@@ -1,0 +1,35 @@
+{
+  "name": "jschema",
+  "version": "0.1.0",
+  "description": "A JSON Schema Validator",
+  "main": "lib/index.js",
+  "browser": {
+    "./lib/fetch.js": "./lib/fetch.browser.js"
+  },
+  "scripts": {
+    "clean": "xargs -a .gitignore rm -rf",
+    "lint": "eslint .",
+    "test": "mocha 'lib/**/*.spec.js'"
+  },
+  "repository": "github:jdesrosiers/jschema",
+  "keywords": [
+    "JSON Schema"
+  ],
+  "author": "Jason Desrosiers <jdesrosi@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "eslint": "^4.19.1",
+    "eslint-import-resolver-node": "^0.3.2",
+    "eslint-plugin-import": "^2.19.1",
+    "json-schema-test-suite": "github:jdesrosiers/JSON-Schema-Test-Suite#dependencies",
+    "mocha": "^5.2.0",
+    "nock": "^9.6.1"
+  },
+  "dependencies": {
+    "@hyperjump/json-pointer": "^0.6.0",
+    "@hyperjump/pact": "^0.1.0",
+    "fastest-stable-stringify": "^2.0.2",
+    "make-fetch-happen": "^7.1.1"
+  }
+}
