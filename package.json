@@ -22,7 +22,7 @@
     "eslint": "^4.19.1",
     "eslint-import-resolver-node": "^0.3.2",
     "eslint-plugin-import": "^2.19.1",
-    "json-schema-test-suite": "github:jdesrosiers/JSON-Schema-Test-Suite#dependencies",
+    "json-schema-test-suite": "github:json-schema-org/JSON-Schema-Test-Suite",
     "mocha": "^5.2.0",
     "nock": "^9.6.1"
   },
