@@ -30,6 +30,7 @@
     "@hyperjump/json-pointer": "^0.6.0",
     "@hyperjump/pact": "^0.1.0",
     "fastest-stable-stringify": "^2.0.2",
-    "make-fetch-happen": "^7.1.1"
+    "make-fetch-happen": "^7.1.1",
+    "node-fetch-npm": "^2.0.2"
   }
 }
