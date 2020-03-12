@@ -9,22 +9,31 @@
   "scripts": {
     "clean": "xargs -a .gitignore rm -rf",
     "lint": "eslint .",
-    "test": "mocha 'lib/**/*.spec.js'"
+    "test": "mocha 'lib/**/*.spec.js'",
+    "build": "rollup --config rollup.config.js",
+    "prepublishOnly": "npm run build"
   },
-  "repository": "github:jdesrosiers/jschema",
+  "repository": "github:jdesrosiers/json-schema",
   "keywords": [
-    "JSON Schema"
+    "JSON Schema",
+    "draft 2019-09",
+    "vocabulary"
   ],
   "author": "Jason Desrosiers <jdesrosi@gmail.com>",
   "license": "MIT",
   "devDependencies": {
+    "@rollup/plugin-commonjs": "^11.0.2",
+    "@rollup/plugin-json": "^4.0.2",
+    "@rollup/plugin-node-resolve": "^7.1.1",
     "chai": "^4.2.0",
     "eslint": "^4.19.1",
     "eslint-import-resolver-node": "^0.3.2",
     "eslint-plugin-import": "^2.19.1",
     "json-schema-test-suite": "github:json-schema-org/JSON-Schema-Test-Suite",
     "mocha": "^5.2.0",
-    "nock": "^9.6.1"
+    "nock": "^9.6.1",
+    "rollup": "^2.0.3",
+    "rollup-plugin-terser": "^5.3.0"
   },
   "dependencies": {
     "@hyperjump/json-pointer": "^0.6.0",
