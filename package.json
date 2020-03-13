@@ -1,5 +1,5 @@
 {
-  "name": "jschema",
+  "name": "@hyperjump/json-schema",
   "version": "0.1.0",
   "description": "A JSON Schema Validator",
   "main": "lib/index.js",
@@ -31,15 +31,11 @@
     "eslint-plugin-import": "^2.19.1",
     "json-schema-test-suite": "github:json-schema-org/JSON-Schema-Test-Suite",
     "mocha": "^5.2.0",
-    "nock": "^9.6.1",
-    "rollup": "^2.0.3",
+    "rollup": "^2.0.6",
     "rollup-plugin-terser": "^5.3.0"
   },
   "dependencies": {
-    "@hyperjump/json-pointer": "^0.6.0",
-    "@hyperjump/pact": "^0.1.0",
-    "fastest-stable-stringify": "^2.0.2",
-    "make-fetch-happen": "^7.1.1",
-    "node-fetch-npm": "^2.0.2"
+    "@hyperjump/json-schema-core": "^0.1.1",
+    "fastest-stable-stringify": "^2.0.2"
   }
 }
