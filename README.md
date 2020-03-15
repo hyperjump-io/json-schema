@@ -84,7 +84,8 @@ JsonSchema.setMetaOutputFormat(JsonSchema.FLAG);
 * **setMetaOutputFormat**: (outputFormat: OutputFormat = DETAILED) => undefined
 
     Set the output format for meta-validation.
-* OutputFormat: [FLAG | BASIC | DETAILED | VERBOSE]
+* OutputFormat: [**FLAG** | **BASIC** | **DETAILED** | **VERBOSE**]
+
     [JSC - Output](https://github.com/jdesrosiers/json-schema-core#output) for
     more information on output formats.
 
@@ -97,7 +98,7 @@ The following optional features are not supported yet.
 * The format vocabulary
 
 ## Backward Compatibility
-The JSV architecture is capable of supporting multiple JSON Schema draft
+The JSC architecture is capable of supporting multiple JSON Schema draft
 versions at once, but only draft-2019-09 is currently supported. I have a fork
 that supports draft-04, draft-06, and draft-07, but there were some significant
 changes in draft-2019-09 and I haven't figured out how to integrate the
