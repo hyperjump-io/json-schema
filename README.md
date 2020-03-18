@@ -1,6 +1,11 @@
 # JSON Schema Validator
-JSON Schema Validator (JSV) is a JSON Schema draft 2019-09 JSON validator built
-on [JSON Schema Core](https://github.com/jdesrosiers/json-schema-core).
+JSON Schema Validator (JSV) is built on [JSON Schema Core](https://github.com/jdesrosiers/json-schema-core).
+
+Supported Versions
+* Draft-04
+* Draft-06
+* Draft-07
+* Draft 2019-09
 
 ## Install
 JSV is designed to run in a vanilla node.js environment, but has no dependencies
@@ -96,13 +101,6 @@ The following optional features are not supported yet.
 * The `unevaluatedProperties` keyword
 * The `unevaluatedItems` keyword
 * The format vocabulary
-
-## Backward Compatibility
-The JSC architecture is capable of supporting multiple JSON Schema draft
-versions at once, but only draft-2019-09 is currently supported. I have a fork
-that supports draft-04, draft-06, and draft-07, but there were some significant
-changes in draft-2019-09 and I haven't figured out how to integrate the
-differences yet.
 
 ## Contributing
 
