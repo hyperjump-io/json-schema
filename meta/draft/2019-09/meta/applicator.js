@@ -1,4 +1,4 @@
-{
+module.exports = `{
     "$schema": "https://json-schema.org/draft/2019-09/schema",
     "$id": "https://json-schema.org/draft/2019-09/meta/applicator",
     "$vocabulary": {
@@ -57,4 +57,4 @@
             "items": { "$recursiveRef": "#" }
         }
     }
-}
+}`;

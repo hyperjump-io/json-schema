@@ -1,4 +1,4 @@
-{
+module.exports = `{
     "$schema": "http://json-schema.org/draft-06/schema#",
     "$id": "http://json-schema.org/draft-06/schema#",
     "title": "Core schema meta-schema",
@@ -151,4 +151,4 @@
         "not": { "$ref": "#" }
     },
     "default": {}
-}
+}`;

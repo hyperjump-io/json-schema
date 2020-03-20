@@ -1,6 +1,5 @@
 const resolve = require("@rollup/plugin-node-resolve");
 const commonjs = require("@rollup/plugin-commonjs");
-const json = require("@rollup/plugin-json");
 const { terser } = require("rollup-plugin-terser");
 
 
@@ -21,7 +20,6 @@ module.exports = config.map(([format, minify]) => ({
     sourcemap: true
   },
   plugins: [
-    json(),
     resolve({
       browser: true
     }),

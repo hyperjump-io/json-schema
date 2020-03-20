@@ -23,7 +23,6 @@
   "license": "MIT",
   "devDependencies": {
     "@rollup/plugin-commonjs": "^11.0.2",
-    "@rollup/plugin-json": "^4.0.2",
     "@rollup/plugin-node-resolve": "^7.1.1",
     "chai": "^4.2.0",
     "eslint": "^4.19.1",
@@ -31,11 +30,11 @@
     "eslint-plugin-import": "^2.19.1",
     "json-schema-test-suite": "github:json-schema-org/JSON-Schema-Test-Suite",
     "mocha": "^5.2.0",
-    "rollup": "^2.0.6",
+    "rollup": "^2.1.0",
     "rollup-plugin-terser": "^5.3.0"
   },
   "dependencies": {
-    "@hyperjump/json-schema-core": "^0.2.0",
+    "@hyperjump/json-schema-core": "^0.3.0",
     "fastest-stable-stringify": "^2.0.2"
   }
 }

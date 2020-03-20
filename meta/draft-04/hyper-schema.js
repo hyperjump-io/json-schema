@@ -1,4 +1,4 @@
-{
+module.exports = `{
     "$schema": "http://json-schema.org/draft-04/hyper-schema#",
     "id": "http://json-schema.org/draft-04/hyper-schema#",
     "title": "JSON Hyper-Schema",
@@ -103,7 +103,7 @@
                     "type": "string"
                 },
                 "method": {
-                    "description": "method for requesting the target of the link (e.g. for HTTP this might be \"GET\" or \"DELETE\")",
+                    "description": "method for requesting the target of the link (e.g. for HTTP this might be \\"GET\\" or \\"DELETE\\")",
                     "type": "string"
                 },
                 "encType": {
@@ -133,4 +133,4 @@
             "href": "{+($ref)}"
         }
     ]
-}
+}`;

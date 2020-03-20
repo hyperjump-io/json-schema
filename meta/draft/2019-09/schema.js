@@ -1,4 +1,4 @@
-{
+module.exports = `{
     "$schema": "https://json-schema.org/draft/2019-09/schema",
     "$id": "https://json-schema.org/draft/2019-09/schema",
     "$vocabulary": {
@@ -29,7 +29,7 @@
             "default": {}
         },
         "dependencies": {
-            "$comment": "\"dependencies\" is no longer a keyword, but schema authors should avoid redefining it to facilitate a smooth transition to \"dependentSchemas\" and \"dependentRequired\"",
+            "$comment": "\\"dependencies\\" is no longer a keyword, but schema authors should avoid redefining it to facilitate a smooth transition to \\"dependentSchemas\\" and \\"dependentRequired\\"",
             "type": "object",
             "additionalProperties": {
                 "anyOf": [
@@ -39,4 +39,4 @@
             }
         }
     }
-}
+}`;

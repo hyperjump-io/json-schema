@@ -1,4 +1,4 @@
-{
+module.exports = `{
     "$schema": "https://json-schema.org/draft/2019-09/schema",
     "$id": "https://json-schema.org/draft/2019-09/meta/meta-data",
     "$vocabulary": {
@@ -34,4 +34,4 @@
             "items": true
         }
     }
-}
+}`;
