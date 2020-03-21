@@ -15,12 +15,6 @@ module.exports = `{
             "type": "number",
             "exclusiveMinimum": 0
         },
-        "maximum": {
-            "type": "number"
-        },
-        "minimum": {
-            "type": "number"
-        },
         "maxLength": { "$ref": "#/$defs/nonNegativeInteger" },
         "minLength": { "$ref": "#/$defs/nonNegativeIntegerDefault0" },
         "pattern": {

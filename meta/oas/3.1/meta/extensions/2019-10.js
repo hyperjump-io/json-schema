@@ -9,10 +9,16 @@ module.exports = `{
     "type": ["object", "boolean"],
     "properties": {
         "example": true,
-        "exclusiveMinimum": {
-            "type": ["number", "boolean"]
+        "maximum": {
+            "type": "number"
         },
         "exclusiveMaximum": {
+            "type": ["number", "boolean"]
+        },
+        "minimum": {
+            "type": "number"
+        },
+        "exclusiveMinimum": {
             "type": ["number", "boolean"]
         },
         "nullable": {
