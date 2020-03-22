@@ -1,6 +1,6 @@
 module.exports = `{
     "$id": "https://spec.openapis.org/oas/3.1/meta/schema-object/2019-10",
-    "$schema": "https://spec.openapis.org/oas/3.1/meta/schema-object/2019-10",
+    "$schema": "https://json-schema.org/draft/2019-09/schema",
     "$vocabulary": {
         "https://json-schema.org/draft/2019-09/vocab/core": true,
         "https://json-schema.org/draft/2019-09/vocab/applicator": true,

@@ -1,9 +1,6 @@
 module.exports = `{
-    "$schema": "https://json-schema.org/draft/2019-09/schema",
     "$id": "https://json-schema.org/draft/2019-09/meta/meta-data",
-    "$vocabulary": {
-        "https://json-schema.org/draft/2019-09/vocab/meta-data": true
-    },
+    "$schema": "https://json-schema.org/draft/2019-09/schema",
     "$recursiveAnchor": true,
 
     "title": "Meta-data vocabulary meta-schema",

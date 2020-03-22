@@ -1,9 +1,6 @@
 module.exports = `{
-    "$schema": "https://json-schema.org/draft/2019-09/schema",
     "$id": "https://json-schema.org/draft/2019-09/meta/applicator",
-    "$vocabulary": {
-        "https://json-schema.org/draft/2019-09/vocab/applicator": true
-    },
+    "$schema": "https://json-schema.org/draft/2019-09/schema",
     "$recursiveAnchor": true,
 
     "title": "Applicator vocabulary meta-schema",
@@ -18,12 +15,7 @@ module.exports = `{
         },
         "contains": { "$recursiveRef": "#" },
         "additionalProperties": { "$recursiveRef": "#" },
-        "unevaluatedProperties": {
-            "type": "object",
-            "additionalProperties": {
-                "$recursiveRef": "#"
-            }
-        },
+        "unevaluatedProperties": { "$recursiveRef": "#" },
         "properties": {
             "type": "object",
             "additionalProperties": { "$recursiveRef": "#" },

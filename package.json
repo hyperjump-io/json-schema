@@ -16,8 +16,12 @@
   "repository": "github:jdesrosiers/json-schema",
   "keywords": [
     "JSON Schema",
+    "draft-04",
+    "draft-06",
+    "draft-07",
     "draft 2019-09",
-    "vocabulary"
+    "vocabulary",
+    "vocabularies"
   ],
   "author": "Jason Desrosiers <jdesrosi@gmail.com>",
   "license": "MIT",
@@ -34,7 +38,7 @@
     "rollup-plugin-terser": "^5.3.0"
   },
   "dependencies": {
-    "@hyperjump/json-schema-core": "^0.3.0",
+    "@hyperjump/json-schema-core": "^0.4.0",
     "fastest-stable-stringify": "^2.0.2"
   }
 }

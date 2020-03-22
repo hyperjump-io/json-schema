@@ -1,9 +1,6 @@
 module.exports = `{
     "$id": "https://spec.openapis.org/oas/3.1/meta/extensions/2019-10",
     "$schema": "https://spec.openapis.org/oas/3.1/meta/schema-object/2019-10",
-    "$vocabulary": {
-        "https://spec.openapis.org/oas/3.1/vocab/extensions/2019-10": true
-    },
     "$recursiveAnchor": true,
 
     "type": ["object", "boolean"],
