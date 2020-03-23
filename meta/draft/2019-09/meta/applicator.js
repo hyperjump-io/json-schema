@@ -1,6 +1,9 @@
 module.exports = `{
     "$id": "https://json-schema.org/draft/2019-09/meta/applicator",
     "$schema": "https://json-schema.org/draft/2019-09/schema",
+    "$vocabulary": {
+      "https://json-schema.org/draft/2019-09/vocab/applicator": true
+    },
     "$recursiveAnchor": true,
 
     "title": "Applicator vocabulary meta-schema",
