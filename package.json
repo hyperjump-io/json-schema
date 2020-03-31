@@ -8,7 +8,7 @@
   },
   "scripts": {
     "clean": "xargs -a .gitignore rm -rf",
-    "lint": "eslint .",
+    "lint": "eslint lib",
     "test": "mocha 'lib/**/*.spec.js'",
     "build": "rollup --config rollup.config.js",
     "prepublishOnly": "npm run build"
