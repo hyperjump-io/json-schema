@@ -9,18 +9,6 @@ module.exports = `{
     "type": ["object", "boolean"],
     "properties": {
         "example": true,
-        "maximum": {
-            "type": "number"
-        },
-        "exclusiveMaximum": {
-            "type": ["number", "boolean"]
-        },
-        "minimum": {
-            "type": "number"
-        },
-        "exclusiveMinimum": {
-            "type": ["number", "boolean"]
-        },
         "nullable": {
             "type": "boolean",
             "default": false
@@ -38,30 +26,6 @@ module.exports = `{
     "patternProperties": {
         "^x-": true
     },
-    "allOf": [
-        {
-            "if": {
-                "properties": {
-                    "exclusiveMinimum": { "type": "boolean" }
-                },
-                "required": ["exclusiveMinimum"]
-            },
-            "then": {
-                "required": ["minimum"]
-            }
-        },
-        {
-            "if": {
-                "properties": {
-                    "exclusiveMaximum": { "type": "boolean" }
-                },
-                "required": ["exclusiveMaximum"]
-            },
-            "then": {
-                "required": ["maximum"]
-            }
-        }
-    ],
     "$defs": {
         "Discriminator": {
             "type": "object",
