@@ -70,6 +70,9 @@ const output = await JsonSchema.validate(schema, "foo", JsonSchema.VERBOSE);
 
 // Example: Specify meta-validation output format
 JsonSchema.setMetaOutputFormat(JsonSchema.FLAG);
+
+// Example: Disable meta-validation
+JsonSchema.setShouldMetaValidate(false);
 ```
 
 ## API
@@ -86,10 +89,14 @@ JsonSchema.setMetaOutputFormat(JsonSchema.FLAG);
 
     Validate an instance against a schema. The function is curried to allow
     compiling the schema once and applying it to multiple instances. See
-* **setMetaOutputFormat**: (outputFormat: OutputFormat = DETAILED) => undefined
+* **setMetaOutputFormat**: (outputFormat: OutputFormat) => undefined
 
-    Set the output format for meta-validation.
-* OutputFormat: [**FLAG** | **BASIC** | **DETAILED** | **VERBOSE**]
+    Validate an instance against a schema. The function is curried to allow
+    compiling the schema once and applying it to multiple instances.
+* **setShouldMetaValidate**: (isEnabled: boolean) => undefined
+
+    Enable or disable meta-validation.
+* **OutputFormat**: [**FLAG** | **BASIC** | **DETAILED** | **VERBOSE**]
 
     [JSC - Output](https://github.com/jdesrosiers/json-schema-core#output) for
     more information on output formats.
