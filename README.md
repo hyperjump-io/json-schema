@@ -105,8 +105,6 @@ JsonSchema.setShouldMetaValidate(false);
 This implementation supports all required features of JSON Schema draft 2019-09.
 The following optional features are not supported yet.
 
-* The `unevaluatedProperties` keyword
-* The `unevaluatedItems` keyword
 * The format vocabulary
 
 ## Contributing
