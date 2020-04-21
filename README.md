@@ -1,5 +1,5 @@
-# JSON Schema Validator
-JSON Schema Validator (JSV) is built on [JSON Schema Core](https://github.com/jdesrosiers/json-schema-core).
+# Hyperjump - JSON Schema Validator
+JSON Schema Validator (JSV) is built on [JSON Schema Core](https://github.com/hyperjump-io/json-schema-core).
 
 Supported Versions
 * Draft-04
@@ -78,8 +78,8 @@ JsonSchema.setShouldMetaValidate(false);
 ## API
 * **add**: (schema: object, url?: URI, schemaVersion?: string) => undefined
 
-    Load a schema. See [JSC - $id](https://github.com/jdesrosiers/json-schema-core#id)
-    and [JSC - $schema](https://github.com/jdesrosiers/json-schema-core#schema-1)
+    Load a schema. See [JSC - $id](https://github.com/hyperjump-io/json-schema-core#id)
+    and [JSC - $schema](https://github.com/hyperjump-io/json-schema-core#schema-1)
     for more information.
 * **get**: (url: URI, contextDoc?: SDoc, recursive: boolean = false) => Promise<SDoc>
 
@@ -98,7 +98,7 @@ JsonSchema.setShouldMetaValidate(false);
     Enable or disable meta-validation.
 * **OutputFormat**: [**FLAG** | **BASIC** | **DETAILED** | **VERBOSE**]
 
-    [JSC - Output](https://github.com/jdesrosiers/json-schema-core#output) for
+    [JSC - Output](https://github.com/hyperjump-io/json-schema-core#output) for
     more information on output formats.
 
 ## Not (yet) Supported
