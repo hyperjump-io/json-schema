@@ -2,11 +2,11 @@ module.exports = `{
     "$id": "https://spec.openapis.org/oas/3.1/meta/validation/2019-10",
     "$schema": "https://json-schema.org/draft/2019-09/schema",
     "$vocabulary": {
-      "https://spec.openapis.org/oas/3.1/vocab/validation/2019-10": true
+        "https://json-schema.org/draft/2019-09/vocab/validation": true
     },
     "$recursiveAnchor": true,
 
-    "$comment": "This is an alternate meta-schema for the standard validation vocabulary.  It is identical to the standard validation meta-schema except that it omits exclusiveMinimum and exclusiveMaximum, which are described by the OpenAPI extensions meta-schema.",
+    "$comment": "This is an alternate meta-schema for the standard validation vocabulary.  It is identical to the standard validation meta-schema except that it modifies minimum, maximum, exclusiveMinimum and exclusiveMaximum",
 
     "title": "Validation vocabulary meta-schema",
     "type": ["object", "boolean"],
@@ -14,6 +14,18 @@ module.exports = `{
         "multipleOf": {
             "type": "number",
             "exclusiveMinimum": 0
+        },
+        "maximum": {
+            "type": "number"
+        },
+        "minimum": {
+            "type": "number"
+        },
+        "exclusiveMinimum": {
+            "type": ["number", "boolean"]
+        },
+        "exclusiveMaximum": {
+            "type": ["number", "boolean"]
         },
         "maxLength": { "$ref": "#/$defs/nonNegativeInteger" },
         "minLength": { "$ref": "#/$defs/nonNegativeIntegerDefault0" },
@@ -58,6 +70,30 @@ module.exports = `{
             ]
         }
     },
+    "allOf": [
+        {
+            "if": {
+                "required": ["exclusiveMinimum"],
+                "properties": {
+                    "exclusiveMinimum": {"type": "boolean"}
+                }
+            },
+            "then": {
+                "required": ["minimum"]
+            }
+        },
+        {
+            "if": {
+                "required": ["exclusiveMaximum"],
+                "properties": {
+                    "exclusiveMaximum": {"type": "boolean"}
+                }
+            },
+            "then": {
+                "required": ["maximum"]
+            }
+        }
+    ],
     "$defs": {
         "nonNegativeInteger": {
             "type": "integer",

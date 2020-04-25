@@ -2,7 +2,7 @@ module.exports = `{
     "$id": "https://spec.openapis.org/oas/3.1/meta/extensions/2019-10",
     "$schema": "https://json-schema.org/draft/2019-09/schema",
     "$vocabulary": {
-      "https://spec.openapis.org/oas/3.1/vocab/extensions/2019-10": true
+        "https://spec.openapis.org/oas/3.1/vocab/extensions/2019-10": true
     },
     "$recursiveAnchor": true,
 
