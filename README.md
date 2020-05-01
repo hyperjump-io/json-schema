@@ -88,11 +88,11 @@ JsonSchema.setShouldMetaValidate(false);
 * **validate**: (schema: SDoc, instance: any, outputFormat: OutputFormat = FLAG) => OutputUnit
 
     Validate an instance against a schema. The function is curried to allow
-    compiling the schema once and applying it to multiple instances. See
-* **setMetaOutputFormat**: (outputFormat: OutputFormat) => undefined
-
-    Validate an instance against a schema. The function is curried to allow
     compiling the schema once and applying it to multiple instances.
+* **setMetaOutputFormat**: (outputFormat: OutputFormat = DETAILED) => undefined
+
+    Set the output format for meta-validation. Meta-validation output is only
+    returned if meta-validation results in an error.
 * **setShouldMetaValidate**: (isEnabled: boolean) => undefined
 
     Enable or disable meta-validation.
