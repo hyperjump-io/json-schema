@@ -1,11 +1,18 @@
 # Hyperjump - JSON Schema Validator
 JSON Schema Validator (JSV) is built on [JSON Schema Core](https://github.com/hyperjump-io/json-schema-core).
 
-Supported Versions
-* Draft-04
-* Draft-06
-* Draft-07
-* Draft 2019-09
+* Supported JSON Schema Versions
+  * draft-04 | draft-06 | draft-07 | Draft 2019-09
+  * Create your own version with [JSC](https://github.com/hyperjump-io/json-schema-core)
+* Schemas can reference other schemas using a different draft
+* Supported vocabularies (new in Draft 2019-09)
+  * Draft 2019-09: core | applicator | validation | meta-data | content
+  * Create your own vocabulary with [JSC](https://github.com/hyperjump-io/json-schema-core)
+* Output formats
+  * Draft 2019-09: FLAG, BASIC, DETAILED, VERBOSE
+  * Create your own output format with [JSC](https://github.com/hyperjump-io/json-schema-core)
+* Load schemas from filesystem (file://), network (http(s)://), or JavaScript
+* Build non-validation JSON-Schema based tools with JSC
 
 ## Install
 JSV is designed to run in a vanilla node.js environment, but has no dependencies
