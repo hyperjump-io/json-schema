@@ -40,6 +40,11 @@ configuration.
   ]
 ```
 
+### Versioning
+This project is in beta and there may be breaking changes at any time. When it's
+stable enough, I'll publish v1.0.0 and follow semantic versioning from there on
+out.
+
 ## Usage
 ```javascript
 const JsonSchema = require("@hyperjump/json-schema");
