@@ -35,11 +35,11 @@
     "eslint-plugin-import": "^2.20.2",
     "json-schema-test-suite": "github:json-schema-org/JSON-Schema-Test-Suite",
     "mocha": "^5.2.0",
-    "rollup": "^2.12.1",
+    "rollup": "^2.13.1",
     "rollup-plugin-terser": "^5.3.0"
   },
   "dependencies": {
-    "@hyperjump/json-schema-core": "^0.12.0",
+    "@hyperjump/json-schema-core": "^0.13.0",
     "fastest-stable-stringify": "^2.0.2"
   }
 }
