@@ -2,23 +2,17 @@ module.exports = `{
     "$id": "https://json-schema.org/draft/future/meta/applicator",
     "$schema": "https://json-schema.org/draft/future/schema",
     "$vocabulary": {
-      "https://json-schema.org/draft/future/vocab/applicator": true
+        "https://json-schema.org/draft/future/vocab/applicator": true
     },
     "$dynamicAnchor": "meta",
 
     "title": "Applicator vocabulary meta-schema",
+    "type": ["object", "boolean"],
     "properties": {
-        "additionalItems": { "$dynamicRef": "#meta" },
-        "unevaluatedItems": { "$dynamicRef": "#meta" },
-        "items": {
-            "anyOf": [
-                { "$dynamicRef": "#meta" },
-                { "$ref": "#/$defs/schemaArray" }
-            ]
-        },
+        "prefixItems": { "$ref": "#/$defs/schemaArray" },
+        "items": { "$dynamicRef": "#meta" },
         "contains": { "$dynamicRef": "#meta" },
         "additionalProperties": { "$dynamicRef": "#meta" },
-        "unevaluatedProperties": { "$dynamicRef": "#meta" },
         "properties": {
             "type": "object",
             "additionalProperties": { "$dynamicRef": "#meta" },
