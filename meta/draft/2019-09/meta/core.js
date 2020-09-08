@@ -33,7 +33,6 @@ module.exports = `{
         },
         "$recursiveAnchor": {
             "type": "boolean",
-            "const": true,
             "default": false
         },
         "$vocabulary": {
