@@ -1,6 +1,6 @@
 {
   "name": "@hyperjump/json-schema",
-  "version": "0.11.2",
+  "version": "0.12.0",
   "description": "A JSON Schema Validator",
   "main": "lib/index.js",
   "scripts": {
