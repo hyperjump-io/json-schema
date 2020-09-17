@@ -97,10 +97,17 @@ JsonSchema.setShouldMetaValidate(false);
 
     Fetch a schema. Schemas can come from an HTTP request, a file, or a schema
     that was added with `add`.
-* **validate**: (schema: SDoc, instance: any, outputFormat: OutputFormat = FLAG) => OutputUnit
+* **validate**: (schema: SDoc, instance: any, outputFormat: OutputFormat = FLAG) => Promise<OutputUnit>
 
     Validate an instance against a schema. The function is curried to allow
     compiling the schema once and applying it to multiple instances.
+* **compile**: (schema: SDoc) => Promise<CompiledSchema>
+
+    Compile a schema to be used interpreted later. A compiled schema is a JSON
+    serializable structure that can be serialized an restored for later use.
+* **interpret**: (schema: CompiledSchema, instance: any, outputFormat: OutputFormat = FLAG) => OutputUnit
+
+    A curried function for validating an instance against a compiled schema.
 * **setMetaOutputFormat**: (outputFormat: OutputFormat = DETAILED) => undefined
 
     Set the output format for meta-validation. Meta-validation output is only
