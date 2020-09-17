@@ -3,5 +3,4 @@ http-cache/
 rollup.config.js
 .eslintrc.json
 **/*.spec.js
-worksheet*.js
-*.schema.json
+scratch/
