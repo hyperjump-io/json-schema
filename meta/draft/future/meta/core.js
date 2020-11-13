@@ -4,7 +4,7 @@ module.exports = `{
     "$vocabulary": {
         "https://json-schema.org/draft/future/vocab/core": true
     },
-    "$recursiveAnchor": true,
+    "$dynamicAnchor": "meta",
 
     "title": "Core vocabulary meta-schema",
     "type": ["object", "boolean"],
@@ -27,14 +27,13 @@ module.exports = `{
             "type": "string",
             "format": "uri-reference"
         },
-        "$recursiveRef": {
+        "$dynamicRef": {
             "type": "string",
             "format": "uri-reference"
         },
-        "$recursiveAnchor": {
-            "type": "boolean",
-            "const": true,
-            "default": false
+        "$dynamicAnchor": {
+            "type": "string",
+            "pattern": "^[A-Za-z][-A-Za-z0-9.:_]*$"
         },
         "$vocabulary": {
             "type": "object",
@@ -51,7 +50,7 @@ module.exports = `{
         },
         "$defs": {
             "type": "object",
-            "additionalProperties": { "$recursiveRef": "#" },
+            "additionalProperties": { "$dynamicRef": "#meta" },
             "default": {}
         }
     }

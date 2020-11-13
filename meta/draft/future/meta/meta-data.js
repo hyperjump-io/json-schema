@@ -4,7 +4,7 @@ module.exports = `{
     "$vocabulary": {
         "https://json-schema.org/draft/future/vocab/meta-data": true
     },
-    "$recursiveAnchor": true,
+    "$dynamicAnchor": "meta",
 
     "title": "Meta-data vocabulary meta-schema",
 

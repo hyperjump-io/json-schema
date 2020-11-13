@@ -4,52 +4,52 @@ module.exports = `{
     "$vocabulary": {
       "https://json-schema.org/draft/future/vocab/applicator": true
     },
-    "$recursiveAnchor": true,
+    "$dynamicAnchor": "meta",
 
     "title": "Applicator vocabulary meta-schema",
     "properties": {
-        "additionalItems": { "$recursiveRef": "#" },
-        "unevaluatedItems": { "$recursiveRef": "#" },
+        "additionalItems": { "$dynamicRef": "#meta" },
+        "unevaluatedItems": { "$dynamicRef": "#meta" },
         "items": {
             "anyOf": [
-                { "$recursiveRef": "#" },
+                { "$dynamicRef": "#meta" },
                 { "$ref": "#/$defs/schemaArray" }
             ]
         },
-        "contains": { "$recursiveRef": "#" },
-        "additionalProperties": { "$recursiveRef": "#" },
-        "unevaluatedProperties": { "$recursiveRef": "#" },
+        "contains": { "$dynamicRef": "#meta" },
+        "additionalProperties": { "$dynamicRef": "#meta" },
+        "unevaluatedProperties": { "$dynamicRef": "#meta" },
         "properties": {
             "type": "object",
-            "additionalProperties": { "$recursiveRef": "#" },
+            "additionalProperties": { "$dynamicRef": "#meta" },
             "default": {}
         },
         "patternProperties": {
             "type": "object",
-            "additionalProperties": { "$recursiveRef": "#" },
+            "additionalProperties": { "$dynamicRef": "#meta" },
             "propertyNames": { "format": "regex" },
             "default": {}
         },
         "dependentSchemas": {
             "type": "object",
             "additionalProperties": {
-                "$recursiveRef": "#"
+                "$dynamicRef": "#meta"
             }
         },
-        "propertyNames": { "$recursiveRef": "#" },
-        "if": { "$recursiveRef": "#" },
-        "then": { "$recursiveRef": "#" },
-        "else": { "$recursiveRef": "#" },
+        "propertyNames": { "$dynamicRef": "#meta" },
+        "if": { "$dynamicRef": "#meta" },
+        "then": { "$dynamicRef": "#meta" },
+        "else": { "$dynamicRef": "#meta" },
         "allOf": { "$ref": "#/$defs/schemaArray" },
         "anyOf": { "$ref": "#/$defs/schemaArray" },
         "oneOf": { "$ref": "#/$defs/schemaArray" },
-        "not": { "$recursiveRef": "#" }
+        "not": { "$dynamicRef": "#meta" }
     },
     "$defs": {
         "schemaArray": {
             "type": "array",
             "minItems": 1,
-            "items": { "$recursiveRef": "#" }
+            "items": { "$dynamicRef": "#meta" }
         }
     }
 }`;

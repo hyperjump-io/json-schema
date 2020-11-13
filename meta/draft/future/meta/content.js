@@ -4,7 +4,7 @@ module.exports = `{
     "$vocabulary": {
         "https://json-schema.org/draft/future/vocab/content": true
     },
-    "$recursiveAnchor": true,
+    "$dynamicAnchor": "meta",
 
     "title": "Content vocabulary meta-schema",
 
@@ -12,6 +12,6 @@ module.exports = `{
     "properties": {
         "contentMediaType": { "type": "string" },
         "contentEncoding": { "type": "string" },
-        "contentSchema": { "$recursiveRef": "#" }
+        "contentSchema": { "$dynamicRef": "#meta" }
     }
 }`;

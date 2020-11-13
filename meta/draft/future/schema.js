@@ -9,7 +9,7 @@ module.exports = `{
         "https://json-schema.org/draft/future/vocab/format": false,
         "https://json-schema.org/draft/future/vocab/content": true
     },
-    "$recursiveAnchor": true,
+    "$dynamicAnchor": "meta",
 
     "title": "Core and Validation specifications meta-schema",
     "allOf": [
@@ -25,7 +25,7 @@ module.exports = `{
         "definitions": {
             "$comment": "While no longer an official keyword as it is replaced by $defs, this keyword is retained in the meta-schema to prevent incompatible extensions as it remains in common use.",
             "type": "object",
-            "additionalProperties": { "$recursiveRef": "#" },
+            "additionalProperties": { "$dynamicRef": "#meta" },
             "default": {}
         },
         "dependencies": {
@@ -33,7 +33,7 @@ module.exports = `{
             "type": "object",
             "additionalProperties": {
                 "anyOf": [
-                    { "$recursiveRef": "#" },
+                    { "$dynamicRef": "#meta" },
                     { "$ref": "meta/validation#/$defs/stringArray" }
                 ]
             }
