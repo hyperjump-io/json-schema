@@ -4,6 +4,7 @@ module.exports = `{
     "$vocabulary": {
         "https://json-schema.org/draft/future/vocab/core": true,
         "https://json-schema.org/draft/future/vocab/applicator": true,
+        "https://json-schema.org/draft/future/vocab/unevaluated": true,
         "https://json-schema.org/draft/future/vocab/validation": true,
         "https://json-schema.org/draft/future/vocab/meta-data": true,
         "https://json-schema.org/draft/future/vocab/format": false,
