@@ -17,13 +17,13 @@ module.exports = `{
             "type": "number"
         },
         "exclusiveMaximum": {
-            "type": ["number", "boolean"]
+            "type": "number"
         },
         "minimum": {
             "type": "number"
         },
         "exclusiveMinimum": {
-            "type": ["number", "boolean"]
+            "type": "number"
         },
         "maxLength": { "$ref": "#/$defs/nonNegativeInteger" },
         "minLength": { "$ref": "#/$defs/nonNegativeIntegerDefault0" },
@@ -68,30 +68,6 @@ module.exports = `{
             ]
         }
     },
-    "allOf": [
-        {
-            "if": {
-                "properties": {
-                    "exclusiveMinimum": { "type": "boolean" }
-                },
-                "required": ["exclusiveMinimum"]
-            },
-            "then": {
-                "required": ["minimum"]
-            }
-        },
-        {
-            "if": {
-                "properties": {
-                    "exclusiveMaximum": { "type": "boolean" }
-                },
-                "required": ["exclusiveMaximum"]
-            },
-            "then": {
-                "required": ["maximum"]
-            }
-        }
-    ],
     "$defs": {
         "nonNegativeInteger": {
             "type": "integer",
