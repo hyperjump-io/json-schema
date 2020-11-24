@@ -21,7 +21,7 @@ module.exports = `{
         },
         "$anchor": {
             "type": "string",
-            "pattern": "^[A-Za-z][-A-Za-z0-9.:_]*$"
+            "pattern": "^[A-Za-z_][-A-Za-z0-9._]*$"
         },
         "$ref": {
             "type": "string",
@@ -33,7 +33,7 @@ module.exports = `{
         },
         "$dynamicAnchor": {
             "type": "string",
-            "pattern": "^[A-Za-z][-A-Za-z0-9.:_]*$"
+            "pattern": "^[A-Za-z_][-A-Za-z0-9._]*$"
         },
         "$vocabulary": {
             "type": "object",
