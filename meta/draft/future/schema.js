@@ -7,7 +7,7 @@ module.exports = `{
         "https://json-schema.org/draft/future/vocab/unevaluated": true,
         "https://json-schema.org/draft/future/vocab/validation": true,
         "https://json-schema.org/draft/future/vocab/meta-data": true,
-        "https://json-schema.org/draft/future/vocab/format": false,
+        "https://json-schema.org/draft/future/vocab/format-annotation": true,
         "https://json-schema.org/draft/future/vocab/content": true
     },
     "$dynamicAnchor": "meta",
@@ -18,7 +18,7 @@ module.exports = `{
         {"$ref": "meta/applicator"},
         {"$ref": "meta/validation"},
         {"$ref": "meta/meta-data"},
-        {"$ref": "meta/format"},
+        {"$ref": "meta/format-annotation"},
         {"$ref": "meta/content"}
     ],
     "type": ["object", "boolean"],
