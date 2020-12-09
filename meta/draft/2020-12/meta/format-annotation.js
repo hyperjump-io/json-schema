@@ -1,8 +1,8 @@
 module.exports = `{
-    "$id": "https://json-schema.org/draft/future/meta/format-annotation",
-    "$schema": "https://json-schema.org/draft/future/schema",
+    "$id": "https://json-schema.org/draft/2020-12/meta/format-annotation",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$vocabulary": {
-        "https://json-schema.org/draft/future/vocab/format-annotation": true
+        "https://json-schema.org/draft/2020-12/vocab/format-annotation": true
     },
     "$dynamicAnchor": "meta",
 

@@ -2,14 +2,16 @@
 JSON Schema Validator (JSV) is built on [JSON Schema Core](https://github.com/hyperjump-io/json-schema-core).
 
 * Supported JSON Schema Dialects
-  * draft-04 | draft-06 | draft-07 | Draft 2019-09
+  * draft-04 | draft-06 | draft-07 | Draft 2019-09 | Draft 2020-12
   * Create your own dialect with [JSC](https://github.com/hyperjump-io/json-schema-core)
 * Schemas can reference other schemas using a different draft
 * Supported vocabularies (new in Draft 2019-09)
   * Draft 2019-09: core | applicator | validation | meta-data | content
+  * Draft 2020-12: core | applicator | validation | meta-data | content |
+    format-annotations
   * Create your own keywords and vocabularies with [JSC](https://github.com/hyperjump-io/json-schema-core)
 * Output formats
-  * Draft 2019-09: FLAG, BASIC, DETAILED, VERBOSE
+  * FLAG, BASIC, DETAILED, VERBOSE
   * Create your own output format with [JSC](https://github.com/hyperjump-io/json-schema-core)
 * Load schemas from filesystem (file://), network (http(s)://), or JavaScript
 * Build non-validation JSON-Schema based tools with [JSC](https://github.com/hyperjump-io/json-schema-core)
@@ -52,7 +54,7 @@ const JsonSchema = require("@hyperjump/json-schema");
 
 // Example: Inline schema
 const schemaJson = {
-  "$schema": "https://json-schema.org/draft/2019-09/schema",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "http://example.com/schemas/string",
   "type": "string"
 }

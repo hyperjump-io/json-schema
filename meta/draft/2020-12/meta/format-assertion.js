@@ -1,8 +1,8 @@
 module.exports = `{
-    "$id": "https://json-schema.org/draft/future/meta/format-assertion",
-    "$schema": "https://json-schema.org/draft/future/schema",
+    "$id": "https://json-schema.org/draft/2020-12/meta/format-assertion",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$vocabulary": {
-        "https://json-schema.org/draft/future/vocab/format-assertion": true
+        "https://json-schema.org/draft/2020-12/vocab/format-assertion": true
     },
     "$dynamicAnchor": "meta",
 

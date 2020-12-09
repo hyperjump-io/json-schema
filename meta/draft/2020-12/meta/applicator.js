@@ -1,8 +1,8 @@
 module.exports = `{
-    "$id": "https://json-schema.org/draft/future/meta/applicator",
-    "$schema": "https://json-schema.org/draft/future/schema",
+    "$id": "https://json-schema.org/draft/2020-12/meta/applicator",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$vocabulary": {
-        "https://json-schema.org/draft/future/vocab/applicator": true
+        "https://json-schema.org/draft/2020-12/vocab/applicator": true
     },
     "$dynamicAnchor": "meta",
 
