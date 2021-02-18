@@ -16,6 +16,7 @@ module.exports = `{
     "allOf": [
         {"$ref": "meta/core"},
         {"$ref": "meta/applicator"},
+        {"$ref": "meta/unevaluated"},
         {"$ref": "meta/validation"},
         {"$ref": "meta/meta-data"},
         {"$ref": "meta/format-annotation"},
