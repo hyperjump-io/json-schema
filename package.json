@@ -3,6 +3,10 @@
   "version": "0.17.2",
   "description": "A JSON Schema Validator",
   "main": "lib/index.js",
+  "exports": {
+    "require": "./lib/index.js",
+    "import": "./lib/index.mjs"
+  },
   "scripts": {
     "clean": "xargs -a .gitignore rm -rf",
     "lint": "eslint lib",
