@@ -1,0 +1,52 @@
+import type { Json, JsonType } from "@hyperjump/json-schema-core";
+
+
+export type Draft07Schema = boolean | {
+  $ref: string;
+} | {
+  $schema?: "http://json-schema.org/draft-07/schema#";
+  $id?: string;
+  $comment?: string;
+  title?: string;
+  description?: string;
+  default?: Json;
+  readOnly?: boolean;
+  writeOnly?: boolean;
+  examples?: Json[];
+  multipleOf?: number;
+  maximum?: number;
+  exclusiveMaximum?: number;
+  minimum?: number;
+  exclusiveMinimum?: number;
+  maxLength?: number;
+  minLength?: number;
+  pattern?: string;
+  additionalItems?: Draft07Schema;
+  items?: Draft07Schema | Draft07Schema[];
+  maxItems?: number;
+  minItems?: number;
+  uniqueItems?: boolean;
+  contains?: Draft07Schema;
+  maxProperties?: number;
+  minProperties?: number;
+  required?: string[];
+  additionalProperties?: Draft07Schema;
+  definitions?: Record<string, Draft07Schema>;
+  properties?: Record<string, Draft07Schema>;
+  patternProperties?: Record<string, Draft07Schema>;
+  dependencies?: Record<string, Draft07Schema | string[]>;
+  propertyNames?: Draft07Schema;
+  const?: Draft07Schema;
+  enum?: Json[];
+  type?: JsonType | JsonType[];
+  format?: "date-time" | "date" | "time" | "email" | "idn-email" | "hostname" | "idn-hostname" | "ipv4" | "ipv6" | "uri" | "uri-reference" | "iri" | "iri-reference" | "uri-template" | "json-pointer" | "relative-json-pointer" | "regex";
+  contentMediaType?: string;
+  contentEncoding?: string;
+  if?: Draft07Schema;
+  then?: Draft07Schema;
+  else?: Draft07Schema;
+  allOf?: Draft07Schema[];
+  anyOf?: Draft07Schema[];
+  oneOf?: Draft07Schema[];
+  not?: Draft07Schema;
+};

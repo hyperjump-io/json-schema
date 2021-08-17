@@ -2,5 +2,6 @@
 http-cache/
 rollup.config.js
 .eslintrc.json
-**/*.spec.js
+**/*.spec.ts
 scratch/
+tsconfig.json
