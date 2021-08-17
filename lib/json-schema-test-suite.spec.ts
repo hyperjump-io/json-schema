@@ -1,15 +1,28 @@
-const fs = require("fs");
-const JsonSchema = require("./index");
-const { expect } = require("chai");
+import fs from "fs";
+import JsonSchema from "./index";
+import type { SchemaObject, Dialect, Validator } from "@hyperjump/json-schema-core";
+import { expect } from "chai";
 
+
+type Suite = {
+  description: string;
+  schema: SchemaObject;
+  tests: Test[];
+};
+
+type Test = {
+  description: string;
+  data: unknown;
+  valid: boolean;
+};
 
 const testSuitePath = "./node_modules/json-schema-test-suite";
 
-const addRemotes = (schemaVersion, filePath = `${testSuitePath}/remotes`, url = "") => {
-  return fs.readdirSync(filePath, { withFileTypes: true })
+const addRemotes = (schemaVersion: Dialect, filePath = `${testSuitePath}/remotes`, url = "") => {
+  fs.readdirSync(filePath, { withFileTypes: true })
     .forEach((entry) => {
       if (entry.isFile()) {
-        const remote = JSON.parse(fs.readFileSync(`${filePath}/${entry.name}`, "utf8"));
+        const remote = JSON.parse(fs.readFileSync(`${filePath}/${entry.name}`, "utf8")) as SchemaObject;
         JsonSchema.add(remote, `http://localhost:1234${url}/${entry.name}`, schemaVersion);
       } else if (entry.isDirectory()) {
         addRemotes(schemaVersion, `${filePath}/${entry.name}`, `${url}/${entry.name}`);
@@ -20,7 +33,7 @@ const addRemotes = (schemaVersion, filePath = `${testSuitePath}/remotes`, url = 
 JsonSchema.setMetaOutputFormat(JsonSchema.FLAG);
 //JsonSchema.setShouldMetaValidate(false);
 
-const runTestSuite = (draft, schemaVersion) => {
+const runTestSuite = (draft: string, schemaVersion: Dialect) => {
   const testSuiteFilePath = `${testSuitePath}/tests/${draft}`;
 
   describe(`${draft} ${schemaVersion}`, () => {
@@ -29,16 +42,16 @@ const runTestSuite = (draft, schemaVersion) => {
     });
 
     fs.readdirSync(testSuiteFilePath, { withFileTypes: true })
-      .filter((entry) => entry.isFile() && /\.json$/.test(entry.name))
+      .filter((entry) => entry.isFile() && entry.name.endsWith(".json"))
       .forEach((entry) => {
         const file = `${testSuiteFilePath}/${entry.name}`;
 
         describe(entry.name, () => {
-          const suites = JSON.parse(fs.readFileSync(file, "utf8"));
+          const suites = JSON.parse(fs.readFileSync(file, "utf8")) as Suite[];
 
           suites.forEach((suite) => {
             describe(suite.description, () => {
-              let validate;
+              let validate: Validator;
 
               before(async () => {
                 const path = "/" + suite.description.replace(/\s+/g, "-");
