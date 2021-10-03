@@ -17,9 +17,8 @@ JSON Schema Validator (JSV) is built on [JSON Schema Core](https://github.com/hy
 * Build non-validation JSON-Schema based tools with [JSC](https://github.com/hyperjump-io/json-schema-core)
 
 ## Install
-JSV is designed to run in a vanilla node.js environment, but has no dependencies
-on node.js specific libraries so it can be bundled for the browser.  No
-compilers, preprocessors, or bundlers are used.
+JSV includes support for node.js JavaScript (CommonJS and ES Modules),
+TypeScript, and browsers.
 
 ### Node.js
 ```bash
@@ -57,7 +56,7 @@ const schemaJson = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "http://example.com/schemas/string",
   "type": "string"
-}
+};
 JsonSchema.add(schemaJson);
 const schema = await JsonSchema.get("http://example.com/schemas/string");
 
@@ -89,8 +88,40 @@ JsonSchema.setMetaOutputFormat(JsonSchema.FLAG);
 JsonSchema.setShouldMetaValidate(false);
 ```
 
+## TypeScript
+Although the package is written in JavaScript, type definitions are included for
+TypeScript support. The following example shows the types you might want to
+know.
+
+```typescript
+import JsonSchema, { InvalidSchemaError } from "@hyperjump/json-schema";
+import type { SchemaDocument, Validator, Result, Draft202012Schema } from "@hyperjump/json-schema";
+
+
+const schemaJson: Draft202012Schema = {
+  "$id": "https://json-schema.hyperjump.io/schema",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+  "type": "string"
+};
+JsonSchema.add(schemaJson);
+
+const schema: SchemaDocument = await JsonSchema.get("https://json-schema.hyperjump.io/schema");
+try {
+  const isString: Validator = await JsonSchema.validate(schema);
+  const result: Result = isString("foo");
+  console.log("isString:", result.valid);
+} catch (error: unknown) {
+  if (error instanceof InvalidSchemaError) {
+    console.log(error.output);
+  } else {
+    console.log(error);
+  }
+}
+```
+
 ## API
-* **add**: (schema: object, url?: URI, schemaVersion?: string) => undefined
+* **add**: (schema: object, url?: URI, schemaVersion?: string) => SDoc
 
     Load a schema. See [JSC - $id](https://github.com/hyperjump-io/json-schema-core#id)
     and [JSC - $schema](https://github.com/hyperjump-io/json-schema-core#schema-1)
@@ -126,7 +157,7 @@ JsonSchema.setShouldMetaValidate(false);
 This implementation supports all required features of JSON Schema. The following
 optional features are not supported yet.
 
-* The format vocabulary
+* The format-assertion vocabulary
 
 ## Contributing
 
