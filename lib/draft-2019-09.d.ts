@@ -19,7 +19,7 @@ export type Draft201909Schema = boolean | {
   unevaluatedProperties?: Draft201909Schema;
   properties?: Record<string, Draft201909Schema>;
   patternProperties?: Record<string, Draft201909Schema>;
-  dependentSchema?: Record<string, Draft201909Schema>;
+  dependentSchemas?: Record<string, Draft201909Schema>;
   propertyNames?: Draft201909Schema;
   if?: Draft201909Schema;
   then?: Draft201909Schema;
@@ -45,7 +45,7 @@ export type Draft201909Schema = boolean | {
   minProperties?: number;
   required?: string[];
   dependentRequired?: Record<string, string[]>;
-  const?: Draft201909Schema;
+  const?: Json;
   enum?: Json[];
   type?: JsonType | JsonType[];
   title?: string;

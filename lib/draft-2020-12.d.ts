@@ -13,13 +13,14 @@ export type Draft202012Schema = boolean | {
   $defs?: Record<string, Draft202012Schema>;
   additionalItems?: Draft202012Schema;
   unevaluatedItems?: Draft202012Schema;
-  items?: Draft202012Schema | Draft202012Schema[];
+  prefixItems?: Draft202012Schema[];
+  items?: Draft202012Schema;
   contains?: Draft202012Schema;
   additionalProperties?: Draft202012Schema;
   unevaluatedProperties?: Draft202012Schema;
   properties?: Record<string, Draft202012Schema>;
   patternProperties?: Record<string, Draft202012Schema>;
-  dependentSchema?: Record<string, Draft202012Schema>;
+  dependentSchemas?: Record<string, Draft202012Schema>;
   propertyNames?: Draft202012Schema;
   if?: Draft202012Schema;
   then?: Draft202012Schema;
@@ -45,7 +46,7 @@ export type Draft202012Schema = boolean | {
   minProperties?: number;
   required?: string[];
   dependentRequired?: Record<string, string[]>;
-  const?: Draft202012Schema;
+  const?: Json;
   enum?: Json[];
   type?: JsonType | JsonType[];
   title?: string;

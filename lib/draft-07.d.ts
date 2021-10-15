@@ -36,7 +36,7 @@ export type Draft07Schema = boolean | {
   patternProperties?: Record<string, Draft07Schema>;
   dependencies?: Record<string, Draft07Schema | string[]>;
   propertyNames?: Draft07Schema;
-  const?: Draft07Schema;
+  const?: Json;
   enum?: Json[];
   type?: JsonType | JsonType[];
   format?: "date-time" | "date" | "time" | "email" | "idn-email" | "hostname" | "idn-hostname" | "ipv4" | "ipv6" | "uri" | "uri-reference" | "iri" | "iri-reference" | "uri-template" | "json-pointer" | "relative-json-pointer" | "regex";
