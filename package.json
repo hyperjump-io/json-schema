@@ -12,7 +12,8 @@
     "lint": "eslint lib",
     "test": "mocha --require ts-node/register 'lib/**/*.spec.ts'",
     "build": "rollup --config rollup.config.js",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "postinstall": "rm -rf dist"
   },
   "repository": "github:hyperjump-io/json-schema-validator",
   "keywords": [
