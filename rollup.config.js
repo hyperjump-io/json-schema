@@ -1,4 +1,4 @@
-const resolve = require("@rollup/plugin-node-resolve");
+const { nodeResolve } = require("@rollup/plugin-node-resolve");
 const commonjs = require("@rollup/plugin-commonjs");
 const { terser } = require("rollup-plugin-terser");
 
@@ -21,7 +21,7 @@ module.exports = config.map(([format, minify]) => ({
     exports: "named"
   },
   plugins: [
-    resolve({
+    nodeResolve({
       browser: true
     }),
     commonjs(),
