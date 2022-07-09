@@ -121,7 +121,7 @@ try {
 ```
 
 ## API
-* **add**: (schema: object, url?: URI, schemaVersion?: string) => SDoc
+* **add**: (schema: object, url?: URI, dialectId?: string) => SDoc
 
     Load a schema. See [JSC - $id](https://github.com/hyperjump-io/json-schema-core#id)
     and [JSC - $schema](https://github.com/hyperjump-io/json-schema-core#schema-1)
