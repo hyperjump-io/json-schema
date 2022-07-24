@@ -108,6 +108,7 @@ MediaTypePlugin to support that.
 
 ```javascript
 const JsonSchema = require("@hyperjump/json-schema");
+const YAML = require("yaml");
 
 
 // Add support for JSON Schemas written in YAML
