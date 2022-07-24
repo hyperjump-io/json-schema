@@ -53,7 +53,7 @@
     "typescript": "*"
   },
   "dependencies": {
-    "@hyperjump/json-schema-core": "^0.25.1",
+    "@hyperjump/json-schema-core": "^0.26.0",
     "fastest-stable-stringify": "^2.0.2"
   }
 }

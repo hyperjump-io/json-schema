@@ -88,6 +88,43 @@ JsonSchema.setMetaOutputFormat(JsonSchema.FLAG);
 JsonSchema.setShouldMetaValidate(false);
 ```
 
+### Media Types
+JSV has a plugin system for adding support for different media types. By default
+it's configured to accept schemas that have the `application/schema+json`
+Content-Type (web) or a `.schema.json` file extension (filesystem). If for
+example, you want to fetch schemas that are written in YAML, you can add a
+MediaTypePlugin to support that.
+
+* **Core.addMediaTypePlugin**: (contentType: string, plugin: MediaTypePlugin) => void
+
+    Add a custom media type handler to support things like YAML or to change the
+    way JSON is supported.
+* **MediaTypePlugin**: object
+
+    * parse: (response: Response) => string -- Given a fetch Response object,
+      parse the body of the request
+    * matcher: (path) => boolean -- Given a filesystem path, return whether or
+      not the file should be considered a member of this media type
+
+```javascript
+const JsonSchema = require("@hyperjump/json-schema");
+
+
+// Add support for JSON Schemas written in YAML
+JsonSchema.addMediaTypePlugin("application/schema+yaml", {
+  parse: async (response) => YAML.parse(await response.text()),
+  matcher: (path) => path.endsWith(".schema.yaml")
+});
+
+// Example: Fetch schema with Content-Type: application/schema+yaml from the web
+const schema = await JsonSchema.get("http://example.com/schemas/string");
+
+// Example: Fetch from file with JSON Schema YAML file extension
+const schema = await JsonSchema.get("file:///path/to/my/schemas/string.schema.yaml");
+
+// Then validate against your schema like normal
+```
+
 ## TypeScript
 Although the package is written in JavaScript, type definitions are included for
 TypeScript support. The following example shows the types you might want to

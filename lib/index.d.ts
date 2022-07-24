@@ -9,6 +9,7 @@ export type JsonSchema = {
   interpret: typeof Core.interpret;
   setMetaOutputFormat: typeof Core.setMetaOutputFormat;
   setShouldMetaValidate: typeof Core.setShouldMetaValidate;
+  addMediaTypePlugin: typeof Core.addMediaTypePlugin;
   FLAG: typeof Core.FLAG;
   BASIC: typeof Core.BASIC;
   DETAILED: typeof Core.DETAILED;
@@ -24,6 +25,7 @@ export const compile: JsonSchema["compile"];
 export const interpret: JsonSchema["interpret"];
 export const setMetaOutputFormat: JsonSchema["setMetaOutputFormat"];
 export const setShouldMetaValidate: JsonSchema["setShouldMetaValidate"];
+export const addMediaTypePlugin: JsonSchema["addMediaTypePlugin"];
 export const FLAG: JsonSchema["FLAG"];
 export const BASIC: JsonSchema["BASIC"];
 export const DETAILED: JsonSchema["DETAILED"];
