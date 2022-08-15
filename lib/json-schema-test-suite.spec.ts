@@ -21,12 +21,6 @@ type Test = {
 // something that doesn't come up in real schemas in favor of something that has
 // value.
 const skip: Set<string> = new Set([
-  // I don't think the test suite reflects the original intent for how the
-  // length of strings should be determined and I chose to go a different
-  // direction for draft-04.
-  "|draft4|maxLength.json|maxLength validation|two supplementary Unicode code points is long enough",
-  "|draft4|minLength.json|minLength validation|one supplementary Unicode code point is not long enough",
-
   // Skip tests for pointers that cross schema resource boundaries. There might
   // be a way to solve this, but because this functionality has been removed
   // from the spec and there is no good reason to do this, it will probably not
