@@ -1,0 +1,61 @@
+{
+  "name": "@hyperjump/json-schema",
+  "version": "1.0.0",
+  "description": "A JSON Schema validator with support for custom keywords, vocabularies, and dialects",
+  "main": "lib/index.js",
+  "exports": {
+    "require": "./lib/index.js",
+    "import": "./lib/index.mjs"
+  },
+  "browser": {
+    "./lib/fetch.js": "./lib/fetch.browser.js"
+  },
+  "scripts": {
+    "clean": "xargs -a .gitignore rm -rf",
+    "lint": "eslint lib",
+    "test": "mocha --require ts-node/register 'lib/**/*.spec.ts'"
+  },
+  "repository": "github:hyperjump-io/json-schema",
+  "keywords": [
+    "JSON Schema",
+    "JSON",
+    "Schema",
+    "2020-12",
+    "2019-09",
+    "draft-06",
+    "draft-04",
+    "vocabulary",
+    "vocabularies"
+  ],
+  "author": "Jason Desrosiers <jdesrosi@gmail.com>",
+  "license": "MIT",
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/jdesrosiers"
+  },
+  "devDependencies": {
+    "@types/chai": "*",
+    "@types/mocha": "*",
+    "@typescript-eslint/eslint-plugin": "*",
+    "@typescript-eslint/parser": "*",
+    "chai": "*",
+    "eslint": "*",
+    "eslint-import-resolver-node": "*",
+    "eslint-import-resolver-typescript": "*",
+    "eslint-plugin-import": "*",
+    "mocha": "*",
+    "nock": "*",
+    "ts-node": "*",
+    "typescript": "*",
+    "yaml": "*"
+  },
+  "dependencies": {
+    "@hyperjump/json": "^0.1.0",
+    "@hyperjump/json-pointer": "^0.9.4",
+    "@hyperjump/pact": "^0.2.3",
+    "content-type": "^1.0.4",
+    "fastest-stable-stringify": "^2.0.2",
+    "node-fetch": "^2.6.5",
+    "uri-js": "^4.4.1"
+  }
+}

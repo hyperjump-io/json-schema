@@ -1,0 +1,6 @@
+{
+    "$id": "http://localhost:1234/prefixItems.json",
+    "prefixItems": [
+        {"type": "string"}
+    ]
+}

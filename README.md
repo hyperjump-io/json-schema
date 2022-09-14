@@ -1,0 +1,1 @@
+# Hyperjump - JSON Schema Core
