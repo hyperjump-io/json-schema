@@ -1,4 +1,5 @@
-import type { Json, JsonType } from "@hyperjump/json-schema-core";
+import type { Json } from "@hyperjump/json-schema-core";
+import type { JsonSchemaType } from "./common";
 
 
 export type Draft04Schema = {
@@ -31,7 +32,7 @@ export type Draft04Schema = {
   patternProperties?: Record<string, Draft04Schema>;
   dependencies?: Record<string, Draft04Schema | string[]>;
   enum?: Json[];
-  type?: JsonType | JsonType[];
+  type?: JsonSchemaType | JsonSchemaType[];
   format?: "date-time" | "email" | "hostname" | "ipv4" | "ipv6" | "uri";
   allOf?: Draft04Schema[];
   anyOf?: Draft04Schema[];

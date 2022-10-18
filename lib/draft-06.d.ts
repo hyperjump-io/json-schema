@@ -1,4 +1,5 @@
-import type { Json, JsonType } from "@hyperjump/json-schema-core";
+import type { Json } from "@hyperjump/json-schema-core";
+import type { JsonSchemaType } from "./common";
 
 
 export type Draft06Schema = boolean | {
@@ -35,7 +36,7 @@ export type Draft06Schema = boolean | {
   propertyNames?: Draft06Schema;
   const?: Json;
   enum?: Json[];
-  type?: JsonType | JsonType[];
+  type?: JsonSchemaType | JsonSchemaType[];
   format?: "date-time" | "email" | "hostname" | "ipv4" | "ipv6" | "uri" | "uri-reference" | "uri-template" | "json-pointer";
   allOf?: Draft06Schema[];
   anyOf?: Draft06Schema[];

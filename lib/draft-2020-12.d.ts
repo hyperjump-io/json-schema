@@ -1,4 +1,5 @@
-import type { Json, JsonType } from "@hyperjump/json-schema-core";
+import type { Json } from "@hyperjump/json-schema-core";
+import type { JsonSchemaType } from "./common";
 
 
 export type Draft202012Schema = boolean | {
@@ -48,7 +49,7 @@ export type Draft202012Schema = boolean | {
   dependentRequired?: Record<string, string[]>;
   const?: Json;
   enum?: Json[];
-  type?: JsonType | JsonType[];
+  type?: JsonSchemaType | JsonSchemaType[];
   title?: string;
   description?: string;
   default?: Json;

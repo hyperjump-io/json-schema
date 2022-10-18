@@ -1,4 +1,5 @@
-import type { Json, JsonType } from "@hyperjump/json-schema-core";
+import type { Json } from "@hyperjump/json-schema-core";
+import type { JsonSchemaType } from "./common";
 
 
 export type Draft07Schema = boolean | {
@@ -38,7 +39,7 @@ export type Draft07Schema = boolean | {
   propertyNames?: Draft07Schema;
   const?: Json;
   enum?: Json[];
-  type?: JsonType | JsonType[];
+  type?: JsonSchemaType | JsonSchemaType[];
   format?: "date-time" | "date" | "time" | "email" | "idn-email" | "hostname" | "idn-hostname" | "ipv4" | "ipv6" | "uri" | "uri-reference" | "iri" | "iri-reference" | "uri-template" | "json-pointer" | "relative-json-pointer" | "regex";
   contentMediaType?: string;
   contentEncoding?: string;
