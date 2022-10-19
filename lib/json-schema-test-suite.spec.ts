@@ -89,8 +89,7 @@ const runTestSuite = (dialectId?: string) => {
                 const url = `http://test-suite.json-schema.org${path}`;
                 JsonSchema.add(suite.schema, url, dialectId);
 
-                const schema = await JsonSchema.get(url);
-                validate = await JsonSchema.validate(schema);
+                validate = await JsonSchema.validate(url);
               });
 
               suite.tests.forEach((test) => {

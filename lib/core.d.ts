@@ -3,9 +3,9 @@ import type { Schema, SchemaDocument, SchemaObject, Anchors } from "./schema";
 
 export type Core = {
   validate: (
-    (schema: SchemaDocument, value: unknown, outputFormat?: OutputFormat) => Promise<Result>
+    (url: string, value: unknown, outputFormat?: OutputFormat) => Promise<Result>
   ) & (
-    (schema: SchemaDocument) => Promise<Validator>
+    (url: string) => Promise<Validator>
   );
   compile: (schema: SchemaDocument<SchemaObject>) => Promise<CompiledSchema>;
   interpret: (
