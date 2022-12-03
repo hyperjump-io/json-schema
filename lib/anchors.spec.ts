@@ -1,7 +1,7 @@
 import { expect } from "chai";
-import { Given, When, Then } from "./mocha-gherkin.spec";
-import { Schema } from "./index";
-import type { SchemaDocument } from "./index";
+import { Given, When, Then } from "./mocha-gherkin.spec.js";
+import { Schema } from "./index.js";
+import type { SchemaDocument } from "./index.js";
 
 
 describe("Anchors", () => {

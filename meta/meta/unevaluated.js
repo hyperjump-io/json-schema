@@ -1,4 +1,4 @@
-module.exports = `{
+export default `{
   "$id": "https://json-schema.org/meta/unevaluated",
   "title": "Unevaluated applicator vocabulary meta-schema",
 

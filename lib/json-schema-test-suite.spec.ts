@@ -1,6 +1,8 @@
 import fs from "fs";
-import JsonSchema from "./index";
-import type { SchemaObject, Validator } from "./index";
+import path from "path";
+import { fileURLToPath } from "url";
+import * as JsonSchema from "./index.js";
+import type { SchemaObject, Validator } from "./index.js";
 import { expect } from "chai";
 
 
@@ -16,6 +18,9 @@ type Test = {
   data: unknown;
   valid: boolean;
 };
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Tests are only skipped if I have good reason to decide not to fix them. This
 // is usually because there has been some tradeoff I've made to not support

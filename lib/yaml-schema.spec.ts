@@ -1,10 +1,16 @@
+import path from "path";
+import { fileURLToPath } from "url";
 import { expect } from "chai";
 import nock from "nock";
-import { When, Then } from "./mocha-gherkin.spec";
-import JsonSchema, { Schema } from "./index";
-import type { SchemaDocument, SchemaObject } from "./index";
+import { When, Then } from "./mocha-gherkin.spec.js";
+import * as JsonSchema from "./index.js";
+import { Schema } from "./index.js";
+import type { SchemaDocument, SchemaObject } from "./index.js";
 import Yaml from "yaml";
 
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const testDomain = "http://test.jsc.hyperjump.io";
 

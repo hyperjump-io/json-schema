@@ -1,4 +1,4 @@
-import { pathRelative } from "./common";
+import { pathRelative } from "./common.js";
 import { expect } from "chai";
 
 

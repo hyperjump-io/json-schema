@@ -1,4 +1,4 @@
-module.exports = `{
+export default `{
   "$id": "https://json-schema.org/meta/content",
   "title": "Content vocabulary meta-schema",
 

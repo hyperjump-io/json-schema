@@ -1,4 +1,4 @@
-module.exports = `{
+export default `{
   "$id": "https://json-schema.org/validation",
   "$vocabulary": {
     "https://json-schema.org/vocab/core": true,

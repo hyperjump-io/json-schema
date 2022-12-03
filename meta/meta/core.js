@@ -1,4 +1,4 @@
-module.exports = `{
+export default `{
   "$id": "https://json-schema.org/meta/core",
   "title": "Core vocabulary meta-schema",
 
