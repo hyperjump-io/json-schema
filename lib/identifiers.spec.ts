@@ -15,7 +15,7 @@ describe("Identifiers", () => {
       });
 
       Then("it should throw an error", () => {
-        expect(subject).to.throw(Error, "Couldn't determine an identifier for the schema");
+        expect(subject).to.throw(TypeError, "Invalid URL");
       });
     });
   });
@@ -28,7 +28,7 @@ describe("Identifiers", () => {
       });
 
       Then("it should throw an error", () => {
-        expect(subject).to.throw(Error, "Couldn't determine an identifier for the schema");
+        expect(subject).to.throw(TypeError, "Invalid URL");
       });
     });
   });
@@ -173,7 +173,7 @@ describe("Identifiers", () => {
       });
 
       Then("the schema's URI should match the given internal id", () => {
-        expect(Schema.uri(subject)).to.equal(`${internalId}#`);
+        expect(Schema.uri(subject)).to.equal("http://xn--exampl-gva.org/ros%C3%A9#");
       });
     });
   });

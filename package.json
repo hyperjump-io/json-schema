@@ -52,7 +52,6 @@
     "@hyperjump/pact": "^0.2.4",
     "content-type": "^1.0.4",
     "fastest-stable-stringify": "^2.0.2",
-    "node-fetch": "^3.3.0",
-    "uri-js": "^4.4.1"
+    "node-fetch": "^3.3.0"
   }
 }
