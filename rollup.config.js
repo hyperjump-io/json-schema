@@ -1,6 +1,6 @@
 const { nodeResolve } = require("@rollup/plugin-node-resolve");
 const commonjs = require("@rollup/plugin-commonjs");
-const { terser } = require("rollup-plugin-terser");
+const terser = require("@rollup/plugin-terser");
 
 
 const flatMap = (fn, list) => list.reduce((acc, x) => acc.concat(fn(x)), []);
@@ -17,7 +17,7 @@ module.exports = config.map(([format, minify]) => ({
     format: format,
     file: `dist/json-schema-${format}${minify ? ".min" : ""}.js`,
     name: "JsonSchema",
-    sourcemap: true,
+    sourcemap: !minify,
     exports: "named"
   },
   plugins: [
