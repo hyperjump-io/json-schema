@@ -13,7 +13,7 @@
     "test": "mocha --require ts-node/register 'lib/**/*.spec.ts'",
     "build": "rollup --config rollup.config.js",
     "prepublishOnly": "npm run build",
-    "postinstall": "node -e \"require('fs').rmSync('dist', { recursive: true })\""
+    "postinstall": "node -e \"require('fs').rmSync('dist', { force: true, recursive: true })\""
   },
   "repository": "github:hyperjump-io/json-schema-validator",
   "keywords": [
