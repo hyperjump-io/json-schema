@@ -4,6 +4,7 @@ import { expect } from "chai";
 import nock from "nock";
 import { When, Then } from "./mocha-gherkin.spec.js";
 import * as JsonSchema from "./index.js";
+import "../stable/index.js";
 import { Schema } from "./index.js";
 import type { SchemaDocument, SchemaObject } from "./index.js";
 import Yaml from "yaml";

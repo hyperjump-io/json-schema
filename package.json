@@ -3,14 +3,21 @@
   "version": "1.0.0",
   "description": "A JSON Schema validator with support for custom keywords, vocabularies, and dialects",
   "type": "module",
-  "main": "lib/index.js",
+  "exports": {
+    ".": { "import": "./stable/index.js" },
+    "./draft-04": { "import": "./draft-04/index.js" },
+    "./draft-06": { "import": "./draft-06/index.js" },
+    "./draft-07": { "import": "./draft-07/index.js" },
+    "./draft-2019-09": { "import": "./draft-2019-09/index.js" },
+    "./draft-2020-12": { "import": "./draft-2020-12/index.js" }
+  },
   "browser": {
     "./lib/fetch.js": "./lib/fetch.browser.js"
   },
   "scripts": {
     "clean": "xargs -a .gitignore rm -rf",
     "lint": "eslint lib",
-    "test": "mocha 'lib/**/*.spec.ts'"
+    "test": "mocha 'lib/**/*.spec.ts' 'stable/**/*.spec.ts' 'draft-*/**/*.spec.ts'"
   },
   "repository": "github:hyperjump-io/json-schema",
   "keywords": [
@@ -40,6 +47,7 @@
     "eslint-import-resolver-node": "*",
     "eslint-import-resolver-typescript": "*",
     "eslint-plugin-import": "*",
+    "json-schema-test-suite": "github:json-schema-org/JSON-Schema-Test-Suite",
     "mocha": "*",
     "nock": "*",
     "ts-node": "*",

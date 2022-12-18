@@ -1,5 +1,6 @@
 import { expect } from "chai";
 import { Given, When, Then } from "./mocha-gherkin.spec.js";
+import "../stable/index.js";
 import { Schema } from "./index.js";
 import type { SchemaDocument } from "./index.js";
 

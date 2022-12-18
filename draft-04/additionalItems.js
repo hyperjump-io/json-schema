@@ -1,0 +1,29 @@
+import * as Instance from "../lib/instance.js";
+import * as Schema from "../lib/schema.js";
+import Validate from "../lib/keywords/validate.js";
+import { getKeywordName } from "../lib/keywords.js";
+
+
+const id = "https://json-schema.org/keyword/draft-04/additionalItems";
+
+const compile = async (schema, ast, parentSchema) => {
+  const itemsKeywordName = getKeywordName(schema.dialectId, "https://json-schema.org/keyword/draft-04/items");
+  const items = await Schema.step(itemsKeywordName, parentSchema);
+  const numberOfItems = Schema.typeOf(items, "array") ? Schema.length(items) : Number.MAX_SAFE_INTEGER;
+
+  return [numberOfItems, await Validate.compile(schema, ast)];
+};
+
+const interpret = ([numberOfItems, additionalItems], instance, ast, dynamicAnchors) => {
+  if (!Instance.typeOf(instance, "array")) {
+    return true;
+  }
+
+  return Instance.every((item, ndx) => ndx < numberOfItems || Validate.interpret(additionalItems, item, ast, dynamicAnchors), instance);
+};
+
+const collectEvaluatedItems = (keywordValue, instance, ast, dynamicAnchors) => {
+  return interpret(keywordValue, instance, ast, dynamicAnchors) && new Set(Instance.map((item, ndx) => ndx, instance));
+};
+
+export default { id, compile, interpret, collectEvaluatedItems };
