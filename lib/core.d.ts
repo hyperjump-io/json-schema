@@ -13,13 +13,11 @@ export type Core = {
   ) & (
     (compiledSchema: CompiledSchema) => Validator
   );
-  get: Schema["get"];
-  addMediaTypePlugin: (contentType: string, plugin: MediaTypePlugin) => void;
   FLAG: "FLAG";
   BASIC: "BASIC";
   DETAILED: "DETAILED";
   VERBOSE: "VERBOSE";
-  add: Schema["add"];
+  addSchema: Schema["add"];
 };
 
 export type Validator = (value: unknown, outputFormat?: OutputFormat) => Result;
@@ -49,11 +47,6 @@ export type Result = {
   instanceLocation: string;
   valid: boolean;
   errors?: Result[];
-};
-
-export type MediaTypePlugin = {
-  parse: (response: Response, mediaTypeParameters: { [parameter: string]: string }) => Promise<[SchemaObject, string | undefined]>;
-  matcher: (path: string) => boolean;
 };
 
 declare const core: Core;

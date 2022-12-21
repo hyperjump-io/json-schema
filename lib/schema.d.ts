@@ -3,7 +3,7 @@ import type { JsonType } from "./common";
 
 export type Schema = {
   add: <A extends SchemaObject | boolean>(schema: A, url?: string, defaultSchemaVersion?: DialectID) => string;
-  get: (uri: string, context?: SchemaDocument) => Promise<SchemaDocument>;
+  get: (url: string, context?: SchemaDocument) => Promise<SchemaDocument>;
   markValidated: (id: string) => void;
   uri: (doc: SchemaDocument) => string;
   value: <A extends SchemaFragment>(doc: SchemaDocument<A>) => A;

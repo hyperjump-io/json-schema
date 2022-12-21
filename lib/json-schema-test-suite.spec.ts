@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import * as JsonSchema from "./index.js";
+import { addSchema, validate, setMetaOutputFormat, setUnstableKeywordEnabled, FLAG } from "./index.js";
 import type { SchemaObject, Validator } from "./index.js";
 import { expect } from "chai";
 
@@ -52,19 +52,19 @@ const addRemotes = (filePath = `${testSuitePath}/remotes`, url = "") => {
     .forEach((entry) => {
       if (entry.isFile() && entry.name.endsWith(".json")) {
         const remote = JSON.parse(fs.readFileSync(`${filePath}/${entry.name}`, "utf8")) as SchemaObject;
-        JsonSchema.add(remote, `http://localhost:1234${url}/${entry.name}`);
+        addSchema(remote, `http://localhost:1234${url}/${entry.name}`);
       } else if (entry.isDirectory()) {
         addRemotes(`${filePath}/${entry.name}`, `${url}/${entry.name}`);
       }
     });
 };
 
-JsonSchema.setMetaOutputFormat(JsonSchema.FLAG);
+setMetaOutputFormat(FLAG);
 //JsonSchema.setShouldMetaValidate(false);
 
-JsonSchema.setUnstableKeywordEnabled("https://json-schema.org/keyword/dynamicRef", true);
-JsonSchema.setUnstableKeywordEnabled("https://json-schema.org/keyword/propertyDependencies", true);
-JsonSchema.setUnstableKeywordEnabled("https://json-schema.org/keyword/requireAllExcept", true);
+setUnstableKeywordEnabled("https://json-schema.org/keyword/dynamicRef", true);
+setUnstableKeywordEnabled("https://json-schema.org/keyword/propertyDependencies", true);
+setUnstableKeywordEnabled("https://json-schema.org/keyword/requireAllExcept", true);
 
 const runTestSuite = (dialectId?: string) => {
   describe(`JSON Schema Test Suite: ${dialectId || "default"}`, () => {
@@ -78,7 +78,7 @@ const runTestSuite = (dialectId?: string) => {
 
           suites.forEach((suite) => {
             describe(suite.description, () => {
-              let validate: Validator;
+              let _validate: Validator;
               const skipPath = [entry.name, suite.description];
 
               before(async () => {
@@ -87,9 +87,9 @@ const runTestSuite = (dialectId?: string) => {
                 }
                 const path = "/" + suite.description.replace(/\s+/g, "-");
                 const url = `http://test-suite.json-schema.org${path}`;
-                JsonSchema.add(suite.schema, url, dialectId);
+                addSchema(suite.schema, url, dialectId);
 
-                validate = await JsonSchema.validate(url);
+                _validate = await validate(url);
               });
 
               suite.tests.forEach((test) => {
@@ -98,7 +98,7 @@ const runTestSuite = (dialectId?: string) => {
                   it.skip(test.description, () => { /* empty */ });
                 } else {
                   it(test.description, () => {
-                    const output = validate(test.data);
+                    const output = _validate(test.data);
                     expect(output.valid).to.equal(test.valid);
                   });
                 }

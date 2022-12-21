@@ -5,7 +5,7 @@ import type { Json, JsonObject } from "@hyperjump/json-pointer";
 export type Instance = {
   nil: JsonDocument<undefined>;
   cons: (instance: Json, id?: string) => JsonDocument;
-  get: (uri: string, context?: JsonDocument) => JsonDocument;
+  get: (url: string, context?: JsonDocument) => JsonDocument;
   uri: (doc: JsonDocument) => string;
   value: <A extends Json>(doc: JsonDocument<A>) => A;
   has: (key: string, doc: JsonDocument<JsonObject>) => boolean;
