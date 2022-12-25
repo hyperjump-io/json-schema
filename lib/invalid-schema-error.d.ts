@@ -1,4 +1,4 @@
-import type { Result } from "./core";
+import type { Result } from "./core.js";
 
 
 export class InvalidSchemaError extends Error {

@@ -1,12 +1,12 @@
 import fs from "fs";
 import * as JsonSchema from "./index.js";
-import type { SchemaObject, DialectID, Validator } from "./index.js";
+import type { JsonSchemaDraft201909, Validator } from "./index.js";
 import { expect } from "chai";
 
 
 type Suite = {
   description: string;
-  schema: SchemaObject;
+  schema: JsonSchemaDraft201909;
   tests: Test[];
 };
 
@@ -54,11 +54,11 @@ const shouldSkip = (path: string[]): boolean => {
 
 const testSuitePath = "./node_modules/json-schema-test-suite";
 
-const addRemotes = (dialectId: DialectID, filePath = `${testSuitePath}/remotes`, url = "") => {
+const addRemotes = (dialectId: string, filePath = `${testSuitePath}/remotes`, url = "") => {
   fs.readdirSync(filePath, { withFileTypes: true })
     .forEach((entry) => {
       if (entry.isFile() && entry.name.endsWith(".json")) {
-        const remote = JSON.parse(fs.readFileSync(`${filePath}/${entry.name}`, "utf8")) as SchemaObject;
+        const remote = JSON.parse(fs.readFileSync(`${filePath}/${entry.name}`, "utf8")) as JsonSchemaDraft201909;
         try {
           JsonSchema.addSchema(remote, `http://localhost:1234${url}/${entry.name}`, dialectId);
         } catch (error: unknown) {
@@ -70,7 +70,7 @@ const addRemotes = (dialectId: DialectID, filePath = `${testSuitePath}/remotes`,
     });
 };
 
-const runTestSuite = (draft: string, dialectId: DialectID) => {
+const runTestSuite = (draft: string, dialectId: string) => {
   const testSuiteFilePath = `${testSuitePath}/tests/${draft}`;
 
   describe(`${draft} ${dialectId}`, () => {

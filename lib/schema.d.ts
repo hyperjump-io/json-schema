@@ -1,44 +1,41 @@
-import type { JsonType } from "./common";
+import type { JsonType } from "./common.js";
 
 
-export type Schema = {
-  add: <A extends SchemaObject | boolean>(schema: A, url?: string, defaultSchemaVersion?: DialectID) => string;
-  get: (url: string, context?: SchemaDocument) => Promise<SchemaDocument>;
-  markValidated: (id: string) => void;
-  uri: (doc: SchemaDocument) => string;
-  value: <A extends SchemaFragment>(doc: SchemaDocument<A>) => A;
-  getAnchorPointer: (schema: SchemaDocument, fragment: string) => string;
-  typeOf: (
-    (doc: SchemaDocument, type: "null") => doc is SchemaDocument<null>
-  ) & (
-    (doc: SchemaDocument, type: "boolean") => doc is SchemaDocument<boolean>
-  ) & (
-    (doc: SchemaDocument, type: "object") => doc is SchemaDocument<SchemaObject>
-  ) & (
-    (doc: SchemaDocument, type: "array") => doc is SchemaDocument<SchemaFragment[]>
-  ) & (
-    (doc: SchemaDocument, type: "number" | "integer") => doc is SchemaDocument<number>
-  ) & (
-    (doc: SchemaDocument, type: "string") => doc is SchemaDocument<string>
-  ) & (
-    (doc: SchemaDocument, type: JsonType) => boolean
-  ) & (
-    (doc: SchemaDocument) => (type: JsonType) => boolean
-  );
-  has: (key: string, doc: SchemaDocument) => boolean;
-  step: (key: string, doc: SchemaDocument) => Promise<SchemaDocument>;
-  keys: (doc: SchemaDocument) => string[];
-  entries: (doc: SchemaDocument) => Promise<SchemaEntry[]>;
-  map: (
-    <A>(fn: MapFn<A>, doc: SchemaDocument) => Promise<A[]>
-  ) & (
-    <A>(fn: MapFn<A>) => (doc: SchemaDocument) => Promise<A[]>
-  );
-  length: (doc: SchemaDocument) => number;
-  toSchema: (doc: SchemaDocument, options: ToSchemaOptions) => SchemaObject;
-};
+export const add: <A extends SchemaObject | boolean>(schema: A, url?: string, defaultSchemaVersion?: string) => string;
+export const get: (url: string, context?: SchemaDocument) => Promise<SchemaDocument>;
+export const markValidated: (id: string) => void;
+export const uri: (doc: SchemaDocument) => string;
+export const value: <A extends SchemaFragment>(doc: SchemaDocument<A>) => A;
+export const typeOf: (
+  (doc: SchemaDocument, type: "null") => doc is SchemaDocument<null>
+) & (
+  (doc: SchemaDocument, type: "boolean") => doc is SchemaDocument<boolean>
+) & (
+  (doc: SchemaDocument, type: "object") => doc is SchemaDocument<SchemaObject>
+) & (
+  (doc: SchemaDocument, type: "array") => doc is SchemaDocument<SchemaFragment[]>
+) & (
+  (doc: SchemaDocument, type: "number" | "integer") => doc is SchemaDocument<number>
+) & (
+  (doc: SchemaDocument, type: "string") => doc is SchemaDocument<string>
+) & (
+  (doc: SchemaDocument, type: JsonType) => boolean
+) & (
+  (doc: SchemaDocument) => (type: JsonType) => boolean
+);
+export const has: (key: string, doc: SchemaDocument) => boolean;
+export const step: (key: string, doc: SchemaDocument) => Promise<SchemaDocument>;
+export const keys: (doc: SchemaDocument) => string[];
+export const entries: (doc: SchemaDocument) => Promise<SchemaEntry[]>;
+export const map: (
+  <A>(fn: MapFn<A>, doc: SchemaDocument) => Promise<A[]>
+) & (
+  <A>(fn: MapFn<A>) => (doc: SchemaDocument) => Promise<A[]>
+);
+export const length: (doc: SchemaDocument) => number;
+export const toSchema: (doc: SchemaDocument, options: ToSchemaOptions) => SchemaObject;
 
-type MapFn<A> = (element: SchemaDocument, index: number) => A;
+type MapFn<a> = (element: SchemaDocument, index: number) => a;
 export type SchemaEntry = [string, SchemaDocument];
 
 export type ToSchemaOptions = {
@@ -49,7 +46,7 @@ export type ToSchemaOptions = {
 
 export type SchemaDocument<A extends SchemaFragment = SchemaFragment> = {
   id: string;
-  dialectId: DialectID;
+  dialectId: string;
   pointer: string;
   schema: SchemaObject;
   value: A;
@@ -59,14 +56,9 @@ export type SchemaDocument<A extends SchemaFragment = SchemaFragment> = {
   validated: boolean;
 };
 
-export type DialectID = "https://json-schema.org/validation" | string;
-
 export type SchemaFragment = string | number | boolean | null | SchemaObject | SchemaFragment[];
 export type SchemaObject = { // eslint-disable-line @typescript-eslint/consistent-indexed-object-style
   [keyword: string]: SchemaFragment;
 };
 
 export type Anchors = Record<string, string>;
-
-declare const schema: Schema;
-export default schema;

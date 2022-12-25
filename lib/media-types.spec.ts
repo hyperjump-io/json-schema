@@ -2,7 +2,7 @@ import { expect } from "chai";
 import nock from "nock";
 import { Given, Then } from "./mocha-gherkin.spec.js";
 import "../stable/index.js";
-import { Schema } from "./index.js";
+import * as Schema from "./schema.js";
 
 
 const testDomain = "http://test.jsc.hyperjump.io";

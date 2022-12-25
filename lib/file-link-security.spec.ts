@@ -1,11 +1,11 @@
 import path from "path";
-import { fileURLToPath } from 'url';
+import { fileURLToPath } from "url";
 import { expect } from "chai";
 import nock from "nock";
 import { Given, When, Then } from "./mocha-gherkin.spec.js";
 import "../stable/index.js";
-import { Schema } from "./index.js";
-import type { SchemaDocument } from "./index.js";
+import * as Schema from "./schema.js";
+import type { SchemaDocument } from "./schema.js";
 
 
 const __filename = fileURLToPath(import.meta.url);

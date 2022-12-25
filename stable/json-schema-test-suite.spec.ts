@@ -2,14 +2,14 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { addSchema, validate, setMetaOutputFormat, setUnstableKeywordEnabled, FLAG } from "./index.js";
-import type { SchemaObject, Validator } from "./index.js";
+import type { JsonSchema, Validator } from "./index.js";
 import { expect } from "chai";
 
 
 type Suite = {
   description: string;
   stability?: string;
-  schema: SchemaObject;
+  schema: JsonSchema;
   tests: Test[];
 };
 
@@ -51,7 +51,7 @@ const addRemotes = (filePath = `${testSuitePath}/remotes`, url = "") => {
   fs.readdirSync(filePath, { withFileTypes: true })
     .forEach((entry) => {
       if (entry.isFile() && entry.name.endsWith(".json")) {
-        const remote = JSON.parse(fs.readFileSync(`${filePath}/${entry.name}`, "utf8")) as SchemaObject;
+        const remote = JSON.parse(fs.readFileSync(`${filePath}/${entry.name}`, "utf8")) as JsonSchema;
         addSchema(remote, `http://localhost:1234${url}/${entry.name}`);
       } else if (entry.isDirectory()) {
         addRemotes(`${filePath}/${entry.name}`, `${url}/${entry.name}`);

@@ -1,24 +1,22 @@
-import type { Schema, SchemaDocument, SchemaObject, Anchors } from "./schema";
+import type { add, SchemaDocument, SchemaObject, Anchors } from "./schema.js";
 
 
-export type Core = {
-  validate: (
-    (url: string, value: unknown, outputFormat?: OutputFormat) => Promise<Result>
-  ) & (
-    (url: string) => Promise<Validator>
-  );
-  compile: (schema: SchemaDocument<SchemaObject>) => Promise<CompiledSchema>;
-  interpret: (
-    (compiledSchema: CompiledSchema, value: unknown, outputFormat?: OutputFormat) => Result
-  ) & (
-    (compiledSchema: CompiledSchema) => Validator
-  );
-  FLAG: "FLAG";
-  BASIC: "BASIC";
-  DETAILED: "DETAILED";
-  VERBOSE: "VERBOSE";
-  addSchema: Schema["add"];
-};
+export const validate: (
+  (url: string, value: unknown, outputFormat?: OutputFormat) => Promise<Result>
+) & (
+  (url: string) => Promise<Validator>
+);
+export const compile: (schema: SchemaDocument<SchemaObject>) => Promise<CompiledSchema>;
+export const interpret: (
+  (compiledSchema: CompiledSchema, value: unknown, outputFormat?: OutputFormat) => Result
+) & (
+  (compiledSchema: CompiledSchema) => Validator
+);
+export const FLAG: "FLAG";
+export const BASIC: "BASIC";
+export const DETAILED: "DETAILED";
+export const VERBOSE: "VERBOSE";
+export const addSchema: typeof add;
 
 export type Validator = (value: unknown, outputFormat?: OutputFormat) => Result;
 
@@ -48,6 +46,3 @@ export type Result = {
   valid: boolean;
   errors?: Result[];
 };
-
-declare const core: Core;
-export default core;

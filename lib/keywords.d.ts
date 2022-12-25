@@ -1,26 +1,26 @@
 import type { Json } from "@hyperjump/json-pointer";
-import type { AST } from "./core";
-import type { JsonDocument } from "./instance";
-import type { SchemaDocument, Anchors } from "./schema";
+import type { AST } from "./core.js";
+import type { JsonDocument } from "./instance.js";
+import type { SchemaDocument, Anchors } from "./schema.js";
 
 
-export type Keywords = {
-  addKeyword: (id: string, keywordHandler: Keyword) => void;
-  getKeywordId: (dialectId: string, keyword: string) => string;
-  getKeywordName: (schema: SchemaDocument, keywordId: string) => string;
-  getKeyword: <A>(id: string) => {
-    compile: Compile<A>;
-    interpret: Interpret<A>;
-    collectEvaluatedProperties: CollectEvaluatedProperties<A>;
-    collectEvaluatedItems: CollectEvaluatedItems<A>;
-  };
-  defineVocabulary: (id: string, keywords: { [keyword: string]: string }) => void;
-  hasDialect: (dialectId: string) => boolean;
-  loadDialect: (dialectId: string, dialect: Dialect, allowUnknownKeyword: boolean) => void;
-  duplicateDialect: (toDialectId: string, FromDialectId: string) => void;
+export const addKeyword: (keywordHandler: Keyword) => void;
+export const getKeywordId: (dialectId: string, keyword: string) => string;
+export const getKeywordName: (dialectId: string, keywordId: string) => string;
+export const getKeyword: <A>(id: string) => {
+  compile: Compile<A>;
+  interpret: Interpret<A>;
+  collectEvaluatedProperties: CollectEvaluatedProperties<A>;
+  collectEvaluatedItems: CollectEvaluatedItems<A>;
 };
+export const defineVocabulary: (id: string, keywords: { [keyword: string]: string }) => void;
+export const hasDialect: (dialectId: string) => boolean;
+export const loadDialect: (dialectId: string, dialect: Dialect, allowUnknownKeywords?: boolean) => void;
+export const duplicateDialect: (toDialectId: string, FromDialectId: string) => void;
 
 export type Keyword<A extends Json | undefined = Json> = {
+  id: string;
+  unstable?: boolean;
   compile: Compile<A>;
   interpret: Interpret<A>;
   collectEvaluatedProperties?: CollectEvaluatedProperties<A>;
@@ -35,6 +35,3 @@ export type CollectEvaluatedItems<A> = (compiledKeywordValue: A, instance: JsonD
 export type Dialect = {
   [vocabularyId: string]: boolean
 };
-
-declare const keywords: Keywords;
-export default keywords;
