@@ -67,6 +67,6 @@ loadDialect(jsonSchemaVersion, {
   [jsonSchemaVersion]: true
 }, true);
 
-addSchema(JSON.parse(metaSchema));
+addSchema(metaSchema);
 
 export * from "../lib/index.js";

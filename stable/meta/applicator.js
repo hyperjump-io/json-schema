@@ -1,4 +1,4 @@
-export default `{
+export default {
   "$id": "https://json-schema.org/meta/applicator",
   "title": "Applicator vocabulary meta-schema",
 
@@ -46,4 +46,4 @@ export default `{
       "items": { "$dynamicRef": "meta" }
     }
   }
-}`;
+};

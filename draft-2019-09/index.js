@@ -106,12 +106,12 @@ loadDialect("https://json-schema.org/draft/2019-09/schema", {
   "https://json-schema.org/draft/2019-09/vocab/content": true
 }, true);
 
-addSchema(JSON.parse(metaSchema));
-addSchema(JSON.parse(coreMetaSchema));
-addSchema(JSON.parse(applicatorMetaSchema));
-addSchema(JSON.parse(validationMetaSchema));
-addSchema(JSON.parse(metaDataMetaSchema));
-addSchema(JSON.parse(formatMetaSchema));
-addSchema(JSON.parse(contentMetaSchema));
+addSchema(metaSchema);
+addSchema(coreMetaSchema);
+addSchema(applicatorMetaSchema);
+addSchema(validationMetaSchema);
+addSchema(metaDataMetaSchema);
+addSchema(formatMetaSchema);
+addSchema(contentMetaSchema);
 
 export * from "../lib/index.js";

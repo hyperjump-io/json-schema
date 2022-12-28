@@ -1,4 +1,4 @@
-export default `{
+export default {
   "$id": "https://json-schema.org/meta/format-assertion",
   "title": "Format vocabulary meta-schema for assertion results",
 
@@ -7,4 +7,4 @@ export default `{
   "properties": {
     "format": { "type": "string" }
   }
-}`;
+};

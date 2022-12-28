@@ -1,4 +1,4 @@
-export default `{
+export default {
   "$id": "https://json-schema.org/meta/core",
   "title": "Core vocabulary meta-schema",
 
@@ -46,4 +46,4 @@ export default `{
       "pattern": "^[A-Za-z_][-A-Za-z0-9._]*$"
     }
   }
-}`;
+};

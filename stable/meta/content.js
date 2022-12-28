@@ -1,4 +1,4 @@
-export default `{
+export default {
   "$id": "https://json-schema.org/meta/content",
   "title": "Content vocabulary meta-schema",
 
@@ -9,4 +9,4 @@ export default `{
     "contentEncoding": { "type": "string" },
     "contentSchema": { "$dynamicRef": "meta" }
   }
-}`;
+};

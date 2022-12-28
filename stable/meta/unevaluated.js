@@ -1,4 +1,4 @@
-export default `{
+export default {
   "$id": "https://json-schema.org/meta/unevaluated",
   "title": "Unevaluated applicator vocabulary meta-schema",
 
@@ -8,4 +8,4 @@ export default `{
     "unevaluatedItems": { "$dynamicRef": "meta" },
     "unevaluatedProperties": { "$dynamicRef": "meta" }
   }
-}`;
+};

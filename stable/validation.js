@@ -1,4 +1,4 @@
-export default `{
+export default {
   "$id": "https://json-schema.org/validation",
   "$vocabulary": {
     "https://json-schema.org/vocab/core": true,
@@ -21,4 +21,4 @@ export default `{
     { "$ref": "meta/format-annotation" },
     { "$ref": "meta/content" }
   ]
-}`;
+};

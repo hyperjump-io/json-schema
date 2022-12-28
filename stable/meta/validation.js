@@ -1,4 +1,4 @@
-export default `{
+export default {
   "$id": "https://json-schema.org/meta/validation",
   "title": "Validation vocabulary meta-schema",
 
@@ -64,4 +64,4 @@ export default `{
       "uniqueItems": true
     }
   }
-}`;
+};

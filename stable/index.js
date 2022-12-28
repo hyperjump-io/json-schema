@@ -105,14 +105,14 @@ loadDialect("https://json-schema.org/validation", {
   "https://json-schema.org/vocab/unevaluated": true
 });
 
-addSchema(JSON.parse(metaSchema));
-addSchema(JSON.parse(coreMetaSchema));
-addSchema(JSON.parse(applicatorMetaSchema));
-addSchema(JSON.parse(validationMetaSchema));
-addSchema(JSON.parse(metaDataMetaSchema));
-addSchema(JSON.parse(formatAnnotationMetaSchema));
-addSchema(JSON.parse(formatAssertionMetaSchema));
-addSchema(JSON.parse(contentMetaSchema));
-addSchema(JSON.parse(unevaluatedMetaSchema));
+addSchema(metaSchema);
+addSchema(coreMetaSchema);
+addSchema(applicatorMetaSchema);
+addSchema(validationMetaSchema);
+addSchema(metaDataMetaSchema);
+addSchema(formatAnnotationMetaSchema);
+addSchema(formatAssertionMetaSchema);
+addSchema(contentMetaSchema);
+addSchema(unevaluatedMetaSchema);
 
 export * from "../lib/index.js";

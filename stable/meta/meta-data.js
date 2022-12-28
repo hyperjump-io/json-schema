@@ -1,4 +1,4 @@
-export default `{
+export default {
   "$id": "https://json-schema.org/meta/meta-data",
   "title": "Meta-data vocabulary meta-schema",
 
@@ -13,4 +13,4 @@ export default `{
     "writeOnly": { "type": "boolean" },
     "examples": { "type": "array" }
   }
-}`;
+};
