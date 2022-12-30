@@ -28,14 +28,14 @@ export const step: (key: string, doc: SchemaDocument) => Promise<SchemaDocument>
 export const keys: (doc: SchemaDocument) => string[];
 export const entries: (doc: SchemaDocument) => Promise<SchemaEntry[]>;
 export const map: (
-  <A>(fn: MapFn<A>, doc: SchemaDocument) => Promise<A[]>
+  <A>(fn: MapFn<Promise<A> | A>, doc: SchemaDocument) => Promise<A[]>
 ) & (
-  <A>(fn: MapFn<A>) => (doc: SchemaDocument) => Promise<A[]>
+  <A>(fn: MapFn<Promise<A> | A>) => (doc: SchemaDocument) => Promise<A[]>
 );
 export const length: (doc: SchemaDocument) => number;
 export const toSchema: (doc: SchemaDocument, options: ToSchemaOptions) => SchemaObject;
 
-type MapFn<a> = (element: SchemaDocument, index: number) => a;
+type MapFn<A> = (element: SchemaDocument, index: number) => A;
 export type SchemaEntry = [string, SchemaDocument];
 
 export type ToSchemaOptions = {

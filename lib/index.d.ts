@@ -1,10 +1,11 @@
-import type { Keyword } from "./keywords.js";
-
-
-export * from "./core.js";
-export * from "./configuration.js";
-export * from "./keywords.js";
-export * from "./pubsub.js";
-export * from "./invalid-schema-error.js";
+export { addSchema, validate, FLAG } from "./core.js";
+export type { Validator, OutputFormat, CompiledSchema, Result } from "./core.js";
+export {
+  getMetaSchemaOutputFormat,
+  setMetaSchemaOutputFormat,
+  getShouldValidateSchema,
+  setShouldValidateSchema
+} from "./configuration.js";
+export { InvalidSchemaError } from "./invalid-schema-error.js";
 export { addMediaTypePlugin } from "./media-types.js";
-export const Validate: Keyword;
+export type { MediaTypePlugin } from "./media-types.js";

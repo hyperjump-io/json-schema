@@ -10,8 +10,9 @@
     "./draft-07": "./draft-07/index.js",
     "./draft-2019-09": "./draft-2019-09/index.js",
     "./draft-2020-12": "./draft-2020-12/index.js",
-    "./schema": "./lib/schema.js",
-    "./instance": "./lib/instance.js"
+    "./experimental": "./lib/experimental.js",
+    "./schema/experimental": "./lib/schema.js",
+    "./instance/experimental": "./lib/instance.js"
   },
   "browser": {
     "./lib/fetch.js": "./lib/fetch.browser.js"

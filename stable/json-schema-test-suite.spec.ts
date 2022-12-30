@@ -1,7 +1,8 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { addSchema, validate, setMetaOutputFormat, setUnstableKeywordEnabled, FLAG } from "./index.js";
+import { addSchema, validate } from "./index.js";
+import { setUnstableKeywordEnabled } from "../lib/experimental.js";
 import type { JsonSchema, Validator } from "./index.js";
 import { expect } from "chai";
 
@@ -58,9 +59,6 @@ const addRemotes = (filePath = `${testSuitePath}/remotes`, url = "") => {
       }
     });
 };
-
-setMetaOutputFormat(FLAG);
-//JsonSchema.setShouldMetaValidate(false);
 
 setUnstableKeywordEnabled("https://json-schema.org/keyword/dynamicRef", true);
 setUnstableKeywordEnabled("https://json-schema.org/keyword/propertyDependencies", true);
