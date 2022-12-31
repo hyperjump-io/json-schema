@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { addSchema, validate } from "./index.js";
-import { setUnstableKeywordEnabled } from "../lib/experimental.js";
+import { setExperimentalKeywordEnabled } from "../lib/experimental.js";
 import type { JsonSchema, Validator } from "./index.js";
 import { expect } from "chai";
 
@@ -60,9 +60,9 @@ const addRemotes = (filePath = `${testSuitePath}/remotes`, url = "") => {
     });
 };
 
-setUnstableKeywordEnabled("https://json-schema.org/keyword/dynamicRef", true);
-setUnstableKeywordEnabled("https://json-schema.org/keyword/propertyDependencies", true);
-setUnstableKeywordEnabled("https://json-schema.org/keyword/requireAllExcept", true);
+setExperimentalKeywordEnabled("https://json-schema.org/keyword/dynamicRef", true);
+setExperimentalKeywordEnabled("https://json-schema.org/keyword/propertyDependencies", true);
+setExperimentalKeywordEnabled("https://json-schema.org/keyword/requireAllExcept", true);
 
 const runTestSuite = (dialectId?: string) => {
   describe(`JSON Schema Test Suite: ${dialectId || "default"}`, () => {

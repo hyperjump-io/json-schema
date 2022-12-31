@@ -1,4 +1,3 @@
-import type { Json } from "@hyperjump/json-pointer";
 import type { AST } from "./core.js";
 import type { JsonDocument } from "./instance.js";
 import type { SchemaDocument, Anchors } from "./schema.js";
@@ -12,7 +11,7 @@ export const loadDialect: (dialectId: string, dialect: { [vocabularyId: string]:
 
 export type Keyword<A> = {
   id: string;
-  unstable?: boolean;
+  experimental?: boolean;
   compile: (schema: SchemaDocument, ast: AST, parentSchema: SchemaDocument) => Promise<A>;
   interpret: (compiledKeywordValue: A, instance: JsonDocument, ast: AST, dynamicAnchors: Anchors) => boolean;
   collectEvaluatedProperties?: (compiledKeywordValue: A, instance: JsonDocument, ast: AST, dynamicAnchors: Anchors, isTop?: boolean) => string[] | false;
