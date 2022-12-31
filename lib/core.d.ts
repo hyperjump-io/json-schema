@@ -1,4 +1,4 @@
-import type { add, SchemaDocument, SchemaObject, Anchors } from "./schema.js";
+import type { add, Anchors } from "./schema.js";
 
 
 export const validate: (
@@ -6,7 +6,7 @@ export const validate: (
 ) & (
   (url: string) => Promise<Validator>
 );
-export const compile: (schema: SchemaDocument<SchemaObject>) => Promise<CompiledSchema>;
+export const compile: (url: string) => Promise<CompiledSchema>;
 export const interpret: (
   (compiledSchema: CompiledSchema, value: unknown, outputFormat?: OutputFormat) => OutputUnit
 ) & (
