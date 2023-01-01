@@ -1,6 +1,6 @@
 import * as Instance from "../lib/instance.js";
 import * as Schema from "../lib/schema.js";
-import Validate from "../lib/keywords/validate.js";
+import Validation from "../lib/keywords/validation.js";
 import * as Pact from "@hyperjump/pact";
 
 
@@ -9,7 +9,7 @@ const id = "https://json-schema.org/keyword/draft-04/dependencies";
 const compile = (schema, ast) => Pact.pipeline([
   Schema.entries,
   Pact.map(async ([key, dependency]) => {
-    return [key, Schema.typeOf(dependency, "array") ? Schema.value(dependency) : await Validate.compile(dependency, ast)];
+    return [key, Schema.typeOf(dependency, "array") ? Schema.value(dependency) : await Validation.compile(dependency, ast)];
   }),
   Pact.all
 ], schema);
@@ -25,7 +25,7 @@ const interpret = (dependencies, instance, ast, dynamicAnchors) => {
     if (Array.isArray(dependency)) {
       return dependency.every((key) => key in value);
     } else {
-      return Validate.interpret(dependency, instance, ast, dynamicAnchors);
+      return Validation.interpret(dependency, instance, ast, dynamicAnchors);
     }
   });
 };

@@ -1,6 +1,6 @@
 import * as Instance from "../lib/instance.js";
 import * as Schema from "../lib/schema.js";
-import Validate from "../lib/keywords/validate.js";
+import Validation from "../lib/keywords/validation.js";
 import { getKeywordName } from "../lib/keywords.js";
 
 
@@ -11,7 +11,7 @@ const compile = async (schema, ast, parentSchema) => {
   const items = await Schema.step(itemsKeywordName, parentSchema);
   const numberOfItems = Schema.typeOf(items, "array") ? Schema.length(items) : Number.MAX_SAFE_INTEGER;
 
-  return [numberOfItems, await Validate.compile(schema, ast)];
+  return [numberOfItems, await Validation.compile(schema, ast)];
 };
 
 const interpret = ([numberOfItems, additionalItems], instance, ast, dynamicAnchors) => {
@@ -19,7 +19,7 @@ const interpret = ([numberOfItems, additionalItems], instance, ast, dynamicAncho
     return true;
   }
 
-  return Instance.every((item, ndx) => ndx < numberOfItems || Validate.interpret(additionalItems, item, ast, dynamicAnchors), instance);
+  return Instance.every((item, ndx) => ndx < numberOfItems || Validation.interpret(additionalItems, item, ast, dynamicAnchors), instance);
 };
 
 const collectEvaluatedItems = (keywordValue, instance, ast, dynamicAnchors) => {

@@ -1,4 +1,4 @@
-import Validate from "../lib/keywords/validate.js";
+import Validation from "../lib/keywords/validation.js";
 import * as Schema from "../lib/schema.js";
 
 
@@ -7,21 +7,21 @@ const id = "https://json-schema.org/keyword/draft-2020-12/dynamicRef";
 const compile = async (dynamicRef, ast) => {
   const [, fragment] = splitUrl(Schema.value(dynamicRef));
   const referencedSchema = await Schema.get(Schema.value(dynamicRef), dynamicRef);
-  await Validate.compile(referencedSchema, ast);
+  await Validation.compile(referencedSchema, ast);
   return [referencedSchema.id, fragment, Schema.uri(referencedSchema)];
 
 };
 
 const interpret = ([id, fragment, ref], instance, ast, dynamicAnchors) => {
   if (fragment in ast.metaData[id].dynamicAnchors) {
-    return Validate.interpret(dynamicAnchors[fragment], instance, ast, dynamicAnchors);
+    return Validation.interpret(dynamicAnchors[fragment], instance, ast, dynamicAnchors);
   } else {
-    return Validate.interpret(ref, instance, ast, dynamicAnchors);
+    return Validation.interpret(ref, instance, ast, dynamicAnchors);
   }
 };
 
-const collectEvaluatedProperties = Validate.collectEvaluatedProperties;
-const collectEvaluatedItems = Validate.collectEvaluatedItems;
+const collectEvaluatedProperties = Validation.collectEvaluatedProperties;
+const collectEvaluatedItems = Validation.collectEvaluatedItems;
 
 const splitUrl = (url) => {
   const indexOfHash = url.indexOf("#");
