@@ -4,6 +4,10 @@ A collection of modules for working with JSON Schemas.
 
 * Validate JSON-compatible values against a JSON Schema
   * Dialects: draft-2020-12, draft-2019-09, draft-07, draft-06, draft-04
+  * OpenAPI
+    * Versions/Dialects: 3.0, 3.1
+    * Validate an OpenAPI document
+    * Validate values against a schema from an OpenAPI document
   * Schemas can reference other schemas using a different dialect
   * Work directly with schemas on the filesystem or HTTP
 * Create custom keywords, vocabularies, and dialects
@@ -124,6 +128,31 @@ const isString = await validate(`file://${__dirname}/string.schema.yaml`);
 
 // Then validate against your schema like normal
 const output = isString("foo");
+```
+
+**Open API**
+
+The OpenAPI 3.0 and 3.1 meta-schemas are pre-loaded and the OpenAPI JSON Schema
+dialects for each of those versions is supported. A document with a Content-Type
+of `application/openapi+json` (web) or a file extension of `openapi.json`
+(filesystem) is understood as an OpenAPI document.
+
+Use the pattern `@hyperjump/json-schema/*` to import the version you need. The
+available versions are `openapi-3-0` for 3.0 and `openapi-3-1` for 3.1.
+
+YAML support isn't built in, but you can add it by writing a MediaTypePlugin.
+You can use the one at `lib/openapi.js` as an example and replacing the JSON
+parts with YAML.
+
+```javascript
+import { addSchema, validate } from "@hyperjump/json-schema/openapi-3-1";
+
+
+// Validate an OpenAPI document
+const output = await validate("https://spec.openapis.org/oas/3.1/schema-base", openapi);
+
+// Validate an instance against a schema in an OpenAPI document
+const output = await validate(`file://${__dirname}/example.openapi.json#/components/schemas/foo`, 42);
 ```
 
 ## API
