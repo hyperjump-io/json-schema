@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "A JSON Schema validator with support for custom keywords, vocabularies, and dialects",
   "type": "module",
+  "main": "./stable/index.js",
   "exports": {
     ".": "./stable/index.js",
     "./draft-04": "./draft-04/index.js",
