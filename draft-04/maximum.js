@@ -7,7 +7,6 @@ const id = "https://json-schema.org/keyword/draft-04/maximum";
 
 const compile = async (schema, ast, parentSchema) => {
   const exclusiveMaximumKeyword = getKeywordName(schema.dialectId, "https://json-schema.org/keyword/draft-04/exclusiveMaximum");
-  console.log(exclusiveMaximumKeyword);
   const exclusiveMaximum = await Schema.step(exclusiveMaximumKeyword, parentSchema);
   const isExclusive = Schema.value(exclusiveMaximum);
 

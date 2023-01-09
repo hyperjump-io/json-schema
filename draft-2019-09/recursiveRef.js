@@ -3,7 +3,7 @@ import Validation from "../lib/keywords/validation.js";
 
 const id = "https://json-schema.org/keyword/draft-2019-09/recursiveRef";
 
-const compile = async (schema) => schema.id;
+const compile = (schema) => schema.id;
 
 const interpret = (id, instance, ast, dynamicAnchors) => {
   if ("" in ast.metaData[id].dynamicAnchors) {

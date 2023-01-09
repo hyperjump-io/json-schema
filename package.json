@@ -22,7 +22,7 @@
   },
   "scripts": {
     "clean": "xargs -a .gitignore rm -rf",
-    "lint": "eslint lib",
+    "lint": "eslint lib stable draft-* openapi-*",
     "test": "mocha 'lib/**/*.spec.ts' 'stable/**/*.spec.ts' 'draft-*/**/*.spec.ts' 'openapi-*/**/*.spec.ts'"
   },
   "repository": "github:hyperjump-io/json-schema",

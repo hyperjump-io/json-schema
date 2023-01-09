@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import fs from "fs";
 import * as JsonSchema from "./index.js";
 import type { JsonSchemaDraft06, Validator } from "./index.js";

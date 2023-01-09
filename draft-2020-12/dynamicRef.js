@@ -9,7 +9,6 @@ const compile = async (dynamicRef, ast) => {
   const referencedSchema = await Schema.get(Schema.value(dynamicRef), dynamicRef);
   await Validation.compile(referencedSchema, ast);
   return [referencedSchema.id, fragment, Schema.uri(referencedSchema)];
-
 };
 
 const interpret = ([id, fragment, ref], instance, ast, dynamicAnchors) => {

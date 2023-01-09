@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-misused-promises */
 import { expect } from "chai";
 import nock from "nock";
 import { Given, Then } from "./mocha-gherkin.spec.js";
