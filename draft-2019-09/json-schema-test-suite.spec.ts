@@ -29,17 +29,6 @@ const skip: Set<string> = new Set([
   "|draft2019-09|anchor.json|$anchor inside an enum is not a real identifier",
   "|draft2019-09|id.json|$id inside an enum is not a real identifier",
   "|draft2019-09|unknownKeyword.json|$id inside an unknown keyword is not a real identifier",
-
-  // Skip tests with URNs
-  "|draft2019-09|ref.json|simple URN base URI with $ref via the URN",
-  "|draft2019-09|ref.json|simple URN base URI with JSON pointer",
-  "|draft2019-09|ref.json|URN base URI with NSS",
-  "|draft2019-09|ref.json|URN base URI with r-component",
-  "|draft2019-09|ref.json|URN base URI with q-component",
-  "|draft2019-09|ref.json|URN base URI with URN and JSON pointer ref",
-  "|draft2019-09|ref.json|URN base URI with URN and anchor ref",
-  "|draft2019-09|ref.json|URN ref with nested pointer ref",
-  "|draft2019-09|refRemote.json|remote HTTP ref with different URN $id"
 ]);
 
 const shouldSkip = (path: string[]): boolean => {
@@ -79,7 +68,6 @@ const runTestSuite = (draft: string, dialectId: string) => {
       addRemotes(dialectId);
     });
 
-    //[{ name: "recursiveRef.json" }]
     fs.readdirSync(testSuiteFilePath, { withFileTypes: true })
       .filter((entry) => entry.isFile() && entry.name.endsWith(".json"))
       .forEach((entry) => {
@@ -96,8 +84,7 @@ const runTestSuite = (draft: string, dialectId: string) => {
                 if (shouldSkip([draft, entry.name, suite.description])) {
                   return;
                 }
-                const path = "/" + suite.description.replace(/\s+/g, "-");
-                const url = `http://${draft}-test-suite.json-schema.org${path}`;
+                const url = `http://${draft}-test-suite.json-schema.org/${encodeURIComponent(suite.description)}`;
                 JsonSchema.addSchema(suite.schema, url, dialectId);
 
                 validate = await JsonSchema.validate(url);

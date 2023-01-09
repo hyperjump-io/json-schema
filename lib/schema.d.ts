@@ -1,7 +1,7 @@
 import type { JsonType } from "./common.js";
 
 
-export const add: <A extends SchemaObject | boolean>(schema: A, url?: string, defaultSchemaVersion?: string) => string;
+export const add: <A extends SchemaObject | boolean>(schema: A, retrievalUri?: string, defaultSchemaVersion?: string) => string;
 export const get: (url: string, context?: SchemaDocument) => Promise<SchemaDocument>;
 export const markValidated: (id: string) => void;
 export const uri: (doc: SchemaDocument) => string;

@@ -75,7 +75,6 @@ const runTestSuite = (draft: string, dialectId: string) => {
       addRemotes(dialectId);
     });
 
-    //[{ name: "refRemote.json" }]
     fs.readdirSync(testSuiteFilePath, { withFileTypes: true })
       .filter((entry) => entry.isFile() && entry.name.endsWith(".json"))
       .forEach((entry) => {
@@ -92,8 +91,7 @@ const runTestSuite = (draft: string, dialectId: string) => {
                 if (shouldSkip([draft, entry.name, suite.description])) {
                   return;
                 }
-                const path = "/" + suite.description.replace(/\s+/g, "-");
-                const url = `http://${draft}-test-suite.json-schema.org${path}`;
+                const url = `http://${draft}-test-suite.json-schema.org/${encodeURIComponent(suite.description)}`;
                 JsonSchema.addSchema(suite.schema, url, dialectId);
 
                 validate = await JsonSchema.validate(url);

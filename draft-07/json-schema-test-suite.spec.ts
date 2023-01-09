@@ -37,15 +37,6 @@ const skip: Set<string> = new Set([
   "|draft7|unknownKeyword.json|$id inside an unknown keyword is not a real identifier",
   "|draft7|ref.json|naive replacement of $ref with its destination is not correct",
   "|draft7|ref.json|$ref prevents a sibling $id from changing the base uri",
-
-  // Skip tests with URNs
-  "|draft7|ref.json|simple URN base URI with $ref via the URN",
-  "|draft7|ref.json|simple URN base URI with JSON pointer",
-  "|draft7|ref.json|URN base URI with NSS",
-  "|draft7|ref.json|URN base URI with r-component",
-  "|draft7|ref.json|URN base URI with q-component",
-  "|draft7|ref.json|URN base URI with URN and JSON pointer ref",
-  "|draft7|ref.json|URN base URI with URN and anchor ref"
 ]);
 
 const shouldSkip = (path: string[]): boolean => {
@@ -101,8 +92,7 @@ const runTestSuite = (draft: string, dialectId: string) => {
                 if (shouldSkip([draft, entry.name, suite.description])) {
                   return;
                 }
-                const path = "/" + suite.description.replace(/\s+/g, "-");
-                const url = `http://${draft}-test-suite.json-schema.org${path}`;
+                const url = `http://${draft}-test-suite.json-schema.org/${encodeURIComponent(suite.description)}`;
                 JsonSchema.addSchema(suite.schema, url, dialectId);
 
                 validate = await JsonSchema.validate(url);

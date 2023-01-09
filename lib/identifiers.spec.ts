@@ -16,7 +16,7 @@ describe("Identifiers", () => {
       });
 
       Then("it should throw an error", () => {
-        expect(subject).to.throw(TypeError, "Invalid URL");
+        expect(subject).to.throw(Error, "Unable to determine an identifier for the schema. Use the '$id' keyword or pass a retrievalUri when loading the schema.");
       });
     });
   });
@@ -29,7 +29,7 @@ describe("Identifiers", () => {
       });
 
       Then("it should throw an error", () => {
-        expect(subject).to.throw(TypeError, "Invalid URL");
+        expect(subject).to.throw(Error, "Invalid absolute-IRI: #/bar");
       });
     });
   });
@@ -174,7 +174,7 @@ describe("Identifiers", () => {
       });
 
       Then("the schema's URI should match the given internal id", () => {
-        expect(Schema.uri(subject)).to.equal("http://xn--exampl-gva.org/ros%C3%A9#");
+        expect(Schema.uri(subject)).to.equal("http://examplé.org/rosé#");
       });
     });
   });

@@ -29,17 +29,6 @@ const skip: Set<string> = new Set([
   "|draft2020-12|anchor.json|$anchor inside an enum is not a real identifier",
   "|draft2020-12|id.json|$id inside an enum is not a real identifier",
   "|draft2020-12|unknownKeyword.json|$id inside an unknown keyword is not a real identifier",
-
-  // Skip tests with URNs
-  "|draft2020-12|ref.json|simple URN base URI with $ref via the URN",
-  "|draft2020-12|ref.json|simple URN base URI with JSON pointer",
-  "|draft2020-12|ref.json|URN base URI with NSS",
-  "|draft2020-12|ref.json|URN base URI with r-component",
-  "|draft2020-12|ref.json|URN base URI with q-component",
-  "|draft2020-12|ref.json|URN base URI with URN and JSON pointer ref",
-  "|draft2020-12|ref.json|URN base URI with URN and anchor ref",
-  "|draft2020-12|ref.json|URN ref with nested pointer ref",
-  "|draft2020-12|refRemote.json|remote HTTP ref with different URN $id"
 ]);
 
 const shouldSkip = (path: string[]): boolean => {
@@ -96,8 +85,7 @@ const runTestSuite = (draft: string, dialectId: string) => {
                 if (shouldSkip([draft, entry.name, suite.description])) {
                   return;
                 }
-                const path = "/" + suite.description.replace(/\s+/g, "-");
-                const url = `http://${draft}-test-suite.json-schema.org${path}`;
+                const url = `http://${draft}-test-suite.json-schema.org/${encodeURIComponent(suite.description)}`;
                 JsonSchema.addSchema(suite.schema, url, dialectId);
 
                 validate = await JsonSchema.validate(url);

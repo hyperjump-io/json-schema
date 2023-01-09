@@ -84,7 +84,7 @@ const runTestSuite = (dialectId?: string) => {
                 if (shouldSkip(skipPath)) {
                   return;
                 }
-                const path = "/" + suite.description.replace(/\s+/g, "-");
+                const path = "/" + encodeURIComponent(suite.description);
                 const url = `http://test-suite.json-schema.org${path}`;
                 addSchema(suite.schema, url, dialectId);
 
