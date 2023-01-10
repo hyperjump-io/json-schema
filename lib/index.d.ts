@@ -1,5 +1,5 @@
 export { addSchema, validate, FLAG } from "./core.js";
-export type { Validator, OutputFormat, CompiledSchema, Result } from "./core.js";
+export type { Validator, OutputFormat, CompiledSchema, OutputUnit } from "./core.js";
 export {
   getMetaSchemaOutputFormat,
   setMetaSchemaOutputFormat,
