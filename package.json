@@ -15,7 +15,8 @@
     "./openapi-3-1": "./openapi-3-1/index.js",
     "./experimental": "./lib/experimental.js",
     "./schema/experimental": "./lib/schema.js",
-    "./instance/experimental": "./lib/instance.js"
+    "./instance/experimental": "./lib/instance.js",
+    "./bundle": "./bundle/index.js"
   },
   "browser": {
     "./lib/fetch.js": "./lib/fetch.browser.js"
@@ -23,7 +24,7 @@
   "scripts": {
     "clean": "xargs -a .gitignore rm -rf",
     "lint": "eslint lib stable draft-* openapi-*",
-    "test": "mocha 'lib/**/*.spec.ts' 'stable/**/*.spec.ts' 'draft-*/**/*.spec.ts' 'openapi-*/**/*.spec.ts'"
+    "test": "mocha 'lib/**/*.spec.ts' 'stable/**/*.spec.ts' 'draft-*/**/*.spec.ts' 'openapi-*/**/*.spec.ts' 'bundle/**/*.spec.ts'"
   },
   "repository": "github:hyperjump-io/json-schema",
   "keywords": [
@@ -67,6 +68,7 @@
     "@hyperjump/uri": "^1.0.0",
     "content-type": "^1.0.4",
     "fastest-stable-stringify": "^2.0.2",
-    "node-fetch": "^3.3.0"
+    "node-fetch": "^3.3.0",
+    "uuid": "^9.0.0"
   }
 }

@@ -1,0 +1,165 @@
+[
+  {
+    "description": "Flatten already bundled schema",
+    "schema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+      "type": "object",
+      "properties": {
+        "foo": { "$ref": "/string" }
+      },
+
+      "$defs": {
+        "string": {
+          "$id": "https://bundler.hyperjump.io/string",
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+          "type": "string"
+        }
+      }
+    },
+    "externalSchemas": [],
+    "bundledSchema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+      "type": "object",
+      "properties": {
+        "foo": { "$ref": "/string" }
+      },
+
+      "$defs": {
+        "https://bundler.hyperjump.io/string": {
+          "$id": "https://bundler.hyperjump.io/string",
+
+          "type": "string"
+        }
+      }
+    }
+  },
+  {
+    "description": "Flatten deeply bundled schema",
+    "schema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+      "type": "object",
+      "properties": {
+        "foo": { "$ref": "/nested" },
+        "bar": { "$ref": "/string" }
+      },
+
+      "$defs": {
+        "nested": {
+          "$id": "https://bundler.hyperjump.io/nested",
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+          "type": "object",
+          "properties": {
+            "baz": { "$ref": "/string" }
+          },
+
+          "$defs": {
+            "string": {
+              "$id": "https://bundler.hyperjump.io/string",
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "externalSchemas": [],
+    "bundledSchema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+      "type": "object",
+      "properties": {
+        "foo": { "$ref": "/nested" },
+        "bar": { "$ref": "/string" }
+      },
+
+      "$defs": {
+        "https://bundler.hyperjump.io/nested": {
+          "$id": "https://bundler.hyperjump.io/nested",
+
+          "type": "object",
+          "properties": {
+            "baz": { "$ref": "/string" }
+          },
+
+          "$defs": {}
+        },
+        "https://bundler.hyperjump.io/string": {
+          "$id": "https://bundler.hyperjump.io/string",
+
+          "type": "string"
+        }
+      }
+    }
+  },
+  {
+    "description": "Flatten deeply bundled from external schema",
+    "schema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+      "type": "object",
+      "properties": {
+        "foo": { "$ref": "/nested" },
+        "bar": { "$ref": "/string" }
+      }
+    },
+    "externalSchemas": [
+      {
+        "$id": "https://bundler.hyperjump.io/nested",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+        "type": "object",
+        "properties": {
+          "baz": { "$ref": "/string" }
+        },
+
+        "$defs": {
+          "string": {
+            "$id": "https://bundler.hyperjump.io/string",
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+            "type": "string"
+          }
+        }
+      }
+    ],
+    "bundledSchema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+      "type": "object",
+      "properties": {
+        "foo": { "$ref": "/nested" },
+        "bar": { "$ref": "/string" }
+      },
+
+      "$defs": {
+        "https://bundler.hyperjump.io/nested": {
+          "$id": "https://bundler.hyperjump.io/nested",
+
+          "type": "object",
+          "properties": {
+            "baz": { "$ref": "/string" }
+          },
+
+          "$defs": {}
+        },
+        "https://bundler.hyperjump.io/string": {
+          "$id": "https://bundler.hyperjump.io/string",
+
+          "type": "string"
+        }
+      }
+    }
+  }
+]

@@ -1,0 +1,57 @@
+[
+  {
+    "description": "Use relative paths for files",
+    "schema": "main.schema.json",
+    "externalSchemas": [],
+    "bundledSchema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+      "type": "object",
+      "properties": {
+        "foo": { "$ref": "string.schema.json" }
+      },
+
+      "$defs": {
+        "string.schema.json": {
+          "$id": "string.schema.json",
+
+          "type": "string"
+        }
+      }
+    }
+  },
+  {
+    "description": "Allow mix of http and file if main is file",
+    "schema": "mixed-schemes.schema.json",
+    "externalSchemas": [
+      {
+        "$id": "https://bundler.hyperjump.io/number",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+        "type": "number"
+      }
+    ],
+    "bundledSchema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+      "type": "object",
+      "properties": {
+        "foo": { "$ref": "string.schema.json" },
+        "bar": { "$ref": "https://bundler.hyperjump.io/number" }
+      },
+
+      "$defs": {
+        "string.schema.json": {
+          "$id": "string.schema.json",
+
+          "type": "string"
+        },
+        "https://bundler.hyperjump.io/number": {
+          "$id": "https://bundler.hyperjump.io/number",
+
+          "type": "number"
+        }
+      }
+    }
+  }
+]

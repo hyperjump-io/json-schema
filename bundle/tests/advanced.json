@@ -1,0 +1,47 @@
+[
+  {
+    "description": "Recursive schema",
+    "schema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+      "type": "object",
+      "properties": {
+        "tree": { "$ref": "/tree" }
+      }
+    },
+    "externalSchemas": [
+      {
+        "$id": "https://bundler.hyperjump.io/tree",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+        "type": "object",
+        "properties": {
+          "leaf": true,
+          "branch": { "$ref": "#" }
+        }
+      }
+    ],
+    "bundledSchema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+      "type": "object",
+      "properties": {
+        "tree": { "$ref": "/tree" }
+      },
+
+      "$defs": {
+        "https://bundler.hyperjump.io/tree": {
+          "$id": "https://bundler.hyperjump.io/tree",
+
+          "type": "object",
+          "properties": {
+            "leaf": true,
+            "branch": { "$ref": "#" }
+          }
+        }
+      }
+    }
+  }
+]

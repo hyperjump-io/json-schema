@@ -11,6 +11,9 @@ A collection of modules for working with JSON Schemas.
   * Schemas can reference other schemas using a different dialect
   * Work directly with schemas on the filesystem or HTTP
 * Create custom keywords, vocabularies, and dialects
+* Bundle multiple schemas into one document
+  * Uses the process defined in the 2020-12 specification but works with any
+    dialect.
 * Provides utilities for building non-validation JSON Schema tooling
 
 ## Install
@@ -41,7 +44,12 @@ The API for this library is divided into two categories: Stable and
 Experimental. The Stable API strictly follows semantic versioning, but the
 Experimental API may have backward-incompatible changes between minor versions.
 
-## Usage
+All experimental features are segregated into exports that include the word
+"experimental" so you never accidentally depend on something that could change
+or be removed in future releases.
+
+## Validation
+### Usage
 This library supports many versions of JSON Schema. Use the pattern
 `@hyperjump/json-schema/*` to import the version you need.
 
@@ -130,7 +138,7 @@ const isString = await validate(`file://${__dirname}/string.schema.yaml`);
 const output = isString("foo");
 ```
 
-**Open API**
+**OpenAPI**
 
 The OpenAPI 3.0 and 3.1 meta-schemas are pre-loaded and the OpenAPI JSON Schema
 dialects for each of those versions is supported. A document with a Content-Type
@@ -155,7 +163,7 @@ const output = await validate("https://spec.openapis.org/oas/3.1/schema-base", o
 const output = await validate(`file://${__dirname}/example.openapi.json#/components/schemas/foo`, 42);
 ```
 
-## API
+### API
 These are available from any of the exports that refer to a version of JSON
 Schema, such as `@hyperjump/json-schema/draft-2020-12`.
 
@@ -178,12 +186,12 @@ Schema, such as `@hyperjump/json-schema/draft-2020-12`.
 
     This error is thrown if the schema being compiled is found to be invalid.
     The `output` field contains an `OutputUnit` with information about the
-    error. You can use the `setMetaOutputFormat` configuration to set the output
-    format that is returned in `output`.
-* **setMetaOutputFormat**: (outputFormat: OutputFormat) => void
+    error. You can use the `setMetaSchemaOutputFormat` configuration to set the
+    output format that is returned in `output`.
+* **setMetaSchemaOutputFormat**: (outputFormat: OutputFormat) => void
 
     Set the output format used for validating schemas.
-* **getMetaOutputFormat**: () => OutputFormat
+* **getMetaSchemaOutputFormat**: () => OutputFormat
 
     Get the output format used for validating schemas.
 * **setShouldMetaValidate**: (isEnabled: boolean) => void
@@ -221,28 +229,92 @@ The following types are used in the above definitions
       Given a filesystem path, return whether or not the file should be
       considered a member of this media type.
 
-## Experimental
-The JSON Schema specification includes several features that are experimental in
-nature including the Vocabulary System, Output Formats, and Annotations. This
-implementation aims to support only the latest version of experimental features
-as they evolve. There will not be a major version bump if there needs to be
-backward incompatible changes to the Experimental API.
-
+## Bundling
 ### Usage
-All experimental features are segregated into exports that include the word
-"experimental" so you never accidentally depend on something that could change
-or be removed in future releases.
+You can bundle schemas with external references into single deliverable using
+the official JSON Schema bundling process introduced in the 2020-12
+specification. Given a schema with external references, any external schemas
+will be embedded in the schema resulting in a Compound Schema Document with all
+the schemas necessary to evaluate the given schema in one document.
+
+The bundling process allows schemas to be embedded without needing to modify any
+references which means you get the same output details whether you validate the
+bundle or the original unbundled schemas.
 
 ```javascript
-import { BASIC } from "@hyperjump/json-schema/experimental";
+import { addSchema } from "@hyperjump/json-schema/draft-2020-12";
+import { bundle } from "@hyperjump/json-schema/bundle";
+
+addSchema({
+  "$id": "https://example.com/main"
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+  "type": "object",
+  "properties": {
+    "foo": { "$ref": "/string" }
+  }
+});
+
+addSchema({
+  "$id": "https://example.com/string",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+  "type": "string"
+});
+
+const bundledSchema = await bundle("https://example.com/main"); // {
+//   "$id": "https://example.com/main",
+//   "$schema": "https://json-schema.org/draft/2020-12/schema",
+//
+//   "type": "object",
+//   "properties": {
+//     "foo": { "$ref": "/string" }
+//   },
+//
+//   "$defs": {
+//     "https://example.com/main": {
+//       "$id": "https://example.com/main",
+//       "type": "string"
+//     }
+//   }
+// }
 ```
+
+### API
+These are available from the `@hyperjump/json-schema/bundle` export.
+
+* **bundle**: (uri: string, options: Options) => Promise<SchemaObject>
+
+    Create a bundled schema starting with the given schema. External schemas
+    will be fetched from the filesystem, the network, or internally as needed.
+
+    Options:
+     * alwaysIncludeDialect: boolean (default: false) -- Include dialect even
+       when it isn't strictly needed
+     * bundleMode: "flat" | "full" (default: "flat") -- When bundling schemas
+       that already contain bundled schemas, "flat" mode with remove nested
+       embedded schemas and put them all in the top level `$defs`. When using
+       "full" mode, it will keep the already embedded schemas around, which will
+       result in some embedded schema duplication.
+     * definitionNamingStrategy: "uri" | "uuid" (default: "uri") -- By default
+       the name used in definitions for embedded schemas will match the
+       identifier of the embedded schema. This naming is unlikely to collide
+       with actual definitions, but if you want to be sure, you can use the
+       "uuid" strategy instead to be sure you get a unique name.
+     * externalSchemas: string[] (default: []) -- A list of schemas URIs that
+       are available externally and should not be included in the bundle.
+
+## Output Formats (Experimental)
+### Usage
 
 **Change the validation output format**
 
 The `FLAG` output format isn't very informative. You can change the output
-format used for validation to get more information.
+format used for validation to get more information about failures.
 
 ```javascript
+import { BASIC } from "@hyperjump/json-schema/experimental";
+
 const output = await validate("https://example.com/schema1", 42, BASIC);
 ```
 
@@ -251,7 +323,10 @@ const output = await validate("https://example.com/schema1", 42, BASIC);
 The output format used for validating schemas can be changed as well.
 
 ```javascript
-setMetaOutputFormat(BASIC);
+import { validate, setMetaSchemaOutputFormat } from "@hyperjump/json-schema/draft-2020-12";
+import { BASIC } from "@hyperjump/json-schema/experimental";
+
+setMetaSchemaOutputFormat(BASIC);
 try {
   const output = await validate("https://example.com/invalid-schema");
 } catch (error) {
@@ -259,8 +334,20 @@ try {
 }
 ```
 
-**Keywords, Vocabularies, and Dialects**
+### API
+**Type Definitions**
 
+* **OutputFormat**: **FLAG** | **BASIC** | **DETAILED** | **VERBOSE**
+
+    In addition to the `FLAG` output format in the Stable API, the Experimental
+    API includes support for the `BASIC`, `DETAILED`, and `VERBOSE` formats as
+    specified in the 2019-09 specification (with some minor customizations).
+    This implementation doesn't include annotations or human readable error
+    messages. The output can be processed to create human readable error
+    messages as needed.
+
+## Meta-Schemas, Keywords, Vocabularies, and Dialects (Experimental)
+### Usage
 In order to create and use a custom keyword, you need to define your keyword's
 behavior, create a vocabulary that includes that keyword, and then create a
 dialect that includes your vocabulary.
@@ -384,14 +471,6 @@ const output = await validate("https://example.com/schema1", 42); // Expect Inva
 ### API
 These are available from the `@hyperjump/json-schema/experimental` export.
 
-* **compile**: (schema: SchemaDocument) => Promise<CompiledSchema>
-
-    Return a compiled schema. This is useful if you're creating tooling for
-    something other than validation.
-* **interpret**: (schema: CompiledSchema, instance: Instance, outputFormat: OutputFormat = BASIC) => OutputUnit
-
-    A curried function for validating an instance against a compiled schema.
-    This can be useful for creating custom output formats.
 * **addKeyword**: (keywordHandler: Keyword) => void
 
     Define a keyword for use in a vocabulary.
@@ -419,18 +498,6 @@ These are available from the `@hyperjump/json-schema/experimental` export.
     A Keyword object that represents a "validate" operation. You would use this
     for compiling and evaluating sub-schemas when defining a custom keyword.
 
-**Type Definitions**
-
-The following types are used in the above definitions
-
-* **OutputFormat**: **FLAG** | **BASIC** | **DETAILED** | **VERBOSE**
-
-    In addition to the `FLAG` output format in the Stable API, the Experimental
-    API includes support for the `BASIC`, `DETAILED`, and `VERBOSE` formats as
-    specified in the 2019-09 specification (with some minor customizations).
-    This implementation doesn't include annotations or human readable error
-    messages. The output can be processed to create human readable error
-    messages as needed.
 * **Keyword**: object
     * id: string
 
@@ -459,7 +526,7 @@ The following types are used in the above definitions
         If the keyword is an applicator, it will need to implements this
         function for `unevaluatedItems` to work as expected.
 
-### Schema
+### Schema API
 These functions are available from the
 `@hyperjump/json-schema/schema/experimental` export.
 
@@ -518,7 +585,7 @@ The following types are used in the above definitions
     * includeEmbedded: boolean (default: true) -- If false, embedded schemas
       will be unbundled from the schema.
 
-### Instance
+### Instance API
 These functions are available from the
 `@hyperjump/json-schema/instance/experimental` export.
 
@@ -568,6 +635,19 @@ set of functions for working with InstanceDocuments.
 * **Instance.length**: (doc: InstanceDocument) => number
 
     Similar to `Array.prototype.length`.
+
+## Low-level Utilities (Experimental)
+### API
+These are available from the `@hyperjump/json-schema/experimental` export.
+
+* **compile**: (schema: SchemaDocument) => Promise<CompiledSchema>
+
+    Return a compiled schema. This is useful if you're creating tooling for
+    something other than validation.
+* **interpret**: (schema: CompiledSchema, instance: Instance, outputFormat: OutputFormat = BASIC) => OutputUnit
+
+    A curried function for validating an instance against a compiled schema.
+    This can be useful for creating custom output formats.
 
 ## Contributing
 

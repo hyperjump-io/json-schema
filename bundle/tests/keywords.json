@@ -1,0 +1,870 @@
+[
+  {
+    "description": "Bundle schema from $ref",
+    "schema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+      "$ref": "/string"
+    },
+    "externalSchemas": [
+      {
+        "$id": "https://bundler.hyperjump.io/string",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+        "type": "string"
+      }
+    ],
+    "bundledSchema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+      "$ref": "/string",
+
+      "$defs": {
+        "https://bundler.hyperjump.io/string": {
+          "$id": "https://bundler.hyperjump.io/string",
+
+          "type": "string"
+        }
+      }
+    }
+  },
+  {
+    "description": "Bundle schema from additionalItems draft-04",
+    "schema": {
+      "id": "https://bundler.hyperjump.io/main",
+      "$schema": "http://json-schema.org/draft-04/schema#",
+
+      "additionalItems": { "$ref": "/string" }
+    },
+    "externalSchemas": [
+      {
+        "id": "https://bundler.hyperjump.io/string",
+        "$schema": "http://json-schema.org/draft-04/schema#",
+
+        "type": "string"
+      }
+    ],
+    "bundledSchema": {
+      "id": "https://bundler.hyperjump.io/main",
+      "$schema": "http://json-schema.org/draft-04/schema",
+
+      "additionalItems": { "$ref": "/string" },
+
+      "definitions": {
+        "https://bundler.hyperjump.io/string": {
+          "id": "https://bundler.hyperjump.io/string",
+
+          "type": "string"
+        }
+      }
+    }
+  },
+  {
+    "description": "Bundle boolean schema from additionalItems draft-04",
+    "schema": {
+      "id": "https://bundler.hyperjump.io/main",
+      "$schema": "http://json-schema.org/draft-04/schema#",
+
+      "additionalItems": false
+    },
+    "externalSchemas": [
+      {
+        "id": "https://bundler.hyperjump.io/string",
+        "$schema": "http://json-schema.org/draft-04/schema#",
+
+        "type": "string"
+      }
+    ],
+    "bundledSchema": {
+      "id": "https://bundler.hyperjump.io/main",
+      "$schema": "http://json-schema.org/draft-04/schema",
+
+      "additionalItems": false
+    }
+  },
+  {
+    "description": "Bundle schema from additionalItems",
+    "schema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2019-09/schema",
+
+      "additionalItems": { "$ref": "/string" }
+    },
+    "externalSchemas": [
+      {
+        "$id": "https://bundler.hyperjump.io/string",
+        "$schema": "https://json-schema.org/draft/2019-09/schema",
+
+        "type": "string"
+      }
+    ],
+    "bundledSchema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2019-09/schema",
+
+      "additionalItems": { "$ref": "/string" },
+
+      "$defs": {
+        "https://bundler.hyperjump.io/string": {
+          "$id": "https://bundler.hyperjump.io/string",
+
+          "type": "string"
+        }
+      }
+    }
+  },
+  {
+    "description": "Bundle schema from additionalProperties draft-04",
+    "schema": {
+      "id": "https://bundler.hyperjump.io/main",
+      "$schema": "http://json-schema.org/draft-04/schema#",
+
+      "additionalProperties": { "$ref": "/string" }
+    },
+    "externalSchemas": [
+      {
+        "id": "https://bundler.hyperjump.io/string",
+        "$schema": "http://json-schema.org/draft-04/schema#",
+
+        "type": "string"
+      }
+    ],
+    "bundledSchema": {
+      "id": "https://bundler.hyperjump.io/main",
+      "$schema": "http://json-schema.org/draft-04/schema",
+
+      "additionalProperties": { "$ref": "/string" },
+
+      "definitions": {
+        "https://bundler.hyperjump.io/string": {
+          "id": "https://bundler.hyperjump.io/string",
+
+          "type": "string"
+        }
+      }
+    }
+  },
+  {
+    "description": "Bundle boolean schema from additionalProperties draft-04",
+    "schema": {
+      "id": "https://bundler.hyperjump.io/main",
+      "$schema": "http://json-schema.org/draft-04/schema#",
+
+      "additionalProperties": false
+    },
+    "externalSchemas": [
+      {
+        "id": "https://bundler.hyperjump.io/string",
+        "$schema": "http://json-schema.org/draft-04/schema#",
+
+        "type": "string"
+      }
+    ],
+    "bundledSchema": {
+      "id": "https://bundler.hyperjump.io/main",
+      "$schema": "http://json-schema.org/draft-04/schema",
+
+      "additionalProperties": false
+    }
+  },
+  {
+    "description": "Bundle schema from additionalProperties",
+    "schema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+      "additionalProperties": { "$ref": "/string" }
+    },
+    "externalSchemas": [
+      {
+        "$id": "https://bundler.hyperjump.io/string",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+        "type": "string"
+      }
+    ],
+    "bundledSchema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+      "additionalProperties": { "$ref": "/string" },
+
+      "$defs": {
+        "https://bundler.hyperjump.io/string": {
+          "$id": "https://bundler.hyperjump.io/string",
+
+          "type": "string"
+        }
+      }
+    }
+  },
+  {
+    "description": "Bundle schema from allOf",
+    "schema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+      "allOf": [{ "$ref": "/string" }]
+    },
+    "externalSchemas": [
+      {
+        "$id": "https://bundler.hyperjump.io/string",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+        "type": "string"
+      }
+    ],
+    "bundledSchema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+      "allOf": [{ "$ref": "/string" }],
+
+      "$defs": {
+        "https://bundler.hyperjump.io/string": {
+          "$id": "https://bundler.hyperjump.io/string",
+
+          "type": "string"
+        }
+      }
+    }
+  },
+  {
+    "description": "Bundle schema from anyOf",
+    "schema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+      "anyOf": [{ "$ref": "/string" }]
+    },
+    "externalSchemas": [
+      {
+        "$id": "https://bundler.hyperjump.io/string",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+        "type": "string"
+      }
+    ],
+    "bundledSchema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+      "anyOf": [{ "$ref": "/string" }],
+
+      "$defs": {
+        "https://bundler.hyperjump.io/string": {
+          "$id": "https://bundler.hyperjump.io/string",
+
+          "type": "string"
+        }
+      }
+    }
+  },
+  {
+    "description": "Bundle schema from contains draft-07",
+    "schema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "http://json-schema.org/draft-07/schema#",
+
+      "contains": { "$ref": "/string" }
+    },
+    "externalSchemas": [
+      {
+        "$id": "https://bundler.hyperjump.io/string",
+        "$schema": "http://json-schema.org/draft-07/schema#",
+
+        "type": "string"
+      }
+    ],
+    "bundledSchema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "http://json-schema.org/draft-07/schema",
+
+      "contains": { "$ref": "/string" },
+
+      "definitions": {
+        "https://bundler.hyperjump.io/string": {
+          "$id": "https://bundler.hyperjump.io/string",
+
+          "type": "string"
+        }
+      }
+    }
+  },
+  {
+    "description": "Bundle schema from contains",
+    "schema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+      "contains": { "$ref": "/string" }
+    },
+    "externalSchemas": [
+      {
+        "$id": "https://bundler.hyperjump.io/string",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+        "type": "string"
+      }
+    ],
+    "bundledSchema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+      "contains": { "$ref": "/string" },
+
+      "$defs": {
+        "https://bundler.hyperjump.io/string": {
+          "$id": "https://bundler.hyperjump.io/string",
+
+          "type": "string"
+        }
+      }
+    }
+  },
+  {
+    "description": "Bundle schema from dependencies",
+    "schema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "http://json-schema.org/draft-07/schema#",
+
+      "dependencies": {
+        "foo": { "$ref": "/string" }
+      }
+    },
+    "externalSchemas": [
+      {
+        "$id": "https://bundler.hyperjump.io/string",
+        "$schema": "http://json-schema.org/draft-07/schema#",
+
+        "type": "string"
+      }
+    ],
+    "bundledSchema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "http://json-schema.org/draft-07/schema",
+
+      "dependencies": {
+        "foo": { "$ref": "/string" }
+      },
+
+      "definitions": {
+        "https://bundler.hyperjump.io/string": {
+          "$id": "https://bundler.hyperjump.io/string",
+
+          "type": "string"
+        }
+      }
+    }
+  },
+  {
+    "description": "Bundle schema from string-array dependencies",
+    "schema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "http://json-schema.org/draft-07/schema#",
+
+      "dependencies": {
+        "foo": ["bar"]
+      }
+    },
+    "externalSchemas": [
+      {
+        "$id": "https://bundler.hyperjump.io/string",
+        "$schema": "http://json-schema.org/draft-07/schema#",
+
+        "type": "string"
+      }
+    ],
+    "bundledSchema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "http://json-schema.org/draft-07/schema",
+
+      "dependencies": {
+        "foo": ["bar"]
+      }
+    }
+  },
+  {
+    "description": "Bundle schema from dependentSchemas",
+    "schema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+      "dependentSchemas": {
+        "foo": { "$ref": "/string" }
+      }
+    },
+    "externalSchemas": [
+      {
+        "$id": "https://bundler.hyperjump.io/string",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+        "type": "string"
+      }
+    ],
+    "bundledSchema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+      "dependentSchemas": {
+        "foo": { "$ref": "/string" }
+      },
+
+      "$defs": {
+        "https://bundler.hyperjump.io/string": {
+          "$id": "https://bundler.hyperjump.io/string",
+
+          "type": "string"
+        }
+      }
+    }
+  },
+  {
+    "description": "Bundle schema from if",
+    "schema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+      "if": { "$ref": "/string" }
+    },
+    "externalSchemas": [
+      {
+        "$id": "https://bundler.hyperjump.io/string",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+        "type": "string"
+      }
+    ],
+    "bundledSchema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+      "if": { "$ref": "/string" },
+
+      "$defs": {
+        "https://bundler.hyperjump.io/string": {
+          "$id": "https://bundler.hyperjump.io/string",
+
+          "type": "string"
+        }
+      }
+    }
+  },
+  {
+    "description": "Bundle schema from then",
+    "schema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+      "if": true,
+      "then": { "$ref": "/string" }
+    },
+    "externalSchemas": [
+      {
+        "$id": "https://bundler.hyperjump.io/string",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+        "type": "string"
+      }
+    ],
+    "bundledSchema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+      "if": true,
+      "then": { "$ref": "/string" },
+
+      "$defs": {
+        "https://bundler.hyperjump.io/string": {
+          "$id": "https://bundler.hyperjump.io/string",
+
+          "type": "string"
+        }
+      }
+    }
+  },
+  {
+    "description": "Bundle schema from else",
+    "schema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+      "if": false,
+      "else": { "$ref": "/string" }
+    },
+    "externalSchemas": [
+      {
+        "$id": "https://bundler.hyperjump.io/string",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+        "type": "string"
+      }
+    ],
+    "bundledSchema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+      "if": false,
+      "else": { "$ref": "/string" },
+
+      "$defs": {
+        "https://bundler.hyperjump.io/string": {
+          "$id": "https://bundler.hyperjump.io/string",
+
+          "type": "string"
+        }
+      }
+    }
+  },
+  {
+    "description": "Bundle schema from items 2019-09",
+    "schema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2019-09/schema",
+
+      "items": { "$ref": "/string" }
+    },
+    "externalSchemas": [
+      {
+        "$id": "https://bundler.hyperjump.io/string",
+        "$schema": "https://json-schema.org/draft/2019-09/schema",
+
+        "type": "string"
+      }
+    ],
+    "bundledSchema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2019-09/schema",
+
+      "items": { "$ref": "/string" },
+
+      "$defs": {
+        "https://bundler.hyperjump.io/string": {
+          "$id": "https://bundler.hyperjump.io/string",
+
+          "type": "string"
+        }
+      }
+    }
+  },
+  {
+    "description": "Bundle schema from tuple items 2019-09",
+    "schema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2019-09/schema",
+
+      "items": [{ "$ref": "/string" }]
+    },
+    "externalSchemas": [
+      {
+        "$id": "https://bundler.hyperjump.io/string",
+        "$schema": "https://json-schema.org/draft/2019-09/schema",
+
+        "type": "string"
+      }
+    ],
+    "bundledSchema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2019-09/schema",
+
+      "items": [{ "$ref": "/string" }],
+
+      "$defs": {
+        "https://bundler.hyperjump.io/string": {
+          "$id": "https://bundler.hyperjump.io/string",
+
+          "type": "string"
+        }
+      }
+    }
+  },
+  {
+    "description": "Bundle schema from items",
+    "schema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+      "items": { "$ref": "/string" }
+    },
+    "externalSchemas": [
+      {
+        "$id": "https://bundler.hyperjump.io/string",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+        "type": "string"
+      }
+    ],
+    "bundledSchema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+      "items": { "$ref": "/string" },
+
+      "$defs": {
+        "https://bundler.hyperjump.io/string": {
+          "$id": "https://bundler.hyperjump.io/string",
+
+          "type": "string"
+        }
+      }
+    }
+  },
+  {
+    "description": "Bundle schema from not",
+    "schema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+      "not": { "$ref": "/string" }
+    },
+    "externalSchemas": [
+      {
+        "$id": "https://bundler.hyperjump.io/string",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+        "type": "string"
+      }
+    ],
+    "bundledSchema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+      "not": { "$ref": "/string" },
+
+      "$defs": {
+        "https://bundler.hyperjump.io/string": {
+          "$id": "https://bundler.hyperjump.io/string",
+
+          "type": "string"
+        }
+      }
+    }
+  },
+  {
+    "description": "Bundle schema from oneOf",
+    "schema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+      "oneOf": [{ "$ref": "/string" }]
+    },
+    "externalSchemas": [
+      {
+        "$id": "https://bundler.hyperjump.io/string",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+        "type": "string"
+      }
+    ],
+    "bundledSchema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+      "oneOf": [{ "$ref": "/string" }],
+
+      "$defs": {
+        "https://bundler.hyperjump.io/string": {
+          "$id": "https://bundler.hyperjump.io/string",
+
+          "type": "string"
+        }
+      }
+    }
+  },
+  {
+    "description": "Bundle schema from patternProperties",
+    "schema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+      "patternProperties": {
+        ".": { "$ref": "/string" }
+      }
+    },
+    "externalSchemas": [
+      {
+        "$id": "https://bundler.hyperjump.io/string",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+        "type": "string"
+      }
+    ],
+    "bundledSchema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+      "patternProperties": {
+        ".": { "$ref": "/string" }
+      },
+
+      "$defs": {
+        "https://bundler.hyperjump.io/string": {
+          "$id": "https://bundler.hyperjump.io/string",
+
+          "type": "string"
+        }
+      }
+    }
+  },
+  {
+    "description": "Bundle schema from prefixItems",
+    "schema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+      "prefixItems": [{ "$ref": "/string" }]
+    },
+    "externalSchemas": [
+      {
+        "$id": "https://bundler.hyperjump.io/string",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+        "type": "string"
+      }
+    ],
+    "bundledSchema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+      "prefixItems": [{ "$ref": "/string" }],
+
+      "$defs": {
+        "https://bundler.hyperjump.io/string": {
+          "$id": "https://bundler.hyperjump.io/string",
+
+          "type": "string"
+        }
+      }
+    }
+  },
+  {
+    "description": "Bundle schema from properties",
+    "schema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+      "properties": {
+        "foo": { "$ref": "/string" }
+      }
+    },
+    "externalSchemas": [
+      {
+        "$id": "https://bundler.hyperjump.io/string",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+        "type": "string"
+      }
+    ],
+    "bundledSchema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+      "properties": {
+        "foo": { "$ref": "/string" }
+      },
+
+      "$defs": {
+        "https://bundler.hyperjump.io/string": {
+          "$id": "https://bundler.hyperjump.io/string",
+
+          "type": "string"
+        }
+      }
+    }
+  },
+  {
+    "description": "Bundle schema from propertyNames",
+    "schema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+      "propertyNames": { "$ref": "/string" }
+    },
+    "externalSchemas": [
+      {
+        "$id": "https://bundler.hyperjump.io/string",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+        "type": "string"
+      }
+    ],
+    "bundledSchema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+      "propertyNames": { "$ref": "/string" },
+
+      "$defs": {
+        "https://bundler.hyperjump.io/string": {
+          "$id": "https://bundler.hyperjump.io/string",
+
+          "type": "string"
+        }
+      }
+    }
+  },
+  {
+    "description": "Bundle schema from unevaluatedItems",
+    "schema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+      "unevaluatedItems": { "$ref": "/string" }
+    },
+    "externalSchemas": [
+      {
+        "$id": "https://bundler.hyperjump.io/string",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+        "type": "string"
+      }
+    ],
+    "bundledSchema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+      "unevaluatedItems": { "$ref": "/string" },
+
+      "$defs": {
+        "https://bundler.hyperjump.io/string": {
+          "$id": "https://bundler.hyperjump.io/string",
+
+          "type": "string"
+        }
+      }
+    }
+  },
+  {
+    "description": "Bundle schema from unevaluatedProperties",
+    "schema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+      "unevaluatedProperties": { "$ref": "/string" }
+    },
+    "externalSchemas": [
+      {
+        "$id": "https://bundler.hyperjump.io/string",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+        "type": "string"
+      }
+    ],
+    "bundledSchema": {
+      "$id": "https://bundler.hyperjump.io/main",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+      "unevaluatedProperties": { "$ref": "/string" },
+
+      "$defs": {
+        "https://bundler.hyperjump.io/string": {
+          "$id": "https://bundler.hyperjump.io/string",
+
+          "type": "string"
+        }
+      }
+    }
+  }
+]
