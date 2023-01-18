@@ -14,6 +14,7 @@ const compile = async (dynamicRef, ast) => {
 
 const interpret = ([id, fragment, ref], instance, ast, dynamicAnchors) => {
   if (fragment in ast.metaData[id].dynamicAnchors) {
+    dynamicAnchors = { ...ast.metaData[id].dynamicAnchors, ...dynamicAnchors };
     return Validation.interpret(dynamicAnchors[fragment], instance, ast, dynamicAnchors);
   } else {
     return Validation.interpret(ref, instance, ast, dynamicAnchors);

@@ -68,7 +68,6 @@ const runTestSuite = (draft: string, dialectId: string) => {
       addRemotes(dialectId);
     });
 
-    //[{ name: "dynamicRef.json" }]
     fs.readdirSync(testSuiteFilePath, { withFileTypes: true })
       .filter((entry) => entry.isFile() && entry.name.endsWith(".json"))
       .forEach((entry) => {

@@ -7,6 +7,7 @@ const compile = (schema) => schema.id;
 
 const interpret = (id, instance, ast, dynamicAnchors) => {
   if ("" in ast.metaData[id].dynamicAnchors) {
+    dynamicAnchors = { ...ast.metaData[id].dynamicAnchors, ...dynamicAnchors };
     return Validation.interpret(dynamicAnchors[""], instance, ast, dynamicAnchors);
   } else {
     return Validation.interpret(`${id}#`, instance, ast, dynamicAnchors);
