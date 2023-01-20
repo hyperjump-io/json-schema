@@ -63,7 +63,7 @@
   },
   "dependencies": {
     "@hyperjump/json": "^0.1.0",
-    "@hyperjump/json-pointer": "^0.9.5",
+    "@hyperjump/json-pointer": "github:hyperjump-io/json-pointer#performance",
     "@hyperjump/pact": "^0.2.4",
     "@hyperjump/uri": "^1.0.0",
     "content-type": "^1.0.4",
