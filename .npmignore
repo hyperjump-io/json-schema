@@ -8,3 +8,4 @@ tsconfig.json
 scratch/
 stable/json-schema-test-suite/
 bundle/tests
+lib/json-tests

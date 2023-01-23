@@ -1,5 +1,7 @@
 export type JsonType = "object" | "array" | "string" | "number" | "boolean" | "null";
 export type JsonSchemaType = JsonType | "integer";
 
-type PathRelative = (from: string, to: string) => string;
-export const pathRelative: PathRelative;
+export const pathRelative: (from: string, to: string) => string;
+
+export type Replacer = (key: string, value: unknown) => unknown;
+export const jsonStringify: (value: unknown, replacer?: Replacer, space?: string) => string;
