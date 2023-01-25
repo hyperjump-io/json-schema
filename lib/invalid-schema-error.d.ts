@@ -1,8 +1,8 @@
-import type { Result } from "./core.js";
+import type { OutputUnit } from "./core.js";
 
 
 export class InvalidSchemaError extends Error {
-  public output: Result;
+  public output: OutputUnit;
 
-  public constructor(output: Result);
+  public constructor(output: OutputUnit);
 }
