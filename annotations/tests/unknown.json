@@ -1,0 +1,91 @@
+[
+  {
+    "title": "Unknown keywords are not annotations in draft-04",
+    "schema": {
+      "$schema": "http://json-schema.org/draft-04/schema#",
+      "unknown": "Foo"
+    },
+    "subjects": [
+      {
+        "title": "Any instance",
+        "instance": 42,
+        "assertions": [
+          {
+            "location": "#",
+            "keyword": "unknown",
+            "expected": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Unknown keywords are not annotations in draft-06",
+    "schema": {
+      "$schema": "http://json-schema.org/draft-06/schema#",
+      "unknown": "Foo"
+    },
+    "subjects": [
+      {
+        "title": "Any instance",
+        "instance": 42,
+        "assertions": [
+          {
+            "location": "#",
+            "keyword": "unknown",
+            "expected": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Unknown keywords are not annotations in draft-07",
+    "schema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "unknown": "Foo"
+    },
+    "subjects": [
+      {
+        "title": "Any instance",
+        "instance": 42,
+        "assertions": [
+          {
+            "location": "#",
+            "keyword": "unknown",
+            "expected": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Unknown keywords may or may not be annotations in 2019-09",
+    "schema": {
+      "$schema": "https://json-schema.org/draft/2019-09/schema",
+      "unknown": "Foo"
+    },
+    "$comment": "'subjects' is intentionally left empty",
+    "subjects": []
+  },
+  {
+    "title": "Unknown keywords are annotations in 2020-12",
+    "schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "unknown": "Foo"
+    },
+    "subjects": [
+      {
+        "title": "Any instance",
+        "instance": 42,
+        "assertions": [
+          {
+            "location": "#",
+            "keyword": "unknown",
+            "expected": ["Foo"]
+          }
+        ]
+      }
+    ]
+  }
+]

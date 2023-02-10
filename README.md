@@ -15,6 +15,7 @@ A collection of modules for working with JSON Schemas.
   * Uses the process defined in the 2020-12 specification but works with any
     dialect.
 * Provides utilities for building non-validation JSON Schema tooling
+* Provides utilities for working with annotations
 
 ## Install
 Includes support for node.js (ES Modules, TypeScript) and browsers.
@@ -238,11 +239,11 @@ The following types are used in the above definitions
 
 ## Bundling
 ### Usage
-You can bundle schemas with external references into single deliverable using
+You can bundle schemas with external references into a single deliverable using
 the official JSON Schema bundling process introduced in the 2020-12
 specification. Given a schema with external references, any external schemas
 will be embedded in the schema resulting in a Compound Schema Document with all
-the schemas necessary to evaluate the given schema in one document.
+the schemas necessary to evaluate the given schema in a single JSON document.
 
 The bundling process allows schemas to be embedded without needing to modify any
 references which means you get the same output details whether you validate the
@@ -642,6 +643,116 @@ set of functions for working with InstanceDocuments.
 * **Instance.length**: (doc: InstanceDocument) => number
 
     Similar to `Array.prototype.length`.
+
+## Annotations (Experimental)
+JSON Schema is for annotating JSON instances as well as validating them. This
+module provides utilities for working with JSON documents annotated with JSON
+Schema.
+
+### Usage
+An annotated JSON document is represented as an AnnotatedInstance object. This
+object is a wrapper around your JSON document with functions that allow you to
+traverse the data structure and get annotations for the values within.
+
+```javascript
+import { annotate, annotatedWith, addSchema } from "@hyperjump/json-schema/annotations/experimental";
+import * as AnnotatedInstance from "@hyperjump/json-schema/annotated-instance/experimental";
+
+
+const schemaId = "https://example.com/foo";
+const dialectId = "https://json-schema.org/draft/2020-12/schema";
+
+addSchema({
+  "$schema": dialectId,
+
+  "title": "Person",
+  "unknown": "foo",
+
+  "type": "object",
+  "properties": {
+    "name": {
+      "$ref": "#/$defs/name",
+      "deprecated": true
+    },
+    "givenName": {
+      "$ref": "#/$defs/name",
+      "title": "Given Name"
+    },
+    "familyName": {
+      "$ref": "#/$defs/name",
+      "title": "Family Name"
+    }
+  },
+
+  "$defs": {
+    "name": {
+      "type": "string",
+      "title": "Name"
+    }
+  }
+}, schemaId);
+
+const instance = await annotate(schemaId, {
+  name: "Jason Desrosiers",
+  givenName: "Jason",
+  familyName: "Desrosiers"
+});
+
+// Get the title of the instance
+const titles = AnnotatedInstance.annotation(instance, "title", dialectId); // => ["Person"]
+
+// Unknown keywords are collected as annotations
+const unknowns = AnnotatedInstance.annotation(instance, "unknown", dialectId); // => ["foo"]
+
+// The type keyword doesn't produce annotations
+const types = AnnotatedInstance.annotation(instance, "type", dialectId); // => []
+
+// Get the title of each of the properties in the object
+AnnotatedInstance.entries(instance)
+  .map(([propertyName, propertyInstance]) => {
+    return { propertyName, titles: Instance.annotation(propertyInstance, "title", dialectId) }; // => (Example) { propertyName: "givenName", titles: ["Given Name", "Name"] });
+
+// List all locations in the instance that are deprecated
+for (const deprecated of AnnotatedInstance.annotatedWith(instance, "deprecated", dialectId)) {
+  if (AnnotatedInstance.annotation(instance, "deprecated", dialectId)[0]) {
+    logger.warn(`The value at '${deprecated.pointer}' has been deprecated.`); // => (Example) "WARN: The value at '/name' has been deprecated."
+  }
+}
+```
+
+### API
+These are available from the `@hyperjump/json-schema/annotations/experimental`
+export.
+
+* **annotate**: (schemaUri: string, instance: any, outputFormat: OutputFormat = FLAG) => Promise<AnnotatedInstance>
+
+    Annotate an instance using the given schema. The function is curried to
+    allow compiling the schema once and applying it to multiple instances. This
+    may throw an [InvalidSchemaError](#api) if there is a problem with the
+    schema or a ValidationError if the instance doesn't validate against the
+    schema.
+* **ValidationError**:
+    output: OutputUnit -- The errors that were found while validating the
+    instance.
+
+### AnnotatedInstance API
+These are available from the
+`@hyperjump/json-schema/annotated-instance/experimental` export. The
+following functions are available in addition to the functions available in the
+[Instance API](#instance-api).
+
+* **annotation**: (instance: AnnotatedInstance, keyword: string, dialectId?: string) => [any]
+
+    Get the annotations for a given keyword at the location represented by the
+    instance object.
+* **annotatedWith**: (instance: AnnotatedInstance, keyword: string, dialectId?: string) => [AnnotatedInstance]
+
+    Get an array of instances for all the locations that are annotated with the
+    given keyword.
+* **annotate**: (instance: AnnotatedInstance, keywordId: string, value: any) => AnnotatedInstance
+
+    Add an annotation to an instance. This is used internally, you probably
+    don't need it.
 
 ## Low-level Utilities (Experimental)
 ### API

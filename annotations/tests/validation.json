@@ -1,0 +1,328 @@
+[
+  {
+    "title": "`const` doesn't produce annotations",
+    "schema": {
+      "const": "foo"
+    },
+    "subjects": [
+      {
+        "instance": "foo",
+        "assertions": [
+          {
+            "location": "#",
+            "keyword": "const",
+            "expected": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "`dependentRequired` doesn't produce annotations",
+    "schema": {
+      "dependentRequired": {
+        "foo": ["bar"]
+      }
+    },
+    "subjects": [
+      {
+        "instance": { "foo": 1, "bar": 2 },
+        "assertions": [
+          {
+            "location": "#",
+            "keyword": "dependentRequired",
+            "expected": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "`enum` doesn't produce annotations",
+    "schema": {
+      "enum": ["foo"]
+    },
+    "subjects": [
+      {
+        "instance": "foo",
+        "assertions": [
+          {
+            "location": "#",
+            "keyword": "enum",
+            "expected": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "`exclusiveMaximum` doesn't produce annotations",
+    "schema": {
+      "exclusiveMaximum": 50
+    },
+    "subjects": [
+      {
+        "instance": 42,
+        "assertions": [
+          {
+            "location": "#",
+            "keyword": "exclusiveMaximum",
+            "expected": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "`exclusiveMinimum` doesn't produce annotations",
+    "schema": {
+      "exclusiveMinimum": 5
+    },
+    "subjects": [
+      {
+        "instance": 42,
+        "assertions": [
+          {
+            "location": "#",
+            "keyword": "exclusiveMinimum",
+            "expected": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "`maxItems` doesn't produce annotations",
+    "schema": {
+      "maxItems": 42
+    },
+    "subjects": [
+      {
+        "instance": ["foo"],
+        "assertions": [
+          {
+            "location": "#",
+            "keyword": "maxItems",
+            "expected": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "`maxLength` doesn't produce annotations",
+    "schema": {
+      "maxLength": 42
+    },
+    "subjects": [
+      {
+        "instance": "foo",
+        "assertions": [
+          {
+            "location": "#",
+            "keyword": "maxLength",
+            "expected": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "`maxProperties` doesn't produce annotations",
+    "schema": {
+      "maxProperties": 42
+    },
+    "subjects": [
+      {
+        "instance": { "foo": 42 },
+        "assertions": [
+          {
+            "location": "#",
+            "keyword": "maxProperties",
+            "expected": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "`maximum` doesn't produce annotations",
+    "schema": {
+      "maximum": 50
+    },
+    "subjects": [
+      {
+        "instance": 42,
+        "assertions": [
+          {
+            "location": "#",
+            "keyword": "maximum",
+            "expected": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "`minItems` doesn't produce annotations",
+    "schema": {
+      "minItems": 2
+    },
+    "subjects": [
+      {
+        "instance": ["a", "b"],
+        "assertions": [
+          {
+            "location": "#",
+            "keyword": "minItems",
+            "expected": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "`minLength` doesn't produce annotations",
+    "schema": {
+      "minLength": 2
+    },
+    "subjects": [
+      {
+        "instance": "foo",
+        "assertions": [
+          {
+            "location": "#",
+            "keyword": "minLength",
+            "expected": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "`minProperties` doesn't produce annotations",
+    "schema": {
+      "minProperties": 2
+    },
+    "subjects": [
+      {
+        "instance": { "foo": 42, "bar": 24 },
+        "assertions": [
+          {
+            "location": "#",
+            "keyword": "minProperties",
+            "expected": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "`minimum` doesn't produce annotations",
+    "schema": {
+      "minimum": 42
+    },
+    "subjects": [
+      {
+        "instance": 50,
+        "assertions": [
+          {
+            "location": "#",
+            "keyword": "minimum",
+            "expected": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "`multipleOf` doesn't produce annotations",
+    "schema": {
+      "multipleOf": 2
+    },
+    "subjects": [
+      {
+        "instance": 42,
+        "assertions": [
+          {
+            "location": "#",
+            "keyword": "multipleOf",
+            "expected": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "`pattern` doesn't produce annotations",
+    "schema": {
+      "pattern": ".*"
+    },
+    "subjects": [
+      {
+        "instance": "foo",
+        "assertions": [
+          {
+            "location": "#",
+            "keyword": "pattern",
+            "expected": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "`required` doesn't produce annotations",
+    "schema": {
+      "required": ["foo"]
+    },
+    "subjects": [
+      {
+        "instance": { "foo": 42 },
+        "assertions": [
+          {
+            "location": "#",
+            "keyword": "required",
+            "expected": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "`type` doesn't produce annotations",
+    "schema": {
+      "type": "string"
+    },
+    "subjects": [
+      {
+        "instance": "foo",
+        "assertions": [
+          {
+            "location": "#",
+            "keyword": "type",
+            "expected": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "`uniqueItems` doesn't produce annotations",
+    "schema": {
+      "uniqueItems": true
+    },
+    "subjects": [
+      {
+        "instance": ["foo", "bar"],
+        "assertions": [
+          {
+            "location": "#",
+            "keyword": "uniqueItems",
+            "expected": []
+          }
+        ]
+      }
+    ]
+  }
+]

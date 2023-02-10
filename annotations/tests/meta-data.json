@@ -1,0 +1,135 @@
+[
+  {
+    "title": "`title` is an annotation",
+    "schema": {
+      "title": "Foo"
+    },
+    "subjects": [
+      {
+        "title": "Any instance",
+        "instance": 42,
+        "assertions": [
+          {
+            "location": "#",
+            "keyword": "title",
+            "expected": ["Foo"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "`description` is an annotation",
+    "schema": {
+      "description": "Foo"
+    },
+    "subjects": [
+      {
+        "title": "Any instance",
+        "instance": 42,
+        "assertions": [
+          {
+            "location": "#",
+            "keyword": "description",
+            "expected": ["Foo"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "`default` is an annotation",
+    "schema": {
+      "default": "Foo"
+    },
+    "subjects": [
+      {
+        "title": "Any instance",
+        "instance": 42,
+        "assertions": [
+          {
+            "location": "#",
+            "keyword": "default",
+            "expected": ["Foo"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "`deprecated` is an annotation",
+    "schema": {
+      "deprecated": true
+    },
+    "subjects": [
+      {
+        "title": "Any instance",
+        "instance": 42,
+        "assertions": [
+          {
+            "location": "#",
+            "keyword": "deprecated",
+            "expected": [true]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "`readOnly` is an annotation",
+    "schema": {
+      "readOnly": true
+    },
+    "subjects": [
+      {
+        "title": "Any instance",
+        "instance": 42,
+        "assertions": [
+          {
+            "location": "#",
+            "keyword": "readOnly",
+            "expected": [true]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "`writeOnly` is an annotation",
+    "schema": {
+      "writeOnly": true
+    },
+    "subjects": [
+      {
+        "title": "Any instance",
+        "instance": 42,
+        "assertions": [
+          {
+            "location": "#",
+            "keyword": "writeOnly",
+            "expected": [true]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "`examples` is an annotation",
+    "schema": {
+      "examples": ["Foo", "Bar"]
+    },
+    "subjects": [
+      {
+        "title": "Any instance",
+        "instance": "Foo",
+        "assertions": [
+          {
+            "location": "#",
+            "keyword": "examples",
+            "expected": [["Foo", "Bar"]]
+          }
+        ]
+      }
+    ]
+  }
+]

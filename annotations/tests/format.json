@@ -1,0 +1,21 @@
+[
+  {
+    "title": "`format` is an annotation",
+    "schema": {
+      "format": "email"
+    },
+    "subjects": [
+      {
+        "title": "String",
+        "instance": "foo@bar.com",
+        "assertions": [
+          {
+            "location": "#",
+            "keyword": "format",
+            "expected": ["email"]
+          }
+        ]
+      }
+    ]
+  }
+]
