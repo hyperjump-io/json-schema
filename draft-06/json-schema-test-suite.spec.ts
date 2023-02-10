@@ -36,7 +36,7 @@ const skip: Set<string> = new Set([
   "|draft6|id.json|id inside an enum is not a real identifier",
   "|draft6|unknownKeyword.json|$id inside an unknown keyword is not a real identifier",
   "|draft6|ref.json|$ref prevents a sibling $id from changing the base uri",
-  "|draft6|ref.json|naive replacement of $ref with its destination is not correct",
+  "|draft6|ref.json|naive replacement of $ref with its destination is not correct"
 ]);
 
 const shouldSkip = (path: string[]): boolean => {

@@ -28,7 +28,7 @@ const skip: Set<string> = new Set([
   // about making it work.
   "|draft2020-12|anchor.json|$anchor inside an enum is not a real identifier",
   "|draft2020-12|id.json|$id inside an enum is not a real identifier",
-  "|draft2020-12|unknownKeyword.json|$id inside an unknown keyword is not a real identifier",
+  "|draft2020-12|unknownKeyword.json|$id inside an unknown keyword is not a real identifier"
 ]);
 
 const shouldSkip = (path: string[]): boolean => {

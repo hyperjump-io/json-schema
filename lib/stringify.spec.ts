@@ -13,7 +13,7 @@ describe("Json.stringify", () => {
     .filter((entry) => entry.isFile() && entry.name.startsWith("y_") && entry.name.endsWith(".json"))
     .forEach((entry) => {
       const file = `${__dirname}/json-tests/${entry.name}`;
-      const value = JSON.parse(fs.readFileSync(file, "utf8"));
+      const value = JSON.parse(fs.readFileSync(file, "utf8")) as unknown;
 
       it(`${entry.name.substr(2)} without spaces`, () => {
         expect(jsonStringify(value)).to.eql(JSON.stringify(value));
