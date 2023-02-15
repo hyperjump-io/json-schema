@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
 import { expect } from "chai";
-import nock from "nock";
+import { MockAgent, setGlobalDispatcher } from "undici";
 import { Given, Then } from "./mocha-gherkin.spec.js";
 import "../stable/index.js";
 import * as Schema from "./schema.js";
@@ -11,20 +11,28 @@ const defaultDialectId = "https://json-schema.org/validation";
 const customDialectId = `${testDomain}/dialect/dialect-identification/custom`;
 
 describe("Media Types", () => {
+  let mockAgent: MockAgent;
+
   before(() => {
+    mockAgent = new MockAgent();
+    mockAgent.disableNetConnect();
+    setGlobalDispatcher(mockAgent);
+
     Schema.add({
       $id: customDialectId,
       $vocabulary: {}
     });
   });
 
+  after(async () => {
+    await mockAgent.close();
+  });
+
   Given("a schema with Content-Type: application/octet-stream", () => {
     beforeEach(() => {
-      nock(testDomain)
-        .get("/no-content-type")
-        .reply(200, JSON.stringify({}), {
-          "Content-Type": "application/octet-stream"
-        });
+      mockAgent.get(testDomain)
+        .intercept({ method: "GET", path: "/no-content-type" })
+        .reply(200, JSON.stringify({}), { headers: { "Content-Type": "application/octet-stream" } });
     });
 
     Then("it should throw an error when retrieving the schema", async () => {
@@ -41,11 +49,9 @@ describe("Media Types", () => {
 
   Given("a schema with Content-Type: application/json", () => {
     beforeEach(() => {
-      nock(testDomain)
-        .get("/json")
-        .reply(200, JSON.stringify({}), {
-          "Content-Type": "application/json"
-        });
+      mockAgent.get(testDomain)
+        .intercept({ method: "GET", path: "/json" })
+        .reply(200, JSON.stringify({}), { headers: { "Content-Type": "application/json" } });
     });
 
     Then("it should throw an error when retrieving the schema", async () => {
@@ -62,10 +68,10 @@ describe("Media Types", () => {
 
   Given("a schema without $schema", () => {
     beforeEach(() => {
-      nock(testDomain)
-        .get("/schema-json")
+      mockAgent.get(testDomain)
+        .intercept({ method: "GET", path: "/schema-json" })
         .reply(200, JSON.stringify({ type: "string" }), {
-          "Content-Type": "application/schema+json"
+          headers: { "Content-Type": "application/schema+json" }
         });
     });
 
@@ -77,10 +83,10 @@ describe("Media Types", () => {
 
   Given("a schema with a known $schema", () => {
     beforeEach(() => {
-      nock(testDomain)
-        .get("/schema-json-known")
+      mockAgent.get(testDomain)
+        .intercept({ method: "GET", path: "/schema-json-known" })
         .reply(200, JSON.stringify({ $schema: customDialectId }), {
-          "Content-Type": "application/schema+json"
+          headers: { "Content-Type": "application/schema+json" }
         });
     });
 
@@ -92,10 +98,10 @@ describe("Media Types", () => {
 
   Given(`a schema without $schema and media type paramter; schema="${customDialectId}"`, () => {
     beforeEach(() => {
-      nock(testDomain)
-        .get("/schema-json-schema")
+      mockAgent.get(testDomain)
+        .intercept({ method: "GET", path: "/schema-json-schema" })
         .reply(200, JSON.stringify({}), {
-          "Content-Type": `application/schema+json; schema="${customDialectId}"`
+          headers: { "Content-Type": `application/schema+json; schema="${customDialectId}"` }
         });
     });
 
@@ -107,10 +113,10 @@ describe("Media Types", () => {
 
   Given(`a schema without $schema and media type paramter; schema="${customDialectId}"`, () => {
     beforeEach(() => {
-      nock(testDomain)
-        .get("/schema-json-schema-custom")
+      mockAgent.get(testDomain)
+        .intercept({ method: "GET", path: "/schema-json-schema-custom" })
         .reply(200, JSON.stringify({}), {
-          "Content-Type": `application/schema+json; schema="${customDialectId}"`
+          headers: { "Content-Type": `application/schema+json; schema="${customDialectId}"` }
         });
     });
 
@@ -122,10 +128,10 @@ describe("Media Types", () => {
 
   Given("a schema with $schema and media type parameter", () => {
     beforeEach(() => {
-      nock(testDomain)
-        .get("/schema-json-schema")
+      mockAgent.get(testDomain)
+        .intercept({ method: "GET", path: "/schema-json-schema" })
         .reply(200, JSON.stringify({ $schema: customDialectId }), {
-          "Content-Type": `application/schema+json; schema="${testDomain}/dialect/dialect-identification/custom"`
+          headers: { "Content-Type": `application/schema+json; schema="${testDomain}/dialect/dialect-identification/custom"` }
         });
     });
 

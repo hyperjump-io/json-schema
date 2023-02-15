@@ -1,7 +1,8 @@
+import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { expect } from "chai";
-import nock from "nock";
+import { MockAgent, setGlobalDispatcher } from "undici";
 import { Given, When, Then } from "./mocha-gherkin.spec.js";
 import "../stable/index.js";
 import * as Schema from "./schema.js";
@@ -14,6 +15,18 @@ const __dirname = path.dirname(__filename);
 const testDomain = "http://test.jsc.hyperjump.io";
 
 describe("Schema.get with files", () => {
+  let mockAgent: MockAgent;
+
+  before(() => {
+    mockAgent = new MockAgent();
+    mockAgent.disableNetConnect();
+    setGlobalDispatcher(mockAgent);
+  });
+
+  after(async () => {
+    await mockAgent.close();
+  });
+
   Given("a schema loaded from a file as the context schema", () => {
     let context: SchemaDocument;
 
@@ -106,9 +119,9 @@ describe("Schema.get with files", () => {
 
     When("the schema is retrieved from http", () => {
       beforeEach(() => {
-        nock(testDomain)
-          .get("/file-id")
-          .replyWithFile(200, schemaFilePath);
+        mockAgent.get(testDomain)
+          .intercept({ method: "GET", path: "/file-id" })
+          .reply(200, fs.readFileSync(schemaFilePath, "utf8"));
       });
 
       Then("it should throw an error", () => {

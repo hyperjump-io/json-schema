@@ -1,7 +1,8 @@
+import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { expect } from "chai";
-import nock from "nock";
+import { MockAgent, setGlobalDispatcher } from "undici";
 import { When, Then } from "./mocha-gherkin.spec.js";
 import * as JsonSchema from "./index.js";
 import "../stable/index.js";
@@ -21,6 +22,18 @@ JsonSchema.addMediaTypePlugin("application/schema+yaml", {
 });
 
 describe("Schema.get with YAML", () => {
+  let mockAgent: MockAgent;
+
+  before(() => {
+    mockAgent = new MockAgent();
+    mockAgent.disableNetConnect();
+    setGlobalDispatcher(mockAgent);
+  });
+
+  after(async () => {
+    await mockAgent.close();
+  });
+
   When("fetching a YAML schema from the file system", () => {
     let schema: SchemaDocument;
 
@@ -37,9 +50,11 @@ describe("Schema.get with YAML", () => {
     let schema: SchemaDocument;
 
     beforeEach(async () => {
-      nock(testDomain)
-        .get("/string")
-        .replyWithFile(200, `${__dirname}/string.schema.yaml`, { "Content-Type": "application/schema+yaml" });
+      mockAgent.get(testDomain)
+        .intercept({ method: "GET", path: "/string" })
+        .reply(200, fs.readFileSync(`${__dirname}/string.schema.yaml`, "utf8"), {
+          headers: { "Content-Type": "application/schema+yaml" }
+        });
       schema = await Schema.get(`${testDomain}/string`);
     });
 

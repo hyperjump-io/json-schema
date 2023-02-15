@@ -1,4 +1,5 @@
 import type { SchemaObject } from "./schema.js";
+import type { Response } from "undici";
 
 
 export const addMediaTypePlugin: (contentType: string, plugin: MediaTypePlugin) => void;

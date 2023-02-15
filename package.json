@@ -56,7 +56,6 @@
     "eslint-plugin-import": "*",
     "json-schema-test-suite": "github:json-schema-org/JSON-Schema-Test-Suite",
     "mocha": "*",
-    "nock": "*",
     "ts-node": "*",
     "typescript": "*",
     "yaml": "*"
@@ -67,7 +66,7 @@
     "@hyperjump/uri": "^1.0.0",
     "content-type": "^1.0.4",
     "fastest-stable-stringify": "^2.0.2",
-    "node-fetch": "^3.3.0",
+    "undici": "^5.19.1",
     "uuid": "^9.0.0"
   },
   "engines": {
