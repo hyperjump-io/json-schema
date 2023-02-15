@@ -228,6 +228,13 @@ The following types are used in the above definitions
 
       Given a filesystem path, return whether or not the file should be
       considered a member of this media type.
+    * quality (optional): string
+
+      The registered media type plugins are used to create the `Accept` header
+      for HTTP requests. This property allows you to specify a quality value for
+      your media type. A [quality value](https://developer.mozilla.org/en-US/docs/Glossary/Quality_values)
+      is a string representation of a number between 0 and 1 with up to three
+      digits.
 
 ## Bundling
 ### Usage
