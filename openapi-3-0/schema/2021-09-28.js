@@ -193,16 +193,7 @@ export default {
         "schemas": {
           "type": "object",
           "patternProperties": {
-            "^[a-zA-Z0-9\\.\\-_]+$": {
-              "oneOf": [
-                {
-                  "$ref": "#/definitions/Schema"
-                },
-                {
-                  "$ref": "#/definitions/Reference"
-                }
-              ]
-            }
+            "^[a-zA-Z0-9\\.\\-_]+$": { "$ref": "#/definitions/Schema" }
           }
         },
         "responses": {
@@ -384,16 +375,7 @@ export default {
     "MediaType": {
       "type": "object",
       "properties": {
-        "schema": {
-          "oneOf": [
-            {
-              "$ref": "#/definitions/Schema"
-            },
-            {
-              "$ref": "#/definitions/Reference"
-            }
-          ]
-        },
+        "schema": { "$ref": "#/definitions/Schema" },
         "example": {
         },
         "examples": {
@@ -481,16 +463,7 @@ export default {
           "type": "boolean",
           "default": false
         },
-        "schema": {
-          "oneOf": [
-            {
-              "$ref": "#/definitions/Schema"
-            },
-            {
-              "$ref": "#/definitions/Reference"
-            }
-          ]
-        },
+        "schema": { "$ref": "#/definitions/Schema" },
         "content": {
           "type": "object",
           "additionalProperties": {
@@ -853,16 +826,7 @@ export default {
           "type": "boolean",
           "default": false
         },
-        "schema": {
-          "oneOf": [
-            {
-              "$ref": "#/definitions/Schema"
-            },
-            {
-              "$ref": "#/definitions/Reference"
-            }
-          ]
-        },
+        "schema": { "$ref": "#/definitions/Schema" },
         "content": {
           "type": "object",
           "additionalProperties": {
