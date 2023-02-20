@@ -61,28 +61,28 @@ export type OasSchema31 = boolean | {
   contentMediaType?: string;
   contentEncoding?: string;
   contentSchema?: OasSchema31;
-  example: Json;
-  discriminator: Discriminator;
-  externalDocs: ExternalDocs;
-  xml: Xml;
+  example?: Json;
+  discriminator?: Discriminator;
+  externalDocs?: ExternalDocs;
+  xml?: Xml;
 };
 
 type Discriminator = {
   propertyName: string;
-  mappings: Record<string, string>;
+  mappings?: Record<string, string>;
 };
 
 type ExternalDocs = {
   url: string;
-  description: string;
+  description?: string;
 };
 
 type Xml = {
-  name: string;
-  namespace: string;
-  prefix: string;
-  attribute: boolean;
-  wrapped: boolean;
+  name?: string;
+  namespace?: string;
+  prefix?: string;
+  attribute?: boolean;
+  wrapped?: boolean;
 };
 
 export * from "../lib/index.js";
