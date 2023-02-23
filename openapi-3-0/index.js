@@ -65,10 +65,6 @@ loadDialect(jsonSchemaVersion, {
   [jsonSchemaVersion]: true
 });
 
-loadDialect("https://spec.openapis.org/oas/3.0/schema", {
-  [jsonSchemaVersion]: true
-});
-
 addSchema(dialectSchema);
 
 addSchema(schema20210928, "https://spec.openapis.org/oas/3.0/schema");
