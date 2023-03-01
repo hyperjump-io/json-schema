@@ -375,9 +375,9 @@ addKeyword({
     return Schema.map(async (itemSchema) => Validation.compile(await itemSchema, ast), schema);
   },
 
-  interpret: (implies, instance, ast, dynamicAnchors) => {
+  interpret: (implies, instance, ast, dynamicAnchors, quiet) => {
     return implies.reduce((acc, schema) => {
-      return !acc || Validation.interpret(schema, instance, ast, dynamicAnchors);
+      return !acc || Validation.interpret(schema, instance, ast, dynamicAnchors, quiet);
     }, true);
   }
 });
@@ -519,7 +519,7 @@ These are available from the `@hyperjump/json-schema/experimental` export.
         needed for compiling sub-schemas. The `parentSchema` parameter is
         primarily useful for looking up the value of an adjacent keyword that
         might effect this one.
-    * interpret: (compiledKeywordValue: A, instance: JsonDocument, ast: AST, dynamicAnchors: Anchors) => boolean
+    * interpret: (compiledKeywordValue: A, instance: JsonDocument, ast: AST, dynamicAnchors: Anchors, quiet: boolean) => boolean
 
         This function takes the value returned by the `compile` function and the
         instance value that is being validated and returns whether the value is
