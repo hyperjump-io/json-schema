@@ -70,14 +70,13 @@ const collectExternalIds = async (uri, options) => {
 };
 
 Validation.collectExternalIds = (schemaUri, externalIds, ast, dynamicAnchors) => {
-  const nodes = ast[schemaUri][2];
-  if (externalIds.has(schemaUri) || typeof nodes === "boolean") {
+  if (externalIds.has(schemaUri) || typeof ast[schemaUri] === "boolean") {
     return;
   }
   externalIds.add(schemaUri);
 
   const id = toAbsoluteUri(schemaUri);
-  for (const [keywordId, , keywordValue] of nodes) {
+  for (const [keywordId, , keywordValue] of ast[schemaUri]) {
     const keyword = getKeyword(keywordId);
 
     if (keyword.collectExternalIds) {
