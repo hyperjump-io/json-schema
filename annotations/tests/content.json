@@ -6,7 +6,6 @@
     },
     "subjects": [
       {
-        "title": "String",
         "instance": "{ \"foo\": \"bar\" }",
         "assertions": [
           {
@@ -25,7 +24,6 @@
     },
     "subjects": [
       {
-        "title": "Any instance",
         "instance": "SGVsbG8gZnJvbSBKU09OIFNjaGVtYQ==",
         "assertions": [
           {
@@ -45,7 +43,6 @@
     },
     "subjects": [
       {
-        "title": "String",
         "instance": "42",
         "assertions": [
           {

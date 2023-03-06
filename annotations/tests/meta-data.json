@@ -6,7 +6,6 @@
     },
     "subjects": [
       {
-        "title": "Any instance",
         "instance": 42,
         "assertions": [
           {
@@ -25,7 +24,6 @@
     },
     "subjects": [
       {
-        "title": "Any instance",
         "instance": 42,
         "assertions": [
           {
@@ -44,7 +42,6 @@
     },
     "subjects": [
       {
-        "title": "Any instance",
         "instance": 42,
         "assertions": [
           {
@@ -63,7 +60,6 @@
     },
     "subjects": [
       {
-        "title": "Any instance",
         "instance": 42,
         "assertions": [
           {
@@ -82,7 +78,6 @@
     },
     "subjects": [
       {
-        "title": "Any instance",
         "instance": 42,
         "assertions": [
           {
@@ -101,7 +96,6 @@
     },
     "subjects": [
       {
-        "title": "Any instance",
         "instance": 42,
         "assertions": [
           {
@@ -120,7 +114,6 @@
     },
     "subjects": [
       {
-        "title": "Any instance",
         "instance": "Foo",
         "assertions": [
           {

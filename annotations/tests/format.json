@@ -6,7 +6,6 @@
     },
     "subjects": [
       {
-        "title": "String",
         "instance": "foo@bar.com",
         "assertions": [
           {
