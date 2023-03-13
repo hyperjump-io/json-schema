@@ -711,6 +711,7 @@ const types = AnnotatedInstance.annotation(instance, "type", dialectId); // => [
 AnnotatedInstance.entries(instance)
   .map(([propertyName, propertyInstance]) => {
     return { propertyName, titles: Instance.annotation(propertyInstance, "title", dialectId) }; // => (Example) { propertyName: "givenName", titles: ["Given Name", "Name"] });
+  });
 
 // List all locations in the instance that are deprecated
 for (const deprecated of AnnotatedInstance.annotatedWith(instance, "deprecated", dialectId)) {
