@@ -15,7 +15,7 @@ export const cons = (instance, id = undefined) => ({
 
 export const annotation = (instance, keyword, dialectId = defaultDialectId) => {
   const keywordId = getKeywordId(dialectId, keyword);
-  return instance.annotations?.[instance.pointer]?.[keywordId] || [];
+  return instance.annotations[instance.pointer]?.[keywordId] || [];
 };
 
 export const annotate = (instance, keyword, value) => {
