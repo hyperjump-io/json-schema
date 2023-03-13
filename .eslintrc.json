@@ -114,7 +114,6 @@
     "no-unmodified-loop-condition": "error",
     "no-unneeded-ternary": "error",
     "no-unreachable-loop": "error",
-    "no-unused-expressions": "error",
     "no-unused-private-class-members": "error",
     "no-unused-vars": ["error", { "argsIgnorePattern": "_.*" }],
     "no-useless-call": "error",
