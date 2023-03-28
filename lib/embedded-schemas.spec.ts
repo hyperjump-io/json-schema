@@ -2,6 +2,7 @@ import { expect } from "chai";
 import { Given, When, Then } from "./mocha-gherkin.spec.js";
 import "../stable/index.js";
 import * as Schema from "./schema.js";
+import { defineVocabulary, loadDialect } from "./keywords.js";
 import type { SchemaDocument } from "./schema.js";
 
 
@@ -123,6 +124,13 @@ describe("Embedded schemas", () => {
     const embeddedDialectId = `${testDomain}/dialect/embedded-schemas/embedded3`;
 
     beforeEach(() => {
+      const noAnchorVocabId = `${testDomain}/vocab/no-anchor`;
+      defineVocabulary(noAnchorVocabId, { "$id": "https://json-schema.org/keyword/id" });
+      loadDialect(embeddedDialectId, {
+        [noAnchorVocabId]: true,
+        "https://json-schema.org/vocab/validation": true
+      });
+
       Schema.add({
         "$id": `${testDomain}/root`,
         "definitions": {
