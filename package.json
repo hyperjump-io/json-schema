@@ -54,6 +54,7 @@
   },
   "dependencies": {
     "@hyperjump/json-schema-core": "^0.28.0",
-    "fastest-stable-stringify": "^2.0.2"
+    "fastest-stable-stringify": "^2.0.2",
+    "just-curry-it": "^5.3.0"
   }
 }
