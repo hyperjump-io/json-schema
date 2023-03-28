@@ -20,13 +20,13 @@ const compile = async (schema, ast, parentSchema) => {
   return { contains, minContains, maxContains };
 };
 
-const interpret = ({ contains, minContains, maxContains }, instance, ast, dynamicAnchors) => {
+const interpret = ({ contains, minContains, maxContains }, instance, ast, dynamicAnchors, quiet) => {
   if (!Instance.typeOf(instance, "array")) {
     return true;
   }
 
   const matches = Instance.reduce((matches, item) => {
-    return Validation.interpret(contains, item, ast, dynamicAnchors) ? matches + 1 : matches;
+    return Validation.interpret(contains, item, ast, dynamicAnchors, quiet) ? matches + 1 : matches;
   }, 0, instance);
   return matches >= minContains && matches <= maxContains;
 };

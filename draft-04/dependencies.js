@@ -14,7 +14,7 @@ const compile = (schema, ast) => Pact.pipeline([
   Pact.all
 ], schema);
 
-const interpret = (dependencies, instance, ast, dynamicAnchors) => {
+const interpret = (dependencies, instance, ast, dynamicAnchors, quiet) => {
   const value = Instance.value(instance);
 
   return !Instance.typeOf(instance, "object") || dependencies.every(([propertyName, dependency]) => {
@@ -25,7 +25,7 @@ const interpret = (dependencies, instance, ast, dynamicAnchors) => {
     if (Array.isArray(dependency)) {
       return dependency.every((key) => key in value);
     } else {
-      return Validation.interpret(dependency, instance, ast, dynamicAnchors);
+      return Validation.interpret(dependency, instance, ast, dynamicAnchors, quiet);
     }
   });
 };

@@ -14,15 +14,15 @@ const compile = async (schema, ast) => {
   }
 };
 
-const interpret = (items, instance, ast, dynamicAnchors) => {
+const interpret = (items, instance, ast, dynamicAnchors, quiet) => {
   if (!Instance.typeOf(instance, "array")) {
     return true;
   }
 
   if (typeof items === "string") {
-    return Instance.every((itemValue) => Validation.interpret(items, itemValue, ast, dynamicAnchors), instance);
+    return Instance.every((itemValue) => Validation.interpret(items, itemValue, ast, dynamicAnchors), instance, quiet);
   } else {
-    return Instance.every((item, ndx) => !(ndx in items) || Validation.interpret(items[ndx], item, ast, dynamicAnchors), instance);
+    return Instance.every((item, ndx) => !(ndx in items) || Validation.interpret(items[ndx], item, ast, dynamicAnchors), instance, quiet);
   }
 };
 

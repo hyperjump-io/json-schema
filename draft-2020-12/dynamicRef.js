@@ -12,12 +12,12 @@ const compile = async (dynamicRef, ast) => {
   return [referencedSchema.id, fragment, Schema.uri(referencedSchema)];
 };
 
-const interpret = ([id, fragment, ref], instance, ast, dynamicAnchors) => {
+const interpret = ([id, fragment, ref], instance, ast, dynamicAnchors, quiet) => {
   if (fragment in ast.metaData[id].dynamicAnchors) {
     dynamicAnchors = { ...ast.metaData[id].dynamicAnchors, ...dynamicAnchors };
-    return Validation.interpret(dynamicAnchors[fragment], instance, ast, dynamicAnchors);
+    return Validation.interpret(dynamicAnchors[fragment], instance, ast, dynamicAnchors, quiet);
   } else {
-    return Validation.interpret(ref, instance, ast, dynamicAnchors);
+    return Validation.interpret(ref, instance, ast, dynamicAnchors, quiet);
   }
 };
 

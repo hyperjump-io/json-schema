@@ -14,12 +14,12 @@ const compile = async (schema, ast, parentSchema) => {
   return [numberOfItems, await Validation.compile(schema, ast)];
 };
 
-const interpret = ([numberOfItems, additionalItems], instance, ast, dynamicAnchors) => {
+const interpret = ([numberOfItems, additionalItems], instance, ast, dynamicAnchors, quiet) => {
   if (!Instance.typeOf(instance, "array")) {
     return true;
   }
 
-  return Instance.every((item, ndx) => ndx < numberOfItems || Validation.interpret(additionalItems, item, ast, dynamicAnchors), instance);
+  return Instance.every((item, ndx) => ndx < numberOfItems || Validation.interpret(additionalItems, item, ast, dynamicAnchors), instance, quiet);
 };
 
 const collectEvaluatedItems = (keywordValue, instance, ast, dynamicAnchors) => {
