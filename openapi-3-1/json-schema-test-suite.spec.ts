@@ -85,7 +85,8 @@ const runTestSuite = (draft: string, dialectId: string) => {
                 if (shouldSkip([draft, entry.name, suite.description])) {
                   return;
                 }
-                const url = `http://${draft}-test-suite.json-schema.org/${encodeURIComponent(suite.description)}`;
+                const url = (typeof suite.schema !== "boolean" && suite.schema.$id)
+                  || `http://${draft}-test-suite.json-schema.org/${encodeURIComponent(suite.description)}`;
                 if (typeof suite.schema === "object" && suite.schema.$schema === "https://json-schema.org/draft/2020-12/schema") {
                   delete suite.schema.$schema;
                 }

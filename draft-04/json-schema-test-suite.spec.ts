@@ -91,7 +91,8 @@ const runTestSuite = (draft: string, dialectId: string) => {
                 if (shouldSkip([draft, entry.name, suite.description])) {
                   return;
                 }
-                const url = `http://${draft}-test-suite.json-schema.org/${encodeURIComponent(suite.description)}`;
+                const url = (!("$ref" in suite.schema) && suite.schema.id)
+                  || `http://${draft}-test-suite.json-schema.org/${encodeURIComponent(suite.description)}`;
                 JsonSchema.addSchema(suite.schema, url, dialectId);
 
                 validate = await JsonSchema.validate(url);

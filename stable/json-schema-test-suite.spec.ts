@@ -85,7 +85,8 @@ const runTestSuite = (dialectId?: string) => {
                   return;
                 }
                 const path = "/" + encodeURIComponent(suite.description);
-                const url = `http://test-suite.json-schema.org${path}`;
+                const url = (typeof suite.schema !== "boolean" && suite.schema.$id)
+                  || `http://test-suite.json-schema.org${path}`;
                 addSchema(suite.schema, url, dialectId);
 
                 _validate = await validate(url);
