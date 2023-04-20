@@ -92,7 +92,7 @@ const loadKeywordSupport = () => {
 
   const additionalProperties = getKeyword("https://json-schema.org/keyword/additionalProperties");
   if (additionalProperties) {
-    additionalProperties.collectExternalIds = ([, , additionalProperties], externalIds, ast, dynamicAnchors) => {
+    additionalProperties.collectExternalIds = ([, additionalProperties], externalIds, ast, dynamicAnchors) => {
       if (typeof additionalProperties === "string") {
         Validation.collectExternalIds(additionalProperties, externalIds, ast, dynamicAnchors);
       }
