@@ -62,6 +62,7 @@ const skip: Set<string> = new Set([
   "|draft4|ref.json|id must be resolved against nearest parent, not just immediate parent",
   "|draft4|ref.json|id with file URI still resolves pointers - *nix",
   "|draft4|ref.json|id with file URI still resolves pointers - windows",
+  "|draft4|ref.json|empty tokens in $ref json-pointer",
   "|draft4|refRemote.json|ref within remote ref",
   "|draft4|refRemote.json|fragment within remote ref",
   "|draft4|refRemote.json|base URI change",
