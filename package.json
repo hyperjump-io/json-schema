@@ -65,7 +65,7 @@
   "dependencies": {
     "@hyperjump/json-pointer": "^1.0.0",
     "@hyperjump/pact": "^0.2.4",
-    "@hyperjump/uri": "^1.0.0",
+    "@hyperjump/uri": "^1.2.0",
     "content-type": "^1.0.4",
     "fastest-stable-stringify": "^2.0.2",
     "just-curry-it": "^5.3.0",
