@@ -254,7 +254,7 @@ import { addSchema } from "@hyperjump/json-schema/draft-2020-12";
 import { bundle } from "@hyperjump/json-schema/bundle";
 
 addSchema({
-  "$id": "https://example.com/main"
+  "$id": "https://example.com/main",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
 
   "type": "object",
@@ -280,8 +280,8 @@ const bundledSchema = await bundle("https://example.com/main"); // {
 //   },
 //
 //   "$defs": {
-//     "https://example.com/main": {
-//       "$id": "https://example.com/main",
+//     "https://example.com/string": {
+//       "$id": "https://example.com/string",
 //       "type": "string"
 //     }
 //   }
