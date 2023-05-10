@@ -564,15 +564,18 @@ set of functions for working with SchemaDocuments.
 * **Schema.step**: (key: string, doc: SchemaDocument) => Promise<SchemaDocument>
 
     Similar to `schema[key]`, but returns an SchemaDocument.
-* **Schema.entries**: (doc: SchemaDocument) => Promise<[[string, SchemaDocument]]>
+* **Schema.iter**: (doc: SchemaDocument) => AsyncGenerator<SchemaDocument>
 
-    Similar to `Object.entries`, but returns SchemaDocuments for values.
-* **Schema.keys**: (doc: SchemaDocument) => [string]
+    Iterate over the items in the array that the SchemaDocument represents
+* **Schema.entries**: (doc: SchemaDocument) => AsyncGenerator<[string, SchemaDocument]>
+
+    Similar to `Object.entries`, but yields SchemaDocuments for values.
+* **Schema.values**: (doc: SchemaDocument) => AsyncGenerator<SchemaDocument>
+
+    Similar to `Object.values`, but yields SchemaDocuments for values.
+* **Schema.keys**: (doc: SchemaDocument) => Generator<string>
 
     Similar to `Object.keys`.
-* **Schema.map**: (fn: (item: Promise<SchemaDocument>, index: integer) => T, doc: SchemaDocument) => Promise<[T]>
-
-    A `map` function for an SchemaDocument whose value is an array.
 * **Schema.length**: (doc: SchemaDocument) => number
 
     Similar to `Array.prototype.length`.
@@ -622,24 +625,18 @@ set of functions for working with InstanceDocuments.
 * **Instance.step**: (key: string, doc: InstanceDocument) => InstanceDocument
 
     Similar to `schema[key]`, but returns a InstanceDocument.
-* **Instance.entries**: (doc: InstanceDocument) => [string, InstanceDocument]
+* **Instance.iter**: (doc: InstanceDocument) => Generator<InstanceDocument>
 
-    Similar to `Object.entries`, but returns IDocs for values.
-* **Instance.keys**: (doc: InstanceDocument) => [string]
+    Iterate over the items in the array that the SchemaDocument represents.
+* **Instance.entries**: (doc: InstanceDocument) => Generator<[string, InstanceDocument]>
+
+    Similar to `Object.entries`, but yields InstanceDocuments for values.
+* **Instance.values**: (doc: InstanceDocument) => Generator<InstanceDocument>
+
+    Similar to `Object.values`, but yields InstanceDocuments for values.
+* **Instance.keys**: (doc: InstanceDocument) => Generator<string>
 
     Similar to `Object.keys`.
-* **Instance.map**: (fn: (item: InstanceDocument, index: integer) => T, doc: InstanceDocument) => [T]
-
-    A `map` function for an InstanceDocument whose value is an array.
-* **Instance.reduce**: (fn: (accumulator: T, item: InstanceDocument, index: integer) => T, initial: T, doc: InstanceDocument) => T
-
-    A `reduce` function for an InstanceDocument whose value is an array.
-* **Instance.every**: (fn: (doc: InstanceDocument, index: integer) => boolean, doc: InstanceDocument) => boolean
-
-    An `every` function for an InstanceDocument whose value is an array.
-* **Instance.some**: (fn: (doc: InstanceDocument, index: integer) => boolean, doc: InstanceDocument) => boolean
-
-    A `some` function for an InstanceDocument whose value is an array.
 * **Instance.length**: (doc: InstanceDocument) => number
 
     Similar to `Array.prototype.length`.
@@ -708,10 +705,9 @@ const unknowns = AnnotatedInstance.annotation(instance, "unknown", dialectId); /
 const types = AnnotatedInstance.annotation(instance, "type", dialectId); // => []
 
 // Get the title of each of the properties in the object
-AnnotatedInstance.entries(instance)
-  .map(([propertyName, propertyInstance]) => {
-    return { propertyName, titles: Instance.annotation(propertyInstance, "title", dialectId) }; // => (Example) { propertyName: "givenName", titles: ["Given Name", "Name"] });
-  });
+for (const [propertyName, propertyInstance] of AnnotatedInstance.entries(instance)) {
+  console.log(propertyName, Instance.annotation(propertyInstance, "title", dialectId));
+}
 
 // List all locations in the instance that are deprecated
 for (const deprecated of AnnotatedInstance.annotatedWith(instance, "deprecated", dialectId)) {

@@ -25,18 +25,14 @@ export const typeOf: (
 );
 export const has: (key: string, doc: SchemaDocument) => boolean;
 export const step: (key: string, doc: SchemaDocument) => Promise<SchemaDocument>;
-export const keys: (doc: SchemaDocument) => string[];
-export const entries: (doc: SchemaDocument) => Promise<SchemaEntry[]>;
-export const map: (
-  <A>(fn: MapFn<Promise<A> | A>, doc: SchemaDocument) => Promise<A[]>
-) & (
-  <A>(fn: MapFn<Promise<A> | A>) => (doc: SchemaDocument) => Promise<A[]>
-);
+export const iter: (doc: SchemaDocument) => AsyncGenerator<SchemaDocument>;
+export const keys: (doc: SchemaDocument) => Generator<string>;
+export const values: (doc: SchemaDocument) => AsyncGenerator<string>;
+export const entries: (doc: SchemaDocument) => AsyncGenerator<[string, SchemaDocument]>;
 export const length: (doc: SchemaDocument) => number;
 export const toSchema: (doc: SchemaDocument, options: ToSchemaOptions) => SchemaObject;
 
 type MapFn<A> = (element: SchemaDocument, index: number) => A;
-export type SchemaEntry = [string, SchemaDocument];
 
 export type ToSchemaOptions = {
   parentId?: string;

@@ -1,3 +1,4 @@
+import { pipe, drop, every } from "@hyperjump/pact";
 import * as Instance from "../lib/instance.js";
 import * as Schema from "../lib/schema.js";
 import Validation from "../lib/keywords/validation.js";
@@ -19,7 +20,11 @@ const interpret = ([numberOfItems, additionalItems], instance, ast, dynamicAncho
     return true;
   }
 
-  return Instance.every((item, ndx) => ndx < numberOfItems || Validation.interpret(additionalItems, item, ast, dynamicAnchors), instance, quiet);
+  return pipe(
+    Instance.iter(instance),
+    drop(numberOfItems),
+    every((item) => Validation.interpret(additionalItems, item, ast, dynamicAnchors, quiet))
+  );
 };
 
 const collectEvaluatedItems = (keywordValue, instance, ast, dynamicAnchors) => {

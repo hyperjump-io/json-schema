@@ -1,3 +1,4 @@
+import { pipe, filter, reduce, zip, range, map, collectSet } from "@hyperjump/pact";
 import * as Instance from "../lib/instance.js";
 import * as Schema from "../lib/schema.js";
 import { getKeywordName } from "../lib/keywords.js";
@@ -21,20 +22,23 @@ const compile = async (schema, ast, parentSchema) => {
 };
 
 const interpret = ({ contains, minContains, maxContains }, instance, ast, dynamicAnchors, quiet) => {
-  if (!Instance.typeOf(instance, "array")) {
-    return true;
-  }
-
-  const matches = Instance.reduce((matches, item) => {
-    return Validation.interpret(contains, item, ast, dynamicAnchors, quiet) ? matches + 1 : matches;
-  }, 0, instance);
+  const matches = !Instance.typeOf(instance, "array") || pipe(
+    Instance.iter(instance),
+    filter((item) => Validation.interpret(contains, item, ast, dynamicAnchors, quiet)),
+    reduce((matches) => matches + 1, 0)
+  );
   return matches >= minContains && matches <= maxContains;
 };
 
 const collectEvaluatedItems = (keywordValue, instance, ast, dynamicAnchors) => {
-  return interpret(keywordValue, instance, ast, dynamicAnchors) && Instance.reduce((matchedIndexes, item, itemIndex) => {
-    return Validation.interpret(keywordValue.contains, item, ast, dynamicAnchors) ? matchedIndexes.add(itemIndex) : matchedIndexes;
-  }, new Set(), instance);
+  return interpret(keywordValue, instance, ast, dynamicAnchors, true)
+    && Instance.typeOf(instance, "array")
+    && pipe(
+      zip(Instance.iter(instance), range(0)),
+      filter(([item]) => Validation.interpret(keywordValue.contains, item, ast, dynamicAnchors, true)),
+      map(([, itemIndex]) => itemIndex),
+      collectSet
+    );
 };
 
 export default { id, compile, interpret, collectEvaluatedItems };

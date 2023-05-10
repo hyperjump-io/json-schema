@@ -26,40 +26,10 @@ export const typeOf: (
   (doc: JsonDocument) => (type: JsonType) => boolean
 );
 export const step: (key: string, doc: JsonDocument<JsonObject | Json[]>) => JsonDocument<typeof doc.value>;
-export const entries: (doc: JsonDocument<JsonObject>) => [string, JsonDocument][];
-export const keys: (doc: JsonDocument<JsonObject>) => string[];
-export const map: (
-  <A>(fn: MapFn<A>, doc: JsonDocument<Json[]>) => A[]
-) & (
-  <A>(fn: MapFn<A>) => (doc: JsonDocument<Json[]>) => A[]
-);
-export const forEach: (
-  (fn: ForEachFn, doc: JsonDocument<Json[]>) => void
-) & (
-  (fn: ForEachFn) => (doc: JsonDocument<Json[]>) => void
-);
-export const filter: (
-  (fn: FilterFn, doc: JsonDocument<Json[]>) => JsonDocument[]
-) & (
-  (fn: FilterFn) => (doc: JsonDocument<Json[]>) => JsonDocument[]
-);
-export const reduce: (
-  <A>(fn: ReduceFn<A>, acc: A, doc: JsonDocument<Json[]>) => A
-) & (
-  <A>(fn: ReduceFn<A>) => (acc: A, doc: JsonDocument<Json[]>) => A
-) & (
-  <A>(fn: ReduceFn<A>) => (acc: A) => (doc: JsonDocument<Json[]>) => A
-);
-export const every: (
-  (fn: FilterFn, doc: JsonDocument<Json[]>) => boolean
-) & (
-  (fn: FilterFn) => (doc: JsonDocument<Json[]>) => boolean
-);
-export const some: (
-  (fn: FilterFn, doc: JsonDocument<Json[]>) => boolean
-) & (
-  (fn: FilterFn) => (doc: JsonDocument<Json[]>) => boolean
-);
+export const iter: (doc: JsonDocument<JsonObject>) => Generator<JsonDocument>;
+export const keys: (doc: JsonDocument<JsonObject>) => Generator<string>;
+export const values: (doc: JsonDocument<JsonObject>) => Generator<JsonDocument>;
+export const entries: (doc: JsonDocument<JsonObject>) => Generator<[string, JsonDocument]>;
 export const length: (doc: JsonDocument<Json[] | string>) => number;
 
 type MapFn<A> = (element: JsonDocument, index: number) => A;
