@@ -8,6 +8,7 @@ export default {
     "prefixItems": { "$ref": "#/$defs/schemaArray" },
     "items": { "$dynamicRef": "meta" },
     "contains": { "$dynamicRef": "meta" },
+    "itemPattern": { "$ref": "#/$defs/itemPattern" },
     "additionalProperties": { "$dynamicRef": "meta" },
     "properties": {
       "type": "object",
@@ -44,6 +45,21 @@ export default {
       "type": "array",
       "minItems": 1,
       "items": { "$dynamicRef": "meta" }
+    },
+    "itemPattern": {
+      "type": "array",
+      "itemPattern": [
+        [
+          {
+            "if": { "type": "array" },
+            "then": { "$ref": "#/$defs/itemPattern" },
+            "else": { "$dynamicRef": "meta" }
+          },
+          { "enum": ["?", "*", "+"] }, "?",
+          "|",
+          { "const": "|" }
+        ], "*"
+      ]
     }
   }
 };

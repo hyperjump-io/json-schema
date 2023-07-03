@@ -64,6 +64,7 @@ const addRemotes = (filePath = `${testSuitePath}/remotes`, url = "") => {
 setExperimentalKeywordEnabled("https://json-schema.org/keyword/dynamicRef", true);
 setExperimentalKeywordEnabled("https://json-schema.org/keyword/propertyDependencies", true);
 setExperimentalKeywordEnabled("https://json-schema.org/keyword/requireAllExcept", true);
+setExperimentalKeywordEnabled("https://json-schema.org/keyword/itemPattern", true);
 
 const runTestSuite = (dialectId?: string) => {
   describe(`JSON Schema Test Suite: ${dialectId || "default"}`, () => {
