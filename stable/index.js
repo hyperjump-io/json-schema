@@ -34,6 +34,7 @@ defineVocabulary("https://json-schema.org/vocab/applicator", {
   "if": "https://json-schema.org/keyword/if",
   "then": "https://json-schema.org/keyword/then",
   "else": "https://json-schema.org/keyword/else",
+  "conditional": "https://json-schema.org/keyword/conditional",
   "items": "https://json-schema.org/keyword/items",
   "itemPattern": "https://json-schema.org/keyword/itemPattern",
   "not": "https://json-schema.org/keyword/not",

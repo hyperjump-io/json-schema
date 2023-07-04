@@ -34,6 +34,16 @@ export default {
     "if": { "$dynamicRef": "meta" },
     "then": { "$dynamicRef": "meta" },
     "else": { "$dynamicRef": "meta" },
+    "conditional": {
+      "type": "array",
+      "items": {
+        "if": { "type": "array" },
+        "then": {
+          "items": { "$dynamicRef": "meta" }
+        },
+        "else": { "$dynamicRef": "meta" }
+      }
+    },
     "allOf": { "$ref": "#/$defs/schemaArray" },
     "anyOf": { "$ref": "#/$defs/schemaArray" },
     "oneOf": { "$ref": "#/$defs/schemaArray" },
