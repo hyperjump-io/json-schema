@@ -18,7 +18,9 @@ A collection of modules for working with JSON Schemas.
 * Provides utilities for working with annotations
 
 ## Install
-Includes support for node.js (ES Modules, TypeScript) and browsers.
+Includes support for node.js (ES Modules, TypeScript) and browsers (works with
+CSP
+[`unsafe-eval`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/script-src#unsafe_eval_expressions)).
 
 ### Node.js
 ```bash
