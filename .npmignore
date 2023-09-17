@@ -1,6 +1,7 @@
 .github/
 .eslintrc.json
 .mocharc.json
+bun.lockb
 **/*.spec.ts
 **/*.schema.json
 **/*.schema.yaml
