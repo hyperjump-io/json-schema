@@ -20,7 +20,7 @@ export const addSchema: typeof add;
 
 export type Validator = (value: unknown, outputFormat?: OutputFormat) => OutputUnit;
 
-export type OutputFormat = "FLAG" | "BASIC" | "DETAILED" | "VERBOSE" | string;
+export type OutputFormat = "FLAG" | "BASIC" | "DETAILED" | "VERBOSE";
 
 export type OutputUnit = {
   keyword: string;
