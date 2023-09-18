@@ -42,6 +42,16 @@ configuration.
   ]
 ```
 
+### TypeScript
+This package uses the package.json "exports" field. [TypeScript understands
+"exports"](https://devblogs.microsoft.com/typescript/announcing-typescript-4-5-beta/#packagejson-exports-imports-and-self-referencing),
+but you need to change a couple settings in your `tsconfig.json` for it to work.
+
+```jsonc
+    "module": "Node16", // or "NodeNext"
+    "moduleResolution": "Node16", // or "NodeNext"
+```
+
 ### Versioning
 The API for this library is divided into two categories: Stable and
 Experimental. The Stable API strictly follows semantic versioning, but the
