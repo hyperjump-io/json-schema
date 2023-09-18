@@ -21,7 +21,8 @@
     "./bundle": "./bundle/index.js"
   },
   "browser": {
-    "./lib/fetch.js": "./lib/fetch.browser.js"
+    "./lib/fetch.js": "./lib/fetch.browser.js",
+    "./lib/context-uri.js": "./lib/context-uri.browser.js"
   },
   "scripts": {
     "clean": "xargs -a .gitignore rm -rf",

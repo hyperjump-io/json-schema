@@ -108,18 +108,28 @@ const output2 = isString(42);
 
 **Fetching schemas**
 
-You can fetch schemas from the web or from the file system, but when fetching
-from the file system, there are limitations for security reasons. If your schema
-has an identifier with an http(s) scheme (**https**://example.com), it's not
-allowed to reference schemas with a file scheme
-(**file**:///path/to/my/schemas).
+Schemas that are available on the web can be loaded automatically without
+needing to load them manually.
 
 ```javascript
 const output = await validate("http://example.com/schemas/string", "foo");
 ```
 
+When running on the server, you can also load schemas directly from the
+filesystem using `file:` URIs. When fetching from the file system, there are
+limitations for security reasons. If your schema has an identifier with an
+http(s) scheme (**https**://example.com), it's not allowed to reference schemas
+with a file scheme (**file**:///path/to/my/schemas).
+
 ```javascript
 const output = await validate(`file://${__dirname}/string.schema.json`, "foo");
+```
+
+If the schema URI is relative, the base URI in the browser is the browser
+location and the base URI on the server is the current working directory.
+
+```javascript
+const output = await validate(`./string.schema.json`, "foo");
 ```
 
 **Media type plugins**
