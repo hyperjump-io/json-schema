@@ -1,3 +1,4 @@
 {
-  "$id": "http://test.jsc.hyperjump.io/http-id"
+  "$id": "http://test.jsc.hyperjump.io/http-id",
+  "$schema": "https://json-schema.org/validation"
 }

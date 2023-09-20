@@ -1,5 +1,5 @@
 export default {
-  "$id": "https://json-schema.org/meta/core",
+  "$schema": "https://json-schema.org/validation",
   "title": "Core vocabulary meta-schema",
 
   "$dynamicAnchor": "meta",

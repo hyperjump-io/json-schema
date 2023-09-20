@@ -20,6 +20,7 @@ describe("Media Types", () => {
 
     Schema.add({
       $id: customDialectId,
+      $schema: defaultDialectId,
       $vocabulary: {}
     });
   });
@@ -76,8 +77,14 @@ describe("Media Types", () => {
     });
 
     Then("the fetched schema should have the default dialect", async () => {
-      const schema = await Schema.get(`${testDomain}/schema-json`);
-      expect(schema.dialectId).to.equal(defaultDialectId);
+      try {
+        await Schema.get(`${testDomain}/schema-json`);
+        expect.fail("Expected exception");
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          expect(error.message).to.include("Unable to determine a dialect for the schema");
+        }
+      }
     });
   });
 

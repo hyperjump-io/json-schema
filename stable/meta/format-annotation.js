@@ -1,5 +1,5 @@
 export default {
-  "$id": "https://json-schema.org/meta/format-annotation",
+  "$schema": "https://json-schema.org/validation",
   "title": "Format vocabulary meta-schema for annotation results",
 
   "$dynamicAnchor": "meta",

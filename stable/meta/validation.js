@@ -1,5 +1,5 @@
 export default {
-  "$id": "https://json-schema.org/meta/validation",
+  "$schema": "https://json-schema.org/validation",
   "title": "Validation vocabulary meta-schema",
 
   "$dynamicAnchor": "meta",

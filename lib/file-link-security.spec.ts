@@ -13,6 +13,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const testDomain = "http://test.jsc.hyperjump.io";
+const defaultDialectId = "https://json-schema.org/validation";
 
 describe("Schema.get with files", () => {
   let mockAgent: MockAgent;
@@ -62,7 +63,7 @@ describe("Schema.get with files", () => {
       let schema: SchemaDocument;
 
       beforeEach(async () => {
-        Schema.add({ "$id": `${testDomain}/foo` });
+        Schema.add({ "$id": `${testDomain}/foo`, "$schema": defaultDialectId });
         schema = await Schema.get(`${testDomain}/foo`, context);
       });
 
@@ -83,7 +84,7 @@ describe("Schema.get with files", () => {
       let schema: SchemaDocument;
 
       beforeEach(async () => {
-        Schema.add({ "$id": `${testDomain}/foo` });
+        Schema.add({ "$id": `${testDomain}/foo`, "$schema": defaultDialectId });
         schema = await Schema.get("./foo", context);
       });
 
@@ -96,7 +97,7 @@ describe("Schema.get with files", () => {
       let schema: SchemaDocument;
 
       beforeEach(async () => {
-        Schema.add({ "$id": `${testDomain}/foo` });
+        Schema.add({ "$id": `${testDomain}/foo`, "$schema": defaultDialectId });
         schema = await Schema.get(`${testDomain}/foo`, context);
       });
 

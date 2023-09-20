@@ -7,12 +7,14 @@ import type { SchemaDocument } from "./schema.js";
 
 describe("Anchors", () => {
   const testDomain = "http://test.jsc.hyperjump.io";
+  const defaultDialectId = "https://json-schema.org/validation";
 
   Given("A schema with an anchor", () => {
     const id = `${testDomain}/just-anchor`;
     beforeEach(() => {
       Schema.add({
         "$id": id,
+        "$schema": defaultDialectId,
         "definitions": {
           "foo": {
             "$anchor": "foo",
@@ -47,6 +49,7 @@ describe("Anchors", () => {
     beforeEach(() => {
       Schema.add({
         "$id": id,
+        "$schema": defaultDialectId,
         "definitions": {
           "foo": {
             "$id": "foo#foo",

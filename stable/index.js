@@ -97,7 +97,8 @@ defineVocabulary("https://json-schema.org/vocab/unevaluated", {
   "unevaluatedProperties": "https://json-schema.org/keyword/unevaluatedProperties"
 });
 
-loadDialect("https://json-schema.org/validation", {
+const dialectId = "https://json-schema.org/validation";
+loadDialect(dialectId, {
   "https://json-schema.org/vocab/core": true,
   "https://json-schema.org/vocab/applicator": true,
   "https://json-schema.org/vocab/validation": true,
@@ -107,14 +108,14 @@ loadDialect("https://json-schema.org/validation", {
   "https://json-schema.org/vocab/unevaluated": true
 });
 
-addSchema(metaSchema);
-addSchema(coreMetaSchema);
-addSchema(applicatorMetaSchema);
-addSchema(validationMetaSchema);
-addSchema(metaDataMetaSchema);
-addSchema(formatAnnotationMetaSchema);
-addSchema(formatAssertionMetaSchema);
-addSchema(contentMetaSchema);
-addSchema(unevaluatedMetaSchema);
+addSchema(metaSchema, dialectId);
+addSchema(coreMetaSchema, "https://json-schema.org/meta/core");
+addSchema(applicatorMetaSchema, "https://json-schema.org/meta/applicator");
+addSchema(validationMetaSchema, "https://json-schema.org/meta/validation");
+addSchema(metaDataMetaSchema, "https://json-schema.org/meta/meta-data");
+addSchema(formatAnnotationMetaSchema, "https://json-schema.org/meta/format-annotation");
+addSchema(formatAssertionMetaSchema, "https://json-schema.org/meta/format-assertion");
+addSchema(contentMetaSchema, "https://json-schema.org/meta/content");
+addSchema(unevaluatedMetaSchema, "https://json-schema.org/meta/unevaluated");
 
 export * from "../lib/index.js";

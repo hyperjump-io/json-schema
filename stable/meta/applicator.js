@@ -1,5 +1,5 @@
 export default {
-  "$id": "https://json-schema.org/meta/applicator",
+  "$schema": "https://json-schema.org/validation",
   "title": "Applicator vocabulary meta-schema",
 
   "$dynamicAnchor": "meta",

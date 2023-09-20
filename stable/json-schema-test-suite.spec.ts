@@ -47,6 +47,7 @@ const shouldSkip = (path: string[]): boolean => {
   return false;
 };
 
+const dialectId = "https://json-schema.org/validation";
 const testSuitePath = `${__dirname}/json-schema-test-suite`;
 
 const addRemotes = (filePath = `${testSuitePath}/remotes`, url = "") => {
@@ -54,7 +55,7 @@ const addRemotes = (filePath = `${testSuitePath}/remotes`, url = "") => {
     .forEach((entry) => {
       if (entry.isFile() && entry.name.endsWith(".json")) {
         const remote = JSON.parse(fs.readFileSync(`${filePath}/${entry.name}`, "utf8")) as JsonSchema;
-        addSchema(remote, `http://localhost:1234${url}/${entry.name}`);
+        addSchema(remote, `http://localhost:1234${url}/${entry.name}`, dialectId);
       } else if (entry.isDirectory()) {
         addRemotes(`${filePath}/${entry.name}`, `${url}/${entry.name}`);
       }
@@ -67,8 +68,8 @@ setExperimentalKeywordEnabled("https://json-schema.org/keyword/requireAllExcept"
 setExperimentalKeywordEnabled("https://json-schema.org/keyword/itemPattern", true);
 setExperimentalKeywordEnabled("https://json-schema.org/keyword/conditional", true);
 
-const runTestSuite = (dialectId?: string) => {
-  describe(`JSON Schema Test Suite: ${dialectId || "default"}`, () => {
+const runTestSuite = () => {
+  describe(`JSON Schema Test Suite: ${dialectId}`, () => {
     fs.readdirSync(`${testSuitePath}/tests`, { withFileTypes: true })
       .filter((entry) => entry.isFile() && entry.name.endsWith(".json"))
       .forEach((entry) => {

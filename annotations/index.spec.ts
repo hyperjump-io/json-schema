@@ -37,6 +37,7 @@ type Assertion = {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const dialectId = "https://json-schema.org/validation";
 const host = "https://annotations.json-schema.hyperjump.io";
 
 const testSuiteFilePath = `${__dirname}/tests`;
@@ -53,7 +54,7 @@ fs.readdirSync(testSuiteFilePath, { withFileTypes: true })
 
         beforeEach(async () => {
           const id = `${host}/${encodeURIComponent(suite.title)}`;
-          addSchema(suite.schema, id);
+          addSchema(suite.schema, id, dialectId);
 
           annotator = await annotate(id);
         });

@@ -1,5 +1,5 @@
 export default {
-  "$id": "https://json-schema.org/meta/format-assertion",
+  "$schema": "https://json-schema.org/validation",
   "title": "Format vocabulary meta-schema for assertion results",
 
   "$dynamicAnchor": "meta",

@@ -7,12 +7,14 @@ import type { SchemaDocument } from "./schema.js";
 
 
 const testDomain = "http://test.jsc.hyperjump.io";
+const defaultDialectId = "https://json-schema.org/validation";
 
 describe("Embedded schemas", () => {
   Given("an embedded schema with an absolute URI", () => {
     beforeEach(() => {
       Schema.add({
         "$id": `${testDomain}/root`,
+        "$schema": defaultDialectId,
         "definitions": {
           "foo": {
             "$id": `${testDomain}/absolute-id`,
@@ -64,6 +66,7 @@ describe("Embedded schemas", () => {
     beforeEach(() => {
       Schema.add({
         "$id": `${testDomain}/root`,
+        "$schema": defaultDialectId,
         "definitions": {
           "foo": {
             "$id": "relative-id",
@@ -91,6 +94,7 @@ describe("Embedded schemas", () => {
     beforeEach(() => {
       Schema.add({
         "$id": embeddedDialectId,
+        "$schema": defaultDialectId,
         "$vocabulary": {
           "https://json-schema.org/vocab/core": true,
           "https://json-schema.org/vocab/validation": true
@@ -98,6 +102,7 @@ describe("Embedded schemas", () => {
       });
       Schema.add({
         "$id": `${testDomain}/root`,
+        "$schema": defaultDialectId,
         "definitions": {
           "foo": {
             "$id": `${testDomain}/switching-schema-version`,
@@ -133,6 +138,7 @@ describe("Embedded schemas", () => {
 
       Schema.add({
         "$id": `${testDomain}/root`,
+        "$schema": defaultDialectId,
         "definitions": {
           "foo": {
             "id": `${testDomain}/wrong-anchor-token`,
