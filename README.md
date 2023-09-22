@@ -194,11 +194,11 @@ Schema, such as `@hyperjump/json-schema/draft-2020-12`.
 
     Load a schema manually rather than fetching it from the filesystem or over
     the network.
-* **validate**: (schemaURI: string, instance: any, outputFormat: OutputFormat = FLAG) => Promise<OutputUnit>
+* **validate**: (schemaURI: string, instance: any, outputFormat: OutputFormat = * FLAG) => Promise\<OutputUnit>
 
     Validate an instance against a schema. This function is curried to allow
     compiling the schema once and applying it to multiple instances.
-* **validate**: (schemaURI: string) => Promise<(instance: any, outputFormat: OutputFormat = FLAG) => OutputUnit>
+* **validate**: (schemaURI: string) => Promise\<(instance: any, outputFormat: OutputFormat = FLAG) => OutputUnit>
 
     Compiling a schema to a validation function.
 * **FLAG**: "FLAG"
@@ -313,7 +313,7 @@ const bundledSchema = await bundle("https://example.com/main"); // {
 ### API
 These are available from the `@hyperjump/json-schema/bundle` export.
 
-* **bundle**: (uri: string, options: Options) => Promise<SchemaObject>
+* **bundle**: (uri: string, options: Options) => Promise\<SchemaObject>
 
     Create a bundled schema starting with the given schema. External schemas
     will be fetched from the filesystem, the network, or internally as needed.
@@ -533,7 +533,7 @@ These are available from the `@hyperjump/json-schema/experimental` export.
 
         A URI that uniquely identifies the keyword. It should use a domain you
         own to avoid conflict with keywords defined by others.
-    * compile: (schema: SchemaDocument, ast: AST, parentSchema: SchemaDocument) => Promise<A>
+    * compile: (schema: SchemaDocument, ast: AST, parentSchema: SchemaDocument) * => Promise\<A>
 
         This function takes the keyword value, does whatever preprocessing it
         can on it without an instance, and returns the result. The returned
@@ -551,7 +551,7 @@ These are available from the `@hyperjump/json-schema/experimental` export.
 
         If the keyword is an applicator, it will need to implements this
         function for `unevaluatedProperties` to work as expected.
-    * collectEvaluatedItems?: (compiledKeywordValue: A, instance: JsonDocument, ast: AST, dynamicAnchors: Anchors) => Set<number> | false
+    * collectEvaluatedItems?: (compiledKeywordValue: A, instance: JsonDocument, * ast: AST, dynamicAnchors: Anchors) => Set\<number> | false
 
         If the keyword is an applicator, it will need to implements this
         function for `unevaluatedItems` to work as expected.
@@ -567,7 +567,7 @@ set of functions for working with SchemaDocuments.
 * **Schema.add**: (schema: object, retrievalUri?: string, dialectId?: string) => string
 
     Load a schema. Returns the identifier for the schema.
-* **Schema.get**: (url: string, contextDoc?: SchemaDocument) => Promise<SchemaDocument>
+* **Schema.get**: (url: string, contextDoc?: SchemaDocument) => Promise\<SchemaDocument>
 
     Fetch a schema. Schemas can come from an HTTP request, a file, or a schema
     that was added with `Schema.add`.
@@ -580,22 +580,22 @@ set of functions for working with SchemaDocuments.
 * **Schema.typeOf**: (doc: SchemaDocument, type: string) => boolean
 
     Determines if the JSON type of the given doc matches the given type.
-* **Schema.has**: (key: string, doc: SchemaDocument) => Promise<SchemaDocument>
+* **Schema.has**: (key: string, doc: SchemaDocument) => Promise\<SchemaDocument>
 
     Similar to `key in schema`.
-* **Schema.step**: (key: string, doc: SchemaDocument) => Promise<SchemaDocument>
+* **Schema.step**: (key: string, doc: SchemaDocument) => Promise\<SchemaDocument>
 
     Similar to `schema[key]`, but returns an SchemaDocument.
-* **Schema.iter**: (doc: SchemaDocument) => AsyncGenerator<SchemaDocument>
+* **Schema.iter**: (doc: SchemaDocument) => AsyncGenerator\<SchemaDocument>
 
     Iterate over the items in the array that the SchemaDocument represents
-* **Schema.entries**: (doc: SchemaDocument) => AsyncGenerator<[string, SchemaDocument]>
+* **Schema.entries**: (doc: SchemaDocument) => AsyncGenerator\<[string, SchemaDocument]>
 
     Similar to `Object.entries`, but yields SchemaDocuments for values.
-* **Schema.values**: (doc: SchemaDocument) => AsyncGenerator<SchemaDocument>
+* **Schema.values**: (doc: SchemaDocument) => AsyncGenerator\<SchemaDocument>
 
     Similar to `Object.values`, but yields SchemaDocuments for values.
-* **Schema.keys**: (doc: SchemaDocument) => Generator<string>
+* **Schema.keys**: (doc: SchemaDocument) => Generator\<string>
 
     Similar to `Object.keys`.
 * **Schema.length**: (doc: SchemaDocument) => number
@@ -647,16 +647,16 @@ set of functions for working with InstanceDocuments.
 * **Instance.step**: (key: string, doc: InstanceDocument) => InstanceDocument
 
     Similar to `schema[key]`, but returns a InstanceDocument.
-* **Instance.iter**: (doc: InstanceDocument) => Generator<InstanceDocument>
+* **Instance.iter**: (doc: InstanceDocument) => Generator\<InstanceDocument>
 
     Iterate over the items in the array that the SchemaDocument represents.
-* **Instance.entries**: (doc: InstanceDocument) => Generator<[string, InstanceDocument]>
+* **Instance.entries**: (doc: InstanceDocument) => Generator\<[string, InstanceDocument]>
 
     Similar to `Object.entries`, but yields InstanceDocuments for values.
-* **Instance.values**: (doc: InstanceDocument) => Generator<InstanceDocument>
+* **Instance.values**: (doc: InstanceDocument) => Generator\<InstanceDocument>
 
     Similar to `Object.values`, but yields InstanceDocuments for values.
-* **Instance.keys**: (doc: InstanceDocument) => Generator<string>
+* **Instance.keys**: (doc: InstanceDocument) => Generator\<string>
 
     Similar to `Object.keys`.
 * **Instance.length**: (doc: InstanceDocument) => number
@@ -743,7 +743,7 @@ for (const deprecated of AnnotatedInstance.annotatedWith(instance, "deprecated",
 These are available from the `@hyperjump/json-schema/annotations/experimental`
 export.
 
-* **annotate**: (schemaUri: string, instance: any, outputFormat: OutputFormat = FLAG) => Promise<AnnotatedInstance>
+* **annotate**: (schemaUri: string, instance: any, outputFormat: OutputFormat = * FLAG) => Promise\<AnnotatedInstance>
 
     Annotate an instance using the given schema. The function is curried to
     allow compiling the schema once and applying it to multiple instances. This
@@ -777,7 +777,7 @@ following functions are available in addition to the functions available in the
 ### API
 These are available from the `@hyperjump/json-schema/experimental` export.
 
-* **compile**: (schema: SchemaDocument) => Promise<CompiledSchema>
+* **compile**: (schemaUri: string) => Promise\<CompiledSchema>
 
     Return a compiled schema. This is useful if you're creating tooling for
     something other than validation.
