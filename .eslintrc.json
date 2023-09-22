@@ -164,7 +164,7 @@
     "yoda": "error",
     "import/no-duplicates": "error",
     "import/no-unresolved": ["error", { "commonjs": true }],
-    "import/extensions": ["error", "always", { "js": "always" }],
+    "import/extensions": ["error", "always", { "js": "ignorePackages" }],
     "import/newline-after-import": ["error", { "count": 2 }]
   },
   "settings": {
