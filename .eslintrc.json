@@ -162,9 +162,8 @@
     "wrap-iife": "error",
     "yield-star-spacing": "error",
     "yoda": "error",
-    "import/no-duplicates": "error",
     "import/no-unresolved": ["error", { "commonjs": true }],
-    "import/extensions": ["error", "always", { "js": "ignorePackages" }],
+    "import/extensions": ["error", "always", { "js": "always" }],
     "import/newline-after-import": ["error", { "count": 2 }]
   },
   "settings": {
