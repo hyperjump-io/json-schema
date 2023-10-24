@@ -47,7 +47,6 @@ defineVocabulary("https://json-schema.org/draft/2019-09/vocab/applicator", {
   "not": "https://json-schema.org/keyword/not",
   "oneOf": "https://json-schema.org/keyword/oneOf",
   "patternProperties": "https://json-schema.org/keyword/patternProperties",
-  "prefixItems": "https://json-schema.org/keyword/prefixItems",
   "properties": "https://json-schema.org/keyword/properties",
   "propertyNames": "https://json-schema.org/keyword/propertyNames",
   "unevaluatedItems": "https://json-schema.org/keyword/unevaluatedItems",
