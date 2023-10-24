@@ -13,7 +13,7 @@ import additionalItems from "../draft-04/additionalItems.js";
 import contains from "./contains.js";
 import items from "../draft-04/items.js";
 import recursiveAnchor from "./recursiveAnchor.js";
-import recursiveRef from "./recursiveRef.js";
+import recursiveRef from "../draft-2020-12/dynamicRef.js";
 
 
 addKeyword(additionalItems);
@@ -27,7 +27,7 @@ defineVocabulary("https://json-schema.org/draft/2019-09/vocab/core", {
   "$comment": "https://json-schema.org/keyword/comment",
   "$defs": "https://json-schema.org/keyword/definitions",
   "$recursiveAnchor": "https://json-schema.org/keyword/draft-2019-09/recursiveAnchor",
-  "$recursiveRef": "https://json-schema.org/keyword/draft-2019-09/recursiveRef",
+  "$recursiveRef": "https://json-schema.org/keyword/draft-2020-12/dynamicRef",
   "$id": "https://json-schema.org/keyword/id",
   "$ref": "https://json-schema.org/keyword/ref",
   "$vocabulary": "https://json-schema.org/keyword/vocabulary"
