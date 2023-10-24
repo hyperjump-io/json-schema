@@ -697,6 +697,52 @@
         ]
     },
     {
+        "description": "unevaluatedProperties with $dynamicRef",
+        "schema": {
+            "$id": "https://example.com/derived",
+
+            "$ref": "/baseSchema",
+
+            "$defs": {
+                "derived": {
+                    "$dynamicAnchor": "addons",
+                    "properties": {
+                        "bar": { "type": "string" }
+                    }
+                },
+                "baseSchema": {
+                    "$id": "/baseSchema",
+
+                    "type": "object",
+                    "properties": {
+                        "foo": { "type": "string" }
+                    },
+                    "$dynamicRef": "addons",
+                    "unevaluatedProperties": false
+                }
+            }
+        },
+        "tests": [
+            {
+                "description": "with no unevaluated properties",
+                "data": {
+                    "foo": "foo",
+                    "bar": "bar"
+                },
+                "valid": true
+            },
+            {
+                "description": "with unevaluated properties",
+                "data": {
+                    "foo": "foo",
+                    "bar": "bar",
+                    "baz": "baz"
+                },
+                "valid": false
+            }
+        ]
+    },
+    {
         "description": "unevaluatedProperties can't see inside cousins",
         "schema": {
             "allOf": [

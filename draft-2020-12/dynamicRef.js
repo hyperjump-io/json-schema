@@ -12,16 +12,17 @@ const compile = async (dynamicRef, ast) => {
   return [referencedSchema.id, fragment, Schema.uri(referencedSchema)];
 };
 
-const interpret = ([id, fragment, ref], instance, ast, dynamicAnchors, quiet) => {
+const evaluate = (strategy) => ([id, fragment, ref], instance, ast, dynamicAnchors, quiet) => {
   if (fragment in ast.metaData[id].dynamicAnchors) {
     dynamicAnchors = { ...ast.metaData[id].dynamicAnchors, ...dynamicAnchors };
-    return Validation.interpret(dynamicAnchors[fragment], instance, ast, dynamicAnchors, quiet);
+    return strategy(dynamicAnchors[fragment], instance, ast, dynamicAnchors, quiet);
   } else {
-    return Validation.interpret(ref, instance, ast, dynamicAnchors, quiet);
+    return strategy(ref, instance, ast, dynamicAnchors, quiet);
   }
 };
 
-const collectEvaluatedProperties = Validation.collectEvaluatedProperties;
-const collectEvaluatedItems = Validation.collectEvaluatedItems;
+const interpret = evaluate(Validation.interpret);
+const collectEvaluatedProperties = evaluate(Validation.collectEvaluatedProperties);
+const collectEvaluatedItems = evaluate(Validation.collectEvaluatedItems);
 
 export default { id, compile, interpret, collectEvaluatedProperties, collectEvaluatedItems };
