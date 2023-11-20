@@ -26,9 +26,11 @@ const skip: Set<string> = new Set([
   // no way to know whether a location is a schema or not. Especially since this
   // isn't a real problem that comes up with real schemas, I'm not concerned
   // about making it work.
-  "|draft4|ref.json|naive replacement of $ref with its destination is not correct",
+  "|draft4|ref.json|naive replacement of $ref with its destination is not correct"
+]);
 
-  // Skip tests with keywords that OpenAPI 3.0 doesn't support
+// Ignore tests with keywords that OpenAPI 3.0 doesn't support
+const ignore: Set<string> = new Set([
   "|draft4|additionalItems.json",
   "|draft4|additionalProperties.json|additionalProperties being false does not allow other properties",
   "|draft4|additionalProperties.json|non-ASCII pattern with additionalProperties",
@@ -92,6 +94,17 @@ const shouldSkip = (path: string[]): boolean => {
   return false;
 };
 
+const shouldIgnore = (path: string[]): boolean => {
+  let key = "";
+  for (const segment of path) {
+    key = `${key}|${segment}`;
+    if (ignore.has(key)) {
+      return true;
+    }
+  }
+  return false;
+};
+
 const testSuitePath = "./node_modules/json-schema-test-suite";
 
 const addRemotes = (dialectId: string, filePath = `${testSuitePath}/remotes`, url = "") => {
@@ -143,7 +156,7 @@ const runTestSuite = (draft: string, dialectId: string) => {
               suite.tests.forEach((test) => {
                 if (shouldSkip([draft, entry.name, suite.description, test.description])) {
                   it.skip(test.description, () => { /* empty */ });
-                } else {
+                } else if (!shouldIgnore([draft, entry.name, suite.description, test.description])) {
                   it(test.description, () => {
                     const output = validate(test.data);
                     expect(output.valid).to.equal(test.valid);
