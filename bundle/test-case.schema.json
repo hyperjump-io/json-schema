@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+  "title": "Test Case",
+  "type": "object",
+  "properties": {
+    "description": { "type": "string" },
+    "compatibility": {
+      "type": "string",
+      "examples": [
+        "7",
+        "2020",
+        "<=2019",
+        "6,<=2019",
+        "=2020"
+      ]
+    },
+    "schema": {
+      "type": "object"
+    },
+    "externalSchemas": {
+      "type": "object",
+      "patternProperties": {
+        "": {
+          "description": "a JSON Schema",
+          "type": ["object", "boolean"]
+        }
+      },
+      "propertyNames": {
+        "description": "Retrieval URI for the schema",
+        "format": "uri"
+      }
+    },
+    "tests": {
+      "type": "array",
+      "items": { "$ref": "./test.schema.json" }
+    }
+  },
+}

@@ -1,0 +1,866 @@
+[
+  {
+    "description": "No external references",
+    "schema": {
+      "type": "string"
+    },
+    "tests": [
+      {
+        "description": "valid",
+        "instance": "foo"
+      },
+      {
+        "description": "invalid",
+        "instance": 42
+      }
+    ]
+  },
+  {
+    "description": "One external reference",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "foo": { "$ref": "/string" }
+      }
+    },
+    "tests": [
+      {
+        "description": "valid",
+        "instance": { "foo": "is a string" }
+      },
+      {
+        "description": "invalid",
+        "instance": { "foo": 42 }
+      }
+    ]
+  },
+  {
+    "description": "Multiple external references",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "foo": { "$ref": "/string" },
+        "bar": { "$ref": "/number" }
+      }
+    },
+    "tests": [
+      {
+        "description": "valid",
+        "instance": {
+          "foo": "is a string",
+          "bar": 42
+        }
+      },
+      {
+        "description": "invalid foo",
+        "instance": { "foo": 42 }
+      },
+      {
+        "description": "invalid bar",
+        "instance": { "bar": "is a string" }
+      }
+    ]
+  },
+  {
+    "description": "Recursive schema",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "tree": { "$ref": "https://test.json-schema.org/tree" }
+      }
+    },
+    "externalSchemas": {
+      "https://test.json-schema.org/tree": {
+        "type": "object",
+        "properties": {
+          "leaf": {},
+          "branch": { "$ref": "#" }
+        }
+      }
+    },
+    "tests": [
+      {
+        "description": "valid",
+        "instance": {
+          "tree": {
+            "leaf": "foo",
+            "branch": {
+              "leaf": 42
+            }
+          }
+        }
+      },
+      {
+        "description": "invalid",
+        "instance": {
+          "tree": {
+            "leaf": "foo",
+            "branch": 42
+          }
+        }
+      }
+    ]
+  },
+  {
+    "description": "Internal reference to external reference",
+    "compatibility": "2019",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "foo": { "$ref": "#/$defs/string" }
+      },
+      "$defs": {
+        "string": { "$ref": "/string" }
+      }
+    },
+    "tests": [
+      {
+        "description": "valid",
+        "instance": { "foo": "is a string" }
+      },
+      {
+        "description": "invalid",
+        "instance": { "foo": 42 }
+      }
+    ]
+  },
+  {
+    "description": "Anchor reference to external reference",
+    "compatibility": "2019",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "foo": { "$ref": "#string" }
+      },
+      "$defs": {
+        "string": {
+          "$anchor": "string",
+          "$ref": "/string"
+        }
+      }
+    },
+    "tests": [
+      {
+        "description": "valid",
+        "instance": { "foo": "is a string" }
+      },
+      {
+        "description": "invalid",
+        "instance": { "foo": 42 }
+      }
+    ]
+  },
+  {
+    "description": "External schema with $id",
+    "compatibility": "6",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "foo": { "$ref": "/string" }
+      }
+    },
+    "externalSchemas": {
+      "": {
+        "$id": "https://test.json-schema.org/string",
+
+        "type": "string"
+      }
+    },
+    "tests": [
+      {
+        "description": "valid",
+        "instance": { "foo": "is a string" }
+      },
+      {
+        "description": "invalid",
+        "instance": { "foo": 42 }
+      }
+    ]
+  },
+  {
+    "description": "External schema with relative $id",
+    "compatibility": "6",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "foo": { "$ref": "/string" }
+      }
+    },
+    "externalSchemas": {
+      "https://test.json-schema.org/string": {
+        "$id": "/string",
+
+        "type": "string"
+      }
+    },
+    "tests": [
+      {
+        "description": "valid",
+        "instance": { "foo": "is a string" }
+      },
+      {
+        "description": "invalid",
+        "instance": { "foo": 42 }
+      }
+    ]
+  },
+  {
+    "description": "External reference to a different dialect",
+    "compatibility": "2020",
+    "requiredDialects": [2019],
+    "schema": {
+      "type": "object",
+      "properties": {
+        "foo": { "$ref": "https://test.json-schema.org/tuple" }
+      }
+    },
+    "externalSchemas": {
+      "https://test.json-schema.org/tuple": {
+        "$schema": "https://json-schema.org/draft/2019-09/schema",
+
+        "type": "array",
+        "items": [{ "type": "string" }]
+      }
+    },
+    "tests": [
+      {
+        "description": "valid",
+        "instance": {
+          "foo": ["is a string"]
+        }
+      },
+      {
+        "description": "invalid",
+        "instance": {
+          "foo": [42]
+        }
+      }
+    ]
+  },
+  {
+    "description": "With embedded schema",
+    "compatibility": "6",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "foo": { "$ref": "/string" },
+        "bar": { "$ref": "/number" }
+      },
+
+      "$defs": {
+        "string": {
+          "$id": "https://test.json-schema.org/string",
+
+          "type": "string"
+        }
+      }
+    },
+    "tests": [
+      {
+        "description": "valid",
+        "instance": {
+          "foo": "is a string",
+          "bar": 42
+        }
+      },
+      {
+        "description": "invalid foo",
+        "instance": {
+          "foo": 42
+        }
+      },
+      {
+        "description": "invalid bar",
+        "instance": {
+          "bar": "is a string"
+        }
+      }
+    ]
+  },
+  {
+    "description": "With embedded schema with relative $id",
+    "compatibility": "6",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "foo": { "$ref": "/string" },
+        "bar": { "$ref": "/number" }
+      },
+
+      "$defs": {
+        "string": {
+          "$id": "/string",
+
+          "type": "string"
+        }
+      }
+    },
+    "tests": [
+      {
+        "description": "valid",
+        "instance": {
+          "foo": "is a string",
+          "bar": 42
+        }
+      },
+      {
+        "description": "invalid foo",
+        "instance": {
+          "foo": 42
+        }
+      },
+      {
+        "description": "invalid bar",
+        "instance": {
+          "bar": "is a string"
+        }
+      }
+    ]
+  },
+  {
+    "description": "Bundle schema with embedded schemas",
+    "compatibility": "6",
+    "schema": {
+      "allOf": [{ "$ref": "https://test.json-schema.org/foo" }],
+      "properties": {
+        "bar": { "$ref": "/number" }
+      }
+    },
+    "externalSchemas": {
+      "https://test.json-schema.org/foo": {
+        "type": "object",
+        "properties": {
+          "foo": { "$ref": "/string" }
+        },
+
+        "$defs": {
+          "string": {
+            "$id": "https://test.json-schema.org/string",
+
+            "type": "string"
+          }
+        }
+      }
+    },
+    "tests": [
+      {
+        "description": "valid",
+        "instance": {
+          "foo": "is a string",
+          "bar": 42
+        }
+      },
+      {
+        "description": "invalid foo",
+        "instance": {
+          "foo": 42
+        }
+      },
+      {
+        "description": "invalid bar",
+        "instance": {
+          "bar": "is a string"
+        }
+      }
+    ]
+  },
+  {
+    "description": "Bundle schema with embedded schemas with relative $id",
+    "compatibility": "6",
+    "schema": {
+      "allOf": [{ "$ref": "https://test.json-schema.org/foo" }],
+      "properties": {
+        "bar": { "$ref": "/number" }
+      }
+    },
+    "externalSchemas": {
+      "https://test.json-schema.org/foo": {
+        "type": "object",
+        "properties": {
+          "foo": { "$ref": "/string" }
+        },
+
+        "$defs": {
+          "string": {
+            "$id": "/string",
+
+            "type": "string"
+          }
+        }
+      }
+    },
+    "tests": [
+      {
+        "description": "valid",
+        "instance": {
+          "foo": "is a string",
+          "bar": 42
+        }
+      },
+      {
+        "description": "invalid foo",
+        "instance": {
+          "foo": 42
+        }
+      },
+      {
+        "description": "invalid bar",
+        "instance": {
+          "bar": "is a string"
+        }
+      }
+    ]
+  },
+  {
+    "description": "Bundle with deeply embedded schemas",
+    "compatibility": "6",
+    "schema": {
+      "allOf": [{ "$ref": "https://test.json-schema.org/foobar" }]
+    },
+    "externalSchemas": {
+      "https://test.json-schema.org/foobar": {
+        "allOf": [{ "$ref": "/foo" }],
+        "properties": {
+          "bar": { "$ref": "/number" }
+        },
+
+        "$defs": {
+          "https://test.json-schema.org/foo": {
+            "$id": "https://test.json-schema.org/foo",
+
+            "type": "object",
+            "properties": {
+              "foo": { "$ref": "/string" }
+            },
+
+            "$defs": {
+              "string": {
+                "$id": "https://test.json-schema.org/string",
+
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "https://test.json-schema.org/number": {
+        "type": "number"
+      }
+    },
+    "tests": [
+      {
+        "description": "valid",
+        "instance": {
+          "foo": "is a string",
+          "bar": 42
+        }
+      },
+      {
+        "description": "invalid foo",
+        "instance": {
+          "foo": 42
+        }
+      },
+      {
+        "description": "invalid bar",
+        "instance": {
+          "bar": "is a string"
+        }
+      }
+    ]
+  },
+  {
+    "description": "Bundle schema from additionalProperties",
+    "schema": {
+      "additionalProperties": { "$ref": "/string" }
+    },
+    "tests": [
+      {
+        "description": "valid",
+        "instance": { "foo": "" }
+      },
+      {
+        "description": "invalid",
+        "instance": { "foo": 42 }
+      }
+    ]
+  },
+  {
+    "description": "Bundle schema from allOf",
+    "compatibility": "4",
+    "schema": {
+      "allOf": [{ "$ref": "/string" }]
+    },
+    "tests": [
+      {
+        "description": "valid",
+        "instance": "foo"
+      },
+      {
+        "description": "invalid",
+        "instance": 42
+      }
+    ]
+  },
+  {
+    "description": "Bundle schema from anyOf",
+    "compatibility": "4",
+    "schema": {
+      "anyOf": [{ "$ref": "/string" }]
+    },
+    "tests": [
+      {
+        "description": "valid",
+        "instance": "foo"
+      },
+      {
+        "description": "invalid",
+        "instance": 42
+      }
+    ]
+  },
+  {
+    "description": "Bundle schema from contains",
+    "compatibility": "6",
+    "schema": {
+      "contains": { "$ref": "/string" }
+    },
+    "tests": [
+      {
+        "description": "valid",
+        "instance": ["foo"]
+      },
+      {
+        "description": "invalid",
+        "instance": [42]
+      }
+    ]
+  },
+  {
+    "description": "Bundle schema from dependentSchemas",
+    "compatibility": "2019",
+    "schema": {
+      "dependentSchemas": {
+        "foo": {
+          "properties": {
+            "bar": { "$ref": "/string" }
+          }
+        }
+      }
+    },
+    "tests": [
+      {
+        "description": "valid",
+        "instance": { "foo": true, "bar": "" }
+      },
+      {
+        "description": "invalid",
+        "instance": { "foo": true, "bar": 42 }
+      }
+    ]
+  },
+  {
+    "description": "Bundle schema from if",
+    "compatibility": "7",
+    "schema": {
+      "if": { "$ref": "/string" },
+      "then": { "maxLength": 3 }
+    },
+    "tests": [
+      {
+        "description": "valid",
+        "instance": "foo"
+      },
+      {
+        "description": "valid",
+        "instance": 42
+      },
+      {
+        "description": "invalid",
+        "instance": "foobar"
+      }
+    ]
+  },
+  {
+    "description": "Bundle schema from then",
+    "compatibility": "7",
+    "schema": {
+      "if": { "type": "string" },
+      "then": { "$ref": "https://test.json-schema.org/short-string" }
+    },
+    "externalSchemas": {
+      "https://test.json-schema.org/short-string": {
+        "maxLength": 3
+      }
+    },
+    "tests": [
+      {
+        "description": "valid",
+        "instance": "foo"
+      },
+      {
+        "description": "valid",
+        "instance": 42
+      },
+      {
+        "description": "invalid",
+        "instance": "foobar"
+      }
+    ]
+  },
+  {
+    "description": "Bundle schema from else",
+    "compatibility": "7",
+    "schema": {
+      "if": { "type": "number" },
+      "else": { "$ref": "https://test.json-schema.org/short-string" }
+    },
+    "externalSchemas": {
+      "https://test.json-schema.org/short-string": {
+        "type": "string",
+        "maxLength": 3
+      }
+    },
+    "tests": [
+      {
+        "description": "valid",
+        "instance": "foo"
+      },
+      {
+        "description": "valid",
+        "instance": 42
+      },
+      {
+        "description": "invalid",
+        "instance": "foobar"
+      }
+    ]
+  },
+  {
+    "description": "Bundle schema from items",
+    "schema": {
+      "items": { "$ref": "/string" }
+    },
+    "tests": [
+      {
+        "description": "valid",
+        "instance": ["foo"]
+      },
+      {
+        "description": "invalid",
+        "instance": [42]
+      }
+    ]
+  },
+  {
+    "description": "Bundle schema from not",
+    "compatibility": "4",
+    "schema": {
+      "not": { "$ref": "/string" }
+    },
+    "tests": [
+      {
+        "description": "valid",
+        "instance": 42
+      },
+      {
+        "description": "invalid",
+        "instance": "foo"
+      }
+    ]
+  },
+  {
+    "description": "Bundle schema from oneOf",
+    "compatibility": "4",
+    "schema": {
+      "oneOf": [{ "$ref": "/string" }]
+    },
+    "tests": [
+      {
+        "description": "valid",
+        "instance": "foo"
+      },
+      {
+        "description": "invalid",
+        "instance": 42
+      }
+    ]
+  },
+  {
+    "description": "Bundle schema from patternProperties",
+    "schema": {
+      "patternProperties": {
+        "": { "$ref": "/string" }
+      }
+    },
+    "tests": [
+      {
+        "description": "valid",
+        "instance": { "foo": "" }
+      },
+      {
+        "description": "invalid",
+        "instance": { "foo": 42 }
+      }
+    ]
+  },
+  {
+    "description": "Bundle schema from prefixItems",
+    "compatibility": "2020",
+    "schema": {
+      "prefixItems": [{ "$ref": "/string" }]
+    },
+    "tests": [
+      {
+        "description": "valid",
+        "instance": ["foo"]
+      },
+      {
+        "description": "invalid",
+        "instance": [42]
+      }
+    ]
+  },
+  {
+    "description": "Bundle schema from properties",
+    "schema": {
+      "properties": {
+        "foo": { "$ref": "/string" }
+      }
+    },
+    "tests": [
+      {
+        "description": "valid",
+        "instance": { "foo": "" }
+      },
+      {
+        "description": "invalid",
+        "instance": { "foo": 42 }
+      }
+    ]
+  },
+  {
+    "description": "Bundle schema from propertyNames",
+    "compatibility": "6",
+    "schema": {
+      "propertyNames": { "$ref": "https://test.json-schema.org/short-string" }
+    },
+    "externalSchemas": {
+      "https://test.json-schema.org/short-string": {
+        "maxLength": 3
+      }
+    },
+    "tests": [
+      {
+        "description": "valid",
+        "instance": { "foo": "" }
+      },
+      {
+        "description": "invalid",
+        "instance": { "foobar": "" }
+      }
+    ]
+  },
+  {
+    "description": "Bundle schema from unevaluatedItems",
+    "compatibility": "2019",
+    "schema": {
+      "unevaluatedItems": { "$ref": "/string" }
+    },
+    "tests": [
+      {
+        "description": "valid",
+        "instance": ["foo"]
+      },
+      {
+        "description": "invalid",
+        "instance": [42]
+      }
+    ]
+  },
+  {
+    "description": "Bundle schema from unevaluatedProperties",
+    "compatibility": "2019",
+    "schema": {
+      "unevaluatedProperties": { "$ref": "/string" }
+    },
+    "tests": [
+      {
+        "description": "valid",
+        "instance": { "foo": "" }
+      },
+      {
+        "description": "invalid",
+        "instance": { "foo": 42 }
+      }
+    ]
+  },
+  {
+    "description": "Bundle schema from $dynamicRef",
+    "compatibility": "=2020",
+    "schema": {
+      "$ref": "https://test.json-schema.org/list",
+
+      "$defs": {
+        "element": {
+          "$dynamicAnchor": "element",
+          "type": "string"
+        }
+      }
+    },
+    "externalSchemas": {
+      "https://test.json-schema.org/list": {
+        "type": "array",
+        "items": { "$dynamicRef": "#element" },
+
+        "$defs": {
+          "default-element": {
+            "$comment": "This is only need to satisfy the bookending requirement",
+            "$dynamicAnchor": "element",
+            "allOf": [false]
+          }
+        }
+      }
+    },
+    "tests": [
+      {
+        "description": "valid",
+        "instance": ["foo"]
+      },
+      {
+        "description": "invalid",
+        "instance": [42]
+      }
+    ]
+  },
+  {
+    "description": "Bundle schema from $dynamicRef",
+    "compatibility": "9999",
+    "schema": {
+      "$ref": "https://test.json-schema.org/list",
+
+      "$defs": {
+        "element": {
+          "$dynamicAnchor": "element",
+          "type": "string"
+        }
+      }
+    },
+    "externalSchemas": {
+      "https://test.json-schema.org/list": {
+        "type": "array",
+        "items": { "$dynamicRef": "element" }
+      }
+    },
+    "tests": [
+      {
+        "description": "valid",
+        "instance": ["foo"]
+      },
+      {
+        "description": "invalid",
+        "instance": [42]
+      }
+    ]
+  }
+]

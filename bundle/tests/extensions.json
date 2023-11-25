@@ -1,0 +1,86 @@
+[
+  {
+    "description": "Bundle schema from propertyDependencies",
+    "compatibility": "9999",
+    "schema": {
+      "type": "object",
+      "propertyDependencies": {
+        "foo": {
+          "bar": { "$ref": "https://test.json-schema.org/require-baz" }
+        }
+      }
+    },
+    "externalSchemas": {
+      "https://test.json-schema.org/require-baz": {
+        "required": ["baz"]
+      }
+    },
+    "tests": [
+      {
+        "description": "valid",
+        "instance": {
+          "foo": "not bar"
+        }
+      },
+      {
+        "description": "valid",
+        "instance": {
+          "foo": "bar",
+          "baz": 42
+        }
+      },
+      {
+        "description": "invalid",
+        "instance": {
+          "foo": "bar"
+        }
+      }
+    ]
+  },
+  {
+    "description": "Bundle schema from itemPattern",
+    "compatibility": "9999",
+    "schema": {
+      "type": "array",
+      "itemPattern": [
+        { "$ref": "/string" }
+      ]
+    },
+    "tests": [
+      {
+        "description": "valid",
+        "instance": ["foo"]
+      },
+      {
+        "description": "invalid",
+        "instance": {
+          "foo": [42]
+        }
+      }
+    ]
+  },
+  {
+    "description": "Bundle schema from conditional",
+    "compatibility": "9999",
+    "schema": {
+      "conditional": [
+        { "$ref": "/string" },
+        { "maxLength": 3 }
+      ]
+    },
+    "tests": [
+      {
+        "description": "valid",
+        "instance": "foo"
+      },
+      {
+        "description": "valid",
+        "instance": 42
+      },
+      {
+        "description": "invalid",
+        "instance": "foobar"
+      }
+    ]
+  }
+]
