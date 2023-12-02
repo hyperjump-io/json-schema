@@ -8,5 +8,6 @@ bun.lockb
 tsconfig.json
 scratch/
 stable/json-schema-test-suite/
+annotations/tests
 bundle/tests
 lib/json-tests
