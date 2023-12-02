@@ -1,5 +1,5 @@
 import { addKeyword, defineVocabulary, loadDialect } from "../lib/keywords.js";
-import { addSchema } from "../lib/core.js";
+import { registerSchema } from "../lib/index.js";
 
 import metaSchema from "./schema.js";
 import coreMetaSchema from "./meta/core.js";
@@ -111,14 +111,14 @@ loadDialect("https://json-schema.org/draft/2020-12/schema", {
   "https://json-schema.org/draft/2020-12/vocab/unevaluated": true
 }, true);
 
-addSchema(metaSchema);
-addSchema(coreMetaSchema);
-addSchema(applicatorMetaSchema);
-addSchema(validationMetaSchema);
-addSchema(metaDataMetaSchema);
-addSchema(formatAnnotationMetaSchema);
-addSchema(formatAssertionMetaSchema);
-addSchema(contentMetaSchema);
-addSchema(unevaluatedMetaSchema);
+registerSchema(metaSchema);
+registerSchema(coreMetaSchema);
+registerSchema(applicatorMetaSchema);
+registerSchema(validationMetaSchema);
+registerSchema(metaDataMetaSchema);
+registerSchema(formatAnnotationMetaSchema);
+registerSchema(formatAssertionMetaSchema);
+registerSchema(contentMetaSchema);
+registerSchema(unevaluatedMetaSchema);
 
 export * from "../lib/index.js";

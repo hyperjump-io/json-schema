@@ -1,5 +1,5 @@
 import { defineVocabulary, loadDialect } from "../lib/keywords.js";
-import { addSchema } from "../lib/core.js";
+import { registerSchema } from "../lib/index.js";
 
 import metaSchema from "./validation.js";
 import coreMetaSchema from "./meta/core.js";
@@ -108,14 +108,14 @@ loadDialect(dialectId, {
   "https://json-schema.org/vocab/unevaluated": true
 });
 
-addSchema(metaSchema, dialectId);
-addSchema(coreMetaSchema, "https://json-schema.org/meta/core");
-addSchema(applicatorMetaSchema, "https://json-schema.org/meta/applicator");
-addSchema(validationMetaSchema, "https://json-schema.org/meta/validation");
-addSchema(metaDataMetaSchema, "https://json-schema.org/meta/meta-data");
-addSchema(formatAnnotationMetaSchema, "https://json-schema.org/meta/format-annotation");
-addSchema(formatAssertionMetaSchema, "https://json-schema.org/meta/format-assertion");
-addSchema(contentMetaSchema, "https://json-schema.org/meta/content");
-addSchema(unevaluatedMetaSchema, "https://json-schema.org/meta/unevaluated");
+registerSchema(metaSchema, dialectId);
+registerSchema(coreMetaSchema, "https://json-schema.org/meta/core");
+registerSchema(applicatorMetaSchema, "https://json-schema.org/meta/applicator");
+registerSchema(validationMetaSchema, "https://json-schema.org/meta/validation");
+registerSchema(metaDataMetaSchema, "https://json-schema.org/meta/meta-data");
+registerSchema(formatAnnotationMetaSchema, "https://json-schema.org/meta/format-annotation");
+registerSchema(formatAssertionMetaSchema, "https://json-schema.org/meta/format-assertion");
+registerSchema(contentMetaSchema, "https://json-schema.org/meta/content");
+registerSchema(unevaluatedMetaSchema, "https://json-schema.org/meta/unevaluated");
 
 export * from "../lib/index.js";

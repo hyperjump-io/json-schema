@@ -1,9 +1,8 @@
 import { createHmac } from "node:crypto";
 import { readFileSync, readdirSync } from "node:fs";
 import { basename, relative } from "node:path";
-import { resolveIri } from "@hyperjump/uri";
 import { getKeywordName } from "../lib/keywords.js";
-import { addSchema } from "../lib/index.js";
+import { registerSchema, unregisterSchema } from "../lib/index.js";
 
 
 export const testSuite = (path) => {
@@ -80,28 +79,25 @@ export const loadSchemas = (testCase, retrievalUri, dialect) => {
     schema[definitionsToken] = {};
   }
 
-  addSchema(schema, retrievalUri, dialect);
+  registerSchema(schema, retrievalUri, dialect);
 
   for (const retrievalUri in fixtures) {
-    addSchema(fixtures[retrievalUri], retrievalUri, dialect);
+    registerSchema(fixtures[retrievalUri], retrievalUri, dialect);
   }
 
   for (const retrievalUri in testCase.externalSchemas) {
-    addSchema(testCase.externalSchemas[retrievalUri], retrievalUri, dialect);
+    registerSchema(testCase.externalSchemas[retrievalUri], retrievalUri, dialect);
   }
 };
 
-export const unloadSchemas = (testCase, retrievalUri, dialect) => {
-  addSchema(false, retrievalUri, dialect);
+export const unloadSchemas = (testCase, retrievalUri) => {
+  unregisterSchema(retrievalUri);
 
   for (const retrievalUri in fixtures) {
-    addSchema(false, retrievalUri, dialect);
+    unregisterSchema(retrievalUri);
   }
 
   for (const retrievalUri in testCase.externalSchemas) {
-    const id = resolveIri(testCase.externalSchemas[retrievalUri]?.$id
-      ?? testCase.externalSchemas[retrievalUri]?.id
-      ?? "", retrievalUri);
-    addSchema(false, id, dialect);
+    unregisterSchema(retrievalUri || testCase.externalSchemas[retrievalUri]?.$id || testCase.externalSchemas[retrievalUri]?.id);
   }
 };

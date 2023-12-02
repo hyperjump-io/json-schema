@@ -1,5 +1,5 @@
 import type { Json } from "@hyperjump/json-pointer";
-import type { SchemaObject } from "../lib/schema.js";
+import type { SchemaObject } from "../lib/index.js";
 
 
 type TestCase = {

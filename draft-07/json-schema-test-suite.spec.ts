@@ -1,8 +1,9 @@
-/* eslint-disable no-console */
-import fs from "fs";
-import { describe, it, expect, beforeAll } from "vitest";
-import * as JsonSchema from "./index.js";
-import type { JsonSchemaDraft07, Validator } from "./index.js";
+import fs from "node:fs";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { toAbsoluteIri } from "@hyperjump/uri";
+import { registerSchema, unregisterSchema, validate } from "./index.js";
+
+import type { JsonSchemaDraft07, SchemaObject, Validator } from "./index.js";
 
 
 type Suite = {
@@ -33,10 +34,12 @@ const skip: Set<string> = new Set([
   // no way to know whether a location is a schema or not. Especially since this
   // isn't a real problem that comes up with real schemas, I'm not concerned
   // about making it work.
-  "|draft7|id.json|id inside an enum is not a real identifier",
-  "|draft7|unknownKeyword.json|$id inside an unknown keyword is not a real identifier",
   "|draft7|ref.json|naive replacement of $ref with its destination is not correct",
-  "|draft7|ref.json|$ref prevents a sibling $id from changing the base uri"
+  "|draft7|ref.json|$ref prevents a sibling $id from changing the base uri",
+
+  // Self-identifying with a `file:` URI is not allowed for security reasons.
+  "|draft7|ref.json|$id with file URI still resolves pointers - *nix",
+  "|draft7|ref.json|$id with file URI still resolves pointers - windows"
 ]);
 
 const shouldSkip = (path: string[]): boolean => {
@@ -56,11 +59,9 @@ const addRemotes = (dialectId: string, filePath = `${testSuitePath}/remotes`, ur
   fs.readdirSync(filePath, { withFileTypes: true })
     .forEach((entry) => {
       if (entry.isFile() && entry.name.endsWith(".json")) {
-        const remote = JSON.parse(fs.readFileSync(`${filePath}/${entry.name}`, "utf8")) as JsonSchemaDraft07;
-        try {
-          JsonSchema.addSchema(remote, `http://localhost:1234${url}/${entry.name}`, dialectId);
-        } catch (error: unknown) {
-          console.log(`WARNING: Failed to load remote 'http://localhost:1234${url}/${entry.name}'`);
+        const remote = JSON.parse(fs.readFileSync(`${filePath}/${entry.name}`, "utf8")) as SchemaObject;
+        if (!remote.$schema || toAbsoluteIri(remote.$schema as string) === dialectId) {
+          registerSchema(remote, `http://localhost:1234${url}/${entry.name}`, dialectId);
         }
       } else if (entry.isDirectory()) {
         addRemotes(dialectId, `${filePath}/${entry.name}`, `${url}/${entry.name}`);
@@ -86,17 +87,21 @@ const runTestSuite = (draft: string, dialectId: string) => {
 
           suites.forEach((suite) => {
             describe(suite.description, () => {
-              let validate: Validator;
+              let _validate: Validator;
+              let url: string;
 
               beforeAll(async () => {
                 if (shouldSkip([draft, entry.name, suite.description])) {
                   return;
                 }
-                const url = (typeof suite.schema !== "boolean" && !("$ref" in suite.schema) && suite.schema.$id)
-                  || `http://${draft}-test-suite.json-schema.org/${encodeURIComponent(suite.description)}`;
-                JsonSchema.addSchema(suite.schema, url, dialectId);
+                url = `http://${draft}-test-suite.json-schema.org/${encodeURIComponent(suite.description)}`;
+                registerSchema(suite.schema, url, dialectId);
 
-                validate = await JsonSchema.validate(url);
+                _validate = await validate(url);
+              });
+
+              afterAll(() => {
+                unregisterSchema(url);
               });
 
               suite.tests.forEach((test) => {
@@ -104,7 +109,7 @@ const runTestSuite = (draft: string, dialectId: string) => {
                   it.skip(test.description, () => { /* empty */ });
                 } else {
                   it(test.description, () => {
-                    const output = validate(test.data);
+                    const output = _validate(test.data);
                     expect(output.valid).to.equal(test.valid);
                   });
                 }

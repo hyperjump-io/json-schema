@@ -1,8 +1,7 @@
 import { pipe, filter, reduce, zip, range, map, collectSet } from "@hyperjump/pact";
+import * as Browser from "@hyperjump/browser";
 import * as Instance from "../lib/instance.js";
-import * as Schema from "../lib/schema.js";
-import { getKeywordName } from "../lib/keywords.js";
-import Validation from "../lib/keywords/validation.js";
+import { getKeywordName, Validation } from "../lib/experimental.js";
 
 
 const id = "https://json-schema.org/keyword/draft-2019-09/contains";
@@ -10,19 +9,19 @@ const id = "https://json-schema.org/keyword/draft-2019-09/contains";
 const compile = async (schema, ast, parentSchema) => {
   const contains = await Validation.compile(schema, ast);
 
-  const minContainsKeyword = getKeywordName(schema.dialectId, "https://json-schema.org/keyword/minContains");
-  const minContainsSchema = await Schema.step(minContainsKeyword, parentSchema);
-  const minContains = Schema.typeOf(minContainsSchema, "number") ? Schema.value(minContainsSchema) : 1;
+  const minContainsKeyword = getKeywordName(schema.document.dialectId, "https://json-schema.org/keyword/minContains");
+  const minContainsSchema = await Browser.step(minContainsKeyword, parentSchema);
+  const minContains = Browser.typeOf(minContainsSchema) === "number" ? Browser.value(minContainsSchema) : 1;
 
-  const maxContainsKeyword = getKeywordName(schema.dialectId, "https://json-schema.org/keyword/maxContains");
-  const maxContainsSchema = await Schema.step(maxContainsKeyword, parentSchema);
-  const maxContains = Schema.typeOf(maxContainsSchema, "number") ? Schema.value(maxContainsSchema) : Number.MAX_SAFE_INTEGER;
+  const maxContainsKeyword = getKeywordName(schema.document.dialectId, "https://json-schema.org/keyword/maxContains");
+  const maxContainsSchema = await Browser.step(maxContainsKeyword, parentSchema);
+  const maxContains = Browser.typeOf(maxContainsSchema) === "number" ? Browser.value(maxContainsSchema) : Number.MAX_SAFE_INTEGER;
 
   return { contains, minContains, maxContains };
 };
 
 const interpret = ({ contains, minContains, maxContains }, instance, ast, dynamicAnchors, quiet) => {
-  const matches = !Instance.typeOf(instance, "array") || pipe(
+  const matches = Instance.typeOf(instance) !== "array" || pipe(
     Instance.iter(instance),
     filter((item) => Validation.interpret(contains, item, ast, dynamicAnchors, quiet)),
     reduce((matches) => matches + 1, 0)
@@ -32,7 +31,7 @@ const interpret = ({ contains, minContains, maxContains }, instance, ast, dynami
 
 const collectEvaluatedItems = (keywordValue, instance, ast, dynamicAnchors) => {
   return interpret(keywordValue, instance, ast, dynamicAnchors, true)
-    && Instance.typeOf(instance, "array")
+    && Instance.typeOf(instance) === "array"
     && pipe(
       zip(Instance.iter(instance), range(0)),
       filter(([item]) => Validation.interpret(keywordValue.contains, item, ast, dynamicAnchors, true)),

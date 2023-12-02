@@ -1,4 +1,4 @@
-import type { OutputFormat } from "../lib/core.js";
+import type { OutputFormat, OutputUnit } from "../lib/index.js";
 import type { AnnotatedJsonDocument } from "./annotated-instance.js";
 
 
@@ -9,3 +9,9 @@ export const annotate: (
 );
 
 export type Annotator = (value: unknown, outputFormat?: OutputFormat) => AnnotatedJsonDocument;
+
+export class ValidationError extends Error {
+  public output: OutputUnit;
+
+  public constructor(output: OutputUnit);
+}

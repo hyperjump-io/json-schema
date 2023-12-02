@@ -1,9 +1,6 @@
-/* eslint-disable no-console */
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
-import { describe, it, expect, beforeAll } from "vitest";
-import { addSchema, validate } from "./index.js";
+import fs from "node:fs";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { registerSchema, unregisterSchema, validate } from "./index.js";
 import { setExperimentalKeywordEnabled } from "../lib/experimental.js";
 
 import type { JsonSchema, Validator } from "./index.js";
@@ -22,16 +19,12 @@ type Test = {
   valid: boolean;
 };
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 // Tests are only skipped if I have good reason to decide not to fix them. This
 // is usually because there has been some tradeoff I've made to not support
 // something that doesn't come up in real schemas in favor of something that has
 // value.
 const skip: Set<string> = new Set([
-  "anchor.json|$anchor inside an enum is not a real identifier",
-  "id.json|$id inside an enum is not a real identifier"
+  // "filename.json|description"
 ]);
 
 const shouldSkip = (path: string[]): boolean => {
@@ -49,14 +42,14 @@ const shouldSkip = (path: string[]): boolean => {
 };
 
 const dialectId = "https://json-schema.org/validation";
-const testSuitePath = `${__dirname}/json-schema-test-suite`;
+const testSuitePath = `./stable/json-schema-test-suite`;
 
 const addRemotes = (filePath = `${testSuitePath}/remotes`, url = "") => {
   fs.readdirSync(filePath, { withFileTypes: true })
     .forEach((entry) => {
       if (entry.isFile() && entry.name.endsWith(".json")) {
         const remote = JSON.parse(fs.readFileSync(`${filePath}/${entry.name}`, "utf8")) as JsonSchema;
-        addSchema(remote, `http://localhost:1234${url}/${entry.name}`, dialectId);
+        registerSchema(remote, `http://localhost:1234${url}/${entry.name}`, dialectId);
       } else if (entry.isDirectory()) {
         addRemotes(`${filePath}/${entry.name}`, `${url}/${entry.name}`);
       }
@@ -82,18 +75,21 @@ const runTestSuite = () => {
           suites.forEach((suite) => {
             describe(suite.description, () => {
               let _validate: Validator;
+              let schemaId: string;
               const skipPath = [entry.name, suite.description];
 
               beforeAll(async () => {
                 if (shouldSkip(skipPath)) {
                   return;
                 }
-                const path = "/" + encodeURIComponent(suite.description);
-                const url = (typeof suite.schema !== "boolean" && suite.schema.$id)
-                  || `http://test-suite.json-schema.org${path}`;
-                addSchema(suite.schema, url, dialectId);
 
-                _validate = await validate(url);
+                schemaId = `http://test-suite.json-schema.org/${encodeURIComponent(suite.description)}`;
+                registerSchema(suite.schema, schemaId, dialectId);
+                _validate = await validate(schemaId);
+              });
+
+              afterAll(() => {
+                unregisterSchema(schemaId);
               });
 
               suite.tests.forEach((test) => {

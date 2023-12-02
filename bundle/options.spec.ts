@@ -1,7 +1,7 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { bundle } from "./index.js";
-import { addSchema } from "../lib/index.js";
-import { getKeywordName } from "../lib/keywords.js";
+import { registerSchema, unregisterSchema } from "../lib/index.js";
+import { getKeywordName } from "../lib/experimental.js";
 import "../stable/index.js";
 import "../draft-2020-12/index.js";
 import "../draft-2019-09/index.js";
@@ -9,56 +9,78 @@ import "../draft-07/index.js";
 import "../draft-06/index.js";
 import "../draft-04/index.js";
 
-import type { SchemaObject } from "../lib/schema.js";
+import type { SchemaObject } from "../lib/index.js";
 
 
 const testDomain = "https://bundler.hyperjump.io";
 
 const testRunner = (dialect: string) => {
   describe(dialect, () => {
-    it("Schemas in 'externalSchemas' should not be included in the bundle", async () => {
-      addSchema({
-        type: "object",
-        properties: {
-          foo: { $ref: "/string" },
-          bar: { $ref: "/number" }
-        }
-      }, `${testDomain}/main`, dialect);
+    describe("externalSchemas", () => {
+      beforeAll(() => {
+        registerSchema({
+          type: "object",
+          properties: {
+            foo: { $ref: "/string" },
+            bar: { $ref: "/number" }
+          }
+        }, `${testDomain}/main`, dialect);
 
-      addSchema({
-        type: "string"
-      }, `${testDomain}/string`, dialect);
+        registerSchema({
+          type: "string"
+        }, `${testDomain}/string`, dialect);
 
-      addSchema({
-        type: "number"
-      }, `${testDomain}/number`, dialect);
+        registerSchema({
+          type: "number"
+        }, `${testDomain}/number`, dialect);
+      });
 
-      const bundledSchema = await bundle(`${testDomain}/main`, { externalSchemas: [`${testDomain}/string`] });
+      afterAll(() => {
+        unregisterSchema(`${testDomain}/main`);
+        unregisterSchema(`${testDomain}/string`);
+        unregisterSchema(`${testDomain}/number`);
+      });
 
-      const definitionsToken = getKeywordName(dialect, "https://json-schema.org/keyword/definitions");
+      it("should not be included in the bundle", async () => {
+        const bundledSchema = await bundle(`${testDomain}/main`, { externalSchemas: [`${testDomain}/string`] });
 
-      expect(bundledSchema[definitionsToken]).to.not.haveOwnProperty(`${testDomain}/string`);
+        const definitionsToken = getKeywordName(dialect, "https://json-schema.org/keyword/definitions");
+
+        expect(bundledSchema[definitionsToken]).to.not.haveOwnProperty(`${testDomain}/string`);
+      });
     });
 
-    it("$schema should appear in all embedded schemas when 'alwaysIncludeDialect' option is used", async () => {
-      addSchema({
-        type: "object",
-        properties: {
-          foo: { $ref: "/string" }
-        }
-      }, `${testDomain}/main`, dialect);
+    describe("alwaysIncludeDialect", () => {
+      beforeAll(() => {
+        registerSchema({
+          type: "object",
+          properties: {
+            foo: { $ref: "/string" }
+          }
+        }, `${testDomain}/main`, dialect);
 
-      addSchema({
-        type: "string"
-      }, `${testDomain}/string`, dialect);
+        registerSchema({
+          type: "string"
+        }, `${testDomain}/string`, dialect);
+      });
 
-      const bundledSchema = await bundle(`${testDomain}/main`, { alwaysIncludeDialect: true });
+      afterAll(() => {
+        unregisterSchema(`${testDomain}/main`);
+        unregisterSchema(`${testDomain}/string`);
+      });
 
-      const definitionsToken = getKeywordName(dialect, "https://json-schema.org/keyword/definitions");
-      const definitions = bundledSchema[definitionsToken] as Record<string, SchemaObject>;
-      const embeddedSchema = definitions[`${testDomain}/string`];
+      it("$schema should appear in all embedded schemas", async () => {
+        const bundledSchema = await bundle(`${testDomain}/main`, { alwaysIncludeDialect: true });
 
-      expect(embeddedSchema.$schema as string).to.equal(dialect);
+        const definitionsToken = getKeywordName(dialect, "https://json-schema.org/keyword/definitions");
+        const definitions = bundledSchema[definitionsToken] as Record<string, SchemaObject>;
+        const embeddedSchema = definitions.string;
+
+        const legacyIdToken = getKeywordName(dialect, "https://json-schema.org/keyword/draft-04/id");
+        const expectedDialect = legacyIdToken ? dialect + "#" : dialect;
+
+        expect(embeddedSchema.$schema as string).to.equal(expectedDialect);
+      });
     });
   });
 };

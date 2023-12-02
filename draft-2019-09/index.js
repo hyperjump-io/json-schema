@@ -1,5 +1,5 @@
 import { addKeyword, defineVocabulary, loadDialect } from "../lib/keywords.js";
-import { addSchema } from "../lib/core.js";
+import { registerSchema } from "../lib/index.js";
 
 import metaSchema from "./schema.js";
 import coreMetaSchema from "./meta/core.js";
@@ -105,12 +105,12 @@ loadDialect("https://json-schema.org/draft/2019-09/schema", {
   "https://json-schema.org/draft/2019-09/vocab/content": true
 }, true);
 
-addSchema(metaSchema);
-addSchema(coreMetaSchema);
-addSchema(applicatorMetaSchema);
-addSchema(validationMetaSchema);
-addSchema(metaDataMetaSchema);
-addSchema(formatMetaSchema);
-addSchema(contentMetaSchema);
+registerSchema(metaSchema);
+registerSchema(coreMetaSchema);
+registerSchema(applicatorMetaSchema);
+registerSchema(validationMetaSchema);
+registerSchema(metaDataMetaSchema);
+registerSchema(formatMetaSchema);
+registerSchema(contentMetaSchema);
 
 export * from "../lib/index.js";

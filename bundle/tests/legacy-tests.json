@@ -49,7 +49,7 @@
     ]
   },
   {
-    "description": "Anchor reference to external reference (4)",
+    "description": "Anchor reference to external reference (3,4)",
     "compatibility": "<=4",
     "schema": {
       "type": "object",
@@ -137,7 +137,47 @@
     ]
   },
   {
-    "description": "With embedded schema",
+    "description": "With embedded schema (6,7)",
+    "compatibility": "6,<=7",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "foo": { "$ref": "/string" },
+        "bar": { "$ref": "/number" }
+      },
+
+      "definitions": {
+        "string": {
+          "$id": "https://test.json-schema.org/string",
+
+          "type": "string"
+        }
+      }
+    },
+    "tests": [
+      {
+        "description": "valid",
+        "instance": {
+          "foo": "is a string",
+          "bar": 42
+        }
+      },
+      {
+        "description": "invalid foo",
+        "instance": {
+          "foo": 42
+        }
+      },
+      {
+        "description": "invalid bar",
+        "instance": {
+          "bar": "is a string"
+        }
+      }
+    ]
+  },
+  {
+    "description": "With embedded schema (3,4)",
     "compatibility": "<=4",
     "schema": {
       "type": "object",
@@ -146,7 +186,7 @@
         "bar": { "$ref": "/number" }
       },
 
-      "$defs": {
+      "definitions": {
         "string": {
           "id": "https://test.json-schema.org/string",
 
@@ -177,7 +217,47 @@
     ]
   },
   {
-    "description": "With embedded schema with relative id",
+    "description": "With embedded schema with relative id (6,7)",
+    "compatibility": "6,<=7",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "foo": { "$ref": "/string" },
+        "bar": { "$ref": "/number" }
+      },
+
+      "definitions": {
+        "string": {
+          "$id": "/string",
+
+          "type": "string"
+        }
+      }
+    },
+    "tests": [
+      {
+        "description": "valid",
+        "instance": {
+          "foo": "is a string",
+          "bar": 42
+        }
+      },
+      {
+        "description": "invalid foo",
+        "instance": {
+          "foo": 42
+        }
+      },
+      {
+        "description": "invalid bar",
+        "instance": {
+          "bar": "is a string"
+        }
+      }
+    ]
+  },
+  {
+    "description": "With embedded schema with relative id (3,4)",
     "compatibility": "<=4",
     "schema": {
       "type": "object",
@@ -186,7 +266,7 @@
         "bar": { "$ref": "/number" }
       },
 
-      "$defs": {
+      "definitions": {
         "string": {
           "id": "/string",
 
@@ -217,7 +297,54 @@
     ]
   },
   {
-    "description": "Bundle schema with embedded schemas",
+    "description": "Bundle schema with embedded schemas (6,7)",
+    "compatibility": "6,<=7",
+    "schema": {
+      "allOf": [{ "$ref": "https://test.json-schema.org/foo" }],
+      "properties": {
+        "bar": { "$ref": "/number" }
+      }
+    },
+    "externalSchemas": {
+      "https://test.json-schema.org/foo": {
+        "type": "object",
+        "properties": {
+          "foo": { "$ref": "/string" }
+        },
+
+        "definitions": {
+          "string": {
+            "$id": "https://test.json-schema.org/string",
+
+            "type": "string"
+          }
+        }
+      }
+    },
+    "tests": [
+      {
+        "description": "valid",
+        "instance": {
+          "foo": "is a string",
+          "bar": 42
+        }
+      },
+      {
+        "description": "invalid foo",
+        "instance": {
+          "foo": 42
+        }
+      },
+      {
+        "description": "invalid bar",
+        "instance": {
+          "bar": "is a string"
+        }
+      }
+    ]
+  },
+  {
+    "description": "Bundle schema with embedded schemas (3,4)",
     "compatibility": "<=4",
     "schema": {
       "allOf": [{ "$ref": "https://test.json-schema.org/foo" }],
@@ -232,7 +359,7 @@
           "foo": { "$ref": "/string" }
         },
 
-        "$defs": {
+        "definitions": {
           "string": {
             "id": "https://test.json-schema.org/string",
 
@@ -264,7 +391,54 @@
     ]
   },
   {
-    "description": "Bundle schema with embedded schemas with relative id",
+    "description": "Bundle schema with embedded schemas with relative $id (6,7)",
+    "compatibility": "6,<=7",
+    "schema": {
+      "allOf": [{ "$ref": "https://test.json-schema.org/foo" }],
+      "properties": {
+        "bar": { "$ref": "/number" }
+      }
+    },
+    "externalSchemas": {
+      "https://test.json-schema.org/foo": {
+        "type": "object",
+        "properties": {
+          "foo": { "$ref": "/string" }
+        },
+
+        "definitions": {
+          "string": {
+            "$id": "/string",
+
+            "type": "string"
+          }
+        }
+      }
+    },
+    "tests": [
+      {
+        "description": "valid",
+        "instance": {
+          "foo": "is a string",
+          "bar": 42
+        }
+      },
+      {
+        "description": "invalid foo",
+        "instance": {
+          "foo": 42
+        }
+      },
+      {
+        "description": "invalid bar",
+        "instance": {
+          "bar": "is a string"
+        }
+      }
+    ]
+  },
+  {
+    "description": "Bundle schema with embedded schemas with relative id (3,4)",
     "compatibility": "<=4",
     "schema": {
       "allOf": [{ "$ref": "https://test.json-schema.org/foo" }],
@@ -279,7 +453,7 @@
           "foo": { "$ref": "/string" }
         },
 
-        "$defs": {
+        "definitions": {
           "string": {
             "id": "/string",
 
@@ -311,7 +485,7 @@
     ]
   },
   {
-    "description": "Bundle with deeply embedded schemas (definitions)",
+    "description": "Bundle with deeply embedded schemas (6,7)",
     "compatibility": "6,<=7",
     "schema": {
       "allOf": [{ "$ref": "https://test.json-schema.org/foobar" }]
@@ -369,7 +543,7 @@
     ]
   },
   {
-    "description": "Bundle with deeply embedded schemas (id)",
+    "description": "Bundle with deeply embedded schemas (3,4)",
     "compatibility": "<=4",
     "schema": {
       "allOf": [{ "$ref": "https://test.json-schema.org/foobar" }]

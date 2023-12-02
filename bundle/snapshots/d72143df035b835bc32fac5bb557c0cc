@@ -6,7 +6,7 @@
   "errors": [
     {
       "keyword": "https://json-schema.org/keyword/draft-04/additionalItems",
-      "absoluteKeywordLocation": "https://bundler.hyperjump.io/string#",
+      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/additionalItems",
       "instanceLocation": "#",
       "valid": true,
       "errors": []

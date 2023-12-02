@@ -1,15 +1,15 @@
-import Validation from "../lib/keywords/validation.js";
-import * as Schema from "../lib/schema.js";
+import * as Browser from "@hyperjump/browser";
+import { Validation, canonicalUri } from "../lib/experimental.js";
 import { uriFragment } from "../lib/common.js";
 
 
 const id = "https://json-schema.org/keyword/draft-2020-12/dynamicRef";
 
 const compile = async (dynamicRef, ast) => {
-  const fragment = uriFragment(Schema.value(dynamicRef));
-  const referencedSchema = await Schema.get(Schema.value(dynamicRef), dynamicRef);
+  const fragment = uriFragment(Browser.value(dynamicRef));
+  const referencedSchema = await Browser.get(Browser.value(dynamicRef), dynamicRef);
   await Validation.compile(referencedSchema, ast);
-  return [referencedSchema.id, fragment, Schema.uri(referencedSchema)];
+  return [referencedSchema.document.baseUri, fragment, canonicalUri(referencedSchema)];
 };
 
 const evaluate = (strategy) => ([id, fragment, ref], instance, ast, dynamicAnchors, quiet) => {

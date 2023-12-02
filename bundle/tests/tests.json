@@ -239,7 +239,7 @@
   },
   {
     "description": "With embedded schema",
-    "compatibility": "6",
+    "compatibility": "2019",
     "schema": {
       "type": "object",
       "properties": {
@@ -279,7 +279,7 @@
   },
   {
     "description": "With embedded schema with relative $id",
-    "compatibility": "6",
+    "compatibility": "2019",
     "schema": {
       "type": "object",
       "properties": {
@@ -319,7 +319,7 @@
   },
   {
     "description": "Bundle schema with embedded schemas",
-    "compatibility": "6",
+    "compatibility": "2019",
     "schema": {
       "allOf": [{ "$ref": "https://test.json-schema.org/foo" }],
       "properties": {
@@ -366,7 +366,7 @@
   },
   {
     "description": "Bundle schema with embedded schemas with relative $id",
-    "compatibility": "6",
+    "compatibility": "2019",
     "schema": {
       "allOf": [{ "$ref": "https://test.json-schema.org/foo" }],
       "properties": {

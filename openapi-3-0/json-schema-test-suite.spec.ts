@@ -1,7 +1,6 @@
-/* eslint-disable no-console */
-import fs from "fs";
+import fs from "node:fs";
 import { describe, it, expect, beforeAll } from "vitest";
-import * as JsonSchema from "./index.js";
+import { registerSchema, validate } from "./index.js";
 
 import type { OasSchema30, Validator } from "./index.js";
 
@@ -113,10 +112,8 @@ const addRemotes = (dialectId: string, filePath = `${testSuitePath}/remotes`, ur
     .forEach((entry) => {
       if (entry.isFile() && entry.name.endsWith(".json")) {
         const remote = JSON.parse(fs.readFileSync(`${filePath}/${entry.name}`, "utf8")) as OasSchema30;
-        try {
-          JsonSchema.addSchema(remote, `http://localhost:1234${url}/${entry.name}`, dialectId);
-        } catch (error: unknown) {
-          console.log(`WARNING: Failed to load remote 'http://localhost:1234${url}/${entry.name}'`);
+        if (!("$schema" in remote)) {
+          registerSchema(remote, `http://localhost:1234${url}/${entry.name}`, dialectId);
         }
       } else if (entry.isDirectory()) {
         addRemotes(dialectId, `${filePath}/${entry.name}`, `${url}/${entry.name}`);
@@ -132,7 +129,6 @@ const runTestSuite = (draft: string, dialectId: string) => {
       addRemotes(dialectId);
     });
 
-    // [{ name: "additionalItems.json" }]
     fs.readdirSync(testSuiteFilePath, { withFileTypes: true })
       .filter((entry) => entry.isFile() && entry.name.endsWith(".json"))
       .filter((entry) => !ignore.has(`|${draft}|${entry.name}`))
@@ -146,16 +142,17 @@ const runTestSuite = (draft: string, dialectId: string) => {
             .filter((suite) => !ignore.has(`|${draft}|${entry.name}|${suite.description}`))
             .forEach((suite) => {
               describe(suite.description, () => {
-                let validate: Validator;
+                let _validate: Validator;
+                let url: string;
 
                 beforeAll(async () => {
                   if (shouldSkip([draft, entry.name, suite.description])) {
                     return;
                   }
-                  const url = `http://${draft}-test-suite.json-schema.org/${encodeURIComponent(suite.description)}`;
-                  JsonSchema.addSchema(suite.schema, url, dialectId);
+                  url = `http://${draft}-test-suite.json-schema.org/${encodeURIComponent(suite.description)}`;
+                  registerSchema(suite.schema, url, dialectId);
 
-                  validate = await JsonSchema.validate(url);
+                  _validate = await validate(url);
                 });
 
                 suite.tests.forEach((test) => {
@@ -163,7 +160,7 @@ const runTestSuite = (draft: string, dialectId: string) => {
                     it.skip(test.description, () => { /* empty */ });
                   } else if (!shouldIgnore([draft, entry.name, suite.description, test.description])) {
                     it(test.description, () => {
-                      const output = validate(test.data);
+                      const output = _validate(test.data);
                       expect(output.valid).to.equal(test.valid);
                     });
                   }

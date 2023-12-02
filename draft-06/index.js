@@ -1,5 +1,6 @@
 import { addKeyword, defineVocabulary, loadDialect } from "../lib/keywords.js";
-import { addSchema } from "../lib/core.js";
+import { registerSchema } from "../lib/index.js";
+
 import metaSchema from "./schema.js";
 import additionalItems from "../draft-04/additionalItems.js";
 import contains from "./contains.js";
@@ -61,6 +62,6 @@ loadDialect(jsonSchemaVersion, {
   [jsonSchemaVersion]: true
 }, true);
 
-addSchema(metaSchema);
+registerSchema(metaSchema);
 
 export * from "../lib/index.js";

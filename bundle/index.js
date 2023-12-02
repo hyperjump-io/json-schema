@@ -1,18 +1,20 @@
+import curry from "just-curry-it";
 import { v4 as uuid } from "uuid";
+import * as Browser from "@hyperjump/browser";
 import * as JsonPointer from "@hyperjump/json-pointer";
-import { toAbsoluteUri } from "../lib/common.js";
-import { compile } from "../lib/core.js";
-import { getKeywordName, getKeyword } from "../lib/keywords.js";
-import Validation from "../lib/keywords/validation.js";
-import * as Schema from "../lib/schema.js";
+import { asyncCollectSet, asyncFilter, asyncFlatten, asyncMap, pipe } from "@hyperjump/pact";
+import { resolveUri } from "@hyperjump/uri";
+import {
+  Validation,
+  canonicalUri, getSchema, toSchema,
+  getKeywordName, getKeyword, getKeywordByName
+} from "../lib/experimental.js";
 
 
-export const FULL = "full", FLAT = "flat";
 export const URI = "uri", UUID = "uuid";
 
 const defaultOptions = {
   alwaysIncludeDialect: false,
-  bundleMode: FLAT,
   definitionNamingStrategy: URI,
   externalSchemas: []
 };
@@ -21,30 +23,35 @@ export const bundle = async (url, options = {}) => {
   loadKeywordSupport();
   const fullOptions = { ...defaultOptions, ...options };
 
-  const schemaDoc = await Schema.get(url);
-  const externalIds = await collectExternalIds(url, fullOptions);
+  const mainSchema = await getSchema(url);
+  const contextUri = mainSchema.document.baseUri;
+  const contextDialectId = mainSchema.document.dialectId;
+  const bundled = toSchema(mainSchema);
 
-  const bundled = Schema.toSchema(schemaDoc, {
-    includeEmbedded: fullOptions.bundleMode === FULL
-  });
+  const externalIds = await Validation.collectExternalIds(new Set(), mainSchema, mainSchema);
 
-  const bundlingLocation = "/" + getKeywordName(schemaDoc.dialectId, "https://json-schema.org/keyword/definitions");
+  // Bundle
+  const bundlingLocation = "/" + getKeywordName(contextDialectId, "https://json-schema.org/keyword/definitions");
   if (JsonPointer.get(bundlingLocation, bundled) === undefined && externalIds.size > 0) {
     JsonPointer.assign(bundlingLocation, bundled, {});
   }
 
-  for (const uri of externalIds.values()) {
-    const externalSchema = await Schema.get(uri);
-    const embeddedSchema = Schema.toSchema(externalSchema, {
-      parentId: schemaDoc.id,
-      parentDialect: fullOptions.alwaysIncludeDialect ? "" : schemaDoc.dialectId,
-      includeEmbedded: fullOptions.bundleMode === FULL
+  for (const uri of externalIds) {
+    const externalSchema = await getSchema(uri);
+    const embeddedSchema = toSchema(externalSchema, {
+      selfIdentify: true,
+      contextUri: contextUri,
+      includeDialect: fullOptions.alwaysIncludeDialect ? "always" : "auto",
+      contextDialectId: contextDialectId
     });
     let id;
     if (fullOptions.definitionNamingStrategy === URI) {
-      const idToken = getKeywordName(externalSchema.dialectId, "https://json-schema.org/keyword/id")
-        || getKeywordName(externalSchema.dialectId, "https://json-schema.org/keyword/draft-04/id");
+      const idToken = getKeywordName(externalSchema.document.dialectId, "https://json-schema.org/keyword/id")
+        || getKeywordName(externalSchema.document.dialectId, "https://json-schema.org/keyword/draft-04/id");
       id = embeddedSchema[idToken];
+      if (id in JsonPointer.get(bundlingLocation, bundled)) {
+        id = resolveUri(id, contextUri);
+      }
     } else if (fullOptions.definitionNamingStrategy === UUID) {
       id = uuid();
     } else {
@@ -57,74 +64,76 @@ export const bundle = async (url, options = {}) => {
   return bundled;
 };
 
-const collectExternalIds = async (uri, options) => {
-  const { ast, schemaUri } = await compile(uri);
-  const subSchemaUris = new Set();
-  Validation.collectExternalIds(schemaUri, subSchemaUris, ast, {});
-  const externalIds = new Set([...subSchemaUris]
-    .map(toAbsoluteUri)
-    .filter((uri) => !options.externalSchemas.includes(uri)));
-  externalIds.delete(toAbsoluteUri(schemaUri));
+Validation.collectExternalIds = curry(async (visited, parentSchema, schema) => {
+  const uri = canonicalUri(schema);
+  if (visited.has(uri) || Browser.typeOf(schema) === "boolean") {
+    return new Set();
+  }
+
+  visited.add(uri);
+
+  const externalIds = await pipe(
+    Browser.entries(schema),
+    asyncMap(async ([keyword, keywordSchema]) => {
+      const keywordHandler = getKeywordByName(keyword, schema.document.dialectId);
+
+      return "collectExternalIds" in keywordHandler
+        ? await keywordHandler.collectExternalIds(visited, schema, keywordSchema)
+        : new Set();
+    }),
+    asyncFlatten,
+    asyncCollectSet
+  );
+
+  if (parentSchema.document.baseUri !== schema.document.baseUri
+    && (!(schema.document.baseUri in parentSchema.document.embedded) || schema.document.baseUri in parentSchema._cache)
+  ) {
+    externalIds.add(schema.document.baseUri);
+  }
 
   return externalIds;
-};
+});
 
-Validation.collectExternalIds = (schemaUri, externalIds, ast, dynamicAnchors) => {
-  if (externalIds.has(schemaUri) || typeof ast[schemaUri] === "boolean") {
-    return;
-  }
-  externalIds.add(schemaUri);
+const collectExternalIdsFromArrayOfSchemas = (visited, parentSchema, schema) => pipe(
+  Browser.iter(schema),
+  asyncMap(Validation.collectExternalIds(visited, parentSchema)),
+  asyncFlatten,
+  asyncCollectSet
+);
 
-  const id = toAbsoluteUri(schemaUri);
-  for (const [keywordId, , keywordValue] of ast[schemaUri]) {
-    const keyword = getKeyword(keywordId);
-
-    if (keyword.collectExternalIds) {
-      keyword.collectExternalIds(keywordValue, externalIds, ast, {
-        ...ast.metaData[id].dynamicAnchors, ...dynamicAnchors
-      });
-    }
-  }
-};
+const collectExternalIdsFromObjectOfSchemas = async (visited, parentSchema, schema) => pipe(
+  Browser.values(schema),
+  asyncMap(Validation.collectExternalIds(visited, parentSchema)),
+  asyncFlatten,
+  asyncCollectSet
+);
 
 const loadKeywordSupport = () => {
   // Stable
 
   const additionalProperties = getKeyword("https://json-schema.org/keyword/additionalProperties");
   if (additionalProperties) {
-    additionalProperties.collectExternalIds = ([, additionalProperties], externalIds, ast, dynamicAnchors) => {
-      if (typeof additionalProperties === "string") {
-        Validation.collectExternalIds(additionalProperties, externalIds, ast, dynamicAnchors);
-      }
-    };
+    additionalProperties.collectExternalIds = Validation.collectExternalIds;
   }
 
   const allOf = getKeyword("https://json-schema.org/keyword/allOf");
   if (allOf) {
-    allOf.collectExternalIds = (allOf, externalIds, ast, dynamicAnchors) => {
-      allOf.forEach((schemaUri) => Validation.collectExternalIds(schemaUri, externalIds, ast, dynamicAnchors));
-    };
+    allOf.collectExternalIds = collectExternalIdsFromArrayOfSchemas;
   }
 
   const anyOf = getKeyword("https://json-schema.org/keyword/anyOf");
   if (anyOf) {
-    anyOf.collectExternalIds = (anyOf, externalIds, ast, dynamicAnchors) => {
-      anyOf.forEach((schemaUri) => Validation.collectExternalIds(schemaUri, externalIds, ast, dynamicAnchors));
-    };
+    anyOf.collectExternalIds = collectExternalIdsFromArrayOfSchemas;
   }
 
   const contains = getKeyword("https://json-schema.org/keyword/contains");
   if (contains) {
-    contains.collectExternalIds = ({ contains }, externalIds, ast, dynamicAnchors) => {
-      Validation.collectExternalIds(contains, externalIds, ast, dynamicAnchors);
-    };
+    contains.collectExternalIds = Validation.collectExternalIds;
   }
 
   const dependentSchemas = getKeyword("https://json-schema.org/keyword/dependentSchemas");
   if (dependentSchemas) {
-    dependentSchemas.collectExternalIds = (dependentSchemas, externalIds, ast, dynamicAnchors) => {
-      Object.values(dependentSchemas).forEach(([, schemaUri]) => Validation.collectExternalIds(schemaUri, externalIds, ast, dynamicAnchors));
-    };
+    dependentSchemas.collectExternalIds = collectExternalIdsFromObjectOfSchemas;
   }
 
   const if_ = getKeyword("https://json-schema.org/keyword/if");
@@ -134,23 +143,17 @@ const loadKeywordSupport = () => {
 
   const then = getKeyword("https://json-schema.org/keyword/then");
   if (then) {
-    then.collectExternalIds = ([, then], externalIds, ast, dynamicAnchors) => {
-      Validation.collectExternalIds(then, externalIds, ast, dynamicAnchors);
-    };
+    then.collectExternalIds = Validation.collectExternalIds;
   }
 
   const else_ = getKeyword("https://json-schema.org/keyword/else");
   if (else_) {
-    else_.collectExternalIds = ([, elseSchema], externalIds, ast, dynamicAnchors) => {
-      Validation.collectExternalIds(elseSchema, externalIds, ast, dynamicAnchors);
-    };
+    else_.collectExternalIds = Validation.collectExternalIds;
   }
 
   const items = getKeyword("https://json-schema.org/keyword/items");
   if (items) {
-    items.collectExternalIds = ([, items], externalIds, ast, dynamicAnchors) => {
-      Validation.collectExternalIds(items, externalIds, ast, dynamicAnchors);
-    };
+    items.collectExternalIds = Validation.collectExternalIds;
   }
 
   const not = getKeyword("https://json-schema.org/keyword/not");
@@ -160,30 +163,22 @@ const loadKeywordSupport = () => {
 
   const oneOf = getKeyword("https://json-schema.org/keyword/oneOf");
   if (oneOf) {
-    oneOf.collectExternalIds = (oneOf, externalIds, ast, dynamicAnchors) => {
-      oneOf.forEach((schemaUri) => Validation.collectExternalIds(schemaUri, externalIds, ast, dynamicAnchors));
-    };
+    oneOf.collectExternalIds = collectExternalIdsFromArrayOfSchemas;
   }
 
   const patternProperties = getKeyword("https://json-schema.org/keyword/patternProperties");
   if (patternProperties) {
-    patternProperties.collectExternalIds = (patternProperties, externalIds, ast, dynamicAnchors) => {
-      patternProperties.forEach(([, schemaUri]) => Validation.collectExternalIds(schemaUri, externalIds, ast, dynamicAnchors));
-    };
+    patternProperties.collectExternalIds = collectExternalIdsFromObjectOfSchemas;
   }
 
   const prefixItems = getKeyword("https://json-schema.org/keyword/prefixItems");
   if (prefixItems) {
-    prefixItems.collectExternalIds = (tupleItems, externalIds, ast, dynamicAnchors) => {
-      tupleItems.forEach((schemaUri) => Validation.collectExternalIds(schemaUri, externalIds, ast, dynamicAnchors));
-    };
+    prefixItems.collectExternalIds = collectExternalIdsFromArrayOfSchemas;
   }
 
   const properties = getKeyword("https://json-schema.org/keyword/properties");
   if (properties) {
-    properties.collectExternalIds = (properties, externalIds, ast, dynamicAnchors) => {
-      Object.values(properties).forEach((schemaUri) => Validation.collectExternalIds(schemaUri, externalIds, ast, dynamicAnchors));
-    };
+    properties.collectExternalIds = collectExternalIdsFromObjectOfSchemas;
   }
 
   const propertyNames = getKeyword("https://json-schema.org/keyword/propertyNames");
@@ -198,119 +193,80 @@ const loadKeywordSupport = () => {
 
   const unevaluatedItems = getKeyword("https://json-schema.org/keyword/unevaluatedItems");
   if (unevaluatedItems) {
-    unevaluatedItems.collectExternalIds = ([, unevaluatedItems], externalIds, ast, dynamicAnchors) => {
-      Validation.collectExternalIds(unevaluatedItems, externalIds, ast, dynamicAnchors);
-    };
+    unevaluatedItems.collectExternalIds = Validation.collectExternalIds;
   }
 
   const unevaluatedProperties = getKeyword("https://json-schema.org/keyword/unevaluatedProperties");
   if (unevaluatedProperties) {
-    unevaluatedProperties.collectExternalIds = ([, unevaluatedProperties], externalIds, ast, dynamicAnchors) => {
-      Validation.collectExternalIds(unevaluatedProperties, externalIds, ast, dynamicAnchors);
-    };
+    unevaluatedProperties.collectExternalIds = Validation.collectExternalIds;
   }
 
   // Draft-04
 
   const additionalItems4 = getKeyword("https://json-schema.org/keyword/draft-04/additionalItems");
   if (additionalItems4) {
-    additionalItems4.collectExternalIds = ([, additionalItems], externalIds, ast, dynamicAnchors) => {
-      if (typeof additionalItems === "string") {
-        Validation.collectExternalIds(additionalItems, externalIds, ast, dynamicAnchors);
-      }
-    };
+    additionalItems4.collectExternalIds = Validation.collectExternalIds;
   }
 
   const dependencies = getKeyword("https://json-schema.org/keyword/draft-04/dependencies");
   if (dependencies) {
-    dependencies.collectExternalIds = (dependencies, externalIds, ast, dynamicAnchors) => {
-      Object.values(dependencies).forEach(([, dependency]) => {
-        if (typeof dependency === "string") {
-          Validation.collectExternalIds(dependency, externalIds, ast, dynamicAnchors);
-        }
-      });
-    };
+    dependencies.collectExternalIds = (visited, parentSchema, schema) => pipe(
+      Browser.values(schema),
+      asyncFilter((subSchema) => Browser.typeOf(subSchema) === "object"),
+      asyncMap(Validation.collectExternalIds(visited, parentSchema)),
+      asyncFlatten,
+      asyncCollectSet
+    );
   }
 
   const items4 = getKeyword("https://json-schema.org/keyword/draft-04/items");
   if (items4) {
-    items4.collectExternalIds = (items, externalIds, ast, dynamicAnchors) => {
-      if (typeof items === "string") {
-        Validation.collectExternalIds(items, externalIds, ast, dynamicAnchors);
-      } else {
-        items.forEach((schemaUri) => Validation.collectExternalIds(schemaUri, externalIds, ast, dynamicAnchors));
-      }
-    };
-  }
-
-  const ref4 = getKeyword("https://json-schema.org/keyword/draft-04/ref");
-  if (ref4) {
-    ref4.collectExternalIds = Validation.collectExternalIds;
+    items4.collectExternalIds = (visited, parentSchema, schema) => Browser.typeOf(schema) === "array"
+      ? collectExternalIdsFromArrayOfSchemas(visited, parentSchema, schema)
+      : Validation.collectExternalIds(visited, parentSchema, schema);
   }
 
   // Draft-06
 
   const contains6 = getKeyword("https://json-schema.org/keyword/draft-06/contains");
   if (contains6) {
-    contains6.collectExternalIds = (contains, externalIds, ast, dynamicAnchors) => {
-      Validation.collectExternalIds(contains, externalIds, ast, dynamicAnchors);
-    };
+    contains6.collectExternalIds = Validation.collectExternalIds;
   }
 
   // Draft-2019-09
 
   const contains19 = getKeyword("https://json-schema.org/keyword/draft-2019-09/contains");
   if (contains19) {
-    contains19.collectExternalIds = ({ contains }, externalIds, ast, dynamicAnchors) => {
-      Validation.collectExternalIds(contains, externalIds, ast, dynamicAnchors);
-    };
+    contains19.collectExternalIds = Validation.collectExternalIds;
   }
 
   // Experimental
 
   const propertyDependencies = getKeyword("https://json-schema.org/keyword/propertyDependencies");
   if (propertyDependencies) {
-    propertyDependencies.collectExternalIds = (propertyDependencies, externalIds, ast, dynamicAnchors) => {
-      for (const key in propertyDependencies) {
-        for (const value in propertyDependencies[key]) {
-          Validation.collectExternalIds(propertyDependencies[key][value], externalIds, ast, dynamicAnchors);
-        }
-      }
-    };
+    propertyDependencies.collectExternalIds = (visited, parentSchema, schema) => pipe(
+      Browser.values(schema),
+      asyncMap((mapping) => Browser.values(mapping)),
+      asyncFlatten,
+      asyncMap(Validation.collectExternalIds(visited, parentSchema)),
+      asyncFlatten,
+      asyncCollectSet
+    );
   }
 
   const conditional = getKeyword("https://json-schema.org/keyword/conditional");
   if (conditional) {
-    conditional.collectExternalIds = (conditional, externalIds, ast, dynamicAnchors) => {
-      for (const schema of conditional) {
-        Validation.collectExternalIds(schema, externalIds, ast, dynamicAnchors);
-      }
-    };
+    conditional.collectExternalIds = collectExternalIdsFromArrayOfSchemas;
   }
 
   const itemPattern = getKeyword("https://json-schema.org/keyword/itemPattern");
   if (itemPattern) {
-    itemPattern.collectExternalIds = (nfa, externalIds, ast, dynamicAnchors) => {
-      for (const itemSchema of collectNfaSchemas(nfa.start)) {
-        Validation.collectExternalIds(itemSchema, externalIds, ast, dynamicAnchors);
-      }
-    };
+    itemPattern.collectExternalIds = (visited, parentSchema, schema) => pipe(
+      Browser.iter(schema),
+      asyncFilter((item) => Browser.typeOf(item) === "object"),
+      asyncMap(Validation.collectExternalIds(visited, parentSchema)),
+      asyncFlatten,
+      asyncCollectSet
+    );
   }
-
-  const collectNfaSchemas = function* (node, visited = new Set()) {
-    if (visited.has(node)) {
-      return;
-    }
-
-    visited.add(node);
-
-    for (const schema in node.transition) {
-      yield schema;
-      yield* collectNfaSchemas(node.transition[schema], visited);
-    }
-
-    for (const epsilon of node.epsilonTransitions) {
-      yield* collectNfaSchemas(epsilon, visited);
-    }
-  };
 };

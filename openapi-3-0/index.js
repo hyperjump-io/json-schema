@@ -1,9 +1,9 @@
 import { addKeyword, defineVocabulary, loadDialect } from "../lib/keywords.js";
-import { addSchema } from "../lib/index.js";
+import { registerSchema } from "../lib/index.js";
 import "../lib/openapi.js";
 
 import dialectSchema from "./dialect.js";
-import schema20210928 from "./schema/2021-09-28.js";
+import schema from "./schema.js";
 
 import discriminator from "./discriminator.js";
 import example from "./example.js";
@@ -69,9 +69,9 @@ loadDialect("https://spec.openapis.org/oas/3.0/schema", {
   [jsonSchemaVersion]: true
 });
 
-addSchema(dialectSchema);
+registerSchema(dialectSchema);
 
-addSchema(schema20210928, "https://spec.openapis.org/oas/3.0/schema");
-addSchema(schema20210928, "https://spec.openapis.org/oas/3.0/schema/latest");
+registerSchema(schema, "https://spec.openapis.org/oas/3.0/schema");
+registerSchema(schema, "https://spec.openapis.org/oas/3.0/schema/latest");
 
 export * from "../draft-04/index.js";

@@ -2,47 +2,35 @@
 
 A collection of modules for working with JSON Schemas.
 
-* Validate JSON-compatible values against a JSON Schema
+* Validate JSON-compatible values against a JSON Schemas
   * Dialects: draft-2020-12, draft-2019-09, draft-07, draft-06, draft-04
-  * OpenAPI
-    * Versions/Dialects: 3.0, 3.1
-    * Validate an OpenAPI document
-    * Validate values against a schema from an OpenAPI document
   * Schemas can reference other schemas using a different dialect
   * Work directly with schemas on the filesystem or HTTP
+* OpenAPI
+  * Versions: 3.0, 3.1
+  * Validate an OpenAPI document
+  * Validate values against a schema from an OpenAPI document
 * Create custom keywords, vocabularies, and dialects
 * Bundle multiple schemas into one document
   * Uses the process defined in the 2020-12 specification but works with any
     dialect.
-* Provides utilities for building non-validation JSON Schema tooling
-* Provides utilities for working with annotations
+* Utilities for building non-validation JSON Schema tooling
+* Utilities for working with annotations
 
 ## Install
+
 Includes support for node.js/bun.js (ES Modules, TypeScript) and browsers (works
 with CSP
 [`unsafe-eval`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/script-src#unsafe_eval_expressions)).
 
 ### Node.js
+
 ```bash
 npm install @hyperjump/json-schema
 ```
 
-### Browser
-When in a browser context, this library is designed to use the browser's `fetch`
-implementation instead of a node.js fetch clone. The Webpack bundler does this
-properly without any extra configuration, but if you are using the Rollup
-bundler you will need to include the `browser: true` option in your Rollup
-configuration.
-
-```javascript
-  plugins: [
-    resolve({
-      browser: true
-    })
-  ]
-```
-
 ### TypeScript
+
 This package uses the package.json "exports" field. [TypeScript understands
 "exports"](https://devblogs.microsoft.com/typescript/announcing-typescript-4-5-beta/#packagejson-exports-imports-and-self-referencing),
 but you need to change a couple settings in your `tsconfig.json` for it to work.
@@ -53,36 +41,40 @@ but you need to change a couple settings in your `tsconfig.json` for it to work.
 ```
 
 ### Versioning
+
 The API for this library is divided into two categories: Stable and
-Experimental. The Stable API strictly follows semantic versioning, but the
-Experimental API may have backward-incompatible changes between minor versions.
+Experimental. The Stable API follows semantic versioning, but the Experimental
+API may have backward-incompatible changes between minor versions.
 
 All experimental features are segregated into exports that include the word
 "experimental" so you never accidentally depend on something that could change
 or be removed in future releases.
 
 ## Validation
+
 ### Usage
+
 This library supports many versions of JSON Schema. Use the pattern
 `@hyperjump/json-schema/*` to import the version you need.
 
 ```javascript
-import { addSchema, validate } from "@hyperjump/json-schema/draft-2020-12";
+import { registerSchema, validate } from "@hyperjump/json-schema/draft-2020-12";
 ```
 
 You can import support for additional versions as needed.
 
 ```javascript
-import { addSchema, validate } from "@hyperjump/json-schema/draft-2020-12";
+import { registerSchema, validate } from "@hyperjump/json-schema/draft-2020-12";
 import "@hyperjump/json-schema/draft-07";
 ```
 
 **Note**: The default export (`@hyperjump/json-schema`) is reserved for the
-stable version of JSON Schema that will hopefully be released in 2023.
+stable version of JSON Schema that will hopefully be released in near future.
 
 **Validate schema from JavaScript**
+
 ```javascript
-addSchema({
+registerSchema({
   $schema: "https://json-schema.org/draft/2020-12/schema",
   type: "string"
 }, "http://example.com/schemas/string");
@@ -116,50 +108,27 @@ const output = await validate("http://example.com/schemas/string", "foo");
 ```
 
 When running on the server, you can also load schemas directly from the
-filesystem using `file:` URIs. When fetching from the file system, there are
-limitations for security reasons. If your schema has an identifier with an
-http(s) scheme (**https**://example.com), it's not allowed to reference schemas
-with a file scheme (**file**:///path/to/my/schemas).
+filesystem. When fetching from the file system, there are limitations for
+security reasons. You can only reference a schema identified by a file URI
+scheme (**file**:///path/to/my/schemas) from another schema identified by a file
+URI scheme. Also, a schema is not allowed to self-identify (`$id`) with a
+`file:` URI scheme.
 
 ```javascript
 const output = await validate(`file://${__dirname}/string.schema.json`, "foo");
 ```
 
 If the schema URI is relative, the base URI in the browser is the browser
-location and the base URI on the server is the current working directory.
+location and the base URI on the server is the current working directory. This
+is the preferred way to work with file-based schemas on the server.
 
 ```javascript
 const output = await validate(`./string.schema.json`, "foo");
 ```
 
-**Media type plugins**
-
-There is a plugin system for adding support for different media types. By
-default it's configured to accept schemas that have the
-`application/schema+json` Content-Type (web) or a `.schema.json` file extension
-(filesystem). If, for example, you want to fetch schemas that are written in
-YAML, you can add a MediaTypePlugin to support that.
-
-```javascript
-import { addMediaTypePlugin, validate } from "@hyperjump/json-schema/draft-2020-12";
-import YAML from "yaml";
-
-
-// Add support for JSON Schemas written in YAML
-addMediaTypePlugin("application/schema+yaml", {
-  parse: async (response) => [YAML.parse(await response.text()), undefined],
-  matcher: (path) => path.endsWith(".schema.yaml")
-});
-
-// Example: Fetch schema with Content-Type: application/schema+yaml from the web
-const isString = await validate("http://example.com/schemas/string");
-
-// Example: Fetch from file with JSON Schema YAML file extension
-const isString = await validate(`file://${__dirname}/string.schema.yaml`);
-
-// Then validate against your schema like normal
-const output = isString("foo");
-```
+You can add/modify/remove support for any URI scheme using the [plugin
+system](https://github.com/hyperjump-io/browser/#uri-schemes) provided by
+`@hyperjump/browser`.
 
 **OpenAPI**
 
@@ -171,30 +140,73 @@ of `application/openapi+json` (web) or a file extension of `openapi.json`
 Use the pattern `@hyperjump/json-schema/*` to import the version you need. The
 available versions are `openapi-3-0` for 3.0 and `openapi-3-1` for 3.1.
 
-YAML support isn't built in, but you can add it by writing a MediaTypePlugin.
-You can use the one at `lib/openapi.js` as an example and replacing the JSON
-parts with YAML.
-
 ```javascript
-import { addSchema, validate } from "@hyperjump/json-schema/openapi-3-1";
+import { validate } from "@hyperjump/json-schema/openapi-3-1";
 
 
 // Validate an OpenAPI document
 const output = await validate("https://spec.openapis.org/oas/3.1/schema-base", openapi);
 
 // Validate an instance against a schema in an OpenAPI document
-const output = await validate(`file://${__dirname}/example.openapi.json#/components/schemas/foo`, 42);
+const output = await validate("./example.openapi.json#/components/schemas/foo", 42);
+```
+
+YAML support isn't built in, but you can add it by writing a
+[MediaTypePlugin](https://github.com/hyperjump-io/browser/#media-types). You can
+use the one at `lib/openapi.js` as an example and replace the JSON parts with
+YAML.
+
+**Media types**
+
+This library uses media types to determine how to parse a retrieved document. It
+will never assume the retrieved document is a schema. By default it's configured
+to accept documents with a `application/schema+json` Content-Type header (web)
+or a `.schema.json` file extension (filesystem).
+
+You can add/modify/remove support for any media-type using the [plugin
+system](https://github.com/hyperjump-io/browser/#media-types) provided by
+`@hyperjump/browser`. The following example shows how to add support for JSON
+Schemas written in YAML.
+
+```javascript
+import YAML from "yaml";
+import contentTypeParser from "content-type";
+import { addMediaTypePlugin } from "@hyperjump/browser";
+import { buildSchemaDocument } from "@hyperjump/json-schema/experimental";
+
+
+addMediaTypePlugin("application/schema+yaml", {
+  parse: async (response) => {
+    const contentType = contentTypeParser.parse(response.headers.get("content-type") ?? "");
+    const contextDialectId = contentType.parameters.schema ?? contentType.parameters.profile;
+
+    const foo = YAML.parse(await response.text());
+    return buildSchemaDocument(foo, response.url, contextDialectId);
+  },
+  fileMatcher: (path) => path.endsWith(".schema.yml")
+});
 ```
 
 ### API
+
 These are available from any of the exports that refer to a version of JSON
 Schema, such as `@hyperjump/json-schema/draft-2020-12`.
 
-* **addSchema**: (schema: object, retrievalUri?: string, defaultDialectId?: string) => void
+* **registerSchema**: (schema: object, retrievalUri?: string, defaultDialectId?: string) => void
+
+    Add a schema the local schema registry. When this schema is needed, it will
+    be loaded from the register rather than the filesystem or network. If a
+    schema with the same identifier is already registered, an exception will be
+    throw.
+* **unregisterSchema**: (uri: string) => void
+
+    Remove a schema from the local schema registry.
+* _(deprecated)_ **addSchema**: (schema: object, retrievalUri?: string, defaultDialectId?: string) => void
 
     Load a schema manually rather than fetching it from the filesystem or over
-    the network.
-* **validate**: (schemaURI: string, instance: any, outputFormat: OutputFormat = * FLAG) => Promise\<OutputUnit>
+    the network. Any schema already registered with the same identifier will be
+    replaced with no warning.
+* **validate**: (schemaURI: string, instance: any, outputFormat: OutputFormat = FLAG) => Promise\<OutputUnit>
 
     Validate an instance against a schema. This function is curried to allow
     compiling the schema once and applying it to multiple instances.
@@ -223,10 +235,6 @@ Schema, such as `@hyperjump/json-schema/draft-2020-12`.
 * **getShouldMetaValidate**: (isEnabled: boolean) => void
 
     Determine if validating schemas is enabled.
-* **addMediaTypePlugin**: (contentType: string, plugin: MediaTypePlugin) => void
-
-    Add a custom media type handler to support things like YAML or to change the
-    way JSON is supported.
 
 **Type Definitions**
 
@@ -241,26 +249,11 @@ The following types are used in the above definitions
     Output is an experimental feature of the JSON Schema specification. There
     may be additional fields present in the OutputUnit, but only the `valid`
     property should be considered part of the Stable API.
-* **MediaTypePlugin**: object
-
-    * parse: (response: Response, mediaTypeParameters: object) => [object | boolean, string?]
-
-      Given a fetch Response object, parse the body of the request. Return the
-      parsed schema and an optional default dialectId.
-    * matcher: (path) => boolean
-
-      Given a filesystem path, return whether or not the file should be
-      considered a member of this media type.
-    * quality (optional): string
-
-      The registered media type plugins are used to create the `Accept` header
-      for HTTP requests. This property allows you to specify a quality value for
-      your media type. A [quality value](https://developer.mozilla.org/en-US/docs/Glossary/Quality_values)
-      is a string representation of a number between 0 and 1 with up to three
-      digits.
 
 ## Bundling
+
 ### Usage
+
 You can bundle schemas with external references into a single deliverable using
 the official JSON Schema bundling process introduced in the 2020-12
 specification. Given a schema with external references, any external schemas
@@ -272,28 +265,26 @@ references which means you get the same output details whether you validate the
 bundle or the original unbundled schemas.
 
 ```javascript
-import { addSchema } from "@hyperjump/json-schema/draft-2020-12";
+import { registerSchema } from "@hyperjump/json-schema/draft-2020-12";
 import { bundle } from "@hyperjump/json-schema/bundle";
 
-addSchema({
-  "$id": "https://example.com/main",
+
+registerSchema({
   "$schema": "https://json-schema.org/draft/2020-12/schema",
 
   "type": "object",
   "properties": {
     "foo": { "$ref": "/string" }
   }
-});
+}, "https://example.com/main");
 
-addSchema({
-  "$id": "https://example.com/string",
+registerSchema({
   "$schema": "https://json-schema.org/draft/2020-12/schema",
 
   "type": "string"
-});
+}, "https://example.com/string");
 
 const bundledSchema = await bundle("https://example.com/main"); // {
-//   "$id": "https://example.com/main",
 //   "$schema": "https://json-schema.org/draft/2020-12/schema",
 //
 //   "type": "object",
@@ -302,7 +293,7 @@ const bundledSchema = await bundle("https://example.com/main"); // {
 //   },
 //
 //   "$defs": {
-//     "https://example.com/string": {
+//     "string": {
 //       "$id": "https://example.com/string",
 //       "type": "string"
 //     }
@@ -311,39 +302,39 @@ const bundledSchema = await bundle("https://example.com/main"); // {
 ```
 
 ### API
+
 These are available from the `@hyperjump/json-schema/bundle` export.
 
 * **bundle**: (uri: string, options: Options) => Promise\<SchemaObject>
 
     Create a bundled schema starting with the given schema. External schemas
-    will be fetched from the filesystem, the network, or internally as needed.
+    will be fetched from the filesystem, the network, or the local schema
+    registry as needed.
 
     Options:
      * alwaysIncludeDialect: boolean (default: false) -- Include dialect even
        when it isn't strictly needed
-     * bundleMode: "flat" | "full" (default: "flat") -- When bundling schemas
-       that already contain bundled schemas, "flat" mode with remove nested
-       embedded schemas and put them all in the top level `$defs`. When using
-       "full" mode, it will keep the already embedded schemas around, which will
-       result in some embedded schema duplication.
      * definitionNamingStrategy: "uri" | "uuid" (default: "uri") -- By default
        the name used in definitions for embedded schemas will match the
-       identifier of the embedded schema. This naming is unlikely to collide
-       with actual definitions, but if you want to be sure, you can use the
-       "uuid" strategy instead to be sure you get a unique name.
+       identifier of the embedded schema. Alternatively, you can use a UUID
+       instead of the schema's URI.
      * externalSchemas: string[] (default: []) -- A list of schemas URIs that
        are available externally and should not be included in the bundle.
 
-## Output Formats (Experimental)
-### Usage
+## Experimental
+
+### Output Formats
 
 **Change the validation output format**
 
 The `FLAG` output format isn't very informative. You can change the output
-format used for validation to get more information about failures.
+format used for validation to get more information about failures. The official
+output format is still evolving, so these may change or be replaced in the
+future.
 
 ```javascript
 import { BASIC } from "@hyperjump/json-schema/experimental";
+
 
 const output = await validate("https://example.com/schema1", 42, BASIC);
 ```
@@ -356,6 +347,7 @@ The output format used for validating schemas can be changed as well.
 import { validate, setMetaSchemaOutputFormat } from "@hyperjump/json-schema/draft-2020-12";
 import { BASIC } from "@hyperjump/json-schema/experimental";
 
+
 setMetaSchemaOutputFormat(BASIC);
 try {
   const output = await validate("https://example.com/invalid-schema");
@@ -364,28 +356,24 @@ try {
 }
 ```
 
-### API
-**Type Definitions**
+### Custom Keywords, Vocabularies, and Dialects
 
-* **OutputFormat**: **FLAG** | **BASIC** | **DETAILED** | **VERBOSE**
-
-    In addition to the `FLAG` output format in the Stable API, the Experimental
-    API includes support for the `BASIC`, `DETAILED`, and `VERBOSE` formats as
-    specified in the 2019-09 specification (with some minor customizations).
-    This implementation doesn't include annotations or human readable error
-    messages. The output can be processed to create human readable error
-    messages as needed.
-
-## Meta-Schemas, Keywords, Vocabularies, and Dialects (Experimental)
-### Usage
 In order to create and use a custom keyword, you need to define your keyword's
 behavior, create a vocabulary that includes that keyword, and then create a
 dialect that includes your vocabulary.
 
+Schemas are represented using the
+[`@hyperjump/browser`](https://github.com/hyperjump-io/browser) package. You'll
+use that API to traverse schemas. `@hyperjump/browser` uses async generators to
+iterate over arrays and objects. If you like using higher order functions like
+`map`/`filter`/`reduce`, see
+[`@hyperjump/pact`](https://github.com/hyperjump-io/pact) for utilities for
+working with generators and async generators.
+
 ```javascript
-import { addSchema, validate } from "@hyperjump/json-schema/draft-2020-12";
+import { registerSchema, validate } from "@hyperjump/json-schema/draft-2020-12";
 import { addKeyword, defineVocabulary, Validation } from "@hyperjump/json-schema/experimental";
-import * as Schema from "@hyperjump/json-schema/schema/experimental";
+import * as Browser from "@hyperjump/browser";
 
 
 // Define a keyword that's an array of schemas that are applied sequentially
@@ -393,13 +381,24 @@ import * as Schema from "@hyperjump/json-schema/schema/experimental";
 addKeyword({
   id: "https://example.com/keyword/implication",
 
-  compile: (schema, ast) => {
-    return Schema.map(async (itemSchema) => Validation.compile(await itemSchema, ast), schema);
+  compile: async (schema, ast) => {
+    const subSchemas = [];
+    for await (const subSchema of Browser.iter(schema)) {
+      subSchemas.push(Validation.compile(subSchema, ast));
+    }
+    return subSchemas;
+
+    // Alternative using @hyperjump/pact
+    // return pipe(
+    //   Browser.iter(schema),
+    //   asyncMap((subSchema) => Validation.compile(subSchema, ast)),
+    //   asyncCollectArray
+    // );
   },
 
   interpret: (implies, instance, ast, dynamicAnchors, quiet) => {
-    return implies.reduce((acc, schema) => {
-      return !acc || Validation.interpret(schema, instance, ast, dynamicAnchors, quiet);
+    return implies.reduce((valid, schema) => {
+      return !valid || Validation.interpret(schema, instance, ast, dynamicAnchors, quiet);
     }, true);
   }
 });
@@ -410,7 +409,7 @@ defineVocabulary("https://example.com/vocab/logic", {
 });
 
 // Create a vocabulary schema for this vocabulary
-addSchema({
+registerSchema({
   "$id": "https://example.com/meta/logic",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
 
@@ -426,7 +425,7 @@ addSchema({
 
 // Create a dialect schema adding this vocabulary to the standard JSON Schema
 // vocabularies
-addSchema({
+registerSchema({
   "$id": "https://example.com/dialect/logic",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
 
@@ -450,7 +449,7 @@ addSchema({
 });
 
 // Use your dialect to validate a JSON instance
-addSchema({
+registerSchema({
   "$schema": "https://example.com/dialect/logic",
 
   "type": "number",
@@ -462,14 +461,14 @@ addSchema({
 const output = await validate("https://example.com/schema1", 42);
 ```
 
-**Custom Meta Schema**
+### Custom Meta Schema
 
 You can use a custom meta-schema to restrict users to a subset of JSON Schema
 functionality. This example requires that no unknown keywords are used in the
 schema.
 
 ```javascript
-addSchema({
+registerSchema({
   "$id": "https://example.com/meta-schema1",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
 
@@ -489,7 +488,7 @@ addSchema({
   "unevaluatedProperties": false
 });
 
-addSchema({
+registerSchema({
   $schema: "https://example.com/meta-schema1",
   type: "number",
   foo: 42
@@ -499,25 +498,69 @@ const output = await validate("https://example.com/schema1", 42); // Expect Inva
 ```
 
 ### API
+
 These are available from the `@hyperjump/json-schema/experimental` export.
 
 * **addKeyword**: (keywordHandler: Keyword) => void
 
     Define a keyword for use in a vocabulary.
+
+    * **Keyword**: object
+      * id: string
+
+          A URI that uniquely identifies the keyword. It should use a domain you
+          own to avoid conflict with keywords defined by others.
+      * compile: (schema: Browser, ast: AST, parentSchema: Browser) => Promise\<any>
+
+          This function takes the keyword value, does whatever preprocessing it
+          can on it without an instance, and returns the result. The returned
+          value will be passed to the `interpret` function. The `ast` parameter
+          is needed for compiling sub-schemas. The `parentSchema` parameter is
+          primarily useful for looking up the value of an adjacent keyword that
+          might effect this one.
+      * interpret: (compiledKeywordValue: any, instance: InstanceDocument, ast: AST, dynamicAnchors: object, quiet: boolean) => boolean
+
+          This function takes the value returned by the `compile` function and
+          the instance value that is being validated and returns whether the
+          value is valid or not. The other parameters are only needed for
+          validating sub-schemas.
+      * collectEvaluatedProperties?: (compiledKeywordValue: any, instance: InstanceDocument, ast: AST, dynamicAnchors: object) => Set\<string> | false
+
+          If the keyword is an applicator, it will need to implement this
+          function for `unevaluatedProperties` to work as expected.
+      * collectEvaluatedItems?: (compiledKeywordValue: A, instance: InstanceDocument, ast: AST, dynamicAnchors: object) => Set\<number> | false
+
+          If the keyword is an applicator, it will need to implement this
+          function for `unevaluatedItems` to work as expected.
+      * collectExternalIds?: (visited: Set\<string>, parentSchema: Browser, schema: Browser) => Set\<string>
+          If the keyword is an applicator, it will need to implement this
+      function to work properly with the [bundle](#bundling) feature.
+      * annotation?: (compiledKeywordValue: any) => any
+
+          If the keyword is an annotation, it will need to implement this
+          function to work with the [annotation](#annotations-experimental)
+          functions.
 * **defineVocabulary**: (id: string, keywords: { [keyword: string]: string }) => void
 
     Define a vocabulary that maps keyword name to keyword URIs defined using
     `addKeyword`.
+* **getKeywordId**: (keywordName: string, dialectId: string) => string
+
+    Get the identifier for a keyword by its name.
 * **getKeyword**: (keywordId: string) => Keyword
 
     Get a keyword object by its URI. This is useful for building non-validation
+    tooling.
+* **getKeywordByName**: (keywordName: string, dialectId: string) => Keyword
+
+    Get a keyword object by its name. This is useful for building non-validation
     tooling.
 * **getKeywordName**: (dialectId: string, keywordId: string) => string
 
     Determine a keyword's name given its URI a dialect URI. This is useful when
     defining a keyword that depends on the value of another keyword (such as how
     `contains` depends on `minContains` and `maxContains`).
-* **loadDialect**: (dialectId: string, dialect: { [vocabularyId: string] }) => void
+* **loadDialect**: (dialectId: string, dialect: { [vocabularyId: string] }, allowUnknownKeywords: boolean = false) => void
 
     Define a dialect. In most cases, dialects are loaded automatically from the
     `$vocabulary` keyword in the meta-schema. The only time you would need to
@@ -527,98 +570,55 @@ These are available from the `@hyperjump/json-schema/experimental` export.
 
     A Keyword object that represents a "validate" operation. You would use this
     for compiling and evaluating sub-schemas when defining a custom keyword.
+        
+* **getSchema**: (uri: string, browser?: Browser) => Promise\<Browser>
 
-* **Keyword**: object
-    * id: string
+    Get a schema by it's URI taking the local schema registry into account.
+* buildSchemaDocument: (schema: SchemaObject | boolean, retrievalUri?: string, contextDialectId?: string) => SchemaDocument
 
-        A URI that uniquely identifies the keyword. It should use a domain you
-        own to avoid conflict with keywords defined by others.
-    * compile: (schema: SchemaDocument, ast: AST, parentSchema: SchemaDocument) * => Promise\<A>
+    Build a SchemaDocument from a JSON-compatible value. You might use this if
+    you're creating a custom media type plugin, such as supporting JSON Schemas
+    in YAML.
+* **canonicalUri**: (schema: Browser) => string
 
-        This function takes the keyword value, does whatever preprocessing it
-        can on it without an instance, and returns the result. The returned
-        value will be passed to the `interpret` function. The `ast` parameter is
-        needed for compiling sub-schemas. The `parentSchema` parameter is
-        primarily useful for looking up the value of an adjacent keyword that
-        might effect this one.
-    * interpret: (compiledKeywordValue: A, instance: JsonDocument, ast: AST, dynamicAnchors: Anchors, quiet: boolean) => boolean
-
-        This function takes the value returned by the `compile` function and the
-        instance value that is being validated and returns whether the value is
-        valid or not. The other parameters are only needed for validating
-        sub-schemas.
-    * collectEvaluatedProperties?: (compiledKeywordValue: A, instance: JsonDocument, ast: AST, dynamicAnchors: Anchors) => string[] | false
-
-        If the keyword is an applicator, it will need to implements this
-        function for `unevaluatedProperties` to work as expected.
-    * collectEvaluatedItems?: (compiledKeywordValue: A, instance: JsonDocument, * ast: AST, dynamicAnchors: Anchors) => Set\<number> | false
-
-        If the keyword is an applicator, it will need to implements this
-        function for `unevaluatedItems` to work as expected.
-
-### Schema API
-These functions are available from the
-`@hyperjump/json-schema/schema/experimental` export.
-
-This library uses SchemaDocument objects to represent a value in a schema.
-You'll work with these objects if you create a custom keyword. This module is a
-set of functions for working with SchemaDocuments.
-
-* **Schema.add**: (schema: object, retrievalUri?: string, dialectId?: string) => string
-
-    Load a schema. Returns the identifier for the schema.
-* **Schema.get**: (url: string, contextDoc?: SchemaDocument) => Promise\<SchemaDocument>
-
-    Fetch a schema. Schemas can come from an HTTP request, a file, or a schema
-    that was added with `Schema.add`.
-* **Schema.uri**: (doc: SchemaDocument) => string
-
-    Returns a URI for the value the SchemaDocument represents.
-* **Schema.value**: (doc: SchemaDocument) => any
-
-    Returns the value the SchemaDocument represents.
-* **Schema.typeOf**: (doc: SchemaDocument, type: string) => boolean
-
-    Determines if the JSON type of the given doc matches the given type.
-* **Schema.has**: (key: string, doc: SchemaDocument) => Promise\<SchemaDocument>
-
-    Similar to `key in schema`.
-* **Schema.step**: (key: string, doc: SchemaDocument) => Promise\<SchemaDocument>
-
-    Similar to `schema[key]`, but returns an SchemaDocument.
-* **Schema.iter**: (doc: SchemaDocument) => AsyncGenerator\<SchemaDocument>
-
-    Iterate over the items in the array that the SchemaDocument represents
-* **Schema.entries**: (doc: SchemaDocument) => AsyncGenerator\<[string, SchemaDocument]>
-
-    Similar to `Object.entries`, but yields SchemaDocuments for values.
-* **Schema.values**: (doc: SchemaDocument) => AsyncGenerator\<SchemaDocument>
-
-    Similar to `Object.values`, but yields SchemaDocuments for values.
-* **Schema.keys**: (doc: SchemaDocument) => Generator\<string>
-
-    Similar to `Object.keys`.
-* **Schema.length**: (doc: SchemaDocument) => number
-
-    Similar to `Array.prototype.length`.
-* **Schema.toSchema**: (doc: SchemaDocument, options: ToSchemaOptions) => object
+    Returns a URI for the schema.
+* **toSchema**: (schema: Browser, options: ToSchemaOptions) => object
 
     Get a raw schema from a Schema Document.
 
-**Type Definitions**
+    * **ToSchemaOptions**: object
 
-The following types are used in the above definitions
+        * contextDialectId: string (default: "") -- If the dialect of the schema
+          matches this value, the `$schema` keyword will be omitted.
+        * includeDialect: "auto" | "always" | "never" (default: "auto") -- If
+          "auto", `$schema` will only be included if it differs from
+          `contextDialectId`.
+        * selfIdentify: boolean (default: false) -- If true, `$id` will be
+          included.
+        * contextUri: string (default: "") -- `$id`s will be relative to this
+          URI.
+        * includeEmbedded: boolean (default: true) -- If false, embedded schemas
+          will be unbundled from the schema.
+* **compile**: (schema: Browser) => Promise\<CompiledSchema>
 
-* **ToSchemaOptions**: object
+    Return a compiled schema. This is useful if you're creating tooling for
+    something other than validation.
+* **interpret**: (schema: CompiledSchema, instance: Instance, outputFormat: OutputFormat = BASIC) => OutputUnit
 
-    * parentId: string (default: "") -- `file://` URIs will be generated
-      relative to this path.
-    * parentDialect: string (default: "") -- If the dialect of the schema
-    * matches this value, the `$schema` keyword will be omitted.
-    * includeEmbedded: boolean (default: true) -- If false, embedded schemas
-      will be unbundled from the schema.
+    A curried function for validating an instance against a compiled schema.
+    This can be useful for creating custom output formats.
 
-### Instance API
+* **OutputFormat**: **FLAG** | **BASIC** | **DETAILED** | **VERBOSE**
+
+    In addition to the `FLAG` output format in the Stable API, the Experimental
+    API includes support for the `BASIC`, `DETAILED`, and `VERBOSE` formats as
+    specified in the 2019-09 specification (with some minor customizations).
+    This implementation doesn't include annotations or human readable error
+    messages. The output can be processed to create human readable error
+    messages as needed.
+
+## Instance API (experimental)
+
 These functions are available from the
 `@hyperjump/json-schema/instance/experimental` export.
 
@@ -626,44 +626,49 @@ This library uses InstanceDocument objects to represent a value in an instance.
 You'll work with these objects if you create a custom keyword. This module is a
 set of functions for working with InstanceDocuments.
 
-* **Instance.cons**: (instance: any, uri?: string) => InstanceDocument
+This API uses generators to iterate over arrays and objects. If you like using
+higher order functions like `map`/`filter`/`reduce`, see
+[`@hyperjump/pact`](https://github.com/hyperjump-io/pact) for utilities for
+working with generators and async generators.
+
+* **cons**: (instance: any, uri?: string) => InstanceDocument
 
     Construct an InstanceDocument from a value.
-* **Instance.get**: (url: string, contextDoc: InstanceDocument) => InstanceDocument
+* **get**: (url: string, contextDoc: InstanceDocument) => InstanceDocument
 
     Apply a same-resource reference to a InstanceDocument.
-* **Instance.uri**: (doc: InstanceDocument) => string
+* **uri**: (doc: InstanceDocument) => string
 
     Returns a URI for the value the InstanceDocument represents.
-* **Instance.value**: (doc: InstanceDocument) => any
+* **value**: (doc: InstanceDocument) => any
 
     Returns the value the InstanceDocument represents.
-* **Instance.has**: (key: string, doc: InstanceDocument) => any
+* **has**: (key: string, doc: InstanceDocument) => any
 
     Similar to `key in instance`.
-* **Instance.typeOf**: (doc: InstanceDocument, type: string) => boolean
+* **typeOf**: (doc: InstanceDocument) => string
 
     Determines if the JSON type of the given doc matches the given type.
-* **Instance.step**: (key: string, doc: InstanceDocument) => InstanceDocument
+* **step**: (key: string, doc: InstanceDocument) => InstanceDocument
 
     Similar to `schema[key]`, but returns a InstanceDocument.
-* **Instance.iter**: (doc: InstanceDocument) => Generator\<InstanceDocument>
+* **iter**: (doc: InstanceDocument) => Generator\<InstanceDocument>
 
     Iterate over the items in the array that the SchemaDocument represents.
-* **Instance.entries**: (doc: InstanceDocument) => Generator\<[string, InstanceDocument]>
+* **entries**: (doc: InstanceDocument) => Generator\<[string, InstanceDocument]>
 
     Similar to `Object.entries`, but yields InstanceDocuments for values.
-* **Instance.values**: (doc: InstanceDocument) => Generator\<InstanceDocument>
+* **values**: (doc: InstanceDocument) => Generator\<InstanceDocument>
 
     Similar to `Object.values`, but yields InstanceDocuments for values.
-* **Instance.keys**: (doc: InstanceDocument) => Generator\<string>
+* **keys**: (doc: InstanceDocument) => Generator\<string>
 
     Similar to `Object.keys`.
-* **Instance.length**: (doc: InstanceDocument) => number
+* **length**: (doc: InstanceDocument) => number
 
     Similar to `Array.prototype.length`.
 
-## Annotations (Experimental)
+## Annotations (experimental)
 JSON Schema is for annotating JSON instances as well as validating them. This
 module provides utilities for working with JSON documents annotated with JSON
 Schema.
@@ -674,14 +679,14 @@ object is a wrapper around your JSON document with functions that allow you to
 traverse the data structure and get annotations for the values within.
 
 ```javascript
-import { annotate, annotatedWith, addSchema } from "@hyperjump/json-schema/annotations/experimental";
+import { annotate, annotatedWith, registerSchema } from "@hyperjump/json-schema/annotations/experimental";
 import * as AnnotatedInstance from "@hyperjump/json-schema/annotated-instance/experimental";
 
 
 const schemaId = "https://example.com/foo";
 const dialectId = "https://json-schema.org/draft/2020-12/schema";
 
-addSchema({
+registerSchema({
   "$schema": dialectId,
 
   "title": "Person",
@@ -743,28 +748,28 @@ for (const deprecated of AnnotatedInstance.annotatedWith(instance, "deprecated",
 These are available from the `@hyperjump/json-schema/annotations/experimental`
 export.
 
-* **annotate**: (schemaUri: string, instance: any, outputFormat: OutputFormat = * FLAG) => Promise\<AnnotatedInstance>
+* **annotate**: (schemaUri: string, instance: any, outputFormat: OutputFormat = FLAG) => Promise\<AnnotatedInstance>
 
     Annotate an instance using the given schema. The function is curried to
     allow compiling the schema once and applying it to multiple instances. This
     may throw an [InvalidSchemaError](#api) if there is a problem with the
     schema or a ValidationError if the instance doesn't validate against the
     schema.
-* **ValidationError**:
-    output: OutputUnit -- The errors that were found while validating the
-    instance.
+* **ValidationError**: Error & { output: OutputUnit }
+    The `output` field contains an `OutputUnit` with information about the
+    error.
 
-### AnnotatedInstance API
+## AnnotatedInstance API (experimental)
 These are available from the
 `@hyperjump/json-schema/annotated-instance/experimental` export. The
 following functions are available in addition to the functions available in the
-[Instance API](#instance-api).
+[Instance API](#instance-api-experimental).
 
-* **annotation**: (instance: AnnotatedInstance, keyword: string, dialectId?: string) => [any]
+* **annotation**: (instance: AnnotatedInstance, keyword: string, dialectId?: string) => any[]
 
     Get the annotations for a given keyword at the location represented by the
     instance object.
-* **annotatedWith**: (instance: AnnotatedInstance, keyword: string, dialectId?: string) => [AnnotatedInstance]
+* **annotatedWith**: (instance: AnnotatedInstance, keyword: string, dialectId?: string) => AnnotatedInstance[]
 
     Get an array of instances for all the locations that are annotated with the
     given keyword.
@@ -772,19 +777,6 @@ following functions are available in addition to the functions available in the
 
     Add an annotation to an instance. This is used internally, you probably
     don't need it.
-
-## Low-level Utilities (Experimental)
-### API
-These are available from the `@hyperjump/json-schema/experimental` export.
-
-* **compile**: (schemaUri: string) => Promise\<CompiledSchema>
-
-    Return a compiled schema. This is useful if you're creating tooling for
-    something other than validation.
-* **interpret**: (schema: CompiledSchema, instance: Instance, outputFormat: OutputFormat = BASIC) => OutputUnit
-
-    A curried function for validating an instance against a compiled schema.
-    This can be useful for creating custom output formats.
 
 ## Contributing
 

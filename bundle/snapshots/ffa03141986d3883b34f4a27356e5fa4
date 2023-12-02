@@ -29,7 +29,7 @@
     },
     {
       "keyword": "https://json-schema.org/keyword/then",
-      "absoluteKeywordLocation": "https://test.json-schema.org/short-string#",
+      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/then",
       "instanceLocation": "#",
       "valid": true,
       "errors": [

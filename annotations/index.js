@@ -1,13 +1,13 @@
 import { subscribe, unsubscribe } from "../lib/pubsub.js";
-import { compile, interpret as validate, BASIC } from "../lib/core.js";
-import { getKeyword } from "../lib/keywords.js";
 import * as Instance from "./annotated-instance.js";
 import { ValidationError } from "./validation-error.js";
+import { getSchema, getKeyword, compile, interpret as validate, BASIC } from "../lib/experimental.js";
 
 
 export const annotate = async (schemaUri, json = undefined, outputFormat = undefined) => {
   loadKeywordSupport();
-  const compiled = await compile(schemaUri);
+  const schema = await getSchema(schemaUri);
+  const compiled = await compile(schema);
   const interpretAst = (json, outputFormat) => interpret(compiled, Instance.cons(json), outputFormat);
 
   return json === undefined ? interpretAst : interpretAst(json, outputFormat);

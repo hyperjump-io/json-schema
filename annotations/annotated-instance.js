@@ -1,4 +1,4 @@
-import { toAbsoluteUri } from "../lib/common.js";
+import { toAbsoluteIri } from "@hyperjump/uri";
 import { nil as nilInstance, get } from "../lib/instance.js";
 import { getKeywordId } from "../lib/keywords.js";
 
@@ -8,13 +8,13 @@ const defaultDialectId = "https://json-schema.org/validation";
 export const nil = { ...nilInstance, annotations: {} };
 export const cons = (instance, id = undefined) => ({
   ...nil,
-  id: id ? toAbsoluteUri(id) : "",
+  id: id ? toAbsoluteIri(id) : "",
   instance,
   value: instance
 });
 
 export const annotation = (instance, keyword, dialectId = defaultDialectId) => {
-  const keywordId = getKeywordId(dialectId, keyword);
+  const keywordId = getKeywordId(keyword, dialectId);
   return instance.annotations[instance.pointer]?.[keywordId] || [];
 };
 

@@ -8,23 +8,7 @@ export const get: (url: string, context?: JsonDocument) => JsonDocument;
 export const uri: (doc: JsonDocument) => string;
 export const value: <A extends Json>(doc: JsonDocument<A>) => A;
 export const has: (key: string, doc: JsonDocument<JsonObject>) => boolean;
-export const typeOf: (
-  (doc: JsonDocument, type: "null") => doc is JsonDocument<null>
-) & (
-  (doc: JsonDocument, type: "boolean") => doc is JsonDocument<boolean>
-) & (
-  (doc: JsonDocument, type: "object") => doc is JsonDocument<JsonObject>
-) & (
-  (doc: JsonDocument, type: "array") => doc is JsonDocument<Json[]>
-) & (
-  (doc: JsonDocument, type: "number" | "integer") => doc is JsonDocument<number>
-) & (
-  (doc: JsonDocument, type: "string") => doc is JsonDocument<string>
-) & (
-  (doc: JsonDocument, type: JsonType) => boolean
-) & (
-  (doc: JsonDocument) => (type: JsonType) => boolean
-);
+export const typeOf: (doc: JsonDocument) => JsonType;
 export const step: (key: string, doc: JsonDocument<JsonObject | Json[]>) => JsonDocument<typeof doc.value>;
 export const iter: (doc: JsonDocument<JsonObject>) => Generator<JsonDocument>;
 export const keys: (doc: JsonDocument<JsonObject>) => Generator<string>;

@@ -6,7 +6,7 @@
   "errors": [
     {
       "keyword": "https://json-schema.org/keyword/not",
-      "absoluteKeywordLocation": "https://bundler.hyperjump.io/string#",
+      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/not",
       "instanceLocation": "#",
       "valid": false,
       "errors": [

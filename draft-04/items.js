@@ -1,15 +1,15 @@
 import { pipe, asyncMap, asyncCollectArray, every, zip, take, range, collectSet } from "@hyperjump/pact";
+import * as Browser from "@hyperjump/browser";
 import * as Instance from "../lib/instance.js";
-import * as Schema from "../lib/schema.js";
-import Validation from "../lib/keywords/validation.js";
+import { Validation } from "../lib/experimental.js";
 
 
 const id = "https://json-schema.org/keyword/draft-04/items";
 
 const compile = (schema, ast) => {
-  if (Schema.typeOf(schema, "array")) {
+  if (Browser.typeOf(schema) === "array") {
     return pipe(
-      Schema.iter(schema),
+      Browser.iter(schema),
       asyncMap((itemSchema) => Validation.compile(itemSchema, ast)),
       asyncCollectArray
     );
@@ -19,7 +19,7 @@ const compile = (schema, ast) => {
 };
 
 const interpret = (items, instance, ast, dynamicAnchors, quiet) => {
-  if (!Instance.typeOf(instance, "array")) {
+  if (Instance.typeOf(instance) !== "array") {
     return true;
   }
 

@@ -1,5 +1,5 @@
 import { writeFile, mkdir, rm } from "node:fs/promises";
-import { isCompatible, md5, loadSchemas, testSuite } from "./test-utils.js";
+import { isCompatible, md5, loadSchemas, testSuite, unloadSchemas } from "./test-utils.js";
 import { validate } from "../lib/index.js";
 import { VERBOSE, setExperimentalKeywordEnabled } from "../lib/experimental.js";
 import "../stable/index.js";
@@ -30,6 +30,8 @@ const snapshotGenerator = async (version, dialect) => {
     for (const test of testCase.tests) {
       loadSchemas(testCase, mainSchemaUri, dialect);
       const expectedOutput = await validate(mainSchemaUri, test.instance, VERBOSE);
+      unloadSchemas(testCase, mainSchemaUri);
+
       const testId = md5(`${version}|${dialect}|${testCase.description}|${testIndex}`);
       await writeFile(`./bundle/snapshots/${testId}`, JSON.stringify(expectedOutput, null, "  "));
       testIndex++;

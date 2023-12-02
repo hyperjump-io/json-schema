@@ -1,19 +1,18 @@
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
-import { describe, it, expect, beforeEach } from "vitest";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { describe, it, expect, beforeEach, beforeAll, afterAll } from "vitest";
 import { toAbsoluteIri } from "@hyperjump/uri";
-
 import * as AnnotatedInstance from "./annotated-instance.js";
 import { annotate } from "./index.js";
-import { addSchema } from "../lib/core.js";
+import { registerSchema, unregisterSchema } from "../lib/index.js";
 import "../stable/index.js";
 import "../draft-2020-12/index.js";
 import "../draft-07/index.js";
 import "../draft-06/index.js";
 import "../draft-04/index.js";
 
-import type { SchemaObject } from "../lib/schema.js";
+import type { SchemaObject } from "../lib/index.js";
 import type { AnnotatedJsonDocument } from "./annotated-instance.js";
 import type { Annotator } from "./index.js";
 
@@ -53,12 +52,17 @@ describe("Annotations", () => {
       suites.forEach((suite) => {
         describe(suite.title + "\n" + JSON.stringify(suite.schema, null, "  "), () => {
           let annotator: Annotator;
+          let id: string;
 
-          beforeEach(async () => {
-            const id = `${host}/${encodeURIComponent(suite.title)}`;
-            addSchema(suite.schema, id, dialectId);
+          beforeAll(async () => {
+            id = `${host}/${encodeURIComponent(suite.title)}`;
+            registerSchema(suite.schema, id, dialectId);
 
             annotator = await annotate(id);
+          });
+
+          afterAll(() => {
+            unregisterSchema(id);
           });
 
           suite.subjects.forEach((subject) => {

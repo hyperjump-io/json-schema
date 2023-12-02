@@ -6,7 +6,7 @@
   "errors": [
     {
       "keyword": "https://json-schema.org/keyword/propertyNames",
-      "absoluteKeywordLocation": "https://test.json-schema.org/short-string#",
+      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/propertyNames",
       "instanceLocation": "#",
       "valid": true,
       "errors": []

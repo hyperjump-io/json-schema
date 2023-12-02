@@ -1,22 +1,21 @@
 import { pipe, drop, every } from "@hyperjump/pact";
+import * as Browser from "@hyperjump/browser";
 import * as Instance from "../lib/instance.js";
-import * as Schema from "../lib/schema.js";
-import Validation from "../lib/keywords/validation.js";
-import { getKeywordName } from "../lib/keywords.js";
+import { getKeywordName, Validation } from "../lib/experimental.js";
 
 
 const id = "https://json-schema.org/keyword/draft-04/additionalItems";
 
 const compile = async (schema, ast, parentSchema) => {
-  const itemsKeywordName = getKeywordName(schema.dialectId, "https://json-schema.org/keyword/draft-04/items");
-  const items = await Schema.step(itemsKeywordName, parentSchema);
-  const numberOfItems = Schema.typeOf(items, "array") ? Schema.length(items) : Number.MAX_SAFE_INTEGER;
+  const itemsKeywordName = getKeywordName(schema.document.dialectId, "https://json-schema.org/keyword/draft-04/items");
+  const items = await Browser.step(itemsKeywordName, parentSchema);
+  const numberOfItems = Browser.typeOf(items) === "array" ? Browser.length(items) : Number.MAX_SAFE_INTEGER;
 
   return [numberOfItems, await Validation.compile(schema, ast)];
 };
 
 const interpret = ([numberOfItems, additionalItems], instance, ast, dynamicAnchors, quiet) => {
-  if (!Instance.typeOf(instance, "array")) {
+  if (Instance.typeOf(instance) !== "array") {
     return true;
   }
 

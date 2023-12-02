@@ -1,10 +1,10 @@
-import { describe, it, expect, beforeAll } from "vitest";
-import { addSchema } from "../lib/index.js";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { registerSchema, unregisterSchema } from "../lib/index.js";
 import "../stable/index.js";
 import "../draft-2020-12/index.js";
 import { bundle } from "./index.js";
 
-import type { SchemaObject } from "../lib/schema.js";
+import type { SchemaObject } from "../lib/index.js";
 
 
 describe("bundle", () => {
@@ -37,8 +37,12 @@ describe("bundle", () => {
     let bundledSchema: SchemaObject;
 
     beforeAll(async () => {
-      addSchema({ "type": "number" }, "https://bundler.hyperjump.io/number", dialect);
+      registerSchema({ "type": "number" }, "https://bundler.hyperjump.io/number", dialect);
       bundledSchema = await bundle("./bundle/file-schemas/mixed-schemes.schema.json");
+    });
+
+    afterAll(() => {
+      unregisterSchema("https://bundler.hyperjump.io/number");
     });
 
     it("should not have an identifier", () => {

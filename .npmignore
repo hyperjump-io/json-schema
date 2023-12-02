@@ -4,7 +4,7 @@ bun.lockb
 **/*.spec.ts
 lib/gherkin.ts
 **/*.schema.json
-**/*.schema.yaml
+**/*.schema.yml
 tsconfig.json
 scratch/
 coverage/

@@ -1,4 +1,0 @@
-{
-  "$id": "file:///path/to/schema/file-id.schema.json",
-  "$schema": "https://json-schema.org/validation"
-}

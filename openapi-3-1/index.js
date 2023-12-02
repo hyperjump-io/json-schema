@@ -1,11 +1,16 @@
-import { addKeyword, defineVocabulary, loadDialect } from "../lib/keywords.js";
-import { addSchema } from "../lib/core.js";
+import { addKeyword, defineVocabulary } from "../lib/keywords.js";
+import { registerSchema } from "../lib/index.js";
 import "../lib/openapi.js";
 
 import dialectSchema from "./dialect/base.js";
 import vocabularySchema from "./meta/base.js";
-import schema20221007 from "./schema/2022-10-07.js";
-import schemaBase20221007 from "./schema-base/2022-10-07.js";
+import schema from "./schema.js";
+import schemaBase from "./schema-base.js";
+import schemaDraft2020 from "./schema-draft-2020-12.js";
+import schemaDraft2019 from "./schema-draft-2019-09.js";
+import schemaDraft07 from "./schema-draft-07.js";
+import schemaDraft06 from "./schema-draft-06.js";
+import schemaDraft04 from "./schema-draft-04.js";
 
 import discriminator from "../openapi-3-0/discriminator.js";
 import example from "../openapi-3-0/example.js";
@@ -25,24 +30,20 @@ defineVocabulary("https://spec.openapis.org/oas/3.1/vocab/base", {
   "xml": "https://spec.openapis.org/oas/3.0/keyword/xml"
 });
 
-loadDialect("https://spec.openapis.org/oas/3.1/schema-base", {
-  "https://json-schema.org/draft/2020-12/vocab/core": true,
-  "https://json-schema.org/draft/2020-12/vocab/applicator": true,
-  "https://json-schema.org/draft/2020-12/vocab/validation": true,
-  "https://json-schema.org/draft/2020-12/vocab/meta-data": true,
-  "https://json-schema.org/draft/2020-12/vocab/format-annotation": true,
-  "https://json-schema.org/draft/2020-12/vocab/content": true,
-  "https://json-schema.org/draft/2020-12/vocab/unevaluated": true,
-  "https://spec.openapis.org/oas/3.1/vocab/base": false
-}, true);
-
-addSchema(vocabularySchema);
-addSchema(dialectSchema);
+registerSchema(vocabularySchema);
+registerSchema(dialectSchema);
 
 // Current Schemas
-addSchema(schema20221007, "https://spec.openapis.org/oas/3.1/schema");
-addSchema(schema20221007, "https://spec.openapis.org/oas/3.1/schema/latest");
-addSchema(schemaBase20221007, "https://spec.openapis.org/oas/3.1/schema-base");
-addSchema(schemaBase20221007, "https://spec.openapis.org/oas/3.1/schema-base/latest");
+registerSchema(schema, "https://spec.openapis.org/oas/3.1/schema");
+registerSchema(schema, "https://spec.openapis.org/oas/3.1/schema/latest");
+registerSchema(schemaBase, "https://spec.openapis.org/oas/3.1/schema-base");
+registerSchema(schemaBase, "https://spec.openapis.org/oas/3.1/schema-base/latest");
+
+// Alternative dialect schemas
+registerSchema(schemaDraft2020, "https://spec.openapis.org/oas/3.1/schema-draft-2020-12");
+registerSchema(schemaDraft2019, "https://spec.openapis.org/oas/3.1/schema-draft-2019-09");
+registerSchema(schemaDraft07, "https://spec.openapis.org/oas/3.1/schema-draft-07");
+registerSchema(schemaDraft06, "https://spec.openapis.org/oas/3.1/schema-draft-06");
+registerSchema(schemaDraft04, "https://spec.openapis.org/oas/3.1/schema-draft-04");
 
 export * from "../draft-2020-12/index.js";

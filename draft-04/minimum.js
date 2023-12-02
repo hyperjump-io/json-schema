@@ -1,20 +1,20 @@
+import * as Browser from "@hyperjump/browser";
 import * as Instance from "../lib/instance.js";
-import * as Schema from "../lib/schema.js";
-import { getKeywordName } from "../lib/keywords.js";
+import { getKeywordName } from "../lib/experimental.js";
 
 
 const id = "https://json-schema.org/keyword/draft-04/minimum";
 
-const compile = async (schema, ast, parentSchema) => {
-  const exclusiveMinimumKeyword = getKeywordName(schema.dialectId, "https://json-schema.org/keyword/draft-04/exclusiveMinimum");
-  const exclusiveMinimum = await Schema.step(exclusiveMinimumKeyword, parentSchema);
-  const isExclusive = Schema.value(exclusiveMinimum);
+const compile = async (schema, _ast, parentSchema) => {
+  const exclusiveMinimumKeyword = getKeywordName(schema.document.dialectId, "https://json-schema.org/keyword/draft-04/exclusiveMinimum");
+  const exclusiveMinimum = await Browser.step(exclusiveMinimumKeyword, parentSchema);
+  const isExclusive = Browser.value(exclusiveMinimum);
 
-  return [Schema.value(schema), isExclusive];
+  return [Browser.value(schema), isExclusive];
 };
 
 const interpret = ([minimum, isExclusive], instance) => {
-  if (!Instance.typeOf(instance, "number")) {
+  if (Instance.typeOf(instance) !== "number") {
     return true;
   }
 

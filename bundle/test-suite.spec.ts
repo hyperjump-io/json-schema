@@ -1,17 +1,16 @@
 import { readFile } from "node:fs/promises";
-import { describe, it, expect, beforeAll, afterEach } from "vitest";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { isCompatible, md5, loadSchemas, unloadSchemas, testSuite } from "./test-utils.js";
-import { addSchema, validate } from "../lib/index.js";
-import { VERBOSE, setExperimentalKeywordEnabled } from "../lib/experimental.js";
+import { registerSchema, unregisterSchema, validate } from "../lib/index.js";
+import { VERBOSE, getKeywordName, setExperimentalKeywordEnabled } from "../lib/experimental.js";
 import "../stable/index.js";
 import "../draft-2020-12/index.js";
 import "../draft-2019-09/index.js";
 import "../draft-07/index.js";
 import "../draft-06/index.js";
 import "../draft-04/index.js";
-import { bundle, FLAT, FULL, URI, UUID } from "./index.js";
+import { bundle, URI, UUID } from "./index.js";
 
-import type { SchemaObject } from "../lib/schema.js";
 import type { BundleOptions } from "./index.js";
 import type { OutputUnit } from "../lib/index.js";
 
@@ -24,18 +23,13 @@ setExperimentalKeywordEnabled("https://json-schema.org/keyword/conditional", tru
 
 const suite = testSuite("./bundle/tests");
 
-const combine = (lists: unknown[][], items: unknown[]) => items.flatMap((item) => lists.map((list: unknown[]): unknown[] => [...list, item]));
-const combinations = (...lists: unknown[][]) => lists.reduce(combine, [[]]);
-
-const bundleMode = [FLAT, FULL];
-const definitionNamingStrategy = [URI, UUID];
-
-const config = combinations(bundleMode, definitionNamingStrategy) as [
-  BundleOptions["bundleMode"],
-  BundleOptions["definitionNamingStrategy"]
-][];
+const config: BundleOptions[] = [
+  { definitionNamingStrategy: URI },
+  { definitionNamingStrategy: UUID }
+];
 
 const testRunner = (version: number, dialect: string) => {
+  const definitionsToken = getKeywordName(dialect, "https://json-schema.org/keyword/definitions");
   describe(dialect, () => {
     for (const testCase of suite) {
       if (!isCompatible(testCase.compatibility, version)) {
@@ -45,24 +39,28 @@ const testRunner = (version: number, dialect: string) => {
       describe(testCase.description, () => {
         const mainSchemaUri = "https://bundler.hyperjump.io/main";
 
-        for (const [bundleMode, definitionNamingStrategy] of config) {
-          const options = { bundleMode, definitionNamingStrategy };
+        for (const options of config) {
           describe(JSON.stringify(options), () => {
-            let bundledSchema: SchemaObject;
-
             beforeAll(async () => {
               loadSchemas(testCase, mainSchemaUri, dialect);
-              bundledSchema = await bundle(mainSchemaUri, options);
+
+              const bundledSchema = await bundle(mainSchemaUri, options);
+              if (!bundledSchema[definitionsToken]) {
+                bundledSchema[definitionsToken] = {};
+              }
+
               unloadSchemas(testCase, mainSchemaUri, dialect);
+
+              registerSchema(bundledSchema, mainSchemaUri, dialect);
             });
 
-            afterEach(() => {
+            afterAll(() => {
               unloadSchemas(testCase, mainSchemaUri, dialect);
+              unregisterSchema(mainSchemaUri);
             });
 
             testCase.tests.forEach((test, testIndex) => {
               it(test.description, async () => {
-                addSchema(bundledSchema, mainSchemaUri, dialect);
                 const output = await validate(mainSchemaUri, test.instance, VERBOSE);
 
                 const testId = md5(`${version}|${dialect}|${testCase.description}|${testIndex}`);
