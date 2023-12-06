@@ -244,7 +244,7 @@ type Header = {
   description?: string;
   required?: boolean;
   deprecated?: boolean;
-  schema?: OpenApi31;
+  schema?: OasSchema31;
   style?: "simple";
   explode?: boolean;
   content?: Content;
