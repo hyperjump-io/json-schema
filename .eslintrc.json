@@ -13,6 +13,12 @@
     "eslint:recommended"
   ],
   "plugins": ["import"],
+  "settings": {
+    "import/resolver": {
+      "node": {},
+      "exports": {}
+    }
+  },
   "rules": {
     "array-bracket-newline": ["error", "consistent"],
     "array-bracket-spacing": "error",
@@ -48,7 +54,6 @@
     "key-spacing": "error",
     "keyword-spacing": "error",
     "linebreak-style": "error",
-    "lines-between-class-members": "error",
     "logical-assignment-operators": "error",
     "max-classes-per-file": "error",
     "max-len": ["warn", { "code": 160, "ignoreStrings": true, "ignoreTemplateLiterals": true, "ignoreRegExpLiterals": true }],
@@ -163,11 +168,8 @@
     "yield-star-spacing": "error",
     "yoda": "error",
     "import/no-unresolved": ["error", { "commonjs": true }],
-    "import/extensions": ["error", "always", { "js": "always" }],
+    "import/extensions": ["error", "always", { "js": "always", "ignorePackages": true }],
     "import/newline-after-import": ["error", { "count": 2 }]
-  },
-  "settings": {
-    "import/resolver": "node"
   },
   "overrides": [
     {
