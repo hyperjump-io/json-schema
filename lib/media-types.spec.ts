@@ -1,7 +1,6 @@
-/* eslint-disable @typescript-eslint/no-misused-promises */
-import { expect } from "chai";
+import { describe, beforeAll, afterAll, beforeEach, expect } from "vitest";
 import { MockAgent, setGlobalDispatcher } from "undici";
-import { Given, Then } from "./mocha-gherkin.spec.js";
+import { Given, Then } from "./gherkin.js";
 import "../stable/index.js";
 import * as Schema from "./schema.js";
 
@@ -13,7 +12,7 @@ const customDialectId = `${testDomain}/dialect/dialect-identification/custom`;
 describe("Media Types", () => {
   let mockAgent: MockAgent;
 
-  before(() => {
+  beforeAll(() => {
     mockAgent = new MockAgent();
     mockAgent.disableNetConnect();
     setGlobalDispatcher(mockAgent);
@@ -25,7 +24,7 @@ describe("Media Types", () => {
     });
   });
 
-  after(async () => {
+  afterAll(async () => {
     await mockAgent.close();
   });
 

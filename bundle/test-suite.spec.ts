@@ -1,6 +1,6 @@
 import { basename, relative } from "node:path";
 import { readFileSync, readdirSync } from "node:fs";
-import { expect } from "chai";
+import { describe, it, expect, beforeAll } from "vitest";
 import { getKeywordName } from "../lib/keywords.js";
 import { addSchema, validate } from "../lib/index.js";
 import { VERBOSE, setExperimentalKeywordEnabled } from "../lib/experimental.js";
@@ -136,7 +136,7 @@ const testRunner = (version: number, dialect: string) => {
         const mainSchemaUri = "https://bundler.hyperjump.io/main";
         const expectedOutput: OutputUnit[] = [];
 
-        before(async () => {
+        beforeAll(async () => {
           for (const test of testCase.tests) {
             loadSchemas(testCase, mainSchemaUri, dialect);
             expectedOutput.push(await validate(mainSchemaUri, test.instance, VERBOSE));
@@ -148,7 +148,7 @@ const testRunner = (version: number, dialect: string) => {
           describe(JSON.stringify(options), () => {
             let bundledSchema: SchemaObject;
 
-            before(async () => {
+            beforeAll(async () => {
               loadSchemas(testCase, mainSchemaUri, dialect);
               bundledSchema = await bundle(mainSchemaUri);
             });

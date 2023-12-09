@@ -1,5 +1,5 @@
 import { addKeyword, defineVocabulary, loadDialect } from "../lib/keywords.js";
-import { addSchema } from "../lib/core.js";
+import { addSchema } from "../lib/index.js";
 import "../lib/openapi.js";
 
 import dialectSchema from "./dialect.js";

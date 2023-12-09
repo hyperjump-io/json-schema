@@ -1,5 +1,5 @@
-import { expect } from "chai";
-import { Given, When, Then } from "./mocha-gherkin.spec.js";
+import { describe, beforeEach, expect } from "vitest";
+import { Given, When, Then } from "./gherkin.js";
 import "../stable/index.js";
 import * as Schema from "./schema.js";
 import { defineVocabulary, loadDialect } from "./keywords.js";

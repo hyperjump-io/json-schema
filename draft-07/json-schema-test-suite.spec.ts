@@ -1,8 +1,8 @@
 /* eslint-disable no-console */
 import fs from "fs";
+import { describe, it, expect, beforeAll } from "vitest";
 import * as JsonSchema from "./index.js";
 import type { JsonSchemaDraft07, Validator } from "./index.js";
-import { expect } from "chai";
 
 
 type Suite = {
@@ -72,7 +72,7 @@ const runTestSuite = (draft: string, dialectId: string) => {
   const testSuiteFilePath = `${testSuitePath}/tests/${draft}`;
 
   describe(`${draft} ${dialectId}`, () => {
-    before(() => {
+    beforeAll(() => {
       addRemotes(dialectId);
     });
 
@@ -88,7 +88,7 @@ const runTestSuite = (draft: string, dialectId: string) => {
             describe(suite.description, () => {
               let validate: Validator;
 
-              before(async () => {
+              beforeAll(async () => {
                 if (shouldSkip([draft, entry.name, suite.description])) {
                   return;
                 }

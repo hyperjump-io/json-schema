@@ -1,14 +1,15 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { expect } from "chai";
+import { describe, expect, beforeAll, afterAll, beforeEach } from "vitest";
 import { MockAgent, setGlobalDispatcher } from "undici";
-import { When, Then } from "./mocha-gherkin.spec.js";
+import { When, Then } from "./gherkin.js";
+import Yaml from "yaml";
 import * as JsonSchema from "./index.js";
 import "../stable/index.js";
 import * as Schema from "./schema.js";
+
 import type { SchemaDocument, SchemaObject } from "./schema.js";
-import Yaml from "yaml";
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -24,13 +25,13 @@ JsonSchema.addMediaTypePlugin("application/schema+yaml", {
 describe("Schema.get with YAML", () => {
   let mockAgent: MockAgent;
 
-  before(() => {
+  beforeAll(() => {
     mockAgent = new MockAgent();
     mockAgent.disableNetConnect();
     setGlobalDispatcher(mockAgent);
   });
 
-  after(async () => {
+  afterAll(async () => {
     await mockAgent.close();
   });
 

@@ -1,8 +1,9 @@
 /* eslint-disable no-console */
 import fs from "fs";
+import { describe, it, expect, beforeAll } from "vitest";
 import * as JsonSchema from "./index.js";
+
 import type { OasSchema30, Validator } from "./index.js";
-import { expect } from "chai";
 
 
 type Suite = {
@@ -127,44 +128,48 @@ const runTestSuite = (draft: string, dialectId: string) => {
   const testSuiteFilePath = `${testSuitePath}/tests/${draft}`;
 
   describe(`${draft} ${dialectId}`, () => {
-    before(() => {
+    beforeAll(() => {
       addRemotes(dialectId);
     });
 
+    // [{ name: "additionalItems.json" }]
     fs.readdirSync(testSuiteFilePath, { withFileTypes: true })
       .filter((entry) => entry.isFile() && entry.name.endsWith(".json"))
+      .filter((entry) => !ignore.has(`|${draft}|${entry.name}`))
       .forEach((entry) => {
         const file = `${testSuiteFilePath}/${entry.name}`;
 
         describe(entry.name, () => {
           const suites = JSON.parse(fs.readFileSync(file, "utf8")) as Suite[];
 
-          suites.forEach((suite) => {
-            describe(suite.description, () => {
-              let validate: Validator;
+          suites
+            .filter((suite) => !ignore.has(`|${draft}|${entry.name}|${suite.description}`))
+            .forEach((suite) => {
+              describe(suite.description, () => {
+                let validate: Validator;
 
-              before(async () => {
-                if (shouldSkip([draft, entry.name, suite.description])) {
-                  return;
-                }
-                const url = `http://${draft}-test-suite.json-schema.org/${encodeURIComponent(suite.description)}`;
-                JsonSchema.addSchema(suite.schema, url, dialectId);
+                beforeAll(async () => {
+                  if (shouldSkip([draft, entry.name, suite.description])) {
+                    return;
+                  }
+                  const url = `http://${draft}-test-suite.json-schema.org/${encodeURIComponent(suite.description)}`;
+                  JsonSchema.addSchema(suite.schema, url, dialectId);
 
-                validate = await JsonSchema.validate(url);
-              });
+                  validate = await JsonSchema.validate(url);
+                });
 
-              suite.tests.forEach((test) => {
-                if (shouldSkip([draft, entry.name, suite.description, test.description])) {
-                  it.skip(test.description, () => { /* empty */ });
-                } else if (!shouldIgnore([draft, entry.name, suite.description, test.description])) {
-                  it(test.description, () => {
-                    const output = validate(test.data);
-                    expect(output.valid).to.equal(test.valid);
-                  });
-                }
+                suite.tests.forEach((test) => {
+                  if (shouldSkip([draft, entry.name, suite.description, test.description])) {
+                    it.skip(test.description, () => { /* empty */ });
+                  } else if (!shouldIgnore([draft, entry.name, suite.description, test.description])) {
+                    it(test.description, () => {
+                      const output = validate(test.data);
+                      expect(output.valid).to.equal(test.valid);
+                    });
+                  }
+                });
               });
             });
-          });
         });
       });
   });

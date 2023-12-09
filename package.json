@@ -27,7 +27,7 @@
   "scripts": {
     "clean": "xargs -a .gitignore rm -rf",
     "lint": "eslint lib stable draft-* openapi-* bundle annotations",
-    "test": "mocha 'lib/**/*.spec.ts' 'stable/**/*.spec.ts' 'draft-*/**/*.spec.ts' 'openapi-*/**/*.spec.ts' 'bundle/**/*.spec.ts' 'annotations/**/*.spec.ts'"
+    "test": "vitest --watch=false"
   },
   "repository": "github:hyperjump-io/json-schema",
   "keywords": [
@@ -51,20 +51,17 @@
     "url": "https://github.com/sponsors/jdesrosiers"
   },
   "devDependencies": {
-    "@types/chai": "*",
-    "@types/mocha": "*",
     "@types/node": "*",
     "@typescript-eslint/eslint-plugin": "*",
     "@typescript-eslint/parser": "*",
-    "chai": "*",
+    "@vitest/coverage-v8": "^1.0.4",
     "eslint": "*",
     "eslint-import-resolver-node": "*",
     "eslint-import-resolver-typescript": "*",
     "eslint-plugin-import": "*",
     "json-schema-test-suite": "github:json-schema-org/JSON-Schema-Test-Suite",
-    "mocha": "*",
-    "ts-node": "*",
     "typescript": "*",
+    "vitest": "*",
     "yaml": "*"
   },
   "dependencies": {

@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { expect } from "chai";
+import { describe, it, expect } from "vitest";
 import { jsonStringify } from "./common.js";
 
 
@@ -15,11 +15,11 @@ describe("Json.stringify", () => {
       const file = `${__dirname}/json-tests/${entry.name}`;
       const value = JSON.parse(fs.readFileSync(file, "utf8")) as unknown;
 
-      it(`${entry.name.substr(2)} without spaces`, () => {
+      it(`${entry.name.substring(2)} without spaces`, () => {
         expect(jsonStringify(value)).to.eql(JSON.stringify(value));
       });
 
-      it(`${entry.name.substr(2)} with spaces`, () => {
+      it(`${entry.name.substring(2)} with spaces`, () => {
         expect(jsonStringify(value, undefined, "  ")).to.eql(JSON.stringify(value, undefined, "  "));
       });
     });

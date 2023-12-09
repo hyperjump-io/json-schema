@@ -1,7 +1,13 @@
-import { expect } from "chai";
+import { describe, it, expect } from "vitest";
 import { bundle } from "./index.js";
 import { addSchema } from "../lib/index.js";
 import { getKeywordName } from "../lib/keywords.js";
+import "../stable/index.js";
+import "../draft-2020-12/index.js";
+import "../draft-2019-09/index.js";
+import "../draft-07/index.js";
+import "../draft-06/index.js";
+import "../draft-04/index.js";
 
 import type { SchemaObject } from "../lib/schema.js";
 

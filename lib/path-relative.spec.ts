@@ -1,5 +1,5 @@
+import { describe, it, expect } from "vitest";
 import { pathRelative } from "./common.js";
-import { expect } from "chai";
 
 
 const relativeTests = [

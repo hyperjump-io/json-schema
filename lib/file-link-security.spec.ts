@@ -1,9 +1,9 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { expect } from "chai";
+import { describe, beforeAll, afterAll, beforeEach, expect } from "vitest";
 import { MockAgent, setGlobalDispatcher } from "undici";
-import { Given, When, Then } from "./mocha-gherkin.spec.js";
+import { Given, When, Then } from "./gherkin.js";
 import "../stable/index.js";
 import * as Schema from "./schema.js";
 import type { SchemaDocument } from "./schema.js";
@@ -18,13 +18,13 @@ const defaultDialectId = "https://json-schema.org/validation";
 describe("Schema.get with files", () => {
   let mockAgent: MockAgent;
 
-  before(() => {
+  beforeAll(() => {
     mockAgent = new MockAgent();
     mockAgent.disableNetConnect();
     setGlobalDispatcher(mockAgent);
   });
 
-  after(async () => {
+  afterAll(async () => {
     await mockAgent.close();
   });
 

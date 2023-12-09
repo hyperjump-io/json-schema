@@ -1,13 +1,15 @@
 .github/
 .eslintrc.json
-.mocharc.json
 bun.lockb
 **/*.spec.ts
+lib/gherkin.ts
 **/*.schema.json
 **/*.schema.yaml
 tsconfig.json
 scratch/
+coverage/
 stable/json-schema-test-suite/
 annotations/tests
 bundle/tests
+bundle/README.md
 lib/json-tests

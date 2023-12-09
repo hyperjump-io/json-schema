@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { expect } from "chai";
+import { describe, it, expect, beforeEach } from "vitest";
 import { toAbsoluteIri } from "@hyperjump/uri";
 
 import * as AnnotatedInstance from "./annotated-instance.js";

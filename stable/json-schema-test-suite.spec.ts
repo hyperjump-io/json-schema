@@ -2,10 +2,11 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { describe, it, expect, beforeAll } from "vitest";
 import { addSchema, validate } from "./index.js";
 import { setExperimentalKeywordEnabled } from "../lib/experimental.js";
+
 import type { JsonSchema, Validator } from "./index.js";
-import { expect } from "chai";
 
 
 type Suite = {
@@ -83,7 +84,7 @@ const runTestSuite = () => {
               let _validate: Validator;
               const skipPath = [entry.name, suite.description];
 
-              before(async () => {
+              beforeAll(async () => {
                 if (shouldSkip(skipPath)) {
                   return;
                 }

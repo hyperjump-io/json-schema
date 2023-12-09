@@ -1,6 +1,7 @@
-import { expect } from "chai";
+import { describe, it, expect, beforeAll } from "vitest";
 import { addSchema } from "../lib/index.js";
 import "../stable/index.js";
+import "../draft-2020-12/index.js";
 import { bundle } from "./index.js";
 
 import type { SchemaObject } from "../lib/schema.js";
@@ -11,7 +12,7 @@ describe("bundle", () => {
     const fileId = "string.schema.json";
     let bundledSchema: SchemaObject;
 
-    before(async () => {
+    beforeAll(async () => {
       bundledSchema = await bundle("./bundle/file-schemas/main.schema.json");
     });
 
@@ -35,7 +36,7 @@ describe("bundle", () => {
     const httpId = "https://bundler.hyperjump.io/number";
     let bundledSchema: SchemaObject;
 
-    before(async () => {
+    beforeAll(async () => {
       addSchema({ "type": "number" }, "https://bundler.hyperjump.io/number", dialect);
       bundledSchema = await bundle("./bundle/file-schemas/mixed-schemes.schema.json");
     });
