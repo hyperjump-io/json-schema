@@ -413,13 +413,13 @@
   },
   {
     "description": "Bundle with deeply embedded schemas",
-    "compatibility": "6",
+    "compatibility": "2019",
     "schema": {
-      "allOf": [{ "$ref": "https://test.json-schema.org/foobar" }]
+      "$ref": "https://test.json-schema.org/foobar"
     },
     "externalSchemas": {
       "https://test.json-schema.org/foobar": {
-        "allOf": [{ "$ref": "/foo" }],
+        "$ref": "/foo",
         "properties": {
           "bar": { "$ref": "/number" }
         },

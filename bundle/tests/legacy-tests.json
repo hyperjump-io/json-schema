@@ -311,19 +311,77 @@
     ]
   },
   {
-    "description": "Bundle with deeply embedded schemas",
+    "description": "Bundle with deeply embedded schemas (definitions)",
+    "compatibility": "6,<=7",
+    "schema": {
+      "allOf": [{ "$ref": "https://test.json-schema.org/foobar" }]
+    },
+    "externalSchemas": {
+      "https://test.json-schema.org/foobar": {
+        "allOf": [{ "$ref": "/foo" }],
+        "properties": {
+          "bar": { "$ref": "/number" }
+        },
+
+        "definitions": {
+          "https://test.json-schema.org/foo": {
+            "$id": "https://test.json-schema.org/foo",
+
+            "type": "object",
+            "properties": {
+              "foo": { "$ref": "/string" }
+            },
+
+            "definitions": {
+              "string": {
+                "$id": "https://test.json-schema.org/string",
+
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "https://test.json-schema.org/number": {
+        "type": "number"
+      }
+    },
+    "tests": [
+      {
+        "description": "valid",
+        "instance": {
+          "foo": "is a string",
+          "bar": 42
+        }
+      },
+      {
+        "description": "invalid foo",
+        "instance": {
+          "foo": 42
+        }
+      },
+      {
+        "description": "invalid bar",
+        "instance": {
+          "bar": "is a string"
+        }
+      }
+    ]
+  },
+  {
+    "description": "Bundle with deeply embedded schemas (id)",
     "compatibility": "<=4",
     "schema": {
       "allOf": [{ "$ref": "https://test.json-schema.org/foobar" }]
     },
     "externalSchemas": {
       "https://test.json-schema.org/foobar": {
-        "$ref": "/foo",
+        "allOf": [{ "$ref": "/foo" }],
         "properties": {
           "bar": { "$ref": "/number" }
         },
 
-        "$defs": {
+        "definitions": {
           "https://test.json-schema.org/foo": {
             "id": "https://test.json-schema.org/foo",
 
@@ -332,7 +390,7 @@
               "foo": { "$ref": "/string" }
             },
 
-            "$defs": {
+            "definitions": {
               "string": {
                 "id": "https://test.json-schema.org/string",
 

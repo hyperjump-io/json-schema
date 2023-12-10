@@ -1,0 +1,86 @@
+{
+  "keyword": "https://json-schema.org/evaluation/validate",
+  "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#",
+  "instanceLocation": "#",
+  "valid": false,
+  "errors": [
+    {
+      "keyword": "https://json-schema.org/keyword/ref",
+      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/$ref",
+      "instanceLocation": "#",
+      "valid": false,
+      "errors": [
+        {
+          "keyword": "https://json-schema.org/evaluation/validate",
+          "absoluteKeywordLocation": "https://test.json-schema.org/foobar#",
+          "instanceLocation": "#",
+          "valid": false,
+          "errors": [
+            {
+              "keyword": "https://json-schema.org/keyword/ref",
+              "absoluteKeywordLocation": "https://test.json-schema.org/foobar#/$ref",
+              "instanceLocation": "#",
+              "valid": false,
+              "errors": [
+                {
+                  "keyword": "https://json-schema.org/evaluation/validate",
+                  "absoluteKeywordLocation": "https://test.json-schema.org/foo#",
+                  "instanceLocation": "#",
+                  "valid": false,
+                  "errors": [
+                    {
+                      "keyword": "https://json-schema.org/keyword/type",
+                      "absoluteKeywordLocation": "https://test.json-schema.org/foo#/type",
+                      "instanceLocation": "#",
+                      "valid": true,
+                      "errors": []
+                    },
+                    {
+                      "keyword": "https://json-schema.org/keyword/properties",
+                      "absoluteKeywordLocation": "https://test.json-schema.org/foo#/properties",
+                      "instanceLocation": "#",
+                      "valid": false,
+                      "errors": [
+                        {
+                          "keyword": "https://json-schema.org/evaluation/validate",
+                          "absoluteKeywordLocation": "https://test.json-schema.org/foo#/properties/foo",
+                          "instanceLocation": "#/foo",
+                          "valid": false,
+                          "errors": [
+                            {
+                              "keyword": "https://json-schema.org/keyword/ref",
+                              "absoluteKeywordLocation": "https://test.json-schema.org/foo#/properties/foo/$ref",
+                              "instanceLocation": "#/foo",
+                              "valid": false,
+                              "errors": [
+                                {
+                                  "keyword": "https://json-schema.org/evaluation/validate",
+                                  "absoluteKeywordLocation": "https://test.json-schema.org/string#",
+                                  "instanceLocation": "#/foo",
+                                  "valid": false,
+                                  "errors": [
+                                    {
+                                      "keyword": "https://json-schema.org/keyword/type",
+                                      "absoluteKeywordLocation": "https://test.json-schema.org/string#/type",
+                                      "instanceLocation": "#/foo",
+                                      "valid": false,
+                                      "errors": []
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "keyword": "https://json-schema.org/evaluation/validate",
+  "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#",
+  "instanceLocation": "#",
+  "valid": true,
+  "errors": [
+    {
+      "keyword": "https://json-schema.org/keyword/type",
+      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/type",
+      "instanceLocation": "#",
+      "valid": true,
+      "errors": []
+    },
+    {
+      "keyword": "https://json-schema.org/keyword/propertyDependencies",
+      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/propertyDependencies",
+      "instanceLocation": "#",
+      "valid": true,
+      "errors": []
+    },
+    {
+      "keyword": "https://json-schema.org/keyword/definitions",
+      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/$defs",
+      "instanceLocation": "#",
+      "valid": true,
+      "errors": []
+    }
+  ]
+}

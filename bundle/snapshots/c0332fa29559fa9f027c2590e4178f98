@@ -1,0 +1,77 @@
+{
+  "keyword": "https://json-schema.org/evaluation/validate",
+  "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#",
+  "instanceLocation": "#",
+  "valid": false,
+  "errors": [
+    {
+      "keyword": "https://json-schema.org/keyword/if",
+      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/if",
+      "instanceLocation": "#",
+      "valid": true,
+      "errors": [
+        {
+          "keyword": "https://json-schema.org/evaluation/validate",
+          "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/if",
+          "instanceLocation": "#",
+          "valid": false,
+          "errors": [
+            {
+              "keyword": "https://json-schema.org/keyword/type",
+              "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/if/type",
+              "instanceLocation": "#",
+              "valid": false,
+              "errors": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "keyword": "https://json-schema.org/keyword/else",
+      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/else",
+      "instanceLocation": "#",
+      "valid": false,
+      "errors": [
+        {
+          "keyword": "https://json-schema.org/evaluation/validate",
+          "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/else",
+          "instanceLocation": "#",
+          "valid": false,
+          "errors": [
+            {
+              "keyword": "https://json-schema.org/keyword/ref",
+              "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/else/$ref",
+              "instanceLocation": "#",
+              "valid": false,
+              "errors": [
+                {
+                  "keyword": "https://json-schema.org/evaluation/validate",
+                  "absoluteKeywordLocation": "https://test.json-schema.org/short-string#",
+                  "instanceLocation": "#",
+                  "valid": false,
+                  "errors": [
+                    {
+                      "keyword": "https://json-schema.org/keyword/type",
+                      "absoluteKeywordLocation": "https://test.json-schema.org/short-string#/type",
+                      "instanceLocation": "#",
+                      "valid": true,
+                      "errors": []
+                    },
+                    {
+                      "keyword": "https://json-schema.org/keyword/maxLength",
+                      "absoluteKeywordLocation": "https://test.json-schema.org/short-string#/maxLength",
+                      "instanceLocation": "#",
+                      "valid": false,
+                      "errors": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

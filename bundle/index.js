@@ -223,8 +223,8 @@ const loadKeywordSupport = () => {
 
   const dependencies = getKeyword("https://json-schema.org/keyword/draft-04/dependencies");
   if (dependencies) {
-    dependencies.collectExternalIds = (dependentSchemas, externalIds, ast, dynamicAnchors) => {
-      Object.values(dependentSchemas).forEach(([, dependency]) => {
+    dependencies.collectExternalIds = (dependencies, externalIds, ast, dynamicAnchors) => {
+      Object.values(dependencies).forEach(([, dependency]) => {
         if (typeof dependency === "string") {
           Validation.collectExternalIds(dependency, externalIds, ast, dynamicAnchors);
         }
@@ -265,4 +265,52 @@ const loadKeywordSupport = () => {
       Validation.collectExternalIds(contains, externalIds, ast, dynamicAnchors);
     };
   }
+
+  // Experimental
+
+  const propertyDependencies = getKeyword("https://json-schema.org/keyword/propertyDependencies");
+  if (propertyDependencies) {
+    propertyDependencies.collectExternalIds = (propertyDependencies, externalIds, ast, dynamicAnchors) => {
+      for (const key in propertyDependencies) {
+        for (const value in propertyDependencies[key]) {
+          Validation.collectExternalIds(propertyDependencies[key][value], externalIds, ast, dynamicAnchors);
+        }
+      }
+    };
+  }
+
+  const conditional = getKeyword("https://json-schema.org/keyword/conditional");
+  if (conditional) {
+    conditional.collectExternalIds = (conditional, externalIds, ast, dynamicAnchors) => {
+      for (const schema of conditional) {
+        Validation.collectExternalIds(schema, externalIds, ast, dynamicAnchors);
+      }
+    };
+  }
+
+  const itemPattern = getKeyword("https://json-schema.org/keyword/itemPattern");
+  if (itemPattern) {
+    itemPattern.collectExternalIds = (nfa, externalIds, ast, dynamicAnchors) => {
+      for (const itemSchema of collectNfaSchemas(nfa.start)) {
+        Validation.collectExternalIds(itemSchema, externalIds, ast, dynamicAnchors);
+      }
+    };
+  }
+
+  const collectNfaSchemas = function* (node, visited = new Set()) {
+    if (visited.has(node)) {
+      return;
+    }
+
+    visited.add(node);
+
+    for (const schema in node.transition) {
+      yield schema;
+      yield* collectNfaSchemas(node.transition[schema], visited);
+    }
+
+    for (const epsilon of node.epsilonTransitions) {
+      yield* collectNfaSchemas(epsilon, visited);
+    }
+  };
 };

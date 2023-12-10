@@ -1,0 +1,84 @@
+{
+  "keyword": "https://json-schema.org/evaluation/validate",
+  "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#",
+  "instanceLocation": "#",
+  "valid": true,
+  "errors": [
+    {
+      "keyword": "https://json-schema.org/keyword/ref",
+      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/$ref",
+      "instanceLocation": "#",
+      "valid": true,
+      "errors": [
+        {
+          "keyword": "https://json-schema.org/evaluation/validate",
+          "absoluteKeywordLocation": "https://test.json-schema.org/list#",
+          "instanceLocation": "#",
+          "valid": true,
+          "errors": [
+            {
+              "keyword": "https://json-schema.org/keyword/type",
+              "absoluteKeywordLocation": "https://test.json-schema.org/list#/type",
+              "instanceLocation": "#",
+              "valid": true,
+              "errors": []
+            },
+            {
+              "keyword": "https://json-schema.org/keyword/items",
+              "absoluteKeywordLocation": "https://test.json-schema.org/list#/items",
+              "instanceLocation": "#",
+              "valid": true,
+              "errors": [
+                {
+                  "keyword": "https://json-schema.org/evaluation/validate",
+                  "absoluteKeywordLocation": "https://test.json-schema.org/list#/items",
+                  "instanceLocation": "#/0",
+                  "valid": true,
+                  "errors": [
+                    {
+                      "keyword": "https://json-schema.org/keyword/draft-2020-12/dynamicRef",
+                      "absoluteKeywordLocation": "https://test.json-schema.org/list#/items/$dynamicRef",
+                      "instanceLocation": "#/0",
+                      "valid": true,
+                      "errors": [
+                        {
+                          "keyword": "https://json-schema.org/evaluation/validate",
+                          "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/$defs/element",
+                          "instanceLocation": "#/0",
+                          "valid": true,
+                          "errors": [
+                            {
+                              "keyword": "https://json-schema.org/keyword/type",
+                              "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/$defs/element/type",
+                              "instanceLocation": "#/0",
+                              "valid": true,
+                              "errors": []
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "keyword": "https://json-schema.org/keyword/definitions",
+              "absoluteKeywordLocation": "https://test.json-schema.org/list#/$defs",
+              "instanceLocation": "#",
+              "valid": true,
+              "errors": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "keyword": "https://json-schema.org/keyword/definitions",
+      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/$defs",
+      "instanceLocation": "#",
+      "valid": true,
+      "errors": []
+    }
+  ]
+}

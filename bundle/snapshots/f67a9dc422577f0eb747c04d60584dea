@@ -1,0 +1,54 @@
+{
+  "keyword": "https://json-schema.org/evaluation/validate",
+  "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#",
+  "instanceLocation": "#",
+  "valid": false,
+  "errors": [
+    {
+      "keyword": "https://json-schema.org/keyword/patternProperties",
+      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/patternProperties",
+      "instanceLocation": "#",
+      "valid": false,
+      "errors": [
+        {
+          "keyword": "https://json-schema.org/evaluation/validate",
+          "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/patternProperties/",
+          "instanceLocation": "#/foo",
+          "valid": false,
+          "errors": [
+            {
+              "keyword": "https://json-schema.org/keyword/ref",
+              "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/patternProperties//$ref",
+              "instanceLocation": "#/foo",
+              "valid": false,
+              "errors": [
+                {
+                  "keyword": "https://json-schema.org/evaluation/validate",
+                  "absoluteKeywordLocation": "https://bundler.hyperjump.io/string#",
+                  "instanceLocation": "#/foo",
+                  "valid": false,
+                  "errors": [
+                    {
+                      "keyword": "https://json-schema.org/keyword/title",
+                      "absoluteKeywordLocation": "https://bundler.hyperjump.io/string#/title",
+                      "instanceLocation": "#/foo",
+                      "valid": true,
+                      "errors": []
+                    },
+                    {
+                      "keyword": "https://json-schema.org/keyword/type",
+                      "absoluteKeywordLocation": "https://bundler.hyperjump.io/string#/type",
+                      "instanceLocation": "#/foo",
+                      "valid": false,
+                      "errors": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

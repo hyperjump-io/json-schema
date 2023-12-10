@@ -1,0 +1,54 @@
+{
+  "keyword": "https://json-schema.org/evaluation/validate",
+  "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#",
+  "instanceLocation": "#",
+  "valid": false,
+  "errors": [
+    {
+      "keyword": "https://json-schema.org/keyword/contains",
+      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/contains",
+      "instanceLocation": "#",
+      "valid": false,
+      "errors": [
+        {
+          "keyword": "https://json-schema.org/evaluation/validate",
+          "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/contains",
+          "instanceLocation": "#/0",
+          "valid": false,
+          "errors": [
+            {
+              "keyword": "https://json-schema.org/keyword/ref",
+              "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/contains/$ref",
+              "instanceLocation": "#/0",
+              "valid": false,
+              "errors": [
+                {
+                  "keyword": "https://json-schema.org/evaluation/validate",
+                  "absoluteKeywordLocation": "https://bundler.hyperjump.io/string#",
+                  "instanceLocation": "#/0",
+                  "valid": false,
+                  "errors": [
+                    {
+                      "keyword": "https://json-schema.org/keyword/title",
+                      "absoluteKeywordLocation": "https://bundler.hyperjump.io/string#/title",
+                      "instanceLocation": "#/0",
+                      "valid": true,
+                      "errors": []
+                    },
+                    {
+                      "keyword": "https://json-schema.org/keyword/type",
+                      "absoluteKeywordLocation": "https://bundler.hyperjump.io/string#/type",
+                      "instanceLocation": "#/0",
+                      "valid": false,
+                      "errors": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

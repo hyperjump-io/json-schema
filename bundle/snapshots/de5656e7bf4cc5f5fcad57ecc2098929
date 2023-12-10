@@ -1,0 +1,84 @@
+{
+  "keyword": "https://json-schema.org/evaluation/validate",
+  "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#",
+  "instanceLocation": "#",
+  "valid": false,
+  "errors": [
+    {
+      "keyword": "https://json-schema.org/keyword/allOf",
+      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/allOf",
+      "instanceLocation": "#",
+      "valid": false,
+      "errors": [
+        {
+          "keyword": "https://json-schema.org/evaluation/validate",
+          "absoluteKeywordLocation": "https://test.json-schema.org/foobar#",
+          "instanceLocation": "#",
+          "valid": false,
+          "errors": [
+            {
+              "keyword": "https://json-schema.org/keyword/allOf",
+              "absoluteKeywordLocation": "https://test.json-schema.org/foobar#/allOf",
+              "instanceLocation": "#",
+              "valid": true,
+              "errors": [
+                {
+                  "keyword": "https://json-schema.org/evaluation/validate",
+                  "absoluteKeywordLocation": "https://test.json-schema.org/foo#",
+                  "instanceLocation": "#",
+                  "valid": true,
+                  "errors": [
+                    {
+                      "keyword": "https://json-schema.org/keyword/type",
+                      "absoluteKeywordLocation": "https://test.json-schema.org/foo#/type",
+                      "instanceLocation": "#",
+                      "valid": true,
+                      "errors": []
+                    },
+                    {
+                      "keyword": "https://json-schema.org/keyword/properties",
+                      "absoluteKeywordLocation": "https://test.json-schema.org/foo#/properties",
+                      "instanceLocation": "#",
+                      "valid": true,
+                      "errors": []
+                    },
+                    {
+                      "keyword": "https://json-schema.org/keyword/definitions",
+                      "absoluteKeywordLocation": "https://test.json-schema.org/foo#/definitions",
+                      "instanceLocation": "#",
+                      "valid": true,
+                      "errors": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "keyword": "https://json-schema.org/keyword/properties",
+              "absoluteKeywordLocation": "https://test.json-schema.org/foobar#/properties",
+              "instanceLocation": "#",
+              "valid": false,
+              "errors": [
+                {
+                  "keyword": "https://json-schema.org/evaluation/validate",
+                  "absoluteKeywordLocation": "https://test.json-schema.org/number#",
+                  "instanceLocation": "#/bar",
+                  "valid": false,
+                  "errors": [
+                    {
+                      "keyword": "https://json-schema.org/keyword/type",
+                      "absoluteKeywordLocation": "https://test.json-schema.org/number#/type",
+                      "instanceLocation": "#/bar",
+                      "valid": false,
+                      "errors": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

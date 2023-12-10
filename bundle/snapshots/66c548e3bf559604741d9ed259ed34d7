@@ -1,0 +1,61 @@
+{
+  "keyword": "https://json-schema.org/evaluation/validate",
+  "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#",
+  "instanceLocation": "#",
+  "valid": true,
+  "errors": [
+    {
+      "keyword": "https://json-schema.org/keyword/items",
+      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/items",
+      "instanceLocation": "#",
+      "valid": true,
+      "errors": [
+        {
+          "keyword": "https://json-schema.org/evaluation/validate",
+          "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/items",
+          "instanceLocation": "#/0",
+          "valid": true,
+          "errors": [
+            {
+              "keyword": "https://json-schema.org/keyword/ref",
+              "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/items/$ref",
+              "instanceLocation": "#/0",
+              "valid": true,
+              "errors": [
+                {
+                  "keyword": "https://json-schema.org/evaluation/validate",
+                  "absoluteKeywordLocation": "https://bundler.hyperjump.io/string#",
+                  "instanceLocation": "#/0",
+                  "valid": true,
+                  "errors": [
+                    {
+                      "keyword": "https://json-schema.org/keyword/title",
+                      "absoluteKeywordLocation": "https://bundler.hyperjump.io/string#/title",
+                      "instanceLocation": "#/0",
+                      "valid": true,
+                      "errors": []
+                    },
+                    {
+                      "keyword": "https://json-schema.org/keyword/type",
+                      "absoluteKeywordLocation": "https://bundler.hyperjump.io/string#/type",
+                      "instanceLocation": "#/0",
+                      "valid": true,
+                      "errors": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "keyword": "https://json-schema.org/keyword/definitions",
+      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/$defs",
+      "instanceLocation": "#",
+      "valid": true,
+      "errors": []
+    }
+  ]
+}

@@ -11,5 +11,8 @@ coverage/
 stable/json-schema-test-suite/
 annotations/tests
 bundle/tests
+bundle/snapshots
+bundle/test-utils.*
+bundle/generate-snapshots.js
 bundle/README.md
 lib/json-tests

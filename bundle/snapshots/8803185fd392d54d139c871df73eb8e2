@@ -1,0 +1,100 @@
+{
+  "keyword": "https://json-schema.org/evaluation/validate",
+  "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#",
+  "instanceLocation": "#",
+  "valid": false,
+  "errors": [
+    {
+      "keyword": "https://json-schema.org/keyword/type",
+      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/type",
+      "instanceLocation": "#",
+      "valid": true,
+      "errors": []
+    },
+    {
+      "keyword": "https://json-schema.org/keyword/properties",
+      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/properties",
+      "instanceLocation": "#",
+      "valid": false,
+      "errors": [
+        {
+          "keyword": "https://json-schema.org/evaluation/validate",
+          "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/properties/tree",
+          "instanceLocation": "#/tree",
+          "valid": false,
+          "errors": [
+            {
+              "keyword": "https://json-schema.org/keyword/ref",
+              "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/properties/tree/$ref",
+              "instanceLocation": "#/tree",
+              "valid": false,
+              "errors": [
+                {
+                  "keyword": "https://json-schema.org/evaluation/validate",
+                  "absoluteKeywordLocation": "https://test.json-schema.org/tree#",
+                  "instanceLocation": "#/tree",
+                  "valid": false,
+                  "errors": [
+                    {
+                      "keyword": "https://json-schema.org/keyword/type",
+                      "absoluteKeywordLocation": "https://test.json-schema.org/tree#/type",
+                      "instanceLocation": "#/tree",
+                      "valid": true,
+                      "errors": []
+                    },
+                    {
+                      "keyword": "https://json-schema.org/keyword/properties",
+                      "absoluteKeywordLocation": "https://test.json-schema.org/tree#/properties",
+                      "instanceLocation": "#/tree",
+                      "valid": false,
+                      "errors": [
+                        {
+                          "keyword": "https://json-schema.org/evaluation/validate",
+                          "absoluteKeywordLocation": "https://test.json-schema.org/tree#/properties/leaf",
+                          "instanceLocation": "#/tree/leaf",
+                          "valid": true,
+                          "errors": []
+                        },
+                        {
+                          "keyword": "https://json-schema.org/evaluation/validate",
+                          "absoluteKeywordLocation": "https://test.json-schema.org/tree#/properties/branch",
+                          "instanceLocation": "#/tree/branch",
+                          "valid": false,
+                          "errors": [
+                            {
+                              "keyword": "https://json-schema.org/keyword/ref",
+                              "absoluteKeywordLocation": "https://test.json-schema.org/tree#/properties/branch/$ref",
+                              "instanceLocation": "#/tree/branch",
+                              "valid": false,
+                              "errors": [
+                                {
+                                  "keyword": "https://json-schema.org/evaluation/validate",
+                                  "absoluteKeywordLocation": "https://test.json-schema.org/tree#",
+                                  "instanceLocation": "#/tree/branch",
+                                  "valid": false,
+                                  "errors": [
+                                    {
+                                      "keyword": "https://json-schema.org/keyword/type",
+                                      "absoluteKeywordLocation": "https://test.json-schema.org/tree#/type",
+                                      "instanceLocation": "#/tree/branch",
+                                      "valid": false,
+                                      "errors": []
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
