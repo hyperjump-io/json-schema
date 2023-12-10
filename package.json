@@ -29,7 +29,10 @@
     "lint": "eslint lib stable draft-* openapi-* bundle annotations",
     "test": "vitest --watch=false"
   },
-  "repository": "github:hyperjump-io/json-schema",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hyperjump-io/json-schema.git"
+  },
   "keywords": [
     "JSON Schema",
     "json-schema",
