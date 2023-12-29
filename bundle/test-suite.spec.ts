@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { isCompatible, md5, loadSchemas, unloadSchemas, testSuite } from "./test-utils.js";
 import { registerSchema, unregisterSchema, validate } from "../lib/index.js";
-import { VERBOSE, getKeywordName, setExperimentalKeywordEnabled } from "../lib/experimental.js";
+import { VERBOSE, getKeywordName } from "../lib/experimental.js";
 import "../stable/index.js";
 import "../draft-2020-12/index.js";
 import "../draft-2019-09/index.js";
@@ -14,12 +14,6 @@ import { bundle, URI, UUID } from "./index.js";
 import type { BundleOptions } from "./index.js";
 import type { OutputUnit } from "../lib/index.js";
 
-
-setExperimentalKeywordEnabled("https://json-schema.org/keyword/dynamicRef", true);
-setExperimentalKeywordEnabled("https://json-schema.org/keyword/propertyDependencies", true);
-setExperimentalKeywordEnabled("https://json-schema.org/keyword/requireAllExcept", true);
-setExperimentalKeywordEnabled("https://json-schema.org/keyword/itemPattern", true);
-setExperimentalKeywordEnabled("https://json-schema.org/keyword/conditional", true);
 
 const suite = testSuite("./bundle/tests");
 

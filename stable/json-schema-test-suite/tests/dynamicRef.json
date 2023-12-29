@@ -1,7 +1,6 @@
 [
     {
         "description": "A $dynamicRef to a $dynamicAnchor in the same schema resource behaves like a normal $ref to an $anchor",
-        "stability": "stage-2",
         "schema": {
             "$schema": "https://json-schema.org/validation",
             "$id": "https://test.json-schema.org/dynamicRef-dynamicAnchor-same-schema/root",
@@ -29,7 +28,6 @@
     },
     {
         "description": "A $dynamicRef resolves to the first $dynamicAnchor still in scope that is encountered when the schema is evaluated",
-        "stability": "stage-2",
         "schema": {
             "$schema": "https://json-schema.org/validation",
             "$id": "https://test.json-schema.org/typical-dynamic-resolution/root",
@@ -61,7 +59,6 @@
     },
     {
         "description": "A $dynamicRef with intermediate scopes that don't include a matching $dynamicAnchor does not affect dynamic scope resolution",
-        "stability": "stage-2",
         "schema": {
             "$schema": "https://json-schema.org/validation",
             "$id": "https://test.json-schema.org/dynamic-resolution-with-intermediate-scopes/root",
@@ -97,7 +94,6 @@
     },
     {
         "description": "An $anchor with the same name as a $dynamicAnchor is not used for dynamic scope resolution",
-        "stability": "stage-2",
         "schema": {
             "$schema": "https://json-schema.org/validation",
             "$id": "https://test.json-schema.org/dynamic-resolution-ignores-anchors/root",
@@ -129,7 +125,6 @@
     },
     {
         "description": "multiple dynamic paths to the $dynamicRef keyword",
-        "stability": "stage-2",
         "schema": {
             "$id": "https://test.json-schema.org/dynamic-ref-with-multiple-paths/main",
             "propertyDependencies": {
@@ -206,7 +201,6 @@
     },
     {
         "description": "strict-tree schema, guards against misspelled properties",
-        "stability": "stage-2",
         "schema": {
             "$schema": "https://json-schema.org/validation",
             "$id": "http://localhost:1234/strict-tree.json",
@@ -238,7 +232,6 @@
     },
     {
         "description": "tests for implementation dynamic anchor and reference link",
-        "stability": "stage-2",
         "schema": {
             "$schema": "https://json-schema.org/validation",
             "$id": "http://localhost:1234/strict-extendible.json",
@@ -284,7 +277,6 @@
     },
     {
         "description": "$ref and $dynamicAnchor are independent of order - $defs first",
-        "stability": "stage-2",
         "schema": {
             "$schema": "https://json-schema.org/validation",
             "$id": "http://localhost:1234/strict-extendible-allof-defs-first.json",
@@ -336,7 +328,6 @@
     },
     {
         "description": "$ref and $dynamicAnchor are independent of order - $ref first",
-        "stability": "stage-2",
         "schema": {
             "$schema": "https://json-schema.org/validation",
             "$id": "http://localhost:1234/strict-extendible-allof-ref-first.json",

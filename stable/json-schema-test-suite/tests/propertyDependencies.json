@@ -1,7 +1,6 @@
 [
     {
         "description": "propertyDependencies doesn't act on non-objects",
-        "stability": "stage-1",
         "schema": {
             "propertyDependencies": {
                 "foo": {"bar": false}
@@ -42,7 +41,6 @@
     },
     {
         "description": "propertyDependencies doesn't act on non-string property values",
-        "stability": "stage-1",
         "schema": {
             "propertyDependencies": {
                 "foo": {"bar": false}
@@ -93,7 +91,6 @@
     },
     {
         "description": "multiple options selects the right one",
-        "stability": "stage-1",
         "schema": {
             "propertyDependencies": {
                 "foo": {

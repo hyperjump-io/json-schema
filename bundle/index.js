@@ -240,7 +240,7 @@ const loadKeywordSupport = () => {
     contains19.collectExternalIds = Validation.collectExternalIds;
   }
 
-  // Experimental
+  // Extensions
 
   const propertyDependencies = getKeyword("https://json-schema.org/keyword/propertyDependencies");
   if (propertyDependencies) {

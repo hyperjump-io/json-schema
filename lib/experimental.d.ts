@@ -35,10 +35,6 @@ export const BASIC: "BASIC";
 export const DETAILED: "DETAILED";
 export const VERBOSE: "VERBOSE";
 
-// Configuration
-export const setExperimentalKeywordEnabled: (keywordId: string, isEnabled: boolean) => void;
-export const isExperimentalKeywordEnabled: (keywordId: string) => boolean;
-
 // Schema
 export const getSchema: (uri: string, browser?: Browser) => Promise<Browser<SchemaDocument>>;
 export const buildSchemaDocument: (schema: SchemaObject | boolean, retrievalUri?: string, contextDialectId?: string) => SchemaDocument;
@@ -71,7 +67,6 @@ export const hasDialect: (dialectId: string) => boolean;
 
 export type Keyword<A> = {
   id: string;
-  experimental?: boolean;
   compile: (schema: Browser<SchemaDocument>, ast: AST, parentSchema: Browser<SchemaDocument>) => Promise<A>;
   interpret: (compiledKeywordValue: A, instance: JsonDocument, ast: AST, dynamicAnchors: Anchors) => boolean;
   collectEvaluatedProperties?: (compiledKeywordValue: A, instance: JsonDocument, ast: AST, dynamicAnchors: Anchors, isTop?: boolean) => Set<string> | false;

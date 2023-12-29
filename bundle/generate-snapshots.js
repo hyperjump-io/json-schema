@@ -1,7 +1,7 @@
 import { writeFile, mkdir, rm } from "node:fs/promises";
 import { isCompatible, md5, loadSchemas, testSuite, unloadSchemas } from "./test-utils.js";
 import { validate } from "../lib/index.js";
-import { VERBOSE, setExperimentalKeywordEnabled } from "../lib/experimental.js";
+import { VERBOSE } from "../lib/experimental.js";
 import "../stable/index.js";
 import "../draft-2020-12/index.js";
 import "../draft-2019-09/index.js";
@@ -9,12 +9,6 @@ import "../draft-07/index.js";
 import "../draft-06/index.js";
 import "../draft-04/index.js";
 
-
-setExperimentalKeywordEnabled("https://json-schema.org/keyword/dynamicRef", true);
-setExperimentalKeywordEnabled("https://json-schema.org/keyword/propertyDependencies", true);
-setExperimentalKeywordEnabled("https://json-schema.org/keyword/requireAllExcept", true);
-setExperimentalKeywordEnabled("https://json-schema.org/keyword/itemPattern", true);
-setExperimentalKeywordEnabled("https://json-schema.org/keyword/conditional", true);
 
 const suite = testSuite("./bundle/tests");
 

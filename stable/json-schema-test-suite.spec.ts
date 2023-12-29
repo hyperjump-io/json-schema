@@ -1,14 +1,12 @@
 import fs from "node:fs";
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { registerSchema, unregisterSchema, validate } from "./index.js";
-import { setExperimentalKeywordEnabled } from "../lib/experimental.js";
 
 import type { JsonSchema, Validator } from "./index.js";
 
 
 type Suite = {
   description: string;
-  stability?: string;
   schema: JsonSchema;
   tests: Test[];
 };
@@ -55,12 +53,6 @@ const addRemotes = (filePath = `${testSuitePath}/remotes`, url = "") => {
       }
     });
 };
-
-setExperimentalKeywordEnabled("https://json-schema.org/keyword/dynamicRef", true);
-setExperimentalKeywordEnabled("https://json-schema.org/keyword/propertyDependencies", true);
-setExperimentalKeywordEnabled("https://json-schema.org/keyword/requireAllExcept", true);
-setExperimentalKeywordEnabled("https://json-schema.org/keyword/itemPattern", true);
-setExperimentalKeywordEnabled("https://json-schema.org/keyword/conditional", true);
 
 const runTestSuite = () => {
   describe(`JSON Schema Test Suite: ${dialectId}`, () => {
