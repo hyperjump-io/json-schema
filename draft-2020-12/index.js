@@ -11,12 +11,10 @@ import formatAssertionMetaSchema from "./meta/format-assertion.js";
 import contentMetaSchema from "./meta/content.js";
 import unevaluatedMetaSchema from "./meta/unevaluated.js";
 
-import contains from "../draft-2019-09/contains.js";
 import dynamicAnchor from "./dynamicAnchor.js";
 import dynamicRef from "./dynamicRef.js";
 
 
-addKeyword(contains);
 addKeyword(dynamicRef);
 addKeyword(dynamicAnchor);
 
@@ -35,7 +33,7 @@ defineVocabulary("https://json-schema.org/draft/2020-12/vocab/applicator", {
   "additionalProperties": "https://json-schema.org/keyword/additionalProperties",
   "allOf": "https://json-schema.org/keyword/allOf",
   "anyOf": "https://json-schema.org/keyword/anyOf",
-  "contains": "https://json-schema.org/keyword/draft-2019-09/contains",
+  "contains": "https://json-schema.org/keyword/contains",
   "dependentSchemas": "https://json-schema.org/keyword/dependentSchemas",
   "if": "https://json-schema.org/keyword/if",
   "then": "https://json-schema.org/keyword/then",

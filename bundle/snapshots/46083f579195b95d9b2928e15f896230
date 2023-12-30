@@ -5,7 +5,7 @@
   "valid": false,
   "errors": [
     {
-      "keyword": "https://json-schema.org/keyword/draft-2019-09/contains",
+      "keyword": "https://json-schema.org/keyword/contains",
       "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/contains",
       "instanceLocation": "#",
       "valid": false,

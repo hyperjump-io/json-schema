@@ -10,14 +10,12 @@ import formatMetaSchema from "./meta/format.js";
 import contentMetaSchema from "./meta/content.js";
 
 import additionalItems from "../draft-04/additionalItems.js";
-import contains from "./contains.js";
 import items from "../draft-04/items.js";
 import recursiveAnchor from "./recursiveAnchor.js";
 import recursiveRef from "../draft-2020-12/dynamicRef.js";
 
 
 addKeyword(additionalItems);
-addKeyword(contains);
 addKeyword(items);
 addKeyword(recursiveAnchor);
 addKeyword(recursiveRef);
@@ -38,7 +36,7 @@ defineVocabulary("https://json-schema.org/draft/2019-09/vocab/applicator", {
   "additionalProperties": "https://json-schema.org/keyword/additionalProperties",
   "allOf": "https://json-schema.org/keyword/allOf",
   "anyOf": "https://json-schema.org/keyword/anyOf",
-  "contains": "https://json-schema.org/keyword/draft-2019-09/contains",
+  "contains": "https://json-schema.org/keyword/contains",
   "dependentSchemas": "https://json-schema.org/keyword/dependentSchemas",
   "if": "https://json-schema.org/keyword/if",
   "then": "https://json-schema.org/keyword/then",
