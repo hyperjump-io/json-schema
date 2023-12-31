@@ -1,9 +1,7 @@
 [
     {
         "description": "const validation",
-        "schema": {
-            "const": 2
-        },
+        "schema": { "const": 2 },
         "tests": [
             {
                 "description": "same value is valid",
@@ -25,22 +23,22 @@
     {
         "description": "const with object",
         "schema": {
-            "const": {"foo": "bar", "baz": "bax"}
+            "const": { "foo": "bar", "baz": "bax" }
         },
         "tests": [
             {
                 "description": "same object is valid",
-                "data": {"foo": "bar", "baz": "bax"},
+                "data": { "foo": "bar", "baz": "bax" },
                 "valid": true
             },
             {
                 "description": "same object with different property order is valid",
-                "data": {"baz": "bax", "foo": "bar"},
+                "data": { "baz": "bax", "foo": "bar" },
                 "valid": true
             },
             {
                 "description": "another object is invalid",
-                "data": {"foo": "bar"},
+                "data": { "foo": "bar" },
                 "valid": false
             },
             {
@@ -58,7 +56,7 @@
         "tests": [
             {
                 "description": "same array is valid",
-                "data": [{"foo": "bar"}],
+                "data": [{ "foo": "bar" }],
                 "valid": true
             },
             {
@@ -186,22 +184,22 @@
     {
         "description": "const with {\"a\": false} does not match {\"a\": 0}",
         "schema": {
-            "const": {"a": false}
+            "const": { "a": false }
         },
         "tests": [
             {
                 "description": "{\"a\": false} is valid",
-                "data": {"a": false},
+                "data": { "a": false },
                 "valid": true
             },
             {
                 "description": "{\"a\": 0} is invalid",
-                "data": {"a": 0},
+                "data": { "a": 0 },
                 "valid": false
             },
             {
                 "description": "{\"a\": 0.0} is invalid",
-                "data": {"a": 0.0},
+                "data": { "a": 0.0 },
                 "valid": false
             }
         ]
@@ -209,22 +207,22 @@
     {
         "description": "const with {\"a\": true} does not match {\"a\": 1}",
         "schema": {
-            "const": {"a": true}
+            "const": { "a": true }
         },
         "tests": [
             {
                 "description": "{\"a\": true} is valid",
-                "data": {"a": true},
+                "data": { "a": true },
                 "valid": true
             },
             {
                 "description": "{\"a\": 1} is invalid",
-                "data": {"a": 1},
+                "data": { "a": 1 },
                 "valid": false
             },
             {
                 "description": "{\"a\": 1.0} is invalid",
-                "data": {"a": 1.0},
+                "data": { "a": 1.0 },
                 "valid": false
             }
         ]

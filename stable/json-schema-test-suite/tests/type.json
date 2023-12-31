@@ -429,12 +429,12 @@
         "tests": [
             {
                 "description": "array is valid",
-                "data": [1,2,3],
+                "data": [1, 2, 3],
                 "valid": true
             },
             {
                 "description": "object is valid",
-                "data": {"foo": 123},
+                "data": { "foo": 123 },
                 "valid": true
             },
             {
@@ -462,12 +462,12 @@
         "tests": [
             {
                 "description": "array is valid",
-                "data": [1,2,3],
+                "data": [1, 2, 3],
                 "valid": true
             },
             {
                 "description": "object is valid",
-                "data": {"foo": 123},
+                "data": { "foo": 123 },
                 "valid": true
             },
             {

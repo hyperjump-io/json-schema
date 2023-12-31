@@ -1,6 +1,5 @@
 {
     "description": "tree schema, extensible",
-    "$id": "http://localhost:1234/tree.json",
     "$dynamicAnchor": "node",
 
     "type": "object",
@@ -8,9 +7,7 @@
         "data": true,
         "children": {
             "type": "array",
-            "items": {
-                "$dynamicRef": "node"
-            }
+            "items": { "$dynamicRef": "node" }
         }
     }
 }

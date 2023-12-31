@@ -47,43 +47,67 @@
             },
             {
                 "description": "unique array of objects is valid",
-                "data": [{"foo": "bar"}, {"foo": "baz"}],
+                "data": [
+                    { "foo": "bar" },
+                    { "foo": "baz" }
+                ],
                 "valid": true
             },
             {
                 "description": "non-unique array of objects is invalid",
-                "data": [{"foo": "bar"}, {"foo": "bar"}],
+                "data": [
+                    { "foo": "bar" },
+                    { "foo": "bar" }
+                ],
+                "valid": false
+            },
+            {
+                "description": "property order of array of objects is ignored",
+                "data": [
+                    { "foo": "bar", "bar": "foo" },
+                    { "bar": "foo", "foo": "bar" }
+                ],
                 "valid": false
             },
             {
                 "description": "unique array of nested objects is valid",
                 "data": [
-                    {"foo": {"bar" : {"baz" : true}}},
-                    {"foo": {"bar" : {"baz" : false}}}
+                    { "foo": { "bar": { "baz": true } } },
+                    { "foo": { "bar": { "baz": false } } }
                 ],
                 "valid": true
             },
             {
                 "description": "non-unique array of nested objects is invalid",
                 "data": [
-                    {"foo": {"bar" : {"baz" : true}}},
-                    {"foo": {"bar" : {"baz" : true}}}
+                    { "foo": { "bar": { "baz": true } } },
+                    { "foo": { "bar": { "baz": true } } }
                 ],
                 "valid": false
             },
             {
                 "description": "unique array of arrays is valid",
-                "data": [["foo"], ["bar"]],
+                "data": [
+                    ["foo"],
+                    ["bar"]
+                ],
                 "valid": true
             },
             {
                 "description": "non-unique array of arrays is invalid",
-                "data": [["foo"], ["foo"]],
+                "data": [
+                    ["foo"],
+                    ["foo"]
+                ],
                 "valid": false
             },
             {
                 "description": "non-unique array of more than two arrays is invalid",
-                "data": [["foo"], ["bar"], ["foo"]],
+                "data": [
+                    ["foo"],
+                    ["bar"],
+                    ["foo"]
+                ],
                 "valid": false
             },
             {
@@ -98,22 +122,34 @@
             },
             {
                 "description": "[1] and [true] are unique",
-                "data": [[1], [true]],
+                "data": [
+                    [1],
+                    [true]
+                ],
                 "valid": true
             },
             {
                 "description": "[0] and [false] are unique",
-                "data": [[0], [false]],
+                "data": [
+                    [0],
+                    [false]
+                ],
                 "valid": true
             },
             {
                 "description": "nested [1] and [true] are unique",
-                "data": [[[1], "foo"], [[true], "foo"]],
+                "data": [
+                    [[1], "foo"],
+                    [[true], "foo"]
+                ],
                 "valid": true
             },
             {
                 "description": "nested [0] and [false] are unique",
-                "data": [[[0], "foo"], [[false], "foo"]],
+                "data": [
+                    [[0], "foo"],
+                    [[false], "foo"]
+                ],
                 "valid": true
             },
             {
@@ -128,22 +164,34 @@
             },
             {
                 "description": "different objects are unique",
-                "data": [{"a": 1, "b": 2}, {"a": 2, "b": 1}],
+                "data": [
+                    { "a": 1, "b": 2 },
+                    { "a": 2, "b": 1 }
+                ],
                 "valid": true
             },
             {
                 "description": "objects are non-unique despite key order",
-                "data": [{"a": 1, "b": 2}, {"b": 2, "a": 1}],
+                "data": [
+                    { "a": 1, "b": 2 },
+                    { "b": 2, "a": 1 }
+                ],
                 "valid": false
             },
             {
                 "description": "{\"a\": false} and {\"a\": 0} are unique",
-                "data": [{"a": false}, {"a": 0}],
+                "data": [
+                    { "a": false },
+                    { "a": 0 }
+                ],
                 "valid": true
             },
             {
                 "description": "{\"a\": true} and {\"a\": 1} are unique",
-                "data": [{"a": true}, {"a": 1}],
+                "data": [
+                    { "a": true },
+                    { "a": 1 }
+                ],
                 "valid": true
             }
         ]
@@ -151,7 +199,10 @@
     {
         "description": "uniqueItems with an array of items",
         "schema": {
-            "prefixItems": [{"type": "boolean"}, {"type": "boolean"}],
+            "prefixItems": [
+                { "type": "boolean" },
+                { "type": "boolean" }
+            ],
             "uniqueItems": true
         },
         "tests": [
@@ -200,7 +251,10 @@
     {
         "description": "uniqueItems with an array of items and additionalItems=false",
         "schema": {
-            "prefixItems": [{"type": "boolean"}, {"type": "boolean"}],
+            "prefixItems": [
+                { "type": "boolean" },
+                { "type": "boolean" }
+            ],
             "uniqueItems": true,
             "items": false
         },
@@ -265,38 +319,50 @@
             },
             {
                 "description": "unique array of objects is valid",
-                "data": [{"foo": "bar"}, {"foo": "baz"}],
+                "data": [
+                    { "foo": "bar" },
+                    { "foo": "baz" }
+                ],
                 "valid": true
             },
             {
                 "description": "non-unique array of objects is valid",
-                "data": [{"foo": "bar"}, {"foo": "bar"}],
+                "data": [
+                    { "foo": "bar" },
+                    { "foo": "bar" }
+                ],
                 "valid": true
             },
             {
                 "description": "unique array of nested objects is valid",
                 "data": [
-                    {"foo": {"bar" : {"baz" : true}}},
-                    {"foo": {"bar" : {"baz" : false}}}
+                    { "foo": { "bar": { "baz": true } } },
+                    { "foo": { "bar": { "baz": false } } }
                 ],
                 "valid": true
             },
             {
                 "description": "non-unique array of nested objects is valid",
                 "data": [
-                    {"foo": {"bar" : {"baz" : true}}},
-                    {"foo": {"bar" : {"baz" : true}}}
+                    { "foo": { "bar": { "baz": true } } },
+                    { "foo": { "bar": { "baz": true } } }
                 ],
                 "valid": true
             },
             {
                 "description": "unique array of arrays is valid",
-                "data": [["foo"], ["bar"]],
+                "data": [
+                    ["foo"],
+                    ["bar"]
+                ],
                 "valid": true
             },
             {
                 "description": "non-unique array of arrays is valid",
-                "data": [["foo"], ["foo"]],
+                "data": [
+                    ["foo"],
+                    ["foo"]
+                ],
                 "valid": true
             },
             {
@@ -324,7 +390,10 @@
     {
         "description": "uniqueItems=false with an array of items",
         "schema": {
-            "prefixItems": [{"type": "boolean"}, {"type": "boolean"}],
+            "prefixItems": [
+                { "type": "boolean" },
+                { "type": "boolean" }
+            ],
             "uniqueItems": false
         },
         "tests": [
@@ -373,7 +442,10 @@
     {
         "description": "uniqueItems=false with an array of items and additionalItems=false",
         "schema": {
-            "prefixItems": [{"type": "boolean"}, {"type": "boolean"}],
+            "prefixItems": [
+                { "type": "boolean" },
+                { "type": "boolean" }
+            ],
             "uniqueItems": false,
             "items": false
         },

@@ -1,15 +1,11 @@
 {
+    "type": "string",
     "$defs": {
         "orNull": {
             "anyOf": [
-                {
-                    "type": "null"
-                },
-                {
-                    "$ref": "#"
-                }
+                { "type": "null" },
+                { "$ref": "#" }
             ]
         }
-    },
-    "type": "string"
+    }
 }

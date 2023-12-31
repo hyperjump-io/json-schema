@@ -93,18 +93,18 @@
     {
         "description": "minContains=2 with contains with a decimal value",
         "schema": {
-            "contains": {"const": 1},
+            "contains": { "const": 1 },
             "minContains": 2.0
         },
         "tests": [
             {
                 "description": "one element matches, invalid minContains",
-                "data": [ 1 ],
+                "data": [1],
                 "valid": false
             },
             {
                 "description": "both elements match, valid minContains",
-                "data": [ 1, 1 ],
+                "data": [1, 1],
                 "valid": true
             }
         ]
@@ -191,24 +191,24 @@
     {
         "description": "minContains = 0 with maxContains",
         "schema": {
-            "contains": {"const": 1},
+            "contains": { "const": 1 },
             "minContains": 0,
             "maxContains": 1
         },
         "tests": [
             {
                 "description": "empty data",
-                "data": [ ],
+                "data": [],
                 "valid": true
             },
             {
                 "description": "not more than maxContains",
-                "data": [ 1 ],
+                "data": [1],
                 "valid": true
             },
             {
                 "description": "too many",
-                "data": [ 1, 1 ],
+                "data": [1, 1],
                 "valid": false
             }
         ]

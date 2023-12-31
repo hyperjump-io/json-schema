@@ -2,7 +2,7 @@
     {
         "description": "propertyNames validation",
         "schema": {
-            "propertyNames": {"maxLength": 3}
+            "propertyNames": { "maxLength": 3 }
         },
         "tests": [
             {
@@ -51,7 +51,7 @@
         "tests": [
             {
                 "description": "object with any properties is valid",
-                "data": {"foo": 1},
+                "data": { "foo": 1 },
                 "valid": true
             },
             {
@@ -69,7 +69,7 @@
         "tests": [
             {
                 "description": "object with any properties is invalid",
-                "data": {"foo": 1},
+                "data": { "foo": 1 },
                 "valid": false
             },
             {

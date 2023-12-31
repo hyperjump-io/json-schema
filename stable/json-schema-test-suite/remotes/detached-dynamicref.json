@@ -1,0 +1,9 @@
+{
+    "$defs": {
+        "foo": { "$dynamicRef": "detached" },
+        "detached": {
+            "$dynamicAnchor": "detached",
+            "type": "integer"
+        }
+    }
+}

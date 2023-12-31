@@ -12,7 +12,7 @@
         "tests": [
             {
                 "description": "valid when property is specified",
-                "data": {"foo": 13},
+                "data": { "foo": 13 },
                 "valid": true
             },
             {
@@ -36,7 +36,7 @@
         "tests": [
             {
                 "description": "valid when property is specified",
-                "data": {"bar": "good"},
+                "data": { "bar": "good" },
                 "valid": true
             },
             {

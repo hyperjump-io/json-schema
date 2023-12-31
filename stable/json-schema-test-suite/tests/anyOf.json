@@ -3,12 +3,8 @@
         "description": "anyOf",
         "schema": {
             "anyOf": [
-                {
-                    "type": "integer"
-                },
-                {
-                    "minimum": 2
-                }
+                { "type": "integer" },
+                { "minimum": 2 }
             ]
         },
         "tests": [
@@ -38,13 +34,9 @@
         "description": "anyOf with base schema",
         "schema": {
             "type": "string",
-            "anyOf" : [
-                {
-                    "maxLength": 2
-                },
-                {
-                    "minLength": 4
-                }
+            "anyOf": [
+                { "maxLength": 2 },
+                { "minLength": 4 }
             ]
         },
         "tests": [
@@ -110,13 +102,13 @@
             "anyOf": [
                 {
                     "properties": {
-                        "bar": {"type": "integer"}
+                        "bar": { "type": "integer" }
                     },
                     "required": ["bar"]
                 },
                 {
                     "properties": {
-                        "foo": {"type": "string"}
+                        "foo": { "type": "string" }
                     },
                     "required": ["foo"]
                 }
@@ -125,22 +117,22 @@
         "tests": [
             {
                 "description": "first anyOf valid (complex)",
-                "data": {"bar": 2},
+                "data": { "bar": 2 },
                 "valid": true
             },
             {
                 "description": "second anyOf valid (complex)",
-                "data": {"foo": "baz"},
+                "data": { "foo": "baz" },
                 "valid": true
             },
             {
                 "description": "both anyOf valid (complex)",
-                "data": {"foo": "baz", "bar": 2},
+                "data": { "foo": "baz", "bar": 2 },
                 "valid": true
             },
             {
                 "description": "neither anyOf valid (complex)",
-                "data": {"foo": 2, "bar": "quux"},
+                "data": { "foo": 2, "bar": "quux" },
                 "valid": false
             }
         ]
@@ -169,15 +161,7 @@
     {
         "description": "nested anyOf, to check validation semantics",
         "schema": {
-            "anyOf": [
-                {
-                    "anyOf": [
-                        {
-                            "type": "null"
-                        }
-                    ]
-                }
-            ]
+            "anyOf": [{ "anyOf": [{ "type": "null" }] }]
         },
         "tests": [
             {

@@ -7,12 +7,12 @@
         "tests": [
             {
                 "description": "longer is valid",
-                "data": {"foo": 1, "bar": 2},
+                "data": { "foo": 1, "bar": 2 },
                 "valid": true
             },
             {
                 "description": "exact length is valid",
-                "data": {"foo": 1},
+                "data": { "foo": 1 },
                 "valid": true
             },
             {
@@ -45,7 +45,7 @@
         "tests": [
             {
                 "description": "longer is valid",
-                "data": {"foo": 1, "bar": 2},
+                "data": { "foo": 1, "bar": 2 },
                 "valid": true
             },
             {

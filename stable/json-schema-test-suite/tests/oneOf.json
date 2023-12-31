@@ -38,13 +38,9 @@
         "description": "oneOf with base schema",
         "schema": {
             "type": "string",
-            "oneOf" : [
-                {
-                    "minLength": 2
-                },
-                {
-                    "maxLength": 4
-                }
+            "oneOf": [
+                { "minLength": 2 },
+                { "maxLength": 4 }
             ]
         },
         "tests": [
@@ -123,13 +119,13 @@
             "oneOf": [
                 {
                     "properties": {
-                        "bar": {"type": "integer"}
+                        "bar": { "type": "integer" }
                     },
                     "required": ["bar"]
                 },
                 {
                     "properties": {
-                        "foo": {"type": "string"}
+                        "foo": { "type": "string" }
                     },
                     "required": ["foo"]
                 }
@@ -138,22 +134,22 @@
         "tests": [
             {
                 "description": "first oneOf valid (complex)",
-                "data": {"bar": 2},
+                "data": { "bar": 2 },
                 "valid": true
             },
             {
                 "description": "second oneOf valid (complex)",
-                "data": {"foo": "baz"},
+                "data": { "foo": "baz" },
                 "valid": true
             },
             {
                 "description": "both oneOf valid (complex)",
-                "data": {"foo": "baz", "bar": 2},
+                "data": { "foo": "baz", "bar": 2 },
                 "valid": false
             },
             {
                 "description": "neither oneOf valid (complex)",
-                "data": {"foo": 2, "bar": "quux"},
+                "data": { "foo": 2, "bar": "quux" },
                 "valid": false
             }
         ]
@@ -191,27 +187,27 @@
         "tests": [
             {
                 "description": "both invalid - invalid",
-                "data": {"bar": 2},
+                "data": { "bar": 2 },
                 "valid": false
             },
             {
                 "description": "first valid - valid",
-                "data": {"foo": 1, "bar": 2},
+                "data": { "foo": 1, "bar": 2 },
                 "valid": true
             },
             {
                 "description": "second valid - valid",
-                "data": {"foo": 1, "baz": 3},
+                "data": { "foo": 1, "baz": 3 },
                 "valid": true
             },
             {
                 "description": "both valid - invalid",
-                "data": {"foo": 1, "bar": 2, "baz" : 3},
+                "data": { "foo": 1, "bar": 2, "baz": 3 },
                 "valid": false
             }
         ]
     },
-	{
+    {
         "description": "oneOf with missing optional property",
         "schema": {
             "oneOf": [
@@ -233,22 +229,22 @@
         "tests": [
             {
                 "description": "first oneOf valid",
-                "data": {"bar": 8},
+                "data": { "bar": 8 },
                 "valid": true
             },
             {
                 "description": "second oneOf valid",
-                "data": {"foo": "foo"},
+                "data": { "foo": "foo" },
                 "valid": true
             },
             {
                 "description": "both oneOf valid",
-                "data": {"foo": "foo", "bar": 8},
+                "data": { "foo": "foo", "bar": 8 },
                 "valid": false
             },
             {
                 "description": "neither oneOf valid",
-                "data": {"baz": "quux"},
+                "data": { "baz": "quux" },
                 "valid": false
             }
         ]
@@ -258,11 +254,7 @@
         "schema": {
             "oneOf": [
                 {
-                    "oneOf": [
-                        {
-                            "type": "null"
-                        }
-                    ]
+                    "oneOf": [{ "type": "null" }]
                 }
             ]
         },

@@ -3,29 +3,29 @@
         "description": "root pointer ref",
         "schema": {
             "properties": {
-                "foo": {"$ref": "#"}
+                "foo": { "$ref": "#" }
             },
             "additionalProperties": false
         },
         "tests": [
             {
                 "description": "match",
-                "data": {"foo": false},
+                "data": { "foo": false },
                 "valid": true
             },
             {
                 "description": "recursive match",
-                "data": {"foo": {"foo": false}},
+                "data": { "foo": { "foo": false } },
                 "valid": true
             },
             {
                 "description": "mismatch",
-                "data": {"bar": false},
+                "data": { "bar": false },
                 "valid": false
             },
             {
                 "description": "recursive mismatch",
-                "data": {"foo": {"bar": false}},
+                "data": { "foo": { "bar": false } },
                 "valid": false
             }
         ]
@@ -34,19 +34,19 @@
         "description": "relative pointer ref to object",
         "schema": {
             "properties": {
-                "foo": {"type": "integer"},
-                "bar": {"$ref": "#/properties/foo"}
+                "foo": { "type": "integer" },
+                "bar": { "$ref": "#/properties/foo" }
             }
         },
         "tests": [
             {
                 "description": "match",
-                "data": {"bar": 3},
+                "data": { "bar": 3 },
                 "valid": true
             },
             {
                 "description": "mismatch",
-                "data": {"bar": true},
+                "data": { "bar": true },
                 "valid": false
             }
         ]
@@ -55,8 +55,8 @@
         "description": "relative pointer ref to array",
         "schema": {
             "prefixItems": [
-                {"type": "integer"},
-                {"$ref": "#/prefixItems/0"}
+                { "type": "integer" },
+                { "$ref": "#/prefixItems/0" }
             ]
         },
         "tests": [
@@ -76,45 +76,45 @@
         "description": "escaped pointer ref",
         "schema": {
             "$defs": {
-                "tilde~field": {"type": "integer"},
-                "slash/field": {"type": "integer"},
-                "percent%field": {"type": "integer"}
+                "tilde~field": { "type": "integer" },
+                "slash/field": { "type": "integer" },
+                "percent%field": { "type": "integer" }
             },
             "properties": {
-                "tilde": {"$ref": "#/$defs/tilde~0field"},
-                "slash": {"$ref": "#/$defs/slash~1field"},
-                "percent": {"$ref": "#/$defs/percent%25field"}
+                "tilde": { "$ref": "#/$defs/tilde~0field" },
+                "slash": { "$ref": "#/$defs/slash~1field" },
+                "percent": { "$ref": "#/$defs/percent%25field" }
             }
         },
         "tests": [
             {
                 "description": "slash invalid",
-                "data": {"slash": "aoeu"},
+                "data": { "slash": "aoeu" },
                 "valid": false
             },
             {
                 "description": "tilde invalid",
-                "data": {"tilde": "aoeu"},
+                "data": { "tilde": "aoeu" },
                 "valid": false
             },
             {
                 "description": "percent invalid",
-                "data": {"percent": "aoeu"},
+                "data": { "percent": "aoeu" },
                 "valid": false
             },
             {
                 "description": "slash valid",
-                "data": {"slash": 123},
+                "data": { "slash": 123 },
                 "valid": true
             },
             {
                 "description": "tilde valid",
-                "data": {"tilde": 123},
+                "data": { "tilde": 123 },
                 "valid": true
             },
             {
                 "description": "percent valid",
-                "data": {"percent": 123},
+                "data": { "percent": 123 },
                 "valid": true
             }
         ]
@@ -123,9 +123,9 @@
         "description": "nested refs",
         "schema": {
             "$defs": {
-                "a": {"type": "integer"},
-                "b": {"$ref": "#/$defs/a"},
-                "c": {"$ref": "#/$defs/b"}
+                "a": { "type": "integer" },
+                "b": { "$ref": "#/$defs/a" },
+                "c": { "$ref": "#/$defs/b" }
             },
             "$ref": "#/$defs/c"
         },
@@ -183,12 +183,12 @@
         "tests": [
             {
                 "description": "remote ref valid",
-                "data": {"minLength": 1},
+                "data": { "minLength": 1 },
                 "valid": true
             },
             {
                 "description": "remote ref invalid",
-                "data": {"minLength": -1},
+                "data": { "minLength": -1 },
                 "valid": false
             }
         ]
@@ -197,18 +197,18 @@
         "description": "property named $ref that is not a reference",
         "schema": {
             "properties": {
-                "$ref": {"type": "string"}
+                "$ref": { "type": "string" }
             }
         },
         "tests": [
             {
                 "description": "property named $ref valid",
-                "data": {"$ref": "a"},
+                "data": { "$ref": "a" },
                 "valid": true
             },
             {
                 "description": "property named $ref invalid",
-                "data": {"$ref": 2},
+                "data": { "$ref": 2 },
                 "valid": false
             }
         ]
@@ -217,23 +217,21 @@
         "description": "property named $ref, containing an actual $ref",
         "schema": {
             "properties": {
-                "$ref": {"$ref": "#/$defs/is-string"}
+                "$ref": { "$ref": "#/$defs/is-string" }
             },
             "$defs": {
-                "is-string": {
-                    "type": "string"
-                }
+                "is-string": { "type": "string" }
             }
         },
         "tests": [
             {
                 "description": "property named $ref valid",
-                "data": {"$ref": "a"},
+                "data": { "$ref": "a" },
                 "valid": true
             },
             {
                 "description": "property named $ref invalid",
-                "data": {"$ref": 2},
+                "data": { "$ref": 2 },
                 "valid": false
             }
         ]
@@ -277,10 +275,10 @@
             "description": "tree of nodes",
             "type": "object",
             "properties": {
-                "meta": {"type": "string"},
+                "meta": { "type": "string" },
                 "nodes": {
                     "type": "array",
-                    "items": {"$ref": "node"}
+                    "items": { "$ref": "node" }
                 }
             },
             "required": ["meta", "nodes"],
@@ -290,8 +288,8 @@
                     "description": "node",
                     "type": "object",
                     "properties": {
-                        "value": {"type": "number"},
-                        "subtree": {"$ref": "tree"}
+                        "value": { "type": "number" },
+                        "subtree": { "$ref": "tree" }
                     },
                     "required": ["value"]
                 }
@@ -308,8 +306,8 @@
                             "subtree": {
                                 "meta": "child",
                                 "nodes": [
-                                    {"value": 1.1},
-                                    {"value": 1.2}
+                                    { "value": 1.1 },
+                                    { "value": 1.2 }
                                 ]
                             }
                         },
@@ -318,8 +316,8 @@
                             "subtree": {
                                 "meta": "child",
                                 "nodes": [
-                                    {"value": 2.1},
-                                    {"value": 2.2}
+                                    { "value": 2.1 },
+                                    { "value": 2.2 }
                                 ]
                             }
                         }
@@ -337,8 +335,8 @@
                             "subtree": {
                                 "meta": "child",
                                 "nodes": [
-                                    {"value": "string is invalid"},
-                                    {"value": 1.2}
+                                    { "value": "string is invalid" },
+                                    { "value": 1.2 }
                                 ]
                             }
                         },
@@ -347,8 +345,8 @@
                             "subtree": {
                                 "meta": "child",
                                 "nodes": [
-                                    {"value": 2.1},
-                                    {"value": 2.2}
+                                    { "value": 2.1 },
+                                    { "value": 2.2 }
                                 ]
                             }
                         }
@@ -362,10 +360,10 @@
         "description": "refs with quote",
         "schema": {
             "properties": {
-                "foo\"bar": {"$ref": "#/$defs/foo%22bar"}
+                "foo\"bar": { "$ref": "#/$defs/foo%22bar" }
             },
             "$defs": {
-                "foo\"bar": {"type": "number"}
+                "foo\"bar": { "type": "number" }
             }
         },
         "tests": [
@@ -618,13 +616,13 @@
             "$ref": "#bigint",
             "$defs": {
                 "bigint": {
-                    "$comment": "canonical uri: https://example.com/ref-and-id2/base.json/$defs/bigint; another valid uri for this location: https://example.com/ref-and-id2/base.json#bigint",
+                    "$comment": "canonical uri: /ref-and-id2/base.json#/$defs/bigint; another valid uri for this location: /ref-and-id2/base.json#bigint",
                     "$anchor": "bigint",
                     "maximum": 10
                 },
                 "smallint": {
                     "$comment": "canonical uri: https://example.com/ref-and-id2#/$defs/smallint; another valid uri for this location: https://example.com/ref-and-id2/#bigint",
-                    "$id": "/ref-and-id2/",
+                    "$id": "https://example.com/ref-and-id2/",
                     "$anchor": "bigint",
                     "maximum": 2
                 }
@@ -639,6 +637,345 @@
             {
                 "description": "data is invalid against first definition",
                 "data": 50,
+                "valid": false
+            }
+        ]
+    },
+    {
+        "description": "simple URN base URI with $ref via the URN",
+        "schema": {
+            "$comment": "URIs do not have to have HTTP(s) schemes",
+            "$id": "urn:uuid:deadbeef-1234-ffff-ffff-4321feebdaed",
+            "minimum": 30,
+            "properties": {
+                "foo": { "$ref": "urn:uuid:deadbeef-1234-ffff-ffff-4321feebdaed" }
+            }
+        },
+        "tests": [
+            {
+                "description": "valid under the URN IDed schema",
+                "data": { "foo": 37 },
+                "valid": true
+            },
+            {
+                "description": "invalid under the URN IDed schema",
+                "data": { "foo": 12 },
+                "valid": false
+            }
+        ]
+    },
+    {
+        "description": "simple URN base URI with JSON pointer",
+        "schema": {
+            "$comment": "URIs do not have to have HTTP(s) schemes",
+            "$id": "urn:uuid:deadbeef-1234-00ff-ff00-4321feebdaed",
+            "properties": {
+                "foo": { "$ref": "#/$defs/bar" }
+            },
+            "$defs": {
+                "bar": { "type": "string" }
+            }
+        },
+        "tests": [
+            {
+                "description": "a string is valid",
+                "data": { "foo": "bar" },
+                "valid": true
+            },
+            {
+                "description": "a non-string is invalid",
+                "data": { "foo": 12 },
+                "valid": false
+            }
+        ]
+    },
+    {
+        "description": "URN base URI with NSS",
+        "schema": {
+            "$comment": "RFC 8141 §2.2",
+            "$id": "urn:example:1/406/47452/2",
+            "properties": {
+                "foo": { "$ref": "#/$defs/bar" }
+            },
+            "$defs": {
+                "bar": { "type": "string" }
+            }
+        },
+        "tests": [
+            {
+                "description": "a string is valid",
+                "data": { "foo": "bar" },
+                "valid": true
+            },
+            {
+                "description": "a non-string is invalid",
+                "data": { "foo": 12 },
+                "valid": false
+            }
+        ]
+    },
+    {
+        "description": "URN base URI with r-component",
+        "schema": {
+            "$comment": "RFC 8141 §2.3.1",
+            "$id": "urn:example:foo-bar-baz-qux?+CCResolve:cc=uk",
+            "properties": {
+                "foo": { "$ref": "#/$defs/bar" }
+            },
+            "$defs": {
+                "bar": { "type": "string" }
+            }
+        },
+        "tests": [
+            {
+                "description": "a string is valid",
+                "data": { "foo": "bar" },
+                "valid": true
+            },
+            {
+                "description": "a non-string is invalid",
+                "data": { "foo": 12 },
+                "valid": false
+            }
+        ]
+    },
+    {
+        "description": "URN base URI with q-component",
+        "schema": {
+            "$comment": "RFC 8141 §2.3.2",
+            "$id": "urn:example:weather?=op=map&lat=39.56&lon=-104.85&datetime=1969-07-21T02:56:15Z",
+            "properties": {
+                "foo": { "$ref": "#/$defs/bar" }
+            },
+            "$defs": {
+                "bar": { "type": "string" }
+            }
+        },
+        "tests": [
+            {
+                "description": "a string is valid",
+                "data": { "foo": "bar" },
+                "valid": true
+            },
+            {
+                "description": "a non-string is invalid",
+                "data": { "foo": 12 },
+                "valid": false
+            }
+        ]
+    },
+    {
+        "description": "URN base URI with f-component",
+        "schema": {
+            "$comment": "RFC 8141 §2.3.3, but we don't allow fragments",
+            "$ref": "https://json-schema.org/validation"
+        },
+        "tests": [
+            {
+                "description": "is invalid",
+                "data": { "$id": "urn:example:foo-bar-baz-qux#somepart" },
+                "valid": false
+            }
+        ]
+    },
+    {
+        "description": "URN base URI with URN and JSON pointer ref",
+        "schema": {
+            "$id": "urn:uuid:deadbeef-1234-0000-0000-4321feebdaed",
+            "properties": {
+                "foo": { "$ref": "urn:uuid:deadbeef-1234-0000-0000-4321feebdaed#/$defs/bar" }
+            },
+            "$defs": {
+                "bar": { "type": "string" }
+            }
+        },
+        "tests": [
+            {
+                "description": "a string is valid",
+                "data": { "foo": "bar" },
+                "valid": true
+            },
+            {
+                "description": "a non-string is invalid",
+                "data": { "foo": 12 },
+                "valid": false
+            }
+        ]
+    },
+    {
+        "description": "URN base URI with URN and anchor ref",
+        "schema": {
+            "$id": "urn:uuid:deadbeef-1234-ff00-00ff-4321feebdaed",
+            "properties": {
+                "foo": { "$ref": "urn:uuid:deadbeef-1234-ff00-00ff-4321feebdaed#something" }
+            },
+            "$defs": {
+                "bar": {
+                    "$anchor": "something",
+                    "type": "string"
+                }
+            }
+        },
+        "tests": [
+            {
+                "description": "a string is valid",
+                "data": { "foo": "bar" },
+                "valid": true
+            },
+            {
+                "description": "a non-string is invalid",
+                "data": { "foo": 12 },
+                "valid": false
+            }
+        ]
+    },
+    {
+        "description": "URN ref with nested pointer ref",
+        "schema": {
+            "$ref": "urn:uuid:deadbeef-4321-ffff-ffff-1234feebdaed",
+            "$defs": {
+                "foo": {
+                    "$id": "urn:uuid:deadbeef-4321-ffff-ffff-1234feebdaed",
+                    "$defs": {
+                        "bar": { "type": "string" }
+                    },
+                    "$ref": "#/$defs/bar"
+                }
+            }
+        },
+        "tests": [
+            {
+                "description": "a string is valid",
+                "data": "bar",
+                "valid": true
+            },
+            {
+                "description": "a non-string is invalid",
+                "data": 12,
+                "valid": false
+            }
+        ]
+    },
+    {
+        "description": "ref to if",
+        "schema": {
+            "$ref": "http://example.com/ref/if",
+            "if": {
+                "$id": "http://example.com/ref/if",
+                "type": "integer"
+            }
+        },
+        "tests": [
+            {
+                "description": "a non-integer is invalid due to the $ref",
+                "data": "foo",
+                "valid": false
+            },
+            {
+                "description": "an integer is valid",
+                "data": 12,
+                "valid": true
+            }
+        ]
+    },
+    {
+        "description": "ref to then",
+        "schema": {
+            "$ref": "http://example.com/ref/then",
+            "then": {
+                "$id": "http://example.com/ref/then",
+                "type": "integer"
+            }
+        },
+        "tests": [
+            {
+                "description": "a non-integer is invalid due to the $ref",
+                "data": "foo",
+                "valid": false
+            },
+            {
+                "description": "an integer is valid",
+                "data": 12,
+                "valid": true
+            }
+        ]
+    },
+    {
+        "description": "ref to else",
+        "schema": {
+            "$ref": "http://example.com/ref/else",
+            "else": {
+                "$id": "http://example.com/ref/else",
+                "type": "integer"
+            }
+        },
+        "tests": [
+            {
+                "description": "a non-integer is invalid due to the $ref",
+                "data": "foo",
+                "valid": false
+            },
+            {
+                "description": "an integer is valid",
+                "data": 12,
+                "valid": true
+            }
+        ]
+    },
+    {
+        "description": "ref with absolute-path-reference",
+        "schema": {
+            "$id": "http://example.com/ref/absref.json",
+            "$defs": {
+                "a": {
+                    "$id": "http://example.com/ref/absref/foobar.json",
+                    "type": "number"
+                },
+                "b": {
+                    "$id": "http://example.com/absref/foobar.json",
+                    "type": "string"
+                }
+            },
+            "$ref": "/absref/foobar.json"
+        },
+        "tests": [
+            {
+                "description": "a string is valid",
+                "data": "foo",
+                "valid": true
+            },
+            {
+                "description": "an integer is invalid",
+                "data": 12,
+                "valid": false
+            }
+        ]
+    },
+    {
+        "description": "empty tokens in $ref json-pointer",
+        "schema": {
+            "$defs": {
+                "": {
+                    "$defs": {
+                        "": { "type": "number" }
+                    }
+                }
+            },
+            "allOf": [
+                {
+                    "$ref": "#/$defs//$defs/"
+                }
+            ]
+        },
+        "tests": [
+            {
+                "description": "number is valid",
+                "data": 1,
+                "valid": true
+            },
+            {
+                "description": "non-number is invalid",
+                "data": "a",
                 "valid": false
             }
         ]

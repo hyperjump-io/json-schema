@@ -30,7 +30,7 @@
             },
             {
                 "description": "object is valid",
-                "data": {"foo": "bar"},
+                "data": { "foo": "bar" },
                 "valid": true
             },
             {
@@ -81,7 +81,7 @@
             },
             {
                 "description": "object is invalid",
-                "data": {"foo": "bar"},
+                "data": { "foo": "bar" },
                 "valid": false
             },
             {

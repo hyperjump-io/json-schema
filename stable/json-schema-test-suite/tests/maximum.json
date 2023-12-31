@@ -32,7 +32,7 @@
         "schema": {
             "maximum": 300
         },
-        "tests":  [
+        "tests": [
             {
                 "description": "below the maximum is invalid",
                 "data": 299.97,

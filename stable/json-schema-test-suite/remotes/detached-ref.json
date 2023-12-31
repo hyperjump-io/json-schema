@@ -1,0 +1,9 @@
+{
+    "$defs": {
+        "foo": { "$ref": "#detached" },
+        "detached": {
+            "$anchor": "detached",
+            "type": "integer"
+        }
+    }
+}

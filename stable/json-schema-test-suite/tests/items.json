@@ -2,12 +2,12 @@
     {
         "description": "a schema given for items",
         "schema": {
-            "items": {"type": "integer"}
+            "items": { "type": "integer" }
         },
         "tests": [
             {
                 "description": "valid items",
-                "data": [ 1, 2, 3 ],
+                "data": [1, 2, 3],
                 "valid": true
             },
             {
@@ -17,7 +17,7 @@
             },
             {
                 "description": "ignores non-arrays",
-                "data": {"foo" : "bar"},
+                "data": { "foo": "bar" },
                 "valid": true
             },
             {
@@ -38,7 +38,7 @@
         "tests": [
             {
                 "description": "any array is valid",
-                "data": [ 1, "foo", true ],
+                "data": [1, "foo", true],
                 "valid": true
             },
             {
@@ -56,7 +56,7 @@
         "tests": [
             {
                 "description": "any non-empty array is invalid",
-                "data": [ 1, "foo", true ],
+                "data": [1, "foo", true],
                 "valid": false
             },
             {
@@ -95,54 +95,54 @@
             {
                 "description": "valid items",
                 "data": [
-                    [ {"foo": null}, {"foo": null} ],
-                    [ {"foo": null}, {"foo": null} ],
-                    [ {"foo": null}, {"foo": null} ]
+                    [{ "foo": null }, { "foo": null }],
+                    [{ "foo": null }, { "foo": null }],
+                    [{ "foo": null }, { "foo": null }]
                 ],
                 "valid": true
             },
             {
                 "description": "too many items",
                 "data": [
-                    [ {"foo": null}, {"foo": null} ],
-                    [ {"foo": null}, {"foo": null} ],
-                    [ {"foo": null}, {"foo": null} ],
-                    [ {"foo": null}, {"foo": null} ]
+                    [{ "foo": null }, { "foo": null }],
+                    [{ "foo": null }, { "foo": null }],
+                    [{ "foo": null }, { "foo": null }],
+                    [{ "foo": null }, { "foo": null }]
                 ],
                 "valid": false
             },
             {
                 "description": "too many sub-items",
                 "data": [
-                    [ {"foo": null}, {"foo": null}, {"foo": null} ],
-                    [ {"foo": null}, {"foo": null} ],
-                    [ {"foo": null}, {"foo": null} ]
+                    [{ "foo": null }, { "foo": null }, { "foo": null }],
+                    [{ "foo": null }, { "foo": null }],
+                    [{ "foo": null }, { "foo": null }]
                 ],
                 "valid": false
             },
             {
                 "description": "wrong item",
                 "data": [
-                    {"foo": null},
-                    [ {"foo": null}, {"foo": null} ],
-                    [ {"foo": null}, {"foo": null} ]
+                    { "foo": null },
+                    [{ "foo": null }, { "foo": null }],
+                    [{ "foo": null }, { "foo": null }]
                 ],
                 "valid": false
             },
             {
                 "description": "wrong sub-item",
                 "data": [
-                    [ {}, {"foo": null} ],
-                    [ {"foo": null}, {"foo": null} ],
-                    [ {"foo": null}, {"foo": null} ]
+                    [{}, { "foo": null }],
+                    [{ "foo": null }, { "foo": null }],
+                    [{ "foo": null }, { "foo": null }]
                 ],
                 "valid": false
             },
             {
                 "description": "fewer items is valid",
                 "data": [
-                    [ {"foo": null} ],
-                    [ {"foo": null} ]
+                    [{ "foo": null }],
+                    [{ "foo": null }]
                 ],
                 "valid": true
             }
@@ -168,17 +168,17 @@
         "tests": [
             {
                 "description": "valid nested array",
-                "data": [[[[1]], [[2],[3]]], [[[4], [5], [6]]]],
+                "data": [[[[1]], [[2], [3]]], [[[4], [5], [6]]]],
                 "valid": true
             },
             {
                 "description": "nested array with invalid type",
-                "data": [[[["1"]], [[2],[3]]], [[[4], [5], [6]]]],
+                "data": [[[["1"]], [[2], [3]]], [[[4], [5], [6]]]],
                 "valid": false
             },
             {
                 "description": "not deep enough",
-                "data": [[[1], [2],[3]], [[4], [5], [6]]],
+                "data": [[[1], [2], [3]], [[4], [5], [6]]],
                 "valid": false
             }
         ]
@@ -192,27 +192,27 @@
         "tests": [
             {
                 "description": "empty array",
-                "data": [ ],
+                "data": [],
                 "valid": true
             },
             {
                 "description": "fewer number of items present (1)",
-                "data": [ 1 ],
+                "data": [1],
                 "valid": true
             },
             {
                 "description": "fewer number of items present (2)",
-                "data": [ 1, 2 ],
+                "data": [1, 2],
                 "valid": true
             },
             {
                 "description": "equal number of items present",
-                "data": [ 1, 2, 3 ],
+                "data": [1, 2, 3],
                 "valid": true
             },
             {
                 "description": "additional items are not permitted",
-                "data": [ 1, 2, 3, 4 ],
+                "data": [1, 2, 3, 4],
                 "valid": false
             }
         ]
@@ -221,19 +221,19 @@
         "description": "items does not look in applicators, valid case",
         "schema": {
             "allOf": [
-                { "prefixItems": [ { "minimum": 3 } ] }
+                { "prefixItems": [{ "minimum": 3 }] }
             ],
             "items": { "minimum": 5 }
         },
         "tests": [
             {
                 "description": "prefixItems in allOf does not constrain items, invalid case",
-                "data": [ 3, 5 ],
+                "data": [3, 5],
                 "valid": false
             },
             {
                 "description": "prefixItems in allOf does not constrain items, valid case",
-                "data": [ 5, 5 ],
+                "data": [5, 5],
                 "valid": true
             }
         ]
@@ -241,33 +241,50 @@
     {
         "description": "prefixItems validation adjusts the starting index for items",
         "schema": {
-            "prefixItems": [ { "type": "string" } ],
+            "prefixItems": [{ "type": "string" }],
             "items": { "type": "integer" }
         },
         "tests": [
             {
                 "description": "valid items",
-                "data": [ "x", 2, 3 ],
+                "data": ["x", 2, 3],
                 "valid": true
             },
             {
                 "description": "wrong type of second item",
-                "data": [ "x", "y" ],
+                "data": ["x", "y"],
                 "valid": false
+            }
+        ]
+    },
+    {
+        "description": "items with heterogeneous array",
+        "schema": {
+            "prefixItems": [{}],
+            "items": false
+        },
+        "tests": [
+            {
+                "description": "heterogeneous invalid instance",
+                "data": ["foo", "bar", 37],
+                "valid": false
+            },
+            {
+                "description": "valid instance",
+                "data": [null],
+                "valid": true
             }
         ]
     },
     {
         "description": "items with null instance elements",
         "schema": {
-            "items": {
-                "type": "null"
-            }
+            "items": { "type": "null" }
         },
         "tests": [
             {
                 "description": "allows null elements",
-                "data": [ null ],
+                "data": [null],
                 "valid": true
             }
         ]
