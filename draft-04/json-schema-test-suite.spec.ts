@@ -34,7 +34,6 @@ const skip: Set<string> = new Set([
   // no way to know whether a location is a schema or not. Especially since this
   // isn't a real problem that comes up with real schemas, I'm not concerned
   // about making it work.
-  "|draft4|id.json|id inside an enum is not a real identifier",
   "|draft4|ref.json|naive replacement of $ref with its destination is not correct",
   "|draft4|ref.json|$ref prevents a sibling id from changing the base uri",
 

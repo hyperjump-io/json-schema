@@ -447,6 +447,36 @@
         ]
     },
     {
+        "description": "unevaluatedItems before $ref",
+        "schema": {
+            "unevaluatedItems": false,
+            "prefixItems": [
+                { "type": "string" }
+            ],
+            "$ref": "#/$defs/bar",
+            "$defs": {
+                "bar": {
+                    "prefixItems": [
+                        true,
+                        { "type": "string" }
+                    ]
+                }
+            }
+        },
+        "tests": [
+            {
+                "description": "with no unevaluated items",
+                "data": ["foo", "bar"],
+                "valid": true
+            },
+            {
+                "description": "with unevaluated items",
+                "data": ["foo", "bar", "baz"],
+                "valid": false
+            }
+        ]
+    },
+    {
         "description": "unevaluatedItems with $dynamicRef",
         "schema": {
             "$id": "https://example.com/unevaluated-items-with-dynamic-ref/derived",
