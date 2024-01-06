@@ -145,7 +145,7 @@ import { validate } from "@hyperjump/json-schema/openapi-3-1";
 
 
 // Validate an OpenAPI document
-const output = await validate("https://spec.openapis.org/oas/3.1/schema-base", openapi);
+const output = await validate("https://spec.openapis.org/oas/3.1/dialect/base", openapi);
 
 // Validate an instance against a schema in an OpenAPI document
 const output = await validate("./example.openapi.json#/components/schemas/foo", 42);
