@@ -37,7 +37,7 @@ export const annotate = (instance, keyword, value) => {
 export const annotatedWith = (instance, keyword, dialectId = defaultDialectId) => {
   const instances = [];
 
-  const keywordId = getKeywordId(dialectId, keyword);
+  const keywordId = getKeywordId(keyword, dialectId);
   for (const instancePointer in instance.annotations) {
     if (keywordId in instance.annotations[instancePointer]) {
       instances.push(get(`#${instancePointer}`, instance));
