@@ -34,7 +34,7 @@ const interpret = (items, instance, ast, dynamicAnchors, quiet) => {
 };
 
 const collectEvaluatedItems = (items, instance, ast, dynamicAnchors) => {
-  return interpret(items, instance, ast, dynamicAnchors) && (typeof items === "string"
+  return interpret(items, instance, ast, dynamicAnchors, true) && (typeof items === "string"
     ? collectSet(range(0, instance.length()))
     : collectSet(range(0, items.length)));
 };

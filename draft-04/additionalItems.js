@@ -26,7 +26,7 @@ const interpret = ([numberOfItems, additionalItems], instance, ast, dynamicAncho
 };
 
 const collectEvaluatedItems = (keywordValue, instance, ast, dynamicAnchors) => {
-  if (!interpret(keywordValue, instance, ast, dynamicAnchors)) {
+  if (!interpret(keywordValue, instance, ast, dynamicAnchors, true)) {
     return false;
   }
 
