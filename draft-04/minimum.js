@@ -1,5 +1,4 @@
 import * as Browser from "@hyperjump/browser";
-import * as Instance from "../lib/instance.js";
 import { getKeywordName } from "../lib/experimental.js";
 
 
@@ -14,11 +13,11 @@ const compile = async (schema, _ast, parentSchema) => {
 };
 
 const interpret = ([minimum, isExclusive], instance) => {
-  if (Instance.typeOf(instance) !== "number") {
+  if (instance.typeOf() !== "number") {
     return true;
   }
 
-  const value = Instance.value(instance);
+  const value = instance.value();
   return isExclusive ? value > minimum : value >= minimum;
 };
 

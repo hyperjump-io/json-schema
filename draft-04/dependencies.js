@@ -1,6 +1,5 @@
 import { pipe, asyncMap, asyncCollectArray } from "@hyperjump/pact";
 import * as Browser from "@hyperjump/browser";
-import * as Instance from "../lib/instance.js";
 import { Validation } from "../lib/experimental.js";
 
 
@@ -16,9 +15,9 @@ const compile = (schema, ast) => pipe(
 );
 
 const interpret = (dependencies, instance, ast, dynamicAnchors, quiet) => {
-  const value = Instance.value(instance);
+  const value = instance.value();
 
-  return Instance.typeOf(instance) !== "object" || dependencies.every(([propertyName, dependency]) => {
+  return instance.typeOf() !== "object" || dependencies.every(([propertyName, dependency]) => {
     if (!(propertyName in value)) {
       return true;
     }

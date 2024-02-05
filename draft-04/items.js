@@ -1,6 +1,5 @@
 import { pipe, asyncMap, asyncCollectArray, every, zip, take, range, collectSet } from "@hyperjump/pact";
 import * as Browser from "@hyperjump/browser";
-import * as Instance from "../lib/instance.js";
 import { Validation } from "../lib/experimental.js";
 
 
@@ -19,16 +18,16 @@ const compile = (schema, ast) => {
 };
 
 const interpret = (items, instance, ast, dynamicAnchors, quiet) => {
-  if (Instance.typeOf(instance) !== "array") {
+  if (instance.typeOf() !== "array") {
     return true;
   }
 
   if (typeof items === "string") {
-    return every((itemValue) => Validation.interpret(items, itemValue, ast, dynamicAnchors, quiet), Instance.iter(instance));
+    return every((itemValue) => Validation.interpret(items, itemValue, ast, dynamicAnchors, quiet), instance.iter());
   } else {
     return pipe(
-      zip(items, Instance.iter(instance)),
-      take(Instance.length(instance)),
+      zip(items, instance.iter()),
+      take(instance.length()),
       every(([prefixItem, item]) => Validation.interpret(prefixItem, item, ast, dynamicAnchors, quiet))
     );
   }
@@ -36,7 +35,7 @@ const interpret = (items, instance, ast, dynamicAnchors, quiet) => {
 
 const collectEvaluatedItems = (items, instance, ast, dynamicAnchors) => {
   return interpret(items, instance, ast, dynamicAnchors) && (typeof items === "string"
-    ? collectSet(range(0, Instance.length(instance)))
+    ? collectSet(range(0, instance.length()))
     : collectSet(range(0, items.length)));
 };
 

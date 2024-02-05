@@ -1,5 +1,4 @@
 import * as Browser from "@hyperjump/browser";
-import * as Instance from "../lib/instance.js";
 import { getKeywordName } from "../lib/experimental.js";
 
 
@@ -16,7 +15,7 @@ const interpret = (type, instance) => typeof type === "string"
   : type.some(isTypeOf(instance));
 
 const isTypeOf = (instance) => (type) => type === "integer"
-  ? Instance.typeOf(instance) === "number" && Number.isInteger(Instance.value(instance))
-  : Instance.typeOf(instance) === type;
+  ? instance.typeOf() === "number" && Number.isInteger(instance.value())
+  : instance.typeOf() === type;
 
 export default { id, compile, interpret };

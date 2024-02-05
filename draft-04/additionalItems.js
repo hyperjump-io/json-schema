@@ -1,6 +1,5 @@
 import { pipe, drop, every } from "@hyperjump/pact";
 import * as Browser from "@hyperjump/browser";
-import * as Instance from "../lib/instance.js";
 import { getKeywordName, Validation } from "../lib/experimental.js";
 
 
@@ -15,12 +14,12 @@ const compile = async (schema, ast, parentSchema) => {
 };
 
 const interpret = ([numberOfItems, additionalItems], instance, ast, dynamicAnchors, quiet) => {
-  if (Instance.typeOf(instance) !== "array") {
+  if (instance.typeOf() !== "array") {
     return true;
   }
 
   return pipe(
-    Instance.iter(instance),
+    instance.iter(),
     drop(numberOfItems),
     every((item) => Validation.interpret(additionalItems, item, ast, dynamicAnchors, quiet))
   );
@@ -32,7 +31,7 @@ const collectEvaluatedItems = (keywordValue, instance, ast, dynamicAnchors) => {
   }
 
   const evaluatedIndexes = new Set();
-  for (let ndx = keywordValue[0]; ndx < Instance.length(instance); ndx++) {
+  for (let ndx = keywordValue[0]; ndx < instance.length(); ndx++) {
     evaluatedIndexes.add(ndx);
   }
 
