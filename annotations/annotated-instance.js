@@ -1,50 +1,48 @@
-import { toAbsoluteIri } from "@hyperjump/uri";
-import { nil as nilInstance, get } from "../lib/instance.js";
+import * as JsonPointer from "@hyperjump/json-pointer";
+import * as Instance from "../lib/instance.js";
 import { getKeywordId } from "../lib/keywords.js";
 
 
 const defaultDialectId = "https://json-schema.org/validation";
 
-export const nil = { ...nilInstance, annotations: {} };
-export const cons = (instance, id = undefined) => ({
-  ...nil,
-  id: id ? toAbsoluteIri(id) : "",
-  instance,
-  value: instance
-});
-
-export const annotation = (instance, keyword, dialectId = defaultDialectId) => {
-  const keywordId = getKeywordId(keyword, dialectId);
-  return instance.annotations[instance.pointer]?.[keywordId] || [];
+export const setAnnotation = (node, keywordUri, schemaLocation, value) => {
+  if (!(keywordUri in node.annotations)) {
+    node.annotations[keywordUri] = {};
+  }
+  node.annotations[keywordUri][schemaLocation] = value;
 };
 
-export const annotate = (instance, keyword, value) => {
-  return Object.freeze({
-    ...instance,
-    annotations: {
-      ...instance.annotations,
-      [instance.pointer]: {
-        ...instance.annotations[instance.pointer],
-        [keyword]: [
-          value,
-          ...instance.annotations[instance.pointer]?.[keyword] || []
-        ]
-      }
-    }
-  });
-};
+export const annotation = (node, keyword, dialect = defaultDialectId) => {
+  const keywordUri = getKeywordId(keyword, dialect);
 
-export const annotatedWith = (instance, keyword, dialectId = defaultDialectId) => {
-  const instances = [];
+  let currentNode = node.root;
+  const errors = Object.keys(node.root.errors);
+  for (let segment of JsonPointer.pointerSegments(node.pointer)) {
+    segment = segment === "-" && currentNode.typeOf() === "array" ? currentNode.length() : segment;
+    currentNode = Instance.step(segment, currentNode);
+    errors.push(...Object.keys(currentNode.errors));
+  }
 
-  const keywordId = getKeywordId(keyword, dialectId);
-  for (const instancePointer in instance.annotations) {
-    if (keywordId in instance.annotations[instancePointer]) {
-      instances.push(get(`#${instancePointer}`, instance));
+  const annotations = [];
+  for (const schemaLocation in node.annotations[keywordUri]) {
+    if (!errors.some((error) => schemaLocation.startsWith(error))) {
+      annotations.unshift(node.annotations[keywordUri][schemaLocation]);
     }
   }
 
-  return instances;
+  return annotations;
 };
 
-export { get, uri, value, has, typeOf, step, iter, keys, values, entries, length } from "../lib/instance.js";
+export const annotatedWith = (instance, keyword, dialectId = defaultDialectId) => {
+  const nodes = [];
+
+  for (const node of Instance.allNodes(instance)) {
+    if (annotation(node, keyword, dialectId).length > 0) {
+      nodes.push(node);
+    }
+  }
+
+  return nodes;
+};
+
+export * from "../lib/instance.js";

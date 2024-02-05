@@ -68,7 +68,7 @@
     "yaml": "*"
   },
   "dependencies": {
-    "@hyperjump/json-pointer": "^1.0.0",
+    "@hyperjump/json-pointer": "^1.1.0",
     "@hyperjump/pact": "^1.2.0",
     "@hyperjump/uri": "^1.2.0",
     "content-type": "^1.0.4",

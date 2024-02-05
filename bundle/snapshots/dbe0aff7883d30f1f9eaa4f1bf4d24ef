@@ -1,61 +1,26 @@
 {
-  "keyword": "https://json-schema.org/evaluation/validate",
-  "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#",
-  "instanceLocation": "#",
-  "valid": false,
-  "errors": [
-    {
-      "keyword": "https://json-schema.org/keyword/draft-04/dependencies",
-      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/dependencies",
-      "instanceLocation": "#",
-      "valid": false,
-      "errors": [
-        {
-          "keyword": "https://json-schema.org/evaluation/validate",
-          "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/dependencies/foo",
-          "instanceLocation": "#",
-          "valid": false,
-          "errors": [
-            {
-              "keyword": "https://json-schema.org/keyword/properties",
-              "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/dependencies/foo/properties",
-              "instanceLocation": "#",
-              "valid": false,
-              "errors": [
-                {
-                  "keyword": "https://json-schema.org/evaluation/validate",
-                  "absoluteKeywordLocation": "https://bundler.hyperjump.io/string#",
-                  "instanceLocation": "#/bar",
-                  "valid": false,
-                  "errors": [
-                    {
-                      "keyword": "https://json-schema.org/keyword/title",
-                      "absoluteKeywordLocation": "https://bundler.hyperjump.io/string#/title",
-                      "instanceLocation": "#/bar",
-                      "valid": true,
-                      "errors": []
-                    },
-                    {
-                      "keyword": "https://json-schema.org/keyword/type",
-                      "absoluteKeywordLocation": "https://bundler.hyperjump.io/string#/type",
-                      "instanceLocation": "#/bar",
-                      "valid": false,
-                      "errors": []
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        }
-      ]
+  "#": {
+    "errors": {
+      "https://bundler.hyperjump.io/main#/dependencies/foo/properties": "https://json-schema.org/keyword/properties",
+      "https://bundler.hyperjump.io/main#/dependencies/foo": "https://json-schema.org/evaluation/validate",
+      "https://bundler.hyperjump.io/main#/dependencies": "https://json-schema.org/keyword/draft-04/dependencies",
+      "https://bundler.hyperjump.io/main#": "https://json-schema.org/evaluation/validate"
     },
-    {
-      "keyword": "https://json-schema.org/keyword/definitions",
-      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/definitions",
-      "instanceLocation": "#",
-      "valid": true,
-      "errors": []
+    "annotations": {}
+  },
+  "#/foo": {
+    "errors": {},
+    "annotations": {}
+  },
+  "#/bar": {
+    "errors": {
+      "https://bundler.hyperjump.io/string#/type": "https://json-schema.org/keyword/type",
+      "https://bundler.hyperjump.io/string#": "https://json-schema.org/evaluation/validate"
+    },
+    "annotations": {
+      "https://json-schema.org/keyword/title": {
+        "https://bundler.hyperjump.io/string#": "String"
+      }
     }
-  ]
+  }
 }

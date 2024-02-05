@@ -1,29 +1,17 @@
 {
-  "keyword": "https://json-schema.org/evaluation/validate",
-  "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#",
-  "instanceLocation": "#",
-  "valid": false,
-  "errors": [
-    {
-      "keyword": "https://json-schema.org/keyword/type",
-      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/type",
-      "instanceLocation": "#",
-      "valid": false,
-      "errors": []
+  "#": {
+    "errors": {
+      "https://bundler.hyperjump.io/main#/type": "https://json-schema.org/keyword/type",
+      "https://bundler.hyperjump.io/main#": "https://json-schema.org/evaluation/validate"
     },
-    {
-      "keyword": "https://json-schema.org/keyword/itemPattern",
-      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/itemPattern",
-      "instanceLocation": "#",
-      "valid": true,
-      "errors": []
-    },
-    {
-      "keyword": "https://json-schema.org/keyword/definitions",
-      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/$defs",
-      "instanceLocation": "#",
-      "valid": true,
-      "errors": []
-    }
-  ]
+    "annotations": {}
+  },
+  "#/foo": {
+    "errors": {},
+    "annotations": {}
+  },
+  "#/foo/0": {
+    "errors": {},
+    "annotations": {}
+  }
 }

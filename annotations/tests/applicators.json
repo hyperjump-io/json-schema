@@ -366,7 +366,7 @@
           {
             "location": "#",
             "keyword": "title",
-            "expected": ["Else", "If"]
+            "expected": ["Else"]
           }
         ]
       }

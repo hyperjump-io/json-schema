@@ -1,68 +1,13 @@
 {
-  "keyword": "https://json-schema.org/evaluation/validate",
-  "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#",
-  "instanceLocation": "#",
-  "valid": false,
-  "errors": [
-    {
-      "keyword": "https://json-schema.org/keyword/if",
-      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/if",
-      "instanceLocation": "#",
-      "valid": true,
-      "errors": [
-        {
-          "keyword": "https://json-schema.org/evaluation/validate",
-          "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/if",
-          "instanceLocation": "#",
-          "valid": false,
-          "errors": [
-            {
-              "keyword": "https://json-schema.org/keyword/type",
-              "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/if/type",
-              "instanceLocation": "#",
-              "valid": false,
-              "errors": []
-            }
-          ]
-        }
-      ]
+  "#": {
+    "errors": {
+      "https://bundler.hyperjump.io/main#/if/type": "https://json-schema.org/keyword/type",
+      "https://bundler.hyperjump.io/main#/if": "https://json-schema.org/evaluation/validate",
+      "https://test.json-schema.org/short-string#/maxLength": "https://json-schema.org/keyword/maxLength",
+      "https://test.json-schema.org/short-string#": "https://json-schema.org/evaluation/validate",
+      "https://bundler.hyperjump.io/main#/else": "https://json-schema.org/keyword/else",
+      "https://bundler.hyperjump.io/main#": "https://json-schema.org/evaluation/validate"
     },
-    {
-      "keyword": "https://json-schema.org/keyword/else",
-      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/else",
-      "instanceLocation": "#",
-      "valid": false,
-      "errors": [
-        {
-          "keyword": "https://json-schema.org/evaluation/validate",
-          "absoluteKeywordLocation": "https://test.json-schema.org/short-string#",
-          "instanceLocation": "#",
-          "valid": false,
-          "errors": [
-            {
-              "keyword": "https://json-schema.org/keyword/type",
-              "absoluteKeywordLocation": "https://test.json-schema.org/short-string#/type",
-              "instanceLocation": "#",
-              "valid": true,
-              "errors": []
-            },
-            {
-              "keyword": "https://json-schema.org/keyword/maxLength",
-              "absoluteKeywordLocation": "https://test.json-schema.org/short-string#/maxLength",
-              "instanceLocation": "#",
-              "valid": false,
-              "errors": []
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "keyword": "https://json-schema.org/keyword/definitions",
-      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/definitions",
-      "instanceLocation": "#",
-      "valid": true,
-      "errors": []
-    }
-  ]
+    "annotations": {}
+  }
 }

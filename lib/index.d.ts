@@ -1,3 +1,6 @@
+import type { Json } from "@hyperjump/json-pointer";
+
+
 export type SchemaFragment = string | number | boolean | null | SchemaObject | SchemaFragment[];
 export type SchemaObject = {
   [keyword: string]: SchemaFragment;
@@ -12,12 +15,12 @@ export const unregisterSchema: (retrievalUri: string) => void;
 export const addSchema: typeof registerSchema;
 
 export const validate: (
-  (url: string, value: unknown, outputFormat?: OutputFormat) => Promise<OutputUnit>
+  (url: string, value: Json, outputFormat?: OutputFormat) => Promise<OutputUnit>
 ) & (
   (url: string) => Promise<Validator>
 );
 
-export type Validator = (value: unknown, outputFormat?: OutputFormat) => OutputUnit;
+export type Validator = (value: Json, outputFormat?: OutputFormat) => OutputUnit;
 
 export type OutputUnit = {
   keyword: string;

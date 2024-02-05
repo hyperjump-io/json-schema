@@ -1,45 +1,20 @@
 {
-  "keyword": "https://json-schema.org/evaluation/validate",
-  "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#",
-  "instanceLocation": "#",
-  "valid": false,
-  "errors": [
-    {
-      "keyword": "https://json-schema.org/keyword/draft-04/items",
-      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/items",
-      "instanceLocation": "#",
-      "valid": false,
-      "errors": [
-        {
-          "keyword": "https://json-schema.org/evaluation/validate",
-          "absoluteKeywordLocation": "https://bundler.hyperjump.io/string#",
-          "instanceLocation": "#/0",
-          "valid": false,
-          "errors": [
-            {
-              "keyword": "https://json-schema.org/keyword/title",
-              "absoluteKeywordLocation": "https://bundler.hyperjump.io/string#/title",
-              "instanceLocation": "#/0",
-              "valid": true,
-              "errors": []
-            },
-            {
-              "keyword": "https://json-schema.org/keyword/type",
-              "absoluteKeywordLocation": "https://bundler.hyperjump.io/string#/type",
-              "instanceLocation": "#/0",
-              "valid": false,
-              "errors": []
-            }
-          ]
-        }
-      ]
+  "#": {
+    "errors": {
+      "https://bundler.hyperjump.io/main#/items": "https://json-schema.org/keyword/draft-04/items",
+      "https://bundler.hyperjump.io/main#": "https://json-schema.org/evaluation/validate"
     },
-    {
-      "keyword": "https://json-schema.org/keyword/definitions",
-      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/definitions",
-      "instanceLocation": "#",
-      "valid": true,
-      "errors": []
+    "annotations": {}
+  },
+  "#/0": {
+    "errors": {
+      "https://bundler.hyperjump.io/string#/type": "https://json-schema.org/keyword/type",
+      "https://bundler.hyperjump.io/string#": "https://json-schema.org/evaluation/validate"
+    },
+    "annotations": {
+      "https://json-schema.org/keyword/title": {
+        "https://bundler.hyperjump.io/string#": "String"
+      }
     }
-  ]
+  }
 }

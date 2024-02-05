@@ -1,82 +1,27 @@
 {
-  "keyword": "https://json-schema.org/evaluation/validate",
-  "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#",
-  "instanceLocation": "#",
-  "valid": false,
-  "errors": [
-    {
-      "keyword": "https://json-schema.org/keyword/type",
-      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/type",
-      "instanceLocation": "#",
-      "valid": true,
-      "errors": []
+  "#": {
+    "errors": {
+      "https://bundler.hyperjump.io/main#/properties": "https://json-schema.org/keyword/properties",
+      "https://bundler.hyperjump.io/main#": "https://json-schema.org/evaluation/validate"
     },
-    {
-      "keyword": "https://json-schema.org/keyword/properties",
-      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/properties",
-      "instanceLocation": "#",
-      "valid": false,
-      "errors": [
-        {
-          "keyword": "https://json-schema.org/evaluation/validate",
-          "absoluteKeywordLocation": "https://test.json-schema.org/tree#",
-          "instanceLocation": "#/tree",
-          "valid": false,
-          "errors": [
-            {
-              "keyword": "https://json-schema.org/keyword/type",
-              "absoluteKeywordLocation": "https://test.json-schema.org/tree#/type",
-              "instanceLocation": "#/tree",
-              "valid": true,
-              "errors": []
-            },
-            {
-              "keyword": "https://json-schema.org/keyword/properties",
-              "absoluteKeywordLocation": "https://test.json-schema.org/tree#/properties",
-              "instanceLocation": "#/tree",
-              "valid": false,
-              "errors": [
-                {
-                  "keyword": "https://json-schema.org/evaluation/validate",
-                  "absoluteKeywordLocation": "https://test.json-schema.org/tree#/properties/leaf",
-                  "instanceLocation": "#/tree/leaf",
-                  "valid": true,
-                  "errors": []
-                },
-                {
-                  "keyword": "https://json-schema.org/evaluation/validate",
-                  "absoluteKeywordLocation": "https://test.json-schema.org/tree#",
-                  "instanceLocation": "#/tree/branch",
-                  "valid": false,
-                  "errors": [
-                    {
-                      "keyword": "https://json-schema.org/keyword/type",
-                      "absoluteKeywordLocation": "https://test.json-schema.org/tree#/type",
-                      "instanceLocation": "#/tree/branch",
-                      "valid": false,
-                      "errors": []
-                    },
-                    {
-                      "keyword": "https://json-schema.org/keyword/properties",
-                      "absoluteKeywordLocation": "https://test.json-schema.org/tree#/properties",
-                      "instanceLocation": "#/tree/branch",
-                      "valid": true,
-                      "errors": []
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        }
-      ]
+    "annotations": {}
+  },
+  "#/tree": {
+    "errors": {
+      "https://test.json-schema.org/tree#/properties": "https://json-schema.org/keyword/properties",
+      "https://test.json-schema.org/tree#": "https://json-schema.org/evaluation/validate"
     },
-    {
-      "keyword": "https://json-schema.org/keyword/definitions",
-      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/definitions",
-      "instanceLocation": "#",
-      "valid": true,
-      "errors": []
-    }
-  ]
+    "annotations": {}
+  },
+  "#/tree/leaf": {
+    "errors": {},
+    "annotations": {}
+  },
+  "#/tree/branch": {
+    "errors": {
+      "https://test.json-schema.org/tree#/type": "https://json-schema.org/keyword/type",
+      "https://test.json-schema.org/tree#": "https://json-schema.org/evaluation/validate"
+    },
+    "annotations": {}
+  }
 }

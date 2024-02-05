@@ -1,22 +1,13 @@
 {
-  "keyword": "https://json-schema.org/evaluation/validate",
-  "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#",
-  "instanceLocation": "#",
-  "valid": false,
-  "errors": [
-    {
-      "keyword": "https://json-schema.org/keyword/propertyNames",
-      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/propertyNames",
-      "instanceLocation": "#",
-      "valid": false,
-      "errors": []
+  "#": {
+    "errors": {
+      "https://bundler.hyperjump.io/main#/propertyNames": "https://json-schema.org/keyword/propertyNames",
+      "https://bundler.hyperjump.io/main#": "https://json-schema.org/evaluation/validate"
     },
-    {
-      "keyword": "https://json-schema.org/keyword/definitions",
-      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/$defs",
-      "instanceLocation": "#",
-      "valid": true,
-      "errors": []
-    }
-  ]
+    "annotations": {}
+  },
+  "#/foobar": {
+    "errors": {},
+    "annotations": {}
+  }
 }

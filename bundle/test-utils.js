@@ -3,6 +3,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { basename, relative } from "node:path";
 import { getKeywordName } from "../lib/keywords.js";
 import { registerSchema, unregisterSchema } from "../lib/index.js";
+import * as Instance from "../lib/instance.js";
 
 
 export const testSuite = (path) => {
@@ -100,4 +101,16 @@ export const unloadSchemas = (testCase, retrievalUri) => {
   for (const retrievalUri in testCase.externalSchemas) {
     unregisterSchema(retrievalUri || testCase.externalSchemas[retrievalUri]?.$id || testCase.externalSchemas[retrievalUri]?.id);
   }
+};
+
+export const toOutput = (root) => {
+  const output = {};
+  for (const node of Instance.allNodes(root)) {
+    output[Instance.uri(node)] = {
+      errors: node.errors,
+      annotations: node.annotations
+    };
+  }
+
+  return output;
 };

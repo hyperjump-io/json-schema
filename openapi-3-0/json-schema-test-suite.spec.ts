@@ -2,6 +2,7 @@ import fs from "node:fs";
 import { describe, it, expect, beforeAll } from "vitest";
 import { registerSchema, validate } from "./index.js";
 
+import type { Json } from "@hyperjump/json-pointer";
 import type { OasSchema30, Validator } from "./index.js";
 
 
@@ -13,7 +14,7 @@ type Suite = {
 
 type Test = {
   description: string;
-  data: unknown;
+  data: Json;
   valid: boolean;
 };
 

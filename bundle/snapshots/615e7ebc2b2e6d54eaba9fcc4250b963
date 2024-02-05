@@ -1,22 +1,10 @@
 {
-  "keyword": "https://json-schema.org/evaluation/validate",
-  "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#",
-  "instanceLocation": "#",
-  "valid": true,
-  "errors": [
-    {
-      "keyword": "https://json-schema.org/keyword/draft-04/additionalItems",
-      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/additionalItems",
-      "instanceLocation": "#",
-      "valid": true,
-      "errors": []
-    },
-    {
-      "keyword": "https://json-schema.org/keyword/definitions",
-      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/$defs",
-      "instanceLocation": "#",
-      "valid": true,
-      "errors": []
-    }
-  ]
+  "#": {
+    "errors": {},
+    "annotations": {}
+  },
+  "#/0": {
+    "errors": {},
+    "annotations": {}
+  }
 }

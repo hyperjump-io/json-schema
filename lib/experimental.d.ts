@@ -1,6 +1,6 @@
 import type { Browser, Document } from "@hyperjump/browser";
 import type { Validator, OutputUnit, OutputFormat, SchemaObject } from "./index.js";
-import type { JsonDocument } from "./instance.js";
+import type { JsonNode } from "./instance.js";
 
 
 // Compile/interpret
@@ -32,8 +32,6 @@ type Anchors = Record<string, string>;
 
 // Output Formats
 export const BASIC: "BASIC";
-export const DETAILED: "DETAILED";
-export const VERBOSE: "VERBOSE";
 
 // Schema
 export const getSchema: (uri: string, browser?: Browser) => Promise<Browser<SchemaDocument>>;
@@ -69,9 +67,9 @@ export const hasDialect: (dialectId: string) => boolean;
 export type Keyword<A> = {
   id: string;
   compile: (schema: Browser<SchemaDocument>, ast: AST, parentSchema: Browser<SchemaDocument>) => Promise<A>;
-  interpret: (compiledKeywordValue: A, instance: JsonDocument, ast: AST, dynamicAnchors: Anchors) => boolean;
-  collectEvaluatedProperties?: (compiledKeywordValue: A, instance: JsonDocument, ast: AST, dynamicAnchors: Anchors, isTop?: boolean) => Set<string> | false;
-  collectEvaluatedItems?: (compiledKeywordValue: A, instance: JsonDocument, ast: AST, dynamicAnchors: Anchors, isTop?: boolean) => Set<number> | false;
+  interpret: (compiledKeywordValue: A, instance: JsonNode, ast: AST, dynamicAnchors: Anchors, quiet: boolean, schemaLocation: string) => boolean;
+  collectEvaluatedProperties?: (compiledKeywordValue: A, instance: JsonNode, ast: AST, dynamicAnchors: Anchors, isTop?: boolean) => Set<string> | false;
+  collectEvaluatedItems?: (compiledKeywordValue: A, instance: JsonNode, ast: AST, dynamicAnchors: Anchors, isTop?: boolean) => Set<number> | false;
   collectExternalIds?: (visited: Set<string>, parentSchema: Browser<SchemaDocument>, schema: Browser<SchemaDocument>) => Promise<Set<string>>;
   annotation?: <B>(compiledKeywordValue: A) => B;
 };

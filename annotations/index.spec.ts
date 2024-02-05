@@ -3,7 +3,6 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, it, expect, beforeEach, beforeAll, afterAll } from "vitest";
 import { toAbsoluteIri } from "@hyperjump/uri";
-import * as AnnotatedInstance from "./annotated-instance.js";
 import { annotate } from "./index.js";
 import { registerSchema, unregisterSchema } from "../lib/index.js";
 import "../stable/index.js";
@@ -11,10 +10,12 @@ import "../draft-2020-12/index.js";
 import "../draft-07/index.js";
 import "../draft-06/index.js";
 import "../draft-04/index.js";
+import * as Instance from "./annotated-instance.js";
 
 import type { SchemaObject } from "../lib/index.js";
-import type { AnnotatedJsonDocument } from "./annotated-instance.js";
 import type { Annotator } from "./index.js";
+import type { JsonNode } from "../lib/instance.js";
+import type { Json } from "@hyperjump/json-pointer";
 
 
 type Suite = {
@@ -24,7 +25,7 @@ type Suite = {
 };
 
 type Subject = {
-  instance: unknown;
+  instance: Json;
   assertions: Assertion[];
 };
 
@@ -67,16 +68,18 @@ describe("Annotations", () => {
 
           suite.subjects.forEach((subject) => {
             describe("Instance: " + JSON.stringify(subject.instance), () => {
-              let instance: AnnotatedJsonDocument;
+              let instance: JsonNode;
 
               beforeEach(() => {
-                instance = annotator(subject.instance);
+                // TODO: What's wrong with the type?
+                instance = annotator(subject.instance); // eslint-disable-line @typescript-eslint/no-unsafe-assignment
               });
 
               subject.assertions.forEach((assertion) => {
                 it(`${assertion.keyword} annotations at '${assertion.location}' should be ${JSON.stringify(assertion.expected)}`, () => {
                   const dialect: string | undefined = suite.schema.$schema ? toAbsoluteIri(suite.schema.$schema as string) : undefined;
-                  const annotations = AnnotatedInstance.annotation(AnnotatedInstance.get(assertion.location, instance), assertion.keyword, dialect);
+                  const subject = Instance.get(assertion.location, instance);
+                  const annotations = subject ? Instance.annotation(subject, assertion.keyword, dialect) : [];
                   expect(annotations).to.eql(assertion.expected);
                 });
               });

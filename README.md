@@ -518,28 +518,23 @@ These are available from the `@hyperjump/json-schema/experimental` export.
           is needed for compiling sub-schemas. The `parentSchema` parameter is
           primarily useful for looking up the value of an adjacent keyword that
           might effect this one.
-      * interpret: (compiledKeywordValue: any, instance: InstanceDocument, ast: AST, dynamicAnchors: object, quiet: boolean) => boolean
+      * interpret: (compiledKeywordValue: any, instance: JsonNode, ast: AST, dynamicAnchors: object, quiet: boolean, schemaLocation: string) => boolean
 
           This function takes the value returned by the `compile` function and
           the instance value that is being validated and returns whether the
           value is valid or not. The other parameters are only needed for
           validating sub-schemas.
-      * collectEvaluatedProperties?: (compiledKeywordValue: any, instance: InstanceDocument, ast: AST, dynamicAnchors: object) => Set\<string> | false
+      * collectEvaluatedProperties?: (compiledKeywordValue: any, instance: JsonNode, ast: AST, dynamicAnchors: object) => Set\<string> | false
 
           If the keyword is an applicator, it will need to implement this
           function for `unevaluatedProperties` to work as expected.
-      * collectEvaluatedItems?: (compiledKeywordValue: A, instance: InstanceDocument, ast: AST, dynamicAnchors: object) => Set\<number> | false
+      * collectEvaluatedItems?: (compiledKeywordValue: A, instance: JsonNode, ast: AST, dynamicAnchors: object) => Set\<number> | false
 
           If the keyword is an applicator, it will need to implement this
           function for `unevaluatedItems` to work as expected.
       * collectExternalIds?: (visited: Set\<string>, parentSchema: Browser, schema: Browser) => Set\<string>
           If the keyword is an applicator, it will need to implement this
       function to work properly with the [bundle](#bundling) feature.
-      * annotation?: (compiledKeywordValue: any) => any
-
-          If the keyword is an annotation, it will need to implement this
-          function to work with the [annotation](#annotations-experimental)
-          functions.
 * **defineVocabulary**: (id: string, keywords: { [keyword: string]: string }) => void
 
     Define a vocabulary that maps keyword name to keyword URIs defined using
@@ -607,68 +602,69 @@ These are available from the `@hyperjump/json-schema/experimental` export.
 
     Return a compiled schema. This is useful if you're creating tooling for
     something other than validation.
-* **interpret**: (schema: CompiledSchema, instance: Instance, outputFormat: OutputFormat = BASIC) => OutputUnit
+* **interpret**: (schema: CompiledSchema, instance: JsonNode, outputFormat: OutputFormat = BASIC) => OutputUnit
 
     A curried function for validating an instance against a compiled schema.
     This can be useful for creating custom output formats.
 
-* **OutputFormat**: **FLAG** | **BASIC** | **DETAILED** | **VERBOSE**
+* **OutputFormat**: **FLAG** | **BASIC**
 
     In addition to the `FLAG` output format in the Stable API, the Experimental
-    API includes support for the `BASIC`, `DETAILED`, and `VERBOSE` formats as
-    specified in the 2019-09 specification (with some minor customizations).
-    This implementation doesn't include annotations or human readable error
-    messages. The output can be processed to create human readable error
-    messages as needed.
+    API includes support for the `BASIC` format as specified in the 2019-09
+    specification (with some minor customizations). This implementation doesn't
+    include annotations or human readable error messages. The output can be
+    processed to create human readable error messages as needed.
 
 ## Instance API (experimental)
 
 These functions are available from the
 `@hyperjump/json-schema/instance/experimental` export.
 
-This library uses InstanceDocument objects to represent a value in an instance.
-You'll work with these objects if you create a custom keyword. This module is a
-set of functions for working with InstanceDocuments.
+This library uses JsonNode objects to represent instances. You'll work with
+these objects if you create a custom keyword.
 
 This API uses generators to iterate over arrays and objects. If you like using
 higher order functions like `map`/`filter`/`reduce`, see
 [`@hyperjump/pact`](https://github.com/hyperjump-io/pact) for utilities for
 working with generators and async generators.
 
-* **cons**: (instance: any, uri?: string) => InstanceDocument
+* **fromJs**: (value: any, uri?: string) => JsonNode
 
-    Construct an InstanceDocument from a value.
-* **get**: (url: string, contextDoc: InstanceDocument) => InstanceDocument
+    Construct a JsonNode from a JavaScript value.
+* **get**: (url: string, instance: JsonNode) => JsonNode
 
-    Apply a same-resource reference to a InstanceDocument.
-* **uri**: (doc: InstanceDocument) => string
+    Apply a same-resource reference to a JsonNode.
+* **uri**: (instance: JsonNode) => string
 
-    Returns a URI for the value the InstanceDocument represents.
-* **value**: (doc: InstanceDocument) => any
+    Returns a URI for the value the JsonNode represents.
+* **value**: (instance: JsonNode) => any
 
-    Returns the value the InstanceDocument represents.
-* **has**: (key: string, doc: InstanceDocument) => any
+    Returns the value the JsonNode represents.
+* **has**: (key: string, instance: JsonNode) => boolean
 
-    Similar to `key in instance`.
-* **typeOf**: (doc: InstanceDocument) => string
+    Returns whether or not "key" is a property name in a JsonNode that
+    represents an object.
+* **typeOf**: (instance: JsonNode) => string
 
-    Determines if the JSON type of the given doc matches the given type.
-* **step**: (key: string, doc: InstanceDocument) => InstanceDocument
+    The JSON type of the JsonNode. In addition to the standard JSON types,
+    there's also the `property` type that indicates a property name/value pair
+    in an object.
+* **step**: (key: string, instance: JsonNode) => JsonType
 
-    Similar to `schema[key]`, but returns a InstanceDocument.
-* **iter**: (doc: InstanceDocument) => Generator\<InstanceDocument>
+    Similar to indexing into a object or array using the `[]` operator.
+* **iter**: (instance: JsonNode) => Generator\<JsonNode>
 
-    Iterate over the items in the array that the SchemaDocument represents.
-* **entries**: (doc: InstanceDocument) => Generator\<[string, InstanceDocument]>
+    Iterate over the items in the array that the JsonNode represents.
+* **entries**: (instance: JsonNode) => Generator\<[JsonNode, JsonNode]>
 
-    Similar to `Object.entries`, but yields InstanceDocuments for values.
-* **values**: (doc: InstanceDocument) => Generator\<InstanceDocument>
+    Similar to `Object.entries`, but yields JsonNodes for keys and values.
+* **values**: (instance: JsonNode) => Generator\<JsonNode>
 
-    Similar to `Object.values`, but yields InstanceDocuments for values.
-* **keys**: (doc: InstanceDocument) => Generator\<string>
+    Similar to `Object.values`, but yields JsonNodes for values.
+* **keys**: (instance: JsonNode) => Generator\<JsonNode>
 
-    Similar to `Object.keys`.
-* **length**: (doc: InstanceDocument) => number
+    Similar to `Object.keys`, but yields JsonNodes for keys.
+* **length**: (instance: JsonNode) => number
 
     Similar to `Array.prototype.length`.
 
@@ -678,12 +674,13 @@ module provides utilities for working with JSON documents annotated with JSON
 Schema.
 
 ### Usage
-An annotated JSON document is represented as an AnnotatedInstance object. This
-object is a wrapper around your JSON document with functions that allow you to
-traverse the data structure and get annotations for the values within.
+An annotated JSON document is represented as a
+(JsonNode)[#/instance-api-experimental] AST. You can use this AST to traverse
+the data structure and get annotations for the values it represents.
 
 ```javascript
-import { annotate, annotatedWith, registerSchema } from "@hyperjump/json-schema/annotations/experimental";
+import { registerSchema } from "@hyperjump/json-schema/draft/2020-12";
+import { annotate } from "@hyperjump/json-schema/annotations/experimental";
 import * as AnnotatedInstance from "@hyperjump/json-schema/annotated-instance/experimental";
 
 
@@ -736,13 +733,14 @@ const unknowns = AnnotatedInstance.annotation(instance, "unknown", dialectId); /
 const types = AnnotatedInstance.annotation(instance, "type", dialectId); // => []
 
 // Get the title of each of the properties in the object
-for (const [propertyName, propertyInstance] of AnnotatedInstance.entries(instance)) {
-  console.log(propertyName, Instance.annotation(propertyInstance, "title", dialectId));
+for (const [propertyNameNode, propertyInstance] of AnnotatedInstance.entries(instance)) {
+  const propertyName = AnnotatedInstance.value(propertyName);
+  console.log(propertyName, AnnotatedInstance.annotation(propertyInstance, "title", dialectId));
 }
 
 // List all locations in the instance that are deprecated
 for (const deprecated of AnnotatedInstance.annotatedWith(instance, "deprecated", dialectId)) {
-  if (AnnotatedInstance.annotation(instance, "deprecated", dialectId)[0]) {
+  if (AnnotatedInstance.annotation(deprecated, "deprecated", dialectId)[0]) {
     logger.warn(`The value at '${deprecated.pointer}' has been deprecated.`); // => (Example) "WARN: The value at '/name' has been deprecated."
   }
 }
@@ -752,13 +750,18 @@ for (const deprecated of AnnotatedInstance.annotatedWith(instance, "deprecated",
 These are available from the `@hyperjump/json-schema/annotations/experimental`
 export.
 
-* **annotate**: (schemaUri: string, instance: any, outputFormat: OutputFormat = FLAG) => Promise\<AnnotatedInstance>
+* **annotate**: (schemaUri: string, instance: any, outputFormat: OutputFormat = BASIC) => Promise\<JsonNode>
 
     Annotate an instance using the given schema. The function is curried to
     allow compiling the schema once and applying it to multiple instances. This
     may throw an [InvalidSchemaError](#api) if there is a problem with the
     schema or a ValidationError if the instance doesn't validate against the
     schema.
+* **interpret**: (compiledSchema: CompiledSchema, instance: JsonNode, outputFormat: OutputFormat = BASIC) => JsonNode
+
+    Annotate a JsonNode object rather than a plain JavaScript value. This might
+    be useful when building tools on top of the annotation functionality, but
+    you probably don't need it.
 * **ValidationError**: Error & { output: OutputUnit }
     The `output` field contains an `OutputUnit` with information about the
     error.
@@ -769,15 +772,13 @@ These are available from the
 following functions are available in addition to the functions available in the
 [Instance API](#instance-api-experimental).
 
-* **annotation**: (instance: AnnotatedInstance, keyword: string, dialectId?: string) => any[]
+* **annotation**: (instance: JsonNode, keyword: string, dialect?: string): any[];
 
-    Get the annotations for a given keyword at the location represented by the
-    instance object.
-* **annotatedWith**: (instance: AnnotatedInstance, keyword: string, dialectId?: string) => AnnotatedInstance[]
+    Get the annotations for a keyword for the value represented by the JsonNode.
+* **annotatedWith**: (instance: JsonNode, keyword: string, dialect?: string): JsonNode[];
 
-    Get an array of instances for all the locations that are annotated with the
-    given keyword.
-* **annotate**: (instance: AnnotatedInstance, keywordId: string, value: any) => AnnotatedInstance
+    Get all JsonNodes that are annotated with the given keyword.
+* **setAnnotation**: (instance: JsonNode, keywordId: string, value: any) => JsonNode
 
     Add an annotation to an instance. This is used internally, you probably
     don't need it.

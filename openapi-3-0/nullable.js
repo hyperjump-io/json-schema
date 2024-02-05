@@ -1,4 +1,10 @@
-import metaData from "../lib/keywords/meta-data.js";
+import * as Browser from "@hyperjump/browser";
 
 
-export default { id: "https://spec.openapis.org/oas/3.0/keyword/nullable", ...metaData };
+const id = "https://spec.openapis.org/oas/3.0/keyword/nullable";
+
+const compile = (schema) => Browser.value(schema);
+
+const interpret = () => true;
+
+export default { id, compile, interpret };

@@ -1534,7 +1534,7 @@
 
         "tests": [
             {
-                "description": "unevaluatedProperties doesn't consider propertyDependencies" , 
+                "description": "unevaluatedProperties doesn't consider propertyDependencies",
                 "data": { "foo": "bar" },
                 "valid": false
             },
@@ -1551,35 +1551,35 @@
         ]
     },
     {
-      "description": "dependentSchemas with unevaluatedProperties",
-      "schema": {
-          "properties": { "foo2": {} },
-          "dependentSchemas": {
-              "foo" : {},
-              "foo2": {
-                  "properties": {
-                      "bar": {}
-                  }
-              }
-          },
-          "unevaluatedProperties": false
-      },
-      "tests": [
-          {
-              "description": "unevaluatedProperties doesn't consider dependentSchemas",
-              "data": { "foo": "" },
-              "valid": false
-          },
-          {
-              "description": "unevaluatedProperties doesn't see bar when foo2 is absent",
-              "data": { "bar": "" },
-              "valid": false
-          },
-          {
-              "description": "unevaluatedProperties sees bar when foo2 is present",
-              "data": { "foo2": "", "bar": "" },
-              "valid": true
-          }
-      ]
+        "description": "dependentSchemas with unevaluatedProperties",
+        "schema": {
+            "properties": { "foo2": {} },
+            "dependentSchemas": {
+                "foo" : {},
+                "foo2": {
+                    "properties": {
+                        "bar": {}
+                    }
+                }
+            },
+            "unevaluatedProperties": false
+        },
+        "tests": [
+            {
+                "description": "unevaluatedProperties doesn't consider dependentSchemas",
+                "data": { "foo": "" },
+                "valid": false
+            },
+            {
+                "description": "unevaluatedProperties doesn't see bar when foo2 is absent",
+                "data": { "bar": "" },
+                "valid": false
+            },
+            {
+                "description": "unevaluatedProperties sees bar when foo2 is present",
+                "data": { "foo2": "", "bar": "" },
+                "valid": true
+            }
+        ]
     }
 ]

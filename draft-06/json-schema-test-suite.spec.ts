@@ -4,6 +4,7 @@ import { toAbsoluteIri } from "@hyperjump/uri";
 import { registerSchema, unregisterSchema, validate } from "./index.js";
 
 import type { JsonSchemaDraft06, SchemaObject, Validator } from "./index.js";
+import type { Json } from "@hyperjump/json-pointer";
 
 
 type Suite = {
@@ -14,7 +15,7 @@ type Suite = {
 
 type Test = {
   description: string;
-  data: unknown;
+  data: Json;
   valid: boolean;
 };
 

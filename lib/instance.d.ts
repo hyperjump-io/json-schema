@@ -1,29 +1,30 @@
-import type { JsonType } from "./common.js";
-import type { Json, JsonObject } from "@hyperjump/json-pointer";
+import type { Json } from "@hyperjump/json-pointer";
 
 
-export const nil: JsonDocument<undefined>;
-export const cons: (instance: Json, id?: string) => JsonDocument;
-export const get: (url: string, context?: JsonDocument) => JsonDocument;
-export const uri: (doc: JsonDocument) => string;
-export const value: <A extends Json>(doc: JsonDocument<A>) => A;
-export const has: (key: string, doc: JsonDocument<JsonObject>) => boolean;
-export const typeOf: (doc: JsonDocument) => JsonType;
-export const step: (key: string, doc: JsonDocument<JsonObject | Json[]>) => JsonDocument<typeof doc.value>;
-export const iter: (doc: JsonDocument<JsonObject>) => Generator<JsonDocument>;
-export const keys: (doc: JsonDocument<JsonObject>) => Generator<string>;
-export const values: (doc: JsonDocument<JsonObject>) => Generator<JsonDocument>;
-export const entries: (doc: JsonDocument<JsonObject>) => Generator<[string, JsonDocument]>;
-export const length: (doc: JsonDocument<Json[] | string>) => number;
+export const fromJs: (value: Json, uri?: string) => JsonNode;
 
-type MapFn<A> = (element: JsonDocument, index: number) => A;
-type ForEachFn = (element: JsonDocument, index: number) => void;
-type FilterFn = (element: JsonDocument, index: number) => boolean;
-type ReduceFn<A> = (accumulator: A, currentValue: JsonDocument, index: number) => A;
+export const get: (url: string, context: JsonNode) => JsonNode | undefined;
+export const uri: (node: JsonNode) => string;
+export const value: <A>(node: JsonNode) => A;
+export const has: (key: string, node: JsonNode) => boolean;
+export const typeOf: (node: JsonNode) => JsonType;
+export const step: (key: string, node: JsonNode) => JsonNode;
+export const iter: (node: JsonNode) => Generator<JsonNode>;
+export const keys: (node: JsonNode) => Generator<JsonNode>;
+export const values: (node: JsonNode) => Generator<JsonNode>;
+export const entries: (node: JsonNode) => Generator<[JsonNode, JsonNode]>;
+export const length: (node: JsonNode) => number;
 
-export type JsonDocument<A extends Json | undefined = Json> = {
-  id: string;
+export const allNodes: (node) => Generator<JsonNode>;
+
+export type JsonNode = {
+  baseUri: string;
   pointer: string;
-  instance: Json;
-  value: A;
+  type: JsonNodeType;
+  children: JsonNode[];
+  parent: JsonNode;
+  root: JsonNode;
+  valid: boolean;
 };
+
+type JsonNodeType = "object" | "array" | "string" | "number" | "boolean" | "null" | "property";

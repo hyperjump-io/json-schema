@@ -1,45 +1,15 @@
 {
-  "keyword": "https://json-schema.org/evaluation/validate",
-  "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#",
-  "instanceLocation": "#",
-  "valid": false,
-  "errors": [
-    {
-      "keyword": "https://json-schema.org/keyword/anyOf",
-      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/anyOf",
-      "instanceLocation": "#",
-      "valid": false,
-      "errors": [
-        {
-          "keyword": "https://json-schema.org/evaluation/validate",
-          "absoluteKeywordLocation": "https://bundler.hyperjump.io/string#",
-          "instanceLocation": "#",
-          "valid": false,
-          "errors": [
-            {
-              "keyword": "https://json-schema.org/keyword/title",
-              "absoluteKeywordLocation": "https://bundler.hyperjump.io/string#/title",
-              "instanceLocation": "#",
-              "valid": true,
-              "errors": []
-            },
-            {
-              "keyword": "https://json-schema.org/keyword/type",
-              "absoluteKeywordLocation": "https://bundler.hyperjump.io/string#/type",
-              "instanceLocation": "#",
-              "valid": false,
-              "errors": []
-            }
-          ]
-        }
-      ]
+  "#": {
+    "errors": {
+      "https://bundler.hyperjump.io/string#/type": "https://json-schema.org/keyword/type",
+      "https://bundler.hyperjump.io/string#": "https://json-schema.org/evaluation/validate",
+      "https://bundler.hyperjump.io/main#/anyOf": "https://json-schema.org/keyword/anyOf",
+      "https://bundler.hyperjump.io/main#": "https://json-schema.org/evaluation/validate"
     },
-    {
-      "keyword": "https://json-schema.org/keyword/definitions",
-      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/definitions",
-      "instanceLocation": "#",
-      "valid": true,
-      "errors": []
+    "annotations": {
+      "https://json-schema.org/keyword/title": {
+        "https://bundler.hyperjump.io/string#": "String"
+      }
     }
-  ]
+  }
 }

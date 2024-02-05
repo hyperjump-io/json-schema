@@ -3,6 +3,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { toAbsoluteIri } from "@hyperjump/uri";
 import { registerSchema, unregisterSchema, validate } from "./index.js";
 
+import type { Json } from "@hyperjump/json-pointer";
 import type { SchemaObject, OasSchema31, Validator } from "./index.js";
 
 
@@ -14,7 +15,7 @@ type Suite = {
 
 type Test = {
   description: string;
-  data: unknown;
+  data: Json;
   valid: boolean;
 };
 

@@ -204,7 +204,7 @@
         },
         "tests": [
             {
-                "description": "additionalProperties doesn't consider propertyDependencies properties" , 
+                "description": "additionalProperties doesn't consider propertyDependencies properties" ,
                 "data": { "foo": "" },
                 "valid": false
             },

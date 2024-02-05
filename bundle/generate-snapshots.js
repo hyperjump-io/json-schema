@@ -1,13 +1,13 @@
 import { writeFile, mkdir, rm } from "node:fs/promises";
-import { isCompatible, md5, loadSchemas, testSuite, unloadSchemas } from "./test-utils.js";
-import { validate } from "../lib/index.js";
-import { VERBOSE } from "../lib/experimental.js";
+import { isCompatible, md5, loadSchemas, testSuite, toOutput, unloadSchemas } from "./test-utils.js";
+import { compile, getSchema, interpret } from "../lib/experimental.js";
 import "../stable/index.js";
 import "../draft-2020-12/index.js";
 import "../draft-2019-09/index.js";
 import "../draft-07/index.js";
 import "../draft-06/index.js";
 import "../draft-04/index.js";
+import * as Instance from "../lib/instance.js";
 
 
 const suite = testSuite("./bundle/tests");
@@ -23,7 +23,11 @@ const snapshotGenerator = async (version, dialect) => {
     let testIndex = 0;
     for (const test of testCase.tests) {
       loadSchemas(testCase, mainSchemaUri, dialect);
-      const expectedOutput = await validate(mainSchemaUri, test.instance, VERBOSE);
+      const schema = await getSchema(mainSchemaUri);
+      const compiledSchema = await compile(schema);
+      const instance = Instance.fromJs(test.instance);
+      interpret(compiledSchema, instance);
+      const expectedOutput = toOutput(instance);
       unloadSchemas(testCase, mainSchemaUri);
 
       const testId = md5(`${version}|${dialect}|${testCase.description}|${testIndex}`);
