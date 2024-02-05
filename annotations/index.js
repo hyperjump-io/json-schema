@@ -1,5 +1,5 @@
 import { subscribe, unsubscribe } from "../lib/pubsub.js";
-import * as Instance from "./annotated-instance.js";
+import { AnnotatedJsInstance } from "./annotated-instance.js";
 import { ValidationError } from "./validation-error.js";
 import { getSchema, getKeyword, compile, interpret as validate, BASIC } from "../lib/experimental.js";
 
@@ -8,7 +8,7 @@ export const annotate = async (schemaUri, json = undefined, outputFormat = undef
   loadKeywordSupport();
   const schema = await getSchema(schemaUri);
   const compiled = await compile(schema);
-  const interpretAst = (json, outputFormat) => interpret(compiled, Instance.cons(json), outputFormat);
+  const interpretAst = (json, outputFormat) => interpret(compiled, new AnnotatedJsInstance(json), outputFormat);
 
   return json === undefined ? interpretAst : interpretAst(json, outputFormat);
 };
@@ -38,13 +38,13 @@ const outputHandler = (output) => {
       instanceStack.push(output[0]);
       isPassing = true;
     } else if (message === "result" && isPassing) {
-      output[0] = Instance.get(resultNode.instanceLocation, output[0]);
+      output[0] = output[0].get(resultNode.instanceLocation);
 
       if (resultNode.valid) {
         const keywordHandler = getKeyword(resultNode.keyword);
         if (keywordHandler?.annotation) {
           const annotation = keywordHandler.annotation(resultNode.ast);
-          output[0] = Instance.annotate(output[0], resultNode.keyword, annotation);
+          output[0] = output[0].annotate(resultNode.keyword, annotation);
         }
       } else {
         output[0] = instanceStack[instanceStack.length - 1];

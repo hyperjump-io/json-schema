@@ -1,83 +1,44 @@
+import type { Json } from "@hyperjump/json-pointer";
 import type { JsonType } from "../lib/common.js";
-import type { Json, JsonObject } from "@hyperjump/json-pointer";
+import type { Instance } from "../lib/instance.js";
 
 
-export const annotate: (instance: AnnotatedJsonDocument, keyword: string, value: string) => AnnotatedJsonDocument;
-export const annotation: <A>(instance: AnnotatedJsonDocument, keyword: string, dialectId?: string) => A[];
-export const annotatedWith: (instance: AnnotatedJsonDocument, keyword: string, dialectId?: string) => AnnotatedJsonDocument[];
-export const nil: AnnotatedJsonDocument<undefined>;
-export const cons: (instance: Json, id?: string) => AnnotatedJsonDocument;
-export const get: (uri: string, context?: AnnotatedJsonDocument) => AnnotatedJsonDocument;
-export const uri: (doc: AnnotatedJsonDocument) => string;
-export const value: <A extends Json>(doc: AnnotatedJsonDocument<A>) => A;
-export const has: (key: string, doc: AnnotatedJsonDocument<JsonObject>) => boolean;
-export const typeOf: (
-  (doc: AnnotatedJsonDocument, type: "null") => doc is AnnotatedJsonDocument<null>
-) & (
-  (doc: AnnotatedJsonDocument, type: "boolean") => doc is AnnotatedJsonDocument<boolean>
-) & (
-  (doc: AnnotatedJsonDocument, type: "object") => doc is AnnotatedJsonDocument<JsonObject>
-) & (
-  (doc: AnnotatedJsonDocument, type: "array") => doc is AnnotatedJsonDocument<Json[]>
-) & (
-  (doc: AnnotatedJsonDocument, type: "number" | "integer") => doc is AnnotatedJsonDocument<number>
-) & (
-  (doc: AnnotatedJsonDocument, type: "string") => doc is AnnotatedJsonDocument<string>
-) & (
-  (doc: AnnotatedJsonDocument, type: JsonType) => boolean
-) & (
-  (doc: AnnotatedJsonDocument) => (type: JsonType) => boolean
-);
-export const step: (key: string, doc: AnnotatedJsonDocument<JsonObject | Json[]>) => AnnotatedJsonDocument<typeof doc.value>;
-export const entries: (doc: AnnotatedJsonDocument<JsonObject>) => [string, AnnotatedJsonDocument][];
-export const keys: (doc: AnnotatedJsonDocument<JsonObject>) => string[];
-export const map: (
-  <A>(fn: MapFn<A>, doc: AnnotatedJsonDocument<Json[]>) => A[]
-) & (
-  <A>(fn: MapFn<A>) => (doc: AnnotatedJsonDocument<Json[]>) => A[]
-);
-export const forEach: (
-  (fn: ForEachFn, doc: AnnotatedJsonDocument<Json[]>) => void
-) & (
-  (fn: ForEachFn) => (doc: AnnotatedJsonDocument<Json[]>) => void
-);
-export const filter: (
-  (fn: FilterFn, doc: AnnotatedJsonDocument<Json[]>) => AnnotatedJsonDocument[]
-) & (
-  (fn: FilterFn) => (doc: AnnotatedJsonDocument<Json[]>) => AnnotatedJsonDocument[]
-);
-export const reduce: (
-  <A>(fn: ReduceFn<A>, acc: A, doc: AnnotatedJsonDocument<Json[]>) => A
-) & (
-  <A>(fn: ReduceFn<A>) => (acc: A, doc: AnnotatedJsonDocument<Json[]>) => A
-) & (
-  <A>(fn: ReduceFn<A>) => (acc: A) => (doc: AnnotatedJsonDocument<Json[]>) => A
-);
-export const every: (
-  (fn: FilterFn, doc: AnnotatedJsonDocument<Json[]>) => boolean
-) & (
-  (fn: FilterFn) => (doc: AnnotatedJsonDocument<Json[]>) => boolean
-);
-export const some: (
-  (fn: FilterFn, doc: AnnotatedJsonDocument<Json[]>) => boolean
-) & (
-  (fn: FilterFn) => (doc: AnnotatedJsonDocument<Json[]>) => boolean
-);
-export const length: (doc: AnnotatedJsonDocument<Json[] | string>) => number;
+export interface AnnotatedInstance extends Instance {
+  annotate: (keyword: string, value: string) => AnnotatedInstance;
+  annotation: <A>(keyword: string, dialectId?: string) => A[];
+  annotatedWith: (keyword: string, dialectId?: string) => AnnotatedInstance[];
 
-type MapFn<A> = (element: AnnotatedJsonDocument, index: number) => A;
-type ForEachFn = (element: AnnotatedJsonDocument, index: number) => void;
-type FilterFn = (element: AnnotatedJsonDocument, index: number) => boolean;
-type ReduceFn<A> = (accumulator: A, currentValue: AnnotatedJsonDocument, index: number) => A;
+  get: (url: string) => AnnotatedInstance;
+  uri: () => string;
+  value: <A extends Json>() => A;
+  has: (key: string) => boolean;
+  typeOf: () => JsonType;
+  step: (key: string) => AnnotatedInstance;
+  iter: () => Generator<AnnotatedInstance>;
+  keys: () => Generator<string>;
+  values: () => Generator<AnnotatedInstance>;
+  entries: () => Generator<[string, AnnotatedInstance]>;
+  length: () => number;
+}
 
-export type AnnotatedJsonDocument<A extends Json | undefined = Json> = {
-  id: string;
-  pointer: string;
-  instance: Json;
-  value: A;
-  annotations: {
-    [pointer: string]: {
-      [keyword: string]: unknown[]
-    }
-  }
-};
+export class AnnotatedJsInstance implements AnnotatedInstance {
+  constructor(instance: Json, id?: string);
+
+  // AnnotatedInstance
+  annotate: (keyword: string, value: string) => AnnotatedInstance;
+  annotation: <A>(keyword: string, dialectId?: string) => A[];
+  annotatedWith: (keyword: string, dialectId?: string) => AnnotatedInstance[];
+
+  // Instance
+  get: (url: string) => AnnotatedInstance;
+  uri: () => string;
+  value: <A extends Json>() => A;
+  has: (key: string) => boolean;
+  typeOf: () => JsonType;
+  step: (key: string) => AnnotatedInstance;
+  iter: () => Generator<AnnotatedInstance>;
+  keys: () => Generator<string>;
+  values: () => Generator<AnnotatedInstance>;
+  entries: () => Generator<[string, AnnotatedInstance]>;
+  length: () => number;
+}

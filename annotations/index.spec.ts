@@ -3,7 +3,6 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, it, expect, beforeEach, beforeAll, afterAll } from "vitest";
 import { toAbsoluteIri } from "@hyperjump/uri";
-import * as AnnotatedInstance from "./annotated-instance.js";
 import { annotate } from "./index.js";
 import { registerSchema, unregisterSchema } from "../lib/index.js";
 import "../stable/index.js";
@@ -13,8 +12,8 @@ import "../draft-06/index.js";
 import "../draft-04/index.js";
 
 import type { SchemaObject } from "../lib/index.js";
-import type { AnnotatedJsonDocument } from "./annotated-instance.js";
 import type { Annotator } from "./index.js";
+import { AnnotatedInstance } from "./annotated-instance.js";
 
 
 type Suite = {
@@ -67,7 +66,7 @@ describe("Annotations", () => {
 
           suite.subjects.forEach((subject) => {
             describe("Instance: " + JSON.stringify(subject.instance), () => {
-              let instance: AnnotatedJsonDocument;
+              let instance: AnnotatedInstance;
 
               beforeEach(() => {
                 instance = annotator(subject.instance);
@@ -76,7 +75,8 @@ describe("Annotations", () => {
               subject.assertions.forEach((assertion) => {
                 it(`${assertion.keyword} annotations at '${assertion.location}' should be ${JSON.stringify(assertion.expected)}`, () => {
                   const dialect: string | undefined = suite.schema.$schema ? toAbsoluteIri(suite.schema.$schema as string) : undefined;
-                  const annotations = AnnotatedInstance.annotation(AnnotatedInstance.get(assertion.location, instance), assertion.keyword, dialect);
+                  const annotations = instance.get(assertion.location)
+                    .annotation(assertion.keyword, dialect);
                   expect(annotations).to.eql(assertion.expected);
                 });
               });
