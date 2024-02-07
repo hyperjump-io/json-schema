@@ -28,7 +28,9 @@ export default {
       "$comment": "While no longer an official keyword as it is replaced by $defs, this keyword is retained in the meta-schema to prevent incompatible extensions as it remains in common use.",
       "type": "object",
       "additionalProperties": { "$dynamicRef": "#meta" },
-      "default": {}
+      "default": {},
+      "deprecated": true,
+      "x-deprecationMessage": "Use '$defs'. 'definitions' was replaced with '$defs' in 2019-09"
     },
     "dependencies": {
       "$comment": "\"dependencies\" is no longer a keyword, but schema authors should avoid redefining it to facilitate a smooth transition to \"dependentSchemas\" and \"dependentRequired\"",
