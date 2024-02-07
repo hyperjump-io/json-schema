@@ -76,3 +76,9 @@ export type Keyword<A> = {
 };
 
 export const Validation: Keyword<string>;
+
+// PubSub
+export const subscribe: <A>(message: string, fn: (message: string, data: A) => void) => string;
+export const unsubscribe: (message: string, token: string) => void;
+export const publish: <A>(message: string, data: A) => void;
+export const publishAsync: <A>(message: string, data: A) => Promise<void>;
