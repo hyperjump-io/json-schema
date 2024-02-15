@@ -20,7 +20,7 @@ type AST = {
   metaData: Record<string, MetaData>;
 } & Record<string, Node<Node<unknown>[] | boolean>>;
 
-type Node<A> = [keywordId: string, schemaUri: string, keywordValue: A];
+type Node<A> = { keywordId: string, schemaUri: string, keywordValue: A };
 
 type MetaData = {
   id: string;
