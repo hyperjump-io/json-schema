@@ -10,6 +10,13 @@
       "instanceLocation": "#",
       "valid": false,
       "errors": []
+    },
+    {
+      "keyword": "https://json-schema.org/keyword/definitions",
+      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/$defs",
+      "instanceLocation": "#",
+      "valid": true,
+      "errors": []
     }
   ]
 }
