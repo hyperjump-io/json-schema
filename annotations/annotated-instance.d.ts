@@ -3,7 +3,7 @@ import type { JsonType } from "../lib/common.js";
 import type { Instance } from "../lib/instance.js";
 
 
-export interface AnnotatedInstance extends Instance {
+export interface AnnotatedInstance extends Instance { // eslint-disable-line @typescript-eslint/consistent-type-definitions
   annotate: (keyword: string, value: string) => AnnotatedInstance;
   annotation: <A>(keyword: string, dialectId?: string) => A[];
   annotatedWith: (keyword: string, dialectId?: string) => AnnotatedInstance[];
