@@ -73,6 +73,13 @@
                           ]
                         }
                       ]
+                    },
+                    {
+                      "keyword": "https://json-schema.org/keyword/definitions",
+                      "absoluteKeywordLocation": "https://test.json-schema.org/foo#/$defs",
+                      "instanceLocation": "#",
+                      "valid": true,
+                      "errors": []
                     }
                   ]
                 }
@@ -81,6 +88,20 @@
           ]
         }
       ]
+    },
+    {
+      "keyword": "https://json-schema.org/keyword/properties",
+      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/properties",
+      "instanceLocation": "#",
+      "valid": true,
+      "errors": []
+    },
+    {
+      "keyword": "https://json-schema.org/keyword/definitions",
+      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/$defs",
+      "instanceLocation": "#",
+      "valid": true,
+      "errors": []
     }
   ]
 }

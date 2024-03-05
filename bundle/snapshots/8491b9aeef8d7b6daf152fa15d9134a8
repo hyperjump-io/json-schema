@@ -10,6 +10,20 @@
       "instanceLocation": "#",
       "valid": false,
       "errors": []
+    },
+    {
+      "keyword": "https://json-schema.org/keyword/itemPattern",
+      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/itemPattern",
+      "instanceLocation": "#",
+      "valid": true,
+      "errors": []
+    },
+    {
+      "keyword": "https://json-schema.org/keyword/definitions",
+      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/$defs",
+      "instanceLocation": "#",
+      "valid": true,
+      "errors": []
     }
   ]
 }
