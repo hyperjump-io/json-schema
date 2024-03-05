@@ -13,7 +13,7 @@ import "../draft-04/index.js";
 
 import type { SchemaObject } from "../lib/index.js";
 import type { Annotator } from "./index.js";
-import { AnnotatedInstance } from "./annotated-instance.js";
+import type { AnnotatedInstance } from "./annotated-instance.js";
 
 
 type Suite = {

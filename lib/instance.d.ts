@@ -2,7 +2,7 @@ import type { JsonType } from "./common.js";
 import type { Json } from "@hyperjump/json-pointer";
 
 
-export interface Instance {
+export interface Instance { // eslint-disable-line @typescript-eslint/consistent-type-definitions
   get: (url: string) => Instance;
   uri: () => string;
   value: <A extends Json>() => A;
