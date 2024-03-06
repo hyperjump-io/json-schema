@@ -23,7 +23,7 @@ const testDomain = "http://test.jsc.hyperjump.io";
 addMediaTypePlugin("application/schema+yaml", {
   parse: async (response) => {
     const contentType = contentTypeParser.parse(response.headers.get("content-type") ?? "");
-    const contextDialectId = contentType.parameters.schema ?? contentType.parameters.profile;
+    const contextDialectId = contentType.parameters.schema ?? contentType.parameters.profile; // eslint-disable-line @typescript-eslint/no-unnecessary-condition
 
     const json = YAML.parse(await response.text()) as SchemaObject | boolean;
 

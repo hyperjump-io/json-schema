@@ -22,7 +22,8 @@
   "scripts": {
     "clean": "xargs -a .gitignore rm -rf",
     "lint": "eslint lib stable draft-* openapi-* bundle annotations",
-    "test": "vitest --watch=false"
+    "test": "vitest --watch=false",
+    "check-types": "tsc --noEmit"
   },
   "repository": {
     "type": "git",
