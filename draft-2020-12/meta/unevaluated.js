@@ -4,7 +4,6 @@ export default {
   "$dynamicAnchor": "meta",
 
   "title": "Unevaluated applicator vocabulary meta-schema",
-  "type": ["object", "boolean"],
   "properties": {
     "unevaluatedItems": { "$dynamicRef": "#meta" },
     "unevaluatedProperties": { "$dynamicRef": "#meta" }
