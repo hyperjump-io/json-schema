@@ -1,9 +1,6 @@
 export default {
   "$id": "https://json-schema.org/draft/2019-09/meta/validation",
   "$schema": "https://json-schema.org/draft/2019-09/schema",
-  "$vocabulary": {
-    "https://json-schema.org/draft/2019-09/vocab/validation": true
-  },
   "$recursiveAnchor": true,
 
   "title": "Validation vocabulary meta-schema",
