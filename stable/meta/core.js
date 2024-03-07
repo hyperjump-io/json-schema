@@ -4,7 +4,6 @@ export default {
 
   "$dynamicAnchor": "meta",
 
-  "type": ["object", "boolean"],
   "properties": {
     "$id": {
       "type": "string",
