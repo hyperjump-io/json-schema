@@ -5,7 +5,6 @@ export default {
 
   "title": "Meta-data vocabulary meta-schema",
 
-  "type": ["object", "boolean"],
   "properties": {
     "title": {
       "type": "string"

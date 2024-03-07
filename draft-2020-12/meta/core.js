@@ -4,7 +4,6 @@ export default {
   "$dynamicAnchor": "meta",
 
   "title": "Core vocabulary meta-schema",
-  "type": ["object", "boolean"],
   "properties": {
     "$id": {
       "type": "string",
