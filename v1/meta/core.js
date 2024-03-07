@@ -2,7 +2,8 @@ export default {
   "$schema": "https://json-schema.org/v1",
   "title": "Core vocabulary meta-schema",
 
-  "type": ["object", "boolean"],
+  "$dynamicAnchor": "meta",
+
   "properties": {
     "$id": {
       "type": "string",

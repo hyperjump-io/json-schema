@@ -5,7 +5,6 @@ export default {
   "title": "OAS Base Vocabulary",
   "description": "A JSON Schema Vocabulary used in the OpenAPI Schema Dialect",
 
-  "type": ["object", "boolean"],
   "properties": {
     "example": true,
     "discriminator": { "$ref": "#/$defs/discriminator" },

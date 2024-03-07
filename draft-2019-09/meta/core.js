@@ -4,7 +4,6 @@ export default {
   "$recursiveAnchor": true,
 
   "title": "Core vocabulary meta-schema",
-  "type": ["object", "boolean"],
   "properties": {
     "$id": {
       "type": "string",
