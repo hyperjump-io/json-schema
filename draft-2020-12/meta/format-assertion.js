@@ -4,7 +4,6 @@ export default {
   "$dynamicAnchor": "meta",
 
   "title": "Format vocabulary meta-schema for assertion results",
-  "type": ["object", "boolean"],
   "properties": {
     "format": { "type": "string" }
   }
