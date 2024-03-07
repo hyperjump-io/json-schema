@@ -4,7 +4,6 @@ export default {
   "$recursiveAnchor": true,
 
   "title": "Format vocabulary meta-schema",
-  "type": ["object", "boolean"],
   "properties": {
     "format": { "type": "string" }
   }
