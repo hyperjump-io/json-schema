@@ -1,9 +1,6 @@
 export default {
   "$id": "https://json-schema.org/draft/2019-09/meta/core",
   "$schema": "https://json-schema.org/draft/2019-09/schema",
-  "$vocabulary": {
-    "https://json-schema.org/draft/2019-09/vocab/core": true
-  },
   "$recursiveAnchor": true,
 
   "title": "Core vocabulary meta-schema",
