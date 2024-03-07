@@ -4,7 +4,6 @@ export default {
   "$dynamicAnchor": "meta",
   "title": "OAS Base vocabulary",
 
-  "type": ["object", "boolean"],
   "properties": {
     "example": true,
     "discriminator": { "$ref": "#/$defs/discriminator" },

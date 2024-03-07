@@ -4,7 +4,6 @@ export default {
   "$dynamicAnchor": "meta",
 
   "title": "Validation vocabulary meta-schema",
-  "type": ["object", "boolean"],
   "properties": {
     "multipleOf": {
       "type": "number",
