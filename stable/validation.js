@@ -13,6 +13,7 @@ export default {
 
   "$dynamicAnchor": "meta",
 
+  "type": ["object", "boolean"],
   "allOf": [
     { "$ref": "meta/core" },
     { "$ref": "meta/applicator" },
