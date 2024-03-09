@@ -1,0 +1,53 @@
+[
+  {
+    "title": "annotation pointers are properly decoded",
+    "schema": {
+      "properties": {
+        "paths": {
+          "properties": {
+            "/pets/{id}": {
+              "title": "path",
+              "properties": {
+                "get": {
+                  "title": "method"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "subjects": [
+      {
+        "instance": {"paths":{"/pets/{id}":{}}},
+        "assertions": [
+          {
+            "location": "#/paths/~1pets~1{id}",
+            "keyword": "title",
+            "expected": ["path"]
+          }
+        ]
+      },
+      {
+        "instance": {"paths":{"/pets/{id}":{}}},
+        "assertions": [
+          {
+            "location": "#/paths/~1pets~1%7Bid%7D",
+            "keyword": "title",
+            "expected": ["path"]
+          }
+        ]
+      },
+      {
+        "instance": {"paths":{"/pets/{id}":{"get":{}}}},
+        "assertions": [
+          {
+            "location": "#/paths/~1pets~1%7Bid%7D/get",
+            "keyword": "title",
+            "expected": ["method"]
+          }
+        ]
+      }
+    ]
+  }
+]
