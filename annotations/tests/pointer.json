@@ -19,7 +19,7 @@
     },
     "subjects": [
       {
-        "instance": {"paths":{"/pets/{id}":{}}},
+        "instance": { "paths": { "/pets/{id}": {} } },
         "assertions": [
           {
             "location": "#/paths/~1pets~1{id}",
@@ -29,7 +29,7 @@
         ]
       },
       {
-        "instance": {"paths":{"/pets/{id}":{}}},
+        "instance": { "paths": { "/pets/{id}": {} } },
         "assertions": [
           {
             "location": "#/paths/~1pets~1%7Bid%7D",
@@ -39,7 +39,7 @@
         ]
       },
       {
-        "instance": {"paths":{"/pets/{id}":{"get":{}}}},
+        "instance": { "paths": { "/pets/{id}": { "get": {} } } },
         "assertions": [
           {
             "location": "#/paths/~1pets~1%7Bid%7D/get",
