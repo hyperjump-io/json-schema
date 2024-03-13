@@ -1,13 +1,14 @@
 import { test, expect, describe } from "vitest";
-import { getDialectIds, loadDialect } from "./keywords.js";
-import "../draft-2020-12";
-import "../draft-2019-09";
-import "../draft-04";
-import "../draft-06";
-import "../draft-07";
-import "../openapi-3-0";
-import "../openapi-3-1";
-import "../stable";
+import { getDialectIds } from "./experimental.js";
+import { registerSchema } from "./schema.js";
+import "../draft-2020-12/index.js";
+import "../draft-2019-09/index.js";
+import "../draft-04/index.js";
+import "../draft-06/index.js";
+import "../draft-07/index.js";
+import "../openapi-3-0/index.js";
+import "../openapi-3-1/index.js";
+import "../v1/index.js";
 
 
 describe("getDialectIds function", () => {
@@ -29,19 +30,18 @@ describe("getDialectIds function", () => {
       "https://spec.openapis.org/oas/3.1/schema-draft-07",
       "https://spec.openapis.org/oas/3.1/schema-draft-06",
       "https://spec.openapis.org/oas/3.1/schema-draft-04",
-      "https://json-schema.org/validation"
+      "https://json-schema.org/v1"
     ]);
   });
 
   test("returns an array of dialect identifiers that are either imported in the file or loaded as custom dialects", () => {
-    //Load some dialects before each test
-    loadDialect("http://example.com/dialect1", {
-      "https://json-schema.org/draft/2020-12/vocab/core": true,
-      "https://json-schema.org/draft/2020-12/vocab/applicator": true
-    });
-    loadDialect("http://example.com/dialect2", {
-      "https://json-schema.org/draft/2020-12/vocab/core": true,
-      "https://json-schema.org/draft/2020-12/vocab/applicator": true
+    registerSchema({
+      "$id": "http://example.com/dialect1",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$vocabulary": {
+        "https://json-schema.org/draft/2020-12/vocab/core": true,
+        "https://json-schema.org/draft/2020-12/vocab/applicator": true
+      }
     });
     const dialectIds = getDialectIds();
     expect(dialectIds).toEqual([
@@ -60,9 +60,8 @@ describe("getDialectIds function", () => {
       "https://spec.openapis.org/oas/3.1/schema-draft-07",
       "https://spec.openapis.org/oas/3.1/schema-draft-06",
       "https://spec.openapis.org/oas/3.1/schema-draft-04",
-      "https://json-schema.org/validation",
-      "http://example.com/dialect1",
-      "http://example.com/dialect2"
+      "https://json-schema.org/v1",
+      "http://example.com/dialect1"
     ]);
   });
 });
