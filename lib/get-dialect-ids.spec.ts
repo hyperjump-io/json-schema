@@ -1,5 +1,6 @@
 import { test, expect, describe } from "vitest";
-import { getDialectIds, loadDialect } from "./keywords.js";
+import { getDialectIds } from "./experimental.js";
+import { registerSchema } from "./schema.js";
 import "../draft-2020-12";
 import "../draft-2019-09";
 import "../draft-04";
@@ -34,14 +35,13 @@ describe("getDialectIds function", () => {
   });
 
   test("returns an array of dialect identifiers that are either imported in the file or loaded as custom dialects", () => {
-    //Load some dialects before each test
-    loadDialect("http://example.com/dialect1", {
-      "https://json-schema.org/draft/2020-12/vocab/core": true,
-      "https://json-schema.org/draft/2020-12/vocab/applicator": true
-    });
-    loadDialect("http://example.com/dialect2", {
-      "https://json-schema.org/draft/2020-12/vocab/core": true,
-      "https://json-schema.org/draft/2020-12/vocab/applicator": true
+    registerSchema({
+      "$id": "http://example.com/dialect1",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$vocabulary": {
+        "https://json-schema.org/draft/2020-12/vocab/core": true,
+        "https://json-schema.org/draft/2020-12/vocab/applicator": true
+      }
     });
     const dialectIds = getDialectIds();
     expect(dialectIds).toEqual([
@@ -61,8 +61,7 @@ describe("getDialectIds function", () => {
       "https://spec.openapis.org/oas/3.1/schema-draft-06",
       "https://spec.openapis.org/oas/3.1/schema-draft-04",
       "https://json-schema.org/validation",
-      "http://example.com/dialect1",
-      "http://example.com/dialect2"
+      "http://example.com/dialect1"
     ]);
   });
 });
