@@ -565,6 +565,9 @@ These are available from the `@hyperjump/json-schema/experimental` export.
 
     Remove a dialect. You shouldn't need to use this function. It's called for
     you when you call `unregisterSchema`.
+* **getDialectIds**
+
+    This function retrieves the identifiers of all loaded JSON Schema dialects.
 * **Validation**: Keyword
 
     A Keyword object that represents a "validate" operation. You would use this
