@@ -68,6 +68,7 @@ export const defineVocabulary: (id: string, keywords: Record<string, string>) =>
 export const loadDialect: (dialectId: string, dialect: Record<string, boolean>, allowUnknownKeywords?: boolean) => void;
 export const unloadDialect: (dialectId: string) => void;
 export const hasDialect: (dialectId: string) => boolean;
+export const loadSchemaDialects: () => string[];
 
 export type Format = {
   id: string;
