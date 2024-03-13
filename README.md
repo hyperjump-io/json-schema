@@ -566,6 +566,9 @@ These are available from the `@hyperjump/json-schema/experimental` export.
     `$vocabulary` keyword in the meta-schema. The only time you would need to
     load a dialect manually is if you're creating a distinct version of JSON
     Schema rather than creating a dialect of an existing version of JSON Schema.
+* **getDialectIds**
+
+    This function retrieves the identifiers of all loaded JSON Schema dialects.
 * **Validation**: Keyword
 
     A Keyword object that represents a "validate" operation. You would use this
