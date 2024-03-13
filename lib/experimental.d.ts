@@ -63,6 +63,7 @@ export const defineVocabulary: (id: string, keywords: { [keyword: string]: strin
 export const loadDialect: (dialectId: string, dialect: { [vocabularyId: string]: boolean }, allowUnknownKeywords?: boolean) => void;
 export const unloadDialect: (dialectId: string) => void;
 export const hasDialect: (dialectId: string) => boolean;
+export const loadSchemaDialects: () => string[];
 
 export type Keyword<A> = {
   id: string;
