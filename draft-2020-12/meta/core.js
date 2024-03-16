@@ -1,3 +1,5 @@
+import IdKeyword from "../../lib/keywords/id"
+
 export default {
   "$id": "https://json-schema.org/draft/2020-12/meta/core",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -9,11 +11,13 @@ export default {
       "type": "string",
       "format": "uri-reference",
       "$comment": "Non-empty fragments not allowed.",
-      "pattern": "^[^#]*#?$"
+      "pattern": "^[^#]*#?$",
+      "description": IdKeyword.description
     },
     "$schema": {
       "type": "string",
-      "format": "uri"
+      "format": "uri",
+      "description": "This keyword is both used as a JSON Schema dialect identifier and as a reference to a JSON Schema which describes the set of valid schemas written for this particular dialect."
     },
     "$anchor": {
       "type": "string",
@@ -21,7 +25,7 @@ export default {
     },
     "$ref": {
       "type": "string",
-      "format": "uri-reference"
+      "format": "uri-reference",
     },
     "$dynamicRef": {
       "type": "string",
@@ -50,4 +54,4 @@ export default {
       "default": {}
     }
   }
-};
+}
