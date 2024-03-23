@@ -1,18 +1,18 @@
-import prefixItems from "../../lib/keywords/prefixItems.js"
-import items from "../../lib/keywords/items.js"
-import contains from "../../lib/keywords/contains.js"
-import additionalProperties from "../../lib/keywords/additionalProperties.js"
-import properties from "../../lib/keywords/properties.js"
-import patternProperties from "../../lib/keywords/patternProperties.js"
-import dependentSchemas from "../../lib/keywords/dependentSchemas.js"
-import propertyNames from "../../lib/keywords/propertyNames.js"
-import ifKeyword from "../../lib/keywords/if.js"
-import thenKeyword from "../../lib/keywords/thenKeyword.js"
-import elseKeyword from "../../lib/keywords/elseKeyword.js"
-import allOf from "../../lib/keywords/allOf.js"
-import anyOf from "../../lib/keywords/anyOf.js"
-import oneOf from "../../lib/keywords/oneOf.js"
-import not from "../../lib/keywords/not.js"
+import prefixItems from "../../lib/keywords/prefixItems.js";
+import items from "../../lib/keywords/items.js";
+import contains from "../../lib/keywords/contains.js";
+import additionalProperties from "../../lib/keywords/additionalProperties.js";
+import properties from "../../lib/keywords/properties.js";
+import patternProperties from "../../lib/keywords/patternProperties.js";
+import dependentSchemas from "../../lib/keywords/dependentSchemas.js";
+import propertyNames from "../../lib/keywords/propertyNames.js";
+import ifKeyword from "../../lib/keywords/if.js";
+import thenKeyword from "../../lib/keywords/then.js";
+import elseKeyword from "../../lib/keywords/else.js";
+import allOf from "../../lib/keywords/allOf.js";
+import anyOf from "../../lib/keywords/anyOf.js";
+import oneOf from "../../lib/keywords/oneOf.js";
+import not from "../../lib/keywords/not.js";
 
 
 export default {
@@ -23,7 +23,7 @@ export default {
   "title": "Applicator vocabulary meta-schema",
   "properties": {
     "prefixItems": { "$ref": "#/$defs/schemaArray", "description": prefixItems.description },
-    "items": { "$dynamicRef": "#meta", "description": items.description},
+    "items": { "$dynamicRef": "#meta", "description": items.description },
     "contains": { "$dynamicRef": "#meta", "description": contains.description },
     "additionalProperties": { "$dynamicRef": "#meta", "description": additionalProperties.description },
     "properties": {

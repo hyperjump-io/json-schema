@@ -1,9 +1,10 @@
-import id from "../../lib/keywords/id.js"
+import id from "../../lib/keywords/id.js";
 import ref from "../../lib/keywords/ref.js";
 import definitions from "../../lib/keywords/definitions.js";
 import comment from "../../lib/keywords/comment.js";
 import vocabulary from "../../lib/keywords/vocabulary.js";
 import anchor from "../../lib/keywords/anchor.js";
+
 
 export default {
   "$id": "https://json-schema.org/draft/2019-09/meta/core",
@@ -24,7 +25,7 @@ export default {
       "format": "uri",
       "description": `This keyword is both used as a JSON Schema dialect \
 identifier and as a reference to a JSON Schema which describes the set \
-of valid schemas written for this particular dialect.`,
+of valid schemas written for this particular dialect.`
     },
     "$anchor": {
       "type": "string",
@@ -49,7 +50,7 @@ of valid schemas written for this particular dialect.`,
       "description": vocabulary.description,
       "propertyNames": {
         "type": "string",
-        "format": "uri",
+        "format": "uri"
       },
       "additionalProperties": {
         "type": "boolean"

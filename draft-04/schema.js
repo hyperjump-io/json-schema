@@ -1,3 +1,13 @@
+import items from "../lib/keywords/items.js";
+import additionalProperties from "../lib/keywords/additionalProperties.js";
+import properties from "../lib/keywords/properties.js";
+import patternProperties from "../lib/keywords/patternProperties.js";
+import allOf from "../lib/keywords/allOf.js";
+import anyOf from "../lib/keywords/anyOf.js";
+import oneOf from "../lib/keywords/oneOf.js";
+import not from "../lib/keywords/not.js";
+
+
 export default {
   "id": "http://json-schema.org/draft-04/schema#",
   "$schema": "http://json-schema.org/draft-04/schema#",
@@ -77,7 +87,8 @@ export default {
         { "$ref": "#" },
         { "$ref": "#/definitions/schemaArray" }
       ],
-      "default": {}
+      "default": {},
+      "description": items.description
     },
     "maxItems": { "$ref": "#/definitions/positiveInteger" },
     "minItems": { "$ref": "#/definitions/positiveIntegerDefault0" },
@@ -93,7 +104,8 @@ export default {
         { "type": "boolean" },
         { "$ref": "#" }
       ],
-      "default": {}
+      "default": {},
+      "description": additionalProperties.description
     },
     "definitions": {
       "type": "object",
@@ -103,12 +115,14 @@ export default {
     "properties": {
       "type": "object",
       "additionalProperties": { "$ref": "#" },
-      "default": {}
+      "default": {},
+      "description": properties.description
     },
     "patternProperties": {
       "type": "object",
       "additionalProperties": { "$ref": "#" },
-      "default": {}
+      "default": {},
+      "description": patternProperties.description
     },
     "dependencies": {
       "type": "object",
@@ -136,10 +150,10 @@ export default {
       ]
     },
     "format": { "type": "string" },
-    "allOf": { "$ref": "#/definitions/schemaArray" },
-    "anyOf": { "$ref": "#/definitions/schemaArray" },
-    "oneOf": { "$ref": "#/definitions/schemaArray" },
-    "not": { "$ref": "#" }
+    "allOf": { "$ref": "#/definitions/schemaArray", "description": allOf.description },
+    "anyOf": { "$ref": "#/definitions/schemaArray", "description": anyOf.description },
+    "oneOf": { "$ref": "#/definitions/schemaArray", "description": oneOf.description },
+    "not": { "$ref": "#", "description": not.description }
   },
   "dependencies": {
     "exclusiveMaximum": ["maximum"],

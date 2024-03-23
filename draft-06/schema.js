@@ -1,4 +1,15 @@
-import id from "../../lib/keywords/id.js"
+import id from "../lib/keywords/id.js";
+import items from "../lib/keywords/items.js";
+import contains from "../lib/keywords/contains.js";
+import additionalProperties from "../lib/keywords/additionalProperties.js";
+import properties from "../lib/keywords/properties.js";
+import patternProperties from "../lib/keywords/patternProperties.js";
+import propertyNames from "../lib/keywords/propertyNames.js";
+import allOf from "../lib/keywords/allOf.js";
+import anyOf from "../lib/keywords/anyOf.js";
+import oneOf from "../lib/keywords/oneOf.js";
+import not from "../lib/keywords/not.js";
+
 
 export default {
   "$schema": "http://json-schema.org/draft-06/schema#",
@@ -50,7 +61,7 @@ export default {
       "format": "uri",
       "description": `This keyword is both used as a JSON Schema dialect \
 identifier and as a reference to a JSON Schema which describes the set \
-of valid schemas written for this particular dialect.`,
+of valid schemas written for this particular dialect.`
     },
     "$ref": {
       "type": "string",
@@ -95,7 +106,8 @@ of valid schemas written for this particular dialect.`,
         { "$ref": "#" },
         { "$ref": "#/definitions/schemaArray" }
       ],
-      "default": {}
+      "default": {},
+      "description": items.description
     },
     "maxItems": { "$ref": "#/definitions/nonNegativeInteger" },
     "minItems": { "$ref": "#/definitions/nonNegativeIntegerDefault0" },
@@ -103,11 +115,11 @@ of valid schemas written for this particular dialect.`,
       "type": "boolean",
       "default": false
     },
-    "contains": { "$ref": "#" },
+    "contains": { "$ref": "#", "description": contains.description },
     "maxProperties": { "$ref": "#/definitions/nonNegativeInteger" },
     "minProperties": { "$ref": "#/definitions/nonNegativeIntegerDefault0" },
     "required": { "$ref": "#/definitions/stringArray" },
-    "additionalProperties": { "$ref": "#" },
+    "additionalProperties": { "$ref": "#", "description": additionalProperties.description },
     "definitions": {
       "type": "object",
       "additionalProperties": { "$ref": "#" },
@@ -116,12 +128,14 @@ of valid schemas written for this particular dialect.`,
     "properties": {
       "type": "object",
       "additionalProperties": { "$ref": "#" },
-      "default": {}
+      "default": {},
+      "description": properties.description
     },
     "patternProperties": {
       "type": "object",
       "additionalProperties": { "$ref": "#" },
-      "default": {}
+      "default": {},
+      "description": patternProperties.description
     },
     "dependencies": {
       "type": "object",
@@ -132,7 +146,7 @@ of valid schemas written for this particular dialect.`,
         ]
       }
     },
-    "propertyNames": { "$ref": "#" },
+    "propertyNames": { "$ref": "#", "description": propertyNames.description },
     "const": {},
     "enum": {
       "type": "array",
@@ -151,10 +165,10 @@ of valid schemas written for this particular dialect.`,
       ]
     },
     "format": { "type": "string" },
-    "allOf": { "$ref": "#/definitions/schemaArray" },
-    "anyOf": { "$ref": "#/definitions/schemaArray" },
-    "oneOf": { "$ref": "#/definitions/schemaArray" },
-    "not": { "$ref": "#" }
+    "allOf": { "$ref": "#/definitions/schemaArray", "description": allOf.description },
+    "anyOf": { "$ref": "#/definitions/schemaArray", "description": anyOf.description },
+    "oneOf": { "$ref": "#/definitions/schemaArray", "description": oneOf.description },
+    "not": { "$ref": "#", "description": not.description }
   },
   "default": {}
 };
