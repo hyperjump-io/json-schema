@@ -1,3 +1,5 @@
+import id from "../../lib/keywords/id.js"
+
 export default {
   "$schema": "http://json-schema.org/draft-06/schema#",
   "$id": "http://json-schema.org/draft-06/schema#",
@@ -40,11 +42,15 @@ export default {
   "properties": {
     "$id": {
       "type": "string",
-      "format": "uri-reference"
+      "format": "uri-reference",
+      "description": id.description
     },
     "$schema": {
       "type": "string",
-      "format": "uri"
+      "format": "uri",
+      "description": `This keyword is both used as a JSON Schema dialect \
+identifier and as a reference to a JSON Schema which describes the set \
+of valid schemas written for this particular dialect.`,
     },
     "$ref": {
       "type": "string",

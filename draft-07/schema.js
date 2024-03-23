@@ -1,3 +1,8 @@
+import id from "../../lib/keywords/id.js"
+import ref from "../..lib/keywords/ref.js"
+import definitions from "../lib/keywords/definitions.js";
+import comment from "../lib/keywords/comment.js";
+
 export default {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "http://json-schema.org/draft-07/schema#",
@@ -40,18 +45,24 @@ export default {
   "properties": {
     "$id": {
       "type": "string",
-      "format": "uri-reference"
+      "format": "uri-reference",
+      "description": id.description
     },
     "$schema": {
       "type": "string",
-      "format": "uri"
+      "format": "uri",
+      "description": `This keyword is both used as a JSON Schema dialect \
+identifier and as a reference to a JSON Schema which describes the set \
+of valid schemas written for this particular dialect.`,
     },
     "$ref": {
       "type": "string",
-      "format": "uri-reference"
+      "format": "uri-reference",
+      "discription": ref.description
     },
     "$comment": {
-      "type": "string"
+      "type": "string",
+      "discription": comment.description
     },
     "title": {
       "type": "string"
@@ -116,7 +127,8 @@ export default {
     "definitions": {
       "type": "object",
       "additionalProperties": { "$ref": "#" },
-      "default": {}
+      "default": {},
+      "discription": definitions.description
     },
     "properties": {
       "type": "object",
