@@ -6,6 +6,25 @@ import allOf from "../lib/keywords/allOf.js";
 import anyOf from "../lib/keywords/anyOf.js";
 import oneOf from "../lib/keywords/oneOf.js";
 import not from "../lib/keywords/not.js";
+import typeKeyword from "../lib/keywords/type.js";
+import enumKeyword from "../lib/keywords/enum.js";
+import pattern from "../lib/keywords/pattern.js";
+import minLength from "../lib/keywords/minLength.js";
+import maxLength from "../lib/keywords/maxLength.js";
+import exclusiveMaximum from "../lib/keywords/exclusiveMaximum.js";
+import multipleOf from "../lib/keywords/multipleOf.js";
+import exclusiveMinimum from "../lib/keywords/exclusiveMinimum.js";
+import maximum from "../lib/keywords/maximum.js";
+import minimum from "../lib/keywords/minimum.js";
+import maxProperties from "../lib/keywords/maxProperties.js";
+import minProperties from "../lib/keywords/minProperties.js";
+import required from "../lib/keywords/required.js";
+import maxItems from "../lib/keywords/maxItems.js";
+import minItems from "../lib/keywords/minItems.js";
+import uniqueItems from "../lib/keywords/uniqueItems.js";
+import title from "../lib/keywords/title.js";
+import description from "../lib/keywords/description.js";
+import format from "../lib/keywords/format.js";
 
 
 export default {
@@ -44,36 +63,44 @@ export default {
       "type": "string"
     },
     "title": {
-      "type": "string"
+      "type": "string",
+      "description": title.description
     },
     "description": {
-      "type": "string"
+      "type": "string",
+      "description": description.description
     },
     "default": {},
     "multipleOf": {
       "type": "number",
       "minimum": 0,
-      "exclusiveMinimum": true
+      "exclusiveMinimum": true,
+      "description": multipleOf.description
     },
     "maximum": {
-      "type": "number"
+      "type": "number",
+      "description": maximum.description
     },
     "exclusiveMaximum": {
       "type": "boolean",
-      "default": false
+      "default": false,
+      "description": exclusiveMaximum.description
     },
     "minimum": {
-      "type": "number"
+      "type": "number",
+      "description": minimum.description
     },
     "exclusiveMinimum": {
       "type": "boolean",
-      "default": false
+      "default": false,
+      "description": exclusiveMinimum.description
     },
-    "maxLength": { "$ref": "#/definitions/positiveInteger" },
-    "minLength": { "$ref": "#/definitions/positiveIntegerDefault0" },
+    "maxLength": { "$ref": "#/definitions/positiveInteger", "description": maxLength.description },
+    "minLength": { "$ref": "#/definitions/positiveIntegerDefault0", "description": minLength.description },
     "pattern": {
       "type": "string",
-      "format": "regex"
+      "format": "regex",
+      "description": pattern.description
     },
     "additionalItems": {
       "anyOf": [
@@ -90,15 +117,16 @@ export default {
       "default": {},
       "description": items.description
     },
-    "maxItems": { "$ref": "#/definitions/positiveInteger" },
-    "minItems": { "$ref": "#/definitions/positiveIntegerDefault0" },
+    "maxItems": { "$ref": "#/definitions/positiveInteger", "description": maxItems.description },
+    "minItems": { "$ref": "#/definitions/positiveIntegerDefault0", "description": minItems.description },
     "uniqueItems": {
       "type": "boolean",
-      "default": false
+      "default": false,
+      "description": uniqueItems.description
     },
-    "maxProperties": { "$ref": "#/definitions/positiveInteger" },
-    "minProperties": { "$ref": "#/definitions/positiveIntegerDefault0" },
-    "required": { "$ref": "#/definitions/stringArray" },
+    "maxProperties": { "$ref": "#/definitions/positiveInteger", "description": maxProperties.description },
+    "minProperties": { "$ref": "#/definitions/positiveIntegerDefault0", "description": minProperties.description },
+    "required": { "$ref": "#/definitions/stringArray", "description": required.description },
     "additionalProperties": {
       "anyOf": [
         { "type": "boolean" },
@@ -136,7 +164,8 @@ export default {
     "enum": {
       "type": "array",
       "minItems": 1,
-      "uniqueItems": true
+      "uniqueItems": true,
+      "description": enumKeyword.description
     },
     "type": {
       "anyOf": [
@@ -147,9 +176,10 @@ export default {
           "minItems": 1,
           "uniqueItems": true
         }
-      ]
+      ],
+      "description": typeKeyword.description
     },
-    "format": { "type": "string" },
+    "format": { "type": "string", "description": format.description },
     "allOf": { "$ref": "#/definitions/schemaArray", "description": allOf.description },
     "anyOf": { "$ref": "#/definitions/schemaArray", "description": anyOf.description },
     "oneOf": { "$ref": "#/definitions/schemaArray", "description": oneOf.description },
