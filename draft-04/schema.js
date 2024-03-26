@@ -95,8 +95,14 @@ export default {
       "default": false,
       "description": exclusiveMinimum.description
     },
-    "maxLength": { "$ref": "#/definitions/positiveInteger", "description": maxLength.description },
-    "minLength": { "$ref": "#/definitions/positiveIntegerDefault0", "description": minLength.description },
+    "maxLength": {
+      "allOf": [{"$ref": "#/definitions/positiveInteger"}],
+      "description": maxLength.description
+    },
+    "minLength": {
+      "allOf": [{"$ref": "#/definitions/positiveIntegerDefault0"}],
+      "description": minLength.description
+    },
     "pattern": {
       "type": "string",
       "format": "regex",
@@ -117,16 +123,32 @@ export default {
       "default": {},
       "description": items.description
     },
-    "maxItems": { "$ref": "#/definitions/positiveInteger", "description": maxItems.description },
-    "minItems": { "$ref": "#/definitions/positiveIntegerDefault0", "description": minItems.description },
+    "maxItems": {
+      "allOf": [{"$ref": "#/definitions/positiveInteger"}],
+      "description": maxItems.description
+    },
+    "minItems": {
+      "allOf": [{"$ref": "#/definitions/positiveIntegerDefault0"}],
+      "description": minItems.description
+    },
     "uniqueItems": {
       "type": "boolean",
       "default": false,
       "description": uniqueItems.description
     },
-    "maxProperties": { "$ref": "#/definitions/positiveInteger", "description": maxProperties.description },
-    "minProperties": { "$ref": "#/definitions/positiveIntegerDefault0", "description": minProperties.description },
-    "required": { "$ref": "#/definitions/stringArray", "description": required.description },
+    "maxProperties": {
+      "allOf": [{"$ref": "#/definitions/positiveIntegerDefault0"}],
+      "$ref": "#/definitions/positiveInteger",
+      "description": maxProperties.description
+    },
+    "minProperties": {
+      "allOf": [{"$ref": "#/definitions/positiveIntegerDefault0"}],
+      "description": minProperties.description
+    },
+    "required": {
+      "allOf": [{"$ref": "#/definitions/stringArray"}],
+      "description": required.description
+    },
     "additionalProperties": {
       "anyOf": [
         { "type": "boolean" },
@@ -180,10 +202,22 @@ export default {
       "description": typeKeyword.description
     },
     "format": { "type": "string", "description": format.description },
-    "allOf": { "$ref": "#/definitions/schemaArray", "description": allOf.description },
-    "anyOf": { "$ref": "#/definitions/schemaArray", "description": anyOf.description },
-    "oneOf": { "$ref": "#/definitions/schemaArray", "description": oneOf.description },
-    "not": { "$ref": "#", "description": not.description }
+    "allOf": {
+      "allOf": [{ "$ref": "#/definitions/schemaArray"}],
+      "description": allOf.description
+    },
+    "anyOf": {
+      "anyOf": [{ "$ref": "#/definitions/schemaArray"}],
+      "description": anyOf.description
+    },
+    "oneOf": {
+      "oneOf": [{ "$ref": "#/definitions/schemaArray"}],
+      "description": oneOf.description
+    },
+    "not": {
+      "allOf": [{"$ref": "#"}],
+      "description": not.description
+    }
   },
   "dependencies": {
     "exclusiveMaximum": ["maximum"],
