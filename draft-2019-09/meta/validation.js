@@ -92,9 +92,9 @@ export default {
           "minItems": 1,
           "uniqueItems": true
         }
-      ]
-    },
-    "description": typeKeyword.description
+      ],
+      "description": typeKeyword.description
+    }
   },
   "$defs": {
     "nonNegativeInteger": {

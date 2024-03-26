@@ -96,11 +96,11 @@ export default {
       "description": exclusiveMinimum.description
     },
     "maxLength": {
-      "allOf": [{"$ref": "#/definitions/positiveInteger"}],
+      "allOf": [{ "$ref": "#/definitions/positiveInteger" }],
       "description": maxLength.description
     },
     "minLength": {
-      "allOf": [{"$ref": "#/definitions/positiveIntegerDefault0"}],
+      "allOf": [{ "$ref": "#/definitions/positiveIntegerDefault0" }],
       "description": minLength.description
     },
     "pattern": {
@@ -124,11 +124,11 @@ export default {
       "description": items.description
     },
     "maxItems": {
-      "allOf": [{"$ref": "#/definitions/positiveInteger"}],
+      "allOf": [{ "$ref": "#/definitions/positiveInteger" }],
       "description": maxItems.description
     },
     "minItems": {
-      "allOf": [{"$ref": "#/definitions/positiveIntegerDefault0"}],
+      "allOf": [{ "$ref": "#/definitions/positiveIntegerDefault0" }],
       "description": minItems.description
     },
     "uniqueItems": {
@@ -137,16 +137,16 @@ export default {
       "description": uniqueItems.description
     },
     "maxProperties": {
-      "allOf": [{"$ref": "#/definitions/positiveIntegerDefault0"}],
+      "allOf": [{ "$ref": "#/definitions/positiveIntegerDefault0" }],
       "$ref": "#/definitions/positiveInteger",
       "description": maxProperties.description
     },
     "minProperties": {
-      "allOf": [{"$ref": "#/definitions/positiveIntegerDefault0"}],
+      "allOf": [{ "$ref": "#/definitions/positiveIntegerDefault0" }],
       "description": minProperties.description
     },
     "required": {
-      "allOf": [{"$ref": "#/definitions/stringArray"}],
+      "allOf": [{ "$ref": "#/definitions/stringArray" }],
       "description": required.description
     },
     "additionalProperties": {
@@ -203,19 +203,19 @@ export default {
     },
     "format": { "type": "string", "description": format.description },
     "allOf": {
-      "allOf": [{ "$ref": "#/definitions/schemaArray"}],
+      "allOf": [{ "$ref": "#/definitions/schemaArray" }],
       "description": allOf.description
     },
     "anyOf": {
-      "anyOf": [{ "$ref": "#/definitions/schemaArray"}],
+      "anyOf": [{ "$ref": "#/definitions/schemaArray" }],
       "description": anyOf.description
     },
     "oneOf": {
-      "oneOf": [{ "$ref": "#/definitions/schemaArray"}],
+      "oneOf": [{ "$ref": "#/definitions/schemaArray" }],
       "description": oneOf.description
     },
     "not": {
-      "allOf": [{"$ref": "#"}],
+      "allOf": [{ "$ref": "#" }],
       "description": not.description
     }
   },

@@ -123,11 +123,11 @@ of valid schemas written for this particular dialect.`
       "description": exclusiveMinimum.description
     },
     "maxLength": {
-      "allOf": [{"$ref": "#/definitions/nonNegativeInteger"}],
+      "allOf": [{ "$ref": "#/definitions/nonNegativeInteger" }],
       "description": maxLength.description
     },
     "minLength": {
-      "allOf": [{"$ref": "#/definitions/nonNegativeIntegerDefault0"}],
+      "allOf": [{ "$ref": "#/definitions/nonNegativeIntegerDefault0" }],
       "description": minLength.description
     },
     "pattern": {
@@ -144,18 +144,18 @@ of valid schemas written for this particular dialect.`
       "default": {},
       "description": items.description
     },
-    "maxItems": { "allOf": [ { "$ref": "#/definitions/nonNegativeInteger" } ], "description": maxItems.description },
-    "minItems": { "allOf": [ { "$ref": "#/definitions/nonNegativeIntegerDefault0" } ], "description": minItems.description },
+    "maxItems": { "allOf": [{ "$ref": "#/definitions/nonNegativeInteger" }], "description": maxItems.description },
+    "minItems": { "allOf": [{ "$ref": "#/definitions/nonNegativeIntegerDefault0" }], "description": minItems.description },
     "uniqueItems": {
       "type": "boolean",
       "default": false,
       "description": uniqueItems.description
     },
-    "contains": { "allOf": [ { "$ref": "#" } ], "description": contains.description },
-    "maxProperties": { "allOf": [ { "$ref": "#/definitions/nonNegativeInteger" } ], "description": maxProperties.description },
-    "minProperties": { "allOf": [ { "$ref": "#/definitions/nonNegativeIntegerDefault0" } ], "description": minProperties.description },
-    "required": { "allOf": [ { "$ref": "#/definitions/stringArray" } ], "description": required.description },
-    "additionalProperties": { "allOf": [ { "$ref": "#" } ], "description": additionalProperties.description },
+    "contains": { "allOf": [{ "$ref": "#" }], "description": contains.description },
+    "maxProperties": { "allOf": [{ "$ref": "#/definitions/nonNegativeInteger" }], "description": maxProperties.description },
+    "minProperties": { "allOf": [{ "$ref": "#/definitions/nonNegativeIntegerDefault0" }], "description": minProperties.description },
+    "required": { "allOf": [{ "$ref": "#/definitions/stringArray" }], "description": required.description },
+    "additionalProperties": { "allOf": [{ "$ref": "#" }], "description": additionalProperties.description },
     "definitions": {
       "type": "object",
       "additionalProperties": { "$ref": "#" },
@@ -182,7 +182,7 @@ of valid schemas written for this particular dialect.`
         ]
       }
     },
-    "propertyNames": { "allOf": [ { "$ref": "#" } ], "description": propertyNames.description },
+    "propertyNames": { "allOf": [{ "$ref": "#" }], "description": propertyNames.description },
     "const": {},
     "enum": {
       "type": "array",
@@ -203,10 +203,10 @@ of valid schemas written for this particular dialect.`
       "description": typeKeyword.description
     },
     "format": { "type": "string", "description": format.description },
-    "allOf": { "allOf": [ { "$ref": "#/definitions/schemaArray" } ], "description": allOf.description },
-    "anyOf": { "allOf": [ { "$ref": "#/definitions/schemaArray" } ], "description": anyOf.description },
-    "oneOf": { "allOf": [ { "$ref": "#/definitions/schemaArray" } ], "description": oneOf.description },
-    "not": { "allOf": [ { "$ref": "#" } ], "description": not.description }
+    "allOf": { "allOf": [{ "$ref": "#/definitions/schemaArray" }], "description": allOf.description },
+    "anyOf": { "allOf": [{ "$ref": "#/definitions/schemaArray" }], "description": anyOf.description },
+    "oneOf": { "allOf": [{ "$ref": "#/definitions/schemaArray" }], "description": oneOf.description },
+    "not": { "allOf": [{ "$ref": "#" }], "description": not.description }
   },
   "default": {}
 };
