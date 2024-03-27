@@ -5,8 +5,8 @@ import { getKeywordId } from "../lib/keywords.js";
 
 const defaultDialectId = "https://json-schema.org/validation";
 
-export const nil = { ...nilInstance, annotations: {} }; // eslint-disable-line import/export
-export const cons = (instance, id = undefined) => ({ // eslint-disable-line import/export
+export const nil = { ...nilInstance, annotations: {} };
+export const cons = (instance, id = undefined) => ({
   ...nil,
   id: id ? toAbsoluteIri(id) : "",
   instance,
@@ -47,4 +47,4 @@ export const annotatedWith = (instance, keyword, dialectId = defaultDialectId) =
   return instances;
 };
 
-export * from "../lib/instance.js"; // eslint-disable-line import/export
+export { get, uri, value, has, typeOf, step, iter, keys, values, entries, length } from "../lib/instance.js";

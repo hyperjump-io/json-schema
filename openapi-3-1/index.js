@@ -18,6 +18,8 @@ import externalDocs from "../openapi-3-0/externalDocs.js";
 import xml from "../openapi-3-0/xml.js";
 
 
+export * from "../draft-2020-12/index.js";
+
 addKeyword(discriminator);
 addKeyword(example);
 addKeyword(externalDocs);
@@ -45,5 +47,3 @@ registerSchema(schemaDraft2019, "https://spec.openapis.org/oas/3.1/schema-draft-
 registerSchema(schemaDraft07, "https://spec.openapis.org/oas/3.1/schema-draft-07");
 registerSchema(schemaDraft06, "https://spec.openapis.org/oas/3.1/schema-draft-06");
 registerSchema(schemaDraft04, "https://spec.openapis.org/oas/3.1/schema-draft-04");
-
-export * from "../draft-2020-12/index.js";

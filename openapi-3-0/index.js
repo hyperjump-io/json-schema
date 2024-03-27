@@ -13,6 +13,8 @@ import type from "./type.js";
 import xml from "./xml.js";
 
 
+export * from "../draft-04/index.js";
+
 addKeyword(discriminator);
 addKeyword(example);
 addKeyword(externalDocs);
@@ -73,5 +75,3 @@ registerSchema(dialectSchema);
 
 registerSchema(schema, "https://spec.openapis.org/oas/3.0/schema");
 registerSchema(schema, "https://spec.openapis.org/oas/3.0/schema/latest");
-
-export * from "../draft-04/index.js";
