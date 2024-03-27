@@ -459,7 +459,7 @@ describe("Schema Parsing", () => {
     expect(browser.document.dynamicAnchors).to.eql({ "": `${testDomain}/schema#` });
   });
 
-  it("dialect schema", async () => {
+  it("registering a dialect schema", async () => {
     registerSchema({
       $schema: "https://json-schema.org/validation",
       $vocabulary: {
@@ -467,8 +467,19 @@ describe("Schema Parsing", () => {
       }
     }, `${testDomain}/schema`);
 
-    await getSchema(`${testDomain}/schema`);
     expect(hasDialect(`${testDomain}/schema`)).to.equal(true);
+  });
+
+  it("unregistering a dialect schema", async () => {
+    registerSchema({
+      $schema: "https://json-schema.org/validation",
+      $vocabulary: {
+        "https://json-schema.org/vocab/core": true
+      }
+    }, `${testDomain}/schema`);
+    unregisterSchema(`${testDomain}/schema`);
+
+    expect(hasDialect(`${testDomain}/schema`)).to.equal(false);
   });
 
   it("duplicate registered schema", async () => {
