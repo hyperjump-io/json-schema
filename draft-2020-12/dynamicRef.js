@@ -27,6 +27,8 @@ const collectEvaluatedItems = evaluate(Validation.collectEvaluatedItems);
 
 const description = `This keyword is used to reference an identified schema, \
 deferring the full resolution until runtime, at which point it is resolved each \
-time it is encountered while evaluating an instance.`;
+time it is encountered while evaluating an instance.\\
+\\
+For examples and more information visit https://www.learnjsonschema.com/2020-12/core/dynamicref/`;
 
 export default { id, compile, interpret, collectEvaluatedProperties, collectEvaluatedItems, description };

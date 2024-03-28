@@ -27,7 +27,9 @@ export default {
       "format": "uri",
       "description": `This keyword is both used as a JSON Schema dialect \
 identifier and as a reference to a JSON Schema which describes the set \
-of valid schemas written for this particular dialect.`
+of valid schemas written for this particular dialect.\\
+\\
+For examples and more information visit https://www.learnjsonschema.com/2020-12/core/schema/`
     },
     "$anchor": {
       "type": "string",
