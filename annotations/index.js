@@ -5,7 +5,6 @@ import { getSchema, getKeyword, compile, interpret as validate, BASIC } from "..
 
 
 export const annotate = async (schemaUri, json = undefined, outputFormat = undefined) => {
-  loadKeywordSupport();
   const schema = await getSchema(schemaUri);
   const compiled = await compile(schema);
   const interpretAst = (json, outputFormat) => interpret(compiled, new AnnotatedJsInstance(json), outputFormat);
@@ -13,7 +12,9 @@ export const annotate = async (schemaUri, json = undefined, outputFormat = undef
   return json === undefined ? interpretAst : interpretAst(json, outputFormat);
 };
 
-const interpret = ({ ast, schemaUri }, instance, outputFormat = BASIC) => {
+export const interpret = ({ ast, schemaUri }, instance, outputFormat = BASIC) => {
+  loadKeywordSupport();
+
   const output = [instance];
   const subscriptionToken = subscribe("result", outputHandler(output));
 
@@ -61,62 +62,62 @@ const identity = (a) => a;
 const loadKeywordSupport = () => {
   const title = getKeyword("https://json-schema.org/keyword/title");
   if (title) {
-    title.annotation = identity;
+    title.annotation = title.annotation ?? identity;
   }
 
   const description = getKeyword("https://json-schema.org/keyword/description");
   if (description) {
-    description.annotation = identity;
+    description.annotation = description.annotation ?? identity;
   }
 
   const _default = getKeyword("https://json-schema.org/keyword/default");
   if (_default) {
-    _default.annotation = identity;
+    _default.annotation = _default.annotation ?? identity;
   }
 
   const deprecated = getKeyword("https://json-schema.org/keyword/deprecated");
   if (deprecated) {
-    deprecated.annotation = identity;
+    deprecated.annotation = deprecated.annotation ?? identity;
   }
 
   const readOnly = getKeyword("https://json-schema.org/keyword/readOnly");
   if (readOnly) {
-    readOnly.annotation = identity;
+    readOnly.annotation = readOnly.annotation ?? identity;
   }
 
   const writeOnly = getKeyword("https://json-schema.org/keyword/writeOnly");
   if (writeOnly) {
-    writeOnly.annotation = identity;
+    writeOnly.annotation = writeOnly.annotation ?? identity;
   }
 
   const examples = getKeyword("https://json-schema.org/keyword/examples");
   if (examples) {
-    examples.annotation = identity;
+    examples.annotation = examples.annotation ?? identity;
   }
 
   const format = getKeyword("https://json-schema.org/keyword/format");
   if (format) {
-    format.annotation = identity;
+    format.annotation = format.annotation ?? identity;
   }
 
   const contentMediaType = getKeyword("https://json-schema.org/keyword/contentMediaType");
   if (contentMediaType) {
-    contentMediaType.annotation = identity;
+    contentMediaType.annotation = contentMediaType.annotation ?? identity;
   }
 
   const contentEncoding = getKeyword("https://json-schema.org/keyword/contentEncoding");
   if (contentEncoding) {
-    contentEncoding.annotation = identity;
+    contentEncoding.annotation = contentEncoding.annotation ?? identity;
   }
 
   const contentSchema = getKeyword("https://json-schema.org/keyword/contentSchema");
   if (contentSchema) {
-    contentSchema.annotation = identity;
+    contentSchema.annotation = contentSchema.annotation ?? identity;
   }
 
   const unknown = getKeyword("https://json-schema.org/keyword/unknown");
   if (unknown) {
-    unknown.annotation = identity;
+    unknown.annotation = unknown.annotation ?? identity;
   }
 };
 

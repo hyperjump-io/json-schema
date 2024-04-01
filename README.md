@@ -762,6 +762,11 @@ export.
     may throw an [InvalidSchemaError](#api) if there is a problem with the
     schema or a ValidationError if the instance doesn't validate against the
     schema.
+* **interpret**: (compiledSchema: CompiledSchema, instance: AnnotatedInstance, outputFormat: OutputFormat = BASIC) => AnnotatedInstance
+
+    Annotate an AnnotatedInstance object rather than plain JavaScript value.
+    This might be useful when building tools on top of the annotation
+    functionality, but you probably don't need it.
 * **ValidationError**: Error & { output: OutputUnit }
     The `output` field contains an `OutputUnit` with information about the
     error.

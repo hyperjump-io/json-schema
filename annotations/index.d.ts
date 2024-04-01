@@ -1,5 +1,6 @@
 import type { OutputFormat, OutputUnit } from "../lib/index.js";
 import type { AnnotatedInstance } from "./annotated-instance.js";
+import type { CompiledSchema } from "../lib/experimental.js";
 
 
 export const annotate: (
@@ -7,6 +8,8 @@ export const annotate: (
 ) & (
   (schemaUrl: string) => Promise<Annotator>
 );
+
+export const interpret: (compiledSchema: CompiledSchema, value: AnnotatedInstance, outputFormat?: OutputFormat) => AnnotatedInstance;
 
 export type Annotator = (value: unknown, outputFormat?: OutputFormat) => AnnotatedInstance;
 
