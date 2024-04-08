@@ -39,4 +39,6 @@ const collectEvaluatedItems = (keywordValue, instance, ast, dynamicAnchors) => {
   return evaluatedIndexes;
 };
 
-export default { id, compile, interpret, collectEvaluatedItems };
+const description = "If items is set to an array of schemas, validation succeeds if each element of the instance not covered by it validates against this schema.";
+
+export default { id, compile, interpret, collectEvaluatedItems, description };

@@ -31,4 +31,6 @@ const interpret = (dependencies, instance, ast, dynamicAnchors, quiet) => {
   });
 };
 
-export default { id, compile, interpret };
+const description = "If the object values are objects, this keyword specifies subschemas that are evaluated if the instance is an object and contains a certain property. If the object values are arrays, validation succeeds if, for each name that appears in both the instance and as a name within this keyword’s value, every item in the corresponding array is also the name of a property in the instance.";
+
+export default { id, compile, interpret, description };

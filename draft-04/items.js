@@ -40,4 +40,6 @@ const collectEvaluatedItems = (items, instance, ast, dynamicAnchors) => {
     : collectSet(range(0, items.length)));
 };
 
-export default { id, compile, interpret, collectEvaluatedItems };
+const description = "If set to a schema, validation succeeds if each element of the instance validates against it, otherwise validation succeeds if each element of the instance validates against the schema at the same position, if any.";
+
+export default { id, compile, interpret, collectEvaluatedItems, description };

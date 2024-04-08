@@ -1,3 +1,12 @@
+import title from "../../lib/keywords/title.js";
+import description from "../../lib/keywords/description.js";
+import _default from "../../lib/keywords/default.js";
+import deprecated from "../../lib/keywords/deprecated.js";
+import readOnly from "../../lib/keywords/readOnly.js";
+import writeOnly from "../../lib/keywords/writeOnly.js";
+import examples from "../../lib/keywords/examples.js";
+
+
 export default {
   "$id": "https://json-schema.org/draft/2019-09/meta/meta-data",
   "$schema": "https://json-schema.org/draft/2019-09/schema",
@@ -7,27 +16,35 @@ export default {
 
   "properties": {
     "title": {
-      "type": "string"
+      "type": "string",
+      "description": title.description
     },
     "description": {
-      "type": "string"
+      "type": "string",
+      "description": description.description
     },
-    "default": true,
+    "default": {
+      "description": _default.description
+    },
     "deprecated": {
       "type": "boolean",
-      "default": false
+      "default": false,
+      "description": deprecated.description
     },
     "readOnly": {
       "type": "boolean",
-      "default": false
+      "default": false,
+      "description": readOnly.description
     },
     "writeOnly": {
       "type": "boolean",
-      "default": false
+      "default": false,
+      "description": writeOnly.description
     },
     "examples": {
       "type": "array",
-      "items": true
+      "items": true,
+      "description": examples.description
     }
   }
 };

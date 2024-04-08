@@ -22,4 +22,6 @@ const interpret = ([maximum, isExclusive], instance) => {
   return isExclusive ? value < maximum : value <= maximum;
 };
 
-export default { id, compile, interpret };
+const description = "Validation succeeds if the numeric instance is less than or equal to the given number. The behavior of this keyword is modified by the exclusiveMaximum keyword.";
+
+export default { id, compile, interpret, description };

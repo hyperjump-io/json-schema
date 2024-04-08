@@ -11,4 +11,6 @@ const interpret = (contains, instance, ast, dynamicAnchors, quiet) => {
   return Instance.typeOf(instance) !== "array" || some((item) => Validation.interpret(contains, item, ast, dynamicAnchors, quiet), Instance.iter(instance));
 };
 
-export default { id, compile, interpret };
+const description = "Validation succeeds if the instance contains an element that validates against this schema.";
+
+export default { id, compile, interpret, description };
