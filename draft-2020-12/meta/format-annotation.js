@@ -1,3 +1,6 @@
+import format from "../../lib/keywords/format.js";
+
+
 export default {
   "$id": "https://json-schema.org/draft/2020-12/meta/format-annotation",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -5,6 +8,6 @@ export default {
 
   "title": "Format vocabulary meta-schema for annotation results",
   "properties": {
-    "format": { "type": "string" }
+    "format": { "type": "string", "description": format.description }
   }
 };
