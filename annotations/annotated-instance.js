@@ -18,7 +18,7 @@ export const annotation = (node, keyword, dialect = defaultDialectId) => {
   let currentNode = node.root;
   const errors = Object.keys(node.root.errors);
   for (let segment of JsonPointer.pointerSegments(node.pointer)) {
-    segment = segment === "-" && currentNode.typeOf() === "array" ? currentNode.length() : segment;
+    segment = segment === "-" && Instance.typeOf(currentNode) === "array" ? Instance.length(currentNode) : segment;
     currentNode = Instance.step(segment, currentNode);
     errors.push(...Object.keys(currentNode.errors));
   }
