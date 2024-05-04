@@ -631,6 +631,10 @@ working with generators and async generators.
 * **fromJs**: (value: any, uri?: string) => JsonNode
 
     Construct a JsonNode from a JavaScript value.
+* **cons**: (baseUri: string, pointer: string, value: any, type: string, children: JsonNode[], parent?: JsonNode) => JsonNode
+
+    Construct a JsonNode. This is used internally. You probably want `fromJs`
+    instead.
 * **get**: (url: string, instance: JsonNode) => JsonNode
 
     Apply a same-resource reference to a JsonNode.
