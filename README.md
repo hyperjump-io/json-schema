@@ -592,8 +592,6 @@ These are available from the `@hyperjump/json-schema/experimental` export.
         * includeDialect: "auto" | "always" | "never" (default: "auto") -- If
           "auto", `$schema` will only be included if it differs from
           `contextDialectId`.
-        * selfIdentify: boolean (default: false) -- If true, `$id` will be
-          included.
         * contextUri: string (default: "") -- `$id`s will be relative to this
           URI.
         * includeEmbedded: boolean (default: true) -- If false, embedded schemas

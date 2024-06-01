@@ -1,7 +1,6 @@
 import { describe, test, expect, beforeEach, afterEach } from "vitest";
-import { MockAgent, setGlobalDispatcher } from "undici";
 import { getSchema, toSchema } from "./experimental.js";
-import "../stable/index.js";
+import { registerSchema, unregisterSchema } from "../stable/index.js";
 import "../draft-2020-12/index.js";
 import "../draft-2019-09/index.js";
 import "../draft-07/index.js";
@@ -13,16 +12,9 @@ import type { SchemaDocument, ToSchemaOptions } from "./experimental.js";
 
 describe("JSON Schema - toString", () => {
   const testDomain = "https://json-schema.hyperjump.io";
-  let mockAgent: MockAgent;
 
-  beforeEach(() => {
-    mockAgent = new MockAgent();
-    mockAgent.disableNetConnect();
-    setGlobalDispatcher(mockAgent);
-  });
-
-  afterEach(async () => {
-    await mockAgent.close();
+  afterEach(() => {
+    unregisterSchema(`${testDomain}/schema`);
   });
 
   describe("dialect and self-identification", () => {
@@ -30,30 +22,29 @@ describe("JSON Schema - toString", () => {
     let schema: Browser<SchemaDocument>;
 
     beforeEach(async () => {
-      const schemaJson = `{}`;
-
-      mockAgent.get(testDomain)
-        .intercept({ method: "GET", path: "/schema" })
-        .reply(200, schemaJson, { headers: { "content-type": `application/schema+json; schema="${contextDialectId}"` } });
-
+      registerSchema({}, `${testDomain}/schema`, contextDialectId);
       schema = await getSchema(`${testDomain}/schema`);
     });
 
     test("default options", async () => {
       expect(toSchema(schema)).to.eql({
-        $schema: contextDialectId
+        $schema: contextDialectId,
+        $id: `${testDomain}/schema`
       });
     });
 
     test("contextDialectId: stable", async () => {
       const options = { contextDialectId: contextDialectId };
-      expect(toSchema(schema, options)).to.eql({});
+      expect(toSchema(schema, options)).to.eql({
+        $id: `${testDomain}/schema`
+      });
     });
 
     test("contextDialectId: 2020-12", async () => {
       const options = { contextDialectId: "https://json-schema.org/draft/2020-12/schema" };
       expect(toSchema(schema, options)).to.eql({
-        $schema: contextDialectId
+        $schema: contextDialectId,
+        $id: `${testDomain}/schema`
       });
     });
 
@@ -62,7 +53,9 @@ describe("JSON Schema - toString", () => {
         contextDialectId: contextDialectId,
         includeDialect: "auto"
       };
-      expect(toSchema(schema, options)).to.eql({});
+      expect(toSchema(schema, options)).to.eql({
+        $id: `${testDomain}/schema`
+      });
     });
 
     test("contextDialectId: 2020-12, includeDialect: auto", async () => {
@@ -71,7 +64,8 @@ describe("JSON Schema - toString", () => {
         includeDialect: "auto"
       };
       expect(toSchema(schema, options)).to.eql({
-        $schema: contextDialectId
+        $schema: contextDialectId,
+        $id: `${testDomain}/schema`
       });
     });
 
@@ -81,7 +75,8 @@ describe("JSON Schema - toString", () => {
         includeDialect: "always"
       };
       expect(toSchema(schema, options)).to.eql({
-        $schema: contextDialectId
+        $schema: contextDialectId,
+        $id: `${testDomain}/schema`
       });
     });
 
@@ -90,31 +85,22 @@ describe("JSON Schema - toString", () => {
         contextDialectId: contextDialectId,
         includeDialect: "never"
       };
-      expect(toSchema(schema, options)).to.eql({});
-    });
-
-    test("selfIdentify: true", async () => {
-      const options: ToSchemaOptions = {
-        selfIdentify: true
-      };
       expect(toSchema(schema, options)).to.eql({
-        $schema: contextDialectId,
         $id: `${testDomain}/schema`
       });
     });
 
-    test("selfIdentify: false", async () => {
+    test("contextUri: same as baseURI", async () => {
       const options: ToSchemaOptions = {
-        selfIdentify: false
+        contextUri: `${testDomain}/schema`
       };
       expect(toSchema(schema, options)).to.eql({
         $schema: contextDialectId
       });
     });
 
-    test("selfIdentify: true, contextUri: testDomain", async () => {
+    test("contextUri: testDomain", async () => {
       const options: ToSchemaOptions = {
-        selfIdentify: true,
         contextUri: testDomain
       };
       expect(toSchema(schema, options)).to.eql({
@@ -123,7 +109,7 @@ describe("JSON Schema - toString", () => {
       });
     });
 
-    test("selfIdentify: true, contextUri: urn", async () => {
+    test("contextUri: not relative to baseURI", async () => {
       const options: ToSchemaOptions = {
         selfIdentify: true,
         contextUri: "urn:example:example"
@@ -133,26 +119,20 @@ describe("JSON Schema - toString", () => {
         $id: `${testDomain}/schema`
       });
     });
+  });
 
-    test("selfIdentify: true, contextUri: example.com", async () => {
-      const options: ToSchemaOptions = {
-        selfIdentify: true,
-        contextUri: "https://example.com"
-      };
-      expect(toSchema(schema, options)).to.eql({
-        $schema: contextDialectId,
-        $id: `${testDomain}/schema`
-      });
+  test("file self-identification", async () => {
+    const contextDialectId = "https://json-schema.org/validation";
+    const schema = await getSchema("./lib/string.schema.json");
+    expect(toSchema(schema)).to.eql({
+      $schema: contextDialectId,
+      type: "string"
     });
   });
 
   test("legacy self-identification", async () => {
     const contextDialectId = "http://json-schema.org/draft-04/schema#";
-    const schemaJson = `{}`;
-
-    mockAgent.get(testDomain)
-      .intercept({ method: "GET", path: "/schema" })
-      .reply(200, schemaJson, { headers: { "content-type": `application/schema+json; schema="${contextDialectId}"` } });
+    registerSchema({}, `${testDomain}/schema`, contextDialectId);
 
     const schema = await getSchema(`${testDomain}/schema`);
 
@@ -167,17 +147,10 @@ describe("JSON Schema - toString", () => {
 
   test("identifier with a query", async () => {
     const contextDialectId = "https://json-schema.org/validation";
-    const schemaJson = `{}`;
-
-    mockAgent.get(testDomain)
-      .intercept({ method: "GET", path: "/schema?foo=bar&baz" })
-      .reply(200, schemaJson, { headers: { "content-type": `application/schema+json; schema="${contextDialectId}"` } });
+    registerSchema({}, `${testDomain}/schema?foo=bar&baz`, contextDialectId);
 
     const schema = await getSchema(`${testDomain}/schema?foo=bar&baz`);
-    const options: ToSchemaOptions = {
-      selfIdentify: true
-    };
-    expect(toSchema(schema, options)).to.eql({
+    expect(toSchema(schema)).to.eql({
       $schema: contextDialectId,
       $id: `${testDomain}/schema?foo=bar&baz`
     });
@@ -185,23 +158,20 @@ describe("JSON Schema - toString", () => {
 
   test("anchors", async () => {
     const contextDialectId = "https://json-schema.org/validation";
-    const schemaJson = `{
-      "$anchor": "root",
+    registerSchema({
+      $anchor: "root",
 
-      "type": "object",
-      "properties": {
-        "foo": { "$anchor": "foo" }
+      type: "object",
+      properties: {
+        foo: { $anchor: "foo" }
       }
-    }`;
-
-    mockAgent.get(testDomain)
-      .intercept({ method: "GET", path: "/schema" })
-      .reply(200, schemaJson, { headers: { "content-type": `application/schema+json; schema="${contextDialectId}"` } });
+    }, `${testDomain}/schema`, contextDialectId);
 
     const schema = await getSchema(`${testDomain}/schema`);
 
     expect(toSchema(schema)).to.eql({
       $schema: contextDialectId,
+      $id: `${testDomain}/schema`,
       $anchor: "root",
 
       type: "object",
@@ -213,24 +183,20 @@ describe("JSON Schema - toString", () => {
 
   test("legacy anchors", async () => {
     const contextDialectId = "http://json-schema.org/draft-07/schema#";
-    const schemaJson = `{
-      "$id": "#root",
+    registerSchema({
+      $id: "#root",
 
-      "type": "object",
-      "properties": {
-        "foo": { "$id": "#foo" }
+      type: "object",
+      properties: {
+        foo: { $id: "#foo" }
       }
-    }`;
-
-    mockAgent.get(testDomain)
-      .intercept({ method: "GET", path: "/schema" })
-      .reply(200, schemaJson, { headers: { "content-type": `application/schema+json; schema="${contextDialectId}"` } });
+    }, `${testDomain}/schema`, contextDialectId);
 
     const schema = await getSchema(`${testDomain}/schema`);
 
     expect(toSchema(schema)).to.eql({
       $schema: contextDialectId,
-      $id: "#root",
+      $id: `${testDomain}/schema#root`,
 
       type: "object",
       properties: {
@@ -241,23 +207,20 @@ describe("JSON Schema - toString", () => {
 
   test("dynamic anchors", async () => {
     const contextDialectId = "https://json-schema.org/validation";
-    const schemaJson = `{
-      "$dynamicAnchor": "root",
+    registerSchema({
+      $dynamicAnchor: "root",
 
-      "type": "object",
-      "properties": {
-        "foo": { "$dynamicAnchor": "foo" }
+      type: "object",
+      properties: {
+        foo: { $dynamicAnchor: "foo" }
       }
-    }`;
-
-    mockAgent.get(testDomain)
-      .intercept({ method: "GET", path: "/schema" })
-      .reply(200, schemaJson, { headers: { "content-type": `application/schema+json; schema="${contextDialectId}"` } });
+    }, `${testDomain}/schema`, contextDialectId);
 
     const schema = await getSchema(`${testDomain}/schema`);
 
     expect(toSchema(schema)).to.eql({
       $schema: contextDialectId,
+      $id: `${testDomain}/schema`,
       $dynamicAnchor: "root",
 
       type: "object",
@@ -269,23 +232,20 @@ describe("JSON Schema - toString", () => {
 
   test("legacy dynamic anchors", async () => {
     const contextDialectId = "https://json-schema.org/draft/2020-12/schema";
-    const schemaJson = `{
-      "$dynamicAnchor": "root",
+    registerSchema({
+      $dynamicAnchor: "root",
 
-      "type": "object",
-      "properties": {
-        "foo": { "$dynamicAnchor": "foo" }
+      type: "object",
+      properties: {
+        foo: { $dynamicAnchor: "foo" }
       }
-    }`;
-
-    mockAgent.get(testDomain)
-      .intercept({ method: "GET", path: "/schema" })
-      .reply(200, schemaJson, { headers: { "content-type": `application/schema+json; schema="${contextDialectId}"` } });
+    }, `${testDomain}/schema`, contextDialectId);
 
     const schema = await getSchema(`${testDomain}/schema`);
 
     expect(toSchema(schema)).to.eql({
       $schema: contextDialectId,
+      $id: `${testDomain}/schema`,
       $dynamicAnchor: "root",
 
       type: "object",
@@ -297,39 +257,33 @@ describe("JSON Schema - toString", () => {
 
   test("recursive anchors", async () => {
     const contextDialectId = "https://json-schema.org/draft/2019-09/schema";
-    const schemaJson = `{
-      "$recursiveAnchor": true
-    }`;
-
-    mockAgent.get(testDomain)
-      .intercept({ method: "GET", path: "/schema" })
-      .reply(200, schemaJson, { headers: { "content-type": `application/schema+json; schema="${contextDialectId}"` } });
+    registerSchema({
+      $recursiveAnchor: true
+    }, `${testDomain}/schema`, contextDialectId);
 
     const schema = await getSchema(`${testDomain}/schema`);
 
     expect(toSchema(schema)).to.eql({
       $schema: contextDialectId,
+      $id: `${testDomain}/schema`,
       $recursiveAnchor: true
     });
   });
 
   test("references", async () => {
     const contextDialectId = "https://json-schema.org/validation";
-    const schemaJson = `{
-      "$ref": "#/$defs/foo",
-      "$defs": {
-        "foo": {}
+    registerSchema({
+      $ref: "#/$defs/foo",
+      $defs: {
+        foo: {}
       }
-    }`;
-
-    mockAgent.get(testDomain)
-      .intercept({ method: "GET", path: "/schema" })
-      .reply(200, schemaJson, { headers: { "content-type": `application/schema+json; schema="${contextDialectId}"` } });
+    }, `${testDomain}/schema`, contextDialectId);
 
     const schema = await getSchema(`${testDomain}/schema`);
 
     expect(toSchema(schema)).to.eql({
       $schema: contextDialectId,
+      $id: `${testDomain}/schema`,
       $ref: "#/$defs/foo",
       $defs: {
         foo: {}
@@ -339,20 +293,17 @@ describe("JSON Schema - toString", () => {
 
   test("legacy references", async () => {
     const contextDialectId = "http://json-schema.org/draft-07/schema#";
-    const schemaJson = `{
-      "allOf": [{ "$ref": "#/$defs/foo" }],
-      "$defs": {
-        "foo": {}
+    registerSchema({
+      allOf: [{ "$ref": "#/$defs/foo" }],
+      $defs: {
+        foo: {}
       }
-    }`;
-
-    mockAgent.get(testDomain)
-      .intercept({ method: "GET", path: "/schema" })
-      .reply(200, schemaJson, { headers: { "content-type": `application/schema+json; schema="${contextDialectId}"` } });
+    }, `${testDomain}/schema`, contextDialectId);
 
     const schema = await getSchema(`${testDomain}/schema`);
 
     expect(toSchema(schema)).to.eql({
+      $id: `${testDomain}/schema`,
       $schema: contextDialectId,
       allOf: [{ $ref: "#/$defs/foo" }],
       $defs: {
@@ -363,45 +314,57 @@ describe("JSON Schema - toString", () => {
 
   test("include embedded schemas", async () => {
     const contextDialectId = "https://json-schema.org/validation";
-    const schemaJson = `{
-      "$ref": "foo",
-      "$defs": {
-        "foo": { "$id": "foo" }
+    registerSchema({
+      $ref: "foo",
+      $defs: {
+        foo: { $id: "foo" }
       }
-    }`;
-
-    mockAgent.get(testDomain)
-      .intercept({ method: "GET", path: "/schema" })
-      .reply(200, schemaJson, { headers: { "content-type": `application/schema+json; schema="${contextDialectId}"` } });
+    }, `${testDomain}/schema`, contextDialectId);
 
     const schema = await getSchema(`${testDomain}/schema`);
 
     expect(toSchema(schema)).to.eql({
       $schema: contextDialectId,
+      $id: `${testDomain}/schema`,
       $ref: "foo",
       $defs: {
-        foo: { $id: "foo" }
+        foo: { $id: `${testDomain}/foo` }
+      }
+    });
+  });
+
+  test("embedded file-schema", async () => {
+    const contextDialectId = "https://json-schema.org/validation";
+    const schema = await getSchema("./lib/bundled.schema.json");
+    expect(toSchema(schema)).to.eql({
+      $schema: contextDialectId,
+      type: "object",
+      properties: {
+        foo: { $ref: "string.schema.json" }
+      },
+      $defs: {
+        "string.schema.json": {
+          $id: "string.schema.json",
+          type: "string"
+        }
       }
     });
   });
 
   test("exclude embedded schemas", async () => {
     const contextDialectId = "https://json-schema.org/validation";
-    const schemaJson = `{
-      "$ref": "foo",
-      "$defs": {
-        "foo": { "$id": "foo" }
+    registerSchema({
+      $ref: "foo",
+      $defs: {
+        foo: { $id: "foo" }
       }
-    }`;
-
-    mockAgent.get(testDomain)
-      .intercept({ method: "GET", path: "/schema" })
-      .reply(200, schemaJson, { headers: { "content-type": `application/schema+json; schema="${contextDialectId}"` } });
+    }, `${testDomain}/schema`, contextDialectId);
 
     const schema = await getSchema(`${testDomain}/schema`);
 
     expect(toSchema(schema, { includeEmbedded: false })).to.eql({
       $schema: contextDialectId,
+      $id: `${testDomain}/schema`,
       $ref: "foo"
     });
   });

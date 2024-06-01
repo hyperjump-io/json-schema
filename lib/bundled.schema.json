@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/validation",
+  "type": "object",
+  "properties": {
+    "foo": { "$ref": "string.schema.json" }
+  },
+  "$defs": {
+    "string.schema.json": {
+      "$id": "string.schema.json",
+      "type": "string"
+    }
+  }
+}

@@ -3,7 +3,6 @@ import { v4 as uuid } from "uuid";
 import * as Browser from "@hyperjump/browser";
 import * as JsonPointer from "@hyperjump/json-pointer";
 import { asyncCollectSet, asyncFilter, asyncFlatten, asyncMap, pipe } from "@hyperjump/pact";
-import { resolveUri } from "@hyperjump/uri";
 import {
   Validation,
   canonicalUri, getSchema, toSchema,
@@ -37,10 +36,13 @@ export const bundle = async (url, options = {}) => {
   }
 
   for (const uri of externalIds) {
+    if (fullOptions.externalSchemas.includes(uri)) {
+      continue;
+    }
+
     const externalSchema = await getSchema(uri);
     const embeddedSchema = toSchema(externalSchema, {
-      selfIdentify: true,
-      contextUri: contextUri,
+      contextUri: externalSchema.document.baseUri.startsWith("file:") ? contextUri : undefined,
       includeDialect: fullOptions.alwaysIncludeDialect ? "always" : "auto",
       contextDialectId: contextDialectId
     });
@@ -49,9 +51,6 @@ export const bundle = async (url, options = {}) => {
       const idToken = getKeywordName(externalSchema.document.dialectId, "https://json-schema.org/keyword/id")
         || getKeywordName(externalSchema.document.dialectId, "https://json-schema.org/keyword/draft-04/id");
       id = embeddedSchema[idToken];
-      if (id in JsonPointer.get(bundlingLocation, bundled)) {
-        id = resolveUri(id, contextUri);
-      }
     } else if (fullOptions.definitionNamingStrategy === UUID) {
       id = uuid();
     } else {

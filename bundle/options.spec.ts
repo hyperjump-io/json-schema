@@ -74,7 +74,7 @@ const testRunner = (dialect: string) => {
 
         const definitionsToken = getKeywordName(dialect, "https://json-schema.org/keyword/definitions");
         const definitions = bundledSchema[definitionsToken] as Record<string, SchemaObject>;
-        const embeddedSchema = definitions.string;
+        const embeddedSchema = definitions[`${testDomain}/string`];
 
         const legacyIdToken = getKeywordName(dialect, "https://json-schema.org/keyword/draft-04/id");
         const expectedDialect = legacyIdToken ? dialect + "#" : dialect;
