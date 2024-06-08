@@ -69,6 +69,7 @@ export const loadDialect: (dialectId: string, dialect: Record<string, boolean>, 
 export const unloadDialect: (dialectId: string) => void;
 export const hasDialect: (dialectId: string) => boolean;
 export const getDialectIds: () => string[];
+export const getDialect: (dialectId: string) => Record<string, string>;
 
 export type Format = {
   id: string;

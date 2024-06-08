@@ -726,6 +726,9 @@ These are available from the `@hyperjump/json-schema/experimental` export.
 * **getDialectIds**
 
     This function retrieves the identifiers of all loaded JSON Schema dialects.
+* **getDialect**:  (dialectId: string) => Record<string, string>;
+
+    This function retrieves all the keywords appropriate for a particular dialect.
 * **Validation**: Keyword
 
     A Keyword object that represents a "validate" operation. You would use this
