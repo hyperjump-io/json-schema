@@ -64,6 +64,7 @@ export const loadDialect: (dialectId: string, dialect: { [vocabularyId: string]:
 export const unloadDialect: (dialectId: string) => void;
 export const hasDialect: (dialectId: string) => boolean;
 export const getDialectIds: () => string[];
+export const getDialect: (dialectId: string) => Record<string, string>;
 
 export type Keyword<A> = {
   id: string;
