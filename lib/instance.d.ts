@@ -23,14 +23,14 @@ export const values: (node: JsonNode) => Generator<JsonNode>;
 export const entries: (node: JsonNode) => Generator<[JsonNode, JsonNode]>;
 export const length: (node: JsonNode) => number;
 
-export const allNodes: (node) => Generator<JsonNode>;
+export const allNodes: (node: JsonNode) => Generator<JsonNode>;
 
 export type JsonNode = {
   baseUri: string;
   pointer: string;
   type: JsonNodeType;
   children: JsonNode[];
-  parent: JsonNode;
+  parent?: JsonNode;
   root: JsonNode;
   valid: boolean;
   errors: Record<string, string>;
