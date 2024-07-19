@@ -1,6 +1,6 @@
 {
   "name": "@hyperjump/json-schema",
-  "version": "1.9.3",
+  "version": "1.9.4",
   "description": "A JSON Schema validator with support for custom keywords, vocabularies, and dialects",
   "type": "module",
   "main": "./stable/index.js",
