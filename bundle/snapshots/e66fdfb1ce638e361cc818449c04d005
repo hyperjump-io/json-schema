@@ -1,7 +1,6 @@
 {
   "#": {
     "errors": {
-      "https://bundler.hyperjump.io/main#/if/type": "https://json-schema.org/keyword/type",
       "https://bundler.hyperjump.io/main#/if": "https://json-schema.org/evaluation/validate",
       "https://test.json-schema.org/short-string#/maxLength": "https://json-schema.org/keyword/maxLength",
       "https://test.json-schema.org/short-string#": "https://json-schema.org/evaluation/validate",

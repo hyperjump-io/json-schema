@@ -16,11 +16,11 @@ export const annotation = (node, keyword, dialect = defaultDialectId) => {
   const keywordUri = getKeywordId(keyword, dialect);
 
   let currentNode = node.root;
-  const errors = Object.keys(node.root.errors);
+  const errors = [...invalidSchemas(currentNode)];
   for (let segment of JsonPointer.pointerSegments(node.pointer)) {
     segment = segment === "-" && Instance.typeOf(currentNode) === "array" ? Instance.length(currentNode) : segment;
     currentNode = Instance.step(segment, currentNode);
-    errors.push(...Object.keys(currentNode.errors));
+    errors.push(...invalidSchemas(currentNode));
   }
 
   const annotations = [];
@@ -31,6 +31,14 @@ export const annotation = (node, keyword, dialect = defaultDialectId) => {
   }
 
   return annotations;
+};
+
+const invalidSchemas = function* (node) {
+  for (const error in node.errors) {
+    if (node.errors[error] === "https://json-schema.org/evaluation/validate") {
+      yield error;
+    }
+  }
 };
 
 export const annotatedWith = (instance, keyword, dialectId = defaultDialectId) => {
