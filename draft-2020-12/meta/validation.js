@@ -53,13 +53,19 @@ export default {
       "items": true
     },
     "type": {
-      "anyOf": [
-        { "$ref": "#/$defs/simpleTypes" },
+      "type": ["string", "array"],
+      "allOf": [
         {
-          "type": "array",
-          "items": { "$ref": "#/$defs/simpleTypes" },
-          "minItems": 1,
-          "uniqueItems": true
+          "if": { "type": "string" },
+          "then": { "$ref": "#/$defs/simpleTypes" }
+        },
+        {
+          "if": { "type": "array" },
+          "then": {
+            "items": { "$ref": "#/$defs/simpleTypes" },
+            "minItems": 1,
+            "uniqueItems": true
+          }
         }
       ]
     }
