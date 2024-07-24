@@ -147,13 +147,19 @@ export default {
       "uniqueItems": true
     },
     "type": {
-      "anyOf": [
-        { "$ref": "#/definitions/simpleTypes" },
+      "type": ["string", "array"],
+      "allOf": [
         {
-          "type": "array",
-          "items": { "$ref": "#/definitions/simpleTypes" },
-          "minItems": 1,
-          "uniqueItems": true
+          "if": { "type": "string" },
+          "then": { "$ref": "#/definitions/simpleTypes" }
+        },
+        {
+          "if": { "type": "array" },
+          "then": {
+            "items": { "$ref": "#/definitions/simpleTypes" },
+            "minItems": 1,
+            "uniqueItems": true
+          }
         }
       ]
     },
