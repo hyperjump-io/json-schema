@@ -34,6 +34,7 @@ defineVocabulary(jsonSchemaVersion, {
   "dependencies": "https://json-schema.org/keyword/draft-04/dependencies",
   "description": "https://json-schema.org/keyword/description",
   "enum": "https://json-schema.org/keyword/enum",
+  "examples": "https://json-schema.org/keyword/examples",
   "exclusiveMaximum": "https://json-schema.org/keyword/exclusiveMaximum",
   "exclusiveMinimum": "https://json-schema.org/keyword/exclusiveMinimum",
   "format": "https://json-schema.org/keyword/format",
