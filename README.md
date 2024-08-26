@@ -697,6 +697,9 @@ These are available from the `@hyperjump/json-schema/experimental` export.
 
     Define a vocabulary that maps keyword name to keyword URIs defined using
     `addKeyword`.
+* **hasVocabulary**: (dialectId: string) => boolean;
+
+    Determine whether the vocabulary is supported.
 * **getKeywordId**: (keywordName: string, dialectId: string) => string
 
     Get the identifier for a keyword by its name.
@@ -726,14 +729,17 @@ These are available from the `@hyperjump/json-schema/experimental` export.
 * **getDialectIds**
 
     This function retrieves the identifiers of all loaded JSON Schema dialects.
-* **getDialect**:  (dialectId: string) => Record<string, string>;
+* **getDialect**: (dialectId: string) => Record<string, string>;
 
-    This function retrieves all the keywords appropriate for a particular dialect.
+    This function retrieves all the keywords appropriate for a particular
+    dialect.
+* **hasDialect**: (dialectId: string) => boolean;
+
+    Determine whether the dialect is supported.
 * **Validation**: Keyword
 
     A Keyword object that represents a "validate" operation. You would use this
     for compiling and evaluating sub-schemas when defining a custom keyword.
-        
 * **getSchema**: (uri: string, browser?: Browser) => Promise\<Browser>
 
     Get a schema by it's URI taking the local schema registry into account.
