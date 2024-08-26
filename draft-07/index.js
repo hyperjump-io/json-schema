@@ -29,6 +29,8 @@ defineVocabulary(jsonSchemaVersion, {
   "anyOf": "https://json-schema.org/keyword/anyOf",
   "const": "https://json-schema.org/keyword/const",
   "contains": "https://json-schema.org/keyword/draft-06/contains",
+  "contentEncoding": "https://json-schema.org/keyword/contentEncoding",
+  "contentMediaType": "https://json-schema.org/keyword/contentMediaType",
   "default": "https://json-schema.org/keyword/default",
   "definitions": "https://json-schema.org/keyword/definitions",
   "dependencies": "https://json-schema.org/keyword/draft-04/dependencies",
