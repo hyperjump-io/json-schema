@@ -6,7 +6,7 @@ import type { JsonNode } from "./instance.js";
 // Compile/interpret
 export const compile: (schema: Browser<SchemaDocument>) => Promise<CompiledSchema>;
 export const interpret: (
-  (compiledSchema: CompiledSchema, value: unknown, outputFormat?: OutputFormat) => OutputUnit
+  (compiledSchema: CompiledSchema, value: JsonNode, outputFormat?: OutputFormat) => OutputUnit
 ) & (
   (compiledSchema: CompiledSchema) => Validator
 );
