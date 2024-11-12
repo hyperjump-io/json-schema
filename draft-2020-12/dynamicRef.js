@@ -12,7 +12,7 @@ const compile = async (dynamicRef, ast) => {
   return [referencedSchema.document.baseUri, fragment, canonicalUri(referencedSchema)];
 };
 
-const evaluate = (strategy) => ([id, fragment, ref], instance, ast, dynamicAnchors, quiet) => {
+const evaluate = (strategy, [id, fragment, ref], instance, ast, dynamicAnchors, quiet) => {
   if (fragment in ast.metaData[id].dynamicAnchors) {
     dynamicAnchors = { ...ast.metaData[id].dynamicAnchors, ...dynamicAnchors };
     return strategy(dynamicAnchors[fragment], instance, ast, dynamicAnchors, quiet);
@@ -21,8 +21,8 @@ const evaluate = (strategy) => ([id, fragment, ref], instance, ast, dynamicAncho
   }
 };
 
-const interpret = evaluate(Validation.interpret);
-const collectEvaluatedProperties = evaluate(Validation.collectEvaluatedProperties);
-const collectEvaluatedItems = evaluate(Validation.collectEvaluatedItems);
+const interpret = (...args) => evaluate(Validation.interpret, ...args);
+const collectEvaluatedProperties = (...args) => evaluate(Validation.collectEvaluatedProperties, ...args);
+const collectEvaluatedItems = (...args) => evaluate(Validation.collectEvaluatedItems, ...args);
 
 export default { id, compile, interpret, collectEvaluatedProperties, collectEvaluatedItems };
