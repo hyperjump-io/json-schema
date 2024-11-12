@@ -12,8 +12,8 @@ type TestCase = {
 };
 
 type Test = {
-  description: string,
-  instance: Json
+  description: string;
+  instance: Json;
 };
 
 export const testSuite: (path: string) => TestCase[];
@@ -22,6 +22,6 @@ export const isCompatible: (compatibility: string | undefined, versionUnderTest:
 export const loadSchemas: (testCase: TestCase, retrievalUri: string, dialect: string) => void;
 export const unloadSchemas: (testCase: TestCase, retrievalUri: string, dialect: string) => void;
 export const toOutput: (instance: JsonNode) => Record<string, {
-  errors: Record<string>,
-  annotations: Record<string, Record<string, string>>
+  errors: Record<string>;
+  annotations: Record<string, Record<string, string>>;
 }>;

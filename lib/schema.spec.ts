@@ -18,19 +18,19 @@ describe("Schema Parsing", () => {
     unregisterSchema(`https://example.com/schema`);
   });
 
-  it("boolean schema without context dialect", async () => {
+  it("boolean schema without context dialect", () => {
     expect(() => {
       registerSchema(true, `${testDomain}/schema`);
     }).to.throw(Error, "Unable to determine a dialect for the schema");
   });
 
-  it("schema without context dialect", async () => {
+  it("schema without context dialect", () => {
     expect(() => {
       registerSchema({}, `${testDomain}/schema`);
     }).to.throw(Error, "Unable to determine a dialect for the schema");
   });
 
-  it("schema with unknown dialect", async () => {
+  it("schema with unknown dialect", () => {
     expect(() => {
       registerSchema({
         $schema: `${testDomain}/unknown-dialect`
@@ -47,7 +47,7 @@ describe("Schema Parsing", () => {
     expect(browser.document.root).to.not.haveOwnProperty("$schema");
   });
 
-  it("schema with no identifier", async () => {
+  it("schema with no identifier", () => {
     expect(() => {
       registerSchema({ $schema: "https://json-schema.org/validation" });
     }).to.throw(Error, "Unable to determine an identifier for the schema");
@@ -64,7 +64,7 @@ describe("Schema Parsing", () => {
     expect(browser.document.baseUri).to.equal(`https://example.com/schema`);
   });
 
-  it("relative self-identifying schema without retrieval URI", async () => {
+  it("relative self-identifying schema without retrieval URI", () => {
     expect(() => {
       registerSchema({
         $schema: "https://json-schema.org/validation",
@@ -84,7 +84,7 @@ describe("Schema Parsing", () => {
     expect(browser.document.baseUri).to.equal(`${testDomain}/relative-schema`);
   });
 
-  it("self-identifying schema with file scheme", async () => {
+  it("self-identifying schema with file scheme", () => {
     expect(() => {
       registerSchema({
         $schema: "https://json-schema.org/validation",
@@ -459,7 +459,7 @@ describe("Schema Parsing", () => {
     expect(browser.document.dynamicAnchors).to.eql({ "": `${testDomain}/schema#` });
   });
 
-  it("registering a dialect schema", async () => {
+  it("registering a dialect schema", () => {
     registerSchema({
       $schema: "https://json-schema.org/validation",
       $vocabulary: {
@@ -470,7 +470,7 @@ describe("Schema Parsing", () => {
     expect(hasDialect(`${testDomain}/schema`)).to.equal(true);
   });
 
-  it("unregistering a dialect schema", async () => {
+  it("unregistering a dialect schema", () => {
     registerSchema({
       $schema: "https://json-schema.org/validation",
       $vocabulary: {
@@ -482,7 +482,7 @@ describe("Schema Parsing", () => {
     expect(hasDialect(`${testDomain}/schema`)).to.equal(false);
   });
 
-  it("duplicate registered schema", async () => {
+  it("duplicate registered schema", () => {
     const schema = {
       $schema: "https://json-schema.org/validation"
     };

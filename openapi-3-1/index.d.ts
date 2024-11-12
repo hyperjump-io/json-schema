@@ -86,11 +86,11 @@ type Xml = {
 };
 
 export type OpenApi = {
-  openapi: string
+  openapi: string;
   info: Info;
   jsonSchemaDialect?: string;
   servers?: Server[];
-  security?: SecurityRequirement[]
+  security?: SecurityRequirement[];
   tags?: Tag[];
   externalDocs?: ExternalDocumentation;
   paths?: Record<string, PathItem>;
@@ -227,7 +227,7 @@ type Callbacks = Record<string, PathItem | Reference>;
 type Example = {
   summary?: string;
   description?: string;
-  value?: Json,
+  value?: Json;
   externalValue?: string;
 };
 

@@ -22,7 +22,7 @@ type Test = {
 // is usually because there has been some tradeoff I've made to not support
 // something that doesn't come up in real schemas in favor of something that has
 // value.
-const skip: Set<string> = new Set([
+const skip = new Set<string>([
   // "filename.json|description"
 ]);
 

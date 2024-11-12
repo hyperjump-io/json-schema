@@ -69,7 +69,7 @@ type OpenApi = {
 };
 
 type Reference = {
-  $ref: "string"
+  $ref: "string";
 };
 
 type Info = {

@@ -26,21 +26,21 @@ describe("JSON Schema - toString", () => {
       schema = await getSchema(`${testDomain}/schema`);
     });
 
-    test("default options", async () => {
+    test("default options", () => {
       expect(toSchema(schema)).to.eql({
         $schema: contextDialectId,
         $id: `${testDomain}/schema`
       });
     });
 
-    test("contextDialectId: stable", async () => {
+    test("contextDialectId: stable", () => {
       const options = { contextDialectId: contextDialectId };
       expect(toSchema(schema, options)).to.eql({
         $id: `${testDomain}/schema`
       });
     });
 
-    test("contextDialectId: 2020-12", async () => {
+    test("contextDialectId: 2020-12", () => {
       const options = { contextDialectId: "https://json-schema.org/draft/2020-12/schema" };
       expect(toSchema(schema, options)).to.eql({
         $schema: contextDialectId,
@@ -48,7 +48,7 @@ describe("JSON Schema - toString", () => {
       });
     });
 
-    test("contextDialectId: stable, includeDialect: auto", async () => {
+    test("contextDialectId: stable, includeDialect: auto", () => {
       const options: ToSchemaOptions = {
         contextDialectId: contextDialectId,
         includeDialect: "auto"
@@ -58,7 +58,7 @@ describe("JSON Schema - toString", () => {
       });
     });
 
-    test("contextDialectId: 2020-12, includeDialect: auto", async () => {
+    test("contextDialectId: 2020-12, includeDialect: auto", () => {
       const options: ToSchemaOptions = {
         contextDialectId: "https://json-schema.org/draft/2020-12/schema",
         includeDialect: "auto"
@@ -69,7 +69,7 @@ describe("JSON Schema - toString", () => {
       });
     });
 
-    test("contextDialectId: stable, includeDialect: always", async () => {
+    test("contextDialectId: stable, includeDialect: always", () => {
       const options: ToSchemaOptions = {
         contextDialectId: contextDialectId,
         includeDialect: "always"
@@ -80,7 +80,7 @@ describe("JSON Schema - toString", () => {
       });
     });
 
-    test("contextDialectId: stable, includeDialect: never", async () => {
+    test("contextDialectId: stable, includeDialect: never", () => {
       const options: ToSchemaOptions = {
         contextDialectId: contextDialectId,
         includeDialect: "never"
@@ -90,7 +90,7 @@ describe("JSON Schema - toString", () => {
       });
     });
 
-    test("contextUri: same as baseURI", async () => {
+    test("contextUri: same as baseURI", () => {
       const options: ToSchemaOptions = {
         contextUri: `${testDomain}/schema`
       };
@@ -99,7 +99,7 @@ describe("JSON Schema - toString", () => {
       });
     });
 
-    test("contextUri: testDomain", async () => {
+    test("contextUri: testDomain", () => {
       const options: ToSchemaOptions = {
         contextUri: testDomain
       };
@@ -109,7 +109,7 @@ describe("JSON Schema - toString", () => {
       });
     });
 
-    test("contextUri: not relative to baseURI", async () => {
+    test("contextUri: not relative to baseURI", () => {
       const options: ToSchemaOptions = {
         selfIdentify: true,
         contextUri: "urn:example:example"

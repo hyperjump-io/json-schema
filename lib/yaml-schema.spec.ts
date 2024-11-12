@@ -6,7 +6,7 @@ import { MockAgent, setGlobalDispatcher } from "undici";
 import contentTypeParser from "content-type";
 import { addMediaTypePlugin, value } from "@hyperjump/browser";
 import { toAbsoluteIri } from "@hyperjump/uri";
-import { When, Then } from "./gherkin.js";
+import { When, Then } from "./gherkin.ts";
 import YAML from "yaml";
 import "../stable/index.js";
 import { getSchema, buildSchemaDocument } from "./experimental.js";
@@ -23,13 +23,13 @@ const testDomain = "http://test.jsc.hyperjump.io";
 addMediaTypePlugin("application/schema+yaml", {
   parse: async (response) => {
     const contentType = contentTypeParser.parse(response.headers.get("content-type") ?? "");
-    const contextDialectId = contentType.parameters.schema ?? contentType.parameters.profile; // eslint-disable-line @typescript-eslint/no-unnecessary-condition
+    const contextDialectId = contentType.parameters.schema ?? contentType.parameters.profile;
 
     const json = YAML.parse(await response.text()) as SchemaObject | boolean;
 
     return buildSchemaDocument(json, response.url, contextDialectId ? toAbsoluteIri(contextDialectId) : contextDialectId);
   },
-  fileMatcher: async (path) => path.endsWith(".schema.yml")
+  fileMatcher: async (path) => path.endsWith(".schema.yml") // eslint-disable-line @typescript-eslint/require-await
 });
 
 describe("Schema.get with YAML", () => {

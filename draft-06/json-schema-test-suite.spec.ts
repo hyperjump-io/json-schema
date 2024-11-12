@@ -23,7 +23,7 @@ type Test = {
 // is usually because there has been some tradeoff I've made to not support
 // something that doesn't come up in real schemas in favor of something that has
 // value.
-const skip: Set<string> = new Set([
+const skip = new Set<string>([
   // Skip tests for pointers that cross schema resource boundaries. There might
   // be a way to solve this, but because this functionality has been removed
   // from the spec and there is no good reason to do this, it will probably not

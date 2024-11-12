@@ -22,7 +22,7 @@ type Test = {
 // This package is indended to be a compatibility mode from stable JSON Schema.
 // Some edge cases might not work exactly as specified, but it should work for
 // any real-life schema.
-const skip: Set<string> = new Set([
+const skip = new Set<string>([
   // Self-identifying with a `file:` URI is not allowed for security reasons.
   "|draft2019-09|ref.json|$id with file URI still resolves pointers - *nix",
   "|draft2019-09|ref.json|$id with file URI still resolves pointers - windows"

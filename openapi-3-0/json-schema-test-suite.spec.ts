@@ -21,7 +21,7 @@ type Test = {
 // This package is indended to be a compatibility mode from stable JSON Schema.
 // Some edge cases might not work exactly as specified, but it should work for
 // any real-life schema.
-const skip: Set<string> = new Set([
+const skip = new Set<string>([
   // Skip tests that ignore keywords in places that are not schemas such as a
   // $ref in a const. Because this implementation is dialect agnostic, there's
   // no way to know whether a location is a schema or not. Especially since this
@@ -31,7 +31,7 @@ const skip: Set<string> = new Set([
 ]);
 
 // Ignore tests with keywords that OpenAPI 3.0 doesn't support
-const ignore: Set<string> = new Set([
+const ignore = new Set<string>([
   "|draft4|additionalItems.json",
   "|draft4|additionalProperties.json|additionalProperties being false does not allow other properties",
   "|draft4|additionalProperties.json|non-ASCII pattern with additionalProperties",

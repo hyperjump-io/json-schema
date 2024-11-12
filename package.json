@@ -50,19 +50,16 @@
     "url": "https://github.com/sponsors/jdesrosiers"
   },
   "devDependencies": {
+    "@stylistic/eslint-plugin": "*",
     "@types/content-type": "*",
     "@types/node": "*",
     "@types/uuid": "*",
-    "@typescript-eslint/eslint-plugin": "*",
-    "@typescript-eslint/parser": "*",
     "@vitest/coverage-v8": "*",
-    "eslint": "*",
-    "eslint-import-resolver-exports": "*",
-    "eslint-import-resolver-node": "*",
     "eslint-import-resolver-typescript": "*",
     "eslint-plugin-import": "*",
     "json-schema-test-suite": "github:json-schema-org/JSON-Schema-Test-Suite",
     "typescript": "*",
+    "typescript-eslint": "*",
     "undici": "*",
     "vitest": "*",
     "yaml": "*"
