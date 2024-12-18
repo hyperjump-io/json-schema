@@ -8,6 +8,7 @@ export type SchemaObject = { // eslint-disable-line @typescript-eslint/consisten
 
 export const registerSchema: (schema: SchemaObject | boolean, retrievalUri?: string, contextDialectId?: string) => void;
 export const unregisterSchema: (retrievalUri: string) => void;
+export const hasSchema: (uri: string) => boolean;
 
 /**
  * @deprecated since 1.7.0. Use registerSchema instead.

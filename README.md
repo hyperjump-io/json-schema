@@ -201,6 +201,9 @@ Schema, such as `@hyperjump/json-schema/draft-2020-12`.
 * **unregisterSchema**: (uri: string) => void
 
     Remove a schema from the local schema registry.
+* **hasSchema**: (uri: string) => boolean
+
+    Check if a schema with the given URI is already registered.
 * _(deprecated)_ **addSchema**: (schema: object, retrievalUri?: string, defaultDialectId?: string) => void
 
     Load a schema manually rather than fetching it from the filesystem or over
