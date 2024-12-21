@@ -1,5 +1,5 @@
 .github/
-.eslintrc.json
+eslint.config.js
 bun.lockb
 **/*.spec.ts
 lib/gherkin.ts
