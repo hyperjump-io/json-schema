@@ -1,6 +1,5 @@
 import { addKeyword, defineVocabulary, loadDialect } from "../lib/keywords.js";
 import { registerSchema } from "../lib/index.js";
-
 import metaSchema from "./schema.js";
 import additionalItems from "../draft-04/additionalItems.js";
 import contains from "../draft-06/contains.js";
