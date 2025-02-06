@@ -201,6 +201,9 @@ Schema, such as `@hyperjump/json-schema/draft-2020-12`.
 * **unregisterSchema**: (uri: string) => void
 
     Remove a schema from the local schema registry.
+* **getAllRegisteredSchemaUris**: () => string[]
+
+    This function returns the URIs of all registered schemas
 * **hasSchema**: (uri: string) => boolean
 
     Check if a schema with the given URI is already registered.
