@@ -71,6 +71,7 @@
     "content-type": "^1.0.4",
     "json-stringify-deterministic": "^1.0.12",
     "just-curry-it": "^5.3.0",
+    "spacetime": "^7.7.0",
     "uuid": "^9.0.0"
   },
   "peerDependencies": {
