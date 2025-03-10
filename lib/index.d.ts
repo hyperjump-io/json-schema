@@ -2,7 +2,7 @@ import type { Json } from "@hyperjump/json-pointer";
 
 
 export type SchemaFragment = string | number | boolean | null | SchemaObject | SchemaFragment[];
-export type SchemaObject = { // eslint-disable-line @typescript-eslint/consistent-indexed-object-style
+export type SchemaObject = {
   [keyword: string]: SchemaFragment;
 };
 

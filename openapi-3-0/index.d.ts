@@ -57,7 +57,7 @@ type Xml = {
   wrapped?: boolean;
 };
 
-type OpenApi = {
+export type OpenApi30 = {
   openapi: string;
   info: Info;
   externalDocs?: ExternalDocs;
