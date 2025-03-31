@@ -1,6 +1,6 @@
 import { writeFile, mkdir, rm } from "node:fs/promises";
 import { isCompatible, md5, loadSchemas, testSuite, unloadSchemas } from "./test-utils.js";
-import { compile, getSchema, Validation } from "../lib/experimental.js";
+import { BASIC, compile, getSchema, Validation } from "../lib/experimental.js";
 import "../stable/index.js";
 import "../draft-2020-12/index.js";
 import "../draft-2019-09/index.js";
@@ -30,7 +30,8 @@ const snapshotGenerator = async (version, dialect) => {
       const instance = Instance.fromJs(test.instance);
       const errors = [];
       const annotations = [];
-      const valid = Validation.interpret(schemaUri, instance, { ast, schemaUri, dynamicAnchors: {}, errors, annotations });
+      const context = { ast, schemaUri, dynamicAnchors: {}, errors, annotations, outputFormat: BASIC };
+      const valid = Validation.interpret(schemaUri, instance, context);
 
       const expectedOutput = { valid, errors, annotations };
 

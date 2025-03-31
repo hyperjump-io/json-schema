@@ -32,6 +32,7 @@ type Anchors = Record<string, string>;
 
 // Output Formats
 export const BASIC: "BASIC";
+export const DETAILED: "DETAILED";
 
 // Schema
 export const getSchema: (uri: string, browser?: Browser) => Promise<Browser<SchemaDocument>>;

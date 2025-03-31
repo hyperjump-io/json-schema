@@ -1,3 +1,4 @@
+import { FLAG } from "../lib/index.js";
 import { ValidationError } from "./validation-error.js";
 import { getSchema, compile, BASIC } from "../lib/experimental.js";
 import Validation from "../lib/keywords/validation.js";
@@ -15,10 +16,11 @@ export const annotate = async (schemaUri, json = undefined, outputFormat = undef
 export const interpret = ({ ast, schemaUri }, instance, outputFormat = BASIC) => {
   const errors = [];
   const annotations = [];
-  const valid = Validation.interpret(schemaUri, instance, { ast, schemaUri, dynamicAnchors: {}, errors, annotations });
+  const context = { ast, schemaUri, dynamicAnchors: {}, errors, annotations, outputFormat };
+  const valid = Validation.interpret(schemaUri, instance, context);
 
   if (!valid) {
-    const result = outputFormat === BASIC && !valid ? { valid, errors } : { valid };
+    const result = outputFormat === FLAG || valid ? { valid } : { valid, errors };
     throw new ValidationError(result);
   }
 
