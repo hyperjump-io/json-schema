@@ -1,15 +1,16 @@
 {
-  "#": {
-    "errors": {
-      "https://bundler.hyperjump.io/string#/type": "https://json-schema.org/keyword/type",
-      "https://bundler.hyperjump.io/string#": "https://json-schema.org/evaluation/validate",
-      "https://bundler.hyperjump.io/main#/anyOf": "https://json-schema.org/keyword/anyOf",
-      "https://bundler.hyperjump.io/main#": "https://json-schema.org/evaluation/validate"
+  "valid": false,
+  "errors": [
+    {
+      "keyword": "https://json-schema.org/keyword/anyOf",
+      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/anyOf",
+      "instanceLocation": "#"
     },
-    "annotations": {
-      "https://json-schema.org/keyword/title": {
-        "https://bundler.hyperjump.io/string#": "String"
-      }
+    {
+      "keyword": "https://json-schema.org/keyword/type",
+      "absoluteKeywordLocation": "https://bundler.hyperjump.io/string#/type",
+      "instanceLocation": "#"
     }
-  }
+  ],
+  "annotations": []
 }

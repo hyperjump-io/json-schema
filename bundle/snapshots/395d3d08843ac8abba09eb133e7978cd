@@ -1,6 +1,5 @@
 {
-  "#": {
-    "errors": {},
-    "annotations": {}
-  }
+  "valid": true,
+  "errors": [],
+  "annotations": []
 }

@@ -6,8 +6,13 @@ const id = "https://spec.openapis.org/oas/3.0/keyword/xml";
 
 const compile = (schema) => Browser.value(schema);
 
-const interpret = (xml, instance, _ast, _dynamicAnchors, _quiet, schemaLocation) => {
-  Instance.setAnnotation(instance, id, schemaLocation, xml);
+const interpret = (xml, instance, { annotations, schemaUri }) => {
+  annotations.push({
+    keyword: id,
+    absoluteKeywordLocation: schemaUri,
+    instanceLocation: Instance.uri(instance),
+    annotation: xml
+  });
   return true;
 };
 

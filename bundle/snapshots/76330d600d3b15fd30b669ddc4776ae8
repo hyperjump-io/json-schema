@@ -1,15 +1,5 @@
 {
-  "#": {
-    "errors": {
-      "https://bundler.hyperjump.io/string#/type": "https://json-schema.org/keyword/type",
-      "https://bundler.hyperjump.io/string#": "https://json-schema.org/evaluation/validate",
-      "https://bundler.hyperjump.io/main#/not/$ref": "https://json-schema.org/keyword/ref",
-      "https://bundler.hyperjump.io/main#/not": "https://json-schema.org/evaluation/validate"
-    },
-    "annotations": {
-      "https://json-schema.org/keyword/title": {
-        "https://bundler.hyperjump.io/string#": "String"
-      }
-    }
-  }
+  "valid": true,
+  "errors": [],
+  "annotations": []
 }

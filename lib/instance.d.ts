@@ -32,8 +32,6 @@ export type JsonNode = {
   children: JsonNode[];
   parent?: JsonNode;
   root: JsonNode;
-  valid: boolean;
-  errors: Record<string, string>;
   annotations: Record<string, Record<string, unknown>>;
 };
 

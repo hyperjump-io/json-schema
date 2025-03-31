@@ -1,26 +1,21 @@
 {
-  "#": {
-    "errors": {
-      "https://bundler.hyperjump.io/main#/dependencies/foo/properties": "https://json-schema.org/keyword/properties",
-      "https://bundler.hyperjump.io/main#/dependencies/foo": "https://json-schema.org/evaluation/validate",
-      "https://bundler.hyperjump.io/main#/dependencies": "https://json-schema.org/keyword/draft-04/dependencies",
-      "https://bundler.hyperjump.io/main#": "https://json-schema.org/evaluation/validate"
+  "valid": false,
+  "errors": [
+    {
+      "keyword": "https://json-schema.org/keyword/draft-04/dependencies",
+      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/dependencies",
+      "instanceLocation": "#"
     },
-    "annotations": {}
-  },
-  "#/foo": {
-    "errors": {},
-    "annotations": {}
-  },
-  "#/bar": {
-    "errors": {
-      "https://bundler.hyperjump.io/string#/type": "https://json-schema.org/keyword/type",
-      "https://bundler.hyperjump.io/string#": "https://json-schema.org/evaluation/validate"
+    {
+      "keyword": "https://json-schema.org/keyword/properties",
+      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/dependencies/foo/properties",
+      "instanceLocation": "#"
     },
-    "annotations": {
-      "https://json-schema.org/keyword/title": {
-        "https://bundler.hyperjump.io/string#": "String"
-      }
+    {
+      "keyword": "https://json-schema.org/keyword/type",
+      "absoluteKeywordLocation": "https://bundler.hyperjump.io/string#/type",
+      "instanceLocation": "#/bar"
     }
-  }
+  ],
+  "annotations": []
 }

@@ -67,11 +67,18 @@ export const hasDialect: (dialectId: string) => boolean;
 export type Keyword<A> = {
   id: string;
   compile: (schema: Browser<SchemaDocument>, ast: AST, parentSchema: Browser<SchemaDocument>) => Promise<A>;
-  interpret: (compiledKeywordValue: A, instance: JsonNode, ast: AST, dynamicAnchors: Anchors, quiet: boolean, schemaLocation: string) => boolean;
-  collectEvaluatedProperties?: (compiledKeywordValue: A, instance: JsonNode, ast: AST, dynamicAnchors: Anchors, isTop?: boolean) => Set<string> | false;
-  collectEvaluatedItems?: (compiledKeywordValue: A, instance: JsonNode, ast: AST, dynamicAnchors: Anchors, isTop?: boolean) => Set<number> | false;
+  interpret: (compiledKeywordValue: A, instance: JsonNode, context: ValidationContext) => boolean;
+  collectEvaluatedProperties?: (compiledKeywordValue: A, instance: JsonNode, context: ValidationContext, isTop?: boolean) => Set<string> | false;
+  collectEvaluatedItems?: (compiledKeywordValue: A, instance: JsonNode, context: ValidationContext, isTop?: boolean) => Set<number> | false;
   collectExternalIds?: (visited: Set<string>, parentSchema: Browser<SchemaDocument>, schema: Browser<SchemaDocument>) => Promise<Set<string>>;
-  annotation?: <B>(compiledKeywordValue: A) => B;
+};
+
+export type ValidationContext = {
+  ast: AST;
+  schemaUri: string;
+  dynamicAnchors: Anchors;
+  errors: OutputUnit[];
+  annotations: OutputUnit[];
 };
 
 export const Validation: Keyword<string>;

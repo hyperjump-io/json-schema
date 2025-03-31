@@ -1,22 +1,21 @@
 {
-  "#": {
-    "errors": {
-      "https://bundler.hyperjump.io/main#/properties": "https://json-schema.org/keyword/properties",
-      "https://bundler.hyperjump.io/main#": "https://json-schema.org/evaluation/validate"
+  "valid": false,
+  "errors": [
+    {
+      "keyword": "https://json-schema.org/keyword/properties",
+      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/properties",
+      "instanceLocation": "#"
     },
-    "annotations": {}
-  },
-  "#/bar": {
-    "errors": {
-      "https://bundler.hyperjump.io/number#/type": "https://json-schema.org/keyword/type",
-      "https://bundler.hyperjump.io/number#": "https://json-schema.org/evaluation/validate",
-      "https://bundler.hyperjump.io/main#/properties/bar/$ref": "https://json-schema.org/keyword/ref",
-      "https://bundler.hyperjump.io/main#/properties/bar": "https://json-schema.org/evaluation/validate"
+    {
+      "keyword": "https://json-schema.org/keyword/ref",
+      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/properties/bar/$ref",
+      "instanceLocation": "#/bar"
     },
-    "annotations": {
-      "https://json-schema.org/keyword/title": {
-        "https://bundler.hyperjump.io/number#": "Number"
-      }
+    {
+      "keyword": "https://json-schema.org/keyword/type",
+      "absoluteKeywordLocation": "https://bundler.hyperjump.io/number#/type",
+      "instanceLocation": "#/bar"
     }
-  }
+  ],
+  "annotations": []
 }

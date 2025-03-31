@@ -1,22 +1,18 @@
 {
-  "#": {
-    "errors": {},
-    "annotations": {}
-  },
-  "#/foo": {
-    "errors": {},
-    "annotations": {
-      "https://json-schema.org/keyword/title": {
-        "https://bundler.hyperjump.io/string#": "String"
-      }
+  "valid": true,
+  "errors": [],
+  "annotations": [
+    {
+      "keyword": "https://json-schema.org/keyword/title",
+      "absoluteKeywordLocation": "https://bundler.hyperjump.io/string#/title",
+      "instanceLocation": "#/foo",
+      "annotation": "String"
+    },
+    {
+      "keyword": "https://json-schema.org/keyword/title",
+      "absoluteKeywordLocation": "https://bundler.hyperjump.io/number#/title",
+      "instanceLocation": "#/bar",
+      "annotation": "Number"
     }
-  },
-  "#/bar": {
-    "errors": {},
-    "annotations": {
-      "https://json-schema.org/keyword/title": {
-        "https://bundler.hyperjump.io/number#": "Number"
-      }
-    }
-  }
+  ]
 }

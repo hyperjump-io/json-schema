@@ -1,31 +1,31 @@
 {
-  "#": {
-    "errors": {
-      "https://bundler.hyperjump.io/main#/properties": "https://json-schema.org/keyword/properties",
-      "https://bundler.hyperjump.io/main#": "https://json-schema.org/evaluation/validate"
+  "valid": false,
+  "errors": [
+    {
+      "keyword": "https://json-schema.org/keyword/properties",
+      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/properties",
+      "instanceLocation": "#"
     },
-    "annotations": {}
-  },
-  "#/tree": {
-    "errors": {
-      "https://test.json-schema.org/tree#/properties": "https://json-schema.org/keyword/properties",
-      "https://test.json-schema.org/tree#": "https://json-schema.org/evaluation/validate",
-      "https://bundler.hyperjump.io/main#/properties/tree/$ref": "https://json-schema.org/keyword/ref",
-      "https://bundler.hyperjump.io/main#/properties/tree": "https://json-schema.org/evaluation/validate"
+    {
+      "keyword": "https://json-schema.org/keyword/ref",
+      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/properties/tree/$ref",
+      "instanceLocation": "#/tree"
     },
-    "annotations": {}
-  },
-  "#/tree/leaf": {
-    "errors": {},
-    "annotations": {}
-  },
-  "#/tree/branch": {
-    "errors": {
-      "https://test.json-schema.org/tree#/type": "https://json-schema.org/keyword/type",
-      "https://test.json-schema.org/tree#": "https://json-schema.org/evaluation/validate",
-      "https://test.json-schema.org/tree#/properties/branch/$ref": "https://json-schema.org/keyword/ref",
-      "https://test.json-schema.org/tree#/properties/branch": "https://json-schema.org/evaluation/validate"
+    {
+      "keyword": "https://json-schema.org/keyword/properties",
+      "absoluteKeywordLocation": "https://test.json-schema.org/tree#/properties",
+      "instanceLocation": "#/tree"
     },
-    "annotations": {}
-  }
+    {
+      "keyword": "https://json-schema.org/keyword/ref",
+      "absoluteKeywordLocation": "https://test.json-schema.org/tree#/properties/branch/$ref",
+      "instanceLocation": "#/tree/branch"
+    },
+    {
+      "keyword": "https://json-schema.org/keyword/type",
+      "absoluteKeywordLocation": "https://test.json-schema.org/tree#/type",
+      "instanceLocation": "#/tree/branch"
+    }
+  ],
+  "annotations": []
 }

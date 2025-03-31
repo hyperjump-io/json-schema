@@ -402,9 +402,9 @@ addKeyword({
     // );
   },
 
-  interpret: (implies, instance, ast, dynamicAnchors, quiet) => {
+  interpret: (implies, instance, context) => {
     return implies.reduce((valid, schema) => {
-      return !valid || Validation.interpret(schema, instance, ast, dynamicAnchors, quiet);
+      return !valid || Validation.interpret(schema, instance, context);
     }, true);
   }
 });
@@ -524,23 +524,30 @@ These are available from the `@hyperjump/json-schema/experimental` export.
           is needed for compiling sub-schemas. The `parentSchema` parameter is
           primarily useful for looking up the value of an adjacent keyword that
           might effect this one.
-      * interpret: (compiledKeywordValue: any, instance: JsonNode, ast: AST, dynamicAnchors: object, quiet: boolean, schemaLocation: string) => boolean
+      * interpret: (compiledKeywordValue: any, instance: JsonNode, context: ValidationContext) => boolean
 
           This function takes the value returned by the `compile` function and
           the instance value that is being validated and returns whether the
           value is valid or not. The other parameters are only needed for
           validating sub-schemas.
-      * collectEvaluatedProperties?: (compiledKeywordValue: any, instance: JsonNode, ast: AST, dynamicAnchors: object) => Set\<string> | false
+      * collectEvaluatedProperties?: (compiledKeywordValue: any, instance: JsonNode, context: ValidationContext, isTop?: boolean) => Set\<string> | false
 
           If the keyword is an applicator, it will need to implement this
           function for `unevaluatedProperties` to work as expected.
-      * collectEvaluatedItems?: (compiledKeywordValue: A, instance: JsonNode, ast: AST, dynamicAnchors: object) => Set\<number> | false
+      * collectEvaluatedItems?: (compiledKeywordValue: A, instance: JsonNode, context: ValidationContext, isTop?: boolean) => Set\<number> | false
 
           If the keyword is an applicator, it will need to implement this
           function for `unevaluatedItems` to work as expected.
       * collectExternalIds?: (visited: Set\<string>, parentSchema: Browser, schema: Browser) => Set\<string>
           If the keyword is an applicator, it will need to implement this
-      function to work properly with the [bundle](#bundling) feature.
+          function to work properly with the [bundle](#bundling) feature.
+
+    * **ValidationContext**: object
+      * ast: AST
+      * dynamicAnchors: object
+      * schemaUrl: string
+      * errors: OutputUnit[]
+      * annotations: OutputUnit[]
 * **defineVocabulary**: (id: string, keywords: { [keyword: string]: string }) => void
 
     Define a vocabulary that maps keyword name to keyword URIs defined using

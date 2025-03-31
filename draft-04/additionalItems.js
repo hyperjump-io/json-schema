@@ -14,7 +14,7 @@ const compile = async (schema, ast, parentSchema) => {
   return [numberOfItems, await Validation.compile(schema, ast)];
 };
 
-const interpret = ([numberOfItems, additionalItems], instance, ast, dynamicAnchors, quiet) => {
+const interpret = ([numberOfItems, additionalItems], instance, context) => {
   if (Instance.typeOf(instance) !== "array") {
     return true;
   }
@@ -22,12 +22,12 @@ const interpret = ([numberOfItems, additionalItems], instance, ast, dynamicAncho
   return pipe(
     Instance.iter(instance),
     drop(numberOfItems),
-    every((item) => Validation.interpret(additionalItems, item, ast, dynamicAnchors, quiet))
+    every((item) => Validation.interpret(additionalItems, item, context))
   );
 };
 
-const collectEvaluatedItems = (keywordValue, instance, ast, dynamicAnchors) => {
-  if (!interpret(keywordValue, instance, ast, dynamicAnchors, true)) {
+const collectEvaluatedItems = (keywordValue, instance, context) => {
+  if (!interpret(keywordValue, instance, context)) {
     return false;
   }
 

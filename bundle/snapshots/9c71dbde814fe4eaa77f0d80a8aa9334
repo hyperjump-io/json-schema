@@ -1,22 +1,5 @@
 {
-  "#": {
-    "errors": {},
-    "annotations": {}
-  },
-  "#/tree": {
-    "errors": {},
-    "annotations": {}
-  },
-  "#/tree/leaf": {
-    "errors": {},
-    "annotations": {}
-  },
-  "#/tree/branch": {
-    "errors": {},
-    "annotations": {}
-  },
-  "#/tree/branch/leaf": {
-    "errors": {},
-    "annotations": {}
-  }
+  "valid": true,
+  "errors": [],
+  "annotations": []
 }

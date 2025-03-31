@@ -1,14 +1,5 @@
 {
-  "#": {
-    "errors": {},
-    "annotations": {}
-  },
-  "#/foo": {
-    "errors": {},
-    "annotations": {}
-  },
-  "#/bar": {
-    "errors": {},
-    "annotations": {}
-  }
+  "valid": true,
+  "errors": [],
+  "annotations": []
 }

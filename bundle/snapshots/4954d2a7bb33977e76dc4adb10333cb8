@@ -1,18 +1,12 @@
 {
-  "#": {
-    "errors": {},
-    "annotations": {}
-  },
-  "#/foo": {
-    "errors": {},
-    "annotations": {}
-  },
-  "#/bar": {
-    "errors": {},
-    "annotations": {
-      "https://json-schema.org/keyword/title": {
-        "https://bundler.hyperjump.io/number#": "Number"
-      }
+  "valid": true,
+  "errors": [],
+  "annotations": [
+    {
+      "keyword": "https://json-schema.org/keyword/title",
+      "absoluteKeywordLocation": "https://bundler.hyperjump.io/number#/title",
+      "instanceLocation": "#/bar",
+      "annotation": "Number"
     }
-  }
+  ]
 }

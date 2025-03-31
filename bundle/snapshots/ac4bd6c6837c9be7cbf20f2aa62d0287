@@ -1,20 +1,26 @@
 {
-  "#": {
-    "errors": {
-      "https://test.json-schema.org/foo#/properties": "https://json-schema.org/keyword/properties",
-      "https://test.json-schema.org/foo#": "https://json-schema.org/evaluation/validate",
-      "https://test.json-schema.org/foobar#/allOf": "https://json-schema.org/keyword/allOf",
-      "https://test.json-schema.org/foobar#": "https://json-schema.org/evaluation/validate",
-      "https://bundler.hyperjump.io/main#/allOf": "https://json-schema.org/keyword/allOf",
-      "https://bundler.hyperjump.io/main#": "https://json-schema.org/evaluation/validate"
+  "valid": false,
+  "errors": [
+    {
+      "keyword": "https://json-schema.org/keyword/allOf",
+      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/allOf",
+      "instanceLocation": "#"
     },
-    "annotations": {}
-  },
-  "#/foo": {
-    "errors": {
-      "https://test.json-schema.org/string#/type": "https://json-schema.org/keyword/type",
-      "https://test.json-schema.org/string#": "https://json-schema.org/evaluation/validate"
+    {
+      "keyword": "https://json-schema.org/keyword/allOf",
+      "absoluteKeywordLocation": "https://test.json-schema.org/foobar#/allOf",
+      "instanceLocation": "#"
     },
-    "annotations": {}
-  }
+    {
+      "keyword": "https://json-schema.org/keyword/properties",
+      "absoluteKeywordLocation": "https://test.json-schema.org/foo#/properties",
+      "instanceLocation": "#"
+    },
+    {
+      "keyword": "https://json-schema.org/keyword/type",
+      "absoluteKeywordLocation": "https://test.json-schema.org/string#/type",
+      "instanceLocation": "#/foo"
+    }
+  ],
+  "annotations": []
 }

@@ -29,6 +29,7 @@ export type OutputUnit = {
   absoluteKeywordLocation: string;
   instanceLocation: string;
   valid: boolean;
+  annotation?: unknown;
   errors?: OutputUnit[];
 };
 

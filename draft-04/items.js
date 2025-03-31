@@ -18,24 +18,24 @@ const compile = (schema, ast) => {
   }
 };
 
-const interpret = (items, instance, ast, dynamicAnchors, quiet) => {
+const interpret = (items, instance, context) => {
   if (Instance.typeOf(instance) !== "array") {
     return true;
   }
 
   if (typeof items === "string") {
-    return every((itemValue) => Validation.interpret(items, itemValue, ast, dynamicAnchors, quiet), Instance.iter(instance));
+    return every((itemValue) => Validation.interpret(items, itemValue, context), Instance.iter(instance));
   } else {
     return pipe(
       zip(items, Instance.iter(instance)),
       take(Instance.length(instance)),
-      every(([prefixItem, item]) => Validation.interpret(prefixItem, item, ast, dynamicAnchors, quiet))
+      every(([prefixItem, item]) => Validation.interpret(prefixItem, item, context))
     );
   }
 };
 
-const collectEvaluatedItems = (items, instance, ast, dynamicAnchors) => {
-  return interpret(items, instance, ast, dynamicAnchors, true) && (typeof items === "string"
+const collectEvaluatedItems = (items, instance, context) => {
+  return interpret(items, instance, context) && (typeof items === "string"
     ? collectSet(range(0, Instance.length(instance)))
     : collectSet(range(0, items.length)));
 };

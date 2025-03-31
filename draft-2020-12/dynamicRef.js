@@ -12,12 +12,12 @@ const compile = async (dynamicRef, ast) => {
   return [referencedSchema.document.baseUri, fragment, canonicalUri(referencedSchema)];
 };
 
-const evaluate = (strategy, [id, fragment, ref], instance, ast, dynamicAnchors, quiet) => {
-  if (fragment in ast.metaData[id].dynamicAnchors) {
-    dynamicAnchors = { ...ast.metaData[id].dynamicAnchors, ...dynamicAnchors };
-    return strategy(dynamicAnchors[fragment], instance, ast, dynamicAnchors, quiet);
+const evaluate = (strategy, [id, fragment, ref], instance, context) => {
+  if (fragment in context.ast.metaData[id].dynamicAnchors) {
+    context.dynamicAnchors = { ...context.ast.metaData[id].dynamicAnchors, ...context.dynamicAnchors };
+    return strategy(context.dynamicAnchors[fragment], instance, context);
   } else {
-    return strategy(ref, instance, ast, dynamicAnchors, quiet);
+    return strategy(ref, instance, context);
   }
 };
 

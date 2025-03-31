@@ -1,17 +1,11 @@
 {
-  "#": {
-    "errors": {
-      "https://bundler.hyperjump.io/main#/type": "https://json-schema.org/keyword/type",
-      "https://bundler.hyperjump.io/main#": "https://json-schema.org/evaluation/validate"
-    },
-    "annotations": {}
-  },
-  "#/foo": {
-    "errors": {},
-    "annotations": {}
-  },
-  "#/foo/0": {
-    "errors": {},
-    "annotations": {}
-  }
+  "valid": false,
+  "errors": [
+    {
+      "keyword": "https://json-schema.org/keyword/type",
+      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/type",
+      "instanceLocation": "#"
+    }
+  ],
+  "annotations": []
 }

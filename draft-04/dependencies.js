@@ -15,7 +15,7 @@ const compile = (schema, ast) => pipe(
   asyncCollectArray
 );
 
-const interpret = (dependencies, instance, ast, dynamicAnchors, quiet) => {
+const interpret = (dependencies, instance, context) => {
   const value = Instance.value(instance);
 
   return Instance.typeOf(instance) !== "object" || dependencies.every(([propertyName, dependency]) => {
@@ -26,7 +26,7 @@ const interpret = (dependencies, instance, ast, dynamicAnchors, quiet) => {
     if (Array.isArray(dependency)) {
       return dependency.every((key) => key in value);
     } else {
-      return Validation.interpret(dependency, instance, ast, dynamicAnchors, quiet);
+      return Validation.interpret(dependency, instance, context);
     }
   });
 };

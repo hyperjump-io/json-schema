@@ -5,13 +5,6 @@ import { getKeywordId } from "../lib/keywords.js";
 
 const defaultDialectId = "https://json-schema.org/validation";
 
-export const setAnnotation = (node, keywordUri, schemaLocation, value) => {
-  if (!(keywordUri in node.annotations)) {
-    node.annotations[keywordUri] = {};
-  }
-  node.annotations[keywordUri][schemaLocation] = value;
-};
-
 export const annotation = (node, keyword, dialect = defaultDialectId) => {
   const keywordUri = getKeywordId(keyword, dialect);
 

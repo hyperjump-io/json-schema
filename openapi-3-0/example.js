@@ -6,8 +6,13 @@ const id = "https://spec.openapis.org/oas/3.0/keyword/example";
 
 const compile = (schema) => Browser.value(schema);
 
-const interpret = (example, instance, _ast, _dynamicAnchors, _quiet, schemaLocation) => {
-  Instance.setAnnotation(instance, id, schemaLocation, example);
+const interpret = (example, instance, { annotations, schemaUri }) => {
+  annotations.push({
+    keyword: id,
+    absoluteKeywordLocation: schemaUri,
+    instanceLocation: Instance.uri(instance),
+    annotation: example
+  });
   return true;
 };
 
