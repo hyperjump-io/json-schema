@@ -7,11 +7,6 @@
       "instanceLocation": "#"
     },
     {
-      "keyword": "https://json-schema.org/keyword/ref",
-      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/items/$ref",
-      "instanceLocation": "#/0"
-    },
-    {
       "keyword": "https://json-schema.org/keyword/type",
       "absoluteKeywordLocation": "https://bundler.hyperjump.io/string#/type",
       "instanceLocation": "#/0"

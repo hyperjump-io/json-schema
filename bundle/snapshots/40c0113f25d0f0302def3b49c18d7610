@@ -7,11 +7,6 @@
       "instanceLocation": "#"
     },
     {
-      "keyword": "https://json-schema.org/keyword/properties",
-      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/dependencies/foo/properties",
-      "instanceLocation": "#"
-    },
-    {
       "keyword": "https://json-schema.org/keyword/type",
       "absoluteKeywordLocation": "https://bundler.hyperjump.io/string#/type",
       "instanceLocation": "#/bar"

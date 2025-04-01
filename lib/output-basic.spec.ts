@@ -25,11 +25,6 @@ describe("Basic Output Format", () => {
         valid: false,
         errors: [
           {
-            keyword: "https://json-schema.org/keyword/ref",
-            absoluteKeywordLocation: `${schemaUri}#/$ref`,
-            instanceLocation: "#"
-          },
-          {
             keyword: "https://json-schema.org/keyword/type",
             absoluteKeywordLocation: `${schemaUri}#/$defs/string/type`,
             instanceLocation: "#"
@@ -60,11 +55,6 @@ describe("Basic Output Format", () => {
         valid: false,
         errors: [
           {
-            keyword: "https://json-schema.org/keyword/additionalProperties",
-            absoluteKeywordLocation: `${schemaUri}#/additionalProperties`,
-            instanceLocation: "#"
-          },
-          {
             keyword: "https://json-schema.org/evaluation/validate",
             absoluteKeywordLocation: `${schemaUri}#/additionalProperties`,
             instanceLocation: "#/foo"
@@ -80,11 +70,6 @@ describe("Basic Output Format", () => {
       expect(output).to.eql({
         valid: false,
         errors: [
-          {
-            keyword: "https://json-schema.org/keyword/additionalProperties",
-            absoluteKeywordLocation: `${schemaUri}#/additionalProperties`,
-            instanceLocation: "#"
-          },
           {
             keyword: "https://json-schema.org/evaluation/validate",
             absoluteKeywordLocation: `${schemaUri}#/additionalProperties`,
@@ -108,11 +93,6 @@ describe("Basic Output Format", () => {
       expect(output).to.eql({
         valid: false,
         errors: [
-          {
-            keyword: "https://json-schema.org/keyword/additionalProperties",
-            absoluteKeywordLocation: `${schemaUri}#/additionalProperties`,
-            instanceLocation: "#"
-          },
           {
             keyword: "https://json-schema.org/keyword/type",
             absoluteKeywordLocation: `${schemaUri}#/additionalProperties/type`,
@@ -143,11 +123,6 @@ describe("Basic Output Format", () => {
         valid: false,
         errors: [
           {
-            keyword: "https://json-schema.org/keyword/allOf",
-            absoluteKeywordLocation: `${schemaUri}#/allOf`,
-            instanceLocation: "#"
-          },
-          {
             keyword: "https://json-schema.org/keyword/maximum",
             absoluteKeywordLocation: `${schemaUri}#/allOf/1/maximum`,
             instanceLocation: "#"
@@ -169,11 +144,6 @@ describe("Basic Output Format", () => {
       expect(output).to.eql({
         valid: false,
         errors: [
-          {
-            keyword: "https://json-schema.org/keyword/allOf",
-            absoluteKeywordLocation: `${schemaUri}#/allOf`,
-            instanceLocation: "#"
-          },
           {
             keyword: "https://json-schema.org/keyword/maximum",
             absoluteKeywordLocation: `${schemaUri}#/allOf/0/maximum`,
@@ -367,11 +337,6 @@ describe("Basic Output Format", () => {
         valid: false,
         errors: [
           {
-            keyword: "https://json-schema.org/keyword/dependentSchemas",
-            absoluteKeywordLocation: `${schemaUri}#/dependentSchemas`,
-            instanceLocation: "#"
-          },
-          {
             keyword: "https://json-schema.org/keyword/required",
             absoluteKeywordLocation: `${schemaUri}#/dependentSchemas/foo/required`,
             instanceLocation: "#"
@@ -392,11 +357,6 @@ describe("Basic Output Format", () => {
       expect(output).to.eql({
         valid: false,
         errors: [
-          {
-            keyword: "https://json-schema.org/keyword/dependentSchemas",
-            absoluteKeywordLocation: `${schemaUri}#/dependentSchemas`,
-            instanceLocation: "#"
-          },
           {
             keyword: "https://json-schema.org/keyword/required",
             absoluteKeywordLocation: `${schemaUri}#/dependentSchemas/foo/required`,
@@ -435,11 +395,6 @@ describe("Basic Output Format", () => {
         valid: false,
         errors: [
           {
-            keyword: "https://json-schema.org/keyword/then",
-            absoluteKeywordLocation: `${schemaUri}#/then`,
-            instanceLocation: "#"
-          },
-          {
             keyword: "https://json-schema.org/keyword/minLength",
             absoluteKeywordLocation: `${schemaUri}#/then/minLength`,
             instanceLocation: "#"
@@ -471,11 +426,6 @@ describe("Basic Output Format", () => {
         valid: false,
         errors: [
           {
-            keyword: "https://json-schema.org/keyword/else",
-            absoluteKeywordLocation: `${schemaUri}#/else`,
-            instanceLocation: "#"
-          },
-          {
             keyword: "https://json-schema.org/keyword/minimum",
             absoluteKeywordLocation: `${schemaUri}#/else/minimum`,
             instanceLocation: "#"
@@ -505,11 +455,6 @@ describe("Basic Output Format", () => {
       expect(output).to.eql({
         valid: false,
         errors: [
-          {
-            keyword: "https://json-schema.org/keyword/items",
-            absoluteKeywordLocation: `${schemaUri}#/items`,
-            instanceLocation: "#"
-          },
           {
             keyword: "https://json-schema.org/keyword/type",
             absoluteKeywordLocation: `${schemaUri}#/items/type`,
@@ -546,11 +491,6 @@ describe("Basic Output Format", () => {
       expect(output).to.eql({
         valid: false,
         errors: [
-          {
-            keyword: "https://json-schema.org/keyword/patternProperties",
-            absoluteKeywordLocation: `${schemaUri}#/patternProperties`,
-            instanceLocation: "#"
-          },
           {
             keyword: "https://json-schema.org/keyword/type",
             absoluteKeywordLocation: `${schemaUri}#/patternProperties/%5Ef/type`,
@@ -591,11 +531,6 @@ describe("Basic Output Format", () => {
         valid: false,
         errors: [
           {
-            keyword: "https://json-schema.org/keyword/prefixItems",
-            absoluteKeywordLocation: `${schemaUri}#/prefixItems`,
-            instanceLocation: "#"
-          },
-          {
             keyword: "https://json-schema.org/keyword/type",
             absoluteKeywordLocation: `${schemaUri}#/prefixItems/0/type`,
             instanceLocation: "#/0"
@@ -635,11 +570,6 @@ describe("Basic Output Format", () => {
         valid: false,
         errors: [
           {
-            keyword: "https://json-schema.org/keyword/properties",
-            absoluteKeywordLocation: `${schemaUri}#/properties`,
-            instanceLocation: "#"
-          },
-          {
             keyword: "https://json-schema.org/keyword/type",
             absoluteKeywordLocation: `${schemaUri}#/properties/foo/type`,
             instanceLocation: "#/foo"
@@ -675,11 +605,6 @@ describe("Basic Output Format", () => {
       expect(output).to.eql({
         valid: false,
         errors: [
-          {
-            keyword: "https://json-schema.org/keyword/propertyNames",
-            absoluteKeywordLocation: `${schemaUri}#/propertyNames`,
-            instanceLocation: "#"
-          },
           {
             keyword: "https://json-schema.org/keyword/pattern",
             absoluteKeywordLocation: `${schemaUri}#/propertyNames/pattern`,
@@ -1213,11 +1138,6 @@ describe("Basic Output Format", () => {
       valid: false,
       errors: [
         {
-          keyword: "https://json-schema.org/keyword/properties",
-          absoluteKeywordLocation: `${schemaUri}#/properties`,
-          instanceLocation: "#"
-        },
-        {
           keyword: "https://json-schema.org/keyword/type",
           absoluteKeywordLocation: `${schemaUri}#/properties/foo/type`,
           instanceLocation: "#/foo"
@@ -1246,16 +1166,6 @@ describe("Basic Output Format", () => {
     expect(output).to.eql({
       valid: false,
       errors: [
-        {
-          keyword: "https://json-schema.org/keyword/properties",
-          absoluteKeywordLocation: `${schemaUri}#/properties`,
-          instanceLocation: "#"
-        },
-        {
-          keyword: "https://json-schema.org/keyword/properties",
-          absoluteKeywordLocation: `${schemaUri}#/properties/foo/properties`,
-          instanceLocation: "#/foo"
-        },
         {
           keyword: "https://json-schema.org/keyword/type",
           absoluteKeywordLocation: `${schemaUri}#/properties/foo/properties/bar/type`,

@@ -2,16 +2,6 @@
   "valid": false,
   "errors": [
     {
-      "keyword": "https://json-schema.org/keyword/properties",
-      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/properties",
-      "instanceLocation": "#"
-    },
-    {
-      "keyword": "https://json-schema.org/keyword/ref",
-      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/properties/foo/$ref",
-      "instanceLocation": "#/foo"
-    },
-    {
       "keyword": "https://json-schema.org/keyword/draft-04/items",
       "absoluteKeywordLocation": "https://test.json-schema.org/tuple#/items",
       "instanceLocation": "#/foo"

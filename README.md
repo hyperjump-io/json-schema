@@ -530,6 +530,12 @@ These are available from the `@hyperjump/json-schema/experimental` export.
           the instance value that is being validated and returns whether the
           value is valid or not. The other parameters are only needed for
           validating sub-schemas.
+      * simpleApplicator?: boolean
+
+          Some applicator keywords just apply schemas and don't do any
+          validation of its own. In these cases, it isn't helpful to include
+          them in BASIC output. This flag is used to trim those nodes from the
+          output.
       * collectEvaluatedProperties?: (compiledKeywordValue: any, instance: JsonNode, context: ValidationContext, isTop?: boolean) => Set\<string> | false
 
           If the keyword is an applicator, it will need to implement this

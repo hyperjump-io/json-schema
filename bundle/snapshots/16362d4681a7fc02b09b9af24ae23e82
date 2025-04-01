@@ -2,16 +2,6 @@
   "valid": false,
   "errors": [
     {
-      "keyword": "https://json-schema.org/keyword/unevaluatedItems",
-      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/unevaluatedItems",
-      "instanceLocation": "#"
-    },
-    {
-      "keyword": "https://json-schema.org/keyword/ref",
-      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/unevaluatedItems/$ref",
-      "instanceLocation": "#/0"
-    },
-    {
       "keyword": "https://json-schema.org/keyword/type",
       "absoluteKeywordLocation": "https://bundler.hyperjump.io/string#/type",
       "instanceLocation": "#/0"

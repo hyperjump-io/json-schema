@@ -2,16 +2,6 @@
   "valid": false,
   "errors": [
     {
-      "keyword": "https://json-schema.org/keyword/propertyNames",
-      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/propertyNames",
-      "instanceLocation": "#"
-    },
-    {
-      "keyword": "https://json-schema.org/keyword/ref",
-      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/propertyNames/$ref",
-      "instanceLocation": "#/foobar"
-    },
-    {
       "keyword": "https://json-schema.org/keyword/maxLength",
       "absoluteKeywordLocation": "https://test.json-schema.org/short-string#/maxLength",
       "instanceLocation": "#/foobar"

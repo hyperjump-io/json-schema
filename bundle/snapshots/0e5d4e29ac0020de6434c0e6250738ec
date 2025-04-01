@@ -2,21 +2,6 @@
   "valid": false,
   "errors": [
     {
-      "keyword": "https://json-schema.org/keyword/properties",
-      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/properties",
-      "instanceLocation": "#"
-    },
-    {
-      "keyword": "https://json-schema.org/keyword/ref",
-      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/properties/foo/$ref",
-      "instanceLocation": "#/foo"
-    },
-    {
-      "keyword": "https://json-schema.org/keyword/ref",
-      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/$defs/string/$ref",
-      "instanceLocation": "#/foo"
-    },
-    {
       "keyword": "https://json-schema.org/keyword/type",
       "absoluteKeywordLocation": "https://bundler.hyperjump.io/string#/type",
       "instanceLocation": "#/foo"

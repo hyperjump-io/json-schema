@@ -2,11 +2,6 @@
   "valid": false,
   "errors": [
     {
-      "keyword": "https://json-schema.org/keyword/patternProperties",
-      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/patternProperties",
-      "instanceLocation": "#"
-    },
-    {
       "keyword": "https://json-schema.org/keyword/type",
       "absoluteKeywordLocation": "https://bundler.hyperjump.io/string#/type",
       "instanceLocation": "#/foo"

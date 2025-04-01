@@ -2,11 +2,6 @@
   "valid": false,
   "errors": [
     {
-      "keyword": "https://json-schema.org/keyword/allOf",
-      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/allOf",
-      "instanceLocation": "#"
-    },
-    {
       "keyword": "https://json-schema.org/keyword/type",
       "absoluteKeywordLocation": "https://bundler.hyperjump.io/string#/type",
       "instanceLocation": "#"

@@ -2,21 +2,6 @@
   "valid": false,
   "errors": [
     {
-      "keyword": "https://json-schema.org/keyword/properties",
-      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/properties",
-      "instanceLocation": "#"
-    },
-    {
-      "keyword": "https://json-schema.org/keyword/ref",
-      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/properties/tree/$ref",
-      "instanceLocation": "#/tree"
-    },
-    {
-      "keyword": "https://json-schema.org/keyword/properties",
-      "absoluteKeywordLocation": "https://test.json-schema.org/tree#/properties",
-      "instanceLocation": "#/tree"
-    },
-    {
       "keyword": "https://json-schema.org/keyword/draft-2020-12/dynamicRef",
       "absoluteKeywordLocation": "https://test.json-schema.org/tree#/properties/branch/$recursiveRef",
       "instanceLocation": "#/tree/branch"
