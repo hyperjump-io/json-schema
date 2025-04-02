@@ -60,7 +60,7 @@ const testRunner = (version: number, dialect: string) => {
                 const instance = Instance.fromJs(test.instance);
                 const errors: OutputUnit[] = [];
                 const annotations: OutputUnit[] = [];
-                const context = { ast, schemaUri, dynamicAnchors: {}, errors, annotations, outputFormat: BASIC };
+                const context = { ast, dynamicAnchors: {}, errors, annotations, outputFormat: BASIC };
                 const valid = Validation.interpret(schemaUri, instance, context);
 
                 const output = { valid, errors, annotations };

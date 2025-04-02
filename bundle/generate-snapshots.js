@@ -30,7 +30,7 @@ const snapshotGenerator = async (version, dialect) => {
       const instance = Instance.fromJs(test.instance);
       const errors = [];
       const annotations = [];
-      const context = { ast, schemaUri, dynamicAnchors: {}, errors, annotations, outputFormat: BASIC };
+      const context = { ast, dynamicAnchors: {}, errors, annotations, outputFormat: BASIC };
       const valid = Validation.interpret(schemaUri, instance, context);
 
       const expectedOutput = { valid, errors, annotations };

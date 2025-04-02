@@ -73,11 +73,11 @@ export type Keyword<A> = {
   collectEvaluatedProperties?: (compiledKeywordValue: A, instance: JsonNode, context: ValidationContext, isTop?: boolean) => Set<string> | false;
   collectEvaluatedItems?: (compiledKeywordValue: A, instance: JsonNode, context: ValidationContext, isTop?: boolean) => Set<number> | false;
   collectExternalIds?: (visited: Set<string>, parentSchema: Browser<SchemaDocument>, schema: Browser<SchemaDocument>) => Promise<Set<string>>;
+  annotation?: <B>(compiledKeywordValue: A) => B;
 };
 
 export type ValidationContext = {
   ast: AST;
-  schemaUri: string;
   dynamicAnchors: Anchors;
   errors: OutputUnit[];
   annotations: OutputUnit[];

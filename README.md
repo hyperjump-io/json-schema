@@ -547,6 +547,10 @@ These are available from the `@hyperjump/json-schema/experimental` export.
       * collectExternalIds?: (visited: Set\<string>, parentSchema: Browser, schema: Browser) => Set\<string>
           If the keyword is an applicator, it will need to implement this
           function to work properly with the [bundle](#bundling) feature.
+      * annotation?: (compiledKeywordValue: any) => any
+
+          If the keyword is an annotation, it will need to implement this
+          function to return the annotation.
 
     * **ValidationContext**: object
       * ast: AST
@@ -696,7 +700,7 @@ Schema.
 
 ### Usage
 An annotated JSON document is represented as a
-(JsonNode)[#/instance-api-experimental] AST. You can use this AST to traverse
+(JsonNode)[#instance-api-experimental] AST. You can use this AST to traverse
 the data structure and get annotations for the values it represents.
 
 ```javascript

@@ -16,7 +16,7 @@ export const annotate = async (schemaUri, json = undefined, outputFormat = undef
 export const interpret = ({ ast, schemaUri }, instance, outputFormat = BASIC) => {
   const errors = [];
   const annotations = [];
-  const context = { ast, schemaUri, dynamicAnchors: {}, errors, annotations, outputFormat };
+  const context = { ast, dynamicAnchors: {}, errors, annotations, outputFormat };
   const valid = Validation.interpret(schemaUri, instance, context);
 
   if (!valid) {
