@@ -2,9 +2,10 @@ import type { Json } from "@hyperjump/json-pointer";
 import type { JsonSchemaType } from "../lib/common.js";
 
 
-export type JsonSchemaDraft06 = boolean | {
+export type JsonSchemaDraft06Ref = {
   $ref: string;
-} | {
+};
+export type JsonSchemaDraft06Object = {
   $schema?: "http://json-schema.org/draft-06/schema#";
   $id?: string;
   title?: string;
@@ -43,5 +44,6 @@ export type JsonSchemaDraft06 = boolean | {
   oneOf?: JsonSchemaDraft06[];
   not?: JsonSchemaDraft06;
 };
+export type JsonSchemaDraft06 = boolean | JsonSchemaDraft06Ref | JsonSchemaDraft06Object;
 
 export * from "../lib/index.js";
