@@ -2,6 +2,8 @@ import type { Json } from "@hyperjump/json-pointer";
 import type { JsonSchemaType } from "../lib/common.js";
 
 
+export type JsonSchemaType = JsonSchemaType;
+
 export type JsonSchema = boolean | {
   $schema?: "https://json-schema.org/validation";
   $id?: string;
