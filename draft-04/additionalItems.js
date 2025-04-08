@@ -26,6 +26,8 @@ const interpret = ([numberOfItems, additionalItems], instance, context) => {
   );
 };
 
+const simpleApplicator = true;
+
 const collectEvaluatedItems = (keywordValue, instance, context) => {
   if (!interpret(keywordValue, instance, context)) {
     return false;
@@ -39,4 +41,4 @@ const collectEvaluatedItems = (keywordValue, instance, context) => {
   return evaluatedIndexes;
 };
 
-export default { id, compile, interpret, collectEvaluatedItems };
+export default { id, compile, interpret, simpleApplicator, collectEvaluatedItems };

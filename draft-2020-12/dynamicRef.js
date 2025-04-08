@@ -21,8 +21,10 @@ const evaluate = (strategy, [id, fragment, ref], instance, context) => {
   }
 };
 
+const simpleApplicator = true;
+
 const interpret = (...args) => evaluate(Validation.interpret, ...args);
 const collectEvaluatedProperties = (...args) => evaluate(Validation.collectEvaluatedProperties, ...args);
 const collectEvaluatedItems = (...args) => evaluate(Validation.collectEvaluatedItems, ...args);
 
-export default { id, compile, interpret, collectEvaluatedProperties, collectEvaluatedItems };
+export default { id, compile, interpret, simpleApplicator, collectEvaluatedProperties, collectEvaluatedItems };

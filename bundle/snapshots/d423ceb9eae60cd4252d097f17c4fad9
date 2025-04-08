@@ -2,9 +2,23 @@
   "valid": false,
   "errors": [
     {
-      "keyword": "https://json-schema.org/keyword/type",
-      "absoluteKeywordLocation": "https://bundler.hyperjump.io/string#/type",
-      "instanceLocation": "#/foo"
+      "keyword": "https://json-schema.org/keyword/properties",
+      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/properties",
+      "instanceLocation": "#",
+      "errors": [
+        {
+          "keyword": "https://json-schema.org/keyword/ref",
+          "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/properties/foo/$ref",
+          "instanceLocation": "#/foo",
+          "errors": [
+            {
+              "keyword": "https://json-schema.org/keyword/type",
+              "absoluteKeywordLocation": "https://bundler.hyperjump.io/string#/type",
+              "instanceLocation": "#/foo"
+            }
+          ]
+        }
+      ]
     }
   ],
   "annotations": []

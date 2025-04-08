@@ -2,9 +2,16 @@
   "valid": false,
   "errors": [
     {
-      "keyword": "https://json-schema.org/keyword/maxLength",
-      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/then/maxLength",
-      "instanceLocation": "#"
+      "keyword": "https://json-schema.org/keyword/then",
+      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/then",
+      "instanceLocation": "#",
+      "errors": [
+        {
+          "keyword": "https://json-schema.org/keyword/maxLength",
+          "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/then/maxLength",
+          "instanceLocation": "#"
+        }
+      ]
     }
   ],
   "annotations": []

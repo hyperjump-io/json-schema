@@ -31,4 +31,6 @@ const interpret = (dependencies, instance, context) => {
   });
 };
 
-export default { id, compile, interpret };
+const simpleApplicator = true;
+
+export default { id, compile, interpret, simpleApplicator };

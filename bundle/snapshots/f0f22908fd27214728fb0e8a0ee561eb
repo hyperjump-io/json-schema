@@ -4,12 +4,21 @@
     {
       "keyword": "https://json-schema.org/keyword/anyOf",
       "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/anyOf",
-      "instanceLocation": "#"
-    },
-    {
-      "keyword": "https://json-schema.org/keyword/type",
-      "absoluteKeywordLocation": "https://bundler.hyperjump.io/string#/type",
-      "instanceLocation": "#"
+      "instanceLocation": "#",
+      "errors": [
+        {
+          "keyword": "https://json-schema.org/keyword/ref",
+          "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/anyOf/0/$ref",
+          "instanceLocation": "#",
+          "errors": [
+            {
+              "keyword": "https://json-schema.org/keyword/type",
+              "absoluteKeywordLocation": "https://bundler.hyperjump.io/string#/type",
+              "instanceLocation": "#"
+            }
+          ]
+        }
+      ]
     }
   ],
   "annotations": []

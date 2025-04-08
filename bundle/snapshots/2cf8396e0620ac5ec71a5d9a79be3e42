@@ -4,12 +4,14 @@
     {
       "keyword": "https://json-schema.org/keyword/draft-04/items",
       "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/items",
-      "instanceLocation": "#"
-    },
-    {
-      "keyword": "https://json-schema.org/keyword/type",
-      "absoluteKeywordLocation": "https://bundler.hyperjump.io/string#/type",
-      "instanceLocation": "#/0"
+      "instanceLocation": "#",
+      "errors": [
+        {
+          "keyword": "https://json-schema.org/keyword/type",
+          "absoluteKeywordLocation": "https://bundler.hyperjump.io/string#/type",
+          "instanceLocation": "#/0"
+        }
+      ]
     }
   ],
   "annotations": []

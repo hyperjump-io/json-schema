@@ -2,14 +2,30 @@
   "valid": false,
   "errors": [
     {
-      "keyword": "https://json-schema.org/keyword/draft-2020-12/dynamicRef",
-      "absoluteKeywordLocation": "https://test.json-schema.org/list#/items/$dynamicRef",
-      "instanceLocation": "#/0"
-    },
-    {
-      "keyword": "https://json-schema.org/keyword/type",
-      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/$defs/element/type",
-      "instanceLocation": "#/0"
+      "keyword": "https://json-schema.org/keyword/ref",
+      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/$ref",
+      "instanceLocation": "#",
+      "errors": [
+        {
+          "keyword": "https://json-schema.org/keyword/items",
+          "absoluteKeywordLocation": "https://test.json-schema.org/list#/items",
+          "instanceLocation": "#",
+          "errors": [
+            {
+              "keyword": "https://json-schema.org/keyword/draft-2020-12/dynamicRef",
+              "absoluteKeywordLocation": "https://test.json-schema.org/list#/items/$dynamicRef",
+              "instanceLocation": "#/0",
+              "errors": [
+                {
+                  "keyword": "https://json-schema.org/keyword/type",
+                  "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/$defs/element/type",
+                  "instanceLocation": "#/0"
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   ],
   "annotations": []

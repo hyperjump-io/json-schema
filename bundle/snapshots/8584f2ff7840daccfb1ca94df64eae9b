@@ -2,9 +2,23 @@
   "valid": false,
   "errors": [
     {
-      "keyword": "https://json-schema.org/keyword/maxLength",
-      "absoluteKeywordLocation": "https://test.json-schema.org/short-string#/maxLength",
-      "instanceLocation": "#"
+      "keyword": "https://json-schema.org/keyword/then",
+      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/then",
+      "instanceLocation": "#",
+      "errors": [
+        {
+          "keyword": "https://json-schema.org/keyword/ref",
+          "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/then/$ref",
+          "instanceLocation": "#",
+          "errors": [
+            {
+              "keyword": "https://json-schema.org/keyword/maxLength",
+              "absoluteKeywordLocation": "https://test.json-schema.org/short-string#/maxLength",
+              "instanceLocation": "#"
+            }
+          ]
+        }
+      ]
     }
   ],
   "annotations": []

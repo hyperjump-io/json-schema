@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { isCompatible, md5, loadSchemas, unloadSchemas, testSuite } from "./test-utils.js";
 import { registerSchema, unregisterSchema } from "../lib/index.js";
-import { BASIC, compile, getKeywordName, getSchema, Validation } from "../lib/experimental.js";
+import { DETAILED, compile, getKeywordName, getSchema, Validation } from "../lib/experimental.js";
 import * as Instance from "../lib/instance.js";
 import "../stable/index.js";
 import "../draft-2020-12/index.js";
@@ -60,7 +60,7 @@ const testRunner = (version: number, dialect: string) => {
                 const instance = Instance.fromJs(test.instance);
                 const errors: OutputUnit[] = [];
                 const annotations: OutputUnit[] = [];
-                const context = { ast, dynamicAnchors: {}, errors, annotations, outputFormat: BASIC };
+                const context = { ast, dynamicAnchors: {}, errors, annotations, outputFormat: DETAILED };
                 const valid = Validation.interpret(schemaUri, instance, context);
 
                 const output = { valid, errors, annotations };

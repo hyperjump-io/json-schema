@@ -34,10 +34,12 @@ const interpret = (items, instance, context) => {
   }
 };
 
+const simpleApplicator = true;
+
 const collectEvaluatedItems = (items, instance, context) => {
   return interpret(items, instance, context) && (typeof items === "string"
     ? collectSet(range(0, Instance.length(instance)))
     : collectSet(range(0, items.length)));
 };
 
-export default { id, compile, interpret, collectEvaluatedItems };
+export default { id, compile, interpret, simpleApplicator, collectEvaluatedItems };
