@@ -1,12 +1,12 @@
 import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-import { describe, it, expect, beforeEach, beforeAll, afterAll } from "vitest";
+import { describe, test, expect, beforeEach, beforeAll, afterAll } from "vitest";
+import { isCompatible } from "./test-utils.js";
 import { toAbsoluteIri } from "@hyperjump/uri";
 import { annotate } from "./index.js";
 import { registerSchema, unregisterSchema } from "../lib/index.js";
 import "../stable/index.js";
 import "../draft-2020-12/index.js";
+import "../draft-2019-09/index.js";
 import "../draft-07/index.js";
 import "../draft-06/index.js";
 import "../draft-04/index.js";
@@ -19,12 +19,18 @@ import type { Json } from "@hyperjump/json-pointer";
 
 
 type Suite = {
-  title: string;
-  schema: SchemaObject;
-  subjects: Subject[];
+  description: string;
+  suite: TestCase[];
 };
 
-type Subject = {
+type TestCase = {
+  description: string;
+  compatibility: string;
+  schema: SchemaObject;
+  tests: Test[];
+};
+
+type Test = {
   instance: Json;
   assertions: Assertion[];
 };
@@ -35,57 +41,68 @@ type Assertion = {
   expected: unknown[];
 };
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const dialectId = "https://json-schema.org/validation";
 const host = "https://annotations.json-schema.hyperjump.io";
 
-const testSuiteFilePath = `${__dirname}/tests`;
+const testSuiteFilePath = "./node_modules/json-schema-test-suite/annotations/tests";
 
-describe("Annotations", () => {
-  fs.readdirSync(testSuiteFilePath, { withFileTypes: true })
-    .filter((entry) => entry.isFile() && entry.name.endsWith(".json"))
-    .forEach((entry) => {
-      const file = `${testSuiteFilePath}/${entry.name}`;
-      const suites = JSON.parse(fs.readFileSync(file, "utf8")) as Suite[];
+const testRunner = (version: number, dialect: string) => {
+  describe(dialect, () => {
+    fs.readdirSync(testSuiteFilePath, { withFileTypes: true })
+      .filter((entry) => entry.isFile() && entry.name.endsWith(".json"))
+      .forEach((entry) => {
+        const file = `${testSuiteFilePath}/${entry.name}`;
+        const suite = JSON.parse(fs.readFileSync(file, "utf8")) as Suite;
 
-      suites.forEach((suite) => {
-        describe(suite.title + "\n" + JSON.stringify(suite.schema, null, "  "), () => {
-          let annotator: Annotator;
-          let id: string;
+        for (const testCase of suite.suite) {
+          if (!isCompatible(testCase.compatibility, version)) {
+            continue;
+          }
 
-          beforeAll(async () => {
-            id = `${host}/${encodeURIComponent(suite.title)}`;
-            registerSchema(suite.schema, id, dialectId);
+          describe(testCase.description + "\n" + JSON.stringify(testCase.schema, null, "  "), () => {
+            let annotator: Annotator;
+            let id: string;
 
-            annotator = await annotate(id);
-          });
+            beforeAll(async () => {
+              id = `${host}/${encodeURIComponent(testCase.description)}`;
+              registerSchema(testCase.schema, id, dialect);
 
-          afterAll(() => {
-            unregisterSchema(id);
-          });
-
-          suite.subjects.forEach((subject) => {
-            describe("Instance: " + JSON.stringify(subject.instance), () => {
-              let instance: JsonNode;
-
-              beforeEach(() => {
-                // TODO: What's wrong with the type?
-                instance = annotator(subject.instance); // eslint-disable-line @typescript-eslint/no-unsafe-assignment
-              });
-
-              subject.assertions.forEach((assertion) => {
-                it(`${assertion.keyword} annotations at '${assertion.location}' should be ${JSON.stringify(assertion.expected)}`, () => {
-                  const dialect: string | undefined = suite.schema.$schema ? toAbsoluteIri(suite.schema.$schema as string) : undefined;
-                  const subject = Instance.get(assertion.location, instance);
-                  const annotations = subject ? Instance.annotation(subject, assertion.keyword, dialect) : [];
-                  expect(annotations).to.eql(assertion.expected);
-                });
-              });
+              annotator = await annotate(id);
             });
+
+            afterAll(() => {
+              unregisterSchema(id);
+            });
+
+            for (const subject of testCase.tests) {
+              describe("Instance: " + JSON.stringify(subject.instance), () => {
+                let instance: JsonNode;
+
+                beforeEach(() => {
+                  // TODO: What's wrong with the type?
+                  instance = annotator(subject.instance); // eslint-disable-line @typescript-eslint/no-unsafe-assignment
+                });
+
+                for (const assertion of subject.assertions) {
+                  test(`${assertion.keyword} annotations at '${assertion.location}' should be ${JSON.stringify(assertion.expected)}`, () => {
+                    const dialect: string | undefined = testCase.schema.$schema ? toAbsoluteIri(testCase.schema.$schema as string) : undefined;
+                    const subject = Instance.get(`#${assertion.location}`, instance);
+                    const annotations = subject ? Instance.annotation(subject, assertion.keyword, dialect) : [];
+                    expect(annotations).to.eql(Object.values(assertion.expected));
+                  });
+                }
+              });
+            }
           });
-        });
+        }
       });
-    });
+  });
+};
+
+describe("annotations", () => {
+  testRunner(9999, "https://json-schema.org/validation");
+  testRunner(2020, "https://json-schema.org/draft/2020-12/schema");
+  testRunner(2019, "https://json-schema.org/draft/2019-09/schema");
+  testRunner(7, "http://json-schema.org/draft-07/schema");
+  testRunner(6, "http://json-schema.org/draft-06/schema");
+  testRunner(4, "http://json-schema.org/draft-04/schema");
 });
