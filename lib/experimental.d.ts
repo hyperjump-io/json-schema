@@ -18,7 +18,7 @@ export type CompiledSchema = {
 
 type AST = {
   metaData: Record<string, MetaData>;
-} & Record<string, Node<Node<unknown>[] | boolean>>;
+} & Record<string, Node<unknown>[] | boolean>;
 
 type Node<A> = [keywordId: string, schemaUri: string, keywordValue: A];
 
@@ -81,6 +81,7 @@ export type ValidationContext = {
   dynamicAnchors: Anchors;
   errors: OutputUnit[];
   annotations: OutputUnit[];
+  outputFormat: OutputFormat;
 };
 
 export const Validation: Keyword<string>;
