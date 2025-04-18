@@ -800,7 +800,7 @@ following functions are available in addition to the functions available in the
 * **annotation**: (instance: JsonNode, keyword: string, dialect?: string): any[];
 
     Get the annotations for a keyword for the value represented by the JsonNode.
-* **annotatedWith**: (instance: JsonNode, keyword: string, dialect?: string): JsonNode[];
+* **annotatedWith**: (instance: JsonNode, keyword: string, dialect?: string): Generator<JsonNode>;
 
     Get all JsonNodes that are annotated with the given keyword.
 * **setAnnotation**: (instance: JsonNode, keywordId: string, value: any) => JsonNode
