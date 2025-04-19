@@ -30,7 +30,7 @@ export const interpret = ({ ast, schemaUri }, instance, outputFormat = BASIC) =>
     if (!node.annotations[keyword]) {
       node.annotations[keyword] = [];
     }
-    node.annotations[keyword].push(annotation.annotation);
+    node.annotations[keyword].unshift(annotation.annotation);
   }
 
   return instance;
