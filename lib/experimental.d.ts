@@ -78,10 +78,26 @@ export type Keyword<A> = {
 
 export type ValidationContext = {
   ast: AST;
+  plugins: EvaluationPlugin<unknow>[];
   dynamicAnchors: Anchors;
+};
+
+export type EvaluationPlugin<Context> = {
+  beforeSchema(schemaContext: Context): void;
+  beforeKeyword(keywordContext: Context, schemaContext: Context): void;
+  afterKeyword(keywordNode: JsonNode, instanceNode: JsonNode, valid: boolean, keywordContext: Context, schemaContext: Context, keyword: Keyword): void;
+  afterSchema(schemaNode: JsonNode, instanceNode: JsonNode, valid: boolean, schemaContext: Context): void;
+};
+
+export const basicOutputPlugin: EvaluationPlugin<ErrorsContext>;
+export const detailedOutputPlugin: EvaluationPlugin<ErrorsContext>;
+export type ErrorsContext = {
   errors: OutputUnit[];
+};
+
+export const annotationsPlugin: EvaluationPlugin<AnnotationsContext>;
+export type AnnotationsContext = {
   annotations: OutputUnit[];
-  outputFormat: OutputFormat;
 };
 
 export const Validation: Keyword<string>;

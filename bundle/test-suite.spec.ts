@@ -2,7 +2,14 @@ import { readFile } from "node:fs/promises";
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { isCompatible, md5, loadSchemas, unloadSchemas, testSuite } from "./test-utils.js";
 import { registerSchema, unregisterSchema } from "../lib/index.js";
-import { DETAILED, compile, getKeywordName, getSchema, Validation } from "../lib/experimental.js";
+import {
+  annotationsPlugin,
+  compile,
+  detailedOutputPlugin,
+  getKeywordName,
+  getSchema,
+  Validation
+} from "../lib/experimental.js";
 import * as Instance from "../lib/instance.js";
 import "../stable/index.js";
 import "../draft-2020-12/index.js";
@@ -14,6 +21,7 @@ import { bundle, URI, UUID } from "./index.js";
 
 import type { BundleOptions } from "./index.js";
 import type { OutputUnit } from "../lib/index.js";
+import type { AnnotationsContext, ErrorsContext, ValidationContext } from "../lib/experimental.js";
 
 
 const suite = testSuite("./bundle/tests");
@@ -58,12 +66,20 @@ const testRunner = (version: number, dialect: string) => {
                 const { ast, schemaUri } = await compile(schema);
 
                 const instance = Instance.fromJs(test.instance);
-                const errors: OutputUnit[] = [];
-                const annotations: OutputUnit[] = [];
-                const context = { ast, dynamicAnchors: {}, errors, annotations, outputFormat: DETAILED };
+                const context = {
+                  ast,
+                  plugins: [detailedOutputPlugin, annotationsPlugin],
+                  dynamicAnchors: {},
+                  errors: [],
+                  annotations: []
+                } as ValidationContext & ErrorsContext & AnnotationsContext;
                 const valid = Validation.interpret(schemaUri, instance, context);
 
-                const output = { valid, errors, annotations };
+                const output = {
+                  valid,
+                  errors: context.errors,
+                  annotations: context.annotations
+                };
 
                 const testId = md5(`${version}|${dialect}|${testCase.description}|${testIndex}`);
                 const expectedOutputJson = await readFile(`./bundle/snapshots/${testId}`, "utf-8");

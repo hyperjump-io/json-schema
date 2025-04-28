@@ -1,8 +1,11 @@
 import { FLAG } from "../lib/index.js";
 import { ValidationError } from "./validation-error.js";
-import { getSchema, compile, BASIC } from "../lib/experimental.js";
+import { getSchema, compile, BASIC, DETAILED } from "../lib/experimental.js";
 import Validation from "../lib/keywords/validation.js";
 import * as Instance from "../lib/instance.js";
+import { annotationsPlugin } from "../lib/evaluation-plugins/annotations.js";
+import { basicOutputPlugin } from "../lib/evaluation-plugins/basic-output.js";
+import { detailedOutputPlugin } from "../lib/evaluation-plugins/detailed-output.js";
 
 
 export const annotate = async (schemaUri, json = undefined, outputFormat = undefined) => {
@@ -14,17 +17,29 @@ export const annotate = async (schemaUri, json = undefined, outputFormat = undef
 };
 
 export const interpret = ({ ast, schemaUri }, instance, outputFormat = BASIC) => {
-  const errors = [];
-  const annotations = [];
-  const context = { ast, dynamicAnchors: {}, errors, annotations, outputFormat };
+  const context = { ast, plugins: [annotationsPlugin], dynamicAnchors: {} };
+
+  switch (outputFormat) {
+    case FLAG:
+      break;
+    case BASIC:
+      context.plugins.push(basicOutputPlugin);
+      break;
+    case DETAILED:
+      context.plugins.push(detailedOutputPlugin);
+      break;
+    default:
+      throw Error(`Unsupported output format '${outputFormat}'`);
+  }
+
   const valid = Validation.interpret(schemaUri, instance, context);
 
   if (!valid) {
-    const result = outputFormat === FLAG || valid ? { valid } : { valid, errors };
+    const result = !valid && "errors" in context ? { valid, errors: context.errors } : { valid };
     throw new ValidationError(result);
   }
 
-  for (const annotation of annotations) {
+  for (const annotation of context.annotations) {
     const node = Instance.get(annotation.instanceLocation, instance);
     const keyword = annotation.keyword;
     if (!node.annotations[keyword]) {

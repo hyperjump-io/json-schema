@@ -1,5 +1,18 @@
 {
   "valid": true,
   "errors": [],
-  "annotations": []
+  "annotations": [
+    {
+      "keyword": "https://json-schema.org/keyword/title",
+      "absoluteKeywordLocation": "https://bundler.hyperjump.io/string#/title",
+      "instanceLocation": "#/foo",
+      "annotation": "String"
+    },
+    {
+      "keyword": "https://json-schema.org/keyword/title",
+      "absoluteKeywordLocation": "https://bundler.hyperjump.io/number#/title",
+      "instanceLocation": "#/bar",
+      "annotation": "Number"
+    }
+  ]
 }
