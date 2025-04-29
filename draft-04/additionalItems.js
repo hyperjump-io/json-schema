@@ -1,4 +1,4 @@
-import { pipe, drop, every } from "@hyperjump/pact";
+import { drop } from "@hyperjump/pact";
 import * as Browser from "@hyperjump/browser";
 import * as Instance from "../lib/instance.js";
 import { getKeywordName, Validation } from "../lib/experimental.js";
@@ -19,26 +19,20 @@ const interpret = ([numberOfItems, additionalItems], instance, context) => {
     return true;
   }
 
-  return pipe(
-    Instance.iter(instance),
-    drop(numberOfItems),
-    every((item) => Validation.interpret(additionalItems, item, context))
-  );
+  let isValid = true;
+  let index = numberOfItems;
+  for (const item of drop(numberOfItems, Instance.iter(instance))) {
+    if (!Validation.interpret(additionalItems, item, context)) {
+      isValid = false;
+    }
+
+    context.evaluatedItems?.add(index);
+    index++;
+  }
+
+  return isValid;
 };
 
 const simpleApplicator = true;
 
-const collectEvaluatedItems = (keywordValue, instance, context) => {
-  if (!interpret(keywordValue, instance, context)) {
-    return false;
-  }
-
-  const evaluatedIndexes = new Set();
-  for (let ndx = keywordValue[0]; ndx < Instance.length(instance); ndx++) {
-    evaluatedIndexes.add(ndx);
-  }
-
-  return evaluatedIndexes;
-};
-
-export default { id, compile, interpret, simpleApplicator, collectEvaluatedItems };
+export default { id, compile, interpret, simpleApplicator };

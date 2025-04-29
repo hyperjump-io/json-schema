@@ -9,7 +9,7 @@
         {
           "keyword": "https://json-schema.org/keyword/maxLength",
           "absoluteKeywordLocation": "https://test.json-schema.org/short-string#/maxLength",
-          "instanceLocation": "#/foobar"
+          "instanceLocation": "#*/foobar"
         }
       ]
     }

@@ -1,4 +1,4 @@
-import { pipe, asyncMap, asyncCollectArray, every, zip, take, range, collectSet } from "@hyperjump/pact";
+import { pipe, asyncMap, asyncCollectArray, zip } from "@hyperjump/pact";
 import * as Browser from "@hyperjump/browser";
 import * as Instance from "../lib/instance.js";
 import { Validation } from "../lib/experimental.js";
@@ -23,23 +23,35 @@ const interpret = (items, instance, context) => {
     return true;
   }
 
+  let isValid = true;
+  let index = 0;
+
   if (typeof items === "string") {
-    return every((itemValue) => Validation.interpret(items, itemValue, context), Instance.iter(instance));
+    for (const item of Instance.iter(instance)) {
+      if (!Validation.interpret(items, item, context)) {
+        isValid = false;
+      }
+
+      context.evaluatedItems?.add(index++);
+    }
   } else {
-    return pipe(
-      zip(items, Instance.iter(instance)),
-      take(Instance.length(instance)),
-      every(([prefixItem, item]) => Validation.interpret(prefixItem, item, context))
-    );
+    for (const [tupleItem, tupleInstance] of zip(items, Instance.iter(instance))) {
+      if (!tupleInstance) {
+        break;
+      }
+
+      if (!Validation.interpret(tupleItem, tupleInstance, context)) {
+        isValid = false;
+      }
+
+      context.evaluatedItems?.add(index);
+      index++;
+    }
   }
+
+  return isValid;
 };
 
 const simpleApplicator = true;
 
-const collectEvaluatedItems = (items, instance, context) => {
-  return interpret(items, instance, context) && (typeof items === "string"
-    ? collectSet(range(0, Instance.length(instance)))
-    : collectSet(range(0, items.length)));
-};
-
-export default { id, compile, interpret, simpleApplicator, collectEvaluatedItems };
+export default { id, compile, interpret, simpleApplicator };

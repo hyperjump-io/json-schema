@@ -18,6 +18,7 @@ export type CompiledSchema = {
 
 type AST = {
   metaData: Record<string, MetaData>;
+  plugins: Set<EvaluationPlugin<unknown>>;
 } & Record<string, Node<unknown>[] | boolean>;
 
 type Node<A> = [keywordId: string, schemaUri: string, keywordValue: A];
@@ -70,23 +71,20 @@ export type Keyword<A> = {
   compile: (schema: Browser<SchemaDocument>, ast: AST, parentSchema: Browser<SchemaDocument>) => Promise<A>;
   interpret: (compiledKeywordValue: A, instance: JsonNode, context: ValidationContext) => boolean;
   simpleApplicator: boolean;
-  collectEvaluatedProperties?: (compiledKeywordValue: A, instance: JsonNode, context: ValidationContext, isTop?: boolean) => Set<string> | false;
-  collectEvaluatedItems?: (compiledKeywordValue: A, instance: JsonNode, context: ValidationContext, isTop?: boolean) => Set<number> | false;
   collectExternalIds?: (visited: Set<string>, parentSchema: Browser<SchemaDocument>, schema: Browser<SchemaDocument>) => Promise<Set<string>>;
   annotation?: <B>(compiledKeywordValue: A, instance: JsonNode) => B | undefined;
 };
 
 export type ValidationContext = {
   ast: AST;
-  plugins: EvaluationPlugin<unknow>[];
-  dynamicAnchors: Anchors;
+  plugins: EvaluationPlugin<unknown>[];
 };
 
 export type EvaluationPlugin<Context> = {
-  beforeSchema(schemaContext: Context): void;
-  beforeKeyword(keywordContext: Context, schemaContext: Context): void;
-  afterKeyword(keywordNode: JsonNode, instanceNode: JsonNode, valid: boolean, keywordContext: Context, schemaContext: Context, keyword: Keyword): void;
-  afterSchema(schemaNode: JsonNode, instanceNode: JsonNode, valid: boolean, schemaContext: Context): void;
+  beforeSchema(url: string, instance: JsonNode, context: Context): void;
+  beforeKeyword(keywordNode: Node<unknown>, instance: JsonNode, context: Context, schemaContext: Context, keyword: Keyword): void;
+  afterKeyword(keywordNode: Node<unknown>, instance: JsonNode, context: Context, valid: boolean, schemaContext: Context, keyword: Keyword): void;
+  afterSchema(url: string, instance: JsonNode, context: Context, valid: boolean): void;
 };
 
 export const basicOutputPlugin: EvaluationPlugin<ErrorsContext>;
