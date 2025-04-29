@@ -717,12 +717,12 @@ describe("Detailed Output Format", () => {
               {
                 keyword: "https://json-schema.org/keyword/pattern",
                 absoluteKeywordLocation: `${schemaUri}#/propertyNames/pattern`,
-                instanceLocation: "#/banana"
+                instanceLocation: "#*/banana"
               },
               {
                 keyword: "https://json-schema.org/keyword/pattern",
                 absoluteKeywordLocation: `${schemaUri}#/propertyNames/pattern`,
-                instanceLocation: "#/pear"
+                instanceLocation: "#*/pear"
               }
             ]
           }
@@ -735,6 +735,118 @@ describe("Detailed Output Format", () => {
         propertyNames: { pattern: "^a" }
       }, schemaUri, dialectUri);
       const output = await validate(schemaUri, { apple: true }, DETAILED);
+      expect(output).to.eql({ valid: true });
+    });
+  });
+
+  describe("unevaluatedProperties", () => {
+    test("invalid - boolean", async () => {
+      registerSchema({ unevaluatedProperties: false }, schemaUri, dialectUri);
+      const output = await validate(schemaUri, { foo: 42 }, DETAILED);
+
+      expect(output).to.eql({
+        valid: false,
+        errors: [
+          {
+            keyword: "https://json-schema.org/keyword/unevaluatedProperties",
+            absoluteKeywordLocation: `${schemaUri}#/unevaluatedProperties`,
+            instanceLocation: "#",
+            errors: [
+              {
+                keyword: "https://json-schema.org/evaluation/validate",
+                absoluteKeywordLocation: `${schemaUri}#/unevaluatedProperties`,
+                instanceLocation: "#/foo"
+              }
+            ]
+          }
+        ]
+      });
+    });
+
+    test("invalid - schema", async () => {
+      registerSchema({
+        unevaluatedProperties: { type: "string" }
+      }, schemaUri, dialectUri);
+      const output = await validate(schemaUri, { foo: 42 }, DETAILED);
+
+      expect(output).to.eql({
+        valid: false,
+        errors: [
+          {
+            keyword: "https://json-schema.org/keyword/unevaluatedProperties",
+            absoluteKeywordLocation: `${schemaUri}#/unevaluatedProperties`,
+            instanceLocation: "#",
+            errors: [
+              {
+                keyword: "https://json-schema.org/keyword/type",
+                absoluteKeywordLocation: `${schemaUri}#/unevaluatedProperties/type`,
+                instanceLocation: "#/foo"
+              }
+            ]
+          }
+        ]
+      });
+    });
+
+    test("valid", async () => {
+      registerSchema({ unevaluatedProperties: false }, schemaUri, dialectUri);
+      const output = await validate(schemaUri, {}, DETAILED);
+      expect(output).to.eql({ valid: true });
+    });
+  });
+
+  describe("unevaluatedItems", () => {
+    test("invalid - boolean", async () => {
+      registerSchema({ unevaluatedItems: false }, schemaUri, dialectUri);
+      const output = await validate(schemaUri, [42], DETAILED);
+
+      expect(output).to.eql({
+        valid: false,
+        errors: [
+          {
+            keyword: "https://json-schema.org/keyword/unevaluatedItems",
+            absoluteKeywordLocation: `${schemaUri}#/unevaluatedItems`,
+            instanceLocation: "#",
+            errors: [
+              {
+                keyword: "https://json-schema.org/evaluation/validate",
+                absoluteKeywordLocation: `${schemaUri}#/unevaluatedItems`,
+                instanceLocation: "#/0"
+              }
+            ]
+          }
+        ]
+      });
+    });
+
+    test("invalid - schema", async () => {
+      registerSchema({
+        unevaluatedItems: { type: "string" }
+      }, schemaUri, dialectUri);
+      const output = await validate(schemaUri, [42], DETAILED);
+
+      expect(output).to.eql({
+        valid: false,
+        errors: [
+          {
+            keyword: "https://json-schema.org/keyword/unevaluatedItems",
+            absoluteKeywordLocation: `${schemaUri}#/unevaluatedItems`,
+            instanceLocation: "#",
+            errors: [
+              {
+                keyword: "https://json-schema.org/keyword/type",
+                absoluteKeywordLocation: `${schemaUri}#/unevaluatedItems/type`,
+                instanceLocation: "#/0"
+              }
+            ]
+          }
+        ]
+      });
+    });
+
+    test("valid", async () => {
+      registerSchema({ unevaluatedItems: false }, schemaUri, dialectUri);
+      const output = await validate(schemaUri, [], DETAILED);
       expect(output).to.eql({ valid: true });
     });
   });

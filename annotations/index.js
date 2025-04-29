@@ -1,11 +1,16 @@
 import { FLAG } from "../lib/index.js";
 import { ValidationError } from "./validation-error.js";
-import { getSchema, compile, BASIC, DETAILED } from "../lib/experimental.js";
+import {
+  getSchema,
+  compile,
+  BASIC,
+  DETAILED,
+  annotationsPlugin,
+  basicOutputPlugin,
+  detailedOutputPlugin
+} from "../lib/experimental.js";
 import Validation from "../lib/keywords/validation.js";
 import * as Instance from "../lib/instance.js";
-import { annotationsPlugin } from "../lib/evaluation-plugins/annotations.js";
-import { basicOutputPlugin } from "../lib/evaluation-plugins/basic-output.js";
-import { detailedOutputPlugin } from "../lib/evaluation-plugins/detailed-output.js";
 
 
 export const annotate = async (schemaUri, json = undefined, outputFormat = undefined) => {
@@ -17,7 +22,7 @@ export const annotate = async (schemaUri, json = undefined, outputFormat = undef
 };
 
 export const interpret = ({ ast, schemaUri }, instance, outputFormat = BASIC) => {
-  const context = { ast, plugins: [annotationsPlugin], dynamicAnchors: {} };
+  const context = { ast, plugins: [annotationsPlugin, ...ast.plugins] };
 
   switch (outputFormat) {
     case FLAG:

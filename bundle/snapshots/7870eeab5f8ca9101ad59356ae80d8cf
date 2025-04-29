@@ -9,12 +9,12 @@
         {
           "keyword": "https://json-schema.org/keyword/ref",
           "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/propertyNames/$ref",
-          "instanceLocation": "#/foobar",
+          "instanceLocation": "#*/foobar",
           "errors": [
             {
               "keyword": "https://json-schema.org/keyword/maxLength",
               "absoluteKeywordLocation": "https://test.json-schema.org/short-string#/maxLength",
-              "instanceLocation": "#/foobar"
+              "instanceLocation": "#*/foobar"
             }
           ]
         }

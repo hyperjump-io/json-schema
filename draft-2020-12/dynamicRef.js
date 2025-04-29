@@ -1,6 +1,6 @@
 import * as Browser from "@hyperjump/browser";
 import { Validation, canonicalUri } from "../lib/experimental.js";
-import { uriFragment } from "../lib/common.js";
+import { toAbsoluteUri, uriFragment } from "../lib/common.js";
 
 
 const id = "https://json-schema.org/keyword/draft-2020-12/dynamicRef";
@@ -12,19 +12,31 @@ const compile = async (dynamicRef, ast) => {
   return [referencedSchema.document.baseUri, fragment, canonicalUri(referencedSchema)];
 };
 
-const evaluate = (strategy, [id, fragment, ref], instance, context) => {
+const interpret = ([id, fragment, ref], instance, context) => {
   if (fragment in context.ast.metaData[id].dynamicAnchors) {
     context.dynamicAnchors = { ...context.ast.metaData[id].dynamicAnchors, ...context.dynamicAnchors };
-    return strategy(context.dynamicAnchors[fragment], instance, context);
+    return Validation.interpret(context.dynamicAnchors[fragment], instance, context);
   } else {
-    return strategy(ref, instance, context);
+    return Validation.interpret(ref, instance, context);
   }
 };
 
 const simpleApplicator = true;
 
-const interpret = (...args) => evaluate(Validation.interpret, ...args);
-const collectEvaluatedProperties = (...args) => evaluate(Validation.collectEvaluatedProperties, ...args);
-const collectEvaluatedItems = (...args) => evaluate(Validation.collectEvaluatedItems, ...args);
+const plugin = {
+  beforeSchema(url, _instance, context) {
+    context.dynamicAnchors = {
+      ...context.ast.metaData[toAbsoluteUri(url)].dynamicAnchors,
+      ...context.dynamicAnchors
+    };
+  },
+  beforeKeyword(_url, _instance, context, schemaContext) {
+    context.dynamicAnchors = schemaContext.dynamicAnchors;
+  },
+  afterKeyword() {
+  },
+  afterSchema() {
+  }
+};
 
-export default { id, compile, interpret, simpleApplicator, collectEvaluatedProperties, collectEvaluatedItems };
+export default { id, compile, interpret, simpleApplicator, plugin };

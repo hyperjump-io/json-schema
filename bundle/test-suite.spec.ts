@@ -68,10 +68,7 @@ const testRunner = (version: number, dialect: string) => {
                 const instance = Instance.fromJs(test.instance);
                 const context = {
                   ast,
-                  plugins: [detailedOutputPlugin, annotationsPlugin],
-                  dynamicAnchors: {},
-                  errors: [],
-                  annotations: []
+                  plugins: [detailedOutputPlugin, annotationsPlugin, ...ast.plugins]
                 } as ValidationContext & ErrorsContext & AnnotationsContext;
                 const valid = Validation.interpret(schemaUri, instance, context);
 
