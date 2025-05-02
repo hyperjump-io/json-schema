@@ -71,7 +71,6 @@ export type Keyword<A> = {
   compile: (schema: Browser<SchemaDocument>, ast: AST, parentSchema: Browser<SchemaDocument>) => Promise<A>;
   interpret: (compiledKeywordValue: A, instance: JsonNode, context: ValidationContext) => boolean;
   simpleApplicator: boolean;
-  collectExternalIds?: (visited: Set<string>, parentSchema: Browser<SchemaDocument>, schema: Browser<SchemaDocument>) => Promise<Set<string>>;
   annotation?: <B>(compiledKeywordValue: A, instance: JsonNode) => B | undefined;
 };
 
