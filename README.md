@@ -248,8 +248,8 @@ The following types are used in the above definitions
 
 * **OutputFormat**: **FLAG**
 
-    Only the `FLAG` output format is part of the Stable API. Additional output
-    formats are included as part of the Experimental API.
+    Only the `FLAG` output format is part of the Stable API. Additional [output
+    formats](#output-formats) are included as part of the Experimental API.
 * **OutputUnit**: { valid: boolean }
 
     Output is an experimental feature of the JSON Schema specification. There
@@ -336,7 +336,8 @@ These are available from the `@hyperjump/json-schema/bundle` export.
 The `FLAG` output format isn't very informative. You can change the output
 format used for validation to get more information about failures. The official
 output format is still evolving, so these may change or be replaced in the
-future.
+future. This implementation currently supports the BASIC and DETAILED output
+formats.
 
 ```javascript
 import { BASIC } from "@hyperjump/json-schema/experimental";
@@ -536,28 +537,21 @@ These are available from the `@hyperjump/json-schema/experimental` export.
           validation of its own. In these cases, it isn't helpful to include
           them in BASIC output. This flag is used to trim those nodes from the
           output.
-      * collectEvaluatedProperties?: (compiledKeywordValue: any, instance: JsonNode, context: ValidationContext, isTop?: boolean) => Set\<string> | false
-
-          If the keyword is an applicator, it will need to implement this
-          function for `unevaluatedProperties` to work as expected.
-      * collectEvaluatedItems?: (compiledKeywordValue: A, instance: JsonNode, context: ValidationContext, isTop?: boolean) => Set\<number> | false
-
-          If the keyword is an applicator, it will need to implement this
-          function for `unevaluatedItems` to work as expected.
-      * collectExternalIds?: (visited: Set\<string>, parentSchema: Browser, schema: Browser) => Set\<string>
-          If the keyword is an applicator, it will need to implement this
-          function to work properly with the [bundle](#bundling) feature.
-      * annotation?: (compiledKeywordValue: any) => any
+      * annotation?: (compiledKeywordValue: any) => any | undefined
 
           If the keyword is an annotation, it will need to implement this
           function to return the annotation.
+      * plugin?: EvaluationPlugin
 
     * **ValidationContext**: object
       * ast: AST
-      * dynamicAnchors: object
-      * schemaUrl: string
-      * errors: OutputUnit[]
-      * annotations: OutputUnit[]
+      * plugins: EvaluationPlugins[]
+
+    * **EvaluationPlugin**: object
+      * beforeSchema(url: string, instance: JsonNode, context: Context): void
+      * beforeKeyword(keywordNode: Node<any>, instance: JsonNode, context: Context, schemaContext: Context, keyword: Keyword): void
+      * afterKeyword(keywordNode: Node<any>, instance: JsonNode, context: Context, valid: boolean, schemaContext: Context, keyword: Keyword): void
+      * afterSchema(url: string, instance: JsonNode, context: Context, valid: boolean): void
 * **defineVocabulary**: (id: string, keywords: { [keyword: string]: string }) => void
 
     Define a vocabulary that maps keyword name to keyword URIs defined using
@@ -596,7 +590,7 @@ These are available from the `@hyperjump/json-schema/experimental` export.
 * **getSchema**: (uri: string, browser?: Browser) => Promise\<Browser>
 
     Get a schema by it's URI taking the local schema registry into account.
-* buildSchemaDocument: (schema: SchemaObject | boolean, retrievalUri?: string, contextDialectId?: string) => SchemaDocument
+* **buildSchemaDocument**: (schema: SchemaObject | boolean, retrievalUri?: string, contextDialectId?: string) => SchemaDocument
 
     Build a SchemaDocument from a JSON-compatible value. You might use this if
     you're creating a custom media type plugin, such as supporting JSON Schemas
