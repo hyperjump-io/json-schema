@@ -18,7 +18,7 @@ export type CompiledSchema = {
 
 type AST = {
   metaData: Record<string, MetaData>;
-  plugins: EvaluationPlugin<unknown>[];
+  plugins: Set<EvaluationPlugin<unknown>>;
 } & Record<string, Node<unknown>[] | boolean>;
 
 type Node<A> = [keywordId: string, schemaUri: string, keywordValue: A];
