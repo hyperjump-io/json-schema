@@ -17,15 +17,7 @@ export const length: <T extends JsonNode>(node: T) => number;
 
 export const allNodes: <T extends JsonNode>(node: T) => Generator<T>;
 
-export type JsonNode = {
-  baseUri: string;
-  pointer: string;
-  type: JsonNodeType;
-  children: JsonNode[];
-  parent?: JsonNode;
-  root: JsonNode;
-  annotations: Record<string, Record<string, unknown>>;
-};
+export type JsonNode = JsonNullNode | JsonBooleanNode | JsonNumberNode | JsonStringNode | JsonArrayNode | JsonObjectNode;
 
 export type JsonNullNode = {
   type: "json";
