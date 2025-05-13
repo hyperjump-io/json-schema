@@ -606,14 +606,9 @@ describe("Basic Output Format", () => {
         valid: false,
         errors: [
           {
-            keyword: "https://json-schema.org/keyword/pattern",
-            absoluteKeywordLocation: `${schemaUri}#/propertyNames/pattern`,
-            instanceLocation: "#*/banana"
-          },
-          {
-            keyword: "https://json-schema.org/keyword/pattern",
-            absoluteKeywordLocation: `${schemaUri}#/propertyNames/pattern`,
-            instanceLocation: "#*/pear"
+            keyword: "https://json-schema.org/keyword/propertyNames",
+            absoluteKeywordLocation: `${schemaUri}#/propertyNames`,
+            instanceLocation: "#"
           }
         ]
       });
