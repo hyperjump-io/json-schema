@@ -16,21 +16,21 @@ const compile = (schema, ast) => pipe(
 );
 
 const interpret = (dependencies, instance, context) => {
-  const value = Instance.value(instance);
+  if (Instance.typeOf(instance) !== "object") {
+    return true;
+  }
 
-  return Instance.typeOf(instance) !== "object" || dependencies.every(([propertyName, dependency]) => {
-    if (!(propertyName in value)) {
+  return dependencies.every(([propertyName, dependency]) => {
+    if (!Instance.has(propertyName, instance)) {
       return true;
     }
 
     if (Array.isArray(dependency)) {
-      return dependency.every((key) => key in value);
+      return dependency.every((key) => Instance.has(key, instance));
     } else {
       return Validation.interpret(dependency, instance, context);
     }
   });
 };
 
-const simpleApplicator = true;
-
-export default { id, compile, interpret, simpleApplicator };
+export default { id, compile, interpret };
