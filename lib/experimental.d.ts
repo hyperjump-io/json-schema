@@ -1,5 +1,5 @@
 import type { Browser, Document } from "@hyperjump/browser";
-import type { Validator, OutputUnit, OutputFormat, SchemaObject } from "./index.js";
+import type { Validator, OutputUnit, OutputFormat, SchemaObject, EvaluationPlugin } from "./index.js";
 import type { JsonNode } from "./instance.js";
 
 
@@ -66,12 +66,13 @@ export const loadDialect: (dialectId: string, dialect: Record<string, boolean>, 
 export const unloadDialect: (dialectId: string) => void;
 export const hasDialect: (dialectId: string) => boolean;
 
-export type Keyword<A> = {
+export type Keyword<A, Context extends ValidationContext = ValidationContext> = {
   id: string;
   compile: (schema: Browser<SchemaDocument>, ast: AST, parentSchema: Browser<SchemaDocument>) => Promise<A>;
-  interpret: (compiledKeywordValue: A, instance: JsonNode, context: ValidationContext) => boolean;
-  simpleApplicator: boolean;
+  interpret: (compiledKeywordValue: A, instance: JsonNode, context: Context) => boolean;
+  simpleApplicator?: boolean;
   annotation?: <B>(compiledKeywordValue: A, instance: JsonNode) => B | undefined;
+  plugin?: EvaluationPlugin<Context>;
 };
 
 export type ValidationContext = {
@@ -79,20 +80,22 @@ export type ValidationContext = {
   plugins: EvaluationPlugin<unknown>[];
 };
 
-export type EvaluationPlugin<Context> = {
-  beforeSchema(url: string, instance: JsonNode, context: Context): void;
-  beforeKeyword(keywordNode: Node<unknown>, instance: JsonNode, context: Context, schemaContext: Context, keyword: Keyword): void;
-  afterKeyword(keywordNode: Node<unknown>, instance: JsonNode, context: Context, valid: boolean, schemaContext: Context, keyword: Keyword): void;
-  afterSchema(url: string, instance: JsonNode, context: Context, valid: boolean): void;
-};
+export class BasicOutputPlugin implements EvaluationPlugin<ErrorsContext> {
+  errors: OutputUnit[];
+}
 
-export const basicOutputPlugin: EvaluationPlugin<ErrorsContext>;
-export const detailedOutputPlugin: EvaluationPlugin<ErrorsContext>;
+export class DetailedOutputPlugin implements EvaluationPlugin<ErrorsContext> {
+  errors: OutputUnit[];
+}
+
 export type ErrorsContext = {
   errors: OutputUnit[];
 };
 
-export const annotationsPlugin: EvaluationPlugin<AnnotationsContext>;
+export class AnnotationsPlugin implements EvaluationPlugin<AnnotationsContext> {
+  annotations: OutputUnit[];
+}
+
 export type AnnotationsContext = {
   annotations: OutputUnit[];
 };

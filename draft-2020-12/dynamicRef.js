@@ -32,10 +32,6 @@ const plugin = {
   },
   beforeKeyword(_url, _instance, context, schemaContext) {
     context.dynamicAnchors = schemaContext.dynamicAnchors;
-  },
-  afterKeyword() {
-  },
-  afterSchema() {
   }
 };
 

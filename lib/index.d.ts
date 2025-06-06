@@ -1,4 +1,5 @@
 import type { Json } from "@hyperjump/json-pointer";
+import type { EvaluationPlugin } from "./experimental.js";
 
 
 export type SchemaFragment = string | number | boolean | null | SchemaObject | SchemaFragment[];
@@ -16,13 +17,25 @@ export const getAllRegisteredSchemaUris: () => string[];
  */
 export const addSchema: typeof registerSchema;
 
+export type ValidationOptions = {
+  outputFormat?: OutputFormat;
+  plugins?: EvaluationPlugin[];
+};
+
+export type EvaluationPlugin<Context extends ValidationOptions = ValidationOptions> = {
+  beforeSchema?(url: string, instance: JsonNode, context: Context): void;
+  beforeKeyword?(keywordNode: Node<unknown>, instance: JsonNode, context: Context, schemaContext: Context, keyword: Keyword): void;
+  afterKeyword?(keywordNode: Node<unknown>, instance: JsonNode, context: Context, valid: boolean, schemaContext: Context, keyword: Keyword): void;
+  afterSchema?(url: string, instance: JsonNode, context: Context, valid: boolean): void;
+};
+
 export const validate: (
-  (url: string, value: Json, outputFormat?: OutputFormat) => Promise<OutputUnit>
+  (url: string, value: Json, options?: OutputFormat | ValidationOptions) => Promise<OutputUnit>
 ) & (
   (url: string) => Promise<Validator>
 );
 
-export type Validator = (value: Json, outputFormat?: OutputFormat) => OutputUnit;
+export type Validator = (value: Json, options?: OutputFormat | ValidationOptions) => OutputUnit;
 
 export type OutputUnit = {
   keyword: string;

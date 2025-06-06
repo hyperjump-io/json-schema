@@ -3,9 +3,9 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { isCompatible, md5, loadSchemas, unloadSchemas, testSuite } from "./test-utils.js";
 import { registerSchema, unregisterSchema } from "../lib/index.js";
 import {
-  annotationsPlugin,
+  AnnotationsPlugin,
   compile,
-  detailedOutputPlugin,
+  DetailedOutputPlugin,
   getKeywordName,
   getSchema,
   Validation
@@ -65,6 +65,8 @@ const testRunner = (version: number, dialect: string) => {
                 const schema = await getSchema(mainSchemaUri);
                 const { ast, schemaUri } = await compile(schema);
 
+                const annotationsPlugin = new AnnotationsPlugin();
+                const detailedOutputPlugin = new DetailedOutputPlugin();
                 const instance = Instance.fromJs(test.instance);
                 const context = {
                   ast,
@@ -74,8 +76,8 @@ const testRunner = (version: number, dialect: string) => {
 
                 const output = {
                   valid,
-                  errors: context.errors,
-                  annotations: context.annotations
+                  errors: detailedOutputPlugin.errors,
+                  annotations: annotationsPlugin.annotations
                 };
 
                 const testId = md5(`${version}|${dialect}|${testCase.description}|${testIndex}`);

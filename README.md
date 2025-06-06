@@ -187,6 +187,57 @@ addMediaTypePlugin("application/schema+yaml", {
 });
 ```
 
+**EvaluationPlugins**
+
+EvaluationPlugins allow you to hook into the validation process for various
+purposes. There are hooks for before an after schema evaluation and before and
+after keyword evaluation. (See the API section for the full interface) The
+following is a simple example to record all the schema locations that were
+evaluated. This could be used as part of a solution for determining test
+coverage for a schema.
+
+```JavaScript
+import { registerSchema, validate } from "@hyperjump/json-schema/draft-2020-12";
+import { BASIC } from "@hyperjump/json-schema/experimental.js";
+
+class EvaluatedKeywordsPlugin {
+  constructor() {
+    this.schemaLocations = new Set();
+  }
+
+  beforeKeyword([, schemaUri]) {
+    this.schemaLocations.add(schemaUri);
+  }
+}
+
+registerSchema({
+  $schema: "https://json-schema.org/draft/2020-12/schema",
+  type: "object",
+  properties: {
+    foo: { type: "number" },
+    bar: { type: "boolean" }
+  },
+  required: ["foo"]
+}, "https://schemas.hyperjump.io/main");
+
+const evaluatedKeywordPlugin = new EvaluatedKeywordsPlugin();
+
+await validate("https://schemas.hyperjump.io/main", { foo: 42 }, {
+  outputFormat: BASIC,
+  plugins: [evaluatedKeywordPlugin]
+});
+
+console.log(evaluatedKeywordPlugin.schemaLocations);
+// Set(4) {
+//   'https://schemas.hyperjump.io/main#/type',
+//   'https://schemas.hyperjump.io/main#/properties',
+//   'https://schemas.hyperjump.io/main#/properties/foo/type',
+//   'https://schemas.hyperjump.io/main#/required'
+// }
+
+// NOTE: #/properties/bar is not in the list because the instance doesn't include that property.
+```
+
 ### API
 
 These are available from any of the exports that refer to a version of JSON
@@ -212,11 +263,11 @@ Schema, such as `@hyperjump/json-schema/draft-2020-12`.
     Load a schema manually rather than fetching it from the filesystem or over
     the network. Any schema already registered with the same identifier will be
     replaced with no warning.
-* **validate**: (schemaURI: string, instance: any, outputFormat: OutputFormat = FLAG) => Promise\<OutputUnit>
+* **validate**: (schemaURI: string, instance: any, outputFormat: ValidationOptions | OutputFormat = FLAG) => Promise\<OutputUnit>
 
     Validate an instance against a schema. This function is curried to allow
     compiling the schema once and applying it to multiple instances.
-* **validate**: (schemaURI: string) => Promise\<(instance: any, outputFormat: OutputFormat = FLAG) => OutputUnit>
+* **validate**: (schemaURI: string) => Promise\<(instance: any, outputFormat: ValidationOptions | OutputFormat = FLAG) => OutputUnit>
 
     Compiling a schema to a validation function.
 * **FLAG**: "FLAG"
@@ -255,6 +306,16 @@ The following types are used in the above definitions
     Output is an experimental feature of the JSON Schema specification. There
     may be additional fields present in the OutputUnit, but only the `valid`
     property should be considered part of the Stable API.
+* **ValidationOptions**:
+
+    * outputFormat?: OutputFormat
+    * plugins?: EvaluationPlugin[]
+
+* **EvaluationPlugin**: object
+    * beforeSchema?(url: string, instance: JsonNode, context: Context): void
+    * beforeKeyword?(keywordNode: Node<any>, instance: JsonNode, context: Context, schemaContext: Context, keyword: Keyword): void
+    * afterKeyword?(keywordNode: Node<any>, instance: JsonNode, context: Context, valid: boolean, schemaContext: Context, keyword: Keyword): void
+    * afterSchema?(url: string, instance: JsonNode, context: Context, valid: boolean): void
 
 ## Bundling
 
@@ -546,12 +607,6 @@ These are available from the `@hyperjump/json-schema/experimental` export.
     * **ValidationContext**: object
       * ast: AST
       * plugins: EvaluationPlugins[]
-
-    * **EvaluationPlugin**: object
-      * beforeSchema(url: string, instance: JsonNode, context: Context): void
-      * beforeKeyword(keywordNode: Node<any>, instance: JsonNode, context: Context, schemaContext: Context, keyword: Keyword): void
-      * afterKeyword(keywordNode: Node<any>, instance: JsonNode, context: Context, valid: boolean, schemaContext: Context, keyword: Keyword): void
-      * afterSchema(url: string, instance: JsonNode, context: Context, valid: boolean): void
 * **defineVocabulary**: (id: string, keywords: { [keyword: string]: string }) => void
 
     Define a vocabulary that maps keyword name to keyword URIs defined using
