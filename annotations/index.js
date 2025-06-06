@@ -1,50 +1,36 @@
-import { FLAG } from "../lib/index.js";
 import { ValidationError } from "./validation-error.js";
 import {
   getSchema,
   compile,
+  interpret as validate,
   BASIC,
-  DETAILED,
-  annotationsPlugin,
-  basicOutputPlugin,
-  detailedOutputPlugin
+  AnnotationsPlugin
 } from "../lib/experimental.js";
-import Validation from "../lib/keywords/validation.js";
 import * as Instance from "../lib/instance.js";
 
 
-export const annotate = async (schemaUri, json = undefined, outputFormat = undefined) => {
+export const annotate = async (schemaUri, json = undefined, options = undefined) => {
   const schema = await getSchema(schemaUri);
   const compiled = await compile(schema);
-  const interpretAst = (json, outputFormat) => interpret(compiled, Instance.fromJs(json), outputFormat);
+  const interpretAst = (json, options) => interpret(compiled, Instance.fromJs(json), options);
 
-  return json === undefined ? interpretAst : interpretAst(json, outputFormat);
+  return json === undefined ? interpretAst : interpretAst(json, options);
 };
 
-export const interpret = ({ ast, schemaUri }, instance, outputFormat = BASIC) => {
-  const context = { ast, plugins: [annotationsPlugin, ...ast.plugins] };
+export const interpret = (compiledSchema, instance, options = BASIC) => {
+  const annotationsPlugin = new AnnotationsPlugin();
+  const plugins = options.plugins ?? [];
 
-  switch (outputFormat) {
-    case FLAG:
-      break;
-    case BASIC:
-      context.plugins.push(basicOutputPlugin);
-      break;
-    case DETAILED:
-      context.plugins.push(detailedOutputPlugin);
-      break;
-    default:
-      throw Error(`Unsupported output format '${outputFormat}'`);
+  const output = validate(compiledSchema, instance, {
+    outputFormat: typeof options === "string" ? options : options.outputFormat ?? BASIC,
+    plugins: [annotationsPlugin, ...plugins]
+  });
+
+  if (!output.valid) {
+    throw new ValidationError(output);
   }
 
-  const valid = Validation.interpret(schemaUri, instance, context);
-
-  if (!valid) {
-    const result = !valid && "errors" in context ? { valid, errors: context.errors } : { valid };
-    throw new ValidationError(result);
-  }
-
-  for (const annotation of context.annotations) {
+  for (const annotation of annotationsPlugin.annotations) {
     const node = Instance.get(annotation.instanceLocation, instance);
     const keyword = annotation.keyword;
     if (!node.annotations[keyword]) {

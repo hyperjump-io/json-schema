@@ -1,6 +1,6 @@
 import { writeFile, mkdir, rm } from "node:fs/promises";
 import { isCompatible, md5, loadSchemas, testSuite, unloadSchemas } from "./test-utils.js";
-import { annotationsPlugin, compile, detailedOutputPlugin, getSchema, Validation } from "../lib/experimental.js";
+import { AnnotationsPlugin, compile, DetailedOutputPlugin, getSchema, Validation } from "../lib/experimental.js";
 import "../stable/index.js";
 import "../draft-2020-12/index.js";
 import "../draft-2019-09/index.js";
@@ -26,6 +26,8 @@ const snapshotGenerator = async (version, dialect) => {
 
       const schema = await getSchema(mainSchemaUri);
       const { ast, schemaUri } = await compile(schema);
+      const annotationsPlugin = new AnnotationsPlugin();
+      const detailedOutputPlugin = new DetailedOutputPlugin();
 
       const instance = Instance.fromJs(test.instance);
       const context = { ast, plugins: [detailedOutputPlugin, annotationsPlugin, ...ast.plugins] };
@@ -33,8 +35,8 @@ const snapshotGenerator = async (version, dialect) => {
 
       const expectedOutput = {
         valid,
-        errors: context.errors,
-        annotations: context.annotations
+        errors: detailedOutputPlugin.errors,
+        annotations: annotationsPlugin.annotations
       };
 
       unloadSchemas(testCase, mainSchemaUri);
