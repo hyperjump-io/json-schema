@@ -1,5 +1,5 @@
 import type { Browser, Document } from "@hyperjump/browser";
-import type { Validator, OutputUnit, OutputFormat, SchemaObject, EvaluationPlugin } from "./index.js";
+import type { Validator, OutputUnit, OutputFormat, SchemaObject } from "./index.js";
 import type { JsonNode } from "./instance.js";
 
 
@@ -18,7 +18,7 @@ export type CompiledSchema = {
 
 type AST = {
   metaData: Record<string, MetaData>;
-  plugins: Set<EvaluationPlugin<unknown>>;
+  plugins: Set<EvaluationPlugin>;
 } & Record<string, Node<unknown>[] | boolean>;
 
 type Node<A> = [keywordId: string, schemaUri: string, keywordValue: A];
@@ -30,14 +30,6 @@ type MetaData = {
 };
 
 type Anchors = Record<string, string>;
-
-// Evaluation Plugins
-export type EvaluationPlugin<Context extends ValidationOptions = ValidationOptions> = {
-  beforeSchema?(url: string, instance: JsonNode, context: Context): void;
-  beforeKeyword?(keywordNode: Node<unknown>, instance: JsonNode, context: Context, schemaContext: Context, keyword: Keyword): void;
-  afterKeyword?(keywordNode: Node<unknown>, instance: JsonNode, context: Context, valid: boolean, schemaContext: Context, keyword: Keyword): void;
-  afterSchema?(url: string, instance: JsonNode, context: Context, valid: boolean): void;
-};
 
 // Output Formats
 export const BASIC: "BASIC";
@@ -85,26 +77,49 @@ export type Keyword<A, Context extends ValidationContext = ValidationContext> = 
 
 export type ValidationContext = {
   ast: AST;
-  plugins: EvaluationPlugin<unknown>[];
+  plugins: EvaluationPlugin[];
+};
+
+// Evaluation Plugins
+export type EvaluationPlugin<Context extends ValidationContext = ValidationContext> = {
+  beforeSchema?(url: string, instance: JsonNode, context: Context): void;
+  beforeKeyword?(keywordNode: Node<unknown>, instance: JsonNode, context: Context, schemaContext: Context, keyword: Keyword): void;
+  afterKeyword?(keywordNode: Node<unknown>, instance: JsonNode, context: Context, valid: boolean, schemaContext: Context, keyword: Keyword): void;
+  afterSchema?(url: string, instance: JsonNode, context: Context, valid: boolean): void;
 };
 
 export class BasicOutputPlugin implements EvaluationPlugin<ErrorsContext> {
   errors: OutputUnit[];
+
+  beforeSchema(url: string, instance: JsonNode, context: ErrorsContext): void;
+  beforeKeyword(keywordNode: Node<unknown>, instance: JsonNode, context: ErrorsContext, schemaContext: ErrorsContext, keyword: Keyword<unknown>): void;
+  afterKeyword(keywordNode: Node<unknown>, instance: JsonNode, context: ErrorsContext, valid: boolean, schemaContext: ErrorsContext, keyword: Keyword<unknown>): void;
+  afterSchema(url: string, instance: JsonNode, context: ErrorsContext, valid: boolean): void;
 }
 
 export class DetailedOutputPlugin implements EvaluationPlugin<ErrorsContext> {
   errors: OutputUnit[];
+
+  beforeSchema(url: string, instance: JsonNode, context: ErrorsContext): void;
+  beforeKeyword(keywordNode: Node<unknown>, instance: JsonNode, context: ErrorsContext, schemaContext: ErrorsContext, keyword: Keyword<unknown>): void;
+  afterKeyword(keywordNode: Node<unknown>, instance: JsonNode, context: ErrorsContext, valid: boolean, schemaContext: ErrorsContext, keyword: Keyword<unknown>): void;
+  afterSchema(url: string, instance: JsonNode, context: ErrorsContext, valid: boolean): void;
 }
 
-export type ErrorsContext = {
+export type ErrorsContext = ValidationContext & {
   errors: OutputUnit[];
 };
 
 export class AnnotationsPlugin implements EvaluationPlugin<AnnotationsContext> {
   annotations: OutputUnit[];
+
+  beforeSchema(url: string, instance: JsonNode, context: AnnotationsContext): void;
+  beforeKeyword(keywordNode: Node<unknown>, instance: JsonNode, context: AnnotationsContext, schemaContext: AnnotationsContext, keyword: Keyword<unknown>): void;
+  afterKeyword(keywordNode: Node<unknown>, instance: JsonNode, context: AnnotationsContext, valid: boolean, schemaContext: AnnotationsContext, keyword: Keyword<unknown>): void;
+  afterSchema(url: string, instance: JsonNode, context: AnnotationsContext, valid: boolean): void;
 }
 
-export type AnnotationsContext = {
+export type AnnotationsContext = ValidationContext & {
   annotations: OutputUnit[];
 };
 

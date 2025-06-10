@@ -21,7 +21,7 @@ import { bundle, URI, UUID } from "./index.js";
 
 import type { BundleOptions } from "./index.js";
 import type { OutputUnit } from "../lib/index.js";
-import type { AnnotationsContext, ErrorsContext, ValidationContext } from "../lib/experimental.js";
+import type { ValidationContext } from "../lib/experimental.js";
 
 
 const suite = testSuite("./bundle/tests");
@@ -68,10 +68,10 @@ const testRunner = (version: number, dialect: string) => {
                 const annotationsPlugin = new AnnotationsPlugin();
                 const detailedOutputPlugin = new DetailedOutputPlugin();
                 const instance = Instance.fromJs(test.instance);
-                const context = {
+                const context: ValidationContext = {
                   ast,
                   plugins: [detailedOutputPlugin, annotationsPlugin, ...ast.plugins]
-                } as ValidationContext & ErrorsContext & AnnotationsContext;
+                };
                 const valid = Validation.interpret(schemaUri, instance, context);
 
                 const output = {
