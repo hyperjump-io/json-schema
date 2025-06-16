@@ -81,6 +81,7 @@ const runTestSuite = (draft: string, dialectId: string) => {
                   return;
                 }
                 url = `http://${draft}-test-suite.json-schema.org/${entry.name}/${encodeURIComponent(suite.description)}`;
+                // @ts-expect-error Covert from 2020-12
                 if (typeof suite.schema === "object" && suite.schema.$schema === "https://json-schema.org/draft/2020-12/schema") {
                   delete suite.schema.$schema;
                 }
