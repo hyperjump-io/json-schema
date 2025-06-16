@@ -1,5 +1,4 @@
 export default {
-  "$id": "https://spec.openapis.org/oas/3.1/dialect/base",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$vocabulary": {
     "https://json-schema.org/draft/2020-12/vocab/core": true,
@@ -14,6 +13,8 @@ export default {
   "$dynamicAnchor": "meta",
 
   "title": "OpenAPI 3.1 Schema Object Dialect",
+  "description": "A JSON Schema dialect describing schemas found in OpenAPI v3.1 Descriptions",
+
   "allOf": [
     { "$ref": "https://json-schema.org/draft/2020-12/schema" },
     { "$ref": "https://spec.openapis.org/oas/3.1/meta/base" }

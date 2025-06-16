@@ -12,7 +12,7 @@ export default {
     "https://spec.openapis.org/oas/3.1/vocab/base": false
   },
 
-  "description": "The description of OpenAPI v3.1.x documents using the OpenAPI JSON Schema dialect, as defined by https://spec.openapis.org/oas/v3.1.0",
+  "description": "The description of OpenAPI v3.1.x Documents using the OpenAPI JSON Schema dialect",
 
   "$ref": "https://spec.openapis.org/oas/3.1/schema",
   "properties": {

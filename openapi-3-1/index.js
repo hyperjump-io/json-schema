@@ -32,8 +32,8 @@ defineVocabulary("https://spec.openapis.org/oas/3.1/vocab/base", {
   "xml": "https://spec.openapis.org/oas/3.0/keyword/xml"
 });
 
-registerSchema(vocabularySchema);
-registerSchema(dialectSchema);
+registerSchema(vocabularySchema, "https://spec.openapis.org/oas/3.1/meta/base");
+registerSchema(dialectSchema, "https://spec.openapis.org/oas/3.1/dialect/base");
 
 // Current Schemas
 registerSchema(schema, "https://spec.openapis.org/oas/3.1/schema");

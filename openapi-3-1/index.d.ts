@@ -3,7 +3,7 @@ import type { JsonSchemaType } from "../lib/common.js";
 
 
 export type OasSchema31 = boolean | {
-  $schema?: "https://json-schema.org/draft/2020-12/schema";
+  $schema?: "https://spec.openapis.org/oas/3.1/dialect/base";
   $id?: string;
   $anchor?: string;
   $ref?: string;

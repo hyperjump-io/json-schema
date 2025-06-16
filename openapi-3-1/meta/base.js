@@ -1,8 +1,9 @@
 export default {
-  "$id": "https://spec.openapis.org/oas/3.1/meta/base",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$dynamicAnchor": "meta",
-  "title": "OAS Base vocabulary",
+
+  "title": "OAS Base Vocabulary",
+  "description": "A JSON Schema Vocabulary used in the OpenAPI Schema Dialect",
 
   "type": ["object", "boolean"],
   "properties": {
