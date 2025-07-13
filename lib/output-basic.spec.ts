@@ -645,6 +645,28 @@ describe("Basic Output Format", () => {
       });
     });
 
+    test("invalid - doesn't apply if the schema fails", async () => {
+      registerSchema({
+        properties: {
+          foo: true,
+          bar: false
+        },
+        unevaluatedProperties: false
+      }, schemaUri, dialectUri);
+      const output = await validate(schemaUri, { foo: 42, bar: true, baz: null }, BASIC);
+
+      expect(output).to.eql({
+        valid: false,
+        errors: [
+          {
+            keyword: "https://json-schema.org/evaluation/validate",
+            absoluteKeywordLocation: `${schemaUri}#/properties/bar`,
+            instanceLocation: "#/bar"
+          }
+        ]
+      });
+    });
+
     test("invalid - schema", async () => {
       registerSchema({
         unevaluatedProperties: { type: "string" }
@@ -700,6 +722,25 @@ describe("Basic Output Format", () => {
             keyword: "https://json-schema.org/keyword/type",
             absoluteKeywordLocation: `${schemaUri}#/unevaluatedItems/type`,
             instanceLocation: "#/0"
+          }
+        ]
+      });
+    });
+
+    test("invalid - doesn't apply if the schema fails", async () => {
+      registerSchema({
+        prefixItems: [true, false],
+        unevaluatedItems: false
+      }, schemaUri, dialectUri);
+      const output = await validate(schemaUri, [42, true, null], BASIC);
+
+      expect(output).to.eql({
+        valid: false,
+        errors: [
+          {
+            keyword: "https://json-schema.org/evaluation/validate",
+            absoluteKeywordLocation: `${schemaUri}#/prefixItems/1`,
+            instanceLocation: "#/1"
           }
         ]
       });
