@@ -20,7 +20,7 @@ import "../draft-04/index.js";
 import { bundle, URI, UUID } from "./index.js";
 
 import type { BundleOptions } from "./index.js";
-import type { OutputUnit } from "../lib/index.js";
+import type { Output } from "../lib/index.js";
 import type { ValidationContext } from "../lib/experimental.js";
 
 
@@ -82,7 +82,7 @@ const testRunner = (version: number, dialect: string) => {
 
                 const testId = md5(`${version}|${dialect}|${testCase.description}|${testIndex}`);
                 const expectedOutputJson = await readFile(`./bundle/snapshots/${testId}`, "utf-8");
-                const expectedOutput = JSON.parse(expectedOutputJson) as OutputUnit;
+                const expectedOutput = JSON.parse(expectedOutputJson) as Output;
                 expect(output).to.eql(expectedOutput);
               });
             });

@@ -23,12 +23,19 @@ export type ValidationOptions = {
 };
 
 export const validate: (
-  (url: string, value: Json, options?: OutputFormat | ValidationOptions) => Promise<OutputUnit>
+  (url: string, value: Json, options?: OutputFormat | ValidationOptions) => Promise<Output>
 ) & (
   (url: string) => Promise<Validator>
 );
 
-export type Validator = (value: Json, options?: OutputFormat | ValidationOptions) => OutputUnit;
+export type Validator = (value: Json, options?: OutputFormat | ValidationOptions) => Output;
+
+export type Output = {
+  valid: true;
+} | {
+  valid: false;
+  errors?: OutputUnit[];
+};
 
 export type OutputUnit = {
   keyword: string;
@@ -49,7 +56,7 @@ export const setShouldValidateSchema: (isEnabled: boolean) => void;
 export const getShouldValidateSchema: () => boolean;
 
 export class InvalidSchemaError extends Error {
-  public output: OutputUnit;
+  public output: Output;
 
-  public constructor(output: OutputUnit);
+  public constructor(output: Output);
 }

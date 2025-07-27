@@ -1,12 +1,12 @@
 import type { Browser, Document } from "@hyperjump/browser";
-import type { Validator, OutputUnit, OutputFormat, SchemaObject } from "./index.js";
+import type { Validator, Output, OutputUnit, OutputFormat, SchemaObject } from "./index.js";
 import type { JsonNode } from "./instance.js";
 
 
 // Compile/interpret
 export const compile: (schema: Browser<SchemaDocument>) => Promise<CompiledSchema>;
 export const interpret: (
-  (compiledSchema: CompiledSchema, value: JsonNode, outputFormat?: OutputFormat) => OutputUnit
+  (compiledSchema: CompiledSchema, value: JsonNode, outputFormat?: OutputFormat) => Output
 ) & (
   (compiledSchema: CompiledSchema) => Validator
 );
