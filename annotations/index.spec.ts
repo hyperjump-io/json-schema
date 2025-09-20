@@ -78,15 +78,14 @@ const testRunner = (version: number, dialect: string) => {
                 let instance: JsonNode;
 
                 beforeEach(() => {
-                  // TODO: What's wrong with the type?
-                  instance = annotator(subject.instance); // eslint-disable-line @typescript-eslint/no-unsafe-assignment
+                  instance = annotator(subject.instance);
                 });
 
                 for (const assertion of subject.assertions) {
                   test(`${assertion.keyword} annotations at '${assertion.location}' should be ${JSON.stringify(assertion.expected)}`, () => {
-                    const dialect: string | undefined = testCase.schema.$schema ? toAbsoluteIri(testCase.schema.$schema as string) : undefined;
+                    const schemaDialect: string | undefined = testCase.schema.$schema ? toAbsoluteIri(testCase.schema.$schema as string) : dialect;
                     const subject = Instance.get(`#${assertion.location}`, instance);
-                    const annotations = subject ? Instance.annotation(subject, assertion.keyword, dialect) : [];
+                    const annotations = subject ? Instance.annotation(subject, assertion.keyword, schemaDialect) : [];
                     expect(annotations).to.eql(Object.values(assertion.expected));
                   });
                 }

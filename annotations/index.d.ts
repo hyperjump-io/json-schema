@@ -1,6 +1,6 @@
 import type { OutputFormat, Output, ValidationOptions } from "../lib/index.js";
 import type { CompiledSchema } from "../lib/experimental.js";
-import type { JsonNode } from "../lib/json-node.js";
+import type { JsonNode } from "../lib/instance.js";
 import type { Json } from "@hyperjump/json-pointer";
 
 
