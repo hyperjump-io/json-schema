@@ -1,10 +1,10 @@
 import * as Browser from "@hyperjump/browser";
-import * as Instance from "../instance.js";
-import { getShouldValidateFormat } from "../configuration.js";
-import { getFormatHandler } from "../keywords.js";
+import * as Instance from "../lib/instance.js";
+import { getShouldValidateFormat } from "../lib/configuration.js";
+import { getFormatHandler } from "../lib/keywords.js";
 
 
-const id = "https://json-schema.org/keyword/format";
+const id = "https://json-schema.org/keyword/draft-2019-09/format-assertion";
 
 const compile = (schema) => Browser.value(schema);
 
@@ -14,7 +14,11 @@ const interpret = (format, instance) => {
   }
 
   const handler = getFormatHandler(formats[format]);
-  return handler?.(Instance.value(instance)) ?? true;
+  if (!handler) {
+    throw Error(`The '${format}' format is not supported.`);
+  }
+
+  return handler(Instance.value(instance));
 };
 
 const annotation = (format) => format;

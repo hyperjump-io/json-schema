@@ -7,6 +7,7 @@ import exclusiveMaximum from "./exclusiveMaximum.js";
 import exclusiveMinimum from "./exclusiveMinimum.js";
 import id from "./id.js";
 import items from "./items.js";
+import format from "./format.js";
 import maximum from "./maximum.js";
 import minimum from "./minimum.js";
 import ref from "./ref.js";
@@ -20,6 +21,7 @@ addKeyword(maximum);
 addKeyword(minimum);
 addKeyword(id);
 addKeyword(items);
+addKeyword(format);
 addKeyword(ref);
 
 const jsonSchemaVersion = "http://json-schema.org/draft-04/schema";
@@ -38,7 +40,7 @@ defineVocabulary(jsonSchemaVersion, {
   "enum": "https://json-schema.org/keyword/enum",
   "exclusiveMaximum": "https://json-schema.org/keyword/draft-04/exclusiveMaximum",
   "exclusiveMinimum": "https://json-schema.org/keyword/draft-04/exclusiveMinimum",
-  "format": "https://json-schema.org/keyword/format",
+  "format": "https://json-schema.org/keyword/draft-04/format",
   "items": "https://json-schema.org/keyword/draft-04/items",
   "maxItems": "https://json-schema.org/keyword/maxItems",
   "maxLength": "https://json-schema.org/keyword/maxLength",

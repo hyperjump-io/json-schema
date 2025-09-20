@@ -130,6 +130,25 @@ You can add/modify/remove support for any URI scheme using the [plugin
 system](https://github.com/hyperjump-io/browser/#uri-schemes) provided by
 `@hyperjump/browser`.
 
+**Format**
+
+Format validation is disabled by default. You can enable it with the
+`setShouldValidateFormat` function.
+
+```javascript
+import { registerSchema, validate } from "@hyperjump/json-schema/draft-2020-12";
+import { setShouldValidateFormat } from "@hyperjump/json-schema/formats";
+
+const schemaUri = "https://example.com/number";
+registerSchema({
+  "type": "string",
+  "format": "date"
+}, schemaUri);
+
+setShouldValidateFormat(true);
+const output = await validate(schemaUri, "Feb 28, 2031"); // { valid: false }
+```
+
 **OpenAPI**
 
 The OpenAPI 3.0 and 3.1 and 3.2 meta-schemas are pre-loaded and the OpenAPI JSON Schema
@@ -472,6 +491,48 @@ registerSchema({
 const output = await validate("https://example.com/schema1", 42);
 ```
 
+### Custom Formats
+
+Custom formats work similarly to keywords. You define a format handler and then
+associate that format handler with the format keyword that applies to the
+dialects you're targeting.
+
+```JavaScript
+import { registerSchema, validate } from "@hyperjump/json-schema/draft-2020-12";
+import {
+  setShouldValiateFormat,
+  addFormat,
+  setFormatHandler
+} from "@hyperjump/json-schema/formats";
+
+const isoDateFormatUri = "https://example.com/format/iso-8601-date"; 
+
+addFormat({
+  id: isoDateFormatUri,
+  handler: (date) => Date.parse(date).toISOString() === date
+});
+
+addFormatHandler("https://json-schema.org/keyword/format", "iso-date", isoDateFormatUri);
+addFormatHandler("https://json-schema.org/keyword/format-assertion", "iso-date", isoDateFormatUri);
+// Optional: Add the iso-date format to other dialects
+addFormatHandler("https://json-schema.org/keyword/draft-2019-09/format", "iso-date", isoDateFormatUri);
+addFormatHandler("https://json-schema.org/keyword/draft-2019-09/format-assertion", "iso-date", isoDateFormatUri);
+addFormatHandler("https://json-schema.org/keyword/draft-07/format", "iso-date", isoDateFormatUri);
+addFormatHandler("https://json-schema.org/keyword/draft-06/format", "iso-date", isoDateFormatUri);
+addFormatHandler("https://json-schema.org/keyword/draft-04/format", "iso-date", isoDateFormatUri);
+
+const schemaUri = "https://example.com/main";
+registerSchema({
+  "$schema": "https://json-schema.org/draft/2002-12/schema",
+
+  "type": "string",
+  "format": "iso-date"
+}, schemaUri);
+
+setShouldValidateFormat(true);
+const output = await validate(schemaUri, "Feb 28, 2031"); // { valid: false }
+```
+
 ### Custom Meta Schema
 
 You can use a custom meta-schema to restrict users to a subset of JSON Schema
@@ -605,6 +666,25 @@ These are available from the `@hyperjump/json-schema/experimental` export.
     * **ValidationContext**: object
       * ast: AST
       * plugins: EvaluationPlugins[]
+* **addFormat**: (formatHandler: Format) => void
+
+    Add a format handler.
+
+    * **Format**: object
+      * id: string
+
+          A URI that uniquely identifies the format. It should use a domain you
+          own to avoid conflict with keywords defined by others.
+      * handler: (value: any) => boolean
+
+          A function that takes the value and returns a boolean determining if
+          it passes validation for the format.
+* **setFormatHandler**: (keywordUri: string, formatName: string, formatUri: string) => void
+
+    Add support for a format to the specified keyword.
+* **removeFormatHandler**: (keywordUri, formatName) => void
+
+    Remove support for a format from the specified keyword.
 * **defineVocabulary**: (id: string, keywords: { [keyword: string]: string }) => void
 
     Define a vocabulary that maps keyword name to keyword URIs defined using

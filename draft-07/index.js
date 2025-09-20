@@ -7,6 +7,7 @@ import contains from "../draft-06/contains.js";
 import dependencies from "../draft-04/dependencies.js";
 import items from "../draft-04/items.js";
 import id from "../draft-04/id.js";
+import format from "./format.js";
 import ref from "../draft-04/ref.js";
 
 
@@ -15,6 +16,7 @@ addKeyword(contains);
 addKeyword(dependencies);
 addKeyword(id);
 addKeyword(items);
+addKeyword(format);
 addKeyword(ref);
 
 const jsonSchemaVersion = "http://json-schema.org/draft-07/schema";
@@ -39,7 +41,7 @@ defineVocabulary(jsonSchemaVersion, {
   "examples": "https://json-schema.org/keyword/examples",
   "exclusiveMaximum": "https://json-schema.org/keyword/exclusiveMaximum",
   "exclusiveMinimum": "https://json-schema.org/keyword/exclusiveMinimum",
-  "format": "https://json-schema.org/keyword/format",
+  "format": "https://json-schema.org/keyword/draft-07/format",
   "if": "https://json-schema.org/keyword/if",
   "then": "https://json-schema.org/keyword/then",
   "else": "https://json-schema.org/keyword/else",

@@ -11,12 +11,14 @@ import contentMetaSchema from "./meta/content.js";
 
 import additionalItems from "../draft-04/additionalItems.js";
 import items from "../draft-04/items.js";
+import formatAssertion from "./format-assertion.js";
 import recursiveAnchor from "./recursiveAnchor.js";
 import recursiveRef from "../draft-2020-12/dynamicRef.js";
 
 
 addKeyword(additionalItems);
 addKeyword(items);
+addKeyword(formatAssertion);
 addKeyword(recursiveAnchor);
 addKeyword(recursiveRef);
 
@@ -85,7 +87,7 @@ defineVocabulary("https://json-schema.org/draft/2019-09/vocab/meta-data", {
 });
 
 defineVocabulary("https://json-schema.org/draft/2019-09/vocab/format", {
-  "format": "https://json-schema.org/keyword/format"
+  "format": "https://json-schema.org/keyword/draft-2019-09/format-assertion"
 });
 
 defineVocabulary("https://json-schema.org/draft/2019-09/vocab/content", {

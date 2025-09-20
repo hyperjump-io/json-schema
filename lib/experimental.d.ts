@@ -61,10 +61,18 @@ export const getKeywordName: (dialectId: string, keywordId: string) => string;
 export const getKeyword: <A>(id: string) => Keyword<A>;
 export const getKeywordByName: <A>(keywordName: string, dialectId: string) => Keyword<A>;
 export const getKeywordId: (keywordName: string, dialectId: string) => string;
+export const addFormat: (format: Format) => void;
+export const setFormatHandler: (keywordUri: string, formatName: string, formatUri: string) => void;
+export const removeFormatHandler: (keywordUri: string, formatName: string) => void;
 export const defineVocabulary: (id: string, keywords: Record<string, string>) => void;
 export const loadDialect: (dialectId: string, dialect: Record<string, boolean>, allowUnknownKeywords?: boolean) => void;
 export const unloadDialect: (dialectId: string) => void;
 export const hasDialect: (dialectId: string) => boolean;
+
+export type Format = {
+  id: string;
+  handler: (value: Json) => boolean;
+};
 
 export type Keyword<A, Context extends ValidationContext = ValidationContext> = {
   id: string;
