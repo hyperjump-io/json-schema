@@ -69,16 +69,6 @@ const skip = new Set<string>([
   "|draft4|ipv6.json",
 
   // Not supported
-  "|draft2020-12|iri-reference.json",
-  "|draft2019-09|iri-reference.json",
-  "|draft7|iri-reference.json",
-
-  // Not supported
-  "|draft2020-12|iri.json",
-  "|draft2019-09|iri.json",
-  "|draft7|iri.json",
-
-  // Not supported
   "|draft2020-12|json-pointer.json",
   "|draft2019-09|json-pointer.json",
   "|draft7|json-pointer.json",
@@ -115,23 +105,10 @@ const skip = new Set<string>([
   "|draft7|time.json|validation of time strings|valid leap second, large negative time-offset",
 
   // Not supported
-  "|draft2020-12|uri-reference.json",
-  "|draft2019-09|uri-reference.json",
-  "|draft7|uri-reference.json",
-  "|draft6|uri-reference.json",
-
-  // Not supported
   "|draft2020-12|uri-template.json",
   "|draft2019-09|uri-template.json",
   "|draft7|uri-template.json",
   "|draft6|uri-template.json",
-
-  // Not supported
-  "|draft2020-12|uri.json",
-  "|draft2019-09|uri.json",
-  "|draft7|uri.json",
-  "|draft6|uri.json",
-  "|draft4|uri.json",
 
   // Not supported
   "|draft2020-12|uuid.json",
