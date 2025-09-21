@@ -4,12 +4,20 @@ import dateTime from "./handlers/date-time.js";
 import date from "./handlers/date.js";
 import time from "./handlers/time.js";
 import duration from "./handlers/duration.js";
+import uri from "./handlers/uri.js";
+import uriReference from "./handlers/uri-reference.js";
+import iri from "./handlers/iri.js";
+import iriReference from "./handlers/iri-reference.js";
 
 
 addFormat(dateTime);
 addFormat(date);
 addFormat(time);
 addFormat(duration);
+addFormat(uri);
+addFormat(uriReference);
+addFormat(iri);
+addFormat(iriReference);
 
 export {
   getShouldValidateFormat,
