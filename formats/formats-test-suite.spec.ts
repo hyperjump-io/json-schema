@@ -26,22 +26,6 @@ type Test = {
 
 const skip = new Set<string>([
   // Not supported
-  "|draft2020-12|date-time.json",
-  "|draft2019-09|date-time.json",
-  "|draft7|date-time.json",
-  "|draft6|date-time.json",
-  "|draft4|date-time.json",
-
-  // Not supported
-  "|draft2020-12|date.json",
-  "|draft2019-09|date.json",
-  "|draft7|date.json",
-
-  // Not supported
-  "|draft2020-12|duration.json",
-  "|draft2019-09|duration.json",
-
-  // Not supported
   "|draft2020-12|ecmascript-regex.json",
   "|draft2019-09|ecmascript-regex.json",
   "|draft7|ecmascript-regex.json",
@@ -110,10 +94,25 @@ const skip = new Set<string>([
   "|draft2019-09|relative-json-pointer.json",
   "|draft7|relative-json-pointer.json",
 
-  // Not supported
-  "|draft2020-12|time.json",
-  "|draft2019-09|time.json",
-  "|draft7|time.json",
+  // Leap seconds don't make sense without a date
+  "|draft2020-12|time.json|validation of time strings|a valid time string with leap second, Zulu",
+  "|draft2019-09|time.json|validation of time strings|a valid time string with leap second, Zulu",
+  "|draft7|time.json|validation of time strings|a valid time string with leap second, Zulu",
+  "|draft2020-12|time.json|validation of time strings|valid leap second, zero time-offset",
+  "|draft2019-09|time.json|validation of time strings|valid leap second, zero time-offset",
+  "|draft7|time.json|validation of time strings|valid leap second, zero time-offset",
+  "|draft2020-12|time.json|validation of time strings|valid leap second, positive time-offset",
+  "|draft2019-09|time.json|validation of time strings|valid leap second, positive time-offset",
+  "|draft7|time.json|validation of time strings|valid leap second, positive time-offset",
+  "|draft2020-12|time.json|validation of time strings|valid leap second, large positive time-offset",
+  "|draft2019-09|time.json|validation of time strings|valid leap second, large positive time-offset",
+  "|draft7|time.json|validation of time strings|valid leap second, large positive time-offset",
+  "|draft2020-12|time.json|validation of time strings|valid leap second, negative time-offset",
+  "|draft2019-09|time.json|validation of time strings|valid leap second, negative time-offset",
+  "|draft7|time.json|validation of time strings|valid leap second, negative time-offset",
+  "|draft2020-12|time.json|validation of time strings|valid leap second, large negative time-offset",
+  "|draft2019-09|time.json|validation of time strings|valid leap second, large negative time-offset",
+  "|draft7|time.json|validation of time strings|valid leap second, large negative time-offset",
 
   // Not supported
   "|draft2020-12|uri-reference.json",
