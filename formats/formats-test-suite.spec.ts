@@ -94,11 +94,7 @@ const skip = new Set<string>([
   "|draft2020-12|uri-template.json",
   "|draft2019-09|uri-template.json",
   "|draft7|uri-template.json",
-  "|draft6|uri-template.json",
-
-  // Not supported
-  "|draft2020-12|uuid.json",
-  "|draft2019-09|uuid.json"
+  "|draft6|uri-template.json"
 ]);
 
 const shouldSkip = (path: string[]): boolean => {
