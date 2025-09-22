@@ -55,20 +55,6 @@ const skip = new Set<string>([
   "|draft7|idn-hostname.json",
 
   // Not supported
-  "|draft2020-12|ipv4.json",
-  "|draft2019-09|ipv4.json",
-  "|draft7|ipv4.json",
-  "|draft6|ipv4.json",
-  "|draft4|ipv4.json",
-
-  // Not supported
-  "|draft2020-12|ipv6.json",
-  "|draft2019-09|ipv6.json",
-  "|draft7|ipv6.json",
-  "|draft6|ipv6.json",
-  "|draft4|ipv6.json",
-
-  // Not supported
   "|draft2020-12|json-pointer.json",
   "|draft2019-09|json-pointer.json",
   "|draft7|json-pointer.json",
