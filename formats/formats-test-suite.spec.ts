@@ -26,11 +26,6 @@ type Test = {
 
 const skip = new Set<string>([
   // Not supported
-  "|draft2020-12|ecmascript-regex.json",
-  "|draft2019-09|ecmascript-regex.json",
-  "|draft7|ecmascript-regex.json",
-
-  // Not supported
   "|draft2020-12|email.json",
   "|draft2019-09|email.json",
   "|draft7|email.json",
@@ -59,11 +54,6 @@ const skip = new Set<string>([
   "|draft2019-09|json-pointer.json",
   "|draft7|json-pointer.json",
   "|draft6|json-pointer.json",
-
-  // Not supported
-  "|draft2020-12|regex.json",
-  "|draft2019-09|regex.json",
-  "|draft7|regex.json",
 
   // Not supported
   "|draft2020-12|relative-json-pointer.json",
