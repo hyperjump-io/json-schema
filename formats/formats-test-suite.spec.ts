@@ -49,11 +49,6 @@ const skip = new Set<string>([
   "|draft2019-09|idn-hostname.json",
   "|draft7|idn-hostname.json",
 
-  // Not supported
-  "|draft2020-12|relative-json-pointer.json",
-  "|draft2019-09|relative-json-pointer.json",
-  "|draft7|relative-json-pointer.json",
-
   // Leap seconds don't make sense without a date
   "|draft2020-12|time.json|validation of time strings|a valid time string with leap second, Zulu",
   "|draft2019-09|time.json|validation of time strings|a valid time string with leap second, Zulu",
