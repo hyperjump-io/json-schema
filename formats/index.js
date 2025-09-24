@@ -12,6 +12,7 @@ import iri from "./handlers/iri.js";
 import iriReference from "./handlers/iri-reference.js";
 import uuid from "./handlers/uuid.js";
 import uriTemplate from "./handlers/uri-template.js";
+import jsonPointer from "./handlers/json-pointer.js";
 import regex from "./handlers/regex.js";
 
 
@@ -27,6 +28,7 @@ addFormat(iri);
 addFormat(iriReference);
 addFormat(uuid);
 addFormat(uriTemplate);
+addFormat(jsonPointer);
 addFormat(regex);
 
 export {
