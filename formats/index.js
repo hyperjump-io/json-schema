@@ -12,6 +12,7 @@ import iri from "./handlers/iri.js";
 import iriReference from "./handlers/iri-reference.js";
 import uuid from "./handlers/uuid.js";
 import uriTemplate from "./handlers/uri-template.js";
+import regex from "./handlers/regex.js";
 
 
 addFormat(dateTime);
@@ -26,6 +27,7 @@ addFormat(iri);
 addFormat(iriReference);
 addFormat(uuid);
 addFormat(uriTemplate);
+addFormat(regex);
 
 export {
   getShouldValidateFormat,
