@@ -50,12 +50,6 @@ const skip = new Set<string>([
   "|draft7|idn-hostname.json",
 
   // Not supported
-  "|draft2020-12|json-pointer.json",
-  "|draft2019-09|json-pointer.json",
-  "|draft7|json-pointer.json",
-  "|draft6|json-pointer.json",
-
-  // Not supported
   "|draft2020-12|relative-json-pointer.json",
   "|draft2019-09|relative-json-pointer.json",
   "|draft7|relative-json-pointer.json",
