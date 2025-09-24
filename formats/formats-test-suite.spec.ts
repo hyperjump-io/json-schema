@@ -88,13 +88,7 @@ const skip = new Set<string>([
   "|draft7|time.json|validation of time strings|valid leap second, negative time-offset",
   "|draft2020-12|time.json|validation of time strings|valid leap second, large negative time-offset",
   "|draft2019-09|time.json|validation of time strings|valid leap second, large negative time-offset",
-  "|draft7|time.json|validation of time strings|valid leap second, large negative time-offset",
-
-  // Not supported
-  "|draft2020-12|uri-template.json",
-  "|draft2019-09|uri-template.json",
-  "|draft7|uri-template.json",
-  "|draft6|uri-template.json"
+  "|draft7|time.json|validation of time strings|valid leap second, large negative time-offset"
 ]);
 
 const shouldSkip = (path: string[]): boolean => {
