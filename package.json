@@ -55,6 +55,7 @@
     "@stylistic/eslint-plugin": "*",
     "@types/content-type": "*",
     "@types/node": "*",
+    "@types/tr46": "^5.0.1",
     "@types/uuid": "*",
     "@vitest/coverage-v8": "*",
     "eslint-import-resolver-typescript": "*",
@@ -73,6 +74,7 @@
     "content-type": "^1.0.4",
     "json-stringify-deterministic": "^1.0.12",
     "just-curry-it": "^5.3.0",
+    "tr46": "^6.0.0",
     "uuid": "^9.0.0"
   },
   "peerDependencies": {
