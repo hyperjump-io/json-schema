@@ -1,4 +1,4 @@
-import { addKeyword, defineVocabulary, loadDialect } from "../lib/keywords.js";
+import { addFormat, addKeyword, defineVocabulary, loadDialect } from "../lib/keywords.js";
 import { registerSchema } from "../lib/index.js";
 import metaSchema from "./schema.js";
 import additionalItems from "./additionalItems.js";
@@ -11,6 +11,7 @@ import format from "./format.js";
 import maximum from "./maximum.js";
 import minimum from "./minimum.js";
 import ref from "./ref.js";
+import hostname from "./hostname.js";
 
 
 addKeyword(additionalItems);
@@ -23,6 +24,8 @@ addKeyword(id);
 addKeyword(items);
 addKeyword(format);
 addKeyword(ref);
+
+addFormat(hostname);
 
 const jsonSchemaVersion = "http://json-schema.org/draft-04/schema";
 
