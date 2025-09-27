@@ -25,18 +25,6 @@ type Test = {
 };
 
 const skip = new Set<string>([
-  // Not supported
-  "|draft2020-12|email.json",
-  "|draft2019-09|email.json",
-  "|draft7|email.json",
-  "|draft6|email.json",
-  "|draft4|email.json",
-
-  // Not supported
-  "|draft2020-12|idn-email.json",
-  "|draft2019-09|idn-email.json",
-  "|draft7|idn-email.json",
-
   // Uses UTS #46 rather than RFC 589[0-5]
   "|draft2020-12|idn-hostname.json|validation of internationalized host names|contains illegal char U+302E Hangul single dot tone mark",
   "|draft2019-09|idn-hostname.json|validation of internationalized host names|contains illegal char U+302E Hangul single dot tone mark",
