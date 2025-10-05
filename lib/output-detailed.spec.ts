@@ -788,7 +788,7 @@ describe("Detailed Output Format", () => {
       });
     });
 
-    test("invalid - doesn't apply if the schema fails", async () => {
+    test("invalid - with sibling property declarations", async () => {
       registerSchema({
         properties: {
           foo: true,
@@ -810,6 +810,18 @@ describe("Detailed Output Format", () => {
                 keyword: "https://json-schema.org/evaluation/validate",
                 absoluteKeywordLocation: `${schemaUri}#/properties/bar`,
                 instanceLocation: "#/bar"
+              }
+            ]
+          },
+          {
+            keyword: "https://json-schema.org/keyword/unevaluatedProperties",
+            absoluteKeywordLocation: `${schemaUri}#/unevaluatedProperties`,
+            instanceLocation: "#",
+            errors: [
+              {
+                keyword: "https://json-schema.org/evaluation/validate",
+                absoluteKeywordLocation: `${schemaUri}#/unevaluatedProperties`,
+                instanceLocation: "#/baz"
               }
             ]
           }
@@ -873,7 +885,7 @@ describe("Detailed Output Format", () => {
       });
     });
 
-    test("invalid - doesn't apply if the schema fails", async () => {
+    test("invalid - with sibling property declarations", async () => {
       registerSchema({
         prefixItems: [true, false],
         unevaluatedItems: false
@@ -892,6 +904,18 @@ describe("Detailed Output Format", () => {
                 keyword: "https://json-schema.org/evaluation/validate",
                 absoluteKeywordLocation: `${schemaUri}#/prefixItems/1`,
                 instanceLocation: "#/1"
+              }
+            ]
+          },
+          {
+            keyword: "https://json-schema.org/keyword/unevaluatedItems",
+            absoluteKeywordLocation: "schema:main#/unevaluatedItems",
+            instanceLocation: "#",
+            errors: [
+              {
+                keyword: "https://json-schema.org/evaluation/validate",
+                absoluteKeywordLocation: "schema:main#/unevaluatedItems",
+                instanceLocation: "#/2"
               }
             ]
           }

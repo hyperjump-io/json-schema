@@ -645,7 +645,7 @@ describe("Basic Output Format", () => {
       });
     });
 
-    test("invalid - doesn't apply if the schema fails", async () => {
+    test("invalid - with sibling property declarations", async () => {
       registerSchema({
         properties: {
           foo: true,
@@ -662,6 +662,11 @@ describe("Basic Output Format", () => {
             keyword: "https://json-schema.org/evaluation/validate",
             absoluteKeywordLocation: `${schemaUri}#/properties/bar`,
             instanceLocation: "#/bar"
+          },
+          {
+            keyword: "https://json-schema.org/evaluation/validate",
+            absoluteKeywordLocation: `${schemaUri}#/unevaluatedProperties`,
+            instanceLocation: "#/baz"
           }
         ]
       });
@@ -727,7 +732,7 @@ describe("Basic Output Format", () => {
       });
     });
 
-    test("invalid - doesn't apply if the schema fails", async () => {
+    test("invalid - with sibling property declarations", async () => {
       registerSchema({
         prefixItems: [true, false],
         unevaluatedItems: false
@@ -741,6 +746,11 @@ describe("Basic Output Format", () => {
             keyword: "https://json-schema.org/evaluation/validate",
             absoluteKeywordLocation: `${schemaUri}#/prefixItems/1`,
             instanceLocation: "#/1"
+          },
+          {
+            keyword: "https://json-schema.org/evaluation/validate",
+            absoluteKeywordLocation: `${schemaUri}#/unevaluatedItems`,
+            instanceLocation: "#/2"
           }
         ]
       });
