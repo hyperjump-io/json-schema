@@ -1,6 +1,6 @@
 export default {
   "$schema": "https://json-schema.org/validation",
-  "title": "Format vocabulary meta-schema for assertion results",
+  "title": "Format vocabulary meta-schema",
 
   "$dynamicAnchor": "meta",
 

@@ -6,7 +6,7 @@ export default {
     "https://json-schema.org/vocab/unevaluated": true,
     "https://json-schema.org/vocab/validation": true,
     "https://json-schema.org/vocab/meta-data": true,
-    "https://json-schema.org/vocab/format-annotation": true,
+    "https://json-schema.org/vocab/format": true,
     "https://json-schema.org/vocab/content": true
   },
   "title": "Core and Validation specifications meta-schema",
@@ -18,7 +18,7 @@ export default {
     { "$ref": "meta/applicator" },
     { "$ref": "meta/validation" },
     { "$ref": "meta/meta-data" },
-    { "$ref": "meta/format-annotation" },
+    { "$ref": "meta/format" },
     { "$ref": "meta/content" }
   ]
 };

@@ -50,6 +50,6 @@ export const isIdnEmail = (email) => {
 };
 
 export default {
-  id: "https://json-schema.org/format/idn-email",
+  id: "https://json-schema.org/format/idn-email(partial)",
   handler: (email) => typeof email !== "string" || isIdnEmail(email)
 };

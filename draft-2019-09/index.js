@@ -12,6 +12,7 @@ import contentMetaSchema from "./meta/content.js";
 import additionalItems from "../draft-04/additionalItems.js";
 import items from "../draft-04/items.js";
 import formatAssertion from "./format-assertion.js";
+import format from "./format.js";
 import recursiveAnchor from "./recursiveAnchor.js";
 import recursiveRef from "../draft-2020-12/dynamicRef.js";
 
@@ -19,6 +20,7 @@ import recursiveRef from "../draft-2020-12/dynamicRef.js";
 addKeyword(additionalItems);
 addKeyword(items);
 addKeyword(formatAssertion);
+addKeyword(format);
 addKeyword(recursiveAnchor);
 addKeyword(recursiveRef);
 

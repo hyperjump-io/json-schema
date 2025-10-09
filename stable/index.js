@@ -1,13 +1,13 @@
 import { defineVocabulary, loadDialect } from "../lib/keywords.js";
 import { registerSchema } from "../lib/index.js";
+import "../formats/index.js";
 
 import metaSchema from "./validation.js";
 import coreMetaSchema from "./meta/core.js";
 import applicatorMetaSchema from "./meta/applicator.js";
 import validationMetaSchema from "./meta/validation.js";
 import metaDataMetaSchema from "./meta/meta-data.js";
-import formatAnnotationMetaSchema from "./meta/format-annotation.js";
-import formatAssertionMetaSchema from "./meta/format-assertion.js";
+import formatMetaSchema from "./meta/format.js";
 import contentMetaSchema from "./meta/content.js";
 import unevaluatedMetaSchema from "./meta/unevaluated.js";
 
@@ -78,12 +78,8 @@ defineVocabulary("https://json-schema.org/vocab/meta-data", {
   "writeOnly": "https://json-schema.org/keyword/writeOnly"
 });
 
-defineVocabulary("https://json-schema.org/vocab/format-annotation", {
+defineVocabulary("https://json-schema.org/vocab/format", {
   "format": "https://json-schema.org/keyword/format"
-});
-
-defineVocabulary("https://json-schema.org/vocab/format-assertion", {
-  "format": "https://json-schema.org/keyword/format-assertion"
 });
 
 defineVocabulary("https://json-schema.org/vocab/content", {
@@ -103,7 +99,7 @@ loadDialect(dialectId, {
   "https://json-schema.org/vocab/applicator": true,
   "https://json-schema.org/vocab/validation": true,
   "https://json-schema.org/vocab/meta-data": true,
-  "https://json-schema.org/vocab/format-annotation": true,
+  "https://json-schema.org/vocab/format": true,
   "https://json-schema.org/vocab/content": true,
   "https://json-schema.org/vocab/unevaluated": true
 });
@@ -113,8 +109,7 @@ registerSchema(coreMetaSchema, "https://json-schema.org/meta/core");
 registerSchema(applicatorMetaSchema, "https://json-schema.org/meta/applicator");
 registerSchema(validationMetaSchema, "https://json-schema.org/meta/validation");
 registerSchema(metaDataMetaSchema, "https://json-schema.org/meta/meta-data");
-registerSchema(formatAnnotationMetaSchema, "https://json-schema.org/meta/format-annotation");
-registerSchema(formatAssertionMetaSchema, "https://json-schema.org/meta/format-assertion");
+registerSchema(formatMetaSchema, "https://json-schema.org/meta/format");
 registerSchema(contentMetaSchema, "https://json-schema.org/meta/content");
 registerSchema(unevaluatedMetaSchema, "https://json-schema.org/meta/unevaluated");
 

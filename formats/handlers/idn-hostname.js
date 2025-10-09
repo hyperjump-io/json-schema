@@ -1,5 +1,5 @@
 import tr46 from "tr46";
-import { isHostname } from "./hostname.js";
+import { isALabel } from "./a-label.js";
 
 
 export const isIdnHostname = (hostname) => {
@@ -9,10 +9,10 @@ export const isIdnHostname = (hostname) => {
     return false;
   }
 
-  return isHostname(asciiHostname);
+  return isALabel(asciiHostname);
 };
 
 export default {
-  id: "https://json-schema.org/format/idn-hostname",
+  id: "https://json-schema.org/format/idn-hostname(partial)",
   handler: (hostname) => typeof hostname !== "string" || isIdnHostname(hostname)
 };
