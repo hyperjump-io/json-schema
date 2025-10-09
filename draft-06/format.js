@@ -9,7 +9,7 @@ const id = "https://json-schema.org/keyword/draft-06/format";
 const compile = (schema) => Browser.value(schema);
 
 const interpret = (format, instance) => {
-  if (!getShouldValidateFormat()) {
+  if (getShouldValidateFormat() === false) {
     return true;
   }
 

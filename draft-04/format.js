@@ -9,7 +9,7 @@ const id = "https://json-schema.org/keyword/draft-04/format";
 const compile = (schema) => Browser.value(schema);
 
 const interpret = (format, instance) => {
-  if (!getShouldValidateFormat()) {
+  if (getShouldValidateFormat() === false) {
     return true;
   }
 
@@ -22,7 +22,7 @@ const annotation = (format) => format;
 const formats = {
   "date-time": "https://json-schema.org/format/date-time",
   "email": "https://json-schema.org/format/email",
-  "hostname": "https://json-schema.org/format/draft-04/hostname",
+  "hostname": "https://json-schema.org/format/hostname",
   "ipv4": "https://json-schema.org/format/ipv4",
   "ipv6": "https://json-schema.org/format/ipv6",
   "uri": "https://json-schema.org/format/uri"

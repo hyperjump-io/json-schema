@@ -1,5 +1,6 @@
 import { addFormat } from "../lib/keywords.js";
 
+import aLabel from "./handlers/a-label.js";
 import dateTime from "./handlers/date-time.js";
 import date from "./handlers/date.js";
 import time from "./handlers/time.js";
@@ -21,6 +22,7 @@ import relativeJsonPointer from "./handlers/relative-json-pointer.js";
 import regex from "./handlers/regex.js";
 
 
+addFormat(aLabel);
 addFormat(dateTime);
 addFormat(date);
 addFormat(time);

@@ -38,7 +38,7 @@ defineVocabulary(jsonSchemaVersion, {
   "exclusiveMaximum": "https://json-schema.org/keyword/draft-04/exclusiveMaximum",
   "exclusiveMinimum": "https://json-schema.org/keyword/draft-04/exclusiveMinimum",
   "externalDocs": "https://spec.openapis.org/oas/3.0/keyword/externalDocs",
-  "format": "https://json-schema.org/keyword/format",
+  "format": "https://json-schema.org/keyword/draft-04/format",
   "items": "https://json-schema.org/keyword/draft-04/items",
   "maxItems": "https://json-schema.org/keyword/maxItems",
   "maxLength": "https://json-schema.org/keyword/maxLength",

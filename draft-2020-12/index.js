@@ -13,10 +13,14 @@ import unevaluatedMetaSchema from "./meta/unevaluated.js";
 
 import dynamicAnchor from "./dynamicAnchor.js";
 import dynamicRef from "./dynamicRef.js";
+import format from "../draft-2019-09/format.js";
+import formatAssertion from "./format-assertion.js";
 
 
 addKeyword(dynamicRef);
 addKeyword(dynamicAnchor);
+addKeyword(format);
+addKeyword(formatAssertion);
 
 defineVocabulary("https://json-schema.org/draft/2020-12/vocab/core", {
   "$anchor": "https://json-schema.org/keyword/anchor",
@@ -81,11 +85,11 @@ defineVocabulary("https://json-schema.org/draft/2020-12/vocab/meta-data", {
 });
 
 defineVocabulary("https://json-schema.org/draft/2020-12/vocab/format-annotation", {
-  "format": "https://json-schema.org/keyword/format"
+  "format": "https://json-schema.org/keyword/draft-2019-09/format"
 });
 
 defineVocabulary("https://json-schema.org/draft/2020-12/vocab/format-assertion", {
-  "format": "https://json-schema.org/keyword/format-assertion"
+  "format": "https://json-schema.org/keyword/draft-2020-12/format-assertion"
 });
 
 defineVocabulary("https://json-schema.org/draft/2020-12/vocab/content", {

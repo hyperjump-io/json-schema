@@ -1,5 +1,6 @@
 import { defineVocabulary, loadDialect } from "../lib/keywords.js";
 import { registerSchema } from "../lib/index.js";
+import "../formats/index.js";
 
 import metaSchema from "./schema.js";
 import coreMetaSchema from "./meta/core.js";
