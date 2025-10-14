@@ -3,7 +3,7 @@ import { Agent, setGlobalDispatcher } from "undici";
 import { RetrievalError } from "@hyperjump/browser";
 import { registerSchema, unregisterSchema } from "./index.js";
 import { getSchema, hasDialect } from "./experimental.js";
-import "../stable/index.js";
+import "../v1/index.js";
 import "../draft-2020-12/index.js";
 import "../draft-2019-09/index.js";
 import "../draft-07/index.js";
@@ -42,7 +42,7 @@ describe("Schema Parsing", () => {
   });
 
   it("declare dialect with $schema", async () => {
-    const dialect = "https://json-schema.org/validation";
+    const dialect = "https://json-schema.org/v1";
     registerSchema({ $schema: dialect }, `${testDomain}/schema`);
 
     const browser = await getSchema(`${testDomain}/schema`);
@@ -52,13 +52,13 @@ describe("Schema Parsing", () => {
 
   it("schema with no identifier", () => {
     expect(() => {
-      registerSchema({ $schema: "https://json-schema.org/validation" });
+      registerSchema({ $schema: "https://json-schema.org/v1" });
     }).to.throw(Error, "Unable to determine an identifier for the schema");
   });
 
   it("self-identifying schema", async () => {
     registerSchema({
-      $schema: "https://json-schema.org/validation",
+      $schema: "https://json-schema.org/v1",
       $id: "https://example.com/schema"
     });
 
@@ -70,7 +70,7 @@ describe("Schema Parsing", () => {
   it("relative self-identifying schema without retrieval URI", () => {
     expect(() => {
       registerSchema({
-        $schema: "https://json-schema.org/validation",
+        $schema: "https://json-schema.org/v1",
         $id: "/schema"
       });
     }).to.throw(Error, "Invalid absolute-IRI");
@@ -78,7 +78,7 @@ describe("Schema Parsing", () => {
 
   it("relative self-identifying schema with retrieval URI", async () => {
     registerSchema({
-      $schema: "https://json-schema.org/validation",
+      $schema: "https://json-schema.org/v1",
       $id: "/relative-schema"
     }, `${testDomain}/schema`);
 
@@ -90,7 +90,7 @@ describe("Schema Parsing", () => {
   it("self-identifying schema with file scheme", () => {
     expect(() => {
       registerSchema({
-        $schema: "https://json-schema.org/validation",
+        $schema: "https://json-schema.org/v1",
         $id: "file:///path/to/schema.schema.json"
       });
     }).to.throw(Error, "Registering a schema with a 'file:' URI scheme is not allowed");
@@ -98,7 +98,7 @@ describe("Schema Parsing", () => {
 
   it("schema with pointer fragment", async () => {
     registerSchema({
-      $schema: "https://json-schema.org/validation",
+      $schema: "https://json-schema.org/v1",
       $defs: {
         foo: {}
       }
@@ -112,7 +112,7 @@ describe("Schema Parsing", () => {
 
   it("self-identifying schema with pointer fragment", async () => {
     registerSchema({
-      $schema: "https://json-schema.org/validation",
+      $schema: "https://json-schema.org/v1",
       $id: "https://example.com/schema",
       $defs: {
         foo: {}
@@ -127,7 +127,7 @@ describe("Schema Parsing", () => {
 
   it("schema with anchor fragment", async () => {
     registerSchema({
-      $schema: "https://json-schema.org/validation",
+      $schema: "https://json-schema.org/v1",
       $defs: {
         foo: { $anchor: "foo" }
       }
@@ -167,7 +167,7 @@ describe("Schema Parsing", () => {
 
   it("self-identifying schema with anchor fragment", async () => {
     registerSchema({
-      $schema: "https://json-schema.org/validation",
+      $schema: "https://json-schema.org/v1",
       $id: "https://example.com/schema",
       $defs: {
         foo: { $anchor: "foo" }
@@ -182,7 +182,7 @@ describe("Schema Parsing", () => {
 
   it("internal reference", async () => {
     registerSchema({
-      $schema: "https://json-schema.org/validation",
+      $schema: "https://json-schema.org/v1",
       $defs: {
         foo: { $ref: "#/$defs/bar" },
         bar: {}
@@ -212,7 +212,7 @@ describe("Schema Parsing", () => {
 
   it("non-reference $ref", async () => {
     registerSchema({
-      $schema: "https://json-schema.org/validation",
+      $schema: "https://json-schema.org/v1",
       $defs: {
         $ref: {}
       }
@@ -240,7 +240,7 @@ describe("Schema Parsing", () => {
 
   it("embedded schema", async () => {
     registerSchema({
-      $schema: "https://json-schema.org/validation",
+      $schema: "https://json-schema.org/v1",
       $defs: {
         foo: {
           $id: "/embedded"
@@ -272,7 +272,7 @@ describe("Schema Parsing", () => {
 
   it("reference embedded schema by pointer", async () => {
     registerSchema({
-      $schema: "https://json-schema.org/validation",
+      $schema: "https://json-schema.org/v1",
       $ref: "#/$defs/foo",
       $defs: {
         foo: {
@@ -289,7 +289,7 @@ describe("Schema Parsing", () => {
 
   it("reference embedded schema by id", async () => {
     registerSchema({
-      $schema: "https://json-schema.org/validation",
+      $schema: "https://json-schema.org/v1",
       $ref: "/embedded",
       $defs: {
         foo: {
@@ -306,7 +306,7 @@ describe("Schema Parsing", () => {
 
   it("reference main schema from embedded schema", async () => {
     registerSchema({
-      $schema: "https://json-schema.org/validation",
+      $schema: "https://json-schema.org/v1",
       $ref: "/embedded#/$ref",
       $defs: {
         foo: {
@@ -324,7 +324,7 @@ describe("Schema Parsing", () => {
 
   it("reference embedded schema from embedded schema", async () => {
     registerSchema({
-      $schema: "https://json-schema.org/validation",
+      $schema: "https://json-schema.org/v1",
       $ref: "/foo#/$ref",
       $defs: {
         foo: {
@@ -345,10 +345,10 @@ describe("Schema Parsing", () => {
 
   it("embedded schema with non-dialect changing $schema", async () => {
     registerSchema({
-      $schema: "https://json-schema.org/validation",
+      $schema: "https://json-schema.org/v1",
       $defs: {
         foo: {
-          $schema: "https://json-schema.org/validation",
+          $schema: "https://json-schema.org/v1",
           $id: "/embedded"
         }
       }
@@ -358,12 +358,12 @@ describe("Schema Parsing", () => {
     expect(browser.uri).to.equal(`${testDomain}/embedded`);
     expect(browser.cursor).to.equal("");
     expect(browser.document.baseUri).to.equal(`${testDomain}/embedded`);
-    expect(browser.document.dialectId).to.equal("https://json-schema.org/validation");
+    expect(browser.document.dialectId).to.equal("https://json-schema.org/v1");
   });
 
   it("embedded schema with dialect changing $schema both using $id", async () => {
     registerSchema({
-      $schema: "https://json-schema.org/validation",
+      $schema: "https://json-schema.org/v1",
       $defs: {
         foo: {
           $schema: "https://json-schema.org/draft/2020-12/schema",
@@ -381,7 +381,7 @@ describe("Schema Parsing", () => {
 
   it("embedded schema with dialect changing $schema from $id to id", async () => {
     registerSchema({
-      $schema: "https://json-schema.org/validation",
+      $schema: "https://json-schema.org/v1",
       $defs: {
         foo: {
           $schema: "http://json-schema.org/draft-04/schema#",
@@ -402,7 +402,7 @@ describe("Schema Parsing", () => {
       $schema: "http://json-schema.org/draft-04/schema#",
       definitions: {
         foo: {
-          $schema: "https://json-schema.org/validation",
+          $schema: "https://json-schema.org/v1",
           $id: "/embedded"
         }
       }
@@ -412,12 +412,12 @@ describe("Schema Parsing", () => {
     expect(browser.uri).to.equal(`${testDomain}/embedded`);
     expect(browser.cursor).to.equal("");
     expect(browser.document.baseUri).to.equal(`${testDomain}/embedded`);
-    expect(browser.document.dialectId).to.equal("https://json-schema.org/validation");
+    expect(browser.document.dialectId).to.equal("https://json-schema.org/v1");
   });
 
   it("dynamic anchors", async () => {
     registerSchema({
-      $schema: "https://json-schema.org/validation",
+      $schema: "https://json-schema.org/v1",
       $dynamicAnchor: "foo",
       $defs: {
         foo: {
@@ -464,9 +464,9 @@ describe("Schema Parsing", () => {
 
   it("registering a dialect schema", () => {
     registerSchema({
-      $schema: "https://json-schema.org/validation",
+      $schema: "https://json-schema.org/v1",
       $vocabulary: {
-        "https://json-schema.org/vocab/core": true
+        "https://json-schema.org/v1/vocab/core": true
       }
     }, `${testDomain}/schema`);
 
@@ -475,9 +475,9 @@ describe("Schema Parsing", () => {
 
   it("unregistering a dialect schema", () => {
     registerSchema({
-      $schema: "https://json-schema.org/validation",
+      $schema: "https://json-schema.org/v1",
       $vocabulary: {
-        "https://json-schema.org/vocab/core": true
+        "https://json-schema.org/v1/vocab/core": true
       }
     }, `${testDomain}/schema`);
     unregisterSchema(`${testDomain}/schema`);
@@ -487,7 +487,7 @@ describe("Schema Parsing", () => {
 
   it("duplicate registered schema", () => {
     const schema = {
-      $schema: "https://json-schema.org/validation"
+      $schema: "https://json-schema.org/v1"
     };
 
     registerSchema(schema, `${testDomain}/schema`);
@@ -499,7 +499,7 @@ describe("Schema Parsing", () => {
 
   it("remove registered schema", async () => {
     const schema = {
-      $schema: "https://json-schema.org/validation"
+      $schema: "https://json-schema.org/v1"
     };
 
     registerSchema(schema, `${testDomain}/schema`);
@@ -515,7 +515,7 @@ describe("Schema Parsing", () => {
 
   it("register removed schema", async () => {
     const schema = {
-      $schema: "https://json-schema.org/validation"
+      $schema: "https://json-schema.org/v1"
     };
 
     registerSchema(schema, `${testDomain}/schema`);

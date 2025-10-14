@@ -1,11 +1,11 @@
 import { afterEach, describe, expect, test } from "vitest";
-import { validate, registerSchema, unregisterSchema } from "../stable/index.js";
+import { validate, registerSchema, unregisterSchema } from "../v1/index.js";
 import { DETAILED } from "./experimental.js";
 
 
 describe("Detailed Output Format", () => {
   const schemaUri = "schema:main";
-  const dialectUri = "https://json-schema.org/validation";
+  const dialectUri = "https://json-schema.org/v1";
 
   afterEach(() => {
     unregisterSchema(schemaUri);

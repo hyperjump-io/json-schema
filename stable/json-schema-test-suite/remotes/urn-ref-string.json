@@ -1,7 +1,0 @@
-{
-    "$id": "urn:uuid:feebdaed-ffff-0000-ffff-0000deadbeef",
-    "$ref": "#/$defs/bar",
-    "$defs": {
-        "bar": { "type": "string" }
-    }
-}

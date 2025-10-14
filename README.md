@@ -68,8 +68,8 @@ import { registerSchema, validate } from "@hyperjump/json-schema/draft-2020-12";
 import "@hyperjump/json-schema/draft-07";
 ```
 
-**Note**: The default export (`@hyperjump/json-schema`) is reserved for the
-stable version of JSON Schema that will hopefully be released in near future.
+**Note**: The default export (`@hyperjump/json-schema`) is reserved for v1 of
+JSON Schema that will hopefully be released in near future.
 
 **Validate schema from JavaScript**
 

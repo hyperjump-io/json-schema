@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { MockAgent, setGlobalDispatcher } from "undici";
 import { getSchema } from "./experimental.js";
-import "../stable/index.js";
+import "../v1/index.js";
 
 
 describe("Schema Media Type Plugin", () => {
@@ -19,7 +19,7 @@ describe("Schema Media Type Plugin", () => {
   });
 
   it("declare dialect with schema media-type parameter", async () => {
-    const dialect = "https://json-schema.org/validation";
+    const dialect = "https://json-schema.org/v1";
 
     mockAgent.get(testDomain)
       .intercept({ method: "GET", path: "/schema" })
@@ -31,7 +31,7 @@ describe("Schema Media Type Plugin", () => {
   });
 
   it("declare dialect with profile media-type parameter", async () => {
-    const dialect = "https://json-schema.org/validation";
+    const dialect = "https://json-schema.org/v1";
 
     mockAgent.get(testDomain)
       .intercept({ method: "GET", path: "/schema" })
@@ -43,7 +43,7 @@ describe("Schema Media Type Plugin", () => {
   });
 
   it("$schema overrides media type parameter", async () => {
-    const dialect = "https://json-schema.org/validation";
+    const dialect = "https://json-schema.org/v1";
     const schema = `{ "$schema": "${dialect}" }`;
 
     mockAgent.get(testDomain)
@@ -56,7 +56,7 @@ describe("Schema Media Type Plugin", () => {
   });
 
   it("schema identified by retieval URI", async () => {
-    const schema = `{ "$schema": "https://json-schema.org/validation" }`;
+    const schema = `{ "$schema": "https://json-schema.org/v1" }`;
 
     mockAgent.get(testDomain)
       .intercept({ method: "GET", path: "/schema" })
@@ -69,7 +69,7 @@ describe("Schema Media Type Plugin", () => {
 
   it("self-identifying schema", async () => {
     const schema = `{
-      "$schema": "https://json-schema.org/validation",
+      "$schema": "https://json-schema.org/v1",
       "$id": "https://example.com/schema"
     }`;
 
@@ -84,7 +84,7 @@ describe("Schema Media Type Plugin", () => {
 
   it("self-identifying schema with pointer fragment", async () => {
     const schema = `{
-      "$schema": "https://json-schema.org/validation",
+      "$schema": "https://json-schema.org/v1",
       "$id": "https://example.com/schema",
       "$defs": {
         "foo": {}

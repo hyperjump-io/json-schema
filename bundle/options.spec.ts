@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { bundle } from "./index.js";
 import { registerSchema, unregisterSchema } from "../lib/index.js";
 import { getKeywordName } from "../lib/experimental.js";
-import "../stable/index.js";
+import "../v1/index.js";
 import "../draft-2020-12/index.js";
 import "../draft-2019-09/index.js";
 import "../draft-07/index.js";
@@ -86,7 +86,7 @@ const testRunner = (dialect: string) => {
 };
 
 describe("bundle", () => {
-  testRunner("https://json-schema.org/validation");
+  testRunner("https://json-schema.org/v1");
   testRunner("https://json-schema.org/draft/2020-12/schema");
   testRunner("https://json-schema.org/draft/2019-09/schema");
   testRunner("http://json-schema.org/draft-07/schema");

@@ -1,7 +1,7 @@
 import { writeFile, mkdir, rm } from "node:fs/promises";
 import { isCompatible, md5, loadSchemas, testSuite, unloadSchemas } from "./test-utils.js";
 import { AnnotationsPlugin, compile, DetailedOutputPlugin, getSchema, Validation } from "../lib/experimental.js";
-import "../stable/index.js";
+import "../v1/index.js";
 import "../draft-2020-12/index.js";
 import "../draft-2019-09/index.js";
 import "../draft-07/index.js";
@@ -51,7 +51,7 @@ const snapshotGenerator = async (version, dialect) => {
 (async function () {
   await rm("./bundle/snapshots", { recursive: true });
   await mkdir("./bundle/snapshots");
-  await snapshotGenerator(9999, "https://json-schema.org/validation");
+  await snapshotGenerator(9999, "https://json-schema.org/v1");
   await snapshotGenerator(2020, "https://json-schema.org/draft/2020-12/schema");
   await snapshotGenerator(2019, "https://json-schema.org/draft/2019-09/schema");
   await snapshotGenerator(7, "http://json-schema.org/draft-07/schema");

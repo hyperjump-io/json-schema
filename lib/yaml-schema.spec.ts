@@ -8,7 +8,7 @@ import { addMediaTypePlugin, value } from "@hyperjump/browser";
 import { toAbsoluteIri } from "@hyperjump/uri";
 import { When, Then } from "./gherkin.ts";
 import YAML from "yaml";
-import "../stable/index.js";
+import "../v1/index.js";
 import { getSchema, buildSchemaDocument } from "./experimental.js";
 
 import type { Browser } from "@hyperjump/browser";

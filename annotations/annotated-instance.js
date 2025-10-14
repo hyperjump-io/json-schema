@@ -2,7 +2,7 @@ import * as Instance from "../lib/instance.js";
 import { getKeywordId } from "../lib/keywords.js";
 
 
-const defaultDialectId = "https://json-schema.org/validation";
+const defaultDialectId = "https://json-schema.org/v1";
 
 export const annotation = (node, keyword, dialect = defaultDialectId) => {
   const keywordUri = getKeywordId(keyword, dialect);

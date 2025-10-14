@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, afterEach } from "vitest";
 import { getSchema, toSchema } from "./experimental.js";
-import { registerSchema, unregisterSchema } from "../stable/index.js";
+import { registerSchema, unregisterSchema } from "../v1/index.js";
 import "../draft-2020-12/index.js";
 import "../draft-2019-09/index.js";
 import "../draft-07/index.js";
@@ -18,7 +18,7 @@ describe("JSON Schema - toString", () => {
   });
 
   describe("dialect and self-identification", () => {
-    const contextDialectId = "https://json-schema.org/validation";
+    const contextDialectId = "https://json-schema.org/v1";
     let schema: Browser<SchemaDocument>;
 
     beforeEach(async () => {
@@ -33,7 +33,7 @@ describe("JSON Schema - toString", () => {
       });
     });
 
-    test("contextDialectId: stable", () => {
+    test("contextDialectId: v1", () => {
       const options = { contextDialectId: contextDialectId };
       expect(toSchema(schema, options)).to.eql({
         $id: `${testDomain}/schema`
@@ -48,7 +48,7 @@ describe("JSON Schema - toString", () => {
       });
     });
 
-    test("contextDialectId: stable, includeDialect: auto", () => {
+    test("contextDialectId: v1, includeDialect: auto", () => {
       const options: ToSchemaOptions = {
         contextDialectId: contextDialectId,
         includeDialect: "auto"
@@ -69,7 +69,7 @@ describe("JSON Schema - toString", () => {
       });
     });
 
-    test("contextDialectId: stable, includeDialect: always", () => {
+    test("contextDialectId: v1, includeDialect: always", () => {
       const options: ToSchemaOptions = {
         contextDialectId: contextDialectId,
         includeDialect: "always"
@@ -80,7 +80,7 @@ describe("JSON Schema - toString", () => {
       });
     });
 
-    test("contextDialectId: stable, includeDialect: never", () => {
+    test("contextDialectId: v1, includeDialect: never", () => {
       const options: ToSchemaOptions = {
         contextDialectId: contextDialectId,
         includeDialect: "never"
@@ -122,7 +122,7 @@ describe("JSON Schema - toString", () => {
   });
 
   test("file self-identification", async () => {
-    const contextDialectId = "https://json-schema.org/validation";
+    const contextDialectId = "https://json-schema.org/v1";
     const schema = await getSchema("./lib/string.schema.json");
     expect(toSchema(schema)).to.eql({
       $schema: contextDialectId,
@@ -146,7 +146,7 @@ describe("JSON Schema - toString", () => {
   });
 
   test("identifier with a query", async () => {
-    const contextDialectId = "https://json-schema.org/validation";
+    const contextDialectId = "https://json-schema.org/v1";
     registerSchema({}, `${testDomain}/schema?foo=bar&baz`, contextDialectId);
 
     const schema = await getSchema(`${testDomain}/schema?foo=bar&baz`);
@@ -157,7 +157,7 @@ describe("JSON Schema - toString", () => {
   });
 
   test("anchors", async () => {
-    const contextDialectId = "https://json-schema.org/validation";
+    const contextDialectId = "https://json-schema.org/v1";
     registerSchema({
       $anchor: "root",
 
@@ -206,7 +206,7 @@ describe("JSON Schema - toString", () => {
   });
 
   test("dynamic anchors", async () => {
-    const contextDialectId = "https://json-schema.org/validation";
+    const contextDialectId = "https://json-schema.org/v1";
     registerSchema({
       $dynamicAnchor: "root",
 
@@ -271,7 +271,7 @@ describe("JSON Schema - toString", () => {
   });
 
   test("references", async () => {
-    const contextDialectId = "https://json-schema.org/validation";
+    const contextDialectId = "https://json-schema.org/v1";
     registerSchema({
       $ref: "#/$defs/foo",
       $defs: {
@@ -313,7 +313,7 @@ describe("JSON Schema - toString", () => {
   });
 
   test("include embedded schemas", async () => {
-    const contextDialectId = "https://json-schema.org/validation";
+    const contextDialectId = "https://json-schema.org/v1";
     registerSchema({
       $ref: "foo",
       $defs: {
@@ -334,7 +334,7 @@ describe("JSON Schema - toString", () => {
   });
 
   test("embedded file-schema", async () => {
-    const contextDialectId = "https://json-schema.org/validation";
+    const contextDialectId = "https://json-schema.org/v1";
     const schema = await getSchema("./lib/bundled.schema.json");
     expect(toSchema(schema)).to.eql({
       $schema: contextDialectId,
@@ -352,7 +352,7 @@ describe("JSON Schema - toString", () => {
   });
 
   test("exclude embedded schemas", async () => {
-    const contextDialectId = "https://json-schema.org/validation";
+    const contextDialectId = "https://json-schema.org/v1";
     registerSchema({
       $ref: "foo",
       $defs: {

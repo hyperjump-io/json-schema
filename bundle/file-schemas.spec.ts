@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { registerSchema, unregisterSchema } from "../lib/index.js";
-import "../stable/index.js";
+import "../v1/index.js";
 import "../draft-2020-12/index.js";
 import { bundle } from "./index.js";
 

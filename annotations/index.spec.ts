@@ -4,7 +4,7 @@ import { isCompatible } from "./test-utils.js";
 import { toAbsoluteIri } from "@hyperjump/uri";
 import { annotate } from "./index.js";
 import { registerSchema, unregisterSchema } from "../lib/index.js";
-import "../stable/index.js";
+import "../v1/index.js";
 import "../draft-2020-12/index.js";
 import "../draft-2019-09/index.js";
 import "../draft-07/index.js";
@@ -98,7 +98,7 @@ const testRunner = (version: number, dialect: string) => {
 };
 
 describe("annotations", () => {
-  testRunner(9999, "https://json-schema.org/validation");
+  testRunner(9999, "https://json-schema.org/v1");
   testRunner(2020, "https://json-schema.org/draft/2020-12/schema");
   testRunner(2019, "https://json-schema.org/draft/2019-09/schema");
   testRunner(7, "http://json-schema.org/draft-07/schema");

@@ -4,12 +4,12 @@ import { toAbsoluteIri } from "@hyperjump/uri";
 import { registerSchema, unregisterSchema, validate } from "./index.js";
 
 import type { Json } from "@hyperjump/json-pointer";
-import type { SchemaObject, OasSchema31, Validator } from "./index.js";
+import type { JsonSchemaV1, SchemaObject, Validator } from "./index.js";
 
 
 type Suite = {
   description: string;
-  schema: OasSchema31;
+  schema: JsonSchemaV1;
   tests: Test[];
 };
 
@@ -19,13 +19,32 @@ type Test = {
   valid: boolean;
 };
 
-// This package is indended to be a compatibility mode from v1 JSON Schema.
-// Some edge cases might not work exactly as specified, but it should work for
-// any real-life schema.
 const skip = new Set<string>([
   // Self-identifying with a `file:` URI is not allowed for security reasons.
-  "|draft2020-12|ref.json|$id with file URI still resolves pointers - *nix",
-  "|draft2020-12|ref.json|$id with file URI still resolves pointers - windows"
+  "|v1|ref.json|$id with file URI still resolves pointers - *nix",
+  "|v1|ref.json|$id with file URI still resolves pointers - windows",
+
+  "|v1|date-time.json",
+  "|v1|date-time.json",
+  "|v1|date.json",
+  "|v1|duration.json",
+  "|v1|ecmascript-regex.json",
+  "|v1|email.json",
+  "|v1|hostname.json",
+  "|v1|idn-email.json",
+  "|v1|idn-hostname.json",
+  "|v1|ipv4.json",
+  "|v1|ipv6.json",
+  "|v1|iri-reference.json",
+  "|v1|iri.json",
+  "|v1|json-pointer.json",
+  "|v1|regex.json",
+  "|v1|relative-json-pointer.json",
+  "|v1|time.json",
+  "|v1|uri-reference.json",
+  "|v1|uri-template.json",
+  "|v1|uri.json",
+  "|v1|uuid.json"
 ]);
 
 const shouldSkip = (path: string[]): boolean => {
@@ -46,7 +65,7 @@ const addRemotes = (dialectId: string, filePath = `${testSuitePath}/remotes`, ur
     .forEach((entry) => {
       if (entry.isFile() && entry.name.endsWith(".json")) {
         const remote = JSON.parse(fs.readFileSync(`${filePath}/${entry.name}`, "utf8")) as SchemaObject;
-        if (!remote.$schema || toAbsoluteIri(remote.$schema as string) === "https://json-schema.org/draft/2020-12/schema") {
+        if (!remote.$schema || toAbsoluteIri(remote.$schema as string) === dialectId) {
           registerSchema(remote, `http://localhost:1234${url}/${entry.name}`, dialectId);
         }
       } else if (entry.isDirectory()) {
@@ -63,10 +82,13 @@ const runTestSuite = (draft: string, dialectId: string) => {
       addRemotes(dialectId);
     });
 
-    fs.readdirSync(testSuiteFilePath, { withFileTypes: true })
+    [
+      ...fs.readdirSync(testSuiteFilePath, { withFileTypes: true }),
+      ...fs.readdirSync(`${testSuiteFilePath}/format`, { withFileTypes: true })
+    ]
       .filter((entry) => entry.isFile() && entry.name.endsWith(".json"))
       .forEach((entry) => {
-        const file = `${testSuiteFilePath}/${entry.name}`;
+        const file = `${entry.parentPath}/${entry.name}`;
 
         describe(entry.name, () => {
           const suites = JSON.parse(fs.readFileSync(file, "utf8")) as Suite[];
@@ -80,11 +102,7 @@ const runTestSuite = (draft: string, dialectId: string) => {
                 if (shouldSkip([draft, entry.name, suite.description])) {
                   return;
                 }
-                url = `http://${draft}-test-suite.json-schema.org/${entry.name}/${encodeURIComponent(suite.description)}`;
-                // @ts-expect-error Covert from 2020-12
-                if (typeof suite.schema === "object" && suite.schema.$schema === "https://json-schema.org/draft/2020-12/schema") {
-                  delete suite.schema.$schema;
-                }
+                url = `http://${draft}-test-suite.json-schema.org/${encodeURIComponent(suite.description)}`;
                 registerSchema(suite.schema, url, dialectId);
 
                 _validate = await validate(url);
@@ -111,4 +129,4 @@ const runTestSuite = (draft: string, dialectId: string) => {
   });
 };
 
-runTestSuite("draft2020-12", "https://spec.openapis.org/oas/3.1/dialect/base");
+runTestSuite("v1", "https://json-schema.org/v1");
