@@ -7,7 +7,7 @@ A collection of modules for working with JSON Schemas.
   * Schemas can reference other schemas using a different dialect
   * Work directly with schemas on the filesystem or HTTP
 * OpenAPI
-  * Versions: 3.0, 3.1
+  * Versions: 3.0, 3.1, 3.2 
   * Validate an OpenAPI document
   * Validate values against a schema from an OpenAPI document
 * Create custom keywords, vocabularies, and dialects
@@ -132,22 +132,22 @@ system](https://github.com/hyperjump-io/browser/#uri-schemes) provided by
 
 **OpenAPI**
 
-The OpenAPI 3.0 and 3.1 meta-schemas are pre-loaded and the OpenAPI JSON Schema
+The OpenAPI 3.0 and 3.1 and 3.2 meta-schemas are pre-loaded and the OpenAPI JSON Schema
 dialects for each of those versions is supported. A document with a Content-Type
 of `application/openapi+json` (web) or a file extension of `openapi.json`
 (filesystem) is understood as an OpenAPI document.
 
 Use the pattern `@hyperjump/json-schema/*` to import the version you need. The
-available versions are `openapi-3-0` for 3.0 and `openapi-3-1` for 3.1.
+available versions are `openapi-3-0` for 3.0, `openapi-3-1` for 3.1, and `openapi-3-2` for 3.2.
 
 ```javascript
-import { validate } from "@hyperjump/json-schema/openapi-3-1";
+import { validate } from "@hyperjump/json-schema/openapi-3-2";
 
 
-// Validate an OpenAPI document
-const output = await validate("https://spec.openapis.org/oas/3.1/schema-base", openapi);
+// Validate an OpenAPI 3.2 document
+const output = await validate("https://spec.openapis.org/oas/3.2/schema-base", openapi);
 
-// Validate an instance against a schema in an OpenAPI document
+// Validate an instance against a schema in an OpenAPI 3.2 document
 const output = await validate("./example.openapi.json#/components/schemas/foo", 42);
 ```
 
@@ -155,6 +155,19 @@ YAML support isn't built in, but you can add it by writing a
 [MediaTypePlugin](https://github.com/hyperjump-io/browser/#media-types). You can
 use the one at `lib/openapi.js` as an example and replace the JSON parts with
 YAML.
+
+<!-- ## `package.json` Exports -->
+<!-- ```json
+"exports": {
+  "./openapi-3-0": "./openapi-3-0/index.js",
+  "./openapi-3-1": "./openapi-3-1/index.js",
+  "./openapi-3-2": "./openapi-3-2/index.js"
+} -->
+
+**`package.json` exports** — add:
+
+```json
+"./openapi-3-2": "./openapi-3-2/index.js"
 
 **Media types**
 
