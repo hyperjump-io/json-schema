@@ -12,7 +12,7 @@ export default {
     "https://spec.openapis.org/oas/3.2/vocab/base": false
   },
 
-  "description": "openapi v3.2.x documents using 2019-09 json schemas",
+  "description": "openapi v3.2.x documents using 2020-12 json schemas",
 
   "$ref": "https://spec.openapis.org/oas/3.2/schema",
   "properties": {
@@ -20,7 +20,7 @@ export default {
   },
 
   "$defs": {
-    "dialect": { "const": "https://json-schema.org/draft/2019-09/schema" },
+    "dialect": { "const": "https://json-schema.org/draft/2020-12/schema" },
 
     "schema": {
       "$dynamicanchor": "meta",

@@ -259,7 +259,7 @@ type Tag = {
 type Reference = {
   $ref: string;
   summary?: string;
-  descriptions?: string;
+  description?: string;
 };
 
 type SecurityScheme = {
@@ -275,7 +275,7 @@ type SecurityScheme = {
 
 type OauthFlows = {
   implicit: Implicit;
-  Password: Password;
+  password: Password;
   clientCredentials: ClientCredentials;
   authorizationCode: AuthorizationCode;
 };

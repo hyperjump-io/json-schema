@@ -62,7 +62,7 @@
     "typescript": "*",
     "typescript-eslint": "*",
     "undici": "*",
-    "vitest": "^3.2.4",
+    "vitest": "*",
     "yaml": "*"
   },
   "dependencies": {
