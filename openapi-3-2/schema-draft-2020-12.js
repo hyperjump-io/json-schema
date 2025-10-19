@@ -23,7 +23,7 @@ export default {
     "dialect": { "const": "https://json-schema.org/draft/2020-12/schema" },
 
     "schema": {
-      "$dynamicanchor": "meta",
+      "$dynamicAnchor": "meta",
       "$ref": "https://spec.openapis.org/oas/3.2/dialect/base",
       "properties": {
         "$schema": { "$ref": "#/$defs/dialect" }

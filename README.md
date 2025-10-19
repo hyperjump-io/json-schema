@@ -156,19 +156,6 @@ YAML support isn't built in, but you can add it by writing a
 use the one at `lib/openapi.js` as an example and replace the JSON parts with
 YAML.
 
-<!-- ## `package.json` Exports -->
-<!-- ```json
-"exports": {
-  "./openapi-3-0": "./openapi-3-0/index.js",
-  "./openapi-3-1": "./openapi-3-1/index.js",
-  "./openapi-3-2": "./openapi-3-2/index.js"
-} -->
-
-**`package.json` exports** — add:
-
-```json
-"./openapi-3-2": "./openapi-3-2/index.js"
-
 **Media types**
 
 This library uses media types to determine how to parse a retrieved document. It
