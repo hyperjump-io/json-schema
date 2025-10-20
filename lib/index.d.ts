@@ -56,7 +56,7 @@ export const setShouldValidateSchema: (isEnabled: boolean) => void;
 export const getShouldValidateSchema: () => boolean;
 
 export class InvalidSchemaError extends Error {
-  public output: Output;
+  public output: Output & { valid: false };
 
   public constructor(output: Output);
 }
