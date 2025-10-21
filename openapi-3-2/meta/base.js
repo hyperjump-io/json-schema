@@ -25,7 +25,7 @@ export default {
         "propertyName": {
           "type": "string"
         },
-        "mappings": {
+        "mapping": {
           "type": "object",
           "additionalProperties": {
             "type": "string"

@@ -1,7 +1,6 @@
 import type { Json } from "@hyperjump/json-pointer";
 import type { JsonSchemaType } from "../lib/common.js";
 
-
 export type OasSchema32 = boolean | {
   $schema?: "https://spec.openapis.org/oas/3.2/dialect/base";
   $id?: string;
@@ -85,8 +84,7 @@ type Xml = {
   wrapped?: boolean;
 };
 
-// TODO: Fill in this type when 3.2 is published
-export type OpenApi32 = {
+export type OpenApi = {
   openapi: "3.2.0";
   info: {
     title: string;
@@ -103,58 +101,58 @@ export type OpenApi32 = {
       url?: string;
     };
   };
-  servers?: Array<{ url: string; description?: string }>;
-  paths?: Record<string, PathItem32>;
-  webhooks?: Record<string, PathItem32>; // <-- NEW in 3.2
-  components?: Components32;
-  security?: SecurityRequirement32[];
-  tags?: Tag32[];
-  externalDocs?: ExternalDocs32;
+  servers?: Server[];
+  paths?: Record<string, PathItem>;
+  webhooks?: Record<string, PathItem>;
+  components?: Components;
+  security?: SecurityRequirement[];
+  tags?: Tag[];
+  externalDocs?: ExternalDocs;
 };
 
-export type PathItem32 = {
+export type PathItem = {
   summary?: string;
   description?: string;
-  get?: Operation32;
-  put?: Operation32;
-  post?: Operation32;
-  delete?: Operation32;
-  options?: Operation32;
-  head?: Operation32;
-  patch?: Operation32;
-  trace?: Operation32;
-  servers?: Array<{ url: string; description?: string }>;
-  parameters?: Parameter32[];
+  get?: Operation;
+  put?: Operation;
+  post?: Operation;
+  delete?: Operation;
+  options?: Operation;
+  head?: Operation;
+  patch?: Operation;
+  trace?: Operation;
+  servers?: Server[];
+  parameters?: Parameter[];
 };
 
-export type Operation32 = {
+export type Operation = {
   tags?: string[];
   summary?: string;
   description?: string;
-  externalDocs?: ExternalDocs32;
+  externalDocs?: ExternalDocs;
   operationId?: string;
-  parameters?: Parameter32[];
-  requestBody?: RequestBody32;
-  responses: Record<string, Response32>;
-  callbacks?: Record<string, Callback32>;
+  parameters?: Parameter[];
+  requestBody?: RequestBody;
+  responses: Record<string, Response>;
+  callbacks?: Record<string, Callback>;
   deprecated?: boolean;
-  security?: SecurityRequirement32[];
-  servers?: Array<{ url: string; description?: string }>;
+  security?: SecurityRequirement[];
+  servers?: Server[];
 };
 
-export type Components32 = {
+export type Components = {
   schemas?: Record<string, OasSchema32>;
-  responses?: Record<string, Response32>;
-  parameters?: Record<string, Parameter32>;
-  examples?: Record<string, Example32>;
-  requestBodies?: Record<string, RequestBody32>;
-  headers?: Record<string, Header32>;
-  securitySchemes?: Record<string, SecurityScheme32>;
-  links?: Record<string, Link32>;
-  callbacks?: Record<string, Callback32>;
+  responses?: Record<string, Response>;
+  parameters?: Record<string, Parameter>;
+  examples?: Record<string, Example>;
+  requestBodies?: Record<string, RequestBody>;
+  headers?: Record<string, Header>;
+  securitySchemes?: Record<string, SecurityScheme>;
+  links?: Record<string, Link>;
+  callbacks?: Record<string, Callback>;
 };
 
-export type ExternalDocs32 = {
+export type ExternalDocs = {
   description?: string;
   url: string;
 };
