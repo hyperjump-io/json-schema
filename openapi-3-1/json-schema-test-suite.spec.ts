@@ -100,7 +100,7 @@ const runTestSuite = (draft: string, dialectId: string) => {
                 } else {
                   it(test.description, () => {
                     const output = _validate(test.data);
-                    expect(output.valid).toBe(test.valid);
+                    expect(output.valid).to.equal(test.valid);
                   });
                 }
               });

@@ -1,7 +1,6 @@
 import type { Json } from "@hyperjump/json-pointer";
 import type { JsonSchemaType } from "../lib/common.js";
 
-
 export type OasSchema31 = boolean | {
   $schema?: "https://spec.openapis.org/oas/3.1/dialect/base";
   $id?: string;
