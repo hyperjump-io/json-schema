@@ -1,4 +1,5 @@
 import { describe, it, expect, afterEach } from "vitest";
+import { Agent, setGlobalDispatcher } from "undici";
 import { RetrievalError } from "@hyperjump/browser";
 import { registerSchema, unregisterSchema } from "./index.js";
 import { getSchema, hasDialect } from "./experimental.js";
@@ -8,6 +9,8 @@ import "../draft-2019-09/index.js";
 import "../draft-07/index.js";
 import "../draft-04/index.js";
 
+
+setGlobalDispatcher(new Agent({ connect: { timeout: 100 } }));
 
 describe("Schema Parsing", () => {
   const testDomain = "https://test.hyperjump.io";

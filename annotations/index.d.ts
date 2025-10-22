@@ -15,7 +15,7 @@ export type Annotator = (value: Json, options?: OutputFormat | ValidationOptions
 export const interpret: (compiledSchema: CompiledSchema, value: JsonNode, options?: OutputFormat | ValidationOptions) => JsonNode;
 
 export class ValidationError extends Error {
-  public output: Output;
+  public output: Output & { valid: false };
 
   public constructor(output: Output);
 }
