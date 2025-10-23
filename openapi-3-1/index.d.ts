@@ -237,7 +237,7 @@ type Link = {
   parameters?: Record<string, string>;
   requestBody?: Json;
   description?: string;
-  body?: Server;
+  server?: Server;
 };
 
 type Header = {
@@ -274,10 +274,10 @@ type SecurityScheme = {
 };
 
 type OauthFlows = {
-  implicit: Implicit;
-  password: Password;
-  clientCredentials: ClientCredentials;
-  authorizationCode: AuthorizationCode;
+  implicit?: Implicit;
+  password?: Password;
+  clientCredentials?: ClientCredentials;
+  authorizationCode?: AuthorizationCode;
 };
 
 type Implicit = {
