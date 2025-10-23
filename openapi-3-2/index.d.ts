@@ -1,6 +1,7 @@
 import type { Json } from "@hyperjump/json-pointer";
 import type { JsonSchemaType } from "../lib/common.js";
 
+
 export type OasSchema32 = boolean | {
   $schema?: "https://spec.openapis.org/oas/3.2/dialect/base";
   $id?: string;
@@ -108,13 +109,13 @@ type Info = {
   contact?: Contact;
   license?: License;
   version: string;
-}
+};
 
 type Contact = {
   name?: string;
   url?: string;
   email?: string;
-}
+};
 
 type License = {
   name: string;
@@ -126,7 +127,7 @@ type ServerVariable = {
   enum?: string[];
   default: string;
   description?: string;
-}
+};
 
 type PathItem = {
   summary?: string;
@@ -174,7 +175,7 @@ type Parameter = {
   allowReserved?: boolean;
   schema?: OasSchema32;
   content?: Record<string, MediaType | Reference>;
-}
+};
 
 type Example = {
   summary?: string;
@@ -183,19 +184,19 @@ type Example = {
   serializedValue?: string;
   externalValue?: string;
   value?: Json;
-}
+};
 
 type Reference = {
   $ref: string;
   summary?: string;
   description?: string;
-}
+};
 
 type RequestBody = {
   description?: string;
   content: Record<string, MediaType | Reference>;
   required?: boolean;
-}
+};
 
 type MediaType = {
   schema?: OasSchema32;
@@ -205,7 +206,7 @@ type MediaType = {
   encoding?: Record<string, Encoding>;
   prefixEncoding?: Encoding[];
   itemEncoding?: Encoding;
-}
+};
 
 type Encoding = {
   contentType?: string;
@@ -216,7 +217,7 @@ type Encoding = {
   style?: string;
   explode?: boolean;
   allowReserved?: boolean;
-}
+};
 
 type Header = {
   description?: string;
@@ -228,7 +229,7 @@ type Header = {
   explode?: boolean;
   schema?: OasSchema32;
   content?: Record<string, MediaType | Reference>;
-}
+};
 
 type Responses = {
   default?: Response | Reference;
@@ -243,7 +244,7 @@ type Server = {
   description?: string;
   name: string;
   variables?: Record<string, ServerVariable>;
-}
+};
 
 type Components = {
   schemas?: Record<string, OasSchema32>;
@@ -262,14 +263,14 @@ type Components = {
 type SecurityScheme = {
   type: "apiKey" | "http" | "mutualTLS" | "oauth2" | "openIdConnect";
   description?: string;
-  name?: string; 
+  name?: string;
   in?: "query" | "header" | "cookie";
-  scheme?: string; 
-  bearerFormat?: string; 
-  flows?: OAuthFlows; 
-  openIdConnectUrl?: string; 
-  oauth2MetadataUrl?: string; 
-  deprecated?: boolean; 
+  scheme?: string;
+  bearerFormat?: string;
+  flows?: OAuthFlows;
+  openIdConnectUrl?: string;
+  oauth2MetadataUrl?: string;
+  deprecated?: boolean;
 };
 
 type OAuthFlows = {
@@ -284,33 +285,33 @@ type Implicit = {
   authorizationUrl: string;
   refreshUrl?: string;
   scopes: Record<string, string>;
-}
+};
 
 type Password = {
   tokenUrl: string;
   refreshUrl?: string;
   scopes: Record<string, string>;
-}
+};
 
 type ClientCredentials = {
   tokenUrl: string;
   refreshUrl?: string;
   scopes: Record<string, string>;
-}
+};
 
 type AuthorizationCode = {
   authorizationUrl: string;
   tokenUrl: string;
   refreshUrl?: string;
   scopes: Record<string, string>;
-}
+};
 
 type DeviceAuthorization = {
   deviceAuthorizationUrl: string;
   tokenUrl: string;
   refreshUrl?: string;
   scopes: Record<string, string>;
-}
+};
 
 type Link = {
   operationRef?: string;
@@ -319,7 +320,7 @@ type Link = {
   requestBody?: Json;
   description?: string;
   server?: Server;
-}
+};
 
 type Tag = {
   name: string;
@@ -328,6 +329,6 @@ type Tag = {
   externalDocs?: ExternalDocs;
   parent?: string;
   kind?: string;
-}
+};
 
 export * from "../lib/index.js";
