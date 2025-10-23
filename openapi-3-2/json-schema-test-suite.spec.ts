@@ -111,4 +111,4 @@ const runTestSuite = (draft: string, dialectId: string) => {
   });
 };
 
-runTestSuite("draft2020-12", "https://spec.openapis.org/oas/3.2/dialect/base");
+runTestSuite("draft2020-12", "https://spec.openapis.org/oas/3.2/dialect");

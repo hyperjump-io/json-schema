@@ -32,14 +32,12 @@ defineVocabulary("https://spec.openapis.org/oas/3.2/vocab/base", {
   "xml": "https://spec.openapis.org/oas/3.0/keyword/xml"
 });
 
-registerSchema(vocabularySchema, "https://spec.openapis.org/oas/3.2/meta/base");
-registerSchema(dialectSchema, "https://spec.openapis.org/oas/3.2/dialect/base");
+registerSchema(vocabularySchema, "https://spec.openapis.org/oas/3.2/meta");
+registerSchema(dialectSchema, "https://spec.openapis.org/oas/3.2/dialect");
 
 // Current Schemas
 registerSchema(schema, "https://spec.openapis.org/oas/3.2/schema");
-registerSchema(schema, "https://spec.openapis.org/oas/3.2/schema/latest");
 registerSchema(schemaBase, "https://spec.openapis.org/oas/3.2/schema-base");
-registerSchema(schemaBase, "https://spec.openapis.org/oas/3.2/schema-base/latest");
 
 // Alternative dialect schemas
 registerSchema(schemaDraft2020, "https://spec.openapis.org/oas/3.2/schema-draft-2020-12");
