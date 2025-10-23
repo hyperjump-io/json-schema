@@ -69,6 +69,7 @@ export type OasSchema32 = boolean | {
 type Discriminator = {
   propertyName: string;
   mappings?: Record<string, string>;
+  defaultMapping?: string;
 };
 
 type ExternalDocs = {
@@ -77,6 +78,7 @@ type ExternalDocs = {
 };
 
 type Xml = {
+  nodeType?: string;
   name?: string;
   namespace?: string;
   prefix?: string;
@@ -85,22 +87,10 @@ type Xml = {
 };
 
 export type OpenApi = {
-  openapi: "3.2.0";
-  info: {
-    title: string;
-    version: string;
-    description?: string;
-    termsOfService?: string;
-    contact?: {
-      name?: string;
-      url?: string;
-      email?: string;
-    };
-    license?: {
-      name: string;
-      url?: string;
-    };
-  };
+  openapi: string;
+  $self?: string;
+  info: Info;
+  jsonSchemaDialect?: string;
   servers?: Server[];
   paths?: Record<string, PathItem>;
   webhooks?: Record<string, PathItem>;
@@ -110,7 +100,35 @@ export type OpenApi = {
   externalDocs?: ExternalDocs;
 };
 
-export type PathItem = {
+type Info = {
+  title: string;
+  summary?: string;
+  description?: string;
+  termsOfService?: string;
+  contact?: Contact;
+  license?: License;
+  version: string;
+}
+
+type Contact = {
+  name?: string;
+  url?: string;
+  email?: string;
+}
+
+type License = {
+  name: string;
+  identifier?: string;
+  url?: string;
+};
+
+type ServerVariable = {
+  enum?: string[];
+  default: string;
+  description?: string;
+}
+
+type PathItem = {
   summary?: string;
   description?: string;
   get?: Operation;
@@ -121,40 +139,195 @@ export type PathItem = {
   head?: Operation;
   patch?: Operation;
   trace?: Operation;
+  query?: Operation;
+  additionOperations?: Record<string, Operation>;
   servers?: Server[];
-  parameters?: Parameter[];
+  parameters?: (Parameter | Reference)[];
 };
 
-export type Operation = {
+type Operation = {
   tags?: string[];
   summary?: string;
   description?: string;
   externalDocs?: ExternalDocs;
   operationId?: string;
-  parameters?: Parameter[];
-  requestBody?: RequestBody;
-  responses: Record<string, Response>;
-  callbacks?: Record<string, Callback>;
+  parameters?: (Parameter | Reference)[];
+  requestBody?: RequestBody | Reference;
+  responses: Responses;
+  callbacks?: Record<string, Callbacks | Reference>;
   deprecated?: boolean;
   security?: SecurityRequirement[];
   servers?: Server[];
 };
 
-export type Components = {
+type Parameter = {
+  name: string;
+  in: "query" | "querystring" | "header" | "path" | "cookie";
+  description?: string;
+  required?: boolean;
+  deprecated?: boolean;
+  allowEmptyValue?: boolean;
+  example?: Json;
+  examples?: Record<string, Example | Reference>;
+  style?: string;
+  explode?: boolean;
+  allowReserved?: boolean;
+  schema?: OasSchema32;
+  content?: Record<string, MediaType | Reference>;
+}
+
+type Example = {
+  summary?: string;
+  description?: string;
+  dataValue?: Json;
+  serializedValue?: string;
+  externalValue?: string;
+  value?: Json;
+}
+
+type Reference = {
+  $ref: string;
+  summary?: string;
+  description?: string;
+}
+
+type RequestBody = {
+  description?: string;
+  content: Record<string, MediaType | Reference>;
+  required?: boolean;
+}
+
+type MediaType = {
+  schema?: OasSchema32;
+  itemSchema?: OasSchema32;
+  example?: Json;
+  examples?: Record<string, Example | Reference>;
+  encoding?: Record<string, Encoding>;
+  prefixEncoding?: Encoding[];
+  itemEncoding?: Encoding;
+}
+
+type Encoding = {
+  contentType?: string;
+  headers?: Record<string, Header | Reference>;
+  encoding?: Record<string, Encoding>;
+  prefixEncoding?: Encoding[];
+  itemEncoding?: Encoding;
+  style?: string;
+  explode?: boolean;
+  allowReserved?: boolean;
+}
+
+type Header = {
+  description?: string;
+  required?: boolean;
+  deprecated?: boolean;
+  example?: Json;
+  examples?: Record<string, Example | Reference>;
+  style?: string;
+  explode?: boolean;
+  schema?: OasSchema32;
+  content?: Record<string, MediaType | Reference>;
+}
+
+type Responses = {
+  default?: Response | Reference;
+} & Record<string, Response | Reference>;
+
+type Callbacks = Record<string, PathItem | Reference>;
+
+type SecurityRequirement = Record<string, string[]>;
+
+type Server = {
+  url: string;
+  description?: string;
+  name: string;
+  variables?: Record<string, ServerVariable>;
+}
+
+type Components = {
   schemas?: Record<string, OasSchema32>;
-  responses?: Record<string, Response>;
-  parameters?: Record<string, Parameter>;
-  examples?: Record<string, Example>;
-  requestBodies?: Record<string, RequestBody>;
-  headers?: Record<string, Header>;
-  securitySchemes?: Record<string, SecurityScheme>;
-  links?: Record<string, Link>;
-  callbacks?: Record<string, Callback>;
+  responses?: Record<string, Response | Reference>;
+  parameters?: Record<string, Parameter | Reference>;
+  examples?: Record<string, Example | Reference>;
+  requestBodies?: Record<string, RequestBody | Reference>;
+  headers?: Record<string, Header | Reference>;
+  securitySchemes?: Record<string, SecurityScheme | Reference>;
+  links?: Record<string, Link | Reference>;
+  callbacks?: Record<string, Callbacks | Reference>;
+  pathItems?: Record<string, PathItem>;
+  mediaTypes?: Record<string, MediaType | Reference>;
 };
 
-export type ExternalDocs = {
+type SecurityScheme = {
+  type: "apiKey" | "http" | "mutualTLS" | "oauth2" | "openIdConnect";
   description?: string;
-  url: string;
+  name?: string; 
+  in?: "query" | "header" | "cookie";
+  scheme?: string; 
+  bearerFormat?: string; 
+  flows?: OAuthFlows; 
+  openIdConnectUrl?: string; 
+  oauth2MetadataUrl?: string; 
+  deprecated?: boolean; 
 };
+
+type OAuthFlows = {
+  implicit?: Implicit;
+  password?: Password;
+  clientCredentials?: ClientCredentials;
+  authorizationCode?: AuthorizationCode;
+  deviceAuthorization?: DeviceAuthorization;
+};
+
+type Implicit = {
+  authorizationUrl: string;
+  refreshUrl?: string;
+  scopes: Record<string, string>;
+}
+
+type Password = {
+  tokenUrl: string;
+  refreshUrl?: string;
+  scopes: Record<string, string>;
+}
+
+type ClientCredentials = {
+  tokenUrl: string;
+  refreshUrl?: string;
+  scopes: Record<string, string>;
+}
+
+type AuthorizationCode = {
+  authorizationUrl: string;
+  tokenUrl: string;
+  refreshUrl?: string;
+  scopes: Record<string, string>;
+}
+
+type DeviceAuthorization = {
+  deviceAuthorizationUrl: string;
+  tokenUrl: string;
+  refreshUrl?: string;
+  scopes: Record<string, string>;
+}
+
+type Link = {
+  operationRef?: string;
+  operationId?: string;
+  parameters?: Record<string, string>;
+  requestBody?: Json;
+  description?: string;
+  server?: Server;
+}
+
+type Tag = {
+  name: string;
+  summary?: string;
+  description?: string;
+  externalDocs?: ExternalDocs;
+  parent?: string;
+  kind?: string;
+}
 
 export * from "../lib/index.js";
