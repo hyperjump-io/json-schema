@@ -123,10 +123,31 @@ type License = {
   url?: string;
 };
 
+type Server = {
+  url: string;
+  description?: string;
+  name?: string;
+  variables?: Record<string, ServerVariable>;
+};
+
 type ServerVariable = {
   enum?: string[];
   default: string;
   description?: string;
+};
+
+type Components = {
+  schemas?: Record<string, OasSchema32>;
+  responses?: Record<string, Response | Reference>;
+  parameters?: Record<string, Parameter | Reference>;
+  examples?: Record<string, Example | Reference>;
+  requestBodies?: Record<string, RequestBody | Reference>;
+  headers?: Record<string, Header | Reference>;
+  securitySchemes?: Record<string, SecurityScheme | Reference>;
+  links?: Record<string, Link | Reference>;
+  callbacks?: Record<string, Callbacks | Reference>;
+  pathItems?: Record<string, PathItem>;
+  mediaTypes?: Record<string, MediaType | Reference>;
 };
 
 type PathItem = {
@@ -162,7 +183,6 @@ type Operation = {
   servers?: Server[];
 };
 
-// TODO: Needs improvement
 type Parameter = {
   name: string;
   in: "query" | "querystring" | "header" | "path" | "cookie";
@@ -178,27 +198,6 @@ type Parameter = {
   content: Record<string, MediaType | Reference>;
 });
 
-// TODO: Needs improvement
-type Example = {
-  summary?: string;
-  description?: string;
-  dataValue?: Json;
-  serializedValue?: string;
-  externalValue?: string;
-  value?: Json;
-};
-
-type Examples = {
-  example?: Json;
-  examples?: Record<string, Example | Reference>;
-};
-
-type Reference = {
-  $ref: string;
-  summary?: string;
-  description?: string;
-};
-
 type RequestBody = {
   description?: string;
   content: Record<string, MediaType | Reference>;
@@ -213,7 +212,6 @@ type MediaType = {
   itemEncoding?: Encoding;
 } & Examples;
 
-// TODO: Needs improvement
 type Encoding = {
   contentType?: string;
   headers?: Record<string, Header | Reference>;
@@ -224,18 +222,6 @@ type Encoding = {
   explode?: boolean;
   allowReserved?: boolean;
 };
-
-type Header = {
-  description?: string;
-  required?: boolean;
-  deprecated?: boolean;
-} & Examples & ({
-  style?: "simple";
-  explode?: boolean;
-  schema: OasSchema32;
-} | {
-  content: Record<string, MediaType | Reference>;
-});
 
 type Responses = {
   default?: Response | Reference;
@@ -251,30 +237,56 @@ type Response = {
 
 type Callbacks = Record<string, PathItem | Reference>;
 
-type SecurityRequirement = Record<string, string[]>;
-
-type Server = {
-  url: string;
-  description?: string;
-  name?: string;
-  variables?: Record<string, ServerVariable>;
-};
-
-type Components = {
-  schemas?: Record<string, OasSchema32>;
-  responses?: Record<string, Response | Reference>;
-  parameters?: Record<string, Parameter | Reference>;
+type Examples = {
+  example?: Json;
   examples?: Record<string, Example | Reference>;
-  requestBodies?: Record<string, RequestBody | Reference>;
-  headers?: Record<string, Header | Reference>;
-  securitySchemes?: Record<string, SecurityScheme | Reference>;
-  links?: Record<string, Link | Reference>;
-  callbacks?: Record<string, Callbacks | Reference>;
-  pathItems?: Record<string, PathItem>;
-  mediaTypes?: Record<string, MediaType | Reference>;
 };
 
-// TODO: Needs improvement
+type Example = {
+  summary?: string;
+  description?: string;
+  dataValue?: Json;
+  serializedValue?: string;
+  externalValue?: string;
+  value?: Json;
+};
+
+type Link = {
+  operationRef?: string;
+  operationId?: string;
+  parameters?: Record<string, string>;
+  requestBody?: Json;
+  description?: string;
+  server?: Server;
+};
+
+type Header = {
+  description?: string;
+  required?: boolean;
+  deprecated?: boolean;
+} & Examples & ({
+  style?: "simple";
+  explode?: boolean;
+  schema: OasSchema32;
+} | {
+  content: Record<string, MediaType | Reference>;
+});
+
+type Tag = {
+  name: string;
+  summary?: string;
+  description?: string;
+  externalDocs?: ExternalDocs;
+  parent?: string;
+  kind?: string;
+};
+
+type Reference = {
+  $ref: string;
+  summary?: string;
+  description?: string;
+};
+
 type SecurityScheme = {
   type: "apiKey" | "http" | "mutualTLS" | "oauth2" | "openIdConnect";
   description?: string;
@@ -282,13 +294,13 @@ type SecurityScheme = {
   in?: "query" | "header" | "cookie";
   scheme?: string;
   bearerFormat?: string;
-  flows?: OAuthFlows;
+  flows?: OauthFlows;
   openIdConnectUrl?: string;
   oauth2MetadataUrl?: string;
   deprecated?: boolean;
 };
 
-type OAuthFlows = {
+type OauthFlows = {
   implicit?: Implicit;
   password?: Password;
   clientCredentials?: ClientCredentials;
@@ -328,22 +340,6 @@ type DeviceAuthorization = {
   scopes: Record<string, string>;
 };
 
-type Link = {
-  operationRef?: string;
-  operationId?: string;
-  parameters?: Record<string, string>;
-  requestBody?: Json;
-  description?: string;
-  server?: Server;
-};
-
-type Tag = {
-  name: string;
-  summary?: string;
-  description?: string;
-  externalDocs?: ExternalDocs;
-  parent?: string;
-  kind?: string;
-};
+type SecurityRequirement = Record<string, string[]>;
 
 export * from "../lib/index.js";
