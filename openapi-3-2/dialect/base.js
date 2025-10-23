@@ -13,10 +13,10 @@ export default {
   "$dynamicAnchor": "meta",
 
   "title": "OpenAPI 3.2 Schema Object Dialect",
-  "description": "A JSON Schema dialect describing schemas found in OpenAPI v3.2 Descriptions",
+  "description": "A JSON Schema dialect describing schemas found in OpenAPI v3.2.x Descriptions",
 
   "allOf": [
     { "$ref": "https://json-schema.org/draft/2020-12/schema" },
-    { "$ref": "https://spec.openapis.org/oas/3.2/meta/base" }
+    { "$ref": "https://spec.openapis.org/oas/3.2/meta" }
   ]
 };

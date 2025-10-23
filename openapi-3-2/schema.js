@@ -19,7 +19,7 @@ export default {
     "jsonSchemaDialect": {
       "type": "string",
       "format": "uri-reference",
-      "default": "https://spec.openapis.org/oas/3.2/dialect/2025-09-17"
+      "default": "https://spec.openapis.org/oas/3.1/dialect"
     },
     "servers": {
       "type": "array",

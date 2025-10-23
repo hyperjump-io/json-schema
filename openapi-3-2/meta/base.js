@@ -3,21 +3,23 @@ export default {
   "$dynamicAnchor": "meta",
 
   "title": "OAS Base Vocabulary",
-  "description": "A JSON Schema Vocabulary used in the OpenAPI Schema Dialect",
+  "description": "A JSON Schema Vocabulary used in the OpenAPI JSON Schema Dialect",
 
   "type": ["object", "boolean"],
   "properties": {
-    "example": true,
     "discriminator": { "$ref": "#/$defs/discriminator" },
+    "example": { "deprecated": true },
     "externalDocs": { "$ref": "#/$defs/external-docs" },
     "xml": { "$ref": "#/$defs/xml" }
   },
+
   "$defs": {
     "extensible": {
       "patternProperties": {
         "^x-": true
       }
     },
+
     "discriminator": {
       "$ref": "#/$defs/extensible",
       "type": "object",
@@ -30,6 +32,9 @@ export default {
           "additionalProperties": {
             "type": "string"
           }
+        },
+        "defaultMapping": {
+          "type": "string"
         }
       },
       "required": ["propertyName"],
@@ -54,21 +59,41 @@ export default {
       "$ref": "#/$defs/extensible",
       "type": "object",
       "properties": {
+        "nodeType": {
+          "type": "string",
+          "enum": [
+            "element",
+            "attribute",
+            "text",
+            "cdata",
+            "none"
+          ]
+        },
         "name": {
           "type": "string"
         },
         "namespace": {
           "type": "string",
-          "format": "uri"
+          "format": "iri"
         },
         "prefix": {
           "type": "string"
         },
         "attribute": {
-          "type": "boolean"
+          "type": "boolean",
+          "deprecated": true
         },
         "wrapped": {
-          "type": "boolean"
+          "type": "boolean",
+          "deprecated": true
+        }
+      },
+      "dependentSchemas": {
+        "nodeType": {
+          "properties": {
+            "attribute": false,
+            "wrapped": false
+          }
         }
       },
       "unevaluatedProperties": false

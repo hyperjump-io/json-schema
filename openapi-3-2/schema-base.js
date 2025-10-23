@@ -20,11 +20,10 @@ export default {
   },
 
   "$defs": {
-    "dialect": { "const": "https://spec.openapis.org/oas/3.2/dialect/base" },
-
+    "dialect": { "const": "https://spec.openapis.org/oas/3.2/dialect" },
     "schema": {
       "$dynamicAnchor": "meta",
-      "$ref": "https://spec.openapis.org/oas/3.2/dialect/base",
+      "$ref": "https://spec.openapis.org/oas/3.2/dialect",
       "properties": {
         "$schema": { "$ref": "#/$defs/dialect" }
       }
