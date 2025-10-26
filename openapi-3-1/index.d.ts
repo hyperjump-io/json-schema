@@ -180,18 +180,55 @@ type ExternalDocumentation = {
   url: string;
 };
 
-type Parameter = {
+export type Parameter = {
   name: string;
-  in: "query" | "header" | "path" | "cookie";
   description?: string;
   required?: boolean;
   deprecated?: boolean;
   allowEmptyValue?: boolean;
-  style?: "matrix" | "label" | "form" | "simple" | "spaceDelimited" | "pipeDelimited" | "deepObject";
+} & (
+  (
+    {
+      in: "path";
+      required: true;
+    } & (
+      ({ style?: "matrix" | "label" | "simple" } & SchemaParameter)
+      | ContentParameter
+    )
+  ) | (
+    {
+      in: "query";
+    } & (
+      ({ style?: "form" | "spaceDelimited" | "pipeDelimited" | "deepObject" } & SchemaParameter)
+      | ContentParameter
+    )
+  ) | (
+    {
+      in: "header";
+    } & (
+      ({ style?: "simple" } & SchemaParameter)
+      | ContentParameter
+    )
+  ) | (
+    {
+      in: "cookie";
+    } & (
+      ({ style?: "form" } & SchemaParameter)
+      | ContentParameter
+    )
+  )
+);
+
+type ContentParameter = {
+  schema?: never;
+  content: Record<string, MediaType | Reference>;
+};
+
+type SchemaParameter = {
   explode?: boolean;
   allowReserved?: boolean;
-  schema?: OasSchema31;
-  content?: Content;
+  schema: OasSchema32;
+  content?: never;
 } & Examples;
 
 type RequestBody = {
@@ -263,14 +300,26 @@ type Reference = {
 };
 
 type SecurityScheme = {
-  type: "apiKey" | "http" | "mutualTLS" | "oauth2" | "openIdConnect";
+  type: "apiKey";
   description?: string;
-  name?: string;
-  in?: "query" | "header" | "cookie";
-  scheme?: string;
+  name: string;
+  in: "query" | "header" | "cookie";
+} | {
+  type: "http";
+  description?: string;
+  scheme: string;
   bearerFormat?: string;
-  flows?: OauthFlows;
-  openIdConnectUrl?: string;
+} | {
+  type: "mutualTLS";
+  description?: string;
+} | {
+  type: "oauth2";
+  description?: string;
+  flows: OauthFlows;
+} | {
+  type: "openIdConnect";
+  description?: string;
+  openIdConnectUrl: string;
 };
 
 type OauthFlows = {

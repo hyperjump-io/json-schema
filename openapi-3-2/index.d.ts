@@ -183,20 +183,58 @@ type Operation = {
   servers?: Server[];
 };
 
-type Parameter = {
+export type Parameter = {
   name: string;
-  in: "query" | "querystring" | "header" | "path" | "cookie";
   description?: string;
   required?: boolean;
   deprecated?: boolean;
   allowEmptyValue?: boolean;
-} & Examples & ({
-  style?: "matrix" | "label" | "form" | "simple" | "spaceDelimited" | "pipeDelimited" | "deepObject";
-  explode?: boolean;
-  schema: OasSchema32;
-} | {
+} & Examples & (
+  (
+    {
+      in: "path";
+      required: true;
+    } & (
+      ({ style?: "matrix" | "label" | "simple" } & SchemaParameter)
+      | ContentParameter
+    )
+  ) | (
+    {
+      in: "query";
+    } & (
+      ({ style?: "form" | "spaceDelimited" | "pipeDelimited" | "deepObject" } & SchemaParameter)
+      | ContentParameter
+    )
+  ) | (
+    {
+      in: "header";
+    } & (
+      ({ style?: "simple" } & SchemaParameter)
+      | ContentParameter
+    )
+  ) | (
+    {
+      in: "cookie";
+    } & (
+      ({ style?: "cookie" } & SchemaParameter)
+      | ContentParameter
+    )
+  ) | (
+    { in: "querystring" } & ContentParameter
+  )
+);
+
+type ContentParameter = {
+  schema?: never;
   content: Record<string, MediaType | Reference>;
-});
+};
+
+type SchemaParameter = {
+  explode?: boolean;
+  allowReserved?: boolean;
+  schema: OasSchema32;
+  content?: never;
+};
 
 type RequestBody = {
   description?: string;
@@ -207,21 +245,31 @@ type RequestBody = {
 type MediaType = {
   schema?: OasSchema32;
   itemSchema?: OasSchema32;
+} & Examples & ({
   encoding?: Record<string, Encoding>;
+  prefixEncoding?: never;
+  itemEncoding?: never;
+} | {
+  encoding?: never;
   prefixEncoding?: Encoding[];
   itemEncoding?: Encoding;
-} & Examples;
+});
 
 type Encoding = {
   contentType?: string;
   headers?: Record<string, Header | Reference>;
-  encoding?: Record<string, Encoding>;
-  prefixEncoding?: Encoding[];
-  itemEncoding?: Encoding;
   style?: "form" | "spaceDelimited" | "pipeDelimited" | "deepObject";
   explode?: boolean;
   allowReserved?: boolean;
-};
+} & ({
+  encoding?: Record<string, Encoding>;
+  prefixEncoding?: never;
+  itemEncoding?: never;
+} | {
+  encoding?: never;
+  prefixEncoding?: Encoding[];
+  itemEncoding?: Encoding;
+});
 
 type Responses = {
   default?: Response | Reference;
@@ -245,11 +293,17 @@ type Examples = {
 type Example = {
   summary?: string;
   description?: string;
+} & ({
+  value?: Json;
+  dataValue?: never;
+  serializedValue?: never;
+  externalValue?: never;
+} | {
+  value?: never;
   dataValue?: Json;
   serializedValue?: string;
   externalValue?: string;
-  value?: Json;
-};
+});
 
 type Link = {
   operationRef?: string;
@@ -288,15 +342,31 @@ type Reference = {
 };
 
 type SecurityScheme = {
-  type: "apiKey" | "http" | "mutualTLS" | "oauth2" | "openIdConnect";
+  type: "apiKey";
   description?: string;
-  name?: string;
-  in?: "query" | "header" | "cookie";
-  scheme?: string;
+  name: string;
+  in: "query" | "header" | "cookie";
+  deprecated?: boolean;
+} | {
+  type: "http";
+  description?: string;
+  scheme: string;
   bearerFormat?: string;
-  flows?: OauthFlows;
-  openIdConnectUrl?: string;
+  deprecated?: boolean;
+} | {
+  type: "mutualTLS";
+  description?: string;
+  deprecated?: boolean;
+} | {
+  type: "oauth2";
+  description?: string;
+  flows: OauthFlows;
   oauth2MetadataUrl?: string;
+  deprecated?: boolean;
+} | {
+  type: "openIdConnect";
+  description?: string;
+  openIdConnectUrl: string;
   deprecated?: boolean;
 };
 
