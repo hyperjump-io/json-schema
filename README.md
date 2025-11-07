@@ -4,18 +4,19 @@ A collection of modules for working with JSON Schemas.
 
 * Validate JSON-compatible values against a JSON Schemas
   * Dialects: draft-2020-12, draft-2019-09, draft-07, draft-06, draft-04
+  * Complete validation support for all formats defined for the `format` keyword
   * Schemas can reference other schemas using a different dialect
   * Work directly with schemas on the filesystem or HTTP
 * OpenAPI
   * Versions: 3.0, 3.1, 3.2 
   * Validate an OpenAPI document
   * Validate values against a schema from an OpenAPI document
-* Create custom keywords, vocabularies, and dialects
+* Create custom keywords, formats, vocabularies, and dialects
 * Bundle multiple schemas into one document
   * Uses the process defined in the 2020-12 specification but works with any
     dialect.
-* Utilities for building non-validation JSON Schema tooling
-* Utilities for working with annotations
+* API for building non-validation JSON Schema tooling
+* API for working with annotations
 
 ## Install
 
@@ -98,7 +99,7 @@ const output1 = isString("foo");
 const output2 = isString(42);
 ```
 
-**Fetching schemas**
+**File-based and web-based schemas**
 
 Schemas that are available on the web can be loaded automatically without
 needing to load them manually.
@@ -132,8 +133,15 @@ system](https://github.com/hyperjump-io/browser/#uri-schemes) provided by
 
 **Format**
 
-Format validation is disabled by default. You can enable it with the
-`setShouldValidateFormat` function.
+Format validation support needs to be explicitly loaded by importing
+`@hyperjump/json-schema/formats`. Once loaded, it depends on the dialect whether
+validation is enabled by default or not. You should explicitly enable/disable it
+with the `setShouldValidateFormat` function.
+
+The `hostname`, `idn-hostname`, and `idn-email` validators are fairly large. If
+you don't need support for those formats and bundle size is a concern, you can
+use `@hyperjump/json-schema/formats-lite` instead to leave out support for those
+formats.
 
 ```javascript
 import { registerSchema, validate } from "@hyperjump/json-schema/draft-2020-12";
@@ -146,18 +154,19 @@ registerSchema({
 }, schemaUri);
 
 setShouldValidateFormat(true);
-const output = await validate(schemaUri, "Feb 28, 2031"); // { valid: false }
+const output = await validate(schemaUri, "Feb 29, 2031"); // { valid: false }
 ```
 
 **OpenAPI**
 
-The OpenAPI 3.0 and 3.1 and 3.2 meta-schemas are pre-loaded and the OpenAPI JSON Schema
-dialects for each of those versions is supported. A document with a Content-Type
-of `application/openapi+json` (web) or a file extension of `openapi.json`
-(filesystem) is understood as an OpenAPI document.
+The OpenAPI 3.0 and 3.1 and 3.2 meta-schemas are pre-loaded and the OpenAPI JSON
+Schema dialects for each of those versions is supported. A document with a
+Content-Type of `application/openapi+json` (web) or a file extension of
+`openapi.json` (filesystem) is understood as an OpenAPI document.
 
 Use the pattern `@hyperjump/json-schema/*` to import the version you need. The
-available versions are `openapi-3-0` for 3.0, `openapi-3-1` for 3.1, and `openapi-3-2` for 3.2.
+available versions are `openapi-3-0` for 3.0, `openapi-3-1` for 3.1, and
+`openapi-3-2` for 3.2.
 
 ```javascript
 import { validate } from "@hyperjump/json-schema/openapi-3-2";

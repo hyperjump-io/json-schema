@@ -25,7 +25,7 @@ const formats = {
   "duration": "https://json-schema.org/format/duration",
   "email": "https://json-schema.org/format/email",
   "idn-email": "https://json-schema.org/format/idn-email",
-  "hostname": "https://json-schema.org/format/a-label",
+  "hostname": "https://json-schema.org/format/hostname",
   "idn-hostname": "https://json-schema.org/format/idn-hostname",
   "ipv4": "https://json-schema.org/format/ipv4",
   "ipv6": "https://json-schema.org/format/ipv6",

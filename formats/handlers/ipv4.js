@@ -1,7 +1,5 @@
-const decOctet = `(?:\\d|[1-9]\\d|1\\d\\d|2[0-4]\\d|25[0-5])`;
-const ipV4Address = `${decOctet}\\.${decOctet}\\.${decOctet}\\.${decOctet}`;
+import { isIPv4 } from "@hyperjump/json-schema-formats";
 
-export const isIPv4 = RegExp.prototype.test.bind(new RegExp(`^${ipV4Address}$`));
 
 export default {
   id: "https://json-schema.org/format/ipv4",

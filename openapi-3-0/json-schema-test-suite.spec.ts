@@ -150,6 +150,10 @@ const runTestSuite = (draft: string, dialectId: string) => {
                   if (shouldSkip([draft, entry.name, suite.description])) {
                     return;
                   }
+
+                  if ("$comment" in suite.schema) {
+                    delete suite.schema.$comment;
+                  }
                   url = `http://${draft}-test-suite.json-schema.org/${encodeURIComponent(suite.description)}`;
                   registerSchema(suite.schema, url, dialectId);
 

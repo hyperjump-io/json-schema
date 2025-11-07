@@ -1,4 +1,4 @@
-import { isIri } from "@hyperjump/uri";
+import { isIri } from "@hyperjump/json-schema-formats";
 
 
 export default {

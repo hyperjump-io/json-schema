@@ -19,7 +19,8 @@
     "./annotations/experimental": "./annotations/index.js",
     "./annotated-instance/experimental": "./annotations/annotated-instance.js",
     "./bundle": "./bundle/index.js",
-    "./formats": "./formats/index.js"
+    "./formats": "./formats/index.js",
+    "./formats-lite": "./formats/lite.js"
   },
   "scripts": {
     "clean": "xargs -a .gitignore rm -rf",
@@ -55,7 +56,6 @@
     "@stylistic/eslint-plugin": "*",
     "@types/content-type": "*",
     "@types/node": "*",
-    "@types/tr46": "^5.0.1",
     "@types/uuid": "*",
     "@vitest/coverage-v8": "*",
     "eslint-import-resolver-typescript": "*",
@@ -69,12 +69,12 @@
   },
   "dependencies": {
     "@hyperjump/json-pointer": "^1.1.0",
+    "@hyperjump/json-schema-formats": "^1.0.0",
     "@hyperjump/pact": "^1.2.0",
     "@hyperjump/uri": "^1.2.0",
     "content-type": "^1.0.4",
     "json-stringify-deterministic": "^1.0.12",
     "just-curry-it": "^5.3.0",
-    "tr46": "^6.0.0",
     "uuid": "^9.0.0"
   },
   "peerDependencies": {

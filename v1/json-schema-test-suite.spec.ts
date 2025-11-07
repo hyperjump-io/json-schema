@@ -2,6 +2,7 @@ import fs from "node:fs";
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { toAbsoluteIri } from "@hyperjump/uri";
 import { registerSchema, unregisterSchema, validate } from "./index.js";
+import "../formats/index.js";
 
 import type { Json } from "@hyperjump/json-pointer";
 import type { JsonSchemaV1, SchemaObject, Validator } from "./index.js";
@@ -24,27 +25,13 @@ const skip = new Set<string>([
   "|v1|ref.json|$id with file URI still resolves pointers - *nix",
   "|v1|ref.json|$id with file URI still resolves pointers - windows",
 
-  "|v1|date-time.json",
-  "|v1|date-time.json",
-  "|v1|date.json",
-  "|v1|duration.json",
-  "|v1|ecmascript-regex.json",
-  "|v1|email.json",
-  "|v1|hostname.json",
-  "|v1|idn-email.json",
-  "|v1|idn-hostname.json",
-  "|v1|ipv4.json",
-  "|v1|ipv6.json",
-  "|v1|iri-reference.json",
-  "|v1|iri.json",
-  "|v1|json-pointer.json",
-  "|v1|regex.json",
-  "|v1|relative-json-pointer.json",
-  "|v1|time.json",
-  "|v1|uri-reference.json",
-  "|v1|uri-template.json",
-  "|v1|uri.json",
-  "|v1|uuid.json"
+  // Leap seconds don't make sense without a date
+  "|v1|time.json|validation of time strings|a valid time string with leap second, Zulu",
+  "|v1|time.json|validation of time strings|valid leap second, zero time-offset",
+  "|v1|time.json|validation of time strings|valid leap second, positive time-offset",
+  "|v1|time.json|validation of time strings|valid leap second, large positive time-offset",
+  "|v1|time.json|validation of time strings|valid leap second, negative time-offset",
+  "|v1|time.json|validation of time strings|valid leap second, large negative time-offset"
 ]);
 
 const shouldSkip = (path: string[]): boolean => {

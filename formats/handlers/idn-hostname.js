@@ -1,18 +1,7 @@
-import tr46 from "tr46";
-import { isALabel } from "./a-label.js";
+import { isIdn } from "@hyperjump/json-schema-formats";
 
-
-export const isIdnHostname = (hostname) => {
-  const asciiHostname = tr46.toASCII(hostname);
-
-  if (!asciiHostname) {
-    return false;
-  }
-
-  return isALabel(asciiHostname);
-};
 
 export default {
-  id: "https://json-schema.org/format/idn-hostname(partial)",
-  handler: (hostname) => typeof hostname !== "string" || isIdnHostname(hostname)
+  id: "https://json-schema.org/format/idn-hostname",
+  handler: (hostname) => typeof hostname !== "string" || isIdn(hostname)
 };
