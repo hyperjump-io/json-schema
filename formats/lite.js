@@ -36,8 +36,3 @@ addFormat(uriTemplate);
 addFormat(jsonPointer);
 addFormat(relativeJsonPointer);
 addFormat(regex);
-
-export {
-  getShouldValidateFormat,
-  setShouldValidateFormat
-} from "../lib/configuration.js";

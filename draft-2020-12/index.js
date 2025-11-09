@@ -13,7 +13,7 @@ import unevaluatedMetaSchema from "./meta/unevaluated.js";
 
 import dynamicAnchor from "./dynamicAnchor.js";
 import dynamicRef from "./dynamicRef.js";
-import format from "../draft-2019-09/format.js";
+import format from "./format.js";
 import formatAssertion from "./format-assertion.js";
 
 
@@ -85,7 +85,7 @@ defineVocabulary("https://json-schema.org/draft/2020-12/vocab/meta-data", {
 });
 
 defineVocabulary("https://json-schema.org/draft/2020-12/vocab/format-annotation", {
-  "format": "https://json-schema.org/keyword/draft-2019-09/format"
+  "format": "https://json-schema.org/keyword/draft-2020-12/format"
 });
 
 defineVocabulary("https://json-schema.org/draft/2020-12/vocab/format-assertion", {

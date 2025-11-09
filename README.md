@@ -507,32 +507,31 @@ associate that format handler with the format keyword that applies to the
 dialects you're targeting.
 
 ```JavaScript
-import { registerSchema, validate } from "@hyperjump/json-schema/draft-2020-12";
-import {
-  setShouldValiateFormat,
-  addFormat,
-  setFormatHandler
-} from "@hyperjump/json-schema/formats";
+import { registerSchema, validate, setShouldValidateFormat } from "@hyperjump/json-schema/draft-2020-12";
+import { addFormat, setFormatHandler } from "@hyperjump/json-schema/experimental";
 
-const isoDateFormatUri = "https://example.com/format/iso-8601-date"; 
+const isoDateFormatUri = "https://example.com/format/iso-8601-date";
 
+// Add the iso-date format handler
 addFormat({
   id: isoDateFormatUri,
-  handler: (date) => Date.parse(date).toISOString() === date
+  handler: (date) => new Date(date).toISOString() === date
 });
 
-addFormatHandler("https://json-schema.org/keyword/format", "iso-date", isoDateFormatUri);
-addFormatHandler("https://json-schema.org/keyword/format-assertion", "iso-date", isoDateFormatUri);
-// Optional: Add the iso-date format to other dialects
-addFormatHandler("https://json-schema.org/keyword/draft-2019-09/format", "iso-date", isoDateFormatUri);
-addFormatHandler("https://json-schema.org/keyword/draft-2019-09/format-assertion", "iso-date", isoDateFormatUri);
-addFormatHandler("https://json-schema.org/keyword/draft-07/format", "iso-date", isoDateFormatUri);
-addFormatHandler("https://json-schema.org/keyword/draft-06/format", "iso-date", isoDateFormatUri);
-addFormatHandler("https://json-schema.org/keyword/draft-04/format", "iso-date", isoDateFormatUri);
+// Add the "iso-date" format to the 2020-12 version of `format`
+setFormatHandler("https://json-schema.org/keyword/draft-2020-12/format", "iso-date", isoDateFormatUri);
+setFormatHandler("https://json-schema.org/keyword/draft-2020-12/format-assertion", "iso-date", isoDateFormatUri);
+
+// Optional: Add the "iso-date" format to other dialects
+setFormatHandler("https://json-schema.org/keyword/draft-2019-09/format", "iso-date", isoDateFormatUri);
+setFormatHandler("https://json-schema.org/keyword/draft-2019-09/format-assertion", "iso-date", isoDateFormatUri);
+setFormatHandler("https://json-schema.org/keyword/draft-07/format", "iso-date", isoDateFormatUri);
+setFormatHandler("https://json-schema.org/keyword/draft-06/format", "iso-date", isoDateFormatUri);
+setFormatHandler("https://json-schema.org/keyword/draft-04/format", "iso-date", isoDateFormatUri);
 
 const schemaUri = "https://example.com/main";
 registerSchema({
-  "$schema": "https://json-schema.org/draft/2002-12/schema",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
 
   "type": "string",
   "format": "iso-date"

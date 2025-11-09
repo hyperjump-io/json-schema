@@ -1,12 +1,12 @@
 import fs from "node:fs";
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { registerSchema, unregisterSchema, validate } from "../lib/index.js";
+import { registerSchema, setShouldValidateFormat, unregisterSchema, validate } from "../lib/index.js";
+import "./index.js";
 import "../draft-2020-12/index.js";
 import "../draft-2019-09/index.js";
 import "../draft-07/index.js";
 import "../draft-06/index.js";
 import "../draft-04/index.js";
-import { setShouldValidateFormat } from "./index.js";
 
 import type { Json } from "@hyperjump/json-pointer";
 import type { SchemaObject, Validator } from "../lib/index.js";
