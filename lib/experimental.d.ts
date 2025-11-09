@@ -1,4 +1,5 @@
 import type { Browser, Document } from "@hyperjump/browser";
+import type { Json } from "@hyperjump/json-pointer";
 import type { Validator, Output, OutputUnit, OutputFormat, SchemaObject } from "./index.js";
 import type { JsonNode } from "./instance.js";
 
@@ -91,8 +92,8 @@ export type ValidationContext = {
 // Evaluation Plugins
 export type EvaluationPlugin<Context extends ValidationContext = ValidationContext> = {
   beforeSchema?(url: string, instance: JsonNode, context: Context): void;
-  beforeKeyword?(keywordNode: Node<unknown>, instance: JsonNode, context: Context, schemaContext: Context, keyword: Keyword): void;
-  afterKeyword?(keywordNode: Node<unknown>, instance: JsonNode, context: Context, valid: boolean, schemaContext: Context, keyword: Keyword): void;
+  beforeKeyword?(keywordNode: Node<unknown>, instance: JsonNode, context: Context, schemaContext: Context, keyword: Keyword<unknown>): void;
+  afterKeyword?(keywordNode: Node<unknown>, instance: JsonNode, context: Context, valid: boolean, schemaContext: Context, keyword: Keyword<unknown>): void;
   afterSchema?(url: string, instance: JsonNode, context: Context, valid: boolean): void;
 };
 
