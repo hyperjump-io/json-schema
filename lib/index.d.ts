@@ -54,8 +54,8 @@ export const setMetaSchemaOutputFormat: (format: OutputFormat) => void;
 export const getMetaSchemaOutputFormat: () => OutputFormat;
 export const setShouldValidateSchema: (isEnabled: boolean) => void;
 export const getShouldValidateSchema: () => boolean;
-export const setShouldValidateFormat: (isEnabled: boolean) => void;
-export const getShouldValidateFormat: () => boolean;
+export const setShouldValidateFormat: (isEnabled: boolean | undefined) => void;
+export const getShouldValidateFormat: () => boolean | undefined;
 
 export class InvalidSchemaError extends Error {
   public output: Output & { valid: false };
