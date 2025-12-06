@@ -1,13 +1,13 @@
 import type { Browser, Document } from "@hyperjump/browser";
 import type { Json } from "@hyperjump/json-pointer";
-import type { Validator, Output, OutputUnit, OutputFormat, SchemaObject } from "./index.js";
+import type { Validator, Output, OutputUnit, OutputFormat, SchemaObject, ValidationOptions } from "./index.js";
 import type { JsonNode } from "./instance.js";
 
 
 // Compile/interpret
 export const compile: (schema: Browser<SchemaDocument>) => Promise<CompiledSchema>;
 export const interpret: (
-  (compiledSchema: CompiledSchema, value: JsonNode, outputFormat?: OutputFormat) => Output
+  (compiledSchema: CompiledSchema, value: JsonNode, outputFormat?: OutputFormat | ValidationOptions) => Output
 ) & (
   (compiledSchema: CompiledSchema) => Validator
 );
@@ -45,7 +45,6 @@ export const toSchema: (browser: Browser<SchemaDocument>, options?: ToSchemaOpti
 export type ToSchemaOptions = {
   contextDialectId?: string;
   includeDialect?: "auto" | "always" | "never";
-  selfIdentify?: boolean;
   contextUri?: string;
   includeEmbedded?: boolean;
 };
@@ -80,7 +79,7 @@ export type Keyword<A, Context extends ValidationContext = ValidationContext> = 
   compile: (schema: Browser<SchemaDocument>, ast: AST, parentSchema: Browser<SchemaDocument>) => Promise<A>;
   interpret: (compiledKeywordValue: A, instance: JsonNode, context: Context) => boolean;
   simpleApplicator?: boolean;
-  annotation?: <B>(compiledKeywordValue: A, instance: JsonNode) => B | undefined;
+  annotation?: (compiledKeywordValue: A, instance: JsonNode) => unknown;
   plugin?: EvaluationPlugin<Context>;
 };
 

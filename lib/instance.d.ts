@@ -32,7 +32,7 @@ export type JsonNode = {
   children: JsonNode[];
   parent?: JsonNode;
   root: JsonNode;
-  annotations: Record<string, Record<string, unknown>>;
+  annotations: Record<string, unknown[]>;
 };
 
 type JsonNodeType = "object" | "array" | "string" | "number" | "boolean" | "null" | "property";
