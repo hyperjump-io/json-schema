@@ -48,7 +48,7 @@ export type OutputUnit = {
 
 export const FLAG: "FLAG";
 
-export type OutputFormat = "FLAG" | "BASIC" | "DETAILED" | "VERBOSE";
+export type OutputFormat = "FLAG" | "BASIC" | "DETAILED";
 
 export const setMetaSchemaOutputFormat: (format: OutputFormat) => void;
 export const getMetaSchemaOutputFormat: () => OutputFormat;
