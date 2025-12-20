@@ -163,7 +163,7 @@ type PathItem = {
   patch?: Operation;
   trace?: Operation;
   query?: Operation;
-  additionOperations?: Record<string, Operation>;
+  additionalOperations?: Record<string, Operation>;
   servers?: Server[];
   parameters?: (Parameter | Reference)[];
 };
