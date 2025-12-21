@@ -69,7 +69,7 @@ export type OasSchema32 = boolean | {
 
 type Discriminator = {
   propertyName: string;
-  mappings?: Record<string, string>;
+  mapping?: Record<string, string>;
   defaultMapping?: string;
 };
 
