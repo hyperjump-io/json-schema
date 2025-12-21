@@ -188,7 +188,6 @@ export type Parameter = {
   description?: string;
   required?: boolean;
   deprecated?: boolean;
-  allowEmptyValue?: boolean;
 } & Examples & (
   (
     {
@@ -201,6 +200,7 @@ export type Parameter = {
   ) | (
     {
       in: "query";
+      allowEmptyValue?: boolean;
     } & (
       ({ style?: "form" | "spaceDelimited" | "pipeDelimited" | "deepObject" } & SchemaParameter)
       | ContentParameter
