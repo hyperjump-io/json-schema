@@ -69,7 +69,7 @@ export type OasSchema32 = boolean | {
 
 type Discriminator = {
   propertyName: string;
-  mappings?: Record<string, string>;
+  mapping?: Record<string, string>;
   defaultMapping?: string;
 };
 
@@ -163,7 +163,7 @@ type PathItem = {
   patch?: Operation;
   trace?: Operation;
   query?: Operation;
-  additionOperations?: Record<string, Operation>;
+  additionalOperations?: Record<string, Operation>;
   servers?: Server[];
   parameters?: (Parameter | Reference)[];
 };
