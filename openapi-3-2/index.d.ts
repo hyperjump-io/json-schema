@@ -283,7 +283,7 @@ type Response = {
   links?: Record<string, Link | Reference>;
 };
 
-type Callbacks = Record<string, PathItem | Reference>;
+type Callbacks = Record<string, PathItem>;
 
 type Examples = {
   example?: Json;
