@@ -145,7 +145,7 @@ type Components = {
   headers?: Record<string, Header | Reference>;
   securitySchemes?: Record<string, SecurityScheme | Reference>;
   links?: Record<string, Link | Reference>;
-  callbacks?: Record<string, Callbacks | Reference>;
+  callbacks?: Record<string, Callback | Reference>;
   pathItems?: Record<string, PathItem>;
   mediaTypes?: Record<string, MediaType | Reference>;
 };
@@ -177,7 +177,7 @@ type Operation = {
   parameters?: (Parameter | Reference)[];
   requestBody?: RequestBody | Reference;
   responses?: Responses;
-  callbacks?: Record<string, Callbacks | Reference>;
+  callbacks?: Record<string, Callback | Reference>;
   deprecated?: boolean;
   security?: SecurityRequirement[];
   servers?: Server[];
@@ -283,7 +283,7 @@ type Response = {
   links?: Record<string, Link | Reference>;
 };
 
-type Callbacks = Record<string, PathItem>;
+type Callback = Record<string, PathItem>;
 
 type Examples = {
   example?: Json;
