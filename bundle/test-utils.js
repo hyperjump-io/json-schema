@@ -65,9 +65,9 @@ const fixtures = {};
 readdirSync("bundle/fixtures", { withFileTypes: true, recursive: true })
   .filter((entry) => entry.isFile() && entry.name.endsWith(".schema.json"))
   .forEach((entry) => {
-    const path = relative("bundle/fixtures", `${entry.path}/${basename(entry.name, ".schema.json")}`);
+    const path = relative("bundle/fixtures", `${entry.parentPath}/${basename(entry.name, ".schema.json")}`);
     const retrievalUri = `https://bundler.hyperjump.io/${path}`;
-    const fixture = JSON.parse(readFileSync(`${entry.path}/${entry.name}`, "utf8"));
+    const fixture = JSON.parse(readFileSync(`${entry.parentPath}/${entry.name}`, "utf8"));
     fixtures[retrievalUri] = fixture;
   });
 
