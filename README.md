@@ -962,5 +962,5 @@ npm test
 Run the tests with a continuous test runner
 
 ```bash
-npm test -- --watch
+npx vitest --watch
 ```
