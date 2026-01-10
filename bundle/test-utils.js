@@ -54,7 +54,7 @@ export const isCompatible = (compatibility, versionUnderTest) => {
         }
         break;
       default:
-        throw Error(`Unsupported contraint operator: ${operator}`);
+        throw Error(`Unsupported constraint operator: ${operator}`);
     }
   }
 
