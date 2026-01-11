@@ -67,18 +67,18 @@ export type OasSchema32 = boolean | {
   xml?: Xml;
 };
 
-type Discriminator = {
+export type Discriminator = {
   propertyName: string;
   mapping?: Record<string, string>;
   defaultMapping?: string;
 };
 
-type ExternalDocs = {
+export type ExternalDocs = {
   url: string;
   description?: string;
 };
 
-type Xml = {
+export type Xml = {
   nodeType?: "element" | "attribute" | "text" | "cdata" | "none";
   name?: string;
   namespace?: string;
@@ -101,7 +101,7 @@ export type OpenApi = {
   externalDocs?: ExternalDocs;
 };
 
-type Info = {
+export type Info = {
   title: string;
   summary?: string;
   description?: string;
@@ -111,32 +111,32 @@ type Info = {
   version: string;
 };
 
-type Contact = {
+export type Contact = {
   name?: string;
   url?: string;
   email?: string;
 };
 
-type License = {
+export type License = {
   name: string;
   identifier?: string;
   url?: string;
 };
 
-type Server = {
+export type Server = {
   url: string;
   description?: string;
   name?: string;
   variables?: Record<string, ServerVariable>;
 };
 
-type ServerVariable = {
+export type ServerVariable = {
   enum?: string[];
   default: string;
   description?: string;
 };
 
-type Components = {
+export type Components = {
   schemas?: Record<string, OasSchema32>;
   responses?: Record<string, Response | Reference>;
   parameters?: Record<string, Parameter | Reference>;
@@ -150,7 +150,7 @@ type Components = {
   mediaTypes?: Record<string, MediaType | Reference>;
 };
 
-type PathItem = {
+export type PathItem = {
   $ref?: string;
   summary?: string;
   description?: string;
@@ -168,7 +168,7 @@ type PathItem = {
   parameters?: (Parameter | Reference)[];
 };
 
-type Operation = {
+export type Operation = {
   tags?: string[];
   summary?: string;
   description?: string;
@@ -224,25 +224,25 @@ export type Parameter = {
   )
 );
 
-type ContentParameter = {
+export type ContentParameter = {
   schema?: never;
   content: Record<string, MediaType | Reference>;
 };
 
-type SchemaParameter = {
+export type SchemaParameter = {
   explode?: boolean;
   allowReserved?: boolean;
   schema: OasSchema32;
   content?: never;
 };
 
-type RequestBody = {
+export type RequestBody = {
   description?: string;
   content: Record<string, MediaType | Reference>;
   required?: boolean;
 };
 
-type MediaType = {
+export type MediaType = {
   schema?: OasSchema32;
   itemSchema?: OasSchema32;
 } & Examples & ({
@@ -255,7 +255,7 @@ type MediaType = {
   itemEncoding?: Encoding;
 });
 
-type Encoding = {
+export type Encoding = {
   contentType?: string;
   headers?: Record<string, Header | Reference>;
   style?: "form" | "spaceDelimited" | "pipeDelimited" | "deepObject";
@@ -271,11 +271,11 @@ type Encoding = {
   itemEncoding?: Encoding;
 });
 
-type Responses = {
+export type Responses = {
   default?: Response | Reference;
 } & Record<string, Response | Reference>;
 
-type Response = {
+export type Response = {
   summary?: string;
   description?: string;
   headers?: Record<string, Header | Reference>;
@@ -283,14 +283,14 @@ type Response = {
   links?: Record<string, Link | Reference>;
 };
 
-type Callback = Record<string, PathItem>;
+export type Callback = Record<string, PathItem>;
 
-type Examples = {
+export type Examples = {
   example?: Json;
   examples?: Record<string, Example | Reference>;
 };
 
-type Example = {
+export type Example = {
   summary?: string;
   description?: string;
 } & ({
@@ -305,7 +305,7 @@ type Example = {
   externalValue?: string;
 });
 
-type Link = {
+export type Link = {
   operationRef?: string;
   operationId?: string;
   parameters?: Record<string, string>;
@@ -314,7 +314,7 @@ type Link = {
   server?: Server;
 };
 
-type Header = {
+export type Header = {
   description?: string;
   required?: boolean;
   deprecated?: boolean;
@@ -326,7 +326,7 @@ type Header = {
   content: Record<string, MediaType | Reference>;
 });
 
-type Tag = {
+export type Tag = {
   name: string;
   summary?: string;
   description?: string;
@@ -335,13 +335,13 @@ type Tag = {
   kind?: string;
 };
 
-type Reference = {
+export type Reference = {
   $ref: string;
   summary?: string;
   description?: string;
 };
 
-type SecurityScheme = {
+export type SecurityScheme = {
   type: "apiKey";
   description?: string;
   name: string;
@@ -370,7 +370,7 @@ type SecurityScheme = {
   deprecated?: boolean;
 };
 
-type OauthFlows = {
+export type OauthFlows = {
   implicit?: Implicit;
   password?: Password;
   clientCredentials?: ClientCredentials;
@@ -378,38 +378,38 @@ type OauthFlows = {
   deviceAuthorization?: DeviceAuthorization;
 };
 
-type Implicit = {
+export type Implicit = {
   authorizationUrl: string;
   refreshUrl?: string;
   scopes: Record<string, string>;
 };
 
-type Password = {
+export type Password = {
   tokenUrl: string;
   refreshUrl?: string;
   scopes: Record<string, string>;
 };
 
-type ClientCredentials = {
+export type ClientCredentials = {
   tokenUrl: string;
   refreshUrl?: string;
   scopes: Record<string, string>;
 };
 
-type AuthorizationCode = {
+export type AuthorizationCode = {
   authorizationUrl: string;
   tokenUrl: string;
   refreshUrl?: string;
   scopes: Record<string, string>;
 };
 
-type DeviceAuthorization = {
+export type DeviceAuthorization = {
   deviceAuthorizationUrl: string;
   tokenUrl: string;
   refreshUrl?: string;
   scopes: Record<string, string>;
 };
 
-type SecurityRequirement = Record<string, string[]>;
+export type SecurityRequirement = Record<string, string[]>;
 
 export * from "../lib/index.js";

@@ -67,17 +67,17 @@ export type OasSchema31 = boolean | {
   xml?: Xml;
 };
 
-type Discriminator = {
+export type Discriminator = {
   propertyName: string;
   mappings?: Record<string, string>;
 };
 
-type ExternalDocs = {
+export type ExternalDocs = {
   url: string;
   description?: string;
 };
 
-type Xml = {
+export type Xml = {
   name?: string;
   namespace?: string;
   prefix?: string;
@@ -98,7 +98,7 @@ export type OpenApi = {
   components?: Components;
 };
 
-type Info = {
+export type Info = {
   title: string;
   summary?: string;
   description?: string;
@@ -108,31 +108,31 @@ type Info = {
   version: string;
 };
 
-type Contact = {
+export type Contact = {
   name?: string;
   url?: string;
   email?: string;
 };
 
-type License = {
+export type License = {
   name: string;
   url?: string;
   identifier?: string;
 };
 
-type Server = {
+export type Server = {
   url: string;
   description?: string;
   variables?: Record<string, ServerVariable>;
 };
 
-type ServerVariable = {
+export type ServerVariable = {
   enum?: string[];
   default: string;
   description?: string;
 };
 
-type Components = {
+export type Components = {
   schemas?: Record<string, OasSchema31>;
   responses?: Record<string, Response | Reference>;
   parameters?: Record<string, Parameter | Reference>;
@@ -145,7 +145,7 @@ type Components = {
   pathItems?: Record<string, PathItem | Reference>;
 };
 
-type PathItem = {
+export type PathItem = {
   summary?: string;
   description?: string;
   servers?: Server[];
@@ -160,7 +160,7 @@ type PathItem = {
   trace?: Operation;
 };
 
-type Operation = {
+export type Operation = {
   tags?: string[];
   summary?: string;
   description?: string;
@@ -175,7 +175,7 @@ type Operation = {
   servers?: Server[];
 };
 
-type ExternalDocumentation = {
+export type ExternalDocumentation = {
   description?: string;
   url: string;
 };
@@ -219,32 +219,32 @@ export type Parameter = {
   )
 );
 
-type ContentParameter = {
+export type ContentParameter = {
   schema?: never;
   content: Record<string, MediaType | Reference>;
 };
 
-type SchemaParameter = {
+export type SchemaParameter = {
   explode?: boolean;
   allowReserved?: boolean;
   schema: OasSchema32;
   content?: never;
 } & Examples;
 
-type RequestBody = {
+export type RequestBody = {
   description?: string;
   content: Content;
   required?: boolean;
 };
 
-type Content = Record<string, MediaType>;
+export type Content = Record<string, MediaType>;
 
-type MediaType = {
+export type MediaType = {
   schema?: OasSchema31;
   encoding?: Record<string, Encoding>;
 } & Examples;
 
-type Encoding = {
+export type Encoding = {
   contentType?: string;
   headers?: Record<string, Header | Reference>;
   style?: "form" | "spaceDelimited" | "pipeDelimited" | "deepObject";
@@ -252,23 +252,23 @@ type Encoding = {
   allowReserved?: boolean;
 };
 
-type Response = {
+export type Response = {
   description: string;
   headers?: Record<string, Header | Reference>;
   content?: Content;
   links?: Record<string, Link | Reference>;
 };
 
-type Callback = Record<string, PathItem>;
+export type Callback = Record<string, PathItem>;
 
-type Example = {
+export type Example = {
   summary?: string;
   description?: string;
   value?: Json;
   externalValue?: string;
 };
 
-type Link = {
+export type Link = {
   operationRef?: string;
   operationId?: string;
   parameters?: Record<string, string>;
@@ -277,7 +277,7 @@ type Link = {
   server?: Server;
 };
 
-type Header = {
+export type Header = {
   description?: string;
   required?: boolean;
   deprecated?: boolean;
@@ -287,19 +287,19 @@ type Header = {
   content?: Content;
 };
 
-type Tag = {
+export type Tag = {
   name: string;
   description?: string;
   externalDocs?: ExternalDocumentation;
 };
 
-type Reference = {
+export type Reference = {
   $ref: string;
   summary?: string;
   description?: string;
 };
 
-type SecurityScheme = {
+export type SecurityScheme = {
   type: "apiKey";
   description?: string;
   name: string;
@@ -322,41 +322,41 @@ type SecurityScheme = {
   openIdConnectUrl: string;
 };
 
-type OauthFlows = {
+export type OauthFlows = {
   implicit?: Implicit;
   password?: Password;
   clientCredentials?: ClientCredentials;
   authorizationCode?: AuthorizationCode;
 };
 
-type Implicit = {
+export type Implicit = {
   authorizationUrl: string;
   refreshUrl?: string;
   scopes: Record<string, string>;
 };
 
-type Password = {
+export type Password = {
   tokenUrl: string;
   refreshUrl?: string;
   scopes: Record<string, string>;
 };
 
-type ClientCredentials = {
+export type ClientCredentials = {
   tokenUrl: string;
   refreshUrl?: string;
   scopes: Record<string, string>;
 };
 
-type AuthorizationCode = {
+export type AuthorizationCode = {
   authorizationUrl: string;
   tokenUrl: string;
   refreshUrl?: string;
   scopes: Record<string, string>;
 };
 
-type SecurityRequirement = Record<string, string[]>;
+export type SecurityRequirement = Record<string, string[]>;
 
-type Examples = {
+export type Examples = {
   example?: Json;
   examples?: Record<string, Example | Reference>;
 };
