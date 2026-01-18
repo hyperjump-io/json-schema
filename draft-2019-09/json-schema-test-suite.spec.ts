@@ -19,7 +19,7 @@ type Test = {
   valid: boolean;
 };
 
-// This package is indended to be a compatibility mode from v1 JSON Schema.
+// This package is intended to be a compatibility mode from v1 JSON Schema.
 // Some edge cases might not work exactly as specified, but it should work for
 // any real-life schema.
 const skip = new Set<string>([
