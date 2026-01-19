@@ -20,17 +20,21 @@ const interpret = (dependencies, instance, context) => {
     return true;
   }
 
-  return dependencies.every(([propertyName, dependency]) => {
+  let isValid = true;
+  for (const [propertyName, dependency] of dependencies) {
     if (!Instance.has(propertyName, instance)) {
-      return true;
+      continue;
     }
 
     if (Array.isArray(dependency)) {
-      return dependency.every((key) => Instance.has(key, instance));
+      isValid &&= dependency.every((key) => Instance.has(key, instance));
     } else {
-      return Validation.interpret(dependency, instance, context);
+      const isSchemaValid = Validation.interpret(dependency, instance, context);
+      isValid &&= isSchemaValid;
     }
-  });
+  }
+
+  return isValid;
 };
 
 export default { id, compile, interpret };
