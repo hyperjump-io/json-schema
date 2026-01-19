@@ -111,7 +111,6 @@ describe("JSON Schema - toString", () => {
 
     test("contextUri: not relative to baseURI", () => {
       const options: ToSchemaOptions = {
-        selfIdentify: true,
         contextUri: "urn:example:example"
       };
       expect(toSchema(schema, options)).to.eql({
@@ -136,9 +135,7 @@ describe("JSON Schema - toString", () => {
 
     const schema = await getSchema(`${testDomain}/schema`);
 
-    const options: ToSchemaOptions = {
-      selfIdentify: true
-    };
+    const options: ToSchemaOptions = {};
     expect(toSchema(schema, options)).to.eql({
       $schema: contextDialectId,
       id: `${testDomain}/schema`
