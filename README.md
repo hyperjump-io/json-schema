@@ -144,8 +144,8 @@ use `@hyperjump/json-schema/formats-lite` instead to leave out support for those
 formats.
 
 ```javascript
-import { registerSchema, validate } from "@hyperjump/json-schema/draft-2020-12";
-import { setShouldValidateFormat } from "@hyperjump/json-schema/formats";
+import { registerSchema, setShouldValidateFormat, validate } from "@hyperjump/json-schema/draft-2020-12";
+import "@hyperjump/json-schema/formats";
 
 const schemaUri = "https://example.com/number";
 registerSchema({
