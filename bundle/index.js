@@ -61,6 +61,10 @@ const doBundling = async (schemaUri, bundled, fullOptions, contextSchema, visite
     bundled = await doBundling(uri, bundled, fullOptions, schema, visited);
   }
 
+  if (Object.keys(JsonPointer.get(fullOptions.bundlingLocation, bundled)).length === 0) {
+    JsonPointer.remove(fullOptions.bundlingLocation, bundled);
+  }
+
   return bundled;
 };
 
