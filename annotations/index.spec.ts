@@ -58,7 +58,7 @@ const testRunner = (version: number, dialect: string) => {
             continue;
           }
 
-          describe(testCase.description + "\n" + JSON.stringify(testCase.schema, null, "  "), () => {
+          describe(testCase.description, () => {
             let annotator: Annotator;
             let id: string;
 
@@ -82,7 +82,7 @@ const testRunner = (version: number, dialect: string) => {
                 });
 
                 for (const assertion of subject.assertions) {
-                  test(`${assertion.keyword} annotations at '${assertion.location}' should be ${JSON.stringify(assertion.expected)}`, () => {
+                  test(`${assertion.keyword} annotations at '${assertion.location}' should be ${JSON.stringify(Object.values(assertion.expected))}`, () => {
                     const schemaDialect: string | undefined = testCase.schema.$schema ? toAbsoluteIri(testCase.schema.$schema as string) : dialect;
                     const subject = Instance.get(`#${assertion.location}`, instance);
                     const annotations = subject ? Instance.annotation(subject, assertion.keyword, schemaDialect) : [];
