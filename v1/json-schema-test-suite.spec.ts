@@ -71,6 +71,7 @@ const runTestSuite = (draft: string, dialectId: string) => {
 
     [
       ...fs.readdirSync(testSuiteFilePath, { withFileTypes: true }),
+      ...fs.readdirSync(`${import.meta.dirname}/extension-tests`, { withFileTypes: true }),
       ...fs.readdirSync(`${testSuiteFilePath}/format`, { withFileTypes: true })
     ]
       .filter((entry) => entry.isFile() && entry.name.endsWith(".json"))
