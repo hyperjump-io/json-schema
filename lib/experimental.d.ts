@@ -19,15 +19,13 @@ export type CompiledSchema = {
 
 type AST = {
   metaData: Record<string, MetaData>;
-  plugins: Set<EvaluationPlugin>;
+  plugins: EvaluationPlugin[];
 } & Record<string, Node<unknown>[] | boolean>;
 
 type Node<A> = [keywordId: string, schemaUri: string, keywordValue: A];
 
 type MetaData = {
-  id: string;
   dynamicAnchors: Anchors;
-  anchors: Anchors;
 };
 
 type Anchors = Record<string, string>;
