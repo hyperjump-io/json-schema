@@ -591,6 +591,8 @@ import { registerSchema, validate } from "@hyperjump/json-schema/draft-2020-12";
 import { BASIC } from "@hyperjump/json-schema/experimental.js";
 
 class EvaluatedKeywordsPlugin {
+  id = "https://example.com/plugins/evaluated-keywords";
+
   constructor() {
     this.schemaLocations = new Set();
   }
@@ -772,6 +774,7 @@ These are available from the `@hyperjump/json-schema/experimental` export.
     processed to create human readable error messages as needed.
 
 * **EvaluationPlugin**: object
+    * id?: string
     * beforeSchema?(url: string, instance: JsonNode, context: Context): void
     * beforeKeyword?(keywordNode: CompiledSchemaNode, instance: JsonNode, context: Context, schemaContext: Context, keyword: Keyword): void
     * afterKeyword?(keywordNode: CompiledSchemaNode, instance: JsonNode, context: Context, valid: boolean, schemaContext: Context, keyword: Keyword): void
