@@ -63,7 +63,7 @@
     "json-schema-test-suite": "github:json-schema-org/JSON-Schema-Test-Suite",
     "typescript": "*",
     "typescript-eslint": "*",
-    "undici": "*",
+    "undici": "8.0.2",
     "vitest": "*",
     "yaml": "*"
   },

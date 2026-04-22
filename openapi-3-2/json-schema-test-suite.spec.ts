@@ -46,7 +46,7 @@ const addRemotes = (dialectId: string, filePath = `${testSuitePath}/remotes`, ur
     .forEach((entry) => {
       if (entry.isFile() && entry.name.endsWith(".json")) {
         const remote = JSON.parse(fs.readFileSync(`${filePath}/${entry.name}`, "utf8")) as Exclude<OasSchema32, boolean>;
-        if (!remote.$schema || toAbsoluteIri(remote.$schema as string) === "https://json-schema.org/draft/2020-12/schema") {
+        if (!remote.$schema || toAbsoluteIri(remote.$schema) === "https://json-schema.org/draft/2020-12/schema") {
           registerSchema(remote, `http://localhost:1234${url}/${entry.name}`, dialectId);
         }
       } else if (entry.isDirectory()) {
