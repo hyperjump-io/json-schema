@@ -24,6 +24,7 @@ const interpret = ([id, fragment, ref], instance, context) => {
 const simpleApplicator = true;
 
 const plugin = {
+  id: `${id}#plugin`,
   beforeSchema(url, _instance, context) {
     context.dynamicAnchors = {
       ...context.ast.metaData[toAbsoluteUri(url)].dynamicAnchors,

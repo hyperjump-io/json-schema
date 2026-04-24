@@ -88,6 +88,7 @@ export type ValidationContext = {
 
 // Evaluation Plugins
 export type EvaluationPlugin<Context extends ValidationContext = ValidationContext> = {
+  id?: string;
   beforeSchema?(url: string, instance: JsonNode, context: Context): void;
   beforeKeyword?(keywordNode: Node<unknown>, instance: JsonNode, context: Context, schemaContext: Context, keyword: Keyword<unknown>): void;
   afterKeyword?(keywordNode: Node<unknown>, instance: JsonNode, context: Context, valid: boolean, schemaContext: Context, keyword: Keyword<unknown>): void;
@@ -95,6 +96,7 @@ export type EvaluationPlugin<Context extends ValidationContext = ValidationConte
 };
 
 export class BasicOutputPlugin implements EvaluationPlugin<ErrorsContext> {
+  id: string;
   errors: OutputUnit[];
 
   beforeSchema(url: string, instance: JsonNode, context: ErrorsContext): void;
@@ -104,6 +106,7 @@ export class BasicOutputPlugin implements EvaluationPlugin<ErrorsContext> {
 }
 
 export class DetailedOutputPlugin implements EvaluationPlugin<ErrorsContext> {
+  id: string;
   errors: OutputUnit[];
 
   beforeSchema(url: string, instance: JsonNode, context: ErrorsContext): void;
@@ -117,6 +120,7 @@ export type ErrorsContext = ValidationContext & {
 };
 
 export class AnnotationsPlugin implements EvaluationPlugin<AnnotationsContext> {
+  id: string;
   annotations: OutputUnit[];
 
   beforeSchema(url: string, instance: JsonNode, context: AnnotationsContext): void;
