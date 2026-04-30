@@ -57,7 +57,7 @@ describe("Compiled Schema Serialization", () => {
       }
     });
 
-    expect(restored.ast.plugins).to.be.instanceOf(Set);
+    expect(Array.isArray(restored.ast.plugins)).to.equal(true);
   });
 
   test("throws if plugin id cannot be resolved", () => {
