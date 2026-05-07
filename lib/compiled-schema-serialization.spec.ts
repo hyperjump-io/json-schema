@@ -43,10 +43,7 @@ describe("Compiled Schema Serialization", () => {
       schemaUri: "schema:custom#",
       ast: {
         "metaData": {},
-        "plugins": {
-          __type: "PluginSet",
-          values: [{ __type: "Plugin", id: plugin.id }]
-        },
+        "plugins": [{ id: plugin.id }],
         "schema:custom#": true
       }
     });
@@ -57,7 +54,7 @@ describe("Compiled Schema Serialization", () => {
       }
     });
 
-    expect(Array.isArray(restored.ast.plugins)).to.equal(true);
+    expect(restored.ast.plugins instanceof Set).to.equal(true);
   });
 
   test("throws if plugin id cannot be resolved", () => {
@@ -65,10 +62,7 @@ describe("Compiled Schema Serialization", () => {
       schemaUri: "schema:missing#",
       ast: {
         "metaData": {},
-        "plugins": {
-          __type: "PluginSet",
-          values: [{ __type: "Plugin", id: "https://example.com/plugins/missing" }]
-        },
+        "plugins": [{ id: "https://example.com/plugins/missing" }],
         "schema:missing#": true
       }
     });
