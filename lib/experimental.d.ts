@@ -26,7 +26,7 @@ export const deserialize: (serialized: string, options?: DeserializeOptions) => 
 
 type AST = {
   metaData: Record<string, MetaData>;
-  plugins: EvaluationPlugin[];
+  plugins: Set<EvaluationPlugin>;
 } & Record<string, Node<unknown>[] | boolean>;
 
 type Node<A> = [keywordId: string, schemaUri: string, keywordValue: A];
