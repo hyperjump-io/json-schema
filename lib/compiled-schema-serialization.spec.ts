@@ -33,42 +33,19 @@ describe("Compiled Schema Serialization", () => {
     expect(interpret(restored, Instance.fromJs({ extra: 1 }))).to.eql({ valid: false });
   });
 
-  test("restores custom plugins from pluginsById", () => {
-    const plugin = {
-      id: "https://example.com/plugins/custom",
-      beforeSchema() {}
-    };
-
-    const serialized = JSON.stringify({
-      schemaUri: "schema:custom#",
-      ast: {
-        "metaData": {},
-        "plugins": [{ id: plugin.id }],
-        "schema:custom#": true
-      }
-    });
-
-    const restored = deserialize(serialized, {
-      pluginsById: {
-        [plugin.id]: plugin
-      }
-    });
-
-    expect(restored.ast.plugins instanceof Set).to.equal(true);
-  });
-
   test("throws if plugin id cannot be resolved", () => {
+    const pluginUri = "https://example.com/plugins/missing";
     const serialized = JSON.stringify({
       schemaUri: "schema:missing#",
       ast: {
         "metaData": {},
-        "plugins": [{ id: "https://example.com/plugins/missing" }],
+        "plugins": [pluginUri],
         "schema:missing#": true
       }
     });
 
     expect(() => {
       deserialize(serialized);
-    }).to.throw("Plugin with id 'https://example.com/plugins/missing' is not found");
+    }).to.throw(`Plugin with id '${pluginUri}' is not found`);
   });
 });

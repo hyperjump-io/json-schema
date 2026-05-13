@@ -17,12 +17,8 @@ export type CompiledSchema = {
   ast: AST;
 };
 
-export type DeserializeOptions = {
-  pluginsById?: Record<string, EvaluationPlugin>;
-};
-
 export const serialize: (compiledSchema: CompiledSchema) => string;
-export const deserialize: (serialized: string, options?: DeserializeOptions) => CompiledSchema;
+export const deserialize: (serialized: string) => CompiledSchema;
 
 type AST = {
   metaData: Record<string, MetaData>;
