@@ -764,6 +764,13 @@ These are available from the `@hyperjump/json-schema/experimental` export.
 
     A curried function for validating an instance against a compiled schema.
     This can be useful for creating custom output formats.
+* **serialize**: (compiledSchema: CompiledSchema) => string
+
+    Serialize a compiled schema as JSON so it can be restored at a later time
+    without needing to recompile.
+* **deserialize**: (serialized: string) => CompiledSchema
+
+    Restore a serialized compiled schema.
 
 * **OutputFormat**: **FLAG** | **BASIC**
 

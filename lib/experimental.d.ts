@@ -17,9 +17,12 @@ export type CompiledSchema = {
   ast: AST;
 };
 
+export const serialize: (compiledSchema: CompiledSchema) => string;
+export const deserialize: (serialized: string) => CompiledSchema;
+
 type AST = {
   metaData: Record<string, MetaData>;
-  plugins: EvaluationPlugin[];
+  plugins: Set<EvaluationPlugin>;
 } & Record<string, Node<unknown>[] | boolean>;
 
 type Node<A> = [keywordId: string, schemaUri: string, keywordValue: A];
