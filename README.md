@@ -99,6 +99,16 @@ const output1 = isString("foo");
 const output2 = isString(42);
 ```
 
+You can also serialize a compiled validation function and restore it later without needing to recompile the schema.
+
+```javascript
+import { restoreValidator } from "@hyperjump/json-schema/draft-2020-12";
+
+const serializedValidator = isString.serialize();
+const restoredIsString = restoreValidator(serializedValidator);
+const output3 = restoredIsString("foo");
+```
+
 **File-based and web-based schemas**
 
 Schemas that are available on the web can be loaded automatically without
@@ -240,21 +250,24 @@ Schema, such as `@hyperjump/json-schema/draft-2020-12`.
     Load a schema manually rather than fetching it from the filesystem or over
     the network. Any schema already registered with the same identifier will be
     replaced with no warning.
-* **validate**: (schemaURI: string, instance: any, outputFormat: ValidationOptions | OutputFormat = FLAG) => Promise\<OutputUnit>
+* **validate**: (schemaURI: string, instance: any, outputFormat: ValidationOptions | OutputFormat = FLAG) => Promise\<Output>
 
     Validate an instance against a schema. This function is curried to allow
     compiling the schema once and applying it to multiple instances.
-* **validate**: (schemaURI: string) => Promise\<(instance: any, outputFormat: ValidationOptions | OutputFormat = FLAG) => OutputUnit>
+* **validate**: (schemaURI: string) => Promise\<Validator>
 
     Compiling a schema to a validation function.
+* **restoreValidator**: (serialized: string) => Validator
+
+    Restore a validation function from a serialized string without needing to recompile.
 * **FLAG**: "FLAG"
 
     An identifier for the `FLAG` output format as defined by the 2019-09 and
     2020-12 specifications.
-* **InvalidSchemaError**: Error & { output: OutputUnit }
+* **InvalidSchemaError**: Error & { output: Output & { valid: false } }
 
     This error is thrown if the schema being compiled is found to be invalid.
-    The `output` field contains an `OutputUnit` with information about the
+    The `output` field contains an `Output` object with information about the
     error. You can use the `setMetaSchemaOutputFormat` configuration to set the
     output format that is returned in `output`.
 * **setMetaSchemaOutputFormat**: (outputFormat: OutputFormat) => void
@@ -278,11 +291,18 @@ The following types are used in the above definitions
 
     Only the `FLAG` output format is part of the Stable API. Additional [output
     formats](#output-formats) are included as part of the Experimental API.
-* **OutputUnit**: { valid: boolean }
+* **Validator**: (instance: any, outputFormat: ValidationOptions | OutputFormat = FLAG) => Output
+    * **serialize**: () => string
+
+    A compiled validation function that can be executed to validate an instance, or serialized to a string so it can be restored at a later time without needing to recompile.
+* **Output**: { valid: boolean }
 
     Output is an experimental feature of the JSON Schema specification. There
-    may be additional fields present in the OutputUnit, but only the `valid`
+    may be additional fields present in the Output, but only the `valid`
     property should be considered part of the Stable API.
+* **OutputUnit**:
+
+    A type used in detailed or hierarchical output formats. Contains information about an individual validation error or annotation.
 * **ValidationOptions**:
 
     * outputFormat?: OutputFormat
@@ -760,7 +780,8 @@ These are available from the `@hyperjump/json-schema/experimental` export.
 
     Return a compiled schema. This is useful if you're creating tooling for
     something other than validation.
-* **interpret**: (schema: CompiledSchema, instance: JsonNode, outputFormat: OutputFormat = BASIC) => OutputUnit
+* **interpret**: (schema: CompiledSchema, instance: JsonNode, outputFormat: ValidationOptions | OutputFormat = BASIC) => Output
+* **interpret**: (schema: CompiledSchema) => Validator
 
     A curried function for validating an instance against a compiled schema.
     This can be useful for creating custom output formats.

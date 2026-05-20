@@ -28,7 +28,12 @@ export const validate: (
   (url: string) => Promise<Validator>
 );
 
-export type Validator = (value: Json, options?: OutputFormat | ValidationOptions) => Output;
+export const restoreValidator: (json: string) => Validator;
+
+export type Validator = {
+  (value: Json, options?: OutputFormat | ValidationOptions): Output;
+  serialize(): string;
+};
 
 export type Output = {
   valid: true;
