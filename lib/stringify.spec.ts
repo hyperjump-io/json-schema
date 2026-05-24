@@ -39,6 +39,20 @@ describe("Json.stringify", () => {
       expect(jsonStringify(value, replacer)).to.eql(JSON.stringify(value, replacer));
     });
 
+    it("should remove the last property when it returns undefined without leaving a trailing comma", () => {
+      const value = {
+        aaa: "foo",
+        bbb: "bar"
+      };
+      const replacer = (key: string, value: unknown) => {
+        if (key !== "bbb") {
+          return value;
+        }
+      };
+
+      expect(jsonStringify(value, replacer)).to.eql(JSON.stringify(value, replacer));
+    });
+
     it("should remove items that return undefined", () => {
       const value = ["foo", "bar"];
       const replacer = (key: string, value: unknown) => {
