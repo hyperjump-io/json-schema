@@ -80,7 +80,7 @@ export type Keyword<A, Context extends ValidationContext = ValidationContext> = 
   compile: (schema: Browser<SchemaDocument>, ast: AST, parentSchema: Browser<SchemaDocument>) => Promise<A>;
   interpret: (compiledKeywordValue: A, instance: JsonNode, context: Context) => boolean;
   simpleApplicator?: boolean;
-  annotation?: (compiledKeywordValue: A, instance: JsonNode) => unknown;
+  annotation?: (compiledKeywordValue: A, instance: JsonNode, context: Context) => unknown;
   plugin?: EvaluationPlugin<Context>;
 };
 
