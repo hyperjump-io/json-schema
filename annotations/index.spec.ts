@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import { describe, test, expect, beforeEach, beforeAll, afterAll } from "vitest";
-import { isCompatible } from "./test-utils.js";
+import { isCompatible } from "../lib/test-utils.js";
 import { toAbsoluteIri } from "@hyperjump/uri";
 import { annotate } from "./index.js";
 import { registerSchema, unregisterSchema } from "../lib/index.js";

@@ -18,7 +18,6 @@ type Test = {
 
 export const testSuite: (path: string) => TestCase[];
 export const md5: (subject: string) => string;
-export const isCompatible: (compatibility: string | undefined, versionUnderTest: number) => boolean;
 export const loadSchemas: (testCase: TestCase, retrievalUri: string, dialect: string) => void;
 export const unloadSchemas: (testCase: TestCase, retrievalUri: string, dialect: string) => void;
 export const toOutput: (instance: JsonNode) => Record<string, {

@@ -22,45 +22,6 @@ export const md5 = (subject) => createHmac("md5", "hyperjump.io")
   .update(subject)
   .digest("hex");
 
-export const isCompatible = (compatibility, versionUnderTest) => {
-  if (compatibility === undefined) {
-    return true;
-  }
-
-  const constraints = compatibility.split(",");
-  for (const constraint of constraints) {
-    const matches = /(?<operator><=|>=|=)?(?<version>\d+)/.exec(constraint);
-    if (!matches) {
-      throw Error(`Invalid compatibility string: ${compatibility}`);
-    }
-
-    const operator = matches[1] ?? ">=";
-    const version = parseInt(matches[2], 10);
-
-    switch (operator) {
-      case ">=":
-        if (versionUnderTest < version) {
-          return false;
-        }
-        break;
-      case "<=":
-        if (versionUnderTest > version) {
-          return false;
-        }
-        break;
-      case "=":
-        if (versionUnderTest !== version) {
-          return false;
-        }
-        break;
-      default:
-        throw Error(`Unsupported constraint operator: ${operator}`);
-    }
-  }
-
-  return true;
-};
-
 const fixtures = {};
 readdirSync("bundle/fixtures", { withFileTypes: true, recursive: true })
   .filter((entry) => entry.isFile() && entry.name.endsWith(".schema.json"))

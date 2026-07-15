@@ -1,6 +1,5 @@
-import fs from "node:fs";
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { registerSchema, setShouldValidateFormat, unregisterSchema, validate } from "../lib/index.js";
+import { runTestSuite } from "../lib/test-utils.js";
+import { setShouldValidateFormat } from "../lib/index.js";
 import "./index.js";
 import "../draft-2020-12/index.js";
 import "../draft-2019-09/index.js";
@@ -8,109 +7,12 @@ import "../draft-07/index.js";
 import "../draft-06/index.js";
 import "../draft-04/index.js";
 
-import type { Json } from "@hyperjump/json-pointer";
-import type { SchemaObject, Validator } from "../lib/index.js";
 
-
-type Suite = {
-  description: string;
-  schema: SchemaObject;
-  tests: Test[];
-};
-
-type Test = {
-  description: string;
-  data: Json;
-  valid: boolean;
-};
-
-const skip = new Set<string>([
-  // Leap seconds don't make sense without a date
-  "|draft2020-12|time.json|validation of time strings|a valid time string with leap second, Zulu",
-  "|draft2019-09|time.json|validation of time strings|a valid time string with leap second, Zulu",
-  "|draft7|time.json|validation of time strings|a valid time string with leap second, Zulu",
-  "|draft2020-12|time.json|validation of time strings|valid leap second, zero time-offset",
-  "|draft2019-09|time.json|validation of time strings|valid leap second, zero time-offset",
-  "|draft7|time.json|validation of time strings|valid leap second, zero time-offset",
-  "|draft2020-12|time.json|validation of time strings|valid leap second, positive time-offset",
-  "|draft2019-09|time.json|validation of time strings|valid leap second, positive time-offset",
-  "|draft7|time.json|validation of time strings|valid leap second, positive time-offset",
-  "|draft2020-12|time.json|validation of time strings|valid leap second, large positive time-offset",
-  "|draft2019-09|time.json|validation of time strings|valid leap second, large positive time-offset",
-  "|draft7|time.json|validation of time strings|valid leap second, large positive time-offset",
-  "|draft2020-12|time.json|validation of time strings|valid leap second, negative time-offset",
-  "|draft2019-09|time.json|validation of time strings|valid leap second, negative time-offset",
-  "|draft7|time.json|validation of time strings|valid leap second, negative time-offset",
-  "|draft2020-12|time.json|validation of time strings|valid leap second, large negative time-offset",
-  "|draft2019-09|time.json|validation of time strings|valid leap second, large negative time-offset",
-  "|draft7|time.json|validation of time strings|valid leap second, large negative time-offset"
-]);
-
-const shouldSkip = (path: string[]): boolean => {
-  let key = "";
-  for (const segment of path) {
-    key = `${key}|${segment}`;
-    if (skip.has(key)) {
-      return true;
-    }
-  }
-  return false;
-};
-
+const formatTestSuitePath = "./node_modules/json-schema-test-suite/validation/tests/optional/format";
 setShouldValidateFormat(true);
 
-const testSuitePath = "./node_modules/json-schema-test-suite";
-
-const runTestSuite = (draft: string, dialectId: string) => {
-  const testSuiteFilePath = `${testSuitePath}/tests/${draft}/optional/format`;
-
-  describe(`${draft} ${dialectId}`, () => {
-    fs.readdirSync(testSuiteFilePath, { withFileTypes: true })
-      .filter((entry) => entry.isFile() && entry.name.endsWith(".json"))
-      .forEach((entry) => {
-        const file = `${testSuiteFilePath}/${entry.name}`;
-
-        describe(entry.name, () => {
-          const suites = JSON.parse(fs.readFileSync(file, "utf8")) as Suite[];
-
-          suites.forEach((suite) => {
-            describe(suite.description, () => {
-              let _validate: Validator;
-              let url: string;
-
-              beforeAll(async () => {
-                if (shouldSkip([draft, entry.name, suite.description])) {
-                  return;
-                }
-                url = `http://${draft}-test-suite.json-schema.org/${encodeURIComponent(suite.description)}`;
-                registerSchema(suite.schema, url, dialectId);
-
-                _validate = await validate(url);
-              });
-
-              afterAll(() => {
-                unregisterSchema(url);
-              });
-
-              suite.tests.forEach((test) => {
-                if (shouldSkip([draft, entry.name, suite.description, test.description])) {
-                  it.skip(test.description, () => { /* empty */ });
-                } else {
-                  it(test.description, () => {
-                    const output = _validate(test.data);
-                    expect(output.valid).to.equal(test.valid);
-                  });
-                }
-              });
-            });
-          });
-        });
-      });
-  });
-};
-
-runTestSuite("draft2020-12", "https://json-schema.org/draft/2020-12/schema");
-runTestSuite("draft2019-09", "https://json-schema.org/draft/2019-09/schema");
-runTestSuite("draft7", "http://json-schema.org/draft-07/schema");
-runTestSuite("draft6", "http://json-schema.org/draft-06/schema");
-runTestSuite("draft4", "http://json-schema.org/draft-04/schema");
+runTestSuite(2020, "https://json-schema.org/draft/2020-12/schema", new Set(["|2020|time-leap-seconds.json"]), formatTestSuitePath);
+runTestSuite(2019, "https://json-schema.org/draft/2019-09/schema", new Set(["|2019|time-leap-seconds.json"]), formatTestSuitePath);
+runTestSuite(7, "http://json-schema.org/draft-07/schema", new Set(["|7|time-leap-seconds.json"]), formatTestSuitePath);
+runTestSuite(6, "http://json-schema.org/draft-06/schema", new Set(["|6|time-leap-seconds.json"]), formatTestSuitePath);
+runTestSuite(4, "http://json-schema.org/draft-04/schema", new Set(["|4|time-leap-seconds.json"]), formatTestSuitePath);

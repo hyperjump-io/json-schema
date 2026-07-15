@@ -1,5 +1,6 @@
 import { writeFile, mkdir, rm } from "node:fs/promises";
-import { isCompatible, md5, loadSchemas, testSuite, unloadSchemas } from "./test-utils.js";
+import { md5, loadSchemas, testSuite, unloadSchemas } from "./test-utils.js";
+import { isCompatible } from "../lib/test-utils.js";
 import { AnnotationsPlugin, compile, DetailedOutputPlugin, getSchema, Validation } from "../lib/experimental.js";
 import "../v1/index.js";
 import "../draft-2020-12/index.js";

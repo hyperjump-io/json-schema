@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { isCompatible, md5, loadSchemas, unloadSchemas, testSuite } from "./test-utils.js";
+import { md5, loadSchemas, unloadSchemas, testSuite } from "./test-utils.js";
+import { isCompatible } from "../lib/test-utils.js";
 import { registerSchema, unregisterSchema } from "../lib/index.js";
 import {
   AnnotationsPlugin,
