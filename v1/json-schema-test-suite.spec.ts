@@ -21,6 +21,14 @@ type Test = {
 };
 
 const skip = new Set<string>([
+  // v1 doesn't allow unknown keywords, so these don't apply.
+  "|v1|optional/dependencies-compatibility.json",
+  "|v1|optional/refOfUnknownKeyword.json",
+  "|v1|optional/unknownKeyword.json",
+
+  // `format` is an assertion in v1, so annotation-only tests don't apply.
+  "|v1|optional/format-annotation.json",
+
   // Self-identifying with a `file:` URI is not allowed for security reasons.
   "|v1|ref.json|$id with file URI still resolves pointers - *nix",
   "|v1|ref.json|$id with file URI still resolves pointers - windows",
@@ -47,6 +55,18 @@ const shouldSkip = (path: string[]): boolean => {
 
 const testSuitePath = "./node_modules/json-schema-test-suite";
 
+const jsonFiles = (path: string): string[] => fs.readdirSync(path, { withFileTypes: true })
+  .filter((entry) => entry.isFile() && entry.name.endsWith(".json"))
+  .map((entry) => entry.name);
+
+// `optional/` is part of the suite and was never being read.
+const testFiles = (path: string): [string, string][] => [
+  ...jsonFiles(path).map((name): [string, string] => [name, `${path}/${name}`]),
+  ...jsonFiles(`${import.meta.dirname}/extension-tests`).map((name): [string, string] => [name, `${import.meta.dirname}/extension-tests/${name}`]),
+  ...jsonFiles(`${path}/format`).map((name): [string, string] => [name, `${path}/format/${name}`]),
+  ...jsonFiles(`${path}/optional`).map((name): [string, string] => [`optional/${name}`, `${path}/optional/${name}`])
+];
+
 const addRemotes = (dialectId: string, filePath = `${testSuitePath}/remotes`, url = "") => {
   fs.readdirSync(filePath, { withFileTypes: true })
     .forEach((entry) => {
@@ -69,16 +89,9 @@ const runTestSuite = (draft: string, dialectId: string) => {
       addRemotes(dialectId);
     });
 
-    [
-      ...fs.readdirSync(testSuiteFilePath, { withFileTypes: true }),
-      ...fs.readdirSync(`${import.meta.dirname}/extension-tests`, { withFileTypes: true }),
-      ...fs.readdirSync(`${testSuiteFilePath}/format`, { withFileTypes: true })
-    ]
-      .filter((entry) => entry.isFile() && entry.name.endsWith(".json"))
-      .forEach((entry) => {
-        const file = `${entry.parentPath}/${entry.name}`;
-
-        describe(entry.name, () => {
+    testFiles(testSuiteFilePath)
+      .forEach(([name, file]) => {
+        describe(name, () => {
           const suites = JSON.parse(fs.readFileSync(file, "utf8")) as Suite[];
 
           suites.forEach((suite) => {
@@ -87,10 +100,10 @@ const runTestSuite = (draft: string, dialectId: string) => {
               let url: string;
 
               beforeAll(async () => {
-                if (shouldSkip([draft, entry.name, suite.description])) {
+                if (shouldSkip([draft, name, suite.description])) {
                   return;
                 }
-                url = `http://${draft}-test-suite.json-schema.org/${encodeURIComponent(suite.description)}`;
+                url = `http://${draft}-test-suite.json-schema.org/${encodeURIComponent(name)}/${encodeURIComponent(suite.description)}`;
                 registerSchema(suite.schema, url, dialectId);
 
                 _validate = await validate(url);
@@ -101,7 +114,7 @@ const runTestSuite = (draft: string, dialectId: string) => {
               });
 
               suite.tests.forEach((test) => {
-                if (shouldSkip([draft, entry.name, suite.description, test.description])) {
+                if (shouldSkip([draft, name, suite.description, test.description])) {
                   it.skip(test.description, () => { /* empty */ });
                 } else {
                   it(test.description, () => {

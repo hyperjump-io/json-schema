@@ -24,19 +24,19 @@ type Test = {
 // something that doesn't come up in real schemas in favor of something that has
 // value.
 const skip = new Set<string>([
+  // Cross-draft tests need remotes from other dialects. addRemotes only
+  // registers remotes that match the dialect under test.
+  "|draft7|optional/cross-draft.json",
+
+  // contentEncoding/contentMediaType are annotations by default in draft-07.
+  // These tests assume the optional assertion behavior.
+  "|draft7|optional/content.json",
+
   // Skip tests for pointers that cross schema resource boundaries. There might
   // be a way to solve this, but because this functionality has been removed
   // from the spec and there is no good reason to do this, it will probably not
   // ever be fixed.
   "|draft7|refRemote.json|base URI change - change folder in subschema",
-
-  // Skip tests that ignore keywords in places that are not schemas such as a
-  // $ref in a const. Because this implementation is dialect agnostic, there's
-  // no way to know whether a location is a schema or not. Especially since this
-  // isn't a real problem that comes up with real schemas, I'm not concerned
-  // about making it work.
-  "|draft7|ref.json|naive replacement of $ref with its destination is not correct",
-  "|draft7|ref.json|$ref prevents a sibling $id from changing the base uri",
 
   // Self-identifying with a `file:` URI is not allowed for security reasons.
   "|draft7|ref.json|$id with file URI still resolves pointers - *nix",
@@ -55,6 +55,17 @@ const shouldSkip = (path: string[]): boolean => {
 };
 
 const testSuitePath = "./node_modules/json-schema-test-suite";
+
+const jsonFiles = (path: string): string[] => fs.readdirSync(path, { withFileTypes: true })
+  .filter((entry) => entry.isFile() && entry.name.endsWith(".json"))
+  .map((entry) => entry.name);
+
+// `optional/` is part of the suite. `optional/format` is covered separately by
+// formats/formats-test-suite.spec.ts, so it's left out here.
+const testFiles = (path: string): [string, string][] => [
+  ...jsonFiles(path).map((name): [string, string] => [name, `${path}/${name}`]),
+  ...jsonFiles(`${path}/optional`).map((name): [string, string] => [`optional/${name}`, `${path}/optional/${name}`])
+];
 
 const addRemotes = (dialectId: string, filePath = `${testSuitePath}/remotes`, url = "") => {
   fs.readdirSync(filePath, { withFileTypes: true })
@@ -78,12 +89,9 @@ const runTestSuite = (draft: string, dialectId: string) => {
       addRemotes(dialectId);
     });
 
-    fs.readdirSync(testSuiteFilePath, { withFileTypes: true })
-      .filter((entry) => entry.isFile() && entry.name.endsWith(".json"))
-      .forEach((entry) => {
-        const file = `${testSuiteFilePath}/${entry.name}`;
-
-        describe(entry.name, () => {
+    testFiles(testSuiteFilePath)
+      .forEach(([name, file]) => {
+        describe(name, () => {
           const suites = JSON.parse(fs.readFileSync(file, "utf8")) as Suite[];
 
           suites.forEach((suite) => {
@@ -92,10 +100,10 @@ const runTestSuite = (draft: string, dialectId: string) => {
               let url: string;
 
               beforeAll(async () => {
-                if (shouldSkip([draft, entry.name, suite.description])) {
+                if (shouldSkip([draft, name, suite.description])) {
                   return;
                 }
-                url = `http://${draft}-test-suite.json-schema.org/${encodeURIComponent(suite.description)}`;
+                url = `http://${draft}-test-suite.json-schema.org/${encodeURIComponent(name)}/${encodeURIComponent(suite.description)}`;
                 registerSchema(suite.schema, url, dialectId);
 
                 _validate = await validate(url);
@@ -106,7 +114,7 @@ const runTestSuite = (draft: string, dialectId: string) => {
               });
 
               suite.tests.forEach((test) => {
-                if (shouldSkip([draft, entry.name, suite.description, test.description])) {
+                if (shouldSkip([draft, name, suite.description, test.description])) {
                   it.skip(test.description, () => { /* empty */ });
                 } else {
                   it(test.description, () => {
