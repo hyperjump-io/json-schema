@@ -1,8 +1,10 @@
 import { describe, it, expect, afterEach } from "vitest";
 import { Agent, setGlobalDispatcher } from "undici";
 import { RetrievalError } from "@hyperjump/browser";
-import { registerSchema, unregisterSchema } from "./index.js";
-import { getSchema, hasDialect } from "./experimental.js";
+import { registerSchema, unregisterSchema, validate } from "./index.js";
+import { buildSchemaDocument, getSchema, hasDialect } from "./experimental.js";
+
+import type { SchemaObject } from "./index.js";
 import "../v1/index.js";
 import "../draft-2020-12/index.js";
 import "../draft-2019-09/index.js";
@@ -142,14 +144,14 @@ describe("Schema Parsing", () => {
   it("schema with legacy anchor fragment", async () => {
     registerSchema({
       $schema: "http://json-schema.org/draft-07/schema#",
-      $defs: {
+      definitions: {
         foo: { $id: "#foo" }
       }
     }, `${testDomain}/schema`);
 
     const browser = await getSchema(`${testDomain}/schema#foo`);
     expect(browser.uri).to.equal(`${testDomain}/schema#foo`);
-    expect(browser.cursor).to.equal("/$defs/foo");
+    expect(browser.cursor).to.equal("/definitions/foo");
     expect(browser.document.baseUri).to.equal(`${testDomain}/schema`);
   });
 
@@ -525,5 +527,120 @@ describe("Schema Parsing", () => {
 
     expect(browser.uri).to.eql(`${testDomain}/schema`);
     expect(browser.document.baseUri).to.eql(`${testDomain}/schema`);
+  });
+});
+
+describe("Schema Position", () => {
+  const testDomain = "https://test.hyperjump.io";
+  const dialectId = "https://json-schema.org/draft/2020-12/schema";
+  let uri: string;
+  let count = 0;
+
+  afterEach(() => {
+    unregisterSchema(uri);
+  });
+
+  const register = (schema: SchemaObject) => {
+    uri = `${testDomain}/position-${count++}`;
+    registerSchema(schema, uri, dialectId);
+    return validate(uri);
+  };
+
+  // enum/const values are instance data, so core keywords in them are just data
+  const values: [string, SchemaObject][] = [
+    ["$id", { $id: "https://example.com/not-an-identifier" }],
+    ["$anchor", { $anchor: "not-an-anchor" }],
+    ["$dynamicAnchor", { $dynamicAnchor: "not-an-anchor" }],
+    ["$ref", { $ref: "https://example.com/does-not-exist" }],
+    ["$schema", { $schema: "https://example.com/not-a-dialect" }],
+    ["a nested $id", { foo: { $id: "https://example.com/not-an-identifier" } }]
+  ];
+
+  for (const [name, value] of values) {
+    it(`enum value containing ${name}`, async () => {
+      const validator = await register({ enum: [value] });
+
+      expect(validator(value).valid).to.equal(true);
+    });
+
+    it(`const value containing ${name}`, async () => {
+      const validator = await register({ const: value });
+
+      expect(validator(value).valid).to.equal(true);
+    });
+  }
+
+  it("$id in an unknown keyword isn't an identifier", () => {
+    const document = buildSchemaDocument({
+      unknownKeyword: { $id: "https://example.com/buried" }
+    }, `${testDomain}/schema`, dialectId);
+
+    expect(Object.keys(document.embedded ?? {})).to.eql([`${testDomain}/schema`]);
+  });
+
+  it("an $anchor in an enum value isn't deleted from the caller's schema", () => {
+    const schema = { enum: [{ $anchor: "not-an-anchor", foo: 42 }] };
+
+    buildSchemaDocument(schema, `${testDomain}/schema`, dialectId);
+
+    expect(schema).to.eql({ enum: [{ $anchor: "not-an-anchor", foo: 42 }] });
+  });
+
+  it("$anchor in default or examples isn't an anchor", () => {
+    const document = buildSchemaDocument({
+      default: { $anchor: "in-default" },
+      examples: [{ $anchor: "in-examples" }]
+    }, `${testDomain}/schema`, dialectId);
+
+    expect(Object.keys(document.anchors)).to.eql([""]);
+  });
+
+  it("anchors in schema positions are still collected", () => {
+    const document = buildSchemaDocument({
+      $defs: { a: { $anchor: "in-defs" } },
+      properties: { enum: { $anchor: "in-properties" } },
+      patternProperties: { "^x": { $anchor: "in-patternProperties" } },
+      dependentSchemas: { x: { $anchor: "in-dependentSchemas" } },
+      allOf: [{ $anchor: "in-allOf" }],
+      not: { $anchor: "in-not" }
+    }, `${testDomain}/schema`, dialectId);
+
+    expect(Object.keys(document.anchors).sort()).to.eql([
+      "",
+      "in-allOf",
+      "in-defs",
+      "in-dependentSchemas",
+      "in-not",
+      "in-patternProperties",
+      "in-properties"
+    ]);
+  });
+
+  it("embedded resources in schema positions are still registered", () => {
+    const document = buildSchemaDocument({
+      $defs: { a: { $id: "https://example.com/a" } },
+      properties: { const: { $id: "https://example.com/b" } },
+      allOf: [{ $id: "https://example.com/c" }]
+    }, `${testDomain}/schema`, dialectId);
+
+    expect(Object.keys(document.embedded ?? {}).sort()).to.eql([
+      "https://example.com/a",
+      "https://example.com/b",
+      "https://example.com/c",
+      `${testDomain}/schema`
+    ]);
+  });
+
+  it("anchors in v1 map-shaped keywords are still collected", () => {
+    const document = buildSchemaDocument({
+      propertyDependencies: { p: { v: { $anchor: "in-propertyDependencies" } } },
+      conditional: [{ $anchor: "in-conditional" }]
+    }, `${testDomain}/schema`, "https://json-schema.org/v1");
+
+    expect(Object.keys(document.anchors).sort()).to.eql([
+      "",
+      "in-conditional",
+      "in-propertyDependencies"
+    ]);
   });
 });
