@@ -839,6 +839,26 @@ describe("Basic Output Format", () => {
 
       expect(output).to.eql({ valid: true });
     });
+
+    test("invalid - property name inherited from Object prototype", async () => {
+      registerSchema({
+        dependentRequired: {
+          foo: ["constructor"]
+        }
+      }, schemaUri, dialectUri);
+      const output = await validate(schemaUri, { foo: 42 }, BASIC);
+
+      expect(output).to.eql({
+        valid: false,
+        errors: [
+          {
+            keyword: "https://json-schema.org/keyword/dependentRequired",
+            absoluteKeywordLocation: `${schemaUri}#/dependentRequired`,
+            instanceLocation: "#"
+          }
+        ]
+      });
+    });
   });
 
   describe("enum", () => {

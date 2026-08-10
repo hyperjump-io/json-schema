@@ -53,7 +53,7 @@ const doBundling = async (schemaUri, bundled, fullOptions, contextSchema, visite
     } else if (fullOptions.definitionNamingStrategy === UUID) {
       id = uuid();
     } else {
-      throw Error(`Unknown definition naming stragety: ${fullOptions.definitionNamingStrategy}`);
+      throw Error(`Unknown definition naming strategy: ${fullOptions.definitionNamingStrategy}`);
     }
     const pointer = JsonPointer.append(id, fullOptions.bundlingLocation);
     JsonPointer.assign(pointer, bundled, embeddedSchema);

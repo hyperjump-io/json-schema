@@ -39,6 +39,23 @@ describe("Json.stringify", () => {
       expect(jsonStringify(value, replacer)).to.eql(JSON.stringify(value, replacer));
     });
 
+    it("should produce an empty object when all properties return undefined", () => {
+      const value = {
+        outer: {
+          aaa: "foo",
+          bbb: "bar"
+        }
+      };
+      const replacer = (key: string, value: unknown) => {
+        if (key === "aaa" || key === "bbb") {
+          return undefined;
+        }
+        return value;
+      };
+
+      expect(jsonStringify(value, replacer, "  ")).to.eql(JSON.stringify(value, replacer, "  "));
+    });
+
     it("should remove the last property when it returns undefined without leaving a trailing comma", () => {
       const value = {
         aaa: "foo",
