@@ -113,6 +113,61 @@ describe("Instance.fromJson", () => {
   });
 });
 
+describe.each([
+  ["fromJs", (json: string, uri?: string) => Instance.fromJs(JSON.parse(json) as Json, uri)],
+  ["fromJson", Instance.fromJson]
+])("Instance.%s pointers", (_name, fromText) => {
+  const json = `{ "foo": [1, { "a/b~c": true }], "": null }`;
+  const pointers = (node: JsonNode) => [...Instance.allNodes(node)].map((node) => node.pointer);
+
+  it("computes the pointer of every node", () => {
+    expect(pointers(fromText(json))).to.eql(["", "/foo", "/foo/0", "/foo/1", "/foo/1/a~1b~0c", "/"]);
+  });
+
+  it("computes the pointer of property and property name nodes", () => {
+    const node = Instance.get("#/foo/1/a~1b~0c", fromText(json))!;
+    expect(node.parent!.pointer).to.equal("/foo/1/a~1b~0c");
+    expect(node.parent!.children[0].pointer).to.equal("*/foo/1/a~1b~0c");
+  });
+
+  it("computes the same pointers regardless of access order", () => {
+    const node = fromText(json);
+    const item = Instance.get("#/foo/1", node)!;
+    expect(Instance.uri(item)).to.equal("#/foo/1");
+    expect(pointers(node)).to.eql(pointers(fromText(json)));
+  });
+
+  it("includes the base URI", () => {
+    const node = fromText(json, "https://example.com/instance#foo");
+    expect(Instance.uri(Instance.get("#/foo/1", node)!)).to.equal("https://example.com/instance#/foo/1");
+  });
+
+  it("creates annotations on first use", () => {
+    const node = fromText(json);
+    expect(node.annotations).to.eql({});
+    node.annotations.foo = [1];
+    expect(node.annotations).to.eql({ foo: [1] });
+  });
+});
+
+describe("Instance.fromJson duplicate keys", () => {
+  it("keeps the last value when duplicates have different types", () => {
+    const text = `{ "a": [1, { "b": 2 }], "c": 0, "a": { "d": [3] } }`;
+    const node = Instance.fromJson(text);
+    expect(Instance.value(node)).to.eql(JSON.parse(text));
+    expect([...Instance.keys(node)].map(Instance.value)).to.eql(["a", "c"]);
+    expect(Instance.value(Instance.get("#/a/d/0", node)!)).to.equal(3);
+    expect(Instance.get("#/a/d/0", node)!.pointer).to.equal("/a/d/0");
+  });
+
+  it("matches property names to values when JS reorders integer-like keys", () => {
+    const text = `{ "b": "x", "1": "y", "a\\\\b": "z" }`;
+    const node = Instance.fromJson(text);
+    expect([...Instance.entries(node)].map(([key, value]) => [Instance.value(key), Instance.value(value)]))
+      .to.eql([["b", "x"], ["1", "y"], ["a\\b", "z"]]);
+  });
+});
+
 describe("Instance.fromJs", () => {
   it("doesn't include location data", () => {
     const node = Instance.fromJs({ foo: 42 });
