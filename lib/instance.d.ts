@@ -2,6 +2,7 @@ import type { Json } from "@hyperjump/json-pointer";
 
 
 export const fromJs: (value: Json, uri?: string) => JsonNode;
+export const fromJson: (json: string, uri?: string) => JsonNode;
 
 export const cons: (
   baseUri: string,
@@ -9,7 +10,10 @@ export const cons: (
   value: Json | undefined,
   type: JsonNodeType,
   children: JsonNode[],
-  parent?: JsonNode
+  parent?: JsonNode,
+  offset?: number,
+  length?: number,
+  colonOffset?: number
 ) => JsonNode;
 export const get: <T extends JsonNode>(url: string, context: T) => T | undefined;
 export const uri: (node: JsonNode) => string;
@@ -32,6 +36,9 @@ export type JsonNode = {
   children: JsonNode[];
   parent?: JsonNode;
   root: JsonNode;
+  offset?: number;
+  length?: number;
+  colonOffset?: number;
   annotations: Record<string, unknown[]>;
 };
 

@@ -824,7 +824,13 @@ working with generators and async generators.
 * **fromJs**: (value: any, uri?: string) => JsonNode
 
     Construct a JsonNode from a JavaScript value.
-* **cons**: (baseUri: string, pointer: string, value: any, type: string, children: JsonNode[], parent?: JsonNode) => JsonNode
+* **fromJson**: (json: string, uri?: string) => JsonNode
+
+    Construct a JsonNode from JSON text. Unlike `fromJs`, each node includes
+    `offset` and `length` properties that give the node's location in the
+    source text. Property nodes also include a `colonOffset` property that gives
+    the location of the `:` separating the property name and value. Throws a `SyntaxError` if the text isn't valid JSON.
+* **cons**: (baseUri: string, pointer: string, value: any, type: string, children: JsonNode[], parent?: JsonNode, offset?: number, length?: number, colonOffset?: number) => JsonNode
 
     Construct a JsonNode. This is used internally. You probably want `fromJs`
     instead.
