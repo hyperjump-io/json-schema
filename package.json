@@ -73,7 +73,6 @@
     "@hyperjump/pact": "^1.2.0",
     "@hyperjump/uri": "^1.2.0",
     "content-type": "^1.0.4",
-    "json-stringify-deterministic": "^1.0.12",
     "just-curry-it": "^5.3.0",
     "uuid": "^14.0.0"
   },
