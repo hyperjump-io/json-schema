@@ -1,4 +1,3 @@
-import { drop } from "@hyperjump/pact";
 import * as Browser from "@hyperjump/browser";
 import * as Instance from "../lib/instance.js";
 import { getKeywordName, Validation } from "../lib/experimental.js";
@@ -20,13 +19,15 @@ const interpret = ([numberOfItems, additionalItems], instance, context) => {
   }
 
   let isValid = true;
-  let index = numberOfItems;
-  for (const item of drop(numberOfItems, Instance.iter(instance))) {
-    if (!Validation.interpret(additionalItems, item, context)) {
-      isValid = false;
-    }
+  let index = 0;
+  for (const item of Instance.iter(instance)) {
+    if (index >= numberOfItems) {
+      if (!Validation.interpret(additionalItems, item, context)) {
+        isValid = false;
+      }
 
-    context.evaluatedItems?.add(index);
+      context.evaluatedItems?.add(index);
+    }
     index++;
   }
 

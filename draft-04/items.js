@@ -1,4 +1,4 @@
-import { pipe, asyncMap, asyncCollectArray, zip } from "@hyperjump/pact";
+import { pipe, asyncMap, asyncCollectArray } from "@hyperjump/pact";
 import * as Browser from "@hyperjump/browser";
 import * as Instance from "../lib/instance.js";
 import { Validation } from "../lib/experimental.js";
@@ -35,12 +35,12 @@ const interpret = (items, instance, context) => {
       context.evaluatedItems?.add(index++);
     }
   } else {
-    for (const [tupleItem, tupleInstance] of zip(items, Instance.iter(instance))) {
-      if (!tupleInstance) {
+    for (const item of Instance.iter(instance)) {
+      if (index >= items.length) {
         break;
       }
 
-      if (!Validation.interpret(tupleItem, tupleInstance, context)) {
+      if (!Validation.interpret(items[index], item, context)) {
         isValid = false;
       }
 
