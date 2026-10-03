@@ -1329,4 +1329,18 @@ describe("Basic Output Format", () => {
       ]
     });
   });
+
+  test("a large number of errors", async () => {
+    registerSchema({
+      properties: {
+        foo: { items: { type: "string" } }
+      }
+    }, schemaUri, dialectUri);
+    const output = await validate(schemaUri, { foo: Array.from({ length: 200_000 }, () => 42) }, BASIC);
+
+    const errors = output.valid ? [] : output.errors ?? [];
+    expect(output.valid).to.equal(false);
+    expect(errors).to.have.length(200_000);
+    expect(errors[199_999].instanceLocation).to.equal("#/foo/199999");
+  });
 });
