@@ -3,3 +3,4 @@ package-lock.json
 coverage/
 scratch/
 bun.lockb
+benchmark/

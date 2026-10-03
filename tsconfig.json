@@ -9,5 +9,6 @@
     "allowJs": true,
     "allowImportingTsExtensions": true,
     "skipLibCheck": true
-  }
+  },
+  "exclude": ["node_modules", "benchmark"]
 }

@@ -16,3 +16,4 @@ bundle/test-utils.*
 bundle/generate-snapshots.js
 bundle/README.md
 lib/json-tests
+benchmark/

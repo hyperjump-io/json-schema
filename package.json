@@ -23,7 +23,7 @@
     "./formats-lite": "./formats/lite.js"
   },
   "scripts": {
-    "clean": "xargs -a .gitignore rm -rf",
+    "clean": "grep -vx benchmark/ .gitignore | xargs rm -rf",
     "lint": "eslint lib v1 draft-* openapi-* bundle annotations",
     "test": "vitest run",
     "check-types": "tsc --noEmit"
