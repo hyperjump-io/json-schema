@@ -195,6 +195,22 @@ describe("Schema Parsing", () => {
     expect(browser.document.baseUri).to.equal(`${testDomain}/schema`);
   });
 
+  it("reference in a subschema object used more than once", async () => {
+    const shared = { $ref: "#/$defs/bar" };
+    registerSchema({
+      $schema: "https://json-schema.org/v1",
+      $defs: {
+        foo: shared,
+        baz: shared,
+        bar: {}
+      }
+    }, `${testDomain}/schema`);
+
+    const browser = await getSchema(`${testDomain}/schema#/$defs/baz/$ref`);
+    expect(browser.uri).to.equal(`${testDomain}/schema#/$defs/bar`);
+    expect(shared).to.eql({ $ref: "#/$defs/bar" });
+  });
+
   it("legacy internal reference", async () => {
     registerSchema({
       $schema: "http://json-schema.org/draft-07/schema#",
