@@ -30,12 +30,12 @@ const skip = new Set<string>([
   // ever be fixed.
   "|draft4|refRemote.json|base URI change - change folder in subschema",
 
-  // Skip tests that ignore keywords in places that are not schemas such as a
-  // $ref in a const. Because this implementation is dialect agnostic, there's
-  // no way to know whether a location is a schema or not. Especially since this
-  // isn't a real problem that comes up with real schemas, I'm not concerned
-  // about making it work.
-  "|draft4|ref.json|naive replacement of $ref with its destination is not correct",
+  // $ref ignores all sibling keywords, but strictly ignoring all keywords can
+  // create paradoxical schemas if you ignore $schema. Therefore, $schema needs
+  // to be treated as an exception to the rule. I made the choice to ake an
+  // exception for all schema processing keywords including $id and $anchor as
+  // well for consistency. Since this isn't a real problem that comes up with
+  // real schemas, I'm not concerned about the deviation.
   "|draft4|ref.json|$ref prevents a sibling id from changing the base uri",
 
   // Self-identifying with a `file:` URI is not allowed for security reasons.
