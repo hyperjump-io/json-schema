@@ -1,13 +1,13 @@
 import type { Browser, Document } from "@hyperjump/browser";
 import type { Json } from "@hyperjump/json-pointer";
-import type { Validator, Output, OutputUnit, OutputFormat, SchemaObject, ValidationOptions } from "./index.js";
+import type { Validator, OutputFormats, OutputUnit, OutputFormat, SchemaObject, ValidationOptions } from "./index.js";
 import type { JsonNode } from "./instance.js";
 
 
 // Compile/interpret
 export const compile: (schema: Browser<SchemaDocument>) => Promise<CompiledSchema>;
 export const interpret: (
-  (compiledSchema: CompiledSchema, value: JsonNode, outputFormat?: OutputFormat | ValidationOptions) => Output
+  <F extends OutputFormat = "FLAG">(compiledSchema: CompiledSchema, value: JsonNode, outputFormat?: F | ValidationOptions<F>) => OutputFormats[F]
 ) & (
   (compiledSchema: CompiledSchema) => Validator
 );
@@ -36,6 +36,20 @@ type Anchors = Record<string, string>;
 // Output Formats
 export const BASIC: "BASIC";
 export const DETAILED: "DETAILED";
+
+/**
+ * Adds an output format, or replaces an existing one. The handler is called for
+ * each evaluation with the validation options. It can return a plugin to collect
+ * results during evaluation and a function to build the `errors` of the output
+ * when validation fails. To give the output format's output a type, augment the
+ * `OutputFormats` interface.
+ */
+export const setOutputFormat: (outputFormat: string, handler: OutputFormatHandler) => void;
+
+export type OutputFormatHandler = (options: ValidationOptions) => {
+  plugin?: EvaluationPlugin;
+  getErrors?: (instance: JsonNode, context: ValidationContext) => unknown;
+};
 
 // Schema
 export const getSchema: (uri: string, browser?: Browser) => Promise<Browser<SchemaDocument>>;

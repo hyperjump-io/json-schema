@@ -17,13 +17,18 @@ export const getAllRegisteredSchemaUris: () => string[];
  */
 export const addSchema: typeof registerSchema;
 
-export type ValidationOptions = {
-  outputFormat?: OutputFormat;
+/**
+ * Options for validation. Packages that add an output format can add options
+ * for it by augmenting this interface.
+ */
+// eslint-disable-next-line @typescript-eslint/consistent-type-definitions -- An interface so it can be augmented
+export interface ValidationOptions<F extends OutputFormat = OutputFormat> {
+  outputFormat?: F;
   plugins?: EvaluationPlugin[];
-};
+}
 
 export const validate: (
-  (url: string, value: Json, options?: OutputFormat | ValidationOptions) => Promise<Output>
+  <F extends OutputFormat = "FLAG">(url: string, value: Json, options?: F | ValidationOptions<F>) => Promise<OutputFormats[F]>
 ) & (
   (url: string) => Promise<Validator>
 );
@@ -31,7 +36,7 @@ export const validate: (
 export const restoreValidator: (json: string) => Validator;
 
 export type Validator = {
-  (value: Json, options?: OutputFormat | ValidationOptions): Output;
+  <F extends OutputFormat = "FLAG">(value: Json, options?: F | ValidationOptions<F>): OutputFormats[F];
   serialize(): string;
 };
 
@@ -53,7 +58,18 @@ export type OutputUnit = {
 
 export const FLAG: "FLAG";
 
-export type OutputFormat = "FLAG" | "BASIC" | "DETAILED";
+/**
+ * The output type of each output format. Packages that add an output format with
+ * `setOutputFormat` can add its output type by augmenting this interface.
+ */
+// eslint-disable-next-line @typescript-eslint/consistent-type-definitions -- An interface so it can be augmented
+export interface OutputFormats {
+  FLAG: Output;
+  BASIC: Output;
+  DETAILED: Output;
+}
+
+export type OutputFormat = keyof OutputFormats;
 
 export const setMetaSchemaOutputFormat: (format: OutputFormat) => void;
 export const getMetaSchemaOutputFormat: () => OutputFormat;

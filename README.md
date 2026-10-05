@@ -398,6 +398,51 @@ import { BASIC } from "@hyperjump/json-schema/experimental";
 const output = await validate("https://example.com/schema1", 42, BASIC);
 ```
 
+**Add a custom output format**
+
+You can add your own output format with `setOutputFormat`. An output format
+handler is called for each evaluation with the validation options. It can
+return an EvaluationPlugin that collects results during evaluation and a
+function that builds the `errors` for the output when validation fails. For
+example, [@hyperjump/json-schema-errors](https://github.com/hyperjump-io/json-schema-errors)
+uses this to add a `JSE` output format with human readable error messages.
+
+```javascript
+import { setOutputFormat } from "@hyperjump/json-schema/experimental";
+
+
+class FailedKeywordsPlugin {
+  constructor() {
+    this.keywords = [];
+  }
+
+  afterKeyword([keywordUri], _instance, _context, valid) {
+    if (!valid) {
+      this.keywords.push(keywordUri);
+    }
+  }
+}
+
+setOutputFormat("FAILED_KEYWORDS", (options) => {
+  const plugin = new FailedKeywordsPlugin();
+  return { plugin, getErrors: () => plugin.keywords };
+});
+
+const output = await validate("https://example.com/schema1", 42, "FAILED_KEYWORDS");
+// { valid: false, errors: ["https://json-schema.org/keyword/type"] }
+```
+
+In TypeScript, give the output format's output a type by augmenting the
+`OutputFormats` interface. You can also add options to `ValidationOptions`.
+
+```typescript
+declare module "@hyperjump/json-schema" {
+  interface OutputFormats {
+    FAILED_KEYWORDS: { valid: true } | { valid: false; errors: string[] };
+  }
+}
+```
+
 **Change the schema validation output format**
 
 The output format used for validating schemas can be changed as well.
@@ -792,14 +837,27 @@ These are available from the `@hyperjump/json-schema/experimental` export.
 * **deserialize**: (serialized: string) => CompiledSchema
 
     Restore a serialized compiled schema.
+* **setOutputFormat**: (outputFormat: string, handler: OutputFormatHandler) => void
 
-* **OutputFormat**: **FLAG** | **BASIC**
+    Add an output format, or replace an existing one. See [Output
+    Formats](#output-formats) for an example.
+
+* **OutputFormat**: **FLAG** | **BASIC** | **DETAILED**
 
     In addition to the `FLAG` output format in the Stable API, the Experimental
-    API includes support for the `BASIC` format as specified in the 2019-09
-    specification (with some minor customizations). This implementation doesn't
-    include annotations or human readable error messages. The output can be
-    processed to create human readable error messages as needed.
+    API includes support for the `BASIC` and `DETAILED` formats as specified in
+    the 2019-09 specification (with some minor customizations). This
+    implementation doesn't include annotations or human readable error messages.
+    The output can be processed to create human readable error messages as
+    needed.
+
+    Other output formats can be added with `setOutputFormat`.
+
+* **OutputFormatHandler**: (options: ValidationOptions) => { plugin?: EvaluationPlugin, getErrors?: (instance: JsonNode, context: ValidationContext) => unknown }
+
+    Called for each evaluation. The `plugin` is added to the evaluation, and
+    `getErrors` builds the `errors` of the output when validation fails. If
+    there's no `getErrors`, the output only includes `valid`.
 
 * **EvaluationPlugin**: object
     * id?: string
