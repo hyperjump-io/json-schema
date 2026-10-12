@@ -2,6 +2,7 @@ import { v4 as uuid } from "uuid";
 import { jrefTypeOf } from "@hyperjump/browser/jref";
 import * as JsonPointer from "@hyperjump/json-pointer";
 import { resolveIri, toAbsoluteIri } from "@hyperjump/uri";
+import { hasSchema } from "../lib/index.js";
 import { getSchema, toSchema, getKeywordName } from "../lib/experimental.js";
 
 
@@ -35,7 +36,7 @@ const doBundling = async (schemaUri, bundled, fullOptions, contextSchema, visite
   const schema = await getSchema(schemaUri, contextSchema);
   for (const reference of allReferences(schema.document.root)) {
     const uri = toAbsoluteIri(resolveIri(reference.href, schema.document.baseUri));
-    if (visited.has(uri) || fullOptions.externalSchemas.includes(uri) || (uri in schema.document.embedded && !(uri in schema._cache))) {
+    if (visited.has(uri) || fullOptions.externalSchemas.includes(uri) || (uri in schema.document.embedded && !(uri in schema._cache) && !hasSchema(uri))) {
       continue;
     }
 
