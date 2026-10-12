@@ -6,7 +6,7 @@ import { getSchema } from "./experimental.js";
 import "../v1/index.js";
 
 
-describe("Schema registry browser cache", () => {
+describe("Schema registry browser lookup", () => {
   const domain = "https://cache.hyperjump.io";
   const rootUri = `${domain}/root`;
   const targetUri = `${domain}/target`;
@@ -32,32 +32,29 @@ describe("Schema registry browser cache", () => {
       .reply(200, { $schema: dialect, type }, { headers: { "content-type": "application/schema+json" } });
   };
 
-  it("retains unvisited schemas after removal only in existing browsers", async () => {
+  it("doesn't find unregistered schemas in existing browsers", async () => {
     registerSchema({ $schema: dialect, type: "string" }, targetUri);
     const browser = await getSchema(rootUri);
+    expect((await getSchema(targetUri, browser)).document.root).to.eql({ type: "string" });
     unregisterSchema(targetUri);
 
-    expect((await getSchema(targetUri, browser)).document.root).to.eql({ type: "string" });
-    await expect(getSchema(targetUri)).rejects.to.be.instanceof(RetrievalError);
+    await expect(getSchema(targetUri, browser)).rejects.to.be.instanceof(RetrievalError);
   });
 
-  it("retains unvisited schemas after replacement while new browsers see the replacement", async () => {
+  it("finds replaced schemas in existing browsers", async () => {
     registerSchema({ $schema: dialect, type: "string" }, targetUri);
     const browser = await getSchema(rootUri);
+    expect((await getSchema(targetUri, browser)).document.root).to.eql({ type: "string" });
     unregisterSchema(targetUri);
     registerSchema({ $schema: dialect, type: "number" }, targetUri);
 
-    expect((await getSchema(targetUri, browser)).document.root).to.eql({ type: "string" });
-    expect((await getSchema(targetUri)).document.root).to.eql({ type: "number" });
+    expect((await getSchema(targetUri, browser)).document.root).to.eql({ type: "number" });
   });
 
-  it("adds newly registered schemas to existing browsers when getSchema is called", async () => {
+  it("finds schemas registered after a browser was created", async () => {
     const browser = await getSchema(rootUri);
     registerSchema({ $schema: dialect, type: "string" }, targetUri);
 
-    await expect(browserGet(targetUri, { ...browser })).rejects.to.be.instanceof(RetrievalError);
-    expect((await getSchema(targetUri, browser)).document.root).to.eql({ type: "string" });
-    unregisterSchema(targetUri);
     expect((await browserGet(targetUri, { ...browser })).document.root).to.eql({ type: "string" });
   });
 
@@ -82,7 +79,7 @@ describe("Schema registry browser cache", () => {
     mockAgent.assertNoPendingInterceptors();
   });
 
-  it("merges registered schemas into a browser created outside getSchema", async () => {
+  it("prefers fetched documents over registered schemas in a browser created outside getSchema", async () => {
     mockSchema("string");
     const browser = await browserGet(targetUri);
     registerSchema({ $schema: dialect, type: "number" }, targetUri);
@@ -92,7 +89,21 @@ describe("Schema registry browser cache", () => {
     mockAgent.assertNoPendingInterceptors();
   });
 
-  it("follows relative references and anchors through the original snapshot", async () => {
+  it("finds schemas registered after a browser created outside getSchema was first used", async () => {
+    mockSchema("string");
+    const browser = await browserGet(targetUri);
+    await getSchema(rootUri, browser);
+    const laterUri = `${domain}/later`;
+    registerSchema({ $schema: dialect, type: "number" }, laterUri);
+
+    try {
+      expect((await getSchema(laterUri, browser)).document.root).to.eql({ type: "number" });
+    } finally {
+      unregisterSchema(laterUri);
+    }
+  });
+
+  it("follows relative references and anchors to registered schemas", async () => {
     unregisterSchema(rootUri);
     registerSchema({ $schema: dialect, $ref: "target#value" }, rootUri);
     registerSchema({
@@ -100,7 +111,6 @@ describe("Schema registry browser cache", () => {
       $defs: { value: { $anchor: "value", type: "string" } }
     }, targetUri);
     const browser = await getSchema(rootUri);
-    unregisterSchema(targetUri);
 
     const referenced = await browserGet("#/$ref", { ...browser });
     expect(referenced.document.baseUri).to.equal(targetUri);
