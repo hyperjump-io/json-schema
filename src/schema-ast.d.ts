@@ -29,7 +29,10 @@ import type {
  *
  * `X` works the same way as it does for `JsonNode`.
  */
-export type JsonSchemaNode<X = never> = JsonNode<{
+export type JsonSchemaNode<X = never> = JsonNode<JsonSchemaAnnotations, X, JsonSchemaPropertyAnnotations>;
+
+/** The annotations of value nodes. See {@link JsonSchemaNode}. */
+export type JsonSchemaAnnotations = {
   type: "json";
 } | {
   type: "json-schema";
@@ -39,7 +42,17 @@ export type JsonSchemaNode<X = never> = JsonNode<{
   type: "reference";
   /** The resolved URI of the reference */
   href: string;
-}, X>;
+};
+
+/**
+ * The annotations of property nodes. Only the properties of an object schema
+ * have a `keywordUri`. See {@link JsonSchemaKeywordNode}.
+ */
+export type JsonSchemaPropertyAnnotations = {
+  keywordUri?: undefined;
+} | {
+  keywordUri: string;
+};
 
 /**
  * A schema node from a parse whose status is `failure`.
@@ -49,9 +62,7 @@ export type JsonSchemaTolerantNode = JsonSchemaNode<JsonErrorNode>;
 /**
  * A property of an object schema.
  */
-// TODO: Type the children of object schemas as JsonSchemaKeywordNode once
-// JsonPropertyNode in @hyperjump/browser accepts additional annotations.
-export type JsonSchemaKeywordNode<X = never> = JsonPropertyNode<JsonSchemaNode<X>, X> & {
+export type JsonSchemaKeywordNode<X = never> = JsonPropertyNode<JsonSchemaAnnotations, X, JsonSchemaPropertyAnnotations> & {
   /**
    * The URI of the keyword in the schema's dialect. A property that isn't a
    * keyword in the dialect gets `https://json-schema.org/keyword/unknown#`
