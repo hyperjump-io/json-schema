@@ -1,0 +1,16 @@
+{
+  "exclude": ["./docs", "./coverage", "./scratch"],
+  "compilerOptions": {
+    "module": "Node16",
+    "target": "esnext",
+    "moduleResolution": "Node16",
+    "esModuleInterop": true,
+    "strict": true,
+    "strictNullChecks": true,
+    "checkJs": true,
+    "skipLibCheck": true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "types": ["node"]
+  }
+}

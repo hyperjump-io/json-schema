@@ -1,0 +1,35 @@
+{
+  "name": "@hyperjump/json-schema-next",
+  "version": "0.0.0",
+  "description": "",
+  "keywords": [
+    "JSON Schema"
+  ],
+  "author": "Jason Desrosiers <jdesrosi@gmail.com>",
+  "license": "MIT",
+  "repository": "github:hyperjump-io/json-schema-next",
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/hyperjump-io"
+  },
+  "type": "module",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "scripts": {
+    "lint": "oxlint",
+    "test": "vitest run",
+    "type-check": "tsc --noEmit",
+    "docs": "typedoc --excludeExternals"
+  },
+  "devDependencies": {
+    "@stylistic/eslint-plugin": "*",
+    "@types/node": "*",
+    "@vitest/coverage-v8": "*",
+    "oxlint": "*",
+    "oxlint-tsgolint": "*",
+    "typedoc": "*",
+    "typescript": "*",
+    "vitest": "*"
+  }
+}
