@@ -35,6 +35,7 @@
   "dependencies": {
     "@hyperjump/browser": "file:../browser",
     "@types/unist": "^3.0.3",
+    "unified": "^11.0.5",
     "vfile-message": "^4.0.3"
   }
 }

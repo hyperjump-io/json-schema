@@ -7,16 +7,19 @@ import type {
   JsonParseStatus,
   JsonSyntaxErrorCode
 } from "@hyperjump/browser/json";
-
-// TODO: Move to the schema AST module once it's designed
-export type JsonSchemaNode = JsonNode<{
-  type: "json";
-} | {
-  type: "json-schema";
-  dialectUri: string;
-}>;
+import type { JsonSchemaNode } from "./schema-ast.d.ts";
+import type { Keyword } from "./keyword.d.ts";
+import type { Dialect, Vocabulary } from "./dialect.d.ts";
 
 export type JsonSchemaConfig = HyperjumpConfig & {
+  /**
+   * The dialect of a schema that doesn't have `$schema` and doesn't get a
+   * dialect from anywhere else, such as a `Content-Type` parameter or the
+   * resource it's embedded in. There is no default. Without one, such a
+   * schema is an error.
+   */
+  defaultDialectUri?: string;
+
   /**
    * Validate `format`. Defaults to whatever the dialect says. `format` is an
    * annotation in most dialects.
@@ -34,6 +37,38 @@ export class JsonSchema extends Hyperjump<JsonSchemaNode> {
   constructor(config?: JsonSchemaConfig);
 
   // TODO: A registry for schemas that aren't retrieved from a URI
+
+  /** Add or replace a keyword definition */
+  addKeyword: (keyword: Keyword) => void;
+
+  /**
+   * Get a keyword definition. Unknown keywords
+   * (`https://json-schema.org/keyword/unknown#<name>`) all get the same
+   * definition, which treats the value as data.
+   *
+   * @throws Error if the keyword hasn't been added.
+   */
+  getKeyword: (uri: string) => Keyword;
+
+  /** Add or replace a vocabulary */
+  addVocabulary: (vocabulary: Vocabulary) => void;
+
+  /**
+   * Add or replace a dialect. Most dialects don't need to be added. They're
+   * built from their meta-schema's `$vocabulary` the first time they're used.
+   * Add one only for a dialect whose meta-schema doesn't have `$vocabulary`,
+   * such as draft-04 through draft-07.
+   */
+  addDialect: (dialect: Dialect) => void;
+
+  /**
+   * Get a dialect. If it hasn't been added, its meta-schema is retrieved and
+   * the dialect is built from the meta-schema's `$vocabulary`.
+   *
+   * @throws Error if the meta-schema can't be retrieved, doesn't have
+   * `$vocabulary`, or requires a vocabulary that hasn't been added.
+   */
+  getDialect: (uri: string) => Promise<Dialect>;
 
   /**
    * Compile a schema into a {@link Validator} that can be used for any
