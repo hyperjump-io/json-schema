@@ -31,5 +31,10 @@
     "typedoc": "*",
     "typescript": "*",
     "vitest": "*"
+  },
+  "dependencies": {
+    "@hyperjump/browser": "file:../browser",
+    "@types/unist": "^3.0.3",
+    "vfile-message": "^4.0.3"
   }
 }
