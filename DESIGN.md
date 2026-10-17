@@ -246,9 +246,10 @@ optimization later. The two-phase design doesn't rule it out.
 
 Sharing one keyword implementation between representations might make call
 sites polymorphic, because V8 may share type feedback between closures
-created from the same code. This needs a benchmark once the v1 keywords exist.
-If it's a problem, keywords could optionally provide a separate evaluator for
-plain values. That would be an addition to the interface, not a redesign.
+created from the same code. The benchmark (see "Benchmark") shows it does:
+`validate` is about 15% slower in a process that has also evaluated ASTs.
+Keywords could optionally provide a separate evaluator for plain values.
+That would be an addition to the interface, not a redesign.
 
 Annotations follow the spec: they're kept only if the keyword and every
 schema they were evaluated through pass. An invalid instance gets no
@@ -347,6 +348,33 @@ objects the caller reads results from afterwards.
   keyword. Explaining errors is left to other output formats, such as
   `json-schema-errors`, so messages aren't part of the keyword interface.
 
+## Benchmark
+
+The benchmark is ported from `@hyperjump/json-schema`'s and isn't committed.
+It compares implementations over the v1 test cases of the
+JSON-Schema-Test-Suite, and over the ones that are also 2020-12 test cases,
+without the test cases tagged for `format`. A test case that any
+implementation gets wrong is left out for every implementation.
+
+Results (mean time per run of the suite, FLAG unless it says errors):
+
+| | json-schema-next | `@hyperjump/json-schema` |
+| --- | --- | --- |
+| v1 | 0.26–0.28 ms | 0.75 ms |
+| v1, after evaluating ASTs | 0.31–0.33 ms | 0.75 ms |
+| v1, all errors | 7.2 ms | 1.4 ms |
+
+- FLAG is about 2.7–2.9 times faster than `@hyperjump/json-schema`.
+- `validate` is about 15% slower in a process that has also evaluated
+  ASTs, because keyword code is shared (see "Compile and evaluate").
+- Collecting errors (BASIC) is about 5 times slower than
+  `@hyperjump/json-schema`. About 60% of it is constructing
+  `VFileMessage`s, which capture a stack trace because they're `Error`s.
+  With `Error.stackTraceLimit = 0`, BASIC over the test cases including
+  `format` went from 12.3 ms to 3.8 ms (`@hyperjump/json-schema`: 2.8 ms).
+- With the `format` test cases, format validators take most of the time,
+  and FLAG is only about 1.4 times faster.
+
 ## Open questions
 
 - **Where keywords get their dependencies.** From a context argument
@@ -355,6 +383,10 @@ objects the caller reads results from afterwards.
 - **Which dialect value schemas are written in.** Probably v1.
 - **`multipleOf` precision.** It uses v1's fixed tolerance for the
   remainder, which is wrong for very small divisors.
+- **The cost of errors.** Validation errors are `VFileMessage`s, and
+  capturing a stack trace for each one is most of what BASIC costs. They
+  could be plain objects with the same fields, be created without a stack
+  trace, or be made only when they're read.
 - **Annotations for invalid instances.** The spec drops annotations from
   failing schemas, which leaves the language server without them. Explore
   alternative annotation behavior.
@@ -446,7 +478,8 @@ Changes made to browser for this (on its `v2` branch):
 
 1. Implement the v1 keywords (shapes, value schemas, compile, and evaluate)
    and a v1 preset. Run the JSON-Schema-Test-Suite. Benchmark whether sharing
-   keyword code between plain values and ASTs slows down `validate`.
+   keyword code between plain values and ASTs slows down `validate`. Done,
+   except value schemas.
 2. Schema validation with value schemas.
 3. Presets for 2020-12, 2019-09, and draft-04 through draft-07. Move the
    `$vocabulary` support into the 2019-09 and 2020-12 presets as a hook the
