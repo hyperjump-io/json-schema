@@ -267,7 +267,7 @@ describe("jsonSchemaResolve", () => {
     test("the document's URI", async () => {
       const { document } = await resolve(jsonSchema, `{ "$schema": "${dialectUri}" }`);
 
-      expect(document).to.include({ type: "json-schema-document", uri: baseUri, dialectUri: dialectUri, fragmentKind: "json-pointer" });
+      expect(document).to.include({ type: "json-schema-document", uri: baseUri, dialectUri: dialectUri, mediaType: "application/schema+json" });
       expect(document.embedded).to.eql({ [baseUri]: document });
     });
 
@@ -775,6 +775,34 @@ describe("jsonSchemaResolve", () => {
 
       const b = await jsonSchema.step("b", await jsonSchema.step("properties", a));
       expect(b.location).to.equal("https://example.com/b#");
+    });
+
+    test("an embedded resource can reference the document that embeds it", async () => {
+      const rootUri = pathToFileURL(join(directory, "embedding.schema.json")).toString();
+      const uri = await schemaFile("embedding.schema.json", {
+        $schema: legacyDialectUri,
+        properties: { foo: { $ref: "https://example.com/c" } },
+        definitions: {
+          c: { $id: "https://example.com/c", properties: { root: { $ref: `${rootUri}#/definitions/d` } } },
+          d: { type: "string" }
+        }
+      });
+
+      const c = await jsonSchema.get(`${uri}#/properties/foo`);
+      const d = await jsonSchema.step("root", await jsonSchema.step("properties", c));
+      expect(d.location).to.equal(`${uri}#/definitions/d`);
+    });
+
+    test("an embedded resource isn't visible outside the document that embeds it", async () => {
+      const embeddedUri = pathToFileURL(join(directory, "not-a-file.schema.json")).toString();
+      const uri = await schemaFile("embeds-a-file.schema.json", {
+        $schema: legacyDialectUri,
+        definitions: { e: { $id: embeddedUri, type: "string" } }
+      });
+
+      await jsonSchema.get(uri);
+      expect((await jsonSchema.getDocument(embeddedUri, { referencedFrom: uri })).uri).to.equal(embeddedUri);
+      await expect(jsonSchema.get(embeddedUri)).rejects.toThrow("Unable to load resource");
     });
 
     test("a schema with problems can't be retrieved", async () => {

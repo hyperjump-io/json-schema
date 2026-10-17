@@ -16,7 +16,8 @@ export { ValidationError, DetailedValidationError, InvalidSchemaError } from "./
  * @import { Format } from "./format.d.ts"
  * @import { Dialect, Vocabulary } from "./dialect.d.ts"
  * @import { CompiledSchemas } from "./compile.js"
- * @import { JsonSchemaNode } from "./schema-ast.d.ts"
+ * @import { DocumentNode, GetOptions } from "@hyperjump/browser"
+ * @import { JsonSchemaDocumentNode, JsonSchemaNode } from "./schema-ast.d.ts"
  * @import * as API from "./json-schema.d.ts"
  */
 
@@ -51,6 +52,14 @@ export class JsonSchema extends Hyperjump {
   #outputFormats;
 
   /**
+   * Maps the URI of every resource in a schema document to the `embedded`
+   * object they share, so a reference from any of them can find the others.
+   *
+   * @type Record<string, Record<string, JsonSchemaDocumentNode>>
+   */
+  #embedded;
+
+  /**
    * Dialects whose meta-schemas are being retrieved
    *
    * @type Record<string, Promise<Dialect>>
@@ -80,6 +89,7 @@ export class JsonSchema extends Hyperjump {
     this.#pendingDialects = {};
     this.#loading = new Map();
     this.#outputFormats = {};
+    this.#embedded = {};
 
     // Every dialect has these
     this.addKeyword(schemaKeyword);
@@ -96,6 +106,43 @@ export class JsonSchema extends Hyperjump {
 
   get config() {
     return this.#config;
+  }
+
+  /**
+   * An embedded resource is only found by a reference from the document that
+   * contains it.
+   *
+   * @param {string} uri
+   * @param {GetOptions} [options]
+   */
+  async getDocument(uri, options = {}) {
+    if (options.referencedFrom !== undefined) {
+      const embeddedDocument = this.#embedded[options.referencedFrom]?.[toAbsoluteIri(uri)];
+      if (embeddedDocument) {
+        return /** @type DocumentNode<JsonSchemaNode> */ (/** @type unknown */ (embeddedDocument));
+      }
+    }
+
+    const document = await super.getDocument(uri, options);
+    if (document.type === "json-schema-document") {
+      this.#addEmbedded(/** @type JsonSchemaDocumentNode */ (/** @type unknown */ (document)));
+    }
+
+    return document;
+  }
+
+  /**
+   * If two schema documents embed a resource with the same URI, references
+   * from that resource find the resources embedded alongside it in whichever
+   * document was retrieved first.
+   *
+   * @type (document: JsonSchemaDocumentNode) => void
+   */
+  #addEmbedded(document) {
+    this.#embedded[document.uri] = document.embedded;
+    for (const uri in document.embedded) {
+      this.#embedded[uri] ??= document.embedded;
+    }
   }
 
   /** @type API.JsonSchema["addKeyword"] */

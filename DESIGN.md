@@ -55,8 +55,19 @@ its position.
   `JsonSchemaDocumentNode` whose root is the same node object. Every resource
   in a document shares one `embedded` map that includes all of them,
   including the root.
+- Only a reference from the same document (`referencedFrom`) finds an
+  embedded resource, so `compile` can't start from one. `JsonSchema`
+  overrides browser's `getDocument` to do that, and browser knows nothing
+  about embedding. If two documents embed a resource with the same URI,
+  references from it find the resources alongside it in whichever document
+  was retrieved first. An embedded resource takes precedence over a cached
+  document with the same URI.
 - Anchors and dynamic anchors are recorded per resource as JSON Pointers.
-  2019-09's `$recursiveAnchor: true` is a dynamic anchor named `""`.
+  2019-09's `$recursiveAnchor: true` is a dynamic anchor named `""`. The
+  schema media type plugin's `fragmentPointer` looks anchors up, so browser
+  doesn't know about them either. Every resource's `mediaType` is
+  `application/schema+json`, so that works for embedded resources browser
+  didn't parse.
 
 ## Keywords (`src/keyword.d.ts`)
 
@@ -480,11 +491,15 @@ Changes made to browser for this (on its `v2` branch):
 - A type parameter for property node annotations, and JSON AST utilities that
   are generic over the node type.
 - A generic `DocumentNode<T>`.
-- Embedded documents can be found from any document in the same compound
-  document.
+- Embedding and anchors aren't in browser, because only JSON Schema uses
+  them. Every document lookup, including following references, goes through
+  `getDocument`, which a subclass can override. A media type plugin's
+  `fragmentPointer` defines what fragments identify, and each document
+  records the media type of the plugin that parsed it.
 - A file's media type uses the longest matching extension.
 - `content-type` v3, with the parsed type validated.
-- `retrieve` is declared as a method so `JsonSchema` can override it.
+- Methods are declared as methods, not function-valued properties, so a
+  subclass can override them.
 - `getDocument` gets the document a URI identifies, for what it has beyond
   its values. Compiling uses it for a resource's dynamic anchors.
 - `jsonValue` supports arrays and objects. `Hyperjump.value` still doesn't,

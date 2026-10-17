@@ -400,7 +400,7 @@ class Resolver {
       children: root ? [root] : [],
       comments: this.#tree.comments,
       uri: uri,
-      fragmentKind: "json-pointer",
+      mediaType: "application/schema+json",
       anchors: {},
       dynamicAnchors: {},
       embedded: this.#embedded

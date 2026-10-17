@@ -100,7 +100,12 @@ export type JsonSchemaDocumentNode<S extends JsonParseStatus = JsonParseStatus> 
    */
   dialectUri?: string;
 
-  fragmentKind: "json-pointer";
+  /**
+   * Always `application/schema+json`, so `@hyperjump/browser` interprets
+   * fragments with the schema media type plugin, even for an embedded
+   * resource it didn't parse.
+   */
+  mediaType: "application/schema+json";
 
   /** Plain-name fragments (`$anchor`) mapped to JSON Pointers */
   anchors: Record<string, string>;

@@ -67,4 +67,16 @@ export class JsonSchemaMediaTypePlugin {
 
     return /** @type JsonSchemaDocumentNode<"success"> */ (document);
   }
+
+  /**
+   * An anchor identifies a JSON Pointer. Otherwise, the fragment is a JSON
+   * Pointer that's percent-encoded.
+   *
+   * @type NonNullable<MediaTypePlugin<JsonSchemaDocumentNode<"success">>["fragmentPointer"]>
+   */
+  fragmentPointer(document, fragment) {
+    return Object.hasOwn(document.anchors, fragment)
+      ? document.anchors[fragment]
+      : decodeURIComponent(fragment);
+  }
 }
