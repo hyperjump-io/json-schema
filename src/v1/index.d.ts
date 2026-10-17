@@ -14,6 +14,10 @@ export const v1Dialect: Dialect;
  * Add the v1 keywords and dialect to a {@link JsonSchema}. It also adds
  * `conditional`, `itemPattern`, and `requireAllExcept`, which aren't full
  * proposals yet, to the dialect.
+ *
+ * `format` validates by default, and the lite formats are added. Add the
+ * full formats (`formats/full.js`) for `hostname`, `idn-hostname`, and
+ * `idn-email`.
  * @throws Error if the v1 dialect is already defined.
  */
 export const addV1: (jsonSchema: JsonSchema) => void;

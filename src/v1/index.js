@@ -56,6 +56,8 @@ import writeOnlyKeyword from "../keywords/writeOnly.js";
 import contentEncodingKeyword from "../keywords/contentEncoding.js";
 import contentMediaTypeKeyword from "../keywords/contentMediaType.js";
 import contentSchemaKeyword from "../keywords/contentSchema.js";
+import formatKeyword from "../keywords/format.js";
+import { addLiteFormats } from "../formats/lite.js";
 
 /**
  * @import { Keyword } from "../keyword.d.ts"
@@ -139,7 +141,29 @@ export const v1Dialect = {
     unevaluatedItems: "https://json-schema.org/keyword/unevaluatedItems",
     unevaluatedProperties: "https://json-schema.org/keyword/unevaluatedProperties"
   },
-  unknownKeywords: "error"
+  unknownKeywords: "error",
+  formats: {
+    "date-time": "https://json-schema.org/format/date-time",
+    "date": "https://json-schema.org/format/date",
+    "time": "https://json-schema.org/format/time",
+    "duration": "https://json-schema.org/format/duration",
+    "email": "https://json-schema.org/format/email",
+    "idn-email": "https://json-schema.org/format/idn-email",
+    "hostname": "https://json-schema.org/format/hostname",
+    "idn-hostname": "https://json-schema.org/format/idn-hostname",
+    "ipv4": "https://json-schema.org/format/ipv4",
+    "ipv6": "https://json-schema.org/format/ipv6",
+    "uri": "https://json-schema.org/format/uri",
+    "uri-reference": "https://json-schema.org/format/uri-reference",
+    "iri": "https://json-schema.org/format/iri",
+    "iri-reference": "https://json-schema.org/format/iri-reference",
+    "uuid": "https://json-schema.org/format/uuid",
+    "uri-template": "https://json-schema.org/format/uri-template",
+    "json-pointer": "https://json-schema.org/format/json-pointer",
+    "relative-json-pointer": "https://json-schema.org/format/relative-json-pointer",
+    "regex": "https://json-schema.org/format/regex"
+  },
+  assertFormats: true
 };
 
 /**
@@ -211,7 +235,8 @@ const keywords = [
   writeOnlyKeyword,
   contentEncodingKeyword,
   contentMediaTypeKeyword,
-  contentSchemaKeyword
+  contentSchemaKeyword,
+  formatKeyword
 ];
 
 /** @type API.addV1 */
@@ -220,6 +245,8 @@ export const addV1 = (jsonSchema) => {
     jsonSchema.addKeyword(keyword);
   }
 
+  addLiteFormats(jsonSchema);
+
   jsonSchema.addDialect(v1Dialect);
-  jsonSchema.extendDialect(v1DialectUri, extensionKeywords);
+  jsonSchema.extendDialect(v1DialectUri, { keywords: extensionKeywords });
 };

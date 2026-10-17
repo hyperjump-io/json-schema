@@ -12,6 +12,7 @@ export { ValidationError, DetailedValidationError, InvalidSchemaError } from "./
 
 /**
  * @import { Keyword } from "./keyword.d.ts"
+ * @import { Format } from "./format.d.ts"
  * @import { Dialect, Vocabulary } from "./dialect.d.ts"
  * @import { CompiledSchemas } from "./compile.js"
  * @import { JsonSchemaNode } from "./schema-ast.d.ts"
@@ -28,6 +29,9 @@ export class JsonSchema extends Hyperjump {
 
   /** @type Record<string, Keyword> */
   #keywords;
+
+  /** @type Record<string, Format> */
+  #formats;
 
   /** @type Record<string, Vocabulary> */
   #vocabularies;
@@ -61,6 +65,7 @@ export class JsonSchema extends Hyperjump {
 
     this.#config = config;
     this.#keywords = {};
+    this.#formats = {};
     this.#vocabularies = {};
     this.#dialects = {};
     this.#pendingDialects = {};
@@ -95,6 +100,20 @@ export class JsonSchema extends Hyperjump {
     return this.#keywords[uri];
   }
 
+  /** @type API.JsonSchema["addFormat"] */
+  addFormat(format) {
+    this.#formats[format.uri] = format;
+  }
+
+  /** @type API.JsonSchema["getFormat"] */
+  getFormat(uri) {
+    if (!(uri in this.#formats)) {
+      throw Error(`The '${uri}' format isn't supported. Use the 'addFormat' function to add support for it.`);
+    }
+
+    return this.#formats[uri];
+  }
+
   /** @type API.JsonSchema["addVocabulary"] */
   addVocabulary(vocabulary) {
     assertNoReservedKeywords(vocabulary.keywords);
@@ -113,7 +132,7 @@ export class JsonSchema extends Hyperjump {
   }
 
   /** @type API.JsonSchema["extendDialect"] */
-  extendDialect(uri, keywords) {
+  extendDialect(uri, { keywords = {}, formats = {} }) {
     uri = toAbsoluteIri(uri);
     const dialect = this.#dialects[uri];
     if (!dialect) {
@@ -127,9 +146,20 @@ export class JsonSchema extends Hyperjump {
       }
     }
 
+    const dialectFormats = dialect.formats ?? {};
+    for (const name in formats) {
+      if (name in dialectFormats) {
+        throw Error(`The '${uri}' dialect already has a '${name}' format`);
+      }
+    }
+
     // Dialects aren't changed in place so the schemas that already use one
     // aren't affected
-    this.#dialects[uri] = { ...dialect, keywords: { ...dialect.keywords, ...keywords } };
+    this.#dialects[uri] = {
+      ...dialect,
+      keywords: { ...dialect.keywords, ...keywords },
+      formats: { ...dialectFormats, ...formats }
+    };
   }
 
   /** @type API.JsonSchema["addDialectFromVocabularies"] */

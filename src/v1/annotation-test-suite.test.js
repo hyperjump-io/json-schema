@@ -5,6 +5,7 @@ import { JsonPointerError, pointerGet } from "@hyperjump/browser/json";
 import { JsonSchema } from "../json-schema.js";
 import { addV1, v1Dialect } from "./index.js";
 import { MemoryUriSchemePlugin, isCompatible, isSkipped } from "./test-suite.js";
+import { addFullFormats } from "../formats/full.js";
 
 /**
  * @import { Json, JsonNode } from "@hyperjump/browser/json"
@@ -45,9 +46,6 @@ const testCaseUri = "https://annotation-test-suite.json-schema.org/";
  * paths. A prefix skips everything under it.
  */
 const skip = new Set([
-  // Keywords that aren't implemented yet
-  "|format.json",
-
   // It has a 2020-12 $schema. It's fixed in the suite, but the fix isn't
   // merged yet.
   "|unknown.json|`unknownKeyword` is an annotation"
@@ -125,6 +123,7 @@ describe("JSON-Schema-Test-Suite v1 annotations", () => {
             const uri = `${testCaseUri}${file}/${index}`;
             const jsonSchema = new JsonSchema();
             addV1(jsonSchema);
+            addFullFormats(jsonSchema);
             jsonSchema.addUriSchemePlugin(new MemoryUriSchemePlugin({
               ...testCase.externalSchemas,
               [uri]: testCase.schema

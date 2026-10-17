@@ -4,6 +4,7 @@ import { describe, test, beforeAll, expect } from "vitest";
 import { JsonSchema } from "../json-schema.js";
 import { addV1 } from "./index.js";
 import { MemoryUriSchemePlugin, isCompatible, isSkipped } from "./test-suite.js";
+import { addFullFormats } from "../formats/full.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
@@ -60,26 +61,6 @@ const supportedTags = new Set(["format-assertion"]);
  * paths. A prefix skips everything under it.
  */
 const skip = new Set([
-  // Keywords that aren't implemented yet
-  "|format-date-time.json",
-  "|format-date.json",
-  "|format-duration.json",
-  "|format-email.json",
-  "|format-hostname.json",
-  "|format-idn-email.json",
-  "|format-idn-hostname.json",
-  "|format-ipv4.json",
-  "|format-ipv6.json",
-  "|format-iri-reference.json",
-  "|format-iri.json",
-  "|format-json-pointer.json",
-  "|format-regex.json",
-  "|format-relative-json-pointer.json",
-  "|format-time.json",
-  "|format-uri-reference.json",
-  "|format-uri-template.json",
-  "|format-uri.json",
-  "|format-uuid.json"
 ]);
 
 /** @type (testCase: TestCase) => boolean */
@@ -148,6 +129,7 @@ describe("JSON-Schema-Test-Suite v1", () => {
             const uri = `${testCaseUri}${file}/${index}`;
             const jsonSchema = new JsonSchema();
             addV1(jsonSchema);
+            addFullFormats(jsonSchema);
             jsonSchema.addUriSchemePlugin(new MemoryUriSchemePlugin({
               ...testCase.externalSchemas,
               [uri]: testCase.schema

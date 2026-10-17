@@ -10,7 +10,8 @@ import type {
 } from "@hyperjump/browser/json";
 import type { JsonSchemaNode } from "./schema-ast.d.ts";
 import type { Keyword } from "./keyword.d.ts";
-import type { Dialect, Vocabulary } from "./dialect.d.ts";
+import type { Dialect, DialectExtension, Vocabulary } from "./dialect.d.ts";
+import type { Format } from "./format.d.ts";
 import type { EvaluationPlugin } from "./evaluation-plugin.d.ts";
 
 export type JsonSchemaConfig = HyperjumpConfig & {
@@ -52,6 +53,16 @@ export class JsonSchema extends Hyperjump<JsonSchemaNode> {
    */
   getKeyword: (uri: string) => Keyword;
 
+  /** Add or replace a format definition */
+  addFormat: (format: Format) => void;
+
+  /**
+   * Get a format definition.
+   *
+   * @throws Error if the format hasn't been added.
+   */
+  getFormat: (uri: string) => Format;
+
   /**
    * Add or replace a vocabulary.
    *
@@ -71,13 +82,14 @@ export class JsonSchema extends Hyperjump<JsonSchemaNode> {
   addDialect: (dialect: Dialect) => void;
 
   /**
-   * Add keywords to a dialect that's defined, such as a custom keyword in the
-   * v1 dialect. Schemas that were already resolved aren't affected.
+   * Add keywords or formats to a dialect that's defined, such as a custom
+   * keyword in the v1 dialect. Schemas that were already resolved aren't
+   * affected.
    *
-   * @throws Error if the dialect isn't defined, it already has a keyword with
-   * one of the names, or a keyword name starts with `x-`.
+   * @throws Error if the dialect isn't defined, it already has a keyword or
+   * format with one of the names, or a keyword name starts with `x-`.
    */
-  extendDialect: (uri: string, keywords: Record<string, string>) => void;
+  extendDialect: (uri: string, extension: DialectExtension) => void;
 
   /**
    * Build a dialect from a `$vocabulary` value and add it. Vocabularies whose

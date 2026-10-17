@@ -96,9 +96,22 @@ were considered. See "Open questions".)
 - `$schema` is only allowed where a schema resource starts. Anywhere else,
   it's ignored with a message and the parent's dialect is used.
 - Defined dialects can't be replaced. `removeDialect` must be called first.
-- `extendDialect(uri, keywords)` adds keywords to a defined dialect. That's
-  how users add custom keywords to v1. It can't replace a keyword. Dialects
-  are never changed in place.
+- `extendDialect(uri, { keywords, formats })` adds keywords and formats to
+  a defined dialect. That's how users add custom keywords and formats to v1.
+  It can't replace either. Dialects are never changed in place.
+- Formats work like keywords. A format definition (`{ uri, validate }`,
+  `src/format.d.ts`) is stateless and added to a `JsonSchema` with
+  `addFormat`. A dialect maps format names to format URIs (`formats`), and
+  says whether `format` validates by default (`assertFormats`). The
+  `validateFormats` config overrides that. When formats are validated, a
+  format the dialect doesn't have, or whose definition hasn't been added,
+  is an error when the schema is compiled. Otherwise, `format` is only an
+  annotation, so any name is fine.
+- The lite formats (`src/formats/lite.js`) are every format JSON Schema
+  defines except `hostname`, `idn-hostname`, and `idn-email`, which need
+  large tables of Unicode data. `addV1` adds them, and v1 validates formats
+  by default. `src/formats/full.js` adds the rest. The validators come from
+  `@hyperjump/json-schema-formats`.
 - Keyword names starting with `x-` are reserved for schema authors in every
   dialect. They're guaranteed to never collide with a keyword, so they must
   never assert. Registering one throws (`addVocabulary`, `addDialect`,

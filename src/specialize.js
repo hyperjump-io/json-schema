@@ -201,6 +201,7 @@ export const specialize = (jsonSchema, compiled, options) => {
 
     /** @type EvaluateContext<I> */
     const context = {
+      jsonSchema: jsonSchema,
       instance: ops,
       schema: (subschemaHandle) => subschemaEvaluator(subschemaHandle, handle, location, steps),
       exhaustive: exhaustive

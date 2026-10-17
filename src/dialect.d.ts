@@ -41,6 +41,28 @@ export type Dialect = {
    * - `ignore`: It has no effect (draft-04 through draft-07).
    */
   unknownKeywords: UnknownKeywords;
+
+  /**
+   * Format names mapped to {@link Format} URIs. A format that isn't included
+   * isn't supported. That's an error if formats are validated. Otherwise,
+   * `format` is only an annotation, so any name is allowed.
+   */
+  formats?: Record<string, string>;
+
+  /**
+   * Whether `format` validates by default. The `validateFormats` config
+   * overrides it. It's `true` in v1 and `false` in most other dialects.
+   */
+  assertFormats?: boolean;
+};
+
+/** Keywords and formats to add to a dialect with `extendDialect` */
+export type DialectExtension = {
+  /** Keyword names mapped to {@link Keyword} URIs */
+  keywords?: Record<string, string>;
+
+  /** Format names mapped to {@link Format} URIs */
+  formats?: Record<string, string>;
 };
 
 export type UnknownKeywords = "error" | "annotation" | "ignore";

@@ -133,6 +133,9 @@ export type CompileContext = {
  * need to know which. They use `instance` to look at it.
  */
 export type EvaluateContext<I> = {
+  /** The instance evaluating the schema */
+  jsonSchema: JsonSchema;
+
   instance: InstanceOps<I>;
 
   /**
