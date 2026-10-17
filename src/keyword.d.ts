@@ -75,6 +75,14 @@ export type Keyword<C extends Json = Json> = {
    *   (`$dynamicRef`, `$recursiveRef`).
    */
   reads?: EvaluationState[];
+
+  /**
+   * Whether the keyword fails only when a subschema fails and its failure is
+   * fully explained by theirs, like `properties`, `allOf`, and `$ref`. The
+   * BASIC output format reports only the subschemas' errors for these. A
+   * failing `oneOf` isn't explained by its subschemas, so it isn't one.
+   */
+  simpleApplicator?: boolean;
 };
 
 export type EvaluationState = "evaluated" | "dynamicScope";

@@ -10,6 +10,7 @@ import type {
 import type { JsonSchemaNode } from "./schema-ast.d.ts";
 import type { Keyword } from "./keyword.d.ts";
 import type { Dialect, Vocabulary } from "./dialect.d.ts";
+import type { EvaluationPlugin } from "./evaluation-plugin.d.ts";
 
 export type JsonSchemaConfig = HyperjumpConfig & {
   /**
@@ -123,6 +124,14 @@ export class JsonSchema extends Hyperjump<JsonSchemaNode> {
    */
   restoreValidator: (compiled: Json) => Validator;
 
+  /**
+   * Add an output format. BASIC and DETAILED are added by default and can be
+   * replaced.
+   *
+   * @throws Error for FLAG, which is built in.
+   */
+  addOutputFormat: <F extends OutputFormat>(name: F, definition: OutputFormatDefinition<F>) => void;
+
   /** A shortcut for `(await compile(uri)).validate(instance, options)` */
   validate: <F extends OutputFormat = "FLAG">(uri: string, instance: Json, options?: ValidationOptions<F>) => Promise<ValidationResult<F>>;
 
@@ -194,21 +203,30 @@ export type ValidationOptions<F extends OutputFormat = OutputFormat> = {
   output?: F;
 
   /**
-   * Plugins to run during this evaluation. The first evaluation with a set
-   * of plugins is slower because the validator is specialized for it.
+   * Plugins to run during this evaluation. With any plugin, the instance is
+   * evaluated once and nothing stops early, which is slower.
    */
   plugins?: EvaluationPlugin[];
 };
 
-/** Observes an evaluation. */
-// TODO: Design the hooks
-export type EvaluationPlugin = {
-  uri: string;
+/**
+ * How an output format is produced. It's called for each evaluation that
+ * uses the format.
+ *
+ * Evaluation without plugins is fastest, so an instance is evaluated without
+ * the format's plugin first unless other plugins are used. The plugin only
+ * runs if the instance is invalid. So `output(true)` can be called without
+ * the plugin having seen anything.
+ */
+export type OutputFormatDefinition<F extends OutputFormat> = () => {
+  plugin?: EvaluationPlugin;
+  output: (valid: boolean) => ValidationResult<F>;
 };
 
 /**
- * The output format determines what's included in `errors`. Augment this
- * interface to add an output format.
+ * The output format determines what's included in `errors`. To add an output
+ * format, augment this interface and add its implementation with
+ * {@link JsonSchema.addOutputFormat}.
  *
  * ```ts
  * declare module "@hyperjump/json-schema" {
@@ -217,8 +235,11 @@ export type EvaluationPlugin = {
  *   }
  * }
  * ```
+ *
+ * The built-in formats give errors a generic `reason` that names the keyword.
+ * Messages that explain the error are left to other output formats, such as
+ * `@hyperjump/json-schema-errors`.
  */
-// TODO: Registering an output format's implementation depends on the evaluation plugin design
 // TODO: Support the output format being developed for the next spec release
 export interface OutputFormats {
   /**
@@ -227,7 +248,11 @@ export interface OutputFormats {
    */
   FLAG: boolean;
 
-  /** A flat list of every error */
+  /**
+   * A flat list of every error. A keyword whose failure is fully explained
+   * by its subschemas' failures ({@link Keyword.simpleApplicator}) doesn't get
+   * an error of its own.
+   */
   BASIC: { valid: boolean; errors: OutputError[] };
 
   /**

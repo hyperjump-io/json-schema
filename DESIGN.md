@@ -177,9 +177,9 @@ There are two phases:
    compiled AST, but built from schema AST nodes. All I/O happens here.
 2. **Specialize** (sync, lazy). Turn the IR into closures for one combination
    of instance representation (plain JS values for `validate`, AST nodes for
-   everything else), mode (flag, collect errors, or annotate), and plugin
-   set. Each combination is built the first time it's needed and cached on
-   the `Validator`. No `eval`.
+   everything else), whether annotations are collected, and whether there
+   are plugins (see "Plugins"). Each combination is built the first time
+   it's needed and cached on the `Validator`. No `eval`.
 
 The IR is where optimization passes can go later. It's JSON, so a compiled
 schema can be serialized (`Validator.serialize`,
@@ -213,19 +213,15 @@ Keywords:
   unknown keyword's `compile` uses `context.dialect.unknownKeywords` to decide
   whether it's an annotation.
 
-Output:
+`validateJson` and `annotateJson` parse with browser's error-tolerant
+`fromJson` and then evaluate the AST. Validating while parsing is a possible
+optimization later. The two-phase design doesn't rule it out.
 
-- FLAG runs the plain closures. Nothing is allocated.
-- BASIC and DETAILED run in flag mode first. Only if the instance is invalid
-  is it evaluated again with the collect-errors specialization, so valid
-  instances never pay for error collection. This assumes evaluation is pure.
-- `validateJson` and `annotateJson` parse with browser's error-tolerant
-  `fromJson` and then evaluate the AST. Validating while parsing is a
-  possible optimization later. The two-phase design doesn't rule it out.
-
-Plugins are passed per call (`ValidationOptions.plugins`). Each distinct
-plugin set gets its own specialization, so plugins cost nothing when they
-aren't used and evaluating with no plugins has no hook wrappers at all.
+Sharing one keyword implementation between representations might make call
+sites polymorphic, because V8 may share type feedback between closures
+created from the same code. This needs a benchmark once the v1 keywords exist.
+If it's a problem, keywords could optionally provide a separate evaluator for
+plain values. That would be an addition to the interface, not a redesign.
 
 Annotations follow the spec: they're kept only if the keyword and every
 schema they were evaluated through pass. An invalid instance gets no
@@ -271,13 +267,52 @@ failure. It must not stop at a passing subschema while `markEvaluated` is
 defined. `context.exhaustive` is true when errors or annotations are being
 collected, and then nothing may stop early.
 
-Plugins no longer need to change evaluation, only observe it.
+### Plugins (`src/evaluation-plugin.d.ts`)
 
-Sharing one keyword implementation between representations might make call
-sites polymorphic, because V8 may share type feedback between closures
-created from the same code. This needs a benchmark once the v1 keywords exist.
-If it's a problem, keywords could optionally provide a separate evaluator for
-plain values. That would be an addition to the interface, not a redesign.
+Plugins only observe evaluation. Nothing built in needs to change it. They're
+passed per call (`ValidationOptions.plugins`) and are usually stateful
+objects the caller reads results from afterwards.
+
+- Hooks are `beforeSchema`, `afterSchema`, `beforeKeyword`, and
+  `afterKeyword`. State is passed explicitly instead of through v1's shared
+  context object: each `before` hook returns the plugin's state for that
+  evaluation, which the core gives to the matching `after` hook and to what's
+  evaluated inside it (a schema's state to its keywords, a keyword's state to
+  the subschemas it applies). The core keeps the stack. That's enough to
+  build nested results like DETAILED without touching shared objects.
+- Hooks get a `SchemaInfo` or `KeywordInfo`, created once per specialization
+  so passing it doesn't allocate, and an `EvaluationLocation` with the
+  instance location, the keyword location (following references), the AST
+  node when there is one, and a lazy `value()`.
+- With any plugin, the instance is evaluated once with `exhaustive` on. A
+  plugin never sees an instance twice (coverage counts) and always sees every
+  keyword that applies. That makes plugins slower, which is the trade-off.
+- Validators are specialized on whether there are plugins, not on which
+  ones. Plugins are often created fresh for each call, so a cache keyed by
+  plugin set would miss every time. The instrumented specialization loops
+  over the call's plugins grouped by hook, like v1's `pluginHooks`. That
+  makes at most four specializations per representation: fast,
+  instrumented, annotate, and annotate with plugins (annotate is AST only).
+
+### Output formats
+
+- FLAG is built in. It runs the fast closures and allocates nothing.
+- Every other format is an `OutputFormatDefinition` registered with
+  `addOutputFormat` and typed through the `OutputFormats` interface. It
+  returns a plugin and an `output(valid)` function for each evaluation. BASIC
+  and DETAILED are registered by default. The output format being developed
+  for the next spec release will be another one.
+- Without user plugins, an instance is evaluated with the fast closures
+  first, and the format's plugin only runs on a second evaluation if the
+  instance is invalid. Valid instances never pay for error collection. With
+  user plugins, there's one instrumented evaluation that includes the
+  format's plugin.
+- BASIC doesn't give an error of its own to a keyword whose failure is fully
+  explained by its subschemas' (`Keyword.simpleApplicator`, as in v1). The
+  core can't infer it: a failing `oneOf` isn't explained by its subschemas.
+- The built-in formats give errors a generic `reason` that names the
+  keyword. Explaining errors is left to other output formats, such as
+  `json-schema-errors`, so messages aren't part of the keyword interface.
 
 ## Open questions
 
@@ -285,14 +320,9 @@ plain values. That would be an addition to the interface, not a redesign.
   (stateless, shareable keywords; current lean, and what `CompileContext`
   does) or constructor injection (matches browser's plugins).
 - **Which dialect value schemas are written in.** Probably v1.
-- **Evaluation plugin hooks and custom output formats.** Plugins are per call,
-  but the hooks aren't designed. Output formats are probably plugins plus a
-  result builder.
 - **Annotations for invalid instances.** The spec drops annotations from
   failing schemas, which leaves the language server without them. Explore
   alternative annotation behavior.
-- **Error messages.** `ValidationError` needs a `reason`. Where keywords
-  provide it isn't decided.
 
 ## Status
 
@@ -303,6 +333,7 @@ Done:
 - Validation API types.
 - Keyword compile and evaluate types, and the two-phase design.
 - Evaluation state for `unevaluated*` and `$dynamicRef`.
+- Evaluation plugin and output format types.
 - Schema AST, keyword, and dialect types.
 - `jsonSchemaResolve`, `JsonSchema` registries, and the schema media type
   plugin, with tests.
@@ -323,20 +354,19 @@ Changes made to browser for this (on its `v2` branch):
 
 ## Plan
 
-1. Finish designing evaluation: plugin hooks and output formats.
-2. Implement compile, specialize, the v1 keywords (shapes, value schemas,
+1. Implement compile, specialize, the v1 keywords (shapes, value schemas,
    compile, and evaluate), and a v1 preset. Run the JSON-Schema-Test-Suite.
    Benchmark whether sharing keyword code between plain values and ASTs slows
    down `validate`.
-3. Schema validation with value schemas.
-4. Presets for 2020-12, 2019-09, and draft-04 through draft-07. Move the
+2. Schema validation with value schemas.
+3. Presets for 2020-12, 2019-09, and draft-04 through draft-07. Move the
    `$vocabulary` support into the 2019-09 and 2020-12 presets as a hook the
    core doesn't need.
-5. Runtime classes for `ValidationError`, `DetailedValidationError`, and
+4. Runtime classes for `ValidationError`, `DetailedValidationError`, and
    `InvalidSchemaError`. They're only declared so far.
-6. A registry for schemas that aren't retrieved by URI (deferred; schemas come
+5. A registry for schemas that aren't retrieved by URI (deferred; schemas come
    from `file:` and `http(s):` for now).
-7. Later: annotations, bundling, OpenAPI, a CLI, a unified plugin for
+6. Later: annotations, bundling, OpenAPI, a CLI, a unified plugin for
    validating JSON files, and migrating dependent projects.
 
 ## Known limitations
