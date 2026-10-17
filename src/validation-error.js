@@ -17,7 +17,16 @@ export class ValidationError extends VFileMessage {
    * @param {API.ValidationErrorOptions} options
    */
   constructor(reason, options) {
-    super(reason, { place: options.place, ruleId: options.ruleId, source: "json-schema" });
+    // VFileMessage replaces the stack trace with an empty string, but the
+    // Error constructor still captures one, which is most of what collecting
+    // errors costs
+    const stackTraceLimit = Error.stackTraceLimit;
+    Error.stackTraceLimit = 0;
+    try {
+      super(reason, { place: options.place, ruleId: options.ruleId, source: "json-schema" });
+    } finally {
+      Error.stackTraceLimit = stackTraceLimit;
+    }
 
     this.ruleId = options.ruleId;
 

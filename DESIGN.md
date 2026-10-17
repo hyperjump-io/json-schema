@@ -170,6 +170,12 @@ Implemented in `src/validator.js`.
   absolute keyword location, and instance location. Text input adds
   positions. Any syntax error makes the instance invalid, but it's still
   validated as far as it could be parsed.
+- Validation errors are created with `Error.stackTraceLimit` set to 0.
+  `VFileMessage` replaces the stack with an empty string anyway, but the
+  `Error` constructor still captures one, which made collecting errors
+  about 5 times slower. Plain objects would be a little faster still, but
+  then errors wouldn't be `VFileMessage`s like syntax errors are, and they'd
+  have to be converted to be reported through a `VFile`.
 - `annotate` returns `{ output, status, node }`. Annotations are
   `node.data.annotations`, a `Map` of annotation keyword URI to values.
 - In a broken (error-tolerant) tree, keywords skip `json-missing` and
@@ -366,16 +372,14 @@ Results (mean time per run of the suite, FLAG unless it says errors):
 | --- | --- | --- |
 | v1 | 0.26–0.28 ms | 0.75 ms |
 | v1, after evaluating ASTs | 0.31–0.33 ms | 0.75 ms |
-| v1, all errors | 7.2 ms | 1.4 ms |
+| v1, all errors | 1.52–1.54 ms | 1.35–1.36 ms |
 
 - FLAG is about 2.7–2.9 times faster than `@hyperjump/json-schema`.
 - `validate` is about 15% slower in a process that has also evaluated
   ASTs, because keyword code is shared (see "Compile and evaluate").
-- Collecting errors (BASIC) is about 5 times slower than
-  `@hyperjump/json-schema`. About 60% of it is constructing
-  `VFileMessage`s, which capture a stack trace because they're `Error`s.
-  With `Error.stackTraceLimit = 0`, BASIC over the test cases including
-  `format` went from 12.3 ms to 3.8 ms (`@hyperjump/json-schema`: 2.8 ms).
+- Collecting errors (BASIC) is about 1.13 times slower than
+  `@hyperjump/json-schema`. It was about 5 times slower until errors
+  stopped capturing stack traces (see "Validation API").
 - With the `format` test cases, format validators take most of the time,
   and FLAG is only about 1.4 times faster.
 
@@ -387,10 +391,6 @@ Results (mean time per run of the suite, FLAG unless it says errors):
 - **Which dialect value schemas are written in.** Probably v1.
 - **`multipleOf` precision.** It uses v1's fixed tolerance for the
   remainder, which is wrong for very small divisors.
-- **The cost of errors.** Validation errors are `VFileMessage`s, and
-  capturing a stack trace for each one is most of what BASIC costs. They
-  could be plain objects with the same fields, be created without a stack
-  trace, or be made only when they're read.
 - **Annotations for invalid instances.** The spec drops annotations from
   failing schemas, which leaves the language server without them. Explore
   alternative annotation behavior.

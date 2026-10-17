@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { describe, test, beforeEach, beforeAll, afterAll, expect } from "vitest";
+import { VFileMessage } from "vfile-message";
 import { resolveIri, toAbsoluteIri } from "@hyperjump/uri";
 import { pointerGet } from "@hyperjump/browser/json";
 import { JsonSchema, ValidationError } from "./json-schema.js";
@@ -424,6 +425,15 @@ describe("Validator", () => {
           instanceLocation: "/a^b"
         }
       ]);
+    });
+
+    test("errors are VFileMessages and leave stackTraceLimit as it was", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({ type: "number" }));
+      const stackTraceLimit = Error.stackTraceLimit;
+
+      const [error] = validator.validate("foo", { output: "BASIC" }).errors;
+      expect(error).to.be.instanceOf(VFileMessage);
+      expect(Error.stackTraceLimit).to.equal(stackTraceLimit);
     });
 
     test("BASIC for a valid instance", async () => {
