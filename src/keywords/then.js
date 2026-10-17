@@ -10,5 +10,6 @@
 export default {
   uri: "https://json-schema.org/keyword/then",
   shape: "schema",
+  valueSchema: new URL("./then.schema.json", import.meta.url).href,
   compile: () => null
 };

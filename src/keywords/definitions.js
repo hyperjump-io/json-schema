@@ -10,5 +10,6 @@
 export default {
   uri: "https://json-schema.org/keyword/definitions",
   shape: { map: "schema" },
+  valueSchema: new URL("./definitions.schema.json", import.meta.url).href,
   compile: () => null
 };

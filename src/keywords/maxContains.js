@@ -9,5 +9,6 @@
  */
 export default {
   uri: "https://json-schema.org/keyword/maxContains",
-  shape: "data"
+  shape: "data",
+  valueSchema: new URL("./maxContains.schema.json", import.meta.url).href
 };

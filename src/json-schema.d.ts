@@ -46,6 +46,9 @@ export class JsonSchema extends Hyperjump<JsonSchemaNode> {
   /** Add or replace a keyword definition */
   addKeyword: (keyword: Keyword) => void;
 
+  /** Whether a keyword definition has been added */
+  hasKeyword: (uri: string) => boolean;
+
   /**
    * Get a keyword definition.
    *
@@ -202,6 +205,13 @@ export type Validator = {
    * the problems are reported at once.
    */
   validateJson: <F extends OutputFormat = "FLAG">(json: string, options?: ValidationOptions<F>) => ValidationResult<F>;
+
+  /**
+   * Validate a JSON AST, such as a value in a schema AST. Errors have the
+   * nodes' positions. Values that couldn't be parsed (`json-missing` and
+   * `json-invalid` nodes) aren't evaluated.
+   */
+  validateNode: <F extends OutputFormat = "FLAG">(node: JsonNode<unknown, JsonErrorNode> | JsonErrorNode, options?: ValidationOptions<F>) => ValidationResult<F>;
 
   annotate: <F extends OutputFormat = "FLAG">(instance: Json, options?: ValidationOptions<F>) => AnnotationResult<F>;
 

@@ -40,6 +40,7 @@ ruleShapes.push(shape);
 export default {
   uri: "https://json-schema.org/keyword/itemPattern",
   shape: shape,
+  valueSchema: new URL("./itemPattern.schema.json", import.meta.url).href,
   async compile(valueNode, context) {
     /** @type State[] */
     const states = [];

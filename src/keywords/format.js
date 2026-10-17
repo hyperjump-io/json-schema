@@ -15,6 +15,7 @@ import { jsonValue } from "@hyperjump/browser/json";
 export default {
   uri: "https://json-schema.org/keyword/format",
   shape: "data",
+  valueSchema: new URL("./format.schema.json", import.meta.url).href,
   compile(valueNode, { jsonSchema, dialect }) {
     const name = /** @type string */ (jsonValue(valueNode));
     if (!(jsonSchema.config.validateFormats ?? dialect.assertFormats ?? false)) {

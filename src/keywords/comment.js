@@ -9,5 +9,6 @@
  */
 export default {
   uri: "https://json-schema.org/keyword/comment",
-  shape: "data"
+  shape: "data",
+  valueSchema: new URL("./comment.schema.json", import.meta.url).href
 };

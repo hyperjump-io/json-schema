@@ -2,7 +2,6 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, test, beforeAll, expect } from "vitest";
 import { JsonSchema } from "../json-schema.js";
-import { addV1 } from "./index.js";
 import { MemoryUriSchemePlugin, isCompatible, isSkipped } from "./test-suite.js";
 import { addFullFormats } from "../formats/full.js";
 
@@ -132,7 +131,6 @@ describe("JSON-Schema-Test-Suite v1", () => {
             // test case gets its own JsonSchema
             const uri = `${testCaseUri}${file}/${index}`;
             const jsonSchema = new JsonSchema();
-            addV1(jsonSchema);
             addFullFormats(jsonSchema);
             jsonSchema.addUriSchemePlugin(new MemoryUriSchemePlugin({
               ...testCase.externalSchemas,

@@ -4,6 +4,7 @@ import { JsonSchemaMediaTypePlugin } from "./json-schema-media-type-plugin.js";
 import { vocabulariesOf } from "./vocabularies.js";
 import schemaKeyword from "./keywords/schema.js";
 import unknownKeyword from "./keywords/unknown.js";
+import { addV1 } from "./v1/dialect.js";
 import { compile, keywordDefinitionUri } from "./compile.js";
 import { Validator } from "./validator.js";
 import { basicOutputFormat, detailedOutputFormat } from "./output-formats.js";
@@ -29,6 +30,13 @@ export class JsonSchema extends Hyperjump {
 
   /** @type Record<string, Keyword> */
   #keywords;
+
+  /**
+   * The value schema URI of each keyword, by keyword URI
+   *
+   * @type Record<string, string>
+   */
+  #valueSchemas;
 
   /** @type Record<string, Format> */
   #formats;
@@ -65,6 +73,7 @@ export class JsonSchema extends Hyperjump {
 
     this.#config = config;
     this.#keywords = {};
+    this.#valueSchemas = {};
     this.#formats = {};
     this.#vocabularies = {};
     this.#dialects = {};
@@ -76,7 +85,10 @@ export class JsonSchema extends Hyperjump {
     this.addKeyword(schemaKeyword);
     this.addKeyword(unknownKeyword);
 
-    this.addMediaTypePlugin(new JsonSchemaMediaTypePlugin(this));
+    // Value schemas are written in v1
+    addV1(this);
+
+    this.addMediaTypePlugin(new JsonSchemaMediaTypePlugin(this, (uri) => Object.values(this.#valueSchemas).includes(uri)));
 
     this.addOutputFormat("BASIC", basicOutputFormat);
     this.addOutputFormat("DETAILED", detailedOutputFormat);
@@ -89,6 +101,12 @@ export class JsonSchema extends Hyperjump {
   /** @type API.JsonSchema["addKeyword"] */
   addKeyword(keyword) {
     this.#keywords[keyword.uri] = keyword;
+    this.#valueSchemas[keyword.uri] = toAbsoluteIri(keyword.valueSchema);
+  }
+
+  /** @type API.JsonSchema["hasKeyword"] */
+  hasKeyword(uri) {
+    return uri in this.#keywords;
   }
 
   /** @type API.JsonSchema["getKeyword"] */

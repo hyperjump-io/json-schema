@@ -12,6 +12,7 @@ import { codePointLength } from "./utilities.js";
 export default {
   uri: "https://json-schema.org/keyword/minLength",
   shape: "data",
+  valueSchema: new URL("./minLength.schema.json", import.meta.url).href,
   evaluate: (minLength, { instance }) => (node) => {
     return instance.typeOf(node) !== "string" || codePointLength(/** @type string */ (instance.value(node))) >= minLength;
   }

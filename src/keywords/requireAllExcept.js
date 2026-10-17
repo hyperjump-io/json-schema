@@ -14,6 +14,7 @@ import { siblingKeyword } from "./utilities.js";
 export default {
   uri: "https://json-schema.org/keyword/requireAllExcept",
   shape: "data",
+  valueSchema: new URL("./requireAllExcept.schema.json", import.meta.url).href,
   compile(valueNode, { schemaNode }) {
     const except = new Set(/** @type string[] */ (jsonValue(valueNode)));
 

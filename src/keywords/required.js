@@ -11,6 +11,7 @@
 export default {
   uri: "https://json-schema.org/keyword/required",
   shape: "data",
+  valueSchema: new URL("./required.schema.json", import.meta.url).href,
   evaluate: (required, { instance }) => (node) => {
     if (instance.typeOf(node) !== "object") {
       return true;

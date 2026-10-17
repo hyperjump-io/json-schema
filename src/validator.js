@@ -68,6 +68,11 @@ export class Validator {
     return this.#evaluateAst(result.node, false, options, /** @type API.JsonSyntaxError[] */ (result.messages));
   }
 
+  /** @type API.Validator["validateNode"] */
+  validateNode(node, options) {
+    return this.#evaluateAst(/** @type InstanceNode */ (node), false, options, []);
+  }
+
   /** @type API.Validator["annotate"] */
   annotate(instance, options) {
     const node = fromJs(instance);

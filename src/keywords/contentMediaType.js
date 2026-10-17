@@ -10,6 +10,7 @@
 export default {
   uri: "https://json-schema.org/keyword/contentMediaType",
   shape: "data",
+  valueSchema: new URL("./contentMediaType.schema.json", import.meta.url).href,
   evaluate(contentMediaType, { instance, annotate }) {
     if (annotate === undefined) {
       return () => true;

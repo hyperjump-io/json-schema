@@ -13,6 +13,7 @@ import { compileSchemaMap } from "./utilities.js";
 export default {
   uri: "https://json-schema.org/keyword/propertyDependencies",
   shape: { map: { map: "schema" } },
+  valueSchema: new URL("./propertyDependencies.schema.json", import.meta.url).href,
   async compile(valueNode, context) {
     /** @type [string, [string, SchemaHandle][]][] */
     const dependencies = [];

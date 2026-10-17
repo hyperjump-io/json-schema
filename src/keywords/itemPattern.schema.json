@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/v1",
+  "type": "array",
+  "items": {
+    "anyOf": [
+      {
+        "type": ["object", "boolean"]
+      },
+      {
+        "$ref": "#"
+      },
+      {
+        "enum": ["*", "+", "?", "|"]
+      }
+    ]
+  }
+}

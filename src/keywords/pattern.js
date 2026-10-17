@@ -11,6 +11,7 @@
 export default {
   uri: "https://json-schema.org/keyword/pattern",
   shape: "data",
+  valueSchema: new URL("./pattern.schema.json", import.meta.url).href,
   evaluate(pattern, { instance }) {
     const regExp = new RegExp(pattern, "u");
     return (node) => instance.typeOf(node) !== "string" || regExp.test(/** @type string */ (instance.value(node)));

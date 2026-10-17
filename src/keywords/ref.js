@@ -14,6 +14,7 @@ import { resolveIri, toAbsoluteIri } from "@hyperjump/uri";
 export default {
   uri: "https://json-schema.org/keyword/ref",
   shape: "data",
+  valueSchema: new URL("./ref.schema.json", import.meta.url).href,
   compile(valueNode, context) {
     const reference = /** @type string */ (jsonValue(valueNode));
     return context.compileSchema(resolveIri(reference, toAbsoluteIri(context.schemaNode.location)));

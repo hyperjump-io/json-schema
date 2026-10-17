@@ -12,6 +12,7 @@
 export default {
   uri: "https://json-schema.org/keyword/unevaluatedProperties",
   shape: "schema",
+  valueSchema: new URL("./unevaluatedProperties.schema.json", import.meta.url).href,
   compile: (valueNode, context) => context.compileSchema(valueNode),
   evaluate(handle, { instance, schema, exhaustive, markEvaluated, evaluated }) {
     const evaluate = schema(handle);

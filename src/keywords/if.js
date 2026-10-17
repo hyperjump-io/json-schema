@@ -14,6 +14,7 @@ import { siblingKeyword } from "./utilities.js";
 export default {
   uri: "https://json-schema.org/keyword/if",
   shape: "schema",
+  valueSchema: new URL("./if.schema.json", import.meta.url).href,
   async compile(valueNode, context) {
     const thenNode = siblingKeyword(context.schemaNode, "https://json-schema.org/keyword/then");
     const elseNode = siblingKeyword(context.schemaNode, "https://json-schema.org/keyword/else");

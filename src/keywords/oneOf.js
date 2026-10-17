@@ -12,6 +12,7 @@ import { compileSchemaArray } from "./utilities.js";
 export default {
   uri: "https://json-schema.org/keyword/oneOf",
   shape: { array: "schema" },
+  valueSchema: new URL("./oneOf.schema.json", import.meta.url).href,
   compile: compileSchemaArray,
   evaluate(oneOf, { schema, exhaustive }) {
     const evaluators = oneOf.map(schema);

@@ -12,6 +12,7 @@ import { codePointLength } from "./utilities.js";
 export default {
   uri: "https://json-schema.org/keyword/maxLength",
   shape: "data",
+  valueSchema: new URL("./maxLength.schema.json", import.meta.url).href,
   evaluate: (maxLength, { instance }) => (node) => {
     return instance.typeOf(node) !== "string" || codePointLength(/** @type string */ (instance.value(node))) <= maxLength;
   }

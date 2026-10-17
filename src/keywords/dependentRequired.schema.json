@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/v1",
+  "type": "object",
+  "additionalProperties": {
+    "type": "array",
+    "items": {
+      "type": "string"
+    },
+    "uniqueItems": true
+  }
+}

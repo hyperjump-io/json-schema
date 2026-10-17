@@ -69,9 +69,10 @@ were considered. See "Open questions".)
 - `shape`: Where the value contains schemas, using combinators: `"schema"`,
   `"data"`, `{ array: Shape }`, `{ map: Shape }`, or `Shape[]` (the first
   alternative whose JSON type matches). A value that doesn't match is data.
-- `valueSchema`: A schema for the keyword's own value, used for schema
-  validation. It doesn't describe subschemas; those are validated as schemas.
-  Not evaluated yet.
+- `valueSchema`: The URI of a schema for the keyword's own value, used for
+  schema validation. It's required, even for a keyword that allows any
+  value. It doesn't describe subschemas; those are validated as schemas. It
+  declares its dialect with `$schema` (see "Schema validation").
 - `resolve`: An optional hook for keywords that identify schemas (`$id`,
   `$anchor`, `$dynamicAnchor`, legacy `id`/`$id`/`$ref`, `$recursiveAnchor`).
   It records effects (`setBaseUri`, `addAnchor`, `addDynamicAnchor`,
@@ -108,10 +109,10 @@ were considered. See "Open questions".)
   is an error when the schema is compiled. Otherwise, `format` is only an
   annotation, so any name is fine.
 - The lite formats (`src/formats/lite.js`) are every format JSON Schema
-  defines except `hostname`, `idn-hostname`, and `idn-email`, which need
-  large tables of Unicode data. `addV1` adds them, and v1 validates formats
-  by default. `src/formats/full.js` adds the rest. The validators come from
-  `@hyperjump/json-schema-formats`.
+  defines except `hostname`, `idn-hostname`, and `idn-email`, which need large
+  tables of Unicode data. Every `JsonSchema` has them, and v1 validates
+  formats by default. `src/formats/full.js` adds the rest. The validators come
+  from `@hyperjump/json-schema-formats`.
 - Keyword names starting with `x-` are reserved for schema authors in every
   dialect. They're guaranteed to never collide with a keyword, so they must
   never assert. Registering one throws (`addVocabulary`, `addDialect`,
@@ -136,9 +137,25 @@ an internal meta-schema.
   never validated against a meta-schema.
 - Unsupported keywords are reported by the resolver according to the
   dialect's `unknownKeywords`.
-- Each keyword's `valueSchema` validates its value. This needs the evaluator,
-  so it isn't implemented yet. It will be a unified plugin that runs after
-  `jsonSchemaResolve`.
+- Each keyword's `valueSchema` validates its value.
+  `jsonSchemaValidateKeywords` is a unified plugin that runs after
+  `jsonSchemaResolve`. The schema media
+  type plugin runs it unless the `validateSchemas` config is `false`. It
+  validates each keyword's value node with `Validator.validateNode`. An
+  invalid value gets one message, placed on the value, with the keyword's URI
+  as the `ruleId` and the value schema's BASIC errors as its `cause` (an
+  `AggregateError`).
+- A keyword's `valueSchema` is a URI, and the value schema is retrieved
+  like any other schema. The built-in keywords' value schemas are
+  `.schema.json` files next to the keywords, and their URIs are computed
+  with `import.meta.url`, so they're `file:` URIs in Node. Being files lets
+  tooling like a language server or a CI check validate them, since they
+  aren't validated themselves. Every keyword has one, even if it allows any
+  value.
+- Value schemas declare their dialect with `$schema`. They're written in v1,
+  so every `JsonSchema` has the v1 dialect, keywords, and lite formats, like
+  it has `$schema` and the unknown keyword. Value schemas aren't validated
+  themselves, because validating one would need itself.
 - Dialect schemas (meta-schemas) are for dev-time tooling, not validators.
   There's no generated "what this implementation supports" meta-schema.
 - A schema that wasn't retrieved from a `file:` URI can't be identified by
@@ -146,7 +163,8 @@ an internal meta-schema.
   file, which would get around browser's rule that only files can reference
   files. v1 had the same rule for registered schemas.
 - The resolver's own checks (misplaced `$schema`, duplicate ids and anchors,
-  invalid identifiers, `file:` identifiers) are schema validation too. Every problem is a
+  invalid identifiers, `file:` identifiers) are schema validation too.
+  Every problem is a
   `VFileMessage` with `source: "json-schema"` and a `ruleId`. Messages from a
   keyword hook use the keyword's URI as the `ruleId`.
 
@@ -222,11 +240,11 @@ Keywords:
 - Keywords are written once for every instance representation. They look at
   instances through `context.instance` (`InstanceOps`: `typeOf`, `value`,
   `length`, `has`, `get`, `entries`, `keys`, `items`), which is fixed for a
-  specialization. `keys` gives property names as instances (name nodes in
-  an AST) for `propertyNames`, so their annotations go on the names. `typeOf` is undefined for `json-missing` and
-  `json-invalid` nodes, and `has` is true for a property whose value is
-  missing. That's how keywords get the error-tolerance rules without extra
-  code.
+  specialization. `keys` gives property names as instances (name nodes in an
+  AST) for `propertyNames`, so their annotations go on the names. `typeOf` is
+  undefined for `json-missing` and `json-invalid` nodes, and `has` is true for
+  a property whose value is missing. That's how keywords get the
+  error-tolerance rules without extra code.
 - Applicators evaluate subschemas through `context.schema(handle)(instance,
   segment)`. The core tracks instance location, keyword location (following
   references), and which AST node to annotate, so keywords never build
@@ -388,7 +406,6 @@ Results (mean time per run of the suite, FLAG unless it says errors):
 - **Where keywords get their dependencies.** From a context argument
   (stateless, shareable keywords; current lean, and what `CompileContext`
   does) or constructor injection (matches browser's plugins).
-- **Which dialect value schemas are written in.** Probably v1.
 - **`multipleOf` precision.** It uses v1's fixed tolerance for the
   remainder, which is wrong for very small divisors.
 - **Annotations for invalid instances.** The spec drops annotations from
@@ -418,8 +435,8 @@ Done:
   `$anchor`, `$dynamicAnchor`, draft-04 `id`/`$ref`, and 2019-09
   `$recursiveAnchor`. Other keywords only need shapes and value schemas, so
   they'll be added with the compile side.
-- The v1 preset (`src/v1`, `addV1`) declares the whole v1 dialect but only
-  adds the keywords that exist. The JSON-Schema-Test-Suite (its `unify`
+- The v1 dialect (`src/v1`) is built into every `JsonSchema`. It used to be
+  added with `addV1`. The JSON-Schema-Test-Suite (its `unify`
   branch, which will replace `main`) runs in
   `src/v1/json-schema-test-suite.test.js`. v1 is the suite's `9999`. Each
   test case gets its own `JsonSchema` with an in-memory `http(s):` URI scheme
@@ -427,15 +444,15 @@ Done:
   `validate`, `validateJson`, BASIC, and `annotate`. Files for keywords that
   don't exist yet are skipped.
 - The v1 dialect includes the `propertyDependencies` proposal, and the
-  suite's proposal tests run too. `addV1` also adds `conditional`,
-  `itemPattern`, and `requireAllExcept`, but with `extendDialect` as a
-  reminder that they aren't full proposals yet. Their tests are in
+  suite's proposal tests run too. `conditional`, `itemPattern`, and
+  `requireAllExcept` are added too, but with `extendDialect` as a reminder
+  that they aren't full proposals yet. Their tests are in
   `src/v1/extension-tests`, ported from v1 except for `requireAllExcept`,
   which v1 didn't have tests for.
 - The validation keywords (`type`, `const`, `enum`, the numeric, string,
   array, and object assertions, `required`, `dependentRequired`, and
   `requireAllExcept`) and `$comment`. Their test suite files pass, except
-  test cases that need applicators. They don't have value schemas yet.
+  test cases that need applicators.
   Equality (`const`, `enum`, `uniqueItems`) compares through
   `InstanceOps`, so an AST isn't copied. A value that couldn't be parsed
   counts as equal for `const` and `enum` and as different for
@@ -467,6 +484,7 @@ Changes made to browser for this (on its `v2` branch):
   document.
 - A file's media type uses the longest matching extension.
 - `content-type` v3, with the parsed type validated.
+- `retrieve` is declared as a method so `JsonSchema` can override it.
 - `getDocument` gets the document a URI identifies, for what it has beyond
   its values. Compiling uses it for a resource's dynamic anchors.
 - `jsonValue` supports arrays and objects. `Hyperjump.value` still doesn't,
@@ -482,14 +500,14 @@ Changes made to browser for this (on its `v2` branch):
 
 1. Implement the v1 keywords (shapes, value schemas, compile, and evaluate)
    and a v1 preset. Run the JSON-Schema-Test-Suite. Benchmark whether sharing
-   keyword code between plain values and ASTs slows down `validate`. Done,
-   except value schemas.
-2. Schema validation with value schemas.
+   keyword code between plain values and ASTs slows down `validate`. Done.
+2. Schema validation with value schemas. Done.
 3. Presets for 2020-12, 2019-09, and draft-04 through draft-07. Move the
    `$vocabulary` support into the 2019-09 and 2020-12 presets as a hook the
    core doesn't need.
 4. A registry for schemas that aren't retrieved by URI (deferred; schemas come
-   from `file:` and `http(s):` for now).
+   from `file:` and `http(s):` for now). Then fix the built-in value schemas
+   in browsers (see "Known limitations").
 5. Later: annotations, bundling, OpenAPI, a CLI, a unified plugin for
    validating JSON files, and migrating dependent projects.
 
@@ -501,6 +519,12 @@ Changes made to browser for this (on its `v2` branch):
 - The base URI from a file's path only handles POSIX paths.
 - The `JsonSchema` shortcuts (`validate(uri, ...)` and the others) compile the
   schema every time.
+- In a browser, the built-in value schemas' URIs are `http(s):` URLs next
+  to the modules. Servers usually serve `.schema.json` as `application/json`,
+  which isn't a schema, so schema validation fails unless `validateSchemas`
+  is `false`. Bundlers that copy `new URL(..., import.meta.url)` assets have
+  the same problem. Browser support is required, so this has to be fixed
+  once there's a registry.
 - A self-describing meta-schema is recognized by the URI it was retrieved
   from. A copy retrieved from a different URI than its `$id` isn't recognized,
   and that's reported as an error.

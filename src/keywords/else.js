@@ -10,5 +10,6 @@
 export default {
   uri: "https://json-schema.org/keyword/else",
   shape: "schema",
+  valueSchema: new URL("./else.schema.json", import.meta.url).href,
   compile: () => null
 };

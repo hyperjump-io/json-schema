@@ -12,6 +12,7 @@ import { compileSchemaArray } from "./utilities.js";
 export default {
   uri: "https://json-schema.org/keyword/prefixItems",
   shape: { array: "schema" },
+  valueSchema: new URL("./prefixItems.schema.json", import.meta.url).href,
   compile: compileSchemaArray,
   evaluate(prefixItems, { instance, schema, exhaustive, markEvaluated }) {
     const evaluators = prefixItems.map(schema);

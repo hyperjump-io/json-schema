@@ -13,6 +13,7 @@ import { parseIri, resolveIri } from "@hyperjump/uri";
 export default {
   uri: "https://json-schema.org/keyword/id",
   shape: "data",
+  valueSchema: new URL("./id.schema.json", import.meta.url).href,
   resolve(valueNode, context) {
     if (valueNode.type !== "json" || valueNode.jsonType !== "string") {
       return;

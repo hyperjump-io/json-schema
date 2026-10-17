@@ -1,5 +1,9 @@
 import { describe, test, beforeEach, expect } from "vitest";
 import { JsonSchema } from "./json-schema.js";
+import unknownKeyword from "./keywords/unknown.js";
+
+/** A value schema that allows any value, for keywords defined in tests */
+const anyValue = unknownKeyword.valueSchema;
 
 /**
  * @import { Dialect } from "./dialect.d.ts"
@@ -143,7 +147,7 @@ describe("JsonSchema", () => {
 
   describe("keywords", () => {
     test("addKeyword", () => {
-      const keyword = { uri: "https://example.com/keyword/foo", shape: /** @type const */ ("data") };
+      const keyword = { uri: "https://example.com/keyword/foo", shape: /** @type const */ ("data"), valueSchema: anyValue };
       jsonSchema.addKeyword(keyword);
 
       expect(jsonSchema.getKeyword(keyword.uri)).to.equal(keyword);

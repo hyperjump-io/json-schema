@@ -15,6 +15,7 @@ import { siblingKeyword } from "./utilities.js";
 export default {
   uri: "https://json-schema.org/keyword/contains",
   shape: "schema",
+  valueSchema: new URL("./contains.schema.json", import.meta.url).href,
   async compile(valueNode, context) {
     const minContainsNode = siblingKeyword(context.schemaNode, "https://json-schema.org/keyword/minContains");
     const maxContainsNode = siblingKeyword(context.schemaNode, "https://json-schema.org/keyword/maxContains");

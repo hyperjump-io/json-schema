@@ -16,6 +16,7 @@
 export default {
   uri: "https://json-schema.org/keyword/type",
   shape: "data",
+  valueSchema: new URL("./type.schema.json", import.meta.url).href,
   evaluate(type, { instance }) {
     /** @type Set<string> */
     const types = new Set(Array.isArray(type) ? type : [type]);

@@ -13,5 +13,6 @@
  */
 export default {
   uri: "https://json-schema.org/keyword/schema",
-  shape: "data"
+  shape: "data",
+  valueSchema: new URL("./schema.schema.json", import.meta.url).href
 };

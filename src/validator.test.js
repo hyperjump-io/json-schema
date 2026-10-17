@@ -10,6 +10,7 @@ import { JsonSchema, ValidationError } from "./json-schema.js";
 import idKeyword from "./keywords/id.js";
 import anchorKeyword from "./keywords/anchor.js";
 import dynamicAnchorKeyword from "./keywords/dynamicAnchor.js";
+import unknownKeyword from "./keywords/unknown.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
@@ -19,6 +20,9 @@ import dynamicAnchorKeyword from "./keywords/dynamicAnchor.js";
  */
 
 const dialectUri = "https://example.com/dialect";
+
+/** A value schema that allows any value, for keywords defined in tests */
+const anyValue = unknownKeyword.valueSchema;
 
 /** @type (node: any) => [string, any][] */
 const propertiesOf = (node) => node.children.map((/** @type any */ property) => [property.children[0].value, property.children[1]]);
@@ -42,6 +46,7 @@ const compileSchemas = async (valueNode, context) => {
 const typeKeyword = {
   uri: "https://example.com/keyword/type",
   shape: "data",
+  valueSchema: anyValue,
   evaluate: (type, { instance }) => (value) => instance.typeOf(value) === type
 };
 
@@ -49,6 +54,7 @@ const typeKeyword = {
 const minimumKeyword = {
   uri: "https://example.com/keyword/minimum",
   shape: "data",
+  valueSchema: anyValue,
   evaluate: (minimum, { instance }) => (value) => {
     return instance.typeOf(value) !== "number" || /** @type number */ (instance.value(value)) >= minimum;
   }
@@ -58,6 +64,7 @@ const minimumKeyword = {
 const titleKeyword = {
   uri: "https://example.com/keyword/title",
   shape: "data",
+  valueSchema: anyValue,
   evaluate: (title, { annotate }) => () => {
     annotate?.(title);
     return true;
@@ -68,6 +75,7 @@ const titleKeyword = {
 const propertiesKeyword = {
   uri: "https://example.com/keyword/properties",
   shape: { map: "schema" },
+  valueSchema: anyValue,
   async compile(valueNode, context) {
     /** @type Record<string, string> */
     const properties = {};
@@ -110,6 +118,7 @@ const propertiesKeyword = {
 const allOfKeyword = {
   uri: "https://example.com/keyword/allOf",
   shape: { array: "schema" },
+  valueSchema: anyValue,
   compile: compileSchemas,
   evaluate(handles, context) {
     const evaluators = handles.map(context.schema);
@@ -133,6 +142,7 @@ const allOfKeyword = {
 const anyOfKeyword = {
   uri: "https://example.com/keyword/anyOf",
   shape: { array: "schema" },
+  valueSchema: anyValue,
   compile: compileSchemas,
   evaluate(handles, context) {
     const evaluators = handles.map(context.schema);
@@ -156,6 +166,7 @@ const anyOfKeyword = {
 const refKeyword = {
   uri: "https://example.com/keyword/ref",
   shape: "data",
+  valueSchema: anyValue,
   compile(valueNode, context) {
     return context.compileSchema(resolveIri(stringOf(valueNode), toAbsoluteIri(context.schemaNode.location)));
   },
@@ -167,6 +178,7 @@ const refKeyword = {
 const dynamicRefKeyword = {
   uri: "https://example.com/keyword/dynamicRef",
   shape: "data",
+  valueSchema: anyValue,
   async compile(valueNode, context) {
     const uri = resolveIri(stringOf(valueNode), toAbsoluteIri(context.schemaNode.location));
     const name = uri.slice(uri.indexOf("#") + 1);
@@ -185,6 +197,7 @@ const dynamicRefKeyword = {
 const ifKeyword = {
   uri: "https://example.com/keyword/if",
   shape: "schema",
+  valueSchema: anyValue,
   async compile(valueNode, context) {
     const schemaNode = /** @type any */ (context.schemaNode);
     const thenProperty = schemaNode.children.find((/** @type any */ property) => property.children[0].value === "then");
@@ -205,6 +218,7 @@ const ifKeyword = {
 const unevaluatedPropertiesKeyword = {
   uri: "https://example.com/keyword/unevaluatedProperties",
   shape: "schema",
+  valueSchema: anyValue,
   compile: (valueNode, context) => context.compileSchema(valueNode),
   evaluate(handle, context) {
     const evaluate = context.schema(handle);
@@ -236,8 +250,8 @@ const unevaluatedPropertiesKeyword = {
 const keywords = [
   idKeyword, anchorKeyword, dynamicAnchorKeyword, typeKeyword, minimumKeyword, titleKeyword, propertiesKeyword,
   allOfKeyword, anyOfKeyword, refKeyword, dynamicRefKeyword, unevaluatedPropertiesKeyword, ifKeyword,
-  { uri: "https://example.com/keyword/defs", shape: { map: "schema" } },
-  { uri: "https://example.com/keyword/then", shape: "schema" }
+  { uri: "https://example.com/keyword/defs", shape: { map: "schema" }, valueSchema: anyValue },
+  { uri: "https://example.com/keyword/then", shape: "schema", valueSchema: anyValue }
 ];
 
 /** @type (jsonSchema: JsonSchema) => void */

@@ -9,5 +9,6 @@
  */
 export default {
   uri: "https://json-schema.org/keyword/minContains",
-  shape: "data"
+  shape: "data",
+  valueSchema: new URL("./minContains.schema.json", import.meta.url).href
 };

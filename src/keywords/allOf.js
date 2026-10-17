@@ -12,6 +12,7 @@ import { compileSchemaArray } from "./utilities.js";
 export default {
   uri: "https://json-schema.org/keyword/allOf",
   shape: { array: "schema" },
+  valueSchema: new URL("./allOf.schema.json", import.meta.url).href,
   compile: compileSchemaArray,
   evaluate(allOf, { schema, exhaustive }) {
     const evaluators = allOf.map(schema);

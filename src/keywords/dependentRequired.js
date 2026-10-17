@@ -10,6 +10,7 @@
 export default {
   uri: "https://json-schema.org/keyword/dependentRequired",
   shape: "data",
+  valueSchema: new URL("./dependentRequired.schema.json", import.meta.url).href,
   evaluate(dependentRequired, { instance }) {
     const dependencies = Object.entries(dependentRequired);
 

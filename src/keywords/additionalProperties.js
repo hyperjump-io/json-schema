@@ -13,6 +13,7 @@ import { siblingKeyword } from "./utilities.js";
 export default {
   uri: "https://json-schema.org/keyword/additionalProperties",
   shape: "schema",
+  valueSchema: new URL("./additionalProperties.schema.json", import.meta.url).href,
   async compile(valueNode, context) {
     /** @type string[] */
     const properties = [];

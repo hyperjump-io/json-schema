@@ -1,9 +1,10 @@
 {
   "exclude": ["./docs", "./coverage", "./scratch"],
   "compilerOptions": {
-    "module": "Node16",
+    "module": "nodenext",
     "target": "esnext",
-    "moduleResolution": "Node16",
+    "moduleResolution": "nodenext",
+    "resolveJsonModule": true,
     "esModuleInterop": true,
     "strict": true,
     "strictNullChecks": true,

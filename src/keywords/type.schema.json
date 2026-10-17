@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/v1",
+  "anyOf": [
+    {
+      "enum": ["null", "boolean", "object", "array", "number", "string", "integer"]
+    },
+    {
+      "type": "array",
+      "items": {
+        "enum": ["null", "boolean", "object", "array", "number", "string", "integer"]
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    }
+  ]
+}

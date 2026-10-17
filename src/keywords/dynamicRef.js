@@ -14,6 +14,7 @@ import { jsonValue } from "@hyperjump/browser/json";
 export default {
   uri: "https://json-schema.org/keyword/dynamicRef",
   shape: "data",
+  valueSchema: new URL("./dynamicRef.schema.json", import.meta.url).href,
   compile: (valueNode) => /** @type string */ (jsonValue(valueNode)),
   evaluate(name, context) {
     const dynamicAnchor = /** @type NonNullable<typeof context.dynamicAnchor> */ (context.dynamicAnchor);

@@ -10,6 +10,7 @@
 export default {
   uri: "https://json-schema.org/keyword/exclusiveMinimum",
   shape: "data",
+  valueSchema: new URL("./exclusiveMinimum.schema.json", import.meta.url).href,
   evaluate: (exclusiveMinimum, { instance }) => (node) => {
     return instance.typeOf(node) !== "number" || /** @type number */ (instance.value(node)) > exclusiveMinimum;
   }

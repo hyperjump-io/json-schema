@@ -12,6 +12,7 @@ import { compileSchemaMap } from "./utilities.js";
 export default {
   uri: "https://json-schema.org/keyword/properties",
   shape: { map: "schema" },
+  valueSchema: new URL("./properties.schema.json", import.meta.url).href,
   compile: compileSchemaMap,
   evaluate(properties, { instance, schema, exhaustive, markEvaluated }) {
     const evaluators = new Map();

@@ -11,6 +11,7 @@
 export default {
   uri: "https://json-schema.org/keyword/multipleOf",
   shape: "data",
+  valueSchema: new URL("./multipleOf.schema.json", import.meta.url).href,
   evaluate: (multipleOf, { instance }) => (node) => {
     if (instance.typeOf(node) !== "number") {
       return true;

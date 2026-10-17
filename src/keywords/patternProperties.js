@@ -13,6 +13,7 @@ import { compileSchemaMap } from "./utilities.js";
 export default {
   uri: "https://json-schema.org/keyword/patternProperties",
   shape: { map: "schema" },
+  valueSchema: new URL("./patternProperties.schema.json", import.meta.url).href,
   compile: compileSchemaMap,
   evaluate(patternProperties, { instance, schema, exhaustive, markEvaluated }) {
     /** @type [RegExp, ReturnType<typeof schema>][] */

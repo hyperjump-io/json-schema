@@ -10,6 +10,7 @@
 export default {
   uri: "https://json-schema.org/keyword/contentEncoding",
   shape: "data",
+  valueSchema: new URL("./contentEncoding.schema.json", import.meta.url).href,
   evaluate(contentEncoding, { instance, annotate }) {
     if (annotate === undefined) {
       return () => true;

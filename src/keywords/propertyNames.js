@@ -11,6 +11,7 @@
 export default {
   uri: "https://json-schema.org/keyword/propertyNames",
   shape: "schema",
+  valueSchema: new URL("./propertyNames.schema.json", import.meta.url).href,
   compile: (valueNode, context) => context.compileSchema(valueNode),
   evaluate(handle, { instance, schema, exhaustive }) {
     const evaluate = schema(handle);

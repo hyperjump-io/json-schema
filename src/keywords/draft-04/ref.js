@@ -11,6 +11,7 @@
 export default {
   uri: "https://json-schema.org/keyword/draft-04/ref",
   shape: "data",
+  valueSchema: new URL("./ref.schema.json", import.meta.url).href,
   resolve(valueNode, context) {
     if (valueNode.type === "json" && valueNode.jsonType === "string") {
       context.setReference(valueNode.value);

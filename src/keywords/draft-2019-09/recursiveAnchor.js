@@ -11,6 +11,7 @@
 export default {
   uri: "https://json-schema.org/keyword/draft-2019-09/recursiveAnchor",
   shape: "data",
+  valueSchema: new URL("./recursiveAnchor.schema.json", import.meta.url).href,
   resolve(valueNode, context) {
     if (valueNode.type === "json" && valueNode.jsonType === "boolean" && valueNode.value) {
       context.addDynamicAnchor("");

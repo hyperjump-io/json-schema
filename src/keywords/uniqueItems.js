@@ -13,6 +13,7 @@ import { instanceEqual } from "./utilities.js";
 export default {
   uri: "https://json-schema.org/keyword/uniqueItems",
   shape: "data",
+  valueSchema: new URL("./uniqueItems.schema.json", import.meta.url).href,
   evaluate(uniqueItems, { instance }) {
     if (!uniqueItems) {
       return () => true;

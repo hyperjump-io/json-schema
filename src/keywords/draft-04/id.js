@@ -14,6 +14,7 @@ import { parseIri, resolveIri, toAbsoluteIri } from "@hyperjump/uri";
 export default {
   uri: "https://json-schema.org/keyword/draft-04/id",
   shape: "data",
+  valueSchema: new URL("./id.schema.json", import.meta.url).href,
   resolve(valueNode, context) {
     if (valueNode.type !== "json" || valueNode.jsonType !== "string") {
       return;

@@ -27,12 +27,15 @@ export type Keyword<C extends Json = Json> = {
   shape: Shape;
 
   /**
-   * A schema for the keyword's value, used to validate schemas. It doesn't
-   * need to describe the subschemas in the value. They're validated as
-   * schemas in their own right. Without a value schema, any value is valid.
+   * The URI of a schema for the keyword's value, used to validate schemas.
+   * It doesn't need to describe the subschemas in the value. They're
+   * validated as schemas in their own right. A keyword that allows any value
+   * still needs one.
+   *
+   * It's retrieved like any other schema and has to declare its dialect with
+   * `$schema`. Value schemas aren't validated with value schemas themselves.
    */
-  // TODO: Evaluate value schemas once compiling and evaluating are implemented
-  valueSchema?: Json;
+  valueSchema: string;
 
   /**
    * Called while a schema document is resolved, for keywords that affect how

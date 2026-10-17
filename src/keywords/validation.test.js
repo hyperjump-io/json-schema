@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { describe, test, beforeAll, afterAll, expect } from "vitest";
 import { JsonSchema } from "../json-schema.js";
-import { addV1, v1DialectUri } from "../v1/index.js";
+import { v1DialectUri } from "../v1/index.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
@@ -33,7 +33,6 @@ describe("validation keywords with syntax errors", () => {
   beforeAll(async () => {
     directory = await mkdtemp(join(tmpdir(), "json-schema-next-"));
     jsonSchema = new JsonSchema();
-    addV1(jsonSchema);
   });
 
   afterAll(async () => {
