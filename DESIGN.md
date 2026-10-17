@@ -207,8 +207,7 @@ Keywords:
   references), and which AST node to annotate, so keywords never build
   pointers. In flag mode, the segment is ignored.
 - `context.annotate` is only defined when annotations are being collected.
-  Annotations are buffered per schema evaluation and kept only if the schema
-  passes.
+  Annotations are buffered in frames (see "Evaluation state").
 - Unknown keywords: the core looks up the definition by `keywordUri` without
   its fragment and passes the property name as `context.keywordName`. The
   unknown keyword's `compile` uses `context.dialect.unknownKeywords` to decide
@@ -228,10 +227,51 @@ Plugins are passed per call (`ValidationOptions.plugins`). Each distinct
 plugin set gets its own specialization, so plugins cost nothing when they
 aren't used and evaluating with no plugins has no hook wrappers at all.
 
-Cross-cutting keywords (`unevaluatedProperties`, `unevaluatedItems`,
-`$dynamicRef`, `$recursiveRef`) declare what they need, such as tracking
-evaluated properties or the dynamic scope, and the specializer only turns on
-that tracking when a keyword in the IR asks for it.
+Annotations follow the spec: they're kept only if the keyword and every
+schema they were evaluated through pass. An invalid instance gets no
+annotations from the failing parts of the schema. The language server has its
+own annotation implementation for that reason. Alternative annotation
+behavior should be explored later.
+
+### Evaluation state
+
+Cross-cutting keywords don't use plugins. v1 implemented `unevaluated*` and
+`$dynamicRef` as plugins, which put every evaluation through hook wrappers.
+Here, the core tracks two kinds of state, each only when a keyword in the IR
+declares that it reads it (`Keyword.reads`):
+
+- **`evaluated`**: The properties or items evaluated at an instance location.
+  Applicators (`properties`, `patternProperties`, `additionalProperties`,
+  `prefixItems`, `items`, `itemPattern`, `contains` for matching items, and
+  `unevaluated*`) call `context.markEvaluated?.(key)`. Readers
+  (`unevaluated*`) call `context.evaluated()` and are evaluated after their
+  siblings that don't read it, which replaces v1's hard-coded keyword order.
+  Objects and arrays share one set because an instance can't be both. This
+  is a built-in set rather than a general way for keywords to read each
+  other's annotations, which would make every reader understand every
+  producer's annotation format.
+- **`dynamicScope`**: `context.dynamicAnchor(name)` returns the evaluator for
+  the outermost schema in the dynamic scope with that anchor. The core
+  updates an anchor-to-evaluator map when evaluation enters a different
+  schema resource, reusing the outer map when the resource adds nothing.
+  Bookending (2020-12) and `$recursiveAnchor` (2019-09) are up to the
+  keyword. Compiling any schema in a resource also compiles that resource's
+  dynamic anchor targets, because specialization can't retrieve anything.
+
+Scoping is the core's job. Each keyword and schema evaluation gets a frame
+for its marks and annotations, which follow the same rule, as the spec does
+for annotations: a frame is kept only if it passes. A subschema evaluated on
+the same instance (no `segment`) merges its frame into its parent's. One
+evaluated on a property or item gets its own, because its marks are about a
+different instance. Frames only exist while marks or annotations are being
+collected.
+
+Because only passing schemas keep marks, a keyword can always stop at a
+failure. It must not stop at a passing subschema while `markEvaluated` is
+defined. `context.exhaustive` is true when errors or annotations are being
+collected, and then nothing may stop early.
+
+Plugins no longer need to change evaluation, only observe it.
 
 Sharing one keyword implementation between representations might make call
 sites polymorphic, because V8 may share type feedback between closures
@@ -248,9 +288,9 @@ plain values. That would be an addition to the interface, not a redesign.
 - **Evaluation plugin hooks and custom output formats.** Plugins are per call,
   but the hooks aren't designed. Output formats are probably plugins plus a
   result builder.
-- **How cross-cutting keywords declare their needs.** Including how
-  `properties`, `items`, and the other applicators report what they
-  evaluated, and how `$dynamicRef` gets the dynamic scope.
+- **Annotations for invalid instances.** The spec drops annotations from
+  failing schemas, which leaves the language server without them. Explore
+  alternative annotation behavior.
 - **Error messages.** `ValidationError` needs a `reason`. Where keywords
   provide it isn't decided.
 
@@ -262,6 +302,7 @@ Done:
   `typedoc`).
 - Validation API types.
 - Keyword compile and evaluate types, and the two-phase design.
+- Evaluation state for `unevaluated*` and `$dynamicRef`.
 - Schema AST, keyword, and dialect types.
 - `jsonSchemaResolve`, `JsonSchema` registries, and the schema media type
   plugin, with tests.
@@ -282,8 +323,7 @@ Changes made to browser for this (on its `v2` branch):
 
 ## Plan
 
-1. Finish designing evaluation: plugin hooks, output formats, and how
-   cross-cutting keywords declare what they need.
+1. Finish designing evaluation: plugin hooks and output formats.
 2. Implement compile, specialize, the v1 keywords (shapes, value schemas,
    compile, and evaluate), and a v1 preset. Run the JSON-Schema-Test-Suite.
    Benchmark whether sharing keyword code between plain values and ASTs slows

@@ -62,7 +62,22 @@ export type Keyword<C extends Json = Json> = {
    * `evaluate`, the keyword has no effect on evaluation, like `$id`.
    */
   evaluate?<I>(compiled: C, context: EvaluateContext<I>): Evaluator<I>;
+
+  /**
+   * Evaluation state the keyword reads. The core only tracks a kind of
+   * state if a keyword in the compiled schema reads it, so schemas that
+   * don't use these keywords don't pay for them.
+   *
+   * - `evaluated`: The properties or items evaluated so far at the same
+   *   instance location (`unevaluatedProperties`, `unevaluatedItems`). The
+   *   keyword is evaluated after its siblings that don't read it.
+   * - `dynamicScope`: The dynamic anchors in the dynamic scope
+   *   (`$dynamicRef`, `$recursiveRef`).
+   */
+  reads?: EvaluationState[];
 };
+
+export type EvaluationState = "evaluated" | "dynamicScope";
 
 /** Whether an instance passes a keyword or a schema */
 export type Evaluator<I> = (instance: I) => boolean;
@@ -116,11 +131,47 @@ export type EvaluateContext<I> = {
   schema: (handle: SchemaHandle) => (instance: I, segment?: string | number) => boolean;
 
   /**
-   * Add an annotation for the instance. It's kept only if every schema it
-   * was evaluated through passes. It's undefined unless annotations are
-   * being collected, so a keyword can skip work it only does to annotate.
+   * Add an annotation for the instance. It's kept only if the keyword and
+   * every schema it was evaluated through pass. It's undefined unless
+   * annotations are being collected, so a keyword can skip work it only does
+   * to annotate.
    */
   annotate?: (value: Json) => void;
+
+  /**
+   * Whether every subschema needs to be evaluated, because errors or
+   * annotations are being collected. When it's false, a keyword can stop as
+   * soon as its result is known.
+   */
+  exhaustive: boolean;
+
+  /**
+   * Record that the keyword evaluated a property (by name) or an item (by
+   * index) of the instance. Applicators that evaluate properties or items
+   * call it after evaluating the subschema. Like annotations, marks are kept
+   * only if the keyword and every schema it was evaluated through pass.
+   *
+   * It's undefined unless a keyword in the compiled schema reads
+   * `evaluated`. While it's defined, a keyword must not stop at a passing
+   * subschema (`anyOf`, `contains`), because the subschemas it skips would
+   * have marked properties or items too. Stopping at a failure is fine.
+   */
+  markEvaluated?: (key: string | number) => void;
+
+  /**
+   * The properties or items marked so far at this instance location. Only
+   * defined for keywords that read `evaluated`.
+   */
+  evaluated?: () => ReadonlySet<string | number>;
+
+  /**
+   * The evaluator for the outermost schema in the dynamic scope with the
+   * given dynamic anchor. Only defined for keywords that read
+   * `dynamicScope`. Rules about the anchor the reference starts from, such
+   * as 2020-12's bookending or 2019-09's `$recursiveAnchor`, are up to the
+   * keyword.
+   */
+  dynamicAnchor?: (name: string) => Evaluator<I> | undefined;
 };
 
 /**
