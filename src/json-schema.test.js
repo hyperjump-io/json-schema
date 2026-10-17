@@ -134,7 +134,7 @@ describe("JsonSchema", () => {
       "https://json-schema.org/keyword/schema",
       "https://json-schema.org/keyword/unknown"
     ])("'%s' is added by default", (uri) => {
-      expect(jsonSchema.getKeyword(uri)).to.eql({ uri, shape: "data" });
+      expect(jsonSchema.getKeyword(uri)).to.include({ uri, shape: "data" });
     });
   });
 });

@@ -520,6 +520,13 @@ describe("Validator", () => {
       expect(node.data?.annotations).to.equal(undefined);
     });
 
+    test("unknown keywords are annotations", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({ foo: { bar: 1 } }));
+
+      const { node } = validator.annotate(1);
+      expect(node.data?.annotations?.get("https://json-schema.org/keyword/unknown#foo")).to.eql([{ bar: 1 }]);
+    });
+
     test("annotateJson", async () => {
       const validator = await jsonSchema.compile(await schemaFile({ properties: { foo: { title: "foo" } } }));
 

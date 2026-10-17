@@ -351,6 +351,8 @@ Done:
   annotating evaluators for plain values and ASTs, evaluation state, frames,
   plugins), the `Validator`, BASIC and DETAILED, and the runtime error
   classes, with tests that use keywords defined in the tests.
+- The unknown keyword is an annotation in dialects whose `unknownKeywords` is
+  `annotation`.
 - Keyword definitions with resolve hooks: `$schema`, unknown, `$id`,
   `$anchor`, `$dynamicAnchor`, draft-04 `id`/`$ref`, and 2019-09
   `$recursiveAnchor`. Other keywords only need shapes and value schemas, so
