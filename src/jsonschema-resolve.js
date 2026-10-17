@@ -1,5 +1,5 @@
 import * as JsonPointer from "@hyperjump/json-pointer";
-import { encodeIriFragment, resolveIri, toAbsoluteIri } from "@hyperjump/uri";
+import { encodeIriFragment, parseIri, resolveIri, toAbsoluteIri } from "@hyperjump/uri";
 import schemaKeyword from "./keywords/schema.js";
 import unknownKeyword from "./keywords/unknown.js";
 import { vocabulariesOf } from "./vocabularies.js";
@@ -289,11 +289,23 @@ class Resolver {
         baseUri: resource.uri,
         dialectUri: dialect.uri,
         setBaseUri: (uri) => {
+          let baseUri;
           try {
-            effects.baseUri = toAbsoluteIri(uri);
+            baseUri = toAbsoluteIri(uri);
           } catch (_error) {
             context.message(`'${uri}' isn't an absolute URI`);
+            return;
           }
+
+          // A document that wasn't read from the filesystem can't identify as
+          // a file. Its references would be resolved as if it were one, which
+          // would give it access to the filesystem.
+          if (parseIri(baseUri).scheme === "file" && parseIri(this.#documentUri).scheme !== "file") {
+            this.#message(`A schema that wasn't retrieved from a 'file:' URI can't be identified by one: ${baseUri}`, valueNode, "file-uri-not-allowed");
+            return;
+          }
+
+          effects.baseUri = baseUri;
         },
         addAnchor: (name) => {
           effects.anchors.push([name, valueNode]);

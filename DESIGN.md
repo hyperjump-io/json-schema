@@ -141,8 +141,12 @@ an internal meta-schema.
   `jsonSchemaResolve`.
 - Dialect schemas (meta-schemas) are for dev-time tooling, not validators.
   There's no generated "what this implementation supports" meta-schema.
+- A schema that wasn't retrieved from a `file:` URI can't be identified by
+  one, in every dialect. Its references would be resolved as if it were a
+  file, which would get around browser's rule that only files can reference
+  files. v1 had the same rule for registered schemas.
 - The resolver's own checks (misplaced `$schema`, duplicate ids and anchors,
-  invalid identifiers) are schema validation too. Every problem is a
+  invalid identifiers, `file:` identifiers) are schema validation too. Every problem is a
   `VFileMessage` with `source: "json-schema"` and a `ruleId`. Messages from a
   keyword hook use the keyword's URI as the `ruleId`.
 

@@ -335,6 +335,29 @@ describe("jsonSchemaResolve", () => {
       expect(Object.keys(document.embedded)).to.eql([baseUri]);
     });
 
+    test("a schema that wasn't retrieved from a file can't identify as one", async () => {
+      const { file, document } = await resolve(jsonSchema, `{
+        "$schema": "${dialectUri}",
+        "$id": "file:///folder/root.json",
+        "$defs": {
+          "foo": { "$id": "file:///folder/foo.json" }
+        }
+      }`);
+
+      expect(ruleIds(file)).to.eql(["file-uri-not-allowed", "file-uri-not-allowed"]);
+      expect(document.uri).to.equal(baseUri);
+    });
+
+    test("a schema retrieved from a file can identify as one", async () => {
+      const { file, document } = await resolve(jsonSchema, `{
+        "$schema": "${dialectUri}",
+        "$id": "file:///folder/root.json"
+      }`, { uri: "file:///other/schema.json" });
+
+      expect(ruleIds(file)).to.eql([]);
+      expect(document.uri).to.equal("file:///folder/root.json");
+    });
+
     test("duplicate $id", async () => {
       const { file } = await resolve(jsonSchema, `{
         "$schema": "${dialectUri}",

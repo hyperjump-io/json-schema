@@ -61,6 +61,10 @@ const supportedTags = new Set(["format-assertion"]);
  * paths. A prefix skips everything under it.
  */
 const skip = new Set([
+  // A schema that wasn't retrieved from a file can't identify as one, for
+  // security reasons
+  "|id.json|$id with file URI still resolves pointers - *nix",
+  "|id.json|$id with file URI still resolves pointers - windows"
 ]);
 
 /** @type (testCase: TestCase) => boolean */
