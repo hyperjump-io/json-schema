@@ -50,7 +50,11 @@ export class JsonSchema extends Hyperjump<JsonSchemaNode> {
    */
   getKeyword: (uri: string) => Keyword;
 
-  /** Add or replace a vocabulary */
+  /**
+   * Add or replace a vocabulary.
+   *
+   * @throws Error if a keyword name starts with `x-`
+   */
   addVocabulary: (vocabulary: Vocabulary) => void;
 
   /**
@@ -59,14 +63,24 @@ export class JsonSchema extends Hyperjump<JsonSchemaNode> {
    * only for a dialect whose meta-schema doesn't have `$vocabulary`, such as
    * draft-04 through draft-07.
    *
-   * @throws Error if the dialect is already defined. Use {@link removeDialect}
-   * first to replace it.
+   * @throws Error if the dialect is already defined (use {@link removeDialect}
+   * first to replace it) or a keyword name starts with `x-`.
    */
   addDialect: (dialect: Dialect) => void;
 
   /**
+   * Add keywords to a dialect that's defined, such as a custom keyword in the
+   * v1 dialect. Schemas that were already resolved aren't affected.
+   *
+   * @throws Error if the dialect isn't defined, it already has a keyword with
+   * one of the names, or a keyword name starts with `x-`.
+   */
+  extendDialect: (uri: string, keywords: Record<string, string>) => void;
+
+  /**
    * Build a dialect from a `$vocabulary` value and add it. Vocabularies whose
    * value is `false` are optional and are skipped if they haven't been added.
+   * Unknown keywords are annotations, as they are in 2019-09 and 2020-12.
    *
    * @throws Error if a required vocabulary hasn't been added or the dialect is
    * already defined.

@@ -23,6 +23,7 @@ import recursiveAnchorKeyword from "./keywords/draft-2019-09/recursiveAnchor.js"
 
 const dialectUri = "https://example.com/dialect";
 const legacyDialectUri = "https://example.com/legacy";
+const strictDialectUri = "https://example.com/strict";
 const baseUri = "https://example.com/schema";
 
 /** @type (jsonSchema: JsonSchema) => void */
@@ -51,7 +52,8 @@ const addTestDialects = (jsonSchema) => {
       type: "https://example.com/keyword/type",
       const: "https://example.com/keyword/const",
       notSupported: "https://example.com/keyword/not-supported"
-    }
+    },
+    unknownKeywords: "annotation"
   });
 
   jsonSchema.addDialect({
@@ -62,7 +64,18 @@ const addTestDialects = (jsonSchema) => {
       definitions: "https://example.com/keyword/defs",
       properties: "https://example.com/keyword/properties",
       type: "https://example.com/keyword/type"
-    }
+    },
+    unknownKeywords: "ignore"
+  });
+
+  jsonSchema.addDialect({
+    uri: strictDialectUri,
+    keywords: {
+      $id: idKeyword.uri,
+      $defs: "https://example.com/keyword/defs",
+      type: "https://example.com/keyword/type"
+    },
+    unknownKeywords: "error"
   });
 };
 
@@ -148,7 +161,7 @@ describe("jsonSchemaResolve", () => {
     });
 
     test("$schema is a keyword in every dialect", async () => {
-      jsonSchema.addDialect({ uri: "https://example.com/minimal", keywords: {} });
+      jsonSchema.addDialect({ uri: "https://example.com/minimal", keywords: {}, unknownKeywords: "error" });
       const { root, file } = await resolve(jsonSchema, `{ "$schema": "https://example.com/minimal" }`);
 
       expect(file.messages).to.eql([]);
@@ -162,6 +175,33 @@ describe("jsonSchemaResolve", () => {
 
       expect(keywordNode(root, "foo").keywordUri).to.equal("https://json-schema.org/keyword/unknown#foo");
       expect(at("/foo", root).type).to.equal("json-schema");
+    });
+
+    test("an unknown keyword in a dialect that doesn't allow them", async () => {
+      const { root, file } = await resolve(jsonSchema, `{ "$schema": "${strictDialectUri}", "foo": 42 }`);
+
+      expect(ruleIds(file)).to.eql(["unknown-keyword"]);
+      expect(file.messages[0].place).to.eql(keywordNode(root, "foo").position);
+      expect(keywordNode(root, "foo").keywordUri).to.equal("https://json-schema.org/keyword/unknown#foo");
+    });
+
+    test("x- keywords are allowed in a dialect that doesn't allow unknown keywords", async () => {
+      const { root, file } = await resolve(jsonSchema, `{ "$schema": "${strictDialectUri}", "x-foo": 42 }`);
+
+      expect(file.messages).to.eql([]);
+      expect(keywordNode(root, "x-foo").keywordUri).to.equal("https://json-schema.org/keyword/unknown#x-foo");
+    });
+
+    test("a misplaced $schema doesn't report keywords twice", async () => {
+      jsonSchema.addDialect({ uri: "https://example.com/strict2", keywords: {}, unknownKeywords: "error" });
+      const { file } = await resolve(jsonSchema, `{
+        "$schema": "${strictDialectUri}",
+        "$defs": {
+          "foo": { "$schema": "https://example.com/strict2", "bar": 42 }
+        }
+      }`);
+
+      expect(ruleIds(file)).to.eql(["misplaced-dialect", "unknown-keyword"]);
     });
 
     test("a keyword in the dialect that isn't supported", async () => {
@@ -537,7 +577,7 @@ describe("jsonSchemaResolve", () => {
         expect(file.messages).to.eql([]);
         expect(root).to.include({ type: "json-schema", dialectUri: baseUri });
         expect(at("/$defs/foo", root).type).to.equal("json-schema");
-        expect(await jsonSchema.getDialect(baseUri)).to.eql({ uri: baseUri, keywords: { $id: idKeyword.uri, $defs: "https://example.com/keyword/defs" } });
+        expect(await jsonSchema.getDialect(baseUri)).to.eql({ uri: baseUri, keywords: { $id: idKeyword.uri, $defs: "https://example.com/keyword/defs" }, unknownKeywords: "annotation" });
       });
 
       test("a meta-schema without $vocabulary", async () => {
@@ -589,6 +629,21 @@ describe("jsonSchemaResolve", () => {
       }`);
 
       expect(ruleIds(file)).to.eql([legacyIdKeyword.uri]);
+    });
+
+    test("unknown keywords ignored because of $ref aren't reported", async () => {
+      jsonSchema.addDialect({
+        uri: "https://example.com/strict-legacy",
+        keywords: { $ref: legacyRefKeyword.uri },
+        unknownKeywords: "error"
+      });
+      const { file } = await resolve(jsonSchema, `{
+        "$schema": "https://example.com/strict-legacy",
+        "$ref": "#",
+        "foo": 42
+      }`);
+
+      expect(file.messages).to.eql([]);
     });
 
     test("keywords ignored because of $ref aren't reported", async () => {

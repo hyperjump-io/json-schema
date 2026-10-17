@@ -1,6 +1,6 @@
 import type { Node } from "unist";
 import type { VFileMessage } from "vfile-message";
-import type { JsonErrorNode, JsonNode } from "@hyperjump/browser/json";
+import type { Json, JsonErrorNode, JsonNode } from "@hyperjump/browser/json";
 
 /**
  * The definition of a keyword. A dialect maps keyword names to these by URI.
@@ -15,6 +15,14 @@ export type Keyword = {
 
   /** Where the keyword's value contains schemas */
   shape: Shape;
+
+  /**
+   * A schema for the keyword's value, used to validate schemas. It doesn't
+   * need to describe the subschemas in the value. They're validated as
+   * schemas in their own right. Without a value schema, any value is valid.
+   */
+  // TODO: Evaluate value schemas once compiling and evaluating are implemented
+  valueSchema?: Json;
 
   /**
    * Called while a schema document is resolved, for keywords that affect how

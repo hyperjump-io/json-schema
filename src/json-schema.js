@@ -84,6 +84,7 @@ export class JsonSchema extends Hyperjump {
 
   /** @type API.JsonSchema["addVocabulary"] */
   addVocabulary(vocabulary) {
+    assertNoReservedKeywords(vocabulary.keywords);
     this.#vocabularies[vocabulary.uri] = vocabulary;
   }
 
@@ -93,8 +94,29 @@ export class JsonSchema extends Hyperjump {
     if (uri in this.#dialects) {
       throw Error(`The '${uri}' dialect is already defined. Use the 'removeDialect' function first to replace it.`);
     }
+    assertNoReservedKeywords(dialect.keywords);
 
     this.#dialects[uri] = { ...dialect, uri };
+  }
+
+  /** @type API.JsonSchema["extendDialect"] */
+  extendDialect(uri, keywords) {
+    uri = toAbsoluteIri(uri);
+    const dialect = this.#dialects[uri];
+    if (!dialect) {
+      throw Error(`The '${uri}' dialect isn't defined`);
+    }
+    assertNoReservedKeywords(keywords);
+
+    for (const name in keywords) {
+      if (name === "$schema" || name in dialect.keywords) {
+        throw Error(`The '${uri}' dialect already has a '${name}' keyword`);
+      }
+    }
+
+    // Dialects aren't changed in place so the schemas that already use one
+    // aren't affected
+    this.#dialects[uri] = { ...dialect, keywords: { ...dialect.keywords, ...keywords } };
   }
 
   /** @type API.JsonSchema["addDialectFromVocabularies"] */
@@ -112,7 +134,8 @@ export class JsonSchema extends Hyperjump {
       }
     }
 
-    const dialect = { uri, keywords };
+    /** @type Dialect */
+    const dialect = { uri, keywords, unknownKeywords: "annotation" };
     this.addDialect(dialect);
 
     return dialect;
@@ -228,3 +251,17 @@ export class JsonSchema extends Hyperjump {
     throw Error("Not implemented");
   }
 }
+
+/**
+ * Keywords that start with `x-` are reserved for schema authors. They're
+ * guaranteed to never collide with a keyword, so they must never assert.
+ *
+ * @type (keywords: Record<string, string>) => void
+ */
+const assertNoReservedKeywords = (keywords) => {
+  for (const name in keywords) {
+    if (name.startsWith("x-")) {
+      throw Error(`'${name}' can't be a keyword. Keywords starting with 'x-' are reserved for schema authors and must never assert.`);
+    }
+  }
+};

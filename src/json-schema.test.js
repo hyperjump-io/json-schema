@@ -1,6 +1,10 @@
 import { describe, test, beforeEach, expect } from "vitest";
 import { JsonSchema } from "./json-schema.js";
 
+/**
+ * @import { Dialect } from "./dialect.d.ts"
+ */
+
 describe("JsonSchema", () => {
   /** @type JsonSchema */
   let jsonSchema;
@@ -14,7 +18,12 @@ describe("JsonSchema", () => {
   });
 
   describe("dialects", () => {
-    const dialect = { uri: "https://example.com/dialect", keywords: { $id: "https://json-schema.org/keyword/id" } };
+    /** @type Dialect */
+    const dialect = {
+      uri: "https://example.com/dialect",
+      keywords: { $id: "https://json-schema.org/keyword/id" },
+      unknownKeywords: "error"
+    };
 
     test("addDialect", async () => {
       jsonSchema.addDialect(dialect);
@@ -54,8 +63,31 @@ describe("JsonSchema", () => {
         "https://example.com/vocab/optional": false
       });
 
-      expect(added).to.eql(dialect);
-      expect(await jsonSchema.getDialect(dialect.uri)).to.eql(dialect);
+      expect(added).to.eql({ ...dialect, unknownKeywords: "annotation" });
+      expect(await jsonSchema.getDialect(dialect.uri)).to.eql(added);
+    });
+
+    test("extendDialect", async () => {
+      jsonSchema.addDialect(dialect);
+      const original = await jsonSchema.getDialect(dialect.uri);
+      jsonSchema.extendDialect(dialect.uri, { foo: "https://example.com/keyword/foo" });
+
+      expect(await jsonSchema.getDialect(dialect.uri)).to.eql({
+        ...dialect,
+        keywords: { ...dialect.keywords, foo: "https://example.com/keyword/foo" }
+      });
+      expect(original).to.eql(dialect);
+    });
+
+    test("extendDialect can't replace a keyword", () => {
+      jsonSchema.addDialect(dialect);
+
+      expect(() => jsonSchema.extendDialect(dialect.uri, { $id: "https://example.com/keyword/id" })).to.throw("already has");
+      expect(() => jsonSchema.extendDialect(dialect.uri, { $schema: "https://example.com/keyword/schema" })).to.throw("already has");
+    });
+
+    test("extendDialect for a dialect that isn't defined", () => {
+      expect(() => jsonSchema.extendDialect(dialect.uri, {})).to.throw("isn't defined");
     });
 
     test("addDialectFromVocabularies with a required vocabulary that isn't supported", () => {
@@ -63,6 +95,26 @@ describe("JsonSchema", () => {
         "https://example.com/vocab/required": true
       })).to.throw("https://example.com/vocab/required");
       expect(jsonSchema.hasDialect(dialect.uri)).to.equal(false);
+    });
+  });
+
+  describe("x- keywords are reserved", () => {
+    const keywords = { "x-foo": "https://example.com/keyword/foo" };
+
+    test("addVocabulary", () => {
+      expect(() => jsonSchema.addVocabulary({ uri: "https://example.com/vocab/x", keywords })).to.throw("reserved");
+    });
+
+    test("addDialect", () => {
+      expect(() => jsonSchema.addDialect({ uri: "https://example.com/x", keywords, unknownKeywords: "error" })).to.throw("reserved");
+      expect(jsonSchema.hasDialect("https://example.com/x")).to.equal(false);
+    });
+
+    test("extendDialect", async () => {
+      jsonSchema.addDialect({ uri: "https://example.com/x", keywords: {}, unknownKeywords: "error" });
+
+      expect(() => jsonSchema.extendDialect("https://example.com/x", keywords)).to.throw("reserved");
+      expect((await jsonSchema.getDialect("https://example.com/x")).keywords).to.eql({});
     });
   });
 

@@ -156,8 +156,10 @@ class Resolver {
       return;
     }
 
-    let keywords = this.#keywords(node, dialect);
+    // Messages about this schema's keywords are discarded if the keywords
+    // turn out to be interpreted differently or ignored
     let messageCount = this.#file.messages.length;
+    let keywords = this.#keywords(node, dialect);
     let effects = this.#collectEffects(keywords, resource, dialect);
 
     // `$schema` is only allowed where a schema resource starts. Anywhere else,
@@ -167,8 +169,8 @@ class Resolver {
       this.#message("'$schema' is only allowed at the root of a schema resource. It's ignored.", $schemaNode, "misplaced-dialect");
 
       dialect = /** @type Dialect */ (parentDialect);
-      keywords = this.#keywords(node, dialect);
       messageCount = this.#file.messages.length;
+      keywords = this.#keywords(node, dialect);
       effects = this.#collectEffects(keywords, resource, dialect);
     }
 
@@ -248,6 +250,10 @@ class Resolver {
       const name = property.children[0].value;
 
       if (name !== "$schema" && !(name in dialect.keywords)) {
+        if (dialect.unknownKeywords === "error" && !name.startsWith("x-")) {
+          this.#message(`'${name}' isn't a keyword in the '${dialect.uri}' dialect`, property, "unknown-keyword");
+        }
+
         return [keywordNode, `${unknownKeyword.uri}#${name}`, this.#jsonSchema.getKeyword(unknownKeyword.uri)];
       }
 
