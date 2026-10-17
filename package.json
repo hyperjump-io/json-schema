@@ -14,7 +14,8 @@
   },
   "type": "module",
   "exports": {
-    ".": "./src/index.js"
+    ".": "./src/index.js",
+    "./v1": "./src/v1/index.js"
   },
   "scripts": {
     "lint": "oxlint",
@@ -26,6 +27,7 @@
     "@stylistic/eslint-plugin": "*",
     "@types/node": "*",
     "@vitest/coverage-v8": "*",
+    "json-schema-test-suite": "github:json-schema-org/JSON-Schema-Test-Suite#unify",
     "oxlint": "*",
     "oxlint-tsgolint": "*",
     "typedoc": "*",

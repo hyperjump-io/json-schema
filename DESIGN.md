@@ -357,6 +357,20 @@ Done:
   `$anchor`, `$dynamicAnchor`, draft-04 `id`/`$ref`, and 2019-09
   `$recursiveAnchor`. Other keywords only need shapes and value schemas, so
   they'll be added with the compile side.
+- The v1 preset (`src/v1`, `addV1`) declares the whole v1 dialect but only
+  adds the keywords that exist. The JSON-Schema-Test-Suite (its `unify`
+  branch, which will replace `main`) runs in
+  `src/v1/json-schema-test-suite.test.js`. v1 is the suite's `9999`. Each
+  test case gets its own `JsonSchema` with an in-memory `http(s):` URI scheme
+  plugin for its schema and `externalSchemas`. Each test is checked with
+  `validate`, `validateJson`, BASIC, and `annotate`. Files for keywords that
+  don't exist yet are skipped.
+- The v1 dialect includes the `propertyDependencies` proposal, and the
+  suite's proposal tests run too. `addV1` also adds `conditional`,
+  `itemPattern`, and `requireAllExcept`, but with `extendDialect` as a
+  reminder that they aren't full proposals yet. Their tests were ported from
+  v1 to `src/v1/extension-tests`. `requireAllExcept` has no tests yet. They
+  need to be written when it's implemented.
 
 Changes made to browser for this (on its `v2` branch):
 
