@@ -397,6 +397,13 @@ Done:
   `minContains`, and `maxContains` have no effect on their own. Compiled
   maps of schemas are `[name, handle]` pairs because a name like
   `__proto__` can't be a property of a plain object.
+- The meta-data and content keywords are annotations. `contentEncoding`,
+  `contentMediaType`, and `contentSchema` only annotate strings, and
+  `contentSchema` only annotates if there's a `contentMediaType`. Content
+  isn't decoded or validated.
+- The suite's annotation tests run in `src/v1/annotation-test-suite.test.js`
+  with `annotate` and `annotateJson`. Only annotation values are compared,
+  in any order, because annotations don't record the schema they came from.
 - In v1, `$dynamicRef` is the name of a dynamic anchor, not a URI. It uses
   the outermost schema in the dynamic scope with that anchor, with no
   lexical fallback. If none is in scope, evaluation throws, because that's a

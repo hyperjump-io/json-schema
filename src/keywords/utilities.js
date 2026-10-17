@@ -1,7 +1,28 @@
 /**
- * @import { CompileContext, InstanceOps, SchemaHandle } from "../keyword.d.ts"
+ * @import { CompileContext, InstanceOps, Keyword, SchemaHandle } from "../keyword.d.ts"
  * @import { JsonSchemaKeywordNode, JsonSchemaNode } from "../schema-ast.d.ts"
  */
+
+/**
+ * A keyword whose value is an annotation for every instance it applies to,
+ * like `title`. It never fails.
+ *
+ * @type (uri: string) => Keyword
+ */
+export const annotationKeyword = (uri) => ({
+  uri: uri,
+  shape: "data",
+  evaluate(value, { annotate }) {
+    if (annotate === undefined) {
+      return () => true;
+    }
+
+    return () => {
+      annotate(value);
+      return true;
+    };
+  }
+});
 
 /**
  * Compile each schema in an array

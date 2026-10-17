@@ -46,6 +46,16 @@ import refKeyword from "../keywords/ref.js";
 import dynamicRefKeyword from "../keywords/dynamicRef.js";
 import unevaluatedPropertiesKeyword from "../keywords/unevaluatedProperties.js";
 import unevaluatedItemsKeyword from "../keywords/unevaluatedItems.js";
+import titleKeyword from "../keywords/title.js";
+import descriptionKeyword from "../keywords/description.js";
+import defaultKeyword from "../keywords/default.js";
+import deprecatedKeyword from "../keywords/deprecated.js";
+import examplesKeyword from "../keywords/examples.js";
+import readOnlyKeyword from "../keywords/readOnly.js";
+import writeOnlyKeyword from "../keywords/writeOnly.js";
+import contentEncodingKeyword from "../keywords/contentEncoding.js";
+import contentMediaTypeKeyword from "../keywords/contentMediaType.js";
+import contentSchemaKeyword from "../keywords/contentSchema.js";
 
 /**
  * @import { Keyword } from "../keyword.d.ts"
@@ -191,7 +201,17 @@ const keywords = [
   refKeyword,
   dynamicRefKeyword,
   unevaluatedPropertiesKeyword,
-  unevaluatedItemsKeyword
+  unevaluatedItemsKeyword,
+  titleKeyword,
+  descriptionKeyword,
+  defaultKeyword,
+  deprecatedKeyword,
+  examplesKeyword,
+  readOnlyKeyword,
+  writeOnlyKeyword,
+  contentEncodingKeyword,
+  contentMediaTypeKeyword,
+  contentSchemaKeyword
 ];
 
 /** @type API.addV1 */

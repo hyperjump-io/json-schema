@@ -1,13 +1,12 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, test, beforeAll, expect } from "vitest";
-import { toAbsoluteIri } from "@hyperjump/uri";
 import { JsonSchema } from "../json-schema.js";
-import { addV1, v1DialectUri } from "./index.js";
+import { addV1 } from "./index.js";
+import { MemoryUriSchemePlugin, isCompatible, isSkipped } from "./test-suite.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
- * @import { UriSchemePlugin } from "@hyperjump/browser"
  * @import { Validator } from "../json-schema.d.ts"
  */
 
@@ -53,12 +52,6 @@ testDirectories["extension-tests/"] = join(import.meta.dirname, "extension-tests
 
 const testCaseUri = "https://test-suite.json-schema.org/";
 
-/**
- * The suite's number for v1. It's in the spec but not released, which the
- * suite calls 9999.
- */
-const version = 9999;
-
 /** In v1, `format` asserts by default */
 const supportedTags = new Set(["format-assertion"]);
 
@@ -68,8 +61,6 @@ const supportedTags = new Set(["format-assertion"]);
  */
 const skip = new Set([
   // Keywords that aren't implemented yet
-  "|content.json",
-  "|default.json",
   "|format-date-time.json",
   "|format-date.json",
   "|format-duration.json",
@@ -88,59 +79,8 @@ const skip = new Set([
   "|format-uri-reference.json",
   "|format-uri-template.json",
   "|format-uri.json",
-  "|format-uuid.json",
-
-  // Test cases that need description, which isn't implemented yet
-  "|ref.json|Recursive references between schemas",
-  "|dynamicRef.json|strict-tree schema, guards against misspelled properties",
-  "|dynamicRef.json|tests for implementation dynamic anchor and reference link",
-  "|dynamicRef.json|$ref and $dynamicAnchor are independent of order - $defs first",
-  "|dynamicRef.json|$ref and $dynamicAnchor are independent of order - $ref first"
+  "|format-uuid.json"
 ]);
-
-/** @type (path: string[]) => boolean */
-const shouldSkip = (path) => {
-  let key = "";
-  for (const segment of path) {
-    key = `${key}|${segment}`;
-    if (skip.has(key)) {
-      return true;
-    }
-  }
-  return false;
-};
-
-/**
- * Whether a test case's `compatibility` includes {@link version}. This is
- * the algorithm from the suite's README.
- *
- * @type (compatibility: string | undefined) => boolean
- */
-const isCompatible = (compatibility) => {
-  if (compatibility === undefined) {
-    return true;
-  }
-
-  let isValid = true;
-  for (const constraint of compatibility.split(",")) {
-    const [, operator, constraintVersion] = /** @type RegExpExecArray */ (/^(<=|=)?(\d+)$/.exec(constraint));
-    const releaseVersion = Number(constraintVersion);
-
-    if (operator === "<=") {
-      isValid = version <= releaseVersion;
-    } else if (operator === "=") {
-      isValid = version === releaseVersion;
-    } else {
-      isValid = version >= releaseVersion;
-    }
-
-    if (version <= releaseVersion) {
-      break;
-    }
-  }
-
-  return isValid;
-};
 
 /** @type (testCase: TestCase) => boolean */
 const appliesToV1 = (testCase) => {
@@ -156,42 +96,6 @@ const appliesToV1 = (testCase) => {
 
   return true;
 };
-
-/**
- * Serves schemas from memory instead of `http(s):`, so the suite doesn't
- * need a server. The suite's schemas don't have `$schema`, so they're served
- * as v1.
- *
- * @implements UriSchemePlugin
- */
-class MemoryUriSchemePlugin {
-  /** @type Record<string, Json> */
-  #schemas;
-
-  /**
-   * @param {Record<string, Json>} schemas
-   */
-  constructor(schemas) {
-    this.schemes = ["http", "https"];
-
-    this.#schemas = schemas;
-  }
-
-  /** @type UriSchemePlugin["retrieve"] */
-  async retrieve(uri) {
-    const id = toAbsoluteIri(uri);
-    if (!(id in this.#schemas)) {
-      throw Error(`'${id}' isn't in the test case`);
-    }
-
-    const response = new Response(JSON.stringify(this.#schemas[id]), {
-      headers: { "Content-Type": `application/schema+json; schema="${v1DialectUri}"` }
-    });
-    Object.defineProperty(response, "url", { value: id });
-
-    return response;
-  }
-}
 
 /**
  * Test files by name, with the test cases that apply to v1
@@ -235,7 +139,7 @@ describe("JSON-Schema-Test-Suite v1", () => {
           let validator;
 
           beforeAll(async () => {
-            if (shouldSkip([file, testCase.description])) {
+            if (isSkipped(skip, [file, testCase.description])) {
               return;
             }
 
@@ -253,7 +157,7 @@ describe("JSON-Schema-Test-Suite v1", () => {
           });
 
           for (const { description, data, valid } of testCase.tests) {
-            test.skipIf(shouldSkip([file, testCase.description, description]))(description, () => {
+            test.skipIf(isSkipped(skip, [file, testCase.description, description]))(description, () => {
               // Every way of evaluating should agree
               expect({
                 validate: validator.validate(data),
