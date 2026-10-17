@@ -115,6 +115,14 @@ export class JsonSchema extends Hyperjump<JsonSchemaNode> {
    */
   compile: (uri: string) => Promise<Validator>;
 
+  /**
+   * Restore a validator from {@link Validator.serialize}. It doesn't
+   * retrieve anything, but it needs the same keywords to have been added.
+   *
+   * @throws Error if a keyword in the compiled schema hasn't been added.
+   */
+  restoreValidator: (compiled: Json) => Validator;
+
   /** A shortcut for `(await compile(uri)).validate(instance, options)` */
   validate: <F extends OutputFormat = "FLAG">(uri: string, instance: Json, options?: ValidationOptions<F>) => Promise<ValidationResult<F>>;
 
@@ -174,10 +182,28 @@ export type Validator = {
    * nodes, so the syntax error is the only error reported for them.
    */
   annotateJson: <F extends OutputFormat = "FLAG">(json: string, options?: ValidationOptions<F>) => AnnotationResult<F>;
+
+  /**
+   * The compiled schema as JSON, to be restored with
+   * {@link JsonSchema.restoreValidator} without compiling again.
+   */
+  serialize: () => Json;
 };
 
 export type ValidationOptions<F extends OutputFormat = OutputFormat> = {
   output?: F;
+
+  /**
+   * Plugins to run during this evaluation. The first evaluation with a set
+   * of plugins is slower because the validator is specialized for it.
+   */
+  plugins?: EvaluationPlugin[];
+};
+
+/** Observes an evaluation. */
+// TODO: Design the hooks
+export type EvaluationPlugin = {
+  uri: string;
 };
 
 /**

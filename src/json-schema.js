@@ -231,6 +231,11 @@ export class JsonSchema extends Hyperjump {
     throw Error("Not implemented");
   }
 
+  /** @type API.JsonSchema["restoreValidator"] */
+  restoreValidator(_compiled) {
+    throw Error("Not implemented");
+  }
+
   /** @type API.JsonSchema["validate"] */
   async validate(_uri, _instance, _options) {
     throw Error("Not implemented");

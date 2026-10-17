@@ -1,12 +1,22 @@
 import type { Node } from "unist";
 import type { VFileMessage } from "vfile-message";
-import type { Json, JsonErrorNode, JsonNode } from "@hyperjump/browser/json";
+import type { Json, JsonErrorNode, JsonNode, JsonType } from "@hyperjump/browser/json";
+import type { JsonSchemaNode } from "./schema-ast.d.ts";
+import type { Dialect } from "./dialect.d.ts";
+import type { JsonSchema } from "./json-schema.d.ts";
 
 /**
  * The definition of a keyword. A dialect maps keyword names to these by URI.
+ *
+ * Keywords are stateless so one definition can be shared by every
+ * `JsonSchema` instance and every dialect. Evaluating a keyword has two
+ * steps. `compile` turns the keyword's value into data once per
+ * schema. `evaluate` turns that data into a function each time a
+ * validator is specialized for a kind of instance and output.
+ *
+ * `C` is the type of the compiled value.
  */
-// TODO: Compiling and evaluating keywords
-export type Keyword = {
+export type Keyword<C extends Json = Json> = {
   /**
    * Identifies the keyword independent of its name in any dialect. Use a
    * domain you control to avoid conflicts.
@@ -34,6 +44,112 @@ export type Keyword = {
    * keywords doesn't matter.
    */
   resolve?: (valueNode: JsonNode<{ type: "json" }, JsonErrorNode> | JsonErrorNode, context: ResolveContext) => void;
+
+  /**
+   * Turn the keyword's value into data the keyword can be evaluated with.
+   * This is where subschemas are compiled and references are retrieved. The
+   * result must be JSON so a compiled schema can be serialized. Without it,
+   * the compiled value is the keyword's value.
+   */
+  compile?(valueNode: JsonSchemaNode, context: CompileContext): C | Promise<C>;
+
+  /**
+   * Build the function that evaluates the keyword. It's called once for
+   * each specialization of a validator, not for each instance, so do any
+   * work that doesn't depend on the instance here.
+   *
+   * The evaluator returns whether the instance is valid. Without
+   * `evaluate`, the keyword has no effect on evaluation, like `$id`.
+   */
+  evaluate?<I>(compiled: C, context: EvaluateContext<I>): Evaluator<I>;
+};
+
+/** Whether an instance passes a keyword or a schema */
+export type Evaluator<I> = (instance: I) => boolean;
+
+/**
+ * Identifies a compiled schema. It's the schema's canonical URI.
+ */
+export type SchemaHandle = string;
+
+export type CompileContext = {
+  /** The instance compiling the schema */
+  jsonSchema: JsonSchema;
+
+  /**
+   * The schema the keyword is in. Use it to find sibling keywords, such as
+   * `properties` for `additionalProperties`.
+   */
+  schemaNode: JsonSchemaNode;
+
+  /** The dialect of the schema the keyword is in */
+  dialect: Dialect;
+
+  /**
+   * The keyword's name in the schema. Unknown keywords share one definition
+   * and use this to tell themselves apart.
+   */
+  keywordName: string;
+
+  /**
+   * Compile a subschema, or the schema a URI identifies, which is retrieved
+   * if necessary. A schema is only compiled once, so schemas that refer to
+   * each other are fine.
+   */
+  compileSchema: (schema: JsonSchemaNode | string) => Promise<SchemaHandle>;
+};
+
+/**
+ * `I` is the kind of instance the validator is specialized for. It's `Json`
+ * for `validate` and a JSON AST node for the other methods. Keywords don't
+ * need to know which. They use `instance` to look at it.
+ */
+export type EvaluateContext<I> = {
+  instance: InstanceOps<I>;
+
+  /**
+   * Get the evaluator for a compiled schema. Pass `segment` when evaluating
+   * a property or item of the instance (`properties`, `items`) so errors and
+   * annotations get the right instance location. Leave it out when
+   * evaluating the same instance (`allOf`, `$ref`).
+   */
+  schema: (handle: SchemaHandle) => (instance: I, segment?: string | number) => boolean;
+
+  /**
+   * Add an annotation for the instance. It's kept only if every schema it
+   * was evaluated through passes. It's undefined unless annotations are
+   * being collected, so a keyword can skip work it only does to annotate.
+   */
+  annotate?: (value: Json) => void;
+};
+
+/**
+ * Operations for looking at an instance without knowing how it's
+ * represented. In a tree from an error-tolerant parse, values that couldn't
+ * be parsed (`json-missing` and `json-invalid` nodes) don't have a type.
+ * Keywords that check the type first skip them, so the syntax error is the
+ * only error reported for them.
+ */
+// TODO: Benchmark whether sharing keyword code between kinds of instances makes evaluation slower
+export type InstanceOps<I> = {
+  /** Undefined for a value that couldn't be parsed */
+  typeOf: (instance: I) => JsonType | undefined;
+
+  /** The instance as a JS value. This is a copy for an array or object node. */
+  value: (instance: I) => Json;
+
+  /** The number of items in an array or properties in an object */
+  length: (instance: I) => number;
+
+  /** Whether an object has a property, even one whose value is missing */
+  has: (instance: I, name: string) => boolean;
+
+  /** A property of an object or an item of an array */
+  get: (instance: I, key: string | number) => I | undefined;
+
+  entries: (instance: I) => Iterable<[string, I]>;
+
+  items: (instance: I) => Iterable<I>;
 };
 
 /**

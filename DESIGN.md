@@ -23,8 +23,8 @@ written by hand and have JSDoc explaining the details.
 ## Architecture
 
 ```text
-text ─ rejsonParse ─▶ JSON AST ─ jsonSchemaResolve ─▶ Schema AST ─ (schema validation) ─▶ compile ─▶ evaluate
-       (browser)                  (async)
+text ─ rejsonParse ─▶ JSON AST ─ jsonSchemaResolve ─▶ Schema AST ─ (schema validation) ─▶ compile ─▶ IR ─ specialize ─▶ closures
+       (browser)                  (async)                                                  (async)         (sync, lazy)
 ```
 
 - `JsonSchema` extends browser's `Hyperjump<JsonSchemaNode>`, so the same
@@ -161,24 +161,98 @@ Designed but not implemented. The methods throw "Not implemented".
 - Extra information for the language server (schema locations, evaluated
   branches) will come from evaluation plugins.
 
+## Compile and evaluate (`src/keyword.d.ts`)
+
+Designed but not implemented. Requirements: fast on plain JS values, exact
+error locations, and extensibility (user keywords and plugins can run
+arbitrary code) can't be traded away for speed.
+
+There are two phases:
+
+1. **Compile** (async, once per `Validator`). Walk the schema AST from the
+   entry URI, retrieving referenced schemas with `get`. The result is an IR:
+   a table of schema canonical URI to a boolean or a list of
+   `[keywordUri, absoluteKeywordLocation, compiledValue]`, plus each schema's
+   resource. Subschemas are referenced by URI, so cycles are fine. It's v1's
+   compiled AST, but built from schema AST nodes. All I/O happens here.
+2. **Specialize** (sync, lazy). Turn the IR into closures for one combination
+   of instance representation (plain JS values for `validate`, AST nodes for
+   everything else), mode (flag, collect errors, or annotate), and plugin
+   set. Each combination is built the first time it's needed and cached on
+   the `Validator`. No `eval`.
+
+The IR is where optimization passes can go later. It's JSON, so a compiled
+schema can be serialized (`Validator.serialize`,
+`JsonSchema.restoreValidator`). That means a keyword's compiled value must be
+JSON.
+
+Keywords:
+
+- `compile(valueNode, context)` returns the compiled value. Without it, the
+  compiled value is the keyword's value. `context.compileSchema` compiles a
+  subschema node or a URI and returns a handle (the canonical URI). Sibling
+  keywords are found through `context.schemaNode`.
+- `evaluate(compiled, context)` returns `(instance) => boolean`. It runs once
+  per specialization, so instance-independent work goes there. A keyword
+  without `evaluate` has no effect on evaluation (`$id`, `$anchor`).
+- Keywords are written once for every instance representation. They look at
+  instances through `context.instance` (`InstanceOps`: `typeOf`, `value`,
+  `length`, `has`, `get`, `entries`, `items`), which is fixed for a
+  specialization. `typeOf` is undefined for `json-missing` and
+  `json-invalid` nodes, and `has` is true for a property whose value is
+  missing. That's how keywords get the error-tolerance rules without extra
+  code.
+- Applicators evaluate subschemas through `context.schema(handle)(instance,
+  segment)`. The core tracks instance location, keyword location (following
+  references), and which AST node to annotate, so keywords never build
+  pointers. In flag mode, the segment is ignored.
+- `context.annotate` is only defined when annotations are being collected.
+  Annotations are buffered per schema evaluation and kept only if the schema
+  passes.
+- Unknown keywords: the core looks up the definition by `keywordUri` without
+  its fragment and passes the property name as `context.keywordName`. The
+  unknown keyword's `compile` uses `context.dialect.unknownKeywords` to decide
+  whether it's an annotation.
+
+Output:
+
+- FLAG runs the plain closures. Nothing is allocated.
+- BASIC and DETAILED run in flag mode first. Only if the instance is invalid
+  is it evaluated again with the collect-errors specialization, so valid
+  instances never pay for error collection. This assumes evaluation is pure.
+- `validateJson` and `annotateJson` parse with browser's error-tolerant
+  `fromJson` and then evaluate the AST. Validating while parsing is a
+  possible optimization later. The two-phase design doesn't rule it out.
+
+Plugins are passed per call (`ValidationOptions.plugins`). Each distinct
+plugin set gets its own specialization, so plugins cost nothing when they
+aren't used and evaluating with no plugins has no hook wrappers at all.
+
+Cross-cutting keywords (`unevaluatedProperties`, `unevaluatedItems`,
+`$dynamicRef`, `$recursiveRef`) declare what they need, such as tracking
+evaluated properties or the dynamic scope, and the specializer only turns on
+that tracking when a keyword in the IR asks for it.
+
+Sharing one keyword implementation between representations might make call
+sites polymorphic, because V8 may share type feedback between closures
+created from the same code. This needs a benchmark once the v1 keywords exist.
+If it's a problem, keywords could optionally provide a separate evaluator for
+plain values. That would be an addition to the interface, not a redesign.
+
 ## Open questions
 
-- **Compile and evaluate.** The next big design. There's an exploratory
-  discussion (not a plan) about lowering schemas to an IR, running
-  optimization passes, and generating closures (no `eval`), with source-map
-  style provenance for error locations and keywords and plugins declaring what
-  they observe so the optimizer can respect them. Requirements: fast on plain
-  JS values, exact error locations, and extensibility (user keywords and
-  plugins can run arbitrary code) can't be traded away for speed. It needs to
-  evaluate both plain values (`validate`) and ASTs (`annotate`), probably as
-  separate specializations of the same compiled schema.
 - **Where keywords get their dependencies.** From a context argument
-  (stateless, shareable keywords; current lean) or constructor injection
-  (matches browser's plugins).
-- **Evaluating unknown keywords.** Their `keywordUri` is
-  `…/unknown#<name>`, but the definition is registered as `…/unknown`.
+  (stateless, shareable keywords; current lean, and what `CompileContext`
+  does) or constructor injection (matches browser's plugins).
 - **Which dialect value schemas are written in.** Probably v1.
-- **Evaluation plugins and custom output formats.** Not designed yet.
+- **Evaluation plugin hooks and custom output formats.** Plugins are per call,
+  but the hooks aren't designed. Output formats are probably plugins plus a
+  result builder.
+- **How cross-cutting keywords declare their needs.** Including how
+  `properties`, `items`, and the other applicators report what they
+  evaluated, and how `$dynamicRef` gets the dynamic scope.
+- **Error messages.** `ValidationError` needs a `reason`. Where keywords
+  provide it isn't decided.
 
 ## Status
 
@@ -187,6 +261,7 @@ Done:
 - Project setup (`oxlint`, `vitest`, `tsc` with declaration files checked,
   `typedoc`).
 - Validation API types.
+- Keyword compile and evaluate types, and the two-phase design.
 - Schema AST, keyword, and dialect types.
 - `jsonSchemaResolve`, `JsonSchema` registries, and the schema media type
   plugin, with tests.
@@ -207,10 +282,12 @@ Changes made to browser for this (on its `v2` branch):
 
 ## Plan
 
-1. Design compile and evaluate: the keyword compile interface, evaluation
-   plugins, and output formats.
-2. Implement the core and the v1 keywords (shapes and value schemas) and a v1
-   preset. Run the JSON-Schema-Test-Suite.
+1. Finish designing evaluation: plugin hooks, output formats, and how
+   cross-cutting keywords declare what they need.
+2. Implement compile, specialize, the v1 keywords (shapes, value schemas,
+   compile, and evaluate), and a v1 preset. Run the JSON-Schema-Test-Suite.
+   Benchmark whether sharing keyword code between plain values and ASTs slows
+   down `validate`.
 3. Schema validation with value schemas.
 4. Presets for 2020-12, 2019-09, and draft-04 through draft-07. Move the
    `$vocabulary` support into the 2019-09 and 2020-12 presets as a hook the
