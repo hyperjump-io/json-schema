@@ -1,0 +1,236 @@
+import * as JsonPointer from "@hyperjump/json-pointer";
+import { toAbsoluteIri } from "@hyperjump/uri";
+import { jsonValue, pointerGet } from "@hyperjump/browser/json";
+
+/**
+ * @import { Json, JsonErrorNode } from "@hyperjump/browser/json"
+ * @import { JsonSchema } from "./json-schema.d.ts"
+ * @import { CompileContext } from "./keyword.d.ts"
+ * @import { JsonSchemaDocumentNode, JsonSchemaNode } from "./schema-ast.d.ts"
+ */
+
+/**
+ * A keyword in a compiled schema. `steps` has the path from the keyword to a
+ * subschema in its value, by the subschema's canonical URI, for the
+ * subschemas whose canonical URI isn't under the keyword's, such as one with
+ * an `$id`.
+ *
+ * @typedef {[keywordUri: string, absoluteKeywordLocation: string, compiled: Json] | [keywordUri: string, absoluteKeywordLocation: string, compiled: Json, steps: Record<string, string>]} CompiledKeyword
+ */
+
+/**
+ * A compiled schema is a boolean or its keywords, in the order they're
+ * evaluated, and the URI of the schema resource it belongs to.
+ *
+ * @typedef {boolean | { resource: string; keywords: CompiledKeyword[] }} CompiledSchema
+ */
+
+/**
+ * A compiled schema and everything it references. This is the IR. It's JSON
+ * so it can be serialized.
+ *
+ * - `uri`: The schema evaluation starts from
+ * - `schemas`: Every compiled schema by canonical URI
+ * - `resources`: The dynamic anchors of every schema resource a compiled
+ *   schema belongs to, mapped to the schemas they identify
+ *
+ * @typedef {{
+ *   uri: string;
+ *   schemas: Record<string, CompiledSchema>;
+ *   resources: Record<string, { dynamicAnchors: Record<string, string> }>;
+ * }} CompiledSchemas
+ */
+
+/** @type (jsonSchema: JsonSchema, uri: string) => Promise<CompiledSchemas> */
+export const compile = async (jsonSchema, uri) => {
+  const compiler = new Compiler(jsonSchema);
+  return compiler.compile(uri);
+};
+
+/**
+ * The keyword URI of an unknown keyword has the keyword's name as its
+ * fragment, but the definition is registered without it.
+ *
+ * @type (keywordUri: string) => string
+ */
+export const keywordDefinitionUri = (keywordUri) => {
+  const fragmentIndex = keywordUri.indexOf("#");
+  return fragmentIndex === -1 ? keywordUri : keywordUri.slice(0, fragmentIndex);
+};
+
+class Compiler {
+  /** @type JsonSchema */
+  #jsonSchema;
+
+  /** @type CompiledSchemas["schemas"] */
+  #schemas;
+
+  /** @type CompiledSchemas["resources"] */
+  #resources;
+
+  /**
+   * @param {JsonSchema} jsonSchema
+   */
+  constructor(jsonSchema) {
+    this.#jsonSchema = jsonSchema;
+    this.#schemas = {};
+    this.#resources = {};
+  }
+
+  /** @type (uri: string) => Promise<CompiledSchemas> */
+  async compile(uri) {
+    const handle = await this.#compileUri(uri);
+    return { uri: handle, schemas: this.#schemas, resources: this.#resources };
+  }
+
+  /** @type (uri: string, referencedFrom?: string) => Promise<string> */
+  async #compileUri(uri, referencedFrom) {
+    const node = await this.#jsonSchema.get(uri, referencedFrom === undefined ? undefined : { referencedFrom });
+    return this.#compileNode(node);
+  }
+
+  /** @type (node: JsonSchemaNode) => Promise<string> */
+  async #compileNode(node) {
+    if (node.type === "reference") {
+      return this.#compileUri(node.href, toAbsoluteIri(node.location));
+    } else if (node.type !== "json-schema") {
+      throw Error(`No schema found at '${node.location}'`);
+    }
+
+    const handle = node.location;
+    if (handle in this.#schemas) {
+      return handle;
+    }
+
+    // A placeholder so schemas that refer to each other are only compiled
+    // once
+    this.#schemas[handle] = false;
+
+    const resourceUri = toAbsoluteIri(handle);
+    await this.#compileResource(resourceUri);
+
+    if (node.jsonType === "boolean") {
+      this.#schemas[handle] = node.value;
+      return handle;
+    } else if (node.jsonType !== "object") {
+      throw Error(`No schema found at '${handle}'`);
+    }
+
+    const dialect = await this.#jsonSchema.getDialect(node.dialectUri);
+
+    /** @type CompiledKeyword[] */
+    const keywords = [];
+
+    /** @type CompiledKeyword[] */
+    const readsEvaluated = [];
+
+    for (const property of node.children) {
+      const [nameNode, valueNode] = property.children;
+      const keywordUri = /** @type string */ (property.keywordUri);
+      const keyword = this.#jsonSchema.getKeyword(keywordDefinitionUri(keywordUri));
+      const keywordLocation = JsonPointer.append(nameNode.value, handle);
+
+      /** @type Record<string, string> | undefined */
+      let steps;
+      /** @type Map<unknown, string> | undefined */
+      let paths;
+
+      /** @type CompileContext */
+      const context = {
+        jsonSchema: this.#jsonSchema,
+        schemaNode: node,
+        dialect: dialect,
+        keywordName: nameNode.value,
+        compileSchema: async (schema) => {
+          if (typeof schema === "string") {
+            return this.#compileUri(schema, resourceUri);
+          }
+
+          const subschemaHandle = await this.#compileNode(schema);
+          if (!subschemaHandle.startsWith(`${keywordLocation}/`)) {
+            paths ??= subschemaPaths(valueNode);
+            const step = paths.get(schema);
+            if (step !== undefined) {
+              steps ??= {};
+              steps[subschemaHandle] = step;
+            }
+          }
+
+          return subschemaHandle;
+        }
+      };
+
+      const compiled = keyword.compile
+        ? await keyword.compile(valueNode, context)
+        : jsonValue(valueNode);
+
+      /** @type CompiledKeyword */
+      const compiledKeyword = steps === undefined
+        ? [keywordUri, keywordLocation, compiled]
+        : [keywordUri, keywordLocation, compiled, steps];
+
+      // Keywords that read which properties or items were evaluated have to
+      // be evaluated after the keywords that evaluate them
+      if (keyword.reads?.includes("evaluated")) {
+        readsEvaluated.push(compiledKeyword);
+      } else {
+        keywords.push(compiledKeyword);
+      }
+    }
+
+    this.#schemas[handle] = { resource: resourceUri, keywords: [...keywords, ...readsEvaluated] };
+    return handle;
+  }
+
+  /**
+   * Compile a resource's dynamic anchors. Evaluation might need them
+   * whenever it enters the resource, and nothing can be retrieved then.
+   *
+   * @type (uri: string) => Promise<void>
+   */
+  async #compileResource(uri) {
+    if (uri in this.#resources) {
+      return;
+    }
+
+    /** @type Record<string, string> */
+    const dynamicAnchors = {};
+    this.#resources[uri] = { dynamicAnchors };
+
+    const resource = /** @type JsonSchemaDocumentNode */ (await this.#jsonSchema.getDocument(uri, { referencedFrom: uri }));
+    const root = /** @type JsonSchemaNode */ (resource.children[0]);
+    for (const name in resource.dynamicAnchors) {
+      const pointer = resource.dynamicAnchors[name];
+      dynamicAnchors[name] = await this.#compileNode(/** @type JsonSchemaNode */ (pointerGet(pointer, root)));
+    }
+  }
+}
+
+/**
+ * The path to each schema in a keyword's value. Schemas are where the search
+ * stops, so it only covers the keyword's own structure.
+ *
+ * @type (valueNode: JsonSchemaNode) => Map<unknown, string>
+ */
+const subschemaPaths = (valueNode) => {
+  /** @type Map<unknown, string> */
+  const paths = new Map();
+
+  /** @type (node: JsonSchemaNode | JsonErrorNode, path: string) => void */
+  const walk = (node, path) => {
+    if (node.type !== "json") {
+      paths.set(node, path);
+    } else if (node.jsonType === "array") {
+      node.children.forEach((itemNode, index) => {
+        walk(itemNode, JsonPointer.append(`${index}`, path));
+      });
+    } else if (node.jsonType === "object") {
+      for (const property of node.children) {
+        walk(property.children[1], JsonPointer.append(property.children[0].value, path));
+      }
+    }
+  };
+  walk(valueNode, "");
+
+  return paths;
+};

@@ -135,7 +135,7 @@ an internal meta-schema.
 
 ## Validation API (`src/json-schema.d.ts`)
 
-Designed but not implemented. The methods throw "Not implemented".
+Implemented in `src/validator.js`.
 
 - `compile(uri)` returns a `Validator` with `validate`, `validateJson`,
   `annotate`, and `annotateJson`. `JsonSchema` has the same four as
@@ -163,7 +163,8 @@ Designed but not implemented. The methods throw "Not implemented".
 
 ## Compile and evaluate (`src/keyword.d.ts`)
 
-Designed but not implemented. Requirements: fast on plain JS values, exact
+Implemented in `src/compile.js` (the IR) and `src/specialize.js`, with the
+instance operations in `src/instance.js`. Requirements: fast on plain JS values, exact
 error locations, and extensibility (user keywords and plugins can run
 arbitrary code) can't be traded away for speed.
 
@@ -206,6 +207,14 @@ Keywords:
   segment)`. The core tracks instance location, keyword location (following
   references), and which AST node to annotate, so keywords never build
   pointers. In flag mode, the segment is ignored.
+  The step from a keyword to a subschema comes from their canonical URIs. A
+  subschema in the keyword's value whose URI isn't under the keyword's (it has
+  an `$id`) has its step recorded in the IR at compile time instead.
+- Evaluation state (frames, locations, dynamic scope, plugins) lives in the
+  specialization's closure instead of being passed through every call. An
+  evaluation started from inside another one, such as by a plugin, saves the
+  outer one's state and restores it. The fastest specialization doesn't use
+  any state, so it doesn't save anything.
 - `context.annotate` is only defined when annotations are being collected.
   Annotations are buffered in frames (see "Evaluation state").
 - Unknown keywords: the core looks up the definition by `keywordUri` without
@@ -290,8 +299,8 @@ objects the caller reads results from afterwards.
 - Validators are specialized on whether there are plugins, not on which
   ones. Plugins are often created fresh for each call, so a cache keyed by
   plugin set would miss every time. The instrumented specialization loops
-  over the call's plugins grouped by hook, like v1's `pluginHooks`. That
-  makes at most four specializations per representation: fast,
+  over the call's plugins and calls the hooks they have. Grouping them by
+  hook, like v1's `pluginHooks`, is a possible optimization. That makes at most four specializations per representation: fast,
   instrumented, annotate, and annotate with plugins (annotate is AST only).
 
 ### Output formats
@@ -299,7 +308,8 @@ objects the caller reads results from afterwards.
 - FLAG is built in. It runs the fast closures and allocates nothing.
 - Every other format is an `OutputFormatDefinition` registered with
   `addOutputFormat` and typed through the `OutputFormats` interface. It
-  returns a plugin and an `output(valid)` function for each evaluation. BASIC
+  returns a plugin and an `output(valid, syntaxErrors)` function for each
+  evaluation, so every format can include syntax errors. BASIC
   and DETAILED are registered by default. The output format being developed
   for the next spec release will be another one.
 - Without user plugins, an instance is evaluated with the fast closures
@@ -337,6 +347,10 @@ Done:
 - Schema AST, keyword, and dialect types.
 - `jsonSchemaResolve`, `JsonSchema` registries, and the schema media type
   plugin, with tests.
+- Compile (the IR, serialization), specialize (fast, instrumented, and
+  annotating evaluators for plain values and ASTs, evaluation state, frames,
+  plugins), the `Validator`, BASIC and DETAILED, and the runtime error
+  classes, with tests that use keywords defined in the tests.
 - Keyword definitions with resolve hooks: `$schema`, unknown, `$id`,
   `$anchor`, `$dynamicAnchor`, draft-04 `id`/`$ref`, and 2019-09
   `$recursiveAnchor`. Other keywords only need shapes and value schemas, so
@@ -351,22 +365,23 @@ Changes made to browser for this (on its `v2` branch):
   document.
 - A file's media type uses the longest matching extension.
 - `content-type` v3, with the parsed type validated.
+- `getDocument` gets the document a URI identifies, for what it has beyond
+  its values. Compiling uses it for a resource's dynamic anchors.
+- `jsonValue` supports arrays and objects. `Hyperjump.value` still doesn't,
+  because it would need to follow references.
 
 ## Plan
 
-1. Implement compile, specialize, the v1 keywords (shapes, value schemas,
-   compile, and evaluate), and a v1 preset. Run the JSON-Schema-Test-Suite.
-   Benchmark whether sharing keyword code between plain values and ASTs slows
-   down `validate`.
+1. Implement the v1 keywords (shapes, value schemas, compile, and evaluate)
+   and a v1 preset. Run the JSON-Schema-Test-Suite. Benchmark whether sharing
+   keyword code between plain values and ASTs slows down `validate`.
 2. Schema validation with value schemas.
 3. Presets for 2020-12, 2019-09, and draft-04 through draft-07. Move the
    `$vocabulary` support into the 2019-09 and 2020-12 presets as a hook the
    core doesn't need.
-4. Runtime classes for `ValidationError`, `DetailedValidationError`, and
-   `InvalidSchemaError`. They're only declared so far.
-5. A registry for schemas that aren't retrieved by URI (deferred; schemas come
+4. A registry for schemas that aren't retrieved by URI (deferred; schemas come
    from `file:` and `http(s):` for now).
-6. Later: annotations, bundling, OpenAPI, a CLI, a unified plugin for
+5. Later: annotations, bundling, OpenAPI, a CLI, a unified plugin for
    validating JSON files, and migrating dependent projects.
 
 ## Known limitations
@@ -374,6 +389,8 @@ Changes made to browser for this (on its `v2` branch):
 - `@hyperjump/browser` v2 isn't published, so it's a `file:../browser`
   dependency.
 - The base URI from a file's path only handles POSIX paths.
+- The `JsonSchema` shortcuts (`validate(uri, ...)` and the others) compile the
+  schema every time.
 - A self-describing meta-schema is recognized by the URI it was retrieved
   from. A copy retrieved from a different URI than its `$id` isn't recognized,
   and that's reported as an error.

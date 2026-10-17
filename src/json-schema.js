@@ -4,10 +4,16 @@ import { JsonSchemaMediaTypePlugin } from "./json-schema-media-type-plugin.js";
 import { vocabulariesOf } from "./vocabularies.js";
 import schemaKeyword from "./keywords/schema.js";
 import unknownKeyword from "./keywords/unknown.js";
+import { compile, keywordDefinitionUri } from "./compile.js";
+import { Validator } from "./validator.js";
+import { basicOutputFormat, detailedOutputFormat } from "./output-formats.js";
+
+export { ValidationError, DetailedValidationError, InvalidSchemaError } from "./validation-error.js";
 
 /**
  * @import { Keyword } from "./keyword.d.ts"
  * @import { Dialect, Vocabulary } from "./dialect.d.ts"
+ * @import { CompiledSchemas } from "./compile.js"
  * @import { JsonSchemaNode } from "./schema-ast.d.ts"
  * @import * as API from "./json-schema.d.ts"
  */
@@ -28,6 +34,9 @@ export class JsonSchema extends Hyperjump {
 
   /** @type Record<string, Dialect> */
   #dialects;
+
+  /** @type Partial<{ [F in API.OutputFormat]: API.OutputFormatDefinition<F> }> */
+  #outputFormats;
 
   /**
    * Dialects whose meta-schemas are being retrieved
@@ -56,12 +65,16 @@ export class JsonSchema extends Hyperjump {
     this.#dialects = {};
     this.#pendingDialects = {};
     this.#loading = new Map();
+    this.#outputFormats = {};
 
     // Every dialect has these
     this.addKeyword(schemaKeyword);
     this.addKeyword(unknownKeyword);
 
     this.addMediaTypePlugin(new JsonSchemaMediaTypePlugin(this));
+
+    this.addOutputFormat("BASIC", basicOutputFormat);
+    this.addOutputFormat("DETAILED", detailedOutputFormat);
   }
 
   get config() {
@@ -227,38 +240,62 @@ export class JsonSchema extends Hyperjump {
   }
 
   /** @type API.JsonSchema["compile"] */
-  async compile(_uri) {
-    throw Error("Not implemented");
+  async compile(uri) {
+    return new Validator(this, await compile(this, uri));
   }
 
   /** @type API.JsonSchema["addOutputFormat"] */
-  addOutputFormat(_name, _definition) {
-    throw Error("Not implemented");
+  addOutputFormat(name, definition) {
+    if (name === "FLAG") {
+      throw Error("The FLAG output format is built in and can't be replaced");
+    }
+
+    this.#outputFormats[name] = /** @type any */ (definition);
+  }
+
+  /** @type API.JsonSchema["getOutputFormat"] */
+  getOutputFormat(name) {
+    const definition = this.#outputFormats[name];
+    if (!definition) {
+      throw Error(`The '${name}' output format isn't supported. Use the 'addOutputFormat' function to add support for it.`);
+    }
+
+    return definition;
   }
 
   /** @type API.JsonSchema["restoreValidator"] */
-  restoreValidator(_compiled) {
-    throw Error("Not implemented");
+  restoreValidator(compiled) {
+    const compiledSchemas = /** @type CompiledSchemas */ (compiled);
+    for (const handle in compiledSchemas.schemas) {
+      const schema = compiledSchemas.schemas[handle];
+      if (typeof schema !== "boolean") {
+        for (const [keywordUri] of schema.keywords) {
+          this.getKeyword(keywordDefinitionUri(keywordUri));
+        }
+      }
+    }
+
+    return new Validator(this, compiledSchemas);
   }
 
   /** @type API.JsonSchema["validate"] */
-  async validate(_uri, _instance, _options) {
-    throw Error("Not implemented");
+  async validate(uri, instance, options) {
+    return (await this.compile(uri)).validate(instance, options);
   }
 
   /** @type API.JsonSchema["validateJson"] */
-  async validateJson(_uri, _json, _options) {
-    throw Error("Not implemented");
+  async validateJson(uri, json, options) {
+    return (await this.compile(uri)).validateJson(json, options);
   }
 
   /** @type API.JsonSchema["annotate"] */
-  async annotate(_uri, _instance, _options) {
-    throw Error("Not implemented");
+  async annotate(uri, instance, options) {
+    return (await this.compile(uri)).annotate(instance, options);
   }
 
   /** @type API.JsonSchema["annotateJson"] */
-  async annotateJson(_uri, _json, _options) {
-    throw Error("Not implemented");
+  async annotateJson(uri, json, options) {
+    return (await this.compile(uri)).annotateJson(json, options);
   }
 }
 

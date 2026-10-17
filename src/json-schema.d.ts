@@ -1,3 +1,4 @@
+import type { Position } from "unist";
 import type { VFileMessage } from "vfile-message";
 import type { Hyperjump, HyperjumpConfig } from "@hyperjump/browser";
 import type {
@@ -132,6 +133,14 @@ export class JsonSchema extends Hyperjump<JsonSchemaNode> {
    */
   addOutputFormat: <F extends OutputFormat>(name: F, definition: OutputFormatDefinition<F>) => void;
 
+  /**
+   * Get an output format's definition.
+   *
+   * @throws Error if the output format hasn't been added. FLAG doesn't have
+   * a definition.
+   */
+  getOutputFormat: <F extends OutputFormat>(name: F) => OutputFormatDefinition<F>;
+
   /** A shortcut for `(await compile(uri)).validate(instance, options)` */
   validate: <F extends OutputFormat = "FLAG">(uri: string, instance: Json, options?: ValidationOptions<F>) => Promise<ValidationResult<F>>;
 
@@ -220,7 +229,14 @@ export type ValidationOptions<F extends OutputFormat = OutputFormat> = {
  */
 export type OutputFormatDefinition<F extends OutputFormat> = () => {
   plugin?: EvaluationPlugin;
-  output: (valid: boolean) => ValidationResult<F>;
+
+  /**
+   * @param valid - False if there are syntax errors, even if the instance
+   * passed the schema
+   * @param syntaxErrors - Errors from parsing JSON text. It's empty for an
+   * instance that wasn't parsed.
+   */
+  output: (valid: boolean, syntaxErrors: JsonSyntaxError[]) => ValidationResult<F>;
 };
 
 /**
@@ -316,7 +332,19 @@ export class ValidationError extends VFileMessage {
 
   /** A JSON Pointer to the value in the instance that failed */
   instanceLocation: string;
+
+  constructor(reason: string, options: ValidationErrorOptions);
 }
+
+export type ValidationErrorOptions = {
+  ruleId: string;
+  keywordLocation: string;
+  absoluteKeywordLocation: string;
+  instanceLocation: string;
+
+  /** Where the instance is in the JSON text it came from */
+  place?: Position;
+};
 
 export class DetailedValidationError extends ValidationError {
   /** The subschema failures that caused this keyword to fail */
