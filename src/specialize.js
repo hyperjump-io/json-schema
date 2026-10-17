@@ -152,7 +152,9 @@ export const specialize = (jsonSchema, compiled, options) => {
    * The evaluator for a subschema of a keyword. When locations are tracked,
    * it adds the path from the keyword to the subschema to the keyword
    * location. A subschema that isn't in the keyword's value, like the target
-   * of a reference, doesn't add anything.
+   * of a reference, doesn't add anything. Steps taken from canonical URIs are
+   * percent-encoded, but keyword locations are JSON Pointers, so they're
+   * decoded.
    *
    * @type (handle: string, keywordAbsoluteLocation: string, steps: Record<string, string> | undefined) => SchemaEvaluator<I>
    */
@@ -163,7 +165,7 @@ export const specialize = (jsonSchema, compiled, options) => {
     }
 
     const step = steps?.[handle]
-      ?? (handle.startsWith(`${keywordAbsoluteLocation}/`) ? handle.slice(keywordAbsoluteLocation.length) : "");
+      ?? (handle.startsWith(`${keywordAbsoluteLocation}/`) ? decodeURIComponent(handle.slice(keywordAbsoluteLocation.length)) : "");
     return (instance, segment) => {
       const outerKeywordLocation = keywordLocation;
       keywordLocation += step;
@@ -234,7 +236,7 @@ export const specialize = (jsonSchema, compiled, options) => {
 
     return {
       info: { keywordUri, absoluteKeywordLocation: location, keyword, compiled: compiledValue },
-      step: location.slice(handle.length),
+      step: decodeURIComponent(location.slice(handle.length)),
       evaluate: keyword.evaluate(compiledValue, context)
     };
   };

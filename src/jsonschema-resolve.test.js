@@ -246,6 +246,17 @@ describe("jsonSchemaResolve", () => {
       expect(at("/properties/a~1b", root).location).to.equal(`${baseUri}#/properties/a~1b`);
       expect(at("/properties/a~1b/const/0", root).location).to.equal(`${baseUri}#/properties/a~1b/const/0`);
     });
+
+    test("locations are percent-encoded where a fragment requires it", async () => {
+      const { root } = await resolve(jsonSchema, `{
+        "$schema": "${dialectUri}",
+        "properties": { "a^b": { "const": { "c d": 1, "rosé": 2 } } }
+      }`);
+
+      expect(at("/properties/a^b", root).location).to.equal(`${baseUri}#/properties/a%5Eb`);
+      expect(at("/properties/a^b/const/c d", root).location).to.equal(`${baseUri}#/properties/a%5Eb/const/c%20d`);
+      expect(at("/properties/a^b/const/rosé", root).location).to.equal(`${baseUri}#/properties/a%5Eb/const/rosé`);
+    });
   });
 
   describe("schema resources", () => {

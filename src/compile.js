@@ -1,6 +1,6 @@
 import * as JsonPointer from "@hyperjump/json-pointer";
 import { toAbsoluteIri } from "@hyperjump/uri";
-import { jsonValue, pointerGet } from "@hyperjump/browser/json";
+import { appendToLocation, jsonValue, pointerGet } from "@hyperjump/browser/json";
 
 /**
  * @import { Json, JsonErrorNode } from "@hyperjump/browser/json"
@@ -128,7 +128,7 @@ class Compiler {
       const [nameNode, valueNode] = property.children;
       const keywordUri = /** @type string */ (property.keywordUri);
       const keyword = this.#jsonSchema.getKeyword(keywordDefinitionUri(keywordUri));
-      const keywordLocation = JsonPointer.append(nameNode.value, handle);
+      const keywordLocation = appendToLocation(nameNode.value, handle);
 
       /** @type Record<string, string> | undefined */
       let steps;

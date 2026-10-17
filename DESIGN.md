@@ -395,6 +395,12 @@ Changes made to browser for this (on its `v2` branch):
   its values. Compiling uses it for a resource's dynamic anchors.
 - `jsonValue` supports arrays and objects. `Hyperjump.value` still doesn't,
   because it would need to follow references.
+- Node locations are valid IRIs. Each pointer segment is percent-encoded
+  with `appendToLocation` (`@hyperjump/uri`'s new `encodeIriFragment`),
+  which produces normalized IRIs, and `get` decodes a fragment before
+  following it as a JSON Pointer. The resolver and compiler build locations
+  the same way. Keyword and instance locations in output are JSON Pointers,
+  so they aren't encoded.
 
 ## Plan
 
@@ -413,7 +419,8 @@ Changes made to browser for this (on its `v2` branch):
 ## Known limitations
 
 - `@hyperjump/browser` v2 isn't published, so it's a `file:../browser`
-  dependency.
+  dependency. `@hyperjump/uri` is `file:../uri` until `encodeIriFragment` is
+  published.
 - The base URI from a file's path only handles POSIX paths.
 - The `JsonSchema` shortcuts (`validate(uri, ...)` and the others) compile the
   schema every time.

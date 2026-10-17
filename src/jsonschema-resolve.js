@@ -1,5 +1,5 @@
 import * as JsonPointer from "@hyperjump/json-pointer";
-import { resolveIri, toAbsoluteIri } from "@hyperjump/uri";
+import { encodeIriFragment, resolveIri, toAbsoluteIri } from "@hyperjump/uri";
 import schemaKeyword from "./keywords/schema.js";
 import unknownKeyword from "./keywords/unknown.js";
 import { vocabulariesOf } from "./vocabularies.js";
@@ -254,7 +254,7 @@ class Resolver {
           this.#message(`'${name}' isn't a keyword in the '${dialect.uri}' dialect`, property, "unknown-keyword");
         }
 
-        return [keywordNode, `${unknownKeyword.uri}#${name}`, this.#jsonSchema.getKeyword(unknownKeyword.uri)];
+        return [keywordNode, `${unknownKeyword.uri}#${encodeIriFragment(name)}`, this.#jsonSchema.getKeyword(unknownKeyword.uri)];
       }
 
       const keywordUri = name === "$schema" ? schemaKeyword.uri : dialect.keywords[name];
@@ -455,7 +455,7 @@ class Resolver {
 }
 
 /** @type (resource: JsonSchemaDocumentNode, pointer: string) => string */
-const location = (resource, pointer) => `${resource.uri}#${pointer}`;
+const location = (resource, pointer) => `${resource.uri}#${encodeIriFragment(pointer)}`;
 
 /** @type (node: TreeNode) => node is JsonErrorNode */
 const isErrorNode = (node) => node.type === "json-invalid" || node.type === "json-missing";

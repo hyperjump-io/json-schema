@@ -367,6 +367,24 @@ describe("Validator", () => {
       ]);
     });
 
+    test("locations with characters that aren't allowed in a fragment", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({
+        $id: "https://example.com/encoded",
+        properties: { "a^b": { $ref: "#/$defs/c%20d" } },
+        $defs: { "c d": { type: "number" } }
+      }));
+
+      const result = validator.validate({ "a^b": "x" }, { output: "BASIC" });
+      expect(result.errors.map((error) => locations(/** @type ValidationError */ (error)))).to.eql([
+        {
+          ruleId: typeKeyword.uri,
+          keywordLocation: "/properties/a^b/$ref/type",
+          absoluteKeywordLocation: "https://example.com/encoded#/$defs/c%20d/type",
+          instanceLocation: "/a^b"
+        }
+      ]);
+    });
+
     test("BASIC for a valid instance", async () => {
       const validator = await jsonSchema.compile(await schemaFile({ type: "number" }));
 
