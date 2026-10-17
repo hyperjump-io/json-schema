@@ -48,7 +48,8 @@ const skip = new Set([
   // Keywords that aren't implemented yet
   "|format.json",
 
-  // It's a 2020-12 schema
+  // It has a 2020-12 $schema. It's fixed in the suite, but the fix isn't
+  // merged yet.
   "|unknown.json|`unknownKeyword` is an annotation"
 ]);
 

@@ -586,6 +586,20 @@ describe("Validator", () => {
       expect(node.data?.annotations?.get("https://json-schema.org/keyword/unknown#foo")).to.eql([{ bar: 1 }]);
     });
 
+    test("x- keywords are annotations if unknown keywords are errors", async () => {
+      for (const unknownKeywords of /** @type const */ (["error", "ignore"])) {
+        const strictDialectUri = `https://example.com/${unknownKeywords}-dialect`;
+        jsonSchema.addDialect({ uri: strictDialectUri, keywords: {}, unknownKeywords });
+        const path = join(directory, `${fileCount++}.schema.json`);
+        await writeFile(path, JSON.stringify({ "$schema": strictDialectUri, "x-foo": 1 }));
+        const validator = await jsonSchema.compile(pathToFileURL(path).toString());
+
+        const { node } = validator.annotate(1);
+        const annotations = node.data?.annotations?.get("https://json-schema.org/keyword/unknown#x-foo");
+        expect(annotations).to.eql(unknownKeywords === "error" ? [1] : undefined);
+      }
+    });
+
     test("annotateJson", async () => {
       const validator = await jsonSchema.compile(await schemaFile({ properties: { foo: { title: "foo" } } }));
 

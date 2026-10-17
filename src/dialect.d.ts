@@ -34,7 +34,8 @@ export type Dialect = {
    * as an unknown keyword.
    *
    * - `error`: The schema is invalid (v1). Keywords starting with `x-` are
-   *   always allowed. They're guaranteed to never be defined by the dialect.
+   *   always allowed, and they're annotations. They're guaranteed to never be
+   *   defined by the dialect.
    * - `annotation`: Its value is collected as an annotation (2019-09,
    *   2020-12).
    * - `ignore`: It has no effect (draft-04 through draft-07).

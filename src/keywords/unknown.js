@@ -15,7 +15,9 @@ import { jsonValue } from "@hyperjump/browser/json";
  * URI to change how unknown keywords are handled.
  *
  * Unknown keywords are annotations in dialects whose `unknownKeywords` is
- * `annotation`. Otherwise, they have no effect.
+ * `annotation`. In dialects whose `unknownKeywords` is `error`, keywords
+ * starting with `x-` are allowed, and they're annotations (v1). Otherwise,
+ * they have no effect.
  *
  * @type Keyword<{ annotation: Json } | null>
  */
@@ -23,7 +25,10 @@ export default {
   uri: "https://json-schema.org/keyword/unknown",
   shape: "data",
   compile(valueNode, context) {
-    return context.dialect.unknownKeywords === "annotation" ? { annotation: jsonValue(valueNode) } : null;
+    const { unknownKeywords } = context.dialect;
+    const isAnnotation = unknownKeywords === "annotation"
+      || (unknownKeywords === "error" && context.keywordName.startsWith("x-"));
+    return isAnnotation ? { annotation: jsonValue(valueNode) } : null;
   },
   evaluate(compiled, context) {
     const annotate = context.annotate;

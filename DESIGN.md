@@ -103,7 +103,7 @@ were considered. See "Open questions".)
   dialect. They're guaranteed to never collide with a keyword, so they must
   never assert. Registering one throws (`addVocabulary`, `addDialect`,
   `extendDialect`). They're always allowed in schemas, even when unknown
-  keywords are errors.
+  keywords are errors, and then they're annotations (v1).
 - `$vocabulary` was removed in v1 but is still supported for 2019-09 and
   2020-12. A dialect that isn't defined is built from its meta-schema's
   `$vocabulary`. The meta-schema is retrieved with `get` and must be a schema.
