@@ -44,34 +44,34 @@ export class JsonSchema extends Hyperjump<JsonSchemaNode> {
   // TODO: A registry for schemas that aren't retrieved from a URI
 
   /** Add or replace a keyword definition */
-  addKeyword: (keyword: Keyword) => void;
+  addKeyword(keyword: Keyword): void;
 
   /** Whether a keyword definition has been added */
-  hasKeyword: (uri: string) => boolean;
+  hasKeyword(uri: string): boolean;
 
   /**
    * Get a keyword definition.
    *
    * @throws Error if the keyword hasn't been added.
    */
-  getKeyword: (uri: string) => Keyword;
+  getKeyword(uri: string): Keyword;
 
   /** Add or replace a format definition */
-  addFormat: (format: Format) => void;
+  addFormat(format: Format): void;
 
   /**
    * Get a format definition.
    *
    * @throws Error if the format hasn't been added.
    */
-  getFormat: (uri: string) => Format;
+  getFormat(uri: string): Format;
 
   /**
    * Add or replace a vocabulary.
    *
    * @throws Error if a keyword name starts with `x-`
    */
-  addVocabulary: (vocabulary: Vocabulary) => void;
+  addVocabulary(vocabulary: Vocabulary): void;
 
   /**
    * Add a dialect. Most dialects don't need to be added. They're built from
@@ -82,7 +82,7 @@ export class JsonSchema extends Hyperjump<JsonSchemaNode> {
    * @throws Error if the dialect is already defined (use {@link removeDialect}
    * first to replace it) or a keyword name starts with `x-`.
    */
-  addDialect: (dialect: Dialect) => void;
+  addDialect(dialect: Dialect): void;
 
   /**
    * Add keywords or formats to a dialect that's defined, such as a custom
@@ -92,7 +92,7 @@ export class JsonSchema extends Hyperjump<JsonSchemaNode> {
    * @throws Error if the dialect isn't defined, it already has a keyword or
    * format with one of the names, or a keyword name starts with `x-`.
    */
-  extendDialect: (uri: string, extension: DialectExtension) => void;
+  extendDialect(uri: string, extension: DialectExtension): void;
 
   /**
    * Build a dialect from a `$vocabulary` value and add it. Vocabularies whose
@@ -102,13 +102,13 @@ export class JsonSchema extends Hyperjump<JsonSchemaNode> {
    * @throws Error if a required vocabulary hasn't been added or the dialect is
    * already defined.
    */
-  addDialectFromVocabularies: (uri: string, vocabularies: Record<string, boolean>) => Dialect;
+  addDialectFromVocabularies(uri: string, vocabularies: Record<string, boolean>): Dialect;
 
   /** Whether a dialect is defined. A dialect that hasn't been used yet isn't. */
-  hasDialect: (uri: string) => boolean;
+  hasDialect(uri: string): boolean;
 
   /** Remove a dialect so it can be replaced. */
-  removeDialect: (uri: string) => void;
+  removeDialect(uri: string): void;
 
   /**
    * Get a dialect. If it isn't defined, its meta-schema is retrieved with
@@ -121,7 +121,7 @@ export class JsonSchema extends Hyperjump<JsonSchemaNode> {
    * doesn't have `$vocabulary`, requires a vocabulary that hasn't been added,
    * or depends on a meta-schema that depends on it.
    */
-  getDialect: (uri: string, options?: GetDialectOptions) => Promise<Dialect>;
+  getDialect(uri: string, options?: GetDialectOptions): Promise<Dialect>;
 
   /**
    * Compile a schema into a {@link Validator} that can be used for any
@@ -130,7 +130,7 @@ export class JsonSchema extends Hyperjump<JsonSchemaNode> {
    * @throws {@link InvalidSchemaError}
    * @throws RetrievalError from `@hyperjump/browser`
    */
-  compile: (uri: string) => Promise<Validator>;
+  compile(uri: string): Promise<Validator>;
 
   /**
    * Restore a validator from {@link Validator.serialize}. It doesn't
@@ -138,7 +138,7 @@ export class JsonSchema extends Hyperjump<JsonSchemaNode> {
    *
    * @throws Error if a keyword in the compiled schema hasn't been added.
    */
-  restoreValidator: (compiled: Json) => Validator;
+  restoreValidator(compiled: Json): Validator;
 
   /**
    * Add an output format. BASIC and DETAILED are added by default and can be
@@ -146,7 +146,7 @@ export class JsonSchema extends Hyperjump<JsonSchemaNode> {
    *
    * @throws Error for FLAG, which is built in.
    */
-  addOutputFormat: <F extends OutputFormat>(name: F, definition: OutputFormatDefinition<F>) => void;
+  addOutputFormat<F extends OutputFormat>(name: F, definition: OutputFormatDefinition<F>): void;
 
   /**
    * Get an output format's definition.
@@ -154,19 +154,19 @@ export class JsonSchema extends Hyperjump<JsonSchemaNode> {
    * @throws Error if the output format hasn't been added. FLAG doesn't have
    * a definition.
    */
-  getOutputFormat: <F extends OutputFormat>(name: F) => OutputFormatDefinition<F>;
+  getOutputFormat<F extends OutputFormat>(name: F): OutputFormatDefinition<F>;
 
   /** A shortcut for `(await compile(uri)).validate(instance, options)` */
-  validate: <F extends OutputFormat = "FLAG">(uri: string, instance: Json, options?: ValidationOptions<F>) => Promise<ValidationResult<F>>;
+  validate<F extends OutputFormat = "FLAG">(uri: string, instance: Json, options?: ValidationOptions<F>): Promise<ValidationResult<F>>;
 
   /** A shortcut for `(await compile(uri)).validateJson(json, options)` */
-  validateJson: <F extends OutputFormat = "FLAG">(uri: string, json: string, options?: ValidationOptions<F>) => Promise<ValidationResult<F>>;
+  validateJson<F extends OutputFormat = "FLAG">(uri: string, json: string, options?: ValidationOptions<F>): Promise<ValidationResult<F>>;
 
   /** A shortcut for `(await compile(uri)).annotate(instance, options)` */
-  annotate: <F extends OutputFormat = "FLAG">(uri: string, instance: Json, options?: ValidationOptions<F>) => Promise<AnnotationResult<F>>;
+  annotate<F extends OutputFormat = "FLAG">(uri: string, instance: Json, options?: ValidationOptions<F>): Promise<AnnotationResult<F>>;
 
   /** A shortcut for `(await compile(uri)).annotateJson(json, options)` */
-  annotateJson: <F extends OutputFormat = "FLAG">(uri: string, json: string, options?: ValidationOptions<F>) => Promise<AnnotationResult<F>>;
+  annotateJson<F extends OutputFormat = "FLAG">(uri: string, json: string, options?: ValidationOptions<F>): Promise<AnnotationResult<F>>;
 }
 
 export type GetDialectOptions = {
@@ -196,7 +196,7 @@ export type Validator = {
   /** The URI of the compiled schema */
   uri: string;
 
-  validate: <F extends OutputFormat = "FLAG">(instance: Json, options?: ValidationOptions<F>) => ValidationResult<F>;
+  validate<F extends OutputFormat = "FLAG">(instance: Json, options?: ValidationOptions<F>): ValidationResult<F>;
 
   /**
    * Parse and validate JSON text. Any syntax error makes the instance
@@ -204,16 +204,16 @@ export type Validator = {
    * but the instance is still validated as far as it could be parsed so all
    * the problems are reported at once.
    */
-  validateJson: <F extends OutputFormat = "FLAG">(json: string, options?: ValidationOptions<F>) => ValidationResult<F>;
+  validateJson<F extends OutputFormat = "FLAG">(json: string, options?: ValidationOptions<F>): ValidationResult<F>;
 
   /**
    * Validate a JSON AST, such as a value in a schema AST. Errors have the
    * nodes' positions. Values that couldn't be parsed (`json-missing` and
    * `json-invalid` nodes) aren't evaluated.
    */
-  validateNode: <F extends OutputFormat = "FLAG">(node: JsonNode<unknown, JsonErrorNode> | JsonErrorNode, options?: ValidationOptions<F>) => ValidationResult<F>;
+  validateNode<F extends OutputFormat = "FLAG">(node: JsonNode<unknown, JsonErrorNode> | JsonErrorNode, options?: ValidationOptions<F>): ValidationResult<F>;
 
-  annotate: <F extends OutputFormat = "FLAG">(instance: Json, options?: ValidationOptions<F>) => AnnotationResult<F>;
+  annotate<F extends OutputFormat = "FLAG">(instance: Json, options?: ValidationOptions<F>): AnnotationResult<F>;
 
   /**
    * Parse, validate, and annotate JSON text. The parse is error-tolerant, so
@@ -221,13 +221,13 @@ export type Validator = {
    * be parsed are {@link JsonErrorNode}s. Keywords don't evaluate those
    * nodes, so the syntax error is the only error reported for them.
    */
-  annotateJson: <F extends OutputFormat = "FLAG">(json: string, options?: ValidationOptions<F>) => AnnotationResult<F>;
+  annotateJson<F extends OutputFormat = "FLAG">(json: string, options?: ValidationOptions<F>): AnnotationResult<F>;
 
   /**
    * The compiled schema as JSON, to be restored with
    * {@link JsonSchema.restoreValidator} without compiling again.
    */
-  serialize: () => Json;
+  serialize(): Json;
 };
 
 export type ValidationOptions<F extends OutputFormat = OutputFormat> = {
