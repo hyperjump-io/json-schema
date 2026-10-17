@@ -20,8 +20,9 @@ export type Dialect = {
   uri: string;
 
   /**
-   * Keyword names mapped to {@link Keyword} URIs. This includes `$schema`
-   * even though its behavior is built in.
+   * Keyword names mapped to {@link Keyword} URIs. `$schema` is part of every
+   * dialect, so it doesn't need to be included. A property of a schema that
+   * isn't included is an unknown keyword.
    */
   keywords: Record<string, string>;
 };

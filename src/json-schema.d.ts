@@ -36,15 +36,15 @@ export type JsonSchemaConfig = HyperjumpConfig & {
 export class JsonSchema extends Hyperjump<JsonSchemaNode> {
   constructor(config?: JsonSchemaConfig);
 
+  readonly config: JsonSchemaConfig;
+
   // TODO: A registry for schemas that aren't retrieved from a URI
 
   /** Add or replace a keyword definition */
   addKeyword: (keyword: Keyword) => void;
 
   /**
-   * Get a keyword definition. Unknown keywords
-   * (`https://json-schema.org/keyword/unknown#<name>`) all get the same
-   * definition, which treats the value as data.
+   * Get a keyword definition.
    *
    * @throws Error if the keyword hasn't been added.
    */
@@ -54,21 +54,43 @@ export class JsonSchema extends Hyperjump<JsonSchemaNode> {
   addVocabulary: (vocabulary: Vocabulary) => void;
 
   /**
-   * Add or replace a dialect. Most dialects don't need to be added. They're
-   * built from their meta-schema's `$vocabulary` the first time they're used.
-   * Add one only for a dialect whose meta-schema doesn't have `$vocabulary`,
-   * such as draft-04 through draft-07.
+   * Add a dialect. Most dialects don't need to be added. They're built from
+   * their meta-schema's `$vocabulary` the first time they're used. Add one
+   * only for a dialect whose meta-schema doesn't have `$vocabulary`, such as
+   * draft-04 through draft-07.
+   *
+   * @throws Error if the dialect is already defined. Use {@link removeDialect}
+   * first to replace it.
    */
   addDialect: (dialect: Dialect) => void;
 
   /**
-   * Get a dialect. If it hasn't been added, its meta-schema is retrieved and
-   * the dialect is built from the meta-schema's `$vocabulary`.
+   * Build a dialect from a `$vocabulary` value and add it. Vocabularies whose
+   * value is `false` are optional and are skipped if they haven't been added.
    *
-   * @throws Error if the meta-schema can't be retrieved, doesn't have
-   * `$vocabulary`, or requires a vocabulary that hasn't been added.
+   * @throws Error if a required vocabulary hasn't been added or the dialect is
+   * already defined.
    */
-  getDialect: (uri: string) => Promise<Dialect>;
+  addDialectFromVocabularies: (uri: string, vocabularies: Record<string, boolean>) => Dialect;
+
+  /** Whether a dialect is defined. A dialect that hasn't been used yet isn't. */
+  hasDialect: (uri: string) => boolean;
+
+  /** Remove a dialect so it can be replaced. */
+  removeDialect: (uri: string) => void;
+
+  /**
+   * Get a dialect. If it isn't defined, its meta-schema is retrieved with
+   * {@link get} and the dialect is built from the meta-schema's `$vocabulary`.
+   * The meta-schema must be retrieved as a schema (`application/schema+json`
+   * or a `.schema.json` file). A JSON document isn't used even if it has a
+   * `$vocabulary`.
+   *
+   * @throws Error if the meta-schema can't be retrieved, isn't a schema,
+   * doesn't have `$vocabulary`, requires a vocabulary that hasn't been added,
+   * or depends on a meta-schema that depends on it.
+   */
+  getDialect: (uri: string, options?: GetDialectOptions) => Promise<Dialect>;
 
   /**
    * Compile a schema into a {@link Validator} that can be used for any
@@ -91,6 +113,16 @@ export class JsonSchema extends Hyperjump<JsonSchemaNode> {
   /** A shortcut for `(await compile(uri)).annotateJson(json, options)` */
   annotateJson: <F extends OutputFormat = "FLAG">(uri: string, json: string, options?: ValidationOptions<F>) => Promise<AnnotationResult<F>>;
 }
+
+export type GetDialectOptions = {
+  /**
+   * The URI of the document that needs the dialect. When that document is a
+   * meta-schema that's being retrieved to build a dialect, this is used to
+   * detect meta-schemas that depend on each other, which would otherwise
+   * wait for each other forever.
+   */
+  referencedFrom?: string;
+};
 
 /**
  * A compiled schema. There are two ways to use it:
