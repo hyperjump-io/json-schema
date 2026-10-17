@@ -1,6 +1,26 @@
 import idKeyword from "../keywords/id.js";
 import anchorKeyword from "../keywords/anchor.js";
+import commentKeyword from "../keywords/comment.js";
 import dynamicAnchorKeyword from "../keywords/dynamicAnchor.js";
+import typeKeyword from "../keywords/type.js";
+import constKeyword from "../keywords/const.js";
+import enumKeyword from "../keywords/enum.js";
+import maximumKeyword from "../keywords/maximum.js";
+import minimumKeyword from "../keywords/minimum.js";
+import exclusiveMaximumKeyword from "../keywords/exclusiveMaximum.js";
+import exclusiveMinimumKeyword from "../keywords/exclusiveMinimum.js";
+import multipleOfKeyword from "../keywords/multipleOf.js";
+import maxLengthKeyword from "../keywords/maxLength.js";
+import minLengthKeyword from "../keywords/minLength.js";
+import patternKeyword from "../keywords/pattern.js";
+import maxItemsKeyword from "../keywords/maxItems.js";
+import minItemsKeyword from "../keywords/minItems.js";
+import uniqueItemsKeyword from "../keywords/uniqueItems.js";
+import maxPropertiesKeyword from "../keywords/maxProperties.js";
+import minPropertiesKeyword from "../keywords/minProperties.js";
+import requiredKeyword from "../keywords/required.js";
+import dependentRequiredKeyword from "../keywords/dependentRequired.js";
+import requireAllExceptKeyword from "../keywords/requireAllExcept.js";
 
 /**
  * @import { Keyword } from "../keyword.d.ts"
@@ -101,7 +121,27 @@ const extensionKeywords = {
 const keywords = [
   idKeyword,
   anchorKeyword,
-  dynamicAnchorKeyword
+  commentKeyword,
+  dynamicAnchorKeyword,
+  typeKeyword,
+  constKeyword,
+  enumKeyword,
+  maximumKeyword,
+  minimumKeyword,
+  exclusiveMaximumKeyword,
+  exclusiveMinimumKeyword,
+  multipleOfKeyword,
+  maxLengthKeyword,
+  minLengthKeyword,
+  patternKeyword,
+  maxItemsKeyword,
+  minItemsKeyword,
+  uniqueItemsKeyword,
+  maxPropertiesKeyword,
+  minPropertiesKeyword,
+  requiredKeyword,
+  dependentRequiredKeyword,
+  requireAllExceptKeyword
 ];
 
 /** @type API.addV1 */

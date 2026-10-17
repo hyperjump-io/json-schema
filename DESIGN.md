@@ -330,6 +330,8 @@ objects the caller reads results from afterwards.
   (stateless, shareable keywords; current lean, and what `CompileContext`
   does) or constructor injection (matches browser's plugins).
 - **Which dialect value schemas are written in.** Probably v1.
+- **`multipleOf` precision.** It uses v1's fixed tolerance for the
+  remainder, which is wrong for very small divisors.
 - **Annotations for invalid instances.** The spec drops annotations from
   failing schemas, which leaves the language server without them. Explore
   alternative annotation behavior.
@@ -368,9 +370,17 @@ Done:
 - The v1 dialect includes the `propertyDependencies` proposal, and the
   suite's proposal tests run too. `addV1` also adds `conditional`,
   `itemPattern`, and `requireAllExcept`, but with `extendDialect` as a
-  reminder that they aren't full proposals yet. Their tests were ported from
-  v1 to `src/v1/extension-tests`. `requireAllExcept` has no tests yet. They
-  need to be written when it's implemented.
+  reminder that they aren't full proposals yet. Their tests are in
+  `src/v1/extension-tests`, ported from v1 except for `requireAllExcept`,
+  which v1 didn't have tests for.
+- The validation keywords (`type`, `const`, `enum`, the numeric, string,
+  array, and object assertions, `required`, `dependentRequired`, and
+  `requireAllExcept`) and `$comment`. Their test suite files pass, except
+  test cases that need applicators. They don't have value schemas yet.
+  Equality (`const`, `enum`, `uniqueItems`) compares through
+  `InstanceOps`, so an AST isn't copied. A value that couldn't be parsed
+  counts as equal for `const` and `enum` and as different for
+  `uniqueItems`, so it never causes an error of its own.
 
 Changes made to browser for this (on its `v2` branch):
 

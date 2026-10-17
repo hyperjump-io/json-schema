@@ -1,0 +1,173 @@
+{
+    "$schema": "../../../node_modules/json-schema-test-suite/validation/validation-test-schema.json",
+    "description": "requireAllExcept validation",
+    "tests": [
+        {
+            "description": "requireAllExcept requires every property in properties except the ones it lists",
+            "schema": {
+                "properties": {
+                    "foo": {},
+                    "bar": {},
+                    "baz": {}
+                },
+                "requireAllExcept": ["baz"]
+            },
+            "tests": [
+                {
+                    "description": "every property is present",
+                    "data": { "foo": 1, "bar": 2, "baz": 3 },
+                    "valid": true
+                },
+                {
+                    "description": "an excepted property is missing",
+                    "data": { "foo": 1, "bar": 2 },
+                    "valid": true
+                },
+                {
+                    "description": "a required property is missing",
+                    "data": { "foo": 1, "baz": 3 },
+                    "valid": false
+                },
+                {
+                    "description": "an empty object",
+                    "data": {},
+                    "valid": false
+                },
+                {
+                    "description": "ignores arrays",
+                    "data": [],
+                    "valid": true
+                },
+                {
+                    "description": "ignores strings",
+                    "data": "",
+                    "valid": true
+                },
+                {
+                    "description": "ignores other non-objects",
+                    "data": 12,
+                    "valid": true
+                }
+            ]
+        },
+        {
+            "description": "an empty requireAllExcept requires every property in properties",
+            "schema": {
+                "properties": {
+                    "foo": {},
+                    "bar": {}
+                },
+                "requireAllExcept": []
+            },
+            "tests": [
+                {
+                    "description": "every property is present",
+                    "data": { "foo": 1, "bar": 2 },
+                    "valid": true
+                },
+                {
+                    "description": "a property is missing",
+                    "data": { "foo": 1 },
+                    "valid": false
+                },
+                {
+                    "description": "properties not in properties are allowed",
+                    "data": { "foo": 1, "bar": 2, "baz": 3 },
+                    "valid": true
+                }
+            ]
+        },
+        {
+            "description": "requireAllExcept excepting every property in properties",
+            "schema": {
+                "properties": {
+                    "foo": {}
+                },
+                "requireAllExcept": ["foo"]
+            },
+            "tests": [
+                {
+                    "description": "an empty object",
+                    "data": {},
+                    "valid": true
+                }
+            ]
+        },
+        {
+            "description": "requireAllExcept excepting a property that isn't in properties",
+            "schema": {
+                "properties": {
+                    "foo": {}
+                },
+                "requireAllExcept": ["bar"]
+            },
+            "tests": [
+                {
+                    "description": "the property in properties is present",
+                    "data": { "foo": 1 },
+                    "valid": true
+                },
+                {
+                    "description": "the property in properties is missing",
+                    "data": { "bar": 2 },
+                    "valid": false
+                }
+            ]
+        },
+        {
+            "description": "requireAllExcept without properties",
+            "schema": {
+                "requireAllExcept": []
+            },
+            "tests": [
+                {
+                    "description": "an empty object",
+                    "data": {},
+                    "valid": true
+                }
+            ]
+        },
+        {
+            "description": "requireAllExcept only uses properties in the same schema",
+            "schema": {
+                "allOf": [
+                    {
+                        "properties": {
+                            "foo": {}
+                        }
+                    }
+                ],
+                "requireAllExcept": []
+            },
+            "tests": [
+                {
+                    "description": "an empty object",
+                    "data": {},
+                    "valid": true
+                }
+            ]
+        },
+        {
+            "description": "requireAllExcept with escaped characters",
+            "schema": {
+                "properties": {
+                    "foo\nbar": {},
+                    "foo\"bar": {}
+                },
+                "requireAllExcept": ["foo\nbar"]
+            },
+            "tests": [
+                {
+                    "description": "the required property is present",
+                    "data": { "foo\"bar": 1 },
+                    "valid": true
+                },
+                {
+                    "description": "the required property is missing",
+                    "data": { "foo\nbar": 1 },
+                    "valid": false
+                }
+            ]
+        }
+    ]
+}
