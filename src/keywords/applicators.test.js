@@ -12,6 +12,12 @@ import { addV1, v1DialectUri } from "../v1/index.js";
  */
 
 /** @type (error: OutputError) => unknown */
+const locations = (error) => {
+  const { keywordLocation, absoluteKeywordLocation, instanceLocation } = /** @type DetailedValidationError */ (error);
+  return { keywordLocation, absoluteKeywordLocation: absoluteKeywordLocation.replace(/.*#/, "#"), instanceLocation };
+};
+
+/** @type (error: OutputError) => unknown */
 const keywordLocations = (error) => {
   const errors = /** @type DetailedValidationError */ (error).errors;
   return errors === undefined
@@ -67,6 +73,64 @@ describe("applicator errors", () => {
       expect(validator.validate(5, { output: "BASIC" }).errors.map(keywordLocations)).to.eql(["/else/minimum"]);
       expect(validator.validate(5, { output: "DETAILED" }).errors.map(keywordLocations)).to.eql([
         { "/if": ["/else/minimum"] }
+      ]);
+    });
+  });
+
+  describe("$ref", () => {
+    test("errors follow the reference", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({
+        properties: { foo: { $ref: "#/$defs/number" } },
+        $defs: { number: { type: "number" } }
+      }));
+
+      expect(validator.validate({ foo: "x" }, { output: "BASIC" }).errors.map(locations)).to.eql([
+        { keywordLocation: "/properties/foo/$ref/type", absoluteKeywordLocation: "#/$defs/number/type", instanceLocation: "/foo" }
+      ]);
+    });
+  });
+
+  describe("$dynamicRef", () => {
+    test("errors follow the dynamic reference", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({
+        items: { $dynamicRef: "item" },
+        $defs: { item: { $dynamicAnchor: "item", type: "string" } }
+      }));
+
+      expect(validator.validate([1], { output: "BASIC" }).errors.map(locations)).to.eql([
+        { keywordLocation: "/items/$dynamicRef/type", absoluteKeywordLocation: "#/$defs/item/type", instanceLocation: "/0" }
+      ]);
+    });
+
+    test("a dynamic anchor that isn't in scope", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({ $dynamicRef: "nope" }));
+
+      expect(() => validator.validate(1)).to.throw("No 'nope' dynamic anchor");
+    });
+  });
+
+  describe("unevaluatedProperties", () => {
+    test("errors are for the unevaluated properties", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({
+        allOf: [{ properties: { foo: true } }],
+        unevaluatedProperties: false
+      }));
+
+      expect(validator.validate({ foo: 1, bar: 2 }, { output: "BASIC" }).errors.map(locations)).to.eql([
+        { keywordLocation: "/unevaluatedProperties", absoluteKeywordLocation: "#/unevaluatedProperties", instanceLocation: "/bar" }
+      ]);
+    });
+  });
+
+  describe("unevaluatedItems", () => {
+    test("errors are for the unevaluated items", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({
+        prefixItems: [true],
+        unevaluatedItems: { type: "string" }
+      }));
+
+      expect(validator.validate([1, 2], { output: "BASIC" }).errors.map(locations)).to.eql([
+        { keywordLocation: "/unevaluatedItems/type", absoluteKeywordLocation: "#/unevaluatedItems/type", instanceLocation: "/1" }
       ]);
     });
   });

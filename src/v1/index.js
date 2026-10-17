@@ -42,6 +42,10 @@ import itemPatternKeyword from "../keywords/itemPattern.js";
 import ifKeyword from "../keywords/if.js";
 import thenKeyword from "../keywords/then.js";
 import elseKeyword from "../keywords/else.js";
+import refKeyword from "../keywords/ref.js";
+import dynamicRefKeyword from "../keywords/dynamicRef.js";
+import unevaluatedPropertiesKeyword from "../keywords/unevaluatedProperties.js";
+import unevaluatedItemsKeyword from "../keywords/unevaluatedItems.js";
 
 /**
  * @import { Keyword } from "../keyword.d.ts"
@@ -183,7 +187,11 @@ const keywords = [
   itemPatternKeyword,
   ifKeyword,
   thenKeyword,
-  elseKeyword
+  elseKeyword,
+  refKeyword,
+  dynamicRefKeyword,
+  unevaluatedPropertiesKeyword,
+  unevaluatedItemsKeyword
 ];
 
 /** @type API.addV1 */

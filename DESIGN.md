@@ -391,12 +391,16 @@ Done:
   `InstanceOps`, so an AST isn't copied. A value that couldn't be parsed
   counts as equal for `const` and `enum` and as different for
   `uniqueItems`, so it never causes an error of its own.
-- The applicators except `$ref`, `$dynamicRef`, and `unevaluated*`. Keywords
+- The applicators. Keywords
   that depend on a sibling (`additionalProperties`, `items`, `contains`, and
   `if`) read it from the schema AST when they're compiled. `then`, `else`,
   `minContains`, and `maxContains` have no effect on their own. Compiled
   maps of schemas are `[name, handle]` pairs because a name like
   `__proto__` can't be a property of a plain object.
+- In v1, `$dynamicRef` is the name of a dynamic anchor, not a URI. It uses
+  the outermost schema in the dynamic scope with that anchor, with no
+  lexical fallback. If none is in scope, evaluation throws, because that's a
+  problem with the schema, not the instance.
 
 Changes made to browser for this (on its `v2` branch):
 

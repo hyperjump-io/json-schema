@@ -68,10 +68,8 @@ const supportedTags = new Set(["format-assertion"]);
  */
 const skip = new Set([
   // Keywords that aren't implemented yet
-  "|anchor.json",
   "|content.json",
   "|default.json",
-  "|dynamicRef.json",
   "|format-date-time.json",
   "|format-date.json",
   "|format-duration.json",
@@ -91,19 +89,13 @@ const skip = new Set([
   "|format-uri-template.json",
   "|format-uri.json",
   "|format-uuid.json",
-  "|id.json",
-  "|infinite-loop-detection.json",
-  "|ref.json",
-  "|unevaluatedItems.json",
-  "|unevaluatedProperties.json",
-  "|proposals/propertyDependencies/dynamicRef.json",
-  "|proposals/propertyDependencies/unevaluatedProperties.json",
 
-  // Test cases that need keywords that aren't implemented yet
-  "|items.json|items and subitems",
-  "|not.json|collect annotations inside a 'not', even if collection is disabled",
-  "|extension-tests/conditional.json|if - then - else with unevaluatedProperties",
-  "|extension-tests/conditional.json|if - then - else with unevaluatedItems"
+  // Test cases that need description, which isn't implemented yet
+  "|ref.json|Recursive references between schemas",
+  "|dynamicRef.json|strict-tree schema, guards against misspelled properties",
+  "|dynamicRef.json|tests for implementation dynamic anchor and reference link",
+  "|dynamicRef.json|$ref and $dynamicAnchor are independent of order - $defs first",
+  "|dynamicRef.json|$ref and $dynamicAnchor are independent of order - $ref first"
 ]);
 
 /** @type (path: string[]) => boolean */
