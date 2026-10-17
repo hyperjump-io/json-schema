@@ -38,6 +38,7 @@ export const jsInstance = {
     return Object.hasOwn(object, key) ? object[key] : undefined;
   },
   entries: (instance) => Object.entries(/** @type Record<string, Json> */ (instance)),
+  keys: (instance) => Object.keys(/** @type Record<string, Json> */ (instance)),
   items: (instance) => /** @type Json[] */ (instance)
 };
 
@@ -67,6 +68,12 @@ export const astInstance = {
     const object = /** @type JsonNode<{ type: "json" }, JsonErrorNode> & { jsonType: "object" } */ (instance);
     for (const property of object.children) {
       yield [property.children[0].value, property.children[1]];
+    }
+  },
+  keys: function* (instance) {
+    const object = /** @type JsonNode<{ type: "json" }, JsonErrorNode> & { jsonType: "object" } */ (instance);
+    for (const property of object.children) {
+      yield /** @type InstanceNode */ (/** @type unknown */ (property.children[0]));
     }
   },
   items: (instance) => /** @type JsonNode<{ type: "json" }, JsonErrorNode> & { jsonType: "array" } */ (instance).children

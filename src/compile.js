@@ -10,10 +10,10 @@ import { appendToLocation, jsonValue, pointerGet } from "@hyperjump/browser/json
  */
 
 /**
- * A keyword in a compiled schema. `steps` has the path from the keyword to a
- * subschema in its value, by the subschema's canonical URI, for the
- * subschemas whose canonical URI isn't under the keyword's, such as one with
- * an `$id`.
+ * A keyword in a compiled schema. `steps` has the path from the schema to a
+ * subschema the keyword compiled, by the subschema's canonical URI, for the
+ * subschemas whose canonical URI isn't under the keyword's. That's one with
+ * an `$id`, or one in a sibling keyword's value, like `then` for `if`.
  *
  * @typedef {[keywordUri: string, absoluteKeywordLocation: string, compiled: Json] | [keywordUri: string, absoluteKeywordLocation: string, compiled: Json, steps: Record<string, string>]} CompiledKeyword
  */
@@ -124,6 +124,9 @@ class Compiler {
     /** @type CompiledKeyword[] */
     const readsEvaluated = [];
 
+    /** @type Map<unknown, string> | undefined */
+    let paths;
+
     for (const property of node.children) {
       const [nameNode, valueNode] = property.children;
       const keywordUri = /** @type string */ (property.keywordUri);
@@ -132,8 +135,6 @@ class Compiler {
 
       /** @type Record<string, string> | undefined */
       let steps;
-      /** @type Map<unknown, string> | undefined */
-      let paths;
 
       /** @type CompileContext */
       const context = {
@@ -148,7 +149,7 @@ class Compiler {
 
           const subschemaHandle = await this.#compileNode(schema);
           if (!subschemaHandle.startsWith(`${keywordLocation}/`)) {
-            paths ??= subschemaPaths(valueNode);
+            paths ??= subschemaPaths(node);
             const step = paths.get(schema);
             if (step !== undefined) {
               steps ??= {};
@@ -207,12 +208,12 @@ class Compiler {
 }
 
 /**
- * The path to each schema in a keyword's value. Schemas are where the search
- * stops, so it only covers the keyword's own structure.
+ * The path from a schema to each schema in its keywords' values. Schemas are
+ * where the search stops, so it only covers the keywords' own structure.
  *
- * @type (valueNode: JsonSchemaNode) => Map<unknown, string>
+ * @type (schemaNode: JsonSchemaNode & { jsonType: "object" }) => Map<unknown, string>
  */
-const subschemaPaths = (valueNode) => {
+const subschemaPaths = (schemaNode) => {
   /** @type Map<unknown, string> */
   const paths = new Map();
 
@@ -230,7 +231,9 @@ const subschemaPaths = (valueNode) => {
       }
     }
   };
-  walk(valueNode, "");
+  for (const property of schemaNode.children) {
+    walk(property.children[1], JsonPointer.append(property.children[0].value, ""));
+  }
 
   return paths;
 };

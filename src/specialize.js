@@ -150,25 +150,31 @@ export const specialize = (jsonSchema, compiled, options) => {
 
   /**
    * The evaluator for a subschema of a keyword. When locations are tracked,
-   * it adds the path from the keyword to the subschema to the keyword
-   * location. A subschema that isn't in the keyword's value, like the target
-   * of a reference, doesn't add anything. Steps taken from canonical URIs are
-   * percent-encoded, but keyword locations are JSON Pointers, so they're
-   * decoded.
+   * the keyword location is the schema's plus the path from the schema to
+   * the subschema. That's usually in the keyword's value, but it can be in a
+   * sibling's, like `then` for `if`. A subschema that isn't in the schema,
+   * like the target of a reference, keeps the keyword's location. Steps
+   * taken from canonical URIs are percent-encoded, but keyword locations are
+   * JSON Pointers, so they're decoded.
    *
-   * @type (handle: string, keywordAbsoluteLocation: string, steps: Record<string, string> | undefined) => SchemaEvaluator<I>
+   * @type (handle: string, schemaHandle: string, keywordAbsoluteLocation: string, steps: Record<string, string> | undefined) => SchemaEvaluator<I>
    */
-  const subschemaEvaluator = (handle, keywordAbsoluteLocation, steps) => {
+  const subschemaEvaluator = (handle, schemaHandle, keywordAbsoluteLocation, steps) => {
     const evaluator = evaluatorFor(handle);
     if (!instrumented) {
       return evaluator;
     }
 
     const step = steps?.[handle]
-      ?? (handle.startsWith(`${keywordAbsoluteLocation}/`) ? decodeURIComponent(handle.slice(keywordAbsoluteLocation.length)) : "");
+      ?? (handle.startsWith(`${keywordAbsoluteLocation}/`) ? decodeURIComponent(handle.slice(schemaHandle.length)) : undefined);
+    if (step === undefined) {
+      return evaluator;
+    }
+
+    const keywordStep = decodeURIComponent(keywordAbsoluteLocation.slice(schemaHandle.length));
     return (instance, segment) => {
       const outerKeywordLocation = keywordLocation;
-      keywordLocation += step;
+      keywordLocation = keywordLocation.slice(0, keywordLocation.length - keywordStep.length) + step;
       const valid = evaluator(instance, segment);
       keywordLocation = outerKeywordLocation;
       return valid;
@@ -196,7 +202,7 @@ export const specialize = (jsonSchema, compiled, options) => {
     /** @type EvaluateContext<I> */
     const context = {
       instance: ops,
-      schema: (subschemaHandle) => subschemaEvaluator(subschemaHandle, location, steps),
+      schema: (subschemaHandle) => subschemaEvaluator(subschemaHandle, handle, location, steps),
       exhaustive: exhaustive
     };
 
@@ -227,7 +233,7 @@ export const specialize = (jsonSchema, compiled, options) => {
 
         let evaluator = dynamicEvaluators.get(anchorHandle);
         if (evaluator === undefined) {
-          evaluator = subschemaEvaluator(anchorHandle, location, steps);
+          evaluator = subschemaEvaluator(anchorHandle, handle, location, steps);
           dynamicEvaluators.set(anchorHandle, evaluator);
         }
         return evaluator;

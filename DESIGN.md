@@ -198,8 +198,9 @@ Keywords:
   without `evaluate` has no effect on evaluation (`$id`, `$anchor`).
 - Keywords are written once for every instance representation. They look at
   instances through `context.instance` (`InstanceOps`: `typeOf`, `value`,
-  `length`, `has`, `get`, `entries`, `items`), which is fixed for a
-  specialization. `typeOf` is undefined for `json-missing` and
+  `length`, `has`, `get`, `entries`, `keys`, `items`), which is fixed for a
+  specialization. `keys` gives property names as instances (name nodes in
+  an AST) for `propertyNames`, so their annotations go on the names. `typeOf` is undefined for `json-missing` and
   `json-invalid` nodes, and `has` is true for a property whose value is
   missing. That's how keywords get the error-tolerance rules without extra
   code.
@@ -208,8 +209,12 @@ Keywords:
   references), and which AST node to annotate, so keywords never build
   pointers. In flag mode, the segment is ignored.
   The step from a keyword to a subschema comes from their canonical URIs. A
-  subschema in the keyword's value whose URI isn't under the keyword's (it has
-  an `$id`) has its step recorded in the IR at compile time instead.
+  subschema whose URI isn't under the keyword's has its step from the schema
+  recorded in the IR at compile time instead. That's one with an `$id`, or
+  one in a sibling keyword's value. That lets `if` evaluate `then` and
+  `else` itself, so the `if` subschema is only evaluated once, while their
+  errors keep their own keyword locations. A schema compiled from a URI is a
+  reference and doesn't get a step.
 - Evaluation state (frames, locations, dynamic scope, plugins) lives in the
   specialization's closure instead of being passed through every call. An
   evaluation started from inside another one, such as by a plugin, saves the
@@ -320,6 +325,11 @@ objects the caller reads results from afterwards.
 - BASIC doesn't give an error of its own to a keyword whose failure is fully
   explained by its subschemas' (`Keyword.simpleApplicator`, as in v1). The
   core can't infer it: a failing `oneOf` isn't explained by its subschemas.
+- A failing condition (the `if` subschema, or a condition of
+  `conditional`) only decides which subschema applies, so BASIC and DETAILED
+  don't report its errors. They recognize these two keywords by URI. It's a
+  special case on purpose, rather than something a keyword can declare, so
+  keywords aren't encouraged to depend on another subschema's result.
 - The built-in formats give errors a generic `reason` that names the
   keyword. Explaining errors is left to other output formats, such as
   `json-schema-errors`, so messages aren't part of the keyword interface.
@@ -381,6 +391,12 @@ Done:
   `InstanceOps`, so an AST isn't copied. A value that couldn't be parsed
   counts as equal for `const` and `enum` and as different for
   `uniqueItems`, so it never causes an error of its own.
+- The applicators except `$ref`, `$dynamicRef`, and `unevaluated*`. Keywords
+  that depend on a sibling (`additionalProperties`, `items`, `contains`, and
+  `if`) read it from the schema AST when they're compiled. `then`, `else`,
+  `minContains`, and `maxContains` have no effect on their own. Compiled
+  maps of schemas are `[name, handle]` pairs because a name like
+  `__proto__` can't be a property of a plain object.
 
 Changes made to browser for this (on its `v2` branch):
 

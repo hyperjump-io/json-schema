@@ -1,11 +1,9 @@
 import { jsonValue } from "@hyperjump/browser/json";
+import { siblingKeyword } from "./utilities.js";
 
 /**
- * @import { JsonSchemaKeywordNode } from "../schema-ast.d.ts"
  * @import { Keyword } from "../keyword.d.ts"
  */
-
-const propertiesUri = "https://json-schema.org/keyword/properties";
 
 /**
  * `requireAllExcept`. Every property in the sibling `properties` is required
@@ -21,16 +19,8 @@ export default {
 
     /** @type string[] */
     const required = [];
-    if (schemaNode.jsonType !== "object") {
-      return required;
-    }
-
-    for (const property of /** @type JsonSchemaKeywordNode[] */ (schemaNode.children)) {
-      const propertiesNode = property.children[1];
-      if (property.keywordUri !== propertiesUri || propertiesNode.jsonType !== "object") {
-        continue;
-      }
-
+    const propertiesNode = siblingKeyword(schemaNode, "https://json-schema.org/keyword/properties");
+    if (propertiesNode?.jsonType === "object") {
       for (const propertyNode of propertiesNode.children) {
         const name = propertyNode.children[0].value;
         if (!except.has(name)) {

@@ -180,6 +180,26 @@ const dynamicRefKeyword = {
   simpleApplicator: true
 };
 
+/** @type Keyword<{ if: string; then: string }> */
+const ifKeyword = {
+  uri: "https://example.com/keyword/if",
+  shape: "schema",
+  async compile(valueNode, context) {
+    const schemaNode = /** @type any */ (context.schemaNode);
+    const thenProperty = schemaNode.children.find((/** @type any */ property) => property.children[0].value === "then");
+    return {
+      if: await context.compileSchema(valueNode),
+      then: await context.compileSchema(thenProperty.children[1])
+    };
+  },
+  evaluate(compiled, context) {
+    const evaluateIf = context.schema(compiled.if);
+    const evaluateThen = context.schema(compiled.then);
+    return (value) => !evaluateIf(value) || evaluateThen(value);
+  },
+  simpleApplicator: true
+};
+
 /** @type Keyword<string> */
 const unevaluatedPropertiesKeyword = {
   uri: "https://example.com/keyword/unevaluatedProperties",
@@ -214,8 +234,9 @@ const unevaluatedPropertiesKeyword = {
 /** @type Keyword[] */
 const keywords = [
   idKeyword, anchorKeyword, dynamicAnchorKeyword, typeKeyword, minimumKeyword, titleKeyword, propertiesKeyword,
-  allOfKeyword, anyOfKeyword, refKeyword, dynamicRefKeyword, unevaluatedPropertiesKeyword,
-  { uri: "https://example.com/keyword/defs", shape: { map: "schema" } }
+  allOfKeyword, anyOfKeyword, refKeyword, dynamicRefKeyword, unevaluatedPropertiesKeyword, ifKeyword,
+  { uri: "https://example.com/keyword/defs", shape: { map: "schema" } },
+  { uri: "https://example.com/keyword/then", shape: "schema" }
 ];
 
 /** @type (jsonSchema: JsonSchema) => void */
@@ -239,6 +260,8 @@ const addTestDialect = (jsonSchema) => {
       properties: propertiesKeyword.uri,
       allOf: allOfKeyword.uri,
       anyOf: anyOfKeyword.uri,
+      if: ifKeyword.uri,
+      then: "https://example.com/keyword/then",
       unevaluatedProperties: unevaluatedPropertiesKeyword.uri
     },
     unknownKeywords: "annotation"
@@ -363,6 +386,24 @@ describe("Validator", () => {
           keywordLocation: "/properties/foo/type",
           absoluteKeywordLocation: "https://example.com/embedded#/type",
           instanceLocation: "/foo"
+        }
+      ]);
+    });
+
+    test("the keyword location of a subschema in a sibling keyword", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({
+        $id: "https://example.com/sibling",
+        if: { type: "string" },
+        then: { minimum: 3, allOf: [{ $id: "https://example.com/sibling-embedded", type: "number" }] }
+      }));
+
+      const result = validator.validate("foo", { output: "BASIC" });
+      expect(result.errors.map((error) => locations(/** @type ValidationError */ (error)))).to.eql([
+        {
+          ruleId: typeKeyword.uri,
+          keywordLocation: "/then/allOf/0/type",
+          absoluteKeywordLocation: "https://example.com/sibling-embedded#/type",
+          instanceLocation: ""
         }
       ]);
     });

@@ -1,6 +1,62 @@
 /**
- * @import { InstanceOps } from "../keyword.d.ts"
+ * @import { CompileContext, InstanceOps, SchemaHandle } from "../keyword.d.ts"
+ * @import { JsonSchemaKeywordNode, JsonSchemaNode } from "../schema-ast.d.ts"
  */
+
+/**
+ * Compile each schema in an array
+ *
+ * @type (valueNode: JsonSchemaNode, context: CompileContext) => Promise<SchemaHandle[]>
+ */
+export const compileSchemaArray = async (valueNode, context) => {
+  /** @type SchemaHandle[] */
+  const handles = [];
+  if (valueNode.jsonType === "array") {
+    for (const itemNode of valueNode.children) {
+      handles.push(await context.compileSchema(itemNode));
+    }
+  }
+
+  return handles;
+};
+
+/**
+ * Compile each schema in an object. It compiles to pairs rather than an
+ * object, because a name like `__proto__` can't be a property of a plain
+ * object.
+ *
+ * @type (valueNode: JsonSchemaNode, context: CompileContext) => Promise<[string, SchemaHandle][]>
+ */
+export const compileSchemaMap = async (valueNode, context) => {
+  /** @type [string, SchemaHandle][] */
+  const handles = [];
+  if (valueNode.jsonType === "object") {
+    for (const propertyNode of valueNode.children) {
+      const [nameNode, schemaNode] = propertyNode.children;
+      handles.push([nameNode.value, await context.compileSchema(schemaNode)]);
+    }
+  }
+
+  return handles;
+};
+
+/**
+ * The value of a sibling keyword, by keyword URI, such as `properties` for
+ * `additionalProperties`
+ *
+ * @type (schemaNode: JsonSchemaNode, keywordUri: string) => JsonSchemaNode | undefined
+ */
+export const siblingKeyword = (schemaNode, keywordUri) => {
+  if (schemaNode.jsonType !== "object") {
+    return;
+  }
+
+  for (const property of /** @type JsonSchemaKeywordNode[] */ (schemaNode.children)) {
+    if (property.keywordUri === keywordUri) {
+      return property.children[1];
+    }
+  }
+};
 
 /**
  * Whether two instances are equal, comparing objects without regard to

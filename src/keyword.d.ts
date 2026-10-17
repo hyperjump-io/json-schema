@@ -118,6 +118,11 @@ export type CompileContext = {
    * Compile a subschema, or the schema a URI identifies, which is retrieved
    * if necessary. A schema is only compiled once, so schemas that refer to
    * each other are fine.
+   *
+   * A subschema node can be in the keyword's value or in a sibling's, like
+   * `then` for `if`. Either way, its keyword location is where it is in the
+   * schema. A schema compiled from a URI is a reference, so its keyword
+   * location is under the keyword's.
    */
   compileSchema: (schema: JsonSchemaNode | string) => Promise<SchemaHandle>;
 };
@@ -207,6 +212,13 @@ export type InstanceOps<I> = {
   get: (instance: I, key: string | number) => I | undefined;
 
   entries: (instance: I) => Iterable<[string, I]>;
+
+  /**
+   * The property names of an object as instances, for keywords that
+   * evaluate them (`propertyNames`). They're strings, or property name nodes
+   * in an AST, so annotations are attached to the names.
+   */
+  keys: (instance: I) => Iterable<I>;
 
   items: (instance: I) => Iterable<I>;
 };

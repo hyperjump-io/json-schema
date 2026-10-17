@@ -68,14 +68,9 @@ const supportedTags = new Set(["format-assertion"]);
  */
 const skip = new Set([
   // Keywords that aren't implemented yet
-  "|additionalProperties.json",
-  "|allOf.json",
   "|anchor.json",
-  "|anyOf.json",
-  "|contains.json",
   "|content.json",
   "|default.json",
-  "|dependentSchemas.json",
   "|dynamicRef.json",
   "|format-date-time.json",
   "|format-date.json",
@@ -97,39 +92,18 @@ const skip = new Set([
   "|format-uri.json",
   "|format-uuid.json",
   "|id.json",
-  "|if-then-else.json",
   "|infinite-loop-detection.json",
-  "|items.json",
-  "|not.json",
-  "|oneOf.json",
-  "|patternProperties.json",
-  "|properties.json",
-  "|propertyNames.json",
   "|ref.json",
   "|unevaluatedItems.json",
   "|unevaluatedProperties.json",
-  "|proposals/propertyDependencies/additionalProperties.json",
   "|proposals/propertyDependencies/dynamicRef.json",
-  "|proposals/propertyDependencies/propertyDependencies.json",
   "|proposals/propertyDependencies/unevaluatedProperties.json",
-  "|extension-tests/conditional.json",
-  "|extension-tests/itemPattern.json",
 
-  // Test cases that need applicators that aren't implemented yet
-  "|enum.json|enums in properties",
-  "|required.json|required validation",
-  "|required.json|required default validation",
-  "|required.json|required with empty array",
-  "|uniqueItems.json|uniqueItems with an array of items (prefixItems)",
-  "|uniqueItems.json|uniqueItems with prefixItems and items=false",
-  "|uniqueItems.json|uniqueItems=false with prefixItems",
-  "|uniqueItems.json|uniqueItems=false with prefixItems and items=false",
-  "|extension-tests/requireAllExcept.json|requireAllExcept requires every property in properties except the ones it lists",
-  "|extension-tests/requireAllExcept.json|an empty requireAllExcept requires every property in properties",
-  "|extension-tests/requireAllExcept.json|requireAllExcept excepting every property in properties",
-  "|extension-tests/requireAllExcept.json|requireAllExcept excepting a property that isn't in properties",
-  "|extension-tests/requireAllExcept.json|requireAllExcept only uses properties in the same schema",
-  "|extension-tests/requireAllExcept.json|requireAllExcept with escaped characters"
+  // Test cases that need keywords that aren't implemented yet
+  "|items.json|items and subitems",
+  "|not.json|collect annotations inside a 'not', even if collection is disabled",
+  "|extension-tests/conditional.json|if - then - else with unevaluatedProperties",
+  "|extension-tests/conditional.json|if - then - else with unevaluatedItems"
 ]);
 
 /** @type (path: string[]) => boolean */

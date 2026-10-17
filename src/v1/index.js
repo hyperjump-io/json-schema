@@ -21,6 +21,27 @@ import minPropertiesKeyword from "../keywords/minProperties.js";
 import requiredKeyword from "../keywords/required.js";
 import dependentRequiredKeyword from "../keywords/dependentRequired.js";
 import requireAllExceptKeyword from "../keywords/requireAllExcept.js";
+import definitionsKeyword from "../keywords/definitions.js";
+import propertiesKeyword from "../keywords/properties.js";
+import patternPropertiesKeyword from "../keywords/patternProperties.js";
+import additionalPropertiesKeyword from "../keywords/additionalProperties.js";
+import propertyNamesKeyword from "../keywords/propertyNames.js";
+import dependentSchemasKeyword from "../keywords/dependentSchemas.js";
+import propertyDependenciesKeyword from "../keywords/propertyDependencies.js";
+import prefixItemsKeyword from "../keywords/prefixItems.js";
+import itemsKeyword from "../keywords/items.js";
+import containsKeyword from "../keywords/contains.js";
+import minContainsKeyword from "../keywords/minContains.js";
+import maxContainsKeyword from "../keywords/maxContains.js";
+import allOfKeyword from "../keywords/allOf.js";
+import anyOfKeyword from "../keywords/anyOf.js";
+import oneOfKeyword from "../keywords/oneOf.js";
+import notKeyword from "../keywords/not.js";
+import conditionalKeyword from "../keywords/conditional.js";
+import itemPatternKeyword from "../keywords/itemPattern.js";
+import ifKeyword from "../keywords/if.js";
+import thenKeyword from "../keywords/then.js";
+import elseKeyword from "../keywords/else.js";
 
 /**
  * @import { Keyword } from "../keyword.d.ts"
@@ -141,7 +162,28 @@ const keywords = [
   minPropertiesKeyword,
   requiredKeyword,
   dependentRequiredKeyword,
-  requireAllExceptKeyword
+  requireAllExceptKeyword,
+  definitionsKeyword,
+  propertiesKeyword,
+  patternPropertiesKeyword,
+  additionalPropertiesKeyword,
+  propertyNamesKeyword,
+  dependentSchemasKeyword,
+  propertyDependenciesKeyword,
+  prefixItemsKeyword,
+  itemsKeyword,
+  containsKeyword,
+  minContainsKeyword,
+  maxContainsKeyword,
+  allOfKeyword,
+  anyOfKeyword,
+  oneOfKeyword,
+  notKeyword,
+  conditionalKeyword,
+  itemPatternKeyword,
+  ifKeyword,
+  thenKeyword,
+  elseKeyword
 ];
 
 /** @type API.addV1 */
