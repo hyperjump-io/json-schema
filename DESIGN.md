@@ -671,9 +671,9 @@ Results (mean time per run of the suite, FLAG unless it says errors):
 
 | | json-schema-next | `@hyperjump/json-schema` |
 | --- | --- | --- |
-| v1 | 0.26–0.28 ms | 0.75 ms |
+| v1 | 0.27–0.28 ms | 0.74–0.79 ms |
 | v1, after evaluating ASTs | 0.31–0.33 ms | 0.75 ms |
-| v1, all errors | 1.52–1.54 ms | 1.35–1.36 ms |
+| v1, all errors | 1.58–1.64 ms | 1.36–1.39 ms |
 | draft-04 | 0.08 ms | 0.21 ms |
 | draft-04, all errors | 0.56–0.57 ms | 0.43–0.44 ms |
 | draft-06 | 0.11 ms | 0.26 ms |
@@ -691,12 +691,17 @@ Results (mean time per run of the suite, FLAG unless it says errors):
   2020-12.
 - `validate` is about 15% slower in a process that has also evaluated
   ASTs, because keyword code is shared (see "Compile and evaluate").
-- Collecting errors (BASIC) is about 1.13 times slower than
+- Collecting errors (BASIC) is about 1.16–1.18 times slower than
   `@hyperjump/json-schema` in v1, about 1.29–1.31 times slower in draft-04,
   about 1.30–1.36 times slower in draft-06, about 1.24 times slower in
   draft-07, about 1.15–1.22 times slower in 2019-09, and about 1.12–1.16 times
   slower in 2020-12. It was about 5 times slower until errors stopped
   capturing stack traces (see "Validation API").
+- Measurements drift by several percent between sessions. The v1 errors
+  row was first measured at 1.52–1.54 ms (about 1.13 times slower). Run
+  side by side later, the code from then and the current code both took
+  1.60–1.66 ms, so it wasn't a regression. The "after evaluating ASTs" row
+  is from the first session.
 - `@exodus/schemasafe`, which generates code, is the fastest at collecting
   errors. It's about 14 times faster than json-schema-next in draft-04, about
   10 times faster in draft-06 and draft-07, about 6.8–7.3 times faster in
