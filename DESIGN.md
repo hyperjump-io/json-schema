@@ -505,6 +505,11 @@ Keywords:
 - `evaluate(compiled, context)` returns `(instance) => boolean`. It runs once
   per specialization, so instance-independent work goes there. A keyword
   without `evaluate` has no effect on evaluation (`$id`, `$anchor`).
+  `evaluate` returns `undefined` if the keyword passes every instance in
+  that specialization, like an annotation when annotations aren't
+  collected, `format` without a validator, or `uniqueItems: false`. The
+  keyword is left out, unless there are plugins, which see it pass. This
+  saved 3–15% on real schemas.
 - Keywords are written once for every instance representation. They look at
   instances through `context.instance` (`InstanceOps`: `typeOf`, `value`,
   `length`, `has`, `get`, `entries`, `keys`, `items`), which is fixed for a
@@ -969,12 +974,13 @@ Changes made to browser for this (on its `v2` branch):
    specialization directly, which halved its overhead on the test suite
    to about 10–15%). Whether keywords can provide a separate
    evaluator for plain values is decided after step 7.
-7. Optimization passes on the IR. Keyword definitions declare when they
-   always pass in FLAG, so the first pass can drop them. Other candidates:
-   fold constants (`true` in `allOf`, `not: true`, an `enum` with one
-   value), inline `$ref` targets that are only used once, evaluate cheap
-   keywords first, and share identical subschemas. Errors must keep their exact locations, so a pass
-   that loses them only applies to FLAG. Passes either run before
+7. Optimization passes on the IR. Keywords that always pass are left out
+   (done: `evaluate` returns `undefined` for them, see "Compile and
+   evaluate"). Other candidates: fold constants (`true` in `allOf`,
+   `not: true`, an `enum` with one value), inline `$ref` targets that are
+   only used once, evaluate cheap keywords first, and share identical
+   subschemas. Errors must keep their exact locations, so a pass that
+   loses them only applies to FLAG. Passes either run before
    `serialize`, so a restored `Validator` has them, or at specialize time,
    where they can depend on the specialization.
 8. Later: annotations, bundling, OpenAPI, a CLI, a unified plugin for
