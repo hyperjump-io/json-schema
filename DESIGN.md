@@ -510,6 +510,12 @@ Keywords:
   collected, `format` without a validator, or `uniqueItems: false`. The
   keyword is left out, unless there are plugins, which see it pass. This
   saved 3–15% on real schemas.
+  `context.alwaysPasses(handle)` says whether a subschema passes every
+  instance and has no other effect (`true`, `{}`, or only keywords that
+  were left out), so applicators can leave it out too, and return
+  `undefined` if nothing is left. It's always false when annotations are
+  collected, there are plugins, or the specialization tracks `evaluated`,
+  and for a schema that refers to itself and isn't built yet.
 - Keywords are written once for every instance representation. They look at
   instances through `context.instance` (`InstanceOps`: `typeOf`, `value`,
   `length`, `has`, `get`, `entries`, `keys`, `items`), which is fixed for a
@@ -976,8 +982,9 @@ Changes made to browser for this (on its `v2` branch):
    evaluator for plain values is decided after step 7.
 7. Optimization passes on the IR. Keywords that always pass are left out
    (done: `evaluate` returns `undefined` for them, see "Compile and
-   evaluate"). Other candidates: fold constants (`true` in `allOf`,
-   `not: true`, an `enum` with one value), inline `$ref` targets that are
+   evaluate"), and so are subschemas that always pass (done:
+   `context.alwaysPasses`). Other candidates: fold constants
+   (`not: true`, an `enum` with one value), inline `$ref` targets that are
    only used once, evaluate cheap keywords first, and share identical
    subschemas. Errors must keep their exact locations, so a pass that
    loses them only applies to FLAG. Passes either run before
