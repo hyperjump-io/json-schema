@@ -544,8 +544,10 @@ Sharing one keyword implementation between representations might make call
 sites polymorphic, because V8 may share type feedback between closures
 created from the same code. The benchmark (see "Benchmark") shows it does:
 `validate` is about 15% slower in a process that has also evaluated ASTs.
-Keywords could optionally provide a separate evaluator for plain values.
-That would be an addition to the interface, not a redesign.
+Closures written for plain values are 1.25–1.8 times faster than the
+specialization for plain values (see "Bytecode and closures"), so keywords
+should be able to provide a separate evaluator for plain values. That would
+be an addition to the interface, not a redesign.
 
 Annotations follow the spec: they're kept only if the keyword and every
 schema they were evaluated through pass. An invalid instance gets no
@@ -708,6 +710,55 @@ Results (mean time per run of the suite, FLAG unless it says errors):
   2019-09, and about 4.6–4.7 times faster in 2020-12.
 - With the `format` test cases, format validators take most of the time,
   and FLAG is only about 1.4 times faster.
+
+### Bytecode and closures
+
+A prototype in `scratch/bench` (`bytecode.ts`) lowers the IR once and then
+turns it into either bytecode (one `Int32Array` run by an interpreter loop)
+or closures with the same logic. Both only evaluate plain values in FLAG.
+The lowered keywords are `type`, `const`, `enum`, `required`, the numeric,
+length, and size bounds, `pattern`, `uniqueItems`, `properties`,
+`patternProperties`, `additionalProperties`, `prefixItems`, `items`,
+draft-04's `items` and `additionalItems`, `$ref`, `allOf`, `anyOf`, `oneOf`,
+and `not`. Any other keyword is a call to its own evaluator. Schemas with a
+keyword that reads evaluation state (`unevaluated*`, `$dynamicRef`) aren't
+supported. It's compared with `Validator.validate` and with the
+specialization for plain values called directly.
+
+`bytecode.bench.ts` and `bytecode-polymorphic.bench.ts` use the test suite.
+`corpus.bench.ts` uses real schemas: SchemaStore's `package.json` schema
+with 3000 `package.json` files and its `tsconfig.json` schema with 196
+`tsconfig.json` files (from `~/Projects`), the OpenAPI 3.0 schema with its
+examples, and the draft-07 and draft-04 meta-schemas with every schema in
+the test suite. `build-corpus.mjs` builds the corpora. Every variant agrees
+with json-schema-next on every instance.
+
+Real schemas (mean time per run of the corpus, FLAG):
+
+| | `validate` | specialization | closures | bytecode | closures, no-ops dropped |
+| --- | --- | --- | --- | --- | --- |
+| `package.json` | 17.9 ms | 17.9 ms | 13.4 ms | 13.9 ms | 12.7 ms |
+| `tsconfig.json` | 0.78 ms | 0.74 ms | 0.41 ms | 0.45 ms | 0.36 ms |
+| OpenAPI 3.0 | 0.159 ms | 0.157 ms | 0.106 ms | 0.101 ms | 0.104 ms |
+| draft-07 meta-schema | 0.137 ms | 0.126 ms | 0.100 ms | 0.103 ms | 0.088 ms |
+| draft-04 meta-schema | 0.100 ms | 0.095 ms | 0.065 ms | 0.069 ms | 0.057 ms |
+
+- Bytecode and closures are within about 10% of each other, and neither
+  wins consistently. Closures were faster on four of the five corpora and
+  on the test suite when every keyword was lowered. Bytecode was slightly
+  faster when some keywords were calls, probably because it finds the
+  instance's type once per schema, which closures could do too. Specialize
+  keeps producing closures.
+- Closures written for plain values are 1.25–1.8 times faster than the
+  specialization, and about 1.65 times faster on the test suite (1.86
+  times after evaluating ASTs). The likely causes are `InstanceOps`,
+  `Object.entries` allocating for `properties`, generic equality, and
+  keyword code shared between representations.
+- `Validator.validate` adds 15–20% on the test suite, whose instances are
+  tiny, and 0–9% on real schemas.
+- Most calls in real schemas are to keywords that always pass in FLAG
+  (`description`, `default`, `title`, unknown keywords). Dropping them saves
+  5–15%. The prototype lists them by hand.
 
 ## Open questions
 
@@ -878,16 +929,20 @@ Changes made to browser for this (on its `v2` branch):
    other keyword, because user keywords can run arbitrary code. Compare FLAG
    with the closures over the test cases it supports, using the benchmark
    in `scratch/bench`. Include a process that has also evaluated ASTs. The
-   result decides what specialize produces.
-6. Optimization passes on the IR. Candidates: drop keywords that have no
-   effect in FLAG (annotations, `$comment`), fold constants (`true` in
-   `allOf`, `not: true`, an `enum` with one value), inline `$ref` targets
-   that are only used once, evaluate cheap keywords first, and share
-   identical subschemas. Errors must keep their exact locations, so a pass
+   result decides what specialize produces. Done. Bytecode isn't faster,
+   so specialize keeps producing closures (see "Bytecode and closures").
+6. Evaluators for plain values. Keywords can provide a separate evaluator
+   for plain values, and the built-in keywords do. Reduce the overhead of
+   each `Validator.validate` call.
+7. Optimization passes on the IR. Keyword definitions declare when they
+   always pass in FLAG, so the first pass can drop them. Other candidates:
+   fold constants (`true` in `allOf`, `not: true`, an `enum` with one
+   value), inline `$ref` targets that are only used once, evaluate cheap
+   keywords first, and share identical subschemas. Errors must keep their exact locations, so a pass
    that loses them only applies to FLAG. Passes either run before
    `serialize`, so a restored `Validator` has them, or at specialize time,
    where they can depend on the specialization.
-7. Later: annotations, bundling, OpenAPI, a CLI, a unified plugin for
+8. Later: annotations, bundling, OpenAPI, a CLI, a unified plugin for
    validating JSON files, and migrating dependent projects.
 
 ## Known limitations
