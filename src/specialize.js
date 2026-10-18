@@ -52,6 +52,9 @@ import { keywordDefinitionUri } from "./compile.js";
 /** @type ReadonlySet<string | number> */
 const nothingEvaluated = new Set();
 
+/** @type Readonly<Record<string, string>> */
+const noDynamicAnchors = {};
+
 /**
  * Turn compiled schemas into an evaluation function for one kind of instance
  * and one mode. Evaluation keeps its state in this closure rather than
@@ -239,6 +242,8 @@ export const specialize = (jsonSchema, compiled, options) => {
         }
         return evaluator;
       };
+
+      context.resourceDynamicAnchors = (resourceUri) => compiled.resources[resourceUri]?.dynamicAnchors ?? noDynamicAnchors;
     }
 
     return {

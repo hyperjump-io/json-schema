@@ -418,8 +418,9 @@ Creating a session takes O(1) per registry, however large the registry is.
   validation"). A schema from any other registry or retrieved is.
 - Keyword schemas don't depend on `import.meta.url`, so they work in
   browsers and with bundlers.
-- The 2019-09 and 2020-12 presets will need their meta-schemas somewhere
-  too, probably a registry the preset adds.
+- The 2020-12 preset adds a registry with its meta-schemas, so they're
+  never retrieved. It's one `SchemaRegistry` shared by every `JsonSchema`
+  the preset is added to. Each identifies the entries itself.
 
 ### The language server
 
@@ -571,7 +572,12 @@ declares that it reads it (`Keyword.reads`):
   updates an anchor-to-evaluator map when evaluation enters a different
   schema resource, reusing the outer map when the resource adds nothing.
   Bookending (2020-12) and `$recursiveAnchor` (2019-09) are up to the
-  keyword. Compiling any schema in a resource also compiles that resource's
+  keyword. `context.resourceDynamicAnchors(uri)` gives it a resource's
+  dynamic anchors from the IR, so it can check whether the schema a
+  reference resolved to has one. It's checked in `evaluate`, once per
+  specialization, because the IR is only complete then. Checking while
+  compiling would miss an anchor whose schema is still being compiled, like
+  `meta/core`'s `"meta"` from a `$dynamicRef` inside it. Compiling any schema in a resource also compiles that resource's
   dynamic anchor targets, because specialization can't retrieve anything.
 
 Scoping is the core's job. Each keyword and schema evaluation gets a frame
@@ -743,6 +749,18 @@ Done:
   lexical fallback. If none is in scope, evaluation throws, because that's a
   problem with the schema, not the instance.
 
+- The 2020-12 preset (`src/draft-2020-12`, `addDraft202012`). It adds
+  2020-12's `$dynamicRef`, its vocabularies with `addVocabulary`, its
+  dialect, and a registry with the official meta-schemas. Every other
+  keyword is shared with v1, including the keyword schemas, which are
+  written in v1. `$dynamicRef` resolves like `$ref`, and if the schema it
+  resolves to has a dynamic anchor named by the fragment, the outermost
+  schema in the dynamic scope with that anchor applies instead. The
+  suite's 2020-12 test cases run in
+  `src/draft-2020-12/json-schema-test-suite.test.js`, sharing
+  `src/test-suite.js` with v1. Test cases tagged `format-assertion` run
+  with `validateFormats`. The annotation suite doesn't run for 2020-12 yet.
+
 Changes made to browser for this (on its `v2` branch):
 
 - A type parameter for property node annotations, and JSON AST utilities that
@@ -781,10 +799,10 @@ Changes made to browser for this (on its `v2` branch):
    and the internal registry with the keyword schemas, which fixes them in
    browsers. Done.
 4. Presets for 2020-12, 2019-09, and draft-04 through draft-07. The
-   `$vocabulary` resolve hook is done. The 2019-09 and 2020-12 presets add
-   their vocabularies with `addVocabulary` and add their own dialects, since
-   their meta-schemas describe themselves. Each of them exports
-   `addVocabulary`.
+   `$vocabulary` resolve hook and the 2020-12 preset are done. The 2019-09
+   preset adds its vocabularies with `addVocabulary` and adds its own
+   dialect, since its meta-schema describes itself, like 2020-12's. It
+   exports `addVocabulary` too.
 5. Later: annotations, bundling, OpenAPI, a CLI, a unified plugin for
    validating JSON files, and migrating dependent projects.
 

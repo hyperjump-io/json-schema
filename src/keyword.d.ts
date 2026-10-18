@@ -192,6 +192,14 @@ export type EvaluateContext<I> = {
    * keyword.
    */
   dynamicAnchor?: (name: string) => Evaluator<I> | undefined;
+
+  /**
+   * The dynamic anchors of a schema resource, mapped to the schemas they
+   * identify. It's for rules that depend on the schema a reference resolves
+   * to, such as 2020-12's bookending. Only defined for keywords that read
+   * `dynamicScope`. A resource that no compiled schema belongs to has none.
+   */
+  resourceDynamicAnchors?: (resourceUri: string) => Readonly<Record<string, SchemaHandle>>;
 };
 
 /**
