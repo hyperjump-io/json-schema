@@ -544,10 +544,13 @@ Sharing one keyword implementation between representations might make call
 sites polymorphic, because V8 may share type feedback between closures
 created from the same code. The benchmark (see "Benchmark") shows it does:
 `validate` is about 15% slower in a process that has also evaluated ASTs.
-Closures written for plain values are 1.25–1.8 times faster than the
-specialization for plain values (see "Bytecode and closures"), so keywords
-should be able to provide a separate evaluator for plain values. That would
-be an addition to the interface, not a redesign.
+Closures written for plain values were 1.25–1.8 times faster than the
+specialization for plain values (see "Bytecode and closures"). Speeding up
+the shared keywords brought that down to 1.06–1.23 times on real schemas.
+What's left is mostly iterating an object's properties and the
+polymorphism. Keywords could provide a separate evaluator for plain values
+for those. That would be an addition to the interface, not a redesign. It's
+undecided until after the optimization passes.
 
 Annotations follow the spec: they're kept only if the keyword and every
 schema they were evaluated through pass. An invalid instance gets no
@@ -749,13 +752,41 @@ Real schemas (mean time per run of the corpus, FLAG):
   faster when some keywords were calls, probably because it finds the
   instance's type once per schema, which closures could do too. Specialize
   keeps producing closures.
-- Closures written for plain values are 1.25–1.8 times faster than the
+- Closures written for plain values were 1.25–1.8 times faster than the
   specialization, and about 1.65 times faster on the test suite (1.86
-  times after evaluating ASTs). The likely causes are `InstanceOps`,
-  `Object.entries` allocating for `properties`, generic equality, and
-  keyword code shared between representations.
+  times after evaluating ASTs).
 - `Validator.validate` adds 15–20% on the test suite, whose instances are
   tiny, and 0–9% on real schemas.
+
+Profiling the specialization on the real schemas found where the gap was.
+`enum` compared every value with `instanceEqual`, `type` looked up a `Set`,
+and the fastest schema evaluator checked for an AST on every call. `enum`
+now looks up primitives in a `Set` and only compares arrays and objects,
+`type` compares a single type directly, and plain values have their own
+fastest schema evaluator, which is the keyword itself for a schema with
+one keyword. The specialization compared with the closures:
+
+| | Before | After |
+| --- | --- | --- |
+| `package.json` | 1.24× | 1.16× |
+| `tsconfig.json` | 1.84× | 0.95× |
+| OpenAPI 3.0 | 1.56× | 1.23× |
+| draft-07 meta-schema | 1.29× | 1.06× |
+| draft-04 meta-schema | 1.46× | 1.15× |
+| v1 suite, every keyword lowered | 1.65× | 1.18× |
+| v1 suite, after evaluating ASTs | 1.86× | 1.43× |
+
+- Iterating an object's properties (`properties`, `additionalProperties`,
+  `patternProperties`) is most of what's left in `package.json` and
+  OpenAPI 3.0. For plain values, `properties` could look up its own names
+  instead, but that's a linear search for each name in an AST, where it
+  also behaves differently for duplicate names. Only a separate evaluator
+  for plain values can do both.
+- A generator for `jsInstance.entries` was 10–18% faster than
+  `Object.entries` in a standalone script but 35–45% slower on
+  `package.json` in the benchmark, so it isn't used.
+- Results drift between sessions by more than some of these differences,
+  so changes are compared by running the old and new code back to back.
 - Most calls in real schemas are to keywords that always pass in FLAG
   (`description`, `default`, `title`, unknown keywords). Dropping them saves
   5–15%. The prototype lists them by hand.
@@ -931,9 +962,13 @@ Changes made to browser for this (on its `v2` branch):
    in `scratch/bench`. Include a process that has also evaluated ASTs. The
    result decides what specialize produces. Done. Bytecode isn't faster,
    so specialize keeps producing closures (see "Bytecode and closures").
-6. Evaluators for plain values. Keywords can provide a separate evaluator
-   for plain values, and the built-in keywords do. Reduce the overhead of
-   each `Validator.validate` call.
+6. Faster evaluation of plain values. Speed up the shared keywords where
+   profiling finds them slow (`enum`, `type`, and the fastest schema
+   evaluator are done) and reduce the overhead of each
+   `Validator.validate` call (done: without options, it calls the FLAG
+   specialization directly, which halved its overhead on the test suite
+   to about 10–15%). Whether keywords can provide a separate
+   evaluator for plain values is decided after step 7.
 7. Optimization passes on the IR. Keyword definitions declare when they
    always pass in FLAG, so the first pass can drop them. Other candidates:
    fold constants (`true` in `allOf`, `not: true`, an `enum` with one
