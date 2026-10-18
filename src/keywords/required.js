@@ -1,3 +1,5 @@
+import keywordSchema from "./required.schema.json" with { type: "json" };
+
 /**
  * @import { Keyword } from "../keyword.d.ts"
  */
@@ -11,7 +13,7 @@
 export default {
   uri: "https://json-schema.org/keyword/required",
   shape: "data",
-  valueSchema: new URL("./required.schema.json", import.meta.url).href,
+  schema: keywordSchema,
   evaluate: (required, { instance }) => (node) => {
     if (instance.typeOf(node) !== "object") {
       return true;

@@ -1,3 +1,5 @@
+import keywordSchema from "./conditional.schema.json" with { type: "json" };
+
 /**
  * @import { Keyword, SchemaHandle } from "../keyword.d.ts"
  * @import { JsonSchemaNode } from "../schema-ast.d.ts"
@@ -14,7 +16,7 @@
 export default {
   uri: "https://json-schema.org/keyword/conditional",
   shape: { array: ["schema", { array: "schema" }] },
-  valueSchema: new URL("./conditional.schema.json", import.meta.url).href,
+  schema: keywordSchema,
   async compile(valueNode, context) {
     /** @type SchemaHandle[] */
     const handles = [];

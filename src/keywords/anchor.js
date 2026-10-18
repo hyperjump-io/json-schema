@@ -1,3 +1,5 @@
+import keywordSchema from "./anchor.schema.json" with { type: "json" };
+
 /**
  * @import { Keyword } from "../keyword.d.ts"
  */
@@ -10,7 +12,7 @@
 export default {
   uri: "https://json-schema.org/keyword/anchor",
   shape: "data",
-  valueSchema: new URL("./anchor.schema.json", import.meta.url).href,
+  schema: keywordSchema,
   resolve(valueNode, context) {
     if (valueNode.type === "json" && valueNode.jsonType === "string") {
       context.addAnchor(valueNode.value);

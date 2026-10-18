@@ -1,6 +1,7 @@
 import { annotationKeyword } from "./utilities.js";
+import keywordSchema from "./writeOnly.schema.json" with { type: "json" };
 
 /**
  * `writeOnly`
  */
-export default annotationKeyword("https://json-schema.org/keyword/writeOnly", new URL("./writeOnly.schema.json", import.meta.url).href);
+export default annotationKeyword("https://json-schema.org/keyword/writeOnly", keywordSchema);

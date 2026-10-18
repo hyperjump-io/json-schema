@@ -65,7 +65,7 @@ describe("jsonSchemaValidateKeywords", () => {
     ]);
   });
 
-  test("the value schema's errors are the cause", async () => {
+  test("the keyword schema's errors are the cause", async () => {
     const file = await validateKeywords(jsonSchema, `{ "$schema": "${v1DialectUri}", "required": ["a", 1] }`);
 
     const cause = /** @type AggregateError */ (file.messages[0].cause);
@@ -75,7 +75,7 @@ describe("jsonSchemaValidateKeywords", () => {
     ]);
   });
 
-  test("a value schema that refers to itself", async () => {
+  test("a keyword schema that refers to itself", async () => {
     const file = await validateKeywords(jsonSchema, `{
       "$schema": "${v1DialectUri}",
       "x-items": [{ "const": 1 }, [{ "const": 2 }, "nope"]],
@@ -85,12 +85,11 @@ describe("jsonSchemaValidateKeywords", () => {
     expect(file.messages.map((message) => message.ruleId)).to.eql(["https://json-schema.org/keyword/itemPattern"]);
   });
 
-  test("a custom keyword's value schema", async () => {
+  test("a custom keyword's schema", async () => {
     jsonSchema.addKeyword({
       uri: "https://example.com/keyword/even",
       shape: "data",
-      // The built-in value schema for a boolean
-      valueSchema: new URL("./keywords/uniqueItems.schema.json", import.meta.url).href
+      schema: { $schema: v1DialectUri, type: "boolean" }
     });
     jsonSchema.extendDialect(v1DialectUri, { keywords: { even: "https://example.com/keyword/even" } });
 
@@ -99,11 +98,16 @@ describe("jsonSchemaValidateKeywords", () => {
     expect(file.messages.map((message) => message.ruleId)).to.eql(["https://example.com/keyword/even"]);
   });
 
-  test("a keyword's value schema is a schema file", async () => {
-    const session = jsonSchema.session();
-    const valueSchema = await session.get(jsonSchema.getKeyword("https://json-schema.org/keyword/minLength").valueSchema);
+  test("a replaced keyword's schema is used", async () => {
+    const keyword = { uri: "https://example.com/keyword/even", shape: /** @type const */ ("data") };
+    jsonSchema.addKeyword({ ...keyword, schema: { $schema: v1DialectUri, type: "boolean" } });
+    jsonSchema.extendDialect(v1DialectUri, { keywords: { even: keyword.uri } });
+    await validateKeywords(jsonSchema, `{ "$schema": "${v1DialectUri}", "even": true }`);
 
-    expect(valueSchema.type).to.equal("json-schema");
+    jsonSchema.addKeyword({ ...keyword, schema: { $schema: v1DialectUri, type: "string" } });
+    const file = await validateKeywords(jsonSchema, `{ "$schema": "${v1DialectUri}", "even": true }`);
+
+    expect(file.messages.map((message) => message.ruleId)).to.eql([keyword.uri]);
   });
 });
 

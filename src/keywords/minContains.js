@@ -1,3 +1,5 @@
+import keywordSchema from "./minContains.schema.json" with { type: "json" };
+
 /**
  * @import { Keyword } from "../keyword.d.ts"
  */
@@ -10,5 +12,5 @@
 export default {
   uri: "https://json-schema.org/keyword/minContains",
   shape: "data",
-  valueSchema: new URL("./minContains.schema.json", import.meta.url).href
+  schema: keywordSchema
 };

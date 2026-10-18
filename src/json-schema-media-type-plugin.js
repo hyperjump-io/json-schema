@@ -2,7 +2,6 @@ import { parse as parseContentType } from "content-type";
 import { unified } from "unified";
 import { VFile } from "vfile";
 import { rejsonParse } from "@hyperjump/browser/json";
-import { toAbsoluteIri } from "@hyperjump/uri";
 import { jsonSchemaResolve } from "./jsonschema-resolve.js";
 import { jsonSchemaValidateKeywords } from "./jsonschema-validate-keywords.js";
 import { JsonSchemaSession } from "./json-schema.js";
@@ -27,20 +26,14 @@ export class JsonSchemaMediaTypePlugin {
   /** @type JsonSchema */
   #jsonSchema;
 
-  /** @type (uri: string) => boolean */
-  #isValueSchema;
-
   /**
    * @param {JsonSchema} jsonSchema
-   * @param {(uri: string) => boolean} isValueSchema - Whether a document is a
-   * keyword's value schema. Those aren't validated.
    */
-  constructor(jsonSchema, isValueSchema) {
+  constructor(jsonSchema) {
     this.mediaType = "application/schema+json";
     this.extensions = [".schema.json"];
 
     this.#jsonSchema = jsonSchema;
-    this.#isValueSchema = isValueSchema;
   }
 
   /** @type MediaTypePlugin<JsonSchemaDocumentNode<"success">>["parse"] */
@@ -59,8 +52,7 @@ export class JsonSchemaMediaTypePlugin {
       .use(rejsonParse)
       .use(jsonSchemaResolve, { session, uri: response.url, dialectUri });
 
-    // Value schemas aren't validated, or validating one would need itself
-    if (this.#jsonSchema.config.validateSchemas !== false && !this.#isValueSchema(toAbsoluteIri(response.url))) {
+    if (this.#jsonSchema.config.validateSchemas !== false) {
       processor.use(jsonSchemaValidateKeywords, { jsonSchema: this.#jsonSchema });
     }
     const document = await processor.run(processor.parse(file), file);

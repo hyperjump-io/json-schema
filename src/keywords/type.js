@@ -1,5 +1,7 @@
+import keywordSchema from "./type.schema.json" with { type: "json" };
+
 /**
- * @import { JsonType } from "@hyperjump/browser/json"
+ * @import { Json, JsonType } from "@hyperjump/browser/json"
  * @import { Keyword } from "../keyword.d.ts"
  */
 
@@ -16,7 +18,7 @@
 export default {
   uri: "https://json-schema.org/keyword/type",
   shape: "data",
-  valueSchema: new URL("./type.schema.json", import.meta.url).href,
+  schema: /** @type Json */ (/** @type unknown */ (keywordSchema)),
   evaluate(type, { instance }) {
     /** @type Set<string> */
     const types = new Set(Array.isArray(type) ? type : [type]);

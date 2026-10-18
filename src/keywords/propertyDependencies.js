@@ -1,4 +1,5 @@
 import { compileSchemaMap } from "./utilities.js";
+import keywordSchema from "./propertyDependencies.schema.json" with { type: "json" };
 
 /**
  * @import { Keyword, SchemaHandle } from "../keyword.d.ts"
@@ -13,7 +14,7 @@ import { compileSchemaMap } from "./utilities.js";
 export default {
   uri: "https://json-schema.org/keyword/propertyDependencies",
   shape: { map: { map: "schema" } },
-  valueSchema: new URL("./propertyDependencies.schema.json", import.meta.url).href,
+  schema: keywordSchema,
   async compile(valueNode, context) {
     /** @type [string, [string, SchemaHandle][]][] */
     const dependencies = [];

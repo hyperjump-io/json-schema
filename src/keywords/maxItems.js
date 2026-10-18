@@ -1,3 +1,5 @@
+import keywordSchema from "./maxItems.schema.json" with { type: "json" };
+
 /**
  * @import { Keyword } from "../keyword.d.ts"
  */
@@ -10,7 +12,7 @@
 export default {
   uri: "https://json-schema.org/keyword/maxItems",
   shape: "data",
-  valueSchema: new URL("./maxItems.schema.json", import.meta.url).href,
+  schema: keywordSchema,
   evaluate: (maxItems, { instance }) => (node) => {
     return instance.typeOf(node) !== "array" || instance.length(node) <= maxItems;
   }

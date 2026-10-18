@@ -265,7 +265,7 @@ class Resolver {
         keyword = this.#session.jsonSchema.getKeyword(keywordUri);
       } catch (error) {
         this.#message(/** @type Error */ (error).message, property, "unsupported-keyword");
-        keyword = { uri: keywordUri, shape: "data", valueSchema: unknownKeyword.valueSchema };
+        keyword = { uri: keywordUri, shape: "data", schema: unknownKeyword.schema };
       }
 
       return [keywordNode, keywordUri, keyword];

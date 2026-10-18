@@ -1,7 +1,7 @@
 import type { JsonSchema } from "../json-schema.d.ts";
 import type { Dialect } from "../dialect.d.ts";
 
-// Every JsonSchema has the v1 dialect, because value schemas are written in
+// Every JsonSchema has the v1 dialect, because keyword schemas are written in
 // v1.
 
 /** The URI of the JSON Schema v1 dialect */

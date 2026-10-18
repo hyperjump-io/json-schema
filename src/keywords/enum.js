@@ -1,5 +1,6 @@
 import { jsInstance } from "../instance.js";
 import { instanceEqual } from "./utilities.js";
+import keywordSchema from "./enum.schema.json" with { type: "json" };
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
@@ -14,7 +15,7 @@ import { instanceEqual } from "./utilities.js";
 export default {
   uri: "https://json-schema.org/keyword/enum",
   shape: "data",
-  valueSchema: new URL("./enum.schema.json", import.meta.url).href,
+  schema: keywordSchema,
   evaluate: (values, { instance }) => (node) => {
     for (const value of values) {
       if (instanceEqual(instance, node, jsInstance, value, true)) {

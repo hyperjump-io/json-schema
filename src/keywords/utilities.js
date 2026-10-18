@@ -1,18 +1,19 @@
 /**
  * @import { CompileContext, InstanceOps, Keyword, SchemaHandle } from "../keyword.d.ts"
  * @import { JsonSchemaKeywordNode, JsonSchemaNode } from "../schema-ast.d.ts"
+ * @import { Json } from "@hyperjump/browser/json"
  */
 
 /**
  * A keyword whose value is an annotation for every instance it applies to,
  * like `title`. It never fails.
  *
- * @type (uri: string, valueSchema: string) => Keyword
+ * @type (uri: string, schema: Json) => Keyword
  */
-export const annotationKeyword = (uri, valueSchema) => ({
+export const annotationKeyword = (uri, schema) => ({
   uri: uri,
   shape: "data",
-  valueSchema: valueSchema,
+  schema: schema,
   evaluate(value, { annotate }) {
     if (annotate === undefined) {
       return () => true;

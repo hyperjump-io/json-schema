@@ -1,3 +1,5 @@
+import keywordSchema from "./contentEncoding.schema.json" with { type: "json" };
+
 /**
  * @import { Keyword } from "../keyword.d.ts"
  */
@@ -10,7 +12,7 @@
 export default {
   uri: "https://json-schema.org/keyword/contentEncoding",
   shape: "data",
-  valueSchema: new URL("./contentEncoding.schema.json", import.meta.url).href,
+  schema: keywordSchema,
   evaluate(contentEncoding, { instance, annotate }) {
     if (annotate === undefined) {
       return () => true;

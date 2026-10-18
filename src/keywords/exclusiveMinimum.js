@@ -1,3 +1,5 @@
+import keywordSchema from "./exclusiveMinimum.schema.json" with { type: "json" };
+
 /**
  * @import { Keyword } from "../keyword.d.ts"
  */
@@ -10,7 +12,7 @@
 export default {
   uri: "https://json-schema.org/keyword/exclusiveMinimum",
   shape: "data",
-  valueSchema: new URL("./exclusiveMinimum.schema.json", import.meta.url).href,
+  schema: keywordSchema,
   evaluate: (exclusiveMinimum, { instance }) => (node) => {
     return instance.typeOf(node) !== "number" || /** @type number */ (instance.value(node)) > exclusiveMinimum;
   }

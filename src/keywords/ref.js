@@ -1,5 +1,6 @@
 import { jsonValue } from "@hyperjump/browser/json";
 import { resolveIri, toAbsoluteIri } from "@hyperjump/uri";
+import keywordSchema from "./ref.schema.json" with { type: "json" };
 
 /**
  * @import { Keyword, SchemaHandle } from "../keyword.d.ts"
@@ -14,7 +15,7 @@ import { resolveIri, toAbsoluteIri } from "@hyperjump/uri";
 export default {
   uri: "https://json-schema.org/keyword/ref",
   shape: "data",
-  valueSchema: new URL("./ref.schema.json", import.meta.url).href,
+  schema: keywordSchema,
   compile(valueNode, context) {
     const reference = /** @type string */ (jsonValue(valueNode));
     return context.compileSchema(resolveIri(reference, toAbsoluteIri(context.schemaNode.location)));

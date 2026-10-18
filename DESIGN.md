@@ -81,10 +81,13 @@ were considered. See "Open questions".)
 - `shape`: Where the value contains schemas, using combinators: `"schema"`,
   `"data"`, `{ array: Shape }`, `{ map: Shape }`, or `Shape[]` (the first
   alternative whose JSON type matches). A value that doesn't match is data.
-- `valueSchema`: The URI of a schema for the keyword's own value, used for
-  schema validation. It's required, even for a keyword that allows any
-  value. It doesn't describe subschemas; those are validated as schemas. It
-  declares its dialect with `$schema` (see "Schema validation").
+- `schema`: The schema for the keyword's own value, used for schema
+  validation. It's the schema itself, not a URI. It's identified by the
+  keyword's `uri`, so it doesn't need an `$id`, and one that has an `$id`
+  must use the keyword's URI. It's required, even for a keyword that allows
+  any value. It doesn't describe subschemas; those are validated as
+  schemas. It declares its dialect with `$schema` (see "Schema
+  validation").
 - `resolve`: An optional hook for keywords that identify schemas (`$id`,
   `$anchor`, `$dynamicAnchor`, legacy `id`/`$id`/`$ref`, `$recursiveAnchor`).
   It records effects (`setBaseUri`, `addAnchor`, `addDynamicAnchor`,
@@ -149,25 +152,26 @@ an internal meta-schema.
   never validated against a meta-schema.
 - Unsupported keywords are reported by the resolver according to the
   dialect's `unknownKeywords`.
-- Each keyword's `valueSchema` validates its value.
+- Each keyword's `schema` validates its value.
   `jsonSchemaValidateKeywords` is a unified plugin that runs after
   `jsonSchemaResolve`. The schema media
   type plugin runs it unless the `validateSchemas` config is `false`. It
   validates each keyword's value node with `Validator.validateNode`. An
   invalid value gets one message, placed on the value, with the keyword's URI
-  as the `ruleId` and the value schema's BASIC errors as its `cause` (an
+  as the `ruleId` and the keyword schema's BASIC errors as its `cause` (an
   `AggregateError`).
-- A keyword's `valueSchema` is a URI, and the value schema is retrieved
-  like any other schema. The built-in keywords' value schemas are
-  `.schema.json` files next to the keywords, and their URIs are computed
-  with `import.meta.url`, so they're `file:` URIs in Node. Being files lets
-  tooling like a language server or a CI check validate them, since they
-  aren't validated themselves. Every keyword has one, even if it allows any
-  value.
-- Value schemas declare their dialect with `$schema`. They're written in v1,
-  so every `JsonSchema` has the v1 dialect, keywords, and lite formats, like
-  it has `$schema` and the unknown keyword. Value schemas aren't validated
-  themselves, because validating one would need itself.
+- `addKeyword` adds the keyword's schema to the `JsonSchema`'s internal
+  registry (see "The internal registry"), so it's found by the keyword's
+  URI like any other schema. The built-in keywords' schemas are
+  `.schema.json` files next to the keywords, imported as JSON. Being files
+  lets tooling like a language server or a CI check validate them, since
+  they aren't validated themselves. Every keyword has one, even if it
+  allows any value.
+- The built-in keyword schemas declare their dialect with `$schema`.
+  They're written in v1, so every `JsonSchema` has the v1 dialect,
+  keywords, and lite formats, like it has `$schema` and the unknown keyword.
+  Keyword schemas aren't validated themselves, because validating one could
+  need itself.
 - Dialect schemas (meta-schemas) are for dev-time tooling, not validators.
   There's no generated "what this implementation supports" meta-schema.
 - A schema that wasn't retrieved from a `file:` URI can't be identified by
@@ -182,8 +186,8 @@ an internal meta-schema.
 
 ## Sessions and registries
 
-Sessions and the HTTP cache are implemented. Registries and the internal
-registry aren't yet. `JsonSchema` used to be a `Hyperjump` with one
+Implemented, except the `$vocabulary` resolve hook, which comes with the
+presets (see "Plan"). `JsonSchema` used to be a `Hyperjump` with one
 document cache for its whole life. That's what made registries hard: a
 registry for one compilation would be visible to compilations running at the
 same time, and nothing could be removed without leaving resolved documents
@@ -197,7 +201,7 @@ Both libraries have a long-lived object and sessions created from it, and
 
 | Level | Browser | JSON Schema adds |
 | --- | --- | --- |
-| Long-lived | `Hyperjump`: URI scheme and media type plugins, the HTTP cache | keywords, formats, dialects, output formats, instance registries, the internal registry |
+| Long-lived | `Hyperjump`: URI scheme and media type plugins, the HTTP cache | keywords and their schemas, formats, dialects, output formats, instance registries |
 | Session | `Session`: document cache, `get`, `step`, …, following references | session registries, the embedded index, `compile` |
 
 - The long-lived level only has state that doesn't depend on a session.
@@ -260,13 +264,26 @@ class SchemaRegistry {
 }
 ```
 
+Implemented in `src/schema-registry.js`, with each `JsonSchema`'s index of a
+registry in `src/registry-index.js`. The state a registry shares with its
+indexes is in `src/registry-state.js`, which isn't exported.
+
 - A schema is identified the way JSON Schema identifies it: by its `$id`
   (or `id` in draft-04), resolved against `retrievalUri`, or by
   `retrievalUri` if it has no `$id`. Only the root resource is indexed.
   Embedded resources are only found from the same document.
+- A schema is also found by its `retrievalUri`, like a retrieved schema is
+  found by the URI it was retrieved from. A reference to a schema by where
+  it lives works even if the schema has a different `$id`, which the
+  JSON-Schema-Test-Suite tests and a language server needs for references
+  by relative path. Its `$id` is still its canonical URI, so locations use
+  it.
+- A schema can't be identified, or have a `retrievalUri`, that's a
+  keyword's URI. That's a keyword's schema.
 - `remove` takes the `retrievalUri`. A schema added without one can't be
-  removed. Adding a `retrievalUri` that's already in the registry throws, so
-  an edit is `remove` then `add`.
+  removed, and removing a `retrievalUri` that isn't there does nothing.
+  Adding a `retrievalUri` that's already in the registry throws, so an edit
+  is `remove` then `add`.
 - `retrievalUri` can be a `file:` URI, because the code calling `add` is
   trusted. The resolver's rule that only a schema retrieved from a `file:`
   URI can be identified by one still applies.
@@ -275,28 +292,34 @@ class SchemaRegistry {
   (`session({ registries })`, `compile(uri, { registries })`).
 - Lookup order is: embedded resources, the internal registry, session
   registries, instance registries, then browser (the session's cache, the
-  HTTP cache, a URI scheme plugin). Two visible entries with the same URI
-  are an error.
+  HTTP cache, a URI scheme plugin). Two entries with the same URI in one
+  registry are an error when the second is added. Two in different
+  registries that a session sees are an error when the URI is looked up,
+  which only costs checking each registry's index.
 
 ### Identification
 
 Identity depends on the dialect, so a registry can't index its own
 entries. Each `JsonSchema` indexes each registry it's used with.
 
-- Every `JsonSchema` a registry is attached to identifies an entry when
-  it's added. Identification is synchronous: it gets the dialect and runs the
-  root's resolve hooks (`$id`, `$schema`). The resolver has an entry point
-  for this that's separate from full resolution, so a schema isn't resolved
-  twice.
+- Every `JsonSchema` a registry is used with identifies an entry when
+  it's added. Identification is synchronous: it gets the dialect and runs
+  only the root's resolve hooks (`identify` in `src/registry-index.js`).
+  Full resolution comes later, separately. A self-describing meta-schema
+  (its `$schema` is its `retrievalUri`) is read with the dialect its own
+  `$vocabulary` defines, as the resolver does.
 - If any `JsonSchema` finds a problem, such as a duplicate `$id`, `add`
   throws (an `AggregateError` if there's more than one) and the entry isn't
   added.
 - An entry whose dialect isn't defined yet waits in a list by dialect URI.
-  Only another registry entry can define it (see `$vocabulary` below), and
-  nothing is retrieved to identify an entry. A schema in a registry that
+  Nothing is retrieved to identify an entry. Waiting entries are tried
+  again when a lookup misses, so a dialect added with `addDialect` later is
+  picked up. The dialects they're waiting for are in the error when the
+  lookup fails. Once the `$vocabulary` hook exists, another registry entry
+  can define the dialect too. Until then, a registry schema whose dialect
+  only comes from a meta-schema can't be found. A schema in a registry that
   uses a `$vocabulary` dialect needs that dialect's meta-schema in a
-  registry too. An entry that's still waiting is mentioned in the error when
-  a lookup finds nothing.
+  registry too.
 - `$vocabulary` is a resolve hook in the 2019-09 and 2020-12 presets. Its
   effect defines a dialect from the vocabularies, with the resource's base
   URI after `$id` as the dialect URI. A dialect defined that way is part of
@@ -317,8 +340,9 @@ Creating a session takes O(1) per registry, however large the registry is.
 - An entry never changes after it's added, so everything derived from it is
   cached once per `JsonSchema` (a `WeakMap` keyed by the entry) and shared by
   every session: its identification and, lazily, its resolved document. A
-  cached result that used a dialect from another entry is only used by a
-  session that sees that same entry.
+  resolved document is only shared if every resource in it uses a dialect
+  added to the `JsonSchema`. One that used a dialect only its session had
+  belongs to that session.
 - A `JsonSchema` keeps an index for each registry (URI to entry), updated as
   the registry changes. Sessions point at the indexes. They don't build
   anything.
@@ -328,8 +352,12 @@ Creating a session takes O(1) per registry, however large the registry is.
   records each registry's version when it's created and only sees entries
   that existed at that version. A URI rarely has more than one or two
   versions, so lookups stay O(1). A removed entry is dropped once no open
-  session can see it, which takes a count of sessions per version, with
-  `FinalizationRegistry` for sessions that are never closed.
+  session can see it. Each index counts open sessions per version, and a
+  `FinalizationRegistry` closes a session when it's garbage collected.
+  Sessions can't be closed explicitly.
+- Registries hold their indexes weakly, and each `JsonSchema` holds its
+  indexes in a `WeakMap` keyed by registry, so a registry that was only
+  used for one session can go away.
 - A session registry costs the same as an instance registry. Its entries are
   identified the first time it's used with a `JsonSchema`, and every session
   after that is O(1).
@@ -342,20 +370,27 @@ Creating a session takes O(1) per registry, however large the registry is.
 
 ### The internal registry
 
-- It has the built-in value schemas, and later the 2019-09 and 2020-12
-  meta-schemas. It's checked first and can't be removed or shadowed.
-- It isn't a `SchemaRegistry`. It's a fixed map from known `$id`s to lazy
-  loaders (`import()` of the JSON files with import attributes), so nothing
-  loads until it's needed. A test checks that each file's `$id` matches its
-  key.
-- Value schemas identify themselves with `https://hyperjump.io/...` `$id`s,
-  and `Keyword.valueSchema` is that URI. They stay `.schema.json` files so
-  tooling can check them. Their resolved documents and validators are
-  cached on `JsonSchema`, because they never change.
-- Nothing from the internal registry is validated. That replaces the list
-  of value schema URIs the media type plugin checks now.
-- This removes the limitation with value schemas in browsers and bundlers
-  (see "Known limitations").
+- Every `JsonSchema` has a `SchemaRegistry` for its keywords' schemas, so
+  there's only one way schemas are stored. `addKeyword` adds the keyword's
+  schema with the keyword's URI as its `retrievalUri`, and replacing a
+  keyword replaces its schema (`remove`, then `add`). Custom keywords' schemas
+  work the same way, so they don't have to be served from anywhere.
+- It's checked right after embedded resources and can't be removed. Another
+  registry can't have a schema that's identified by, or retrieved from, a
+  keyword's URI.
+- Its index is built the first time a session needs it, so a `JsonSchema`
+  that's never used doesn't identify every keyword schema. That's about
+  0.5 ms for the built-in keywords.
+- Keyword schemas use only dialects added to the `JsonSchema`, so each is
+  resolved once and shared by every session, like other registry schemas
+  that do. Their validators are cached for each keyword definition, so a
+  replaced keyword's schema is compiled again.
+- Nothing from the internal registry is validated (see "Schema
+  validation"). A schema from any other registry or retrieved is.
+- Keyword schemas don't depend on `import.meta.url`, so they work in
+  browsers and with bundlers.
+- The 2019-09 and 2020-12 presets will need their meta-schemas somewhere
+  too, probably a registry the preset adds.
 
 ### The language server
 
@@ -633,14 +668,16 @@ Done:
   `annotation`.
 - Keyword definitions with resolve hooks: `$schema`, unknown, `$id`,
   `$anchor`, `$dynamicAnchor`, draft-04 `id`/`$ref`, and 2019-09
-  `$recursiveAnchor`. Other keywords only need shapes and value schemas, so
+  `$recursiveAnchor`. Other keywords only need shapes and schemas, so
   they'll be added with the compile side.
 - The v1 dialect (`src/v1`) is built into every `JsonSchema`. It used to be
   added with `addV1`. The JSON-Schema-Test-Suite (its `unify`
   branch, which will replace `main`) runs in
-  `src/v1/json-schema-test-suite.test.js`. v1 is the suite's `9999`. Each
-  test case gets its own `JsonSchema` with an in-memory `http(s):` URI scheme
-  plugin for its schema and `externalSchemas`. Each test is checked with
+  `src/v1/json-schema-test-suite.test.js`. v1 is the suite's `9999`. One
+  `JsonSchema` runs every test case. Each test case's schema and
+  `externalSchemas` are in a session registry, which keeps test cases from
+  seeing each other's schemas, and `http(s):` is removed so nothing is
+  retrieved. Each test is checked with
   `validate`, `validateJson`, BASIC, and `annotate`. Files for keywords that
   don't exist yet are skipped.
 - The v1 dialect includes the `propertyDependencies` proposal, and the
@@ -704,14 +741,14 @@ Changes made to browser for this (on its `v2` branch):
 
 ## Plan
 
-1. Implement the v1 keywords (shapes, value schemas, compile, and evaluate)
+1. Implement the v1 keywords (shapes, keyword schemas, compile, and evaluate)
    and a v1 preset. Run the JSON-Schema-Test-Suite. Benchmark whether sharing
    keyword code between plain values and ASTs slows down `validate`. Done.
-2. Schema validation with value schemas. Done.
+2. Schema validation with keyword schemas. Done.
 3. Sessions and registries (see "Sessions and registries"). In browser:
    sessions and the HTTP cache. Here: `JsonSchemaSession`, `SchemaRegistry`,
-   and the internal registry with the value schemas, which fixes them in
-   browsers.
+   and the internal registry with the keyword schemas, which fixes them in
+   browsers. Done.
 4. Presets for 2020-12, 2019-09, and draft-04 through draft-07. Move the
    `$vocabulary` support into the 2019-09 and 2020-12 presets as a resolve
    hook the core doesn't need.
@@ -726,12 +763,8 @@ Changes made to browser for this (on its `v2` branch):
 - The base URI from a file's path only handles POSIX paths.
 - The `JsonSchema` shortcuts (`validate(uri, ...)` and the others) compile the
   schema every time.
-- In a browser, the built-in value schemas' URIs are `http(s):` URLs next
-  to the modules. Servers usually serve `.schema.json` as `application/json`,
-  which isn't a schema, so schema validation fails unless `validateSchemas`
-  is `false`. Bundlers that copy `new URL(..., import.meta.url)` assets have
-  the same problem. Browser support is required. The internal registry will
-  fix it.
+- A registry schema whose dialect is only defined by a meta-schema can't be
+  found until the `$vocabulary` resolve hook exists (step 4).
 - A self-describing meta-schema is recognized by the URI it was retrieved
   from. A copy retrieved from a different URI than its `$id` isn't recognized,
   and that's reported as an error. In a registry, that URI is the

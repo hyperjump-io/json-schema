@@ -3,29 +3,32 @@ import { keywordDefinitionUri } from "./compile.js";
 /**
  * @import { JsonErrorNode } from "@hyperjump/browser/json"
  * @import { JsonSchema, Validator } from "./json-schema.d.ts"
+ * @import { Keyword } from "./keyword.d.ts"
  * @import { JsonSchemaKeywordNode, JsonSchemaTolerantNode } from "./schema-ast.d.ts"
  * @import * as API from "./jsonschema-validate-keywords.d.ts"
  */
 
 /**
- * Value schemas are compiled once for each `JsonSchema`, by URI
+ * Keyword schemas are compiled once for each keyword definition in each
+ * `JsonSchema`. A keyword that's replaced has a new definition, so its schema
+ * is compiled again.
  *
- * @type WeakMap<JsonSchema, Map<string, Promise<Validator>>>
+ * @type WeakMap<JsonSchema, WeakMap<Keyword, Promise<Validator>>>
  */
 const validatorCache = new WeakMap();
 
-/** @type (jsonSchema: JsonSchema, valueSchemaUri: string) => Promise<Validator> */
-const valueSchemaValidator = (jsonSchema, valueSchemaUri) => {
+/** @type (jsonSchema: JsonSchema, keyword: Keyword) => Promise<Validator> */
+const keywordSchemaValidator = (jsonSchema, keyword) => {
   let validators = validatorCache.get(jsonSchema);
   if (validators === undefined) {
-    validators = new Map();
+    validators = new WeakMap();
     validatorCache.set(jsonSchema, validators);
   }
 
-  let validator = validators.get(valueSchemaUri);
+  let validator = validators.get(keyword);
   if (validator === undefined) {
-    validator = jsonSchema.compile(valueSchemaUri);
-    validators.set(valueSchemaUri, validator);
+    validator = jsonSchema.compile(keyword.uri);
+    validators.set(keyword, validator);
   }
 
   return validator;
@@ -43,14 +46,14 @@ export function jsonSchemaValidateKeywords(options) {
       }
 
       const [nameNode, valueNode] = property.children;
-      const validator = await valueSchemaValidator(jsonSchema, jsonSchema.getKeyword(keywordUri).valueSchema);
+      const validator = await keywordSchemaValidator(jsonSchema, jsonSchema.getKeyword(keywordUri));
       const output = validator.validateNode(valueNode, { output: "BASIC" });
       if (!output.valid) {
         file.message(`The value of '${nameNode.value}' isn't valid`, {
           place: valueNode.position,
           ruleId: keywordUri,
           source: "json-schema",
-          cause: new AggregateError(output.errors, `The value of '${nameNode.value}' doesn't match the keyword's value schema`)
+          cause: new AggregateError(output.errors, `The value of '${nameNode.value}' doesn't match the keyword's schema`)
         });
       }
     }

@@ -1,3 +1,5 @@
+import keywordSchema from "./contentMediaType.schema.json" with { type: "json" };
+
 /**
  * @import { Keyword } from "../keyword.d.ts"
  */
@@ -10,7 +12,7 @@
 export default {
   uri: "https://json-schema.org/keyword/contentMediaType",
   shape: "data",
-  valueSchema: new URL("./contentMediaType.schema.json", import.meta.url).href,
+  schema: keywordSchema,
   evaluate(contentMediaType, { instance, annotate }) {
     if (annotate === undefined) {
       return () => true;

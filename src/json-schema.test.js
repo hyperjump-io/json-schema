@@ -1,4 +1,4 @@
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -8,11 +8,12 @@ import { JsonSchema } from "./json-schema.js";
 import { v1DialectUri } from "./v1/index.js";
 import unknownKeyword from "./keywords/unknown.js";
 
-/** A value schema that allows any value, for keywords defined in tests */
-const anyValue = unknownKeyword.valueSchema;
+/** A keyword schema that allows any value, for keywords defined in tests */
+const anyValue = unknownKeyword.schema;
 
 /**
  * @import { Dialect } from "./dialect.d.ts"
+ * @import { Keyword } from "./keyword.d.ts"
  */
 
 describe("JsonSchema", () => {
@@ -192,17 +193,23 @@ describe("JsonSchema", () => {
     });
 
     test("a schema can't be retrieved without a JsonSchemaSession", async () => {
-      const valueSchema = jsonSchema.getKeyword("https://json-schema.org/keyword/schema").valueSchema;
+      const directory = await mkdtemp(join(tmpdir(), "json-schema-next-"));
+      try {
+        const path = join(directory, "schema.schema.json");
+        await writeFile(path, JSON.stringify({ $schema: v1DialectUri }));
 
-      await expect(new Session(jsonSchema).get(valueSchema)).rejects.toMatchObject({
-        cause: { message: expect.stringContaining("JsonSchemaSession") }
-      });
+        await expect(new Session(jsonSchema).get(pathToFileURL(path).toString())).rejects.toMatchObject({
+          cause: { message: expect.stringContaining("JsonSchemaSession") }
+        });
+      } finally {
+        await rm(directory, { recursive: true });
+      }
     });
   });
 
   describe("keywords", () => {
     test("addKeyword", () => {
-      const keyword = { uri: "https://example.com/keyword/foo", shape: /** @type const */ ("data"), valueSchema: anyValue };
+      const keyword = { uri: "https://example.com/keyword/foo", shape: /** @type const */ ("data"), schema: anyValue };
       jsonSchema.addKeyword(keyword);
 
       expect(jsonSchema.getKeyword(keyword.uri)).to.equal(keyword);
@@ -210,6 +217,47 @@ describe("JsonSchema", () => {
 
     test("a keyword that hasn't been added", () => {
       expect(() => jsonSchema.getKeyword("https://example.com/keyword/foo")).to.throw("isn't supported");
+    });
+
+    test("every built-in keyword's schema is found by the keyword's URI", async () => {
+      const directory = new URL("./keywords/", import.meta.url);
+      const files = await readdir(directory, { recursive: true });
+      const keywordFiles = files.filter((file) => file.endsWith(".js") && !file.endsWith(".test.js") && file !== "utilities.js");
+      expect(keywordFiles.length).to.be.greaterThan(0);
+
+      for (const file of keywordFiles) {
+        const { default: keyword } = /** @type {{ default: Keyword }} */ (await import(new URL(file, directory).href));
+        const builtIn = new JsonSchema();
+        builtIn.addKeyword(keyword);
+        // Nothing can be retrieved, so the schema has to be the keyword's
+        builtIn.removeUriSchemePlugin("http");
+        builtIn.removeUriSchemePlugin("https");
+
+        const session = builtIn.session();
+        expect(await session.get(keyword.uri), file).to.include({ type: "json-schema", location: `${keyword.uri}#` });
+      }
+    });
+
+    test("a keyword's schema can have an $id that's the keyword's URI", () => {
+      const uri = "https://example.com/keyword/foo";
+
+      expect(() => jsonSchema.addKeyword({ uri, shape: "data", schema: { $schema: v1DialectUri, $id: uri } })).not.to.throw();
+    });
+
+    test("a keyword's schema can't have any other $id", () => {
+      const keyword = { uri: "https://example.com/keyword/foo", shape: /** @type const */ ("data"), schema: { $schema: v1DialectUri, $id: "https://example.com/other" } };
+
+      expect(() => jsonSchema.addKeyword(keyword)).to.throw("keyword's URI");
+      expect(jsonSchema.hasKeyword(keyword.uri)).to.equal(false);
+    });
+
+    test("a keyword's schema is resolved once for every session", async () => {
+      const uri = "https://json-schema.org/keyword/type";
+
+      const first = await jsonSchema.session().getDocument(uri);
+      const second = await jsonSchema.session().getDocument(uri);
+
+      expect(second).to.equal(first);
     });
 
     test.each([

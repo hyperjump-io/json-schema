@@ -1,3 +1,5 @@
+import keywordSchema from "./else.schema.json" with { type: "json" };
+
 /**
  * @import { Keyword } from "../keyword.d.ts"
  */
@@ -10,6 +12,6 @@
 export default {
   uri: "https://json-schema.org/keyword/else",
   shape: "schema",
-  valueSchema: new URL("./else.schema.json", import.meta.url).href,
+  schema: keywordSchema,
   compile: () => null
 };

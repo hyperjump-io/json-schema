@@ -13,6 +13,7 @@ import type { Keyword } from "./keyword.d.ts";
 import type { Dialect, DialectExtension, Vocabulary } from "./dialect.d.ts";
 import type { Format } from "./format.d.ts";
 import type { EvaluationPlugin } from "./evaluation-plugin.d.ts";
+import type { SchemaRegistry } from "./schema-registry.d.ts";
 
 export type JsonSchemaConfig = HyperjumpConfig & {
   /**
@@ -34,6 +35,20 @@ export type JsonSchemaConfig = HyperjumpConfig & {
    * `true`.
    */
   validateSchemas?: boolean;
+
+  /**
+   * Registries every session sees. The same as adding each with
+   * {@link JsonSchema.addRegistry}.
+   */
+  registries?: SchemaRegistry[];
+};
+
+export type SessionOptions = {
+  /**
+   * Registries only this session sees, in addition to the
+   * {@link JsonSchema}'s. They're checked first.
+   */
+  registries?: SchemaRegistry[];
 };
 
 export class JsonSchema extends Hyperjump<JsonSchemaNode> {
@@ -44,11 +59,22 @@ export class JsonSchema extends Hyperjump<JsonSchemaNode> {
   /**
    * Start a session for retrieving and compiling schemas. Dialects built
    * from meta-schemas belong to the session, like the documents it
-   * retrieves.
+   * retrieves. A session sees each registry as it was when the session was
+   * created.
    */
-  session(): JsonSchemaSession;
+  session(options?: SessionOptions): JsonSchemaSession;
 
-  // TODO: A registry for schemas that aren't retrieved from a URI
+  /**
+   * Add a registry that every new session sees. Its schemas are identified
+   * now, and as they're added.
+   *
+   * @throws Error if the registry was already added, or it has schemas that
+   * can't be identified or are identified by the same URI.
+   */
+  addRegistry(registry: SchemaRegistry): void;
+
+  /** Sessions that already exist still see the registry. */
+  removeRegistry(registry: SchemaRegistry): void;
 
   /** Add or replace a keyword definition */
   addKeyword(keyword: Keyword): void;
@@ -142,7 +168,7 @@ export class JsonSchema extends Hyperjump<JsonSchemaNode> {
    * @throws {@link InvalidSchemaError}
    * @throws RetrievalError from `@hyperjump/browser`
    */
-  compile(uri: string): Promise<Validator>;
+  compile(uri: string, options?: SessionOptions): Promise<Validator>;
 
   /**
    * Restore a validator from {@link Validator.serialize}. It doesn't
@@ -187,13 +213,18 @@ export class JsonSchema extends Hyperjump<JsonSchemaNode> {
  * meta-schemas. Create one with {@link JsonSchema.session}.
  */
 export class JsonSchemaSession extends Session<JsonSchemaNode> {
-  constructor(jsonSchema: JsonSchema);
+  constructor(jsonSchema: JsonSchema, options?: SessionOptions);
 
   readonly jsonSchema: JsonSchema;
 
   /**
-   * An embedded resource is only found by a reference from the document
-   * that contains it (`referencedFrom`).
+   * Documents are found in this order: an embedded resource, if the
+   * reference is from the document that contains it (`referencedFrom`); an
+   * keyword's schema; a schema in a session registry, then in one of the
+   * {@link JsonSchema}'s registries; then it's retrieved.
+   *
+   * @throws {@link RetrievalError} if more than one registry has a schema
+   * identified by the URI.
    */
   getDocument(uri: string, options?: GetOptions): Promise<DocumentNode<JsonSchemaNode>>;
 

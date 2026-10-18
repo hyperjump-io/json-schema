@@ -1,3 +1,5 @@
+import keywordSchema from "./maxProperties.schema.json" with { type: "json" };
+
 /**
  * @import { Keyword } from "../keyword.d.ts"
  */
@@ -10,7 +12,7 @@
 export default {
   uri: "https://json-schema.org/keyword/maxProperties",
   shape: "data",
-  valueSchema: new URL("./maxProperties.schema.json", import.meta.url).href,
+  schema: keywordSchema,
   evaluate: (maxProperties, { instance }) => (node) => {
     return instance.typeOf(node) !== "object" || instance.length(node) <= maxProperties;
   }

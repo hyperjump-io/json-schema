@@ -1,6 +1,7 @@
 import { annotationKeyword } from "./utilities.js";
+import keywordSchema from "./readOnly.schema.json" with { type: "json" };
 
 /**
  * `readOnly`
  */
-export default annotationKeyword("https://json-schema.org/keyword/readOnly", new URL("./readOnly.schema.json", import.meta.url).href);
+export default annotationKeyword("https://json-schema.org/keyword/readOnly", keywordSchema);

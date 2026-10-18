@@ -1,5 +1,6 @@
 import { jsonValue } from "@hyperjump/browser/json";
 import { siblingKeyword } from "./utilities.js";
+import keywordSchema from "./contains.schema.json" with { type: "json" };
 
 /**
  * @import { Keyword, SchemaHandle } from "../keyword.d.ts"
@@ -15,7 +16,7 @@ import { siblingKeyword } from "./utilities.js";
 export default {
   uri: "https://json-schema.org/keyword/contains",
   shape: "schema",
-  valueSchema: new URL("./contains.schema.json", import.meta.url).href,
+  schema: keywordSchema,
   async compile(valueNode, context) {
     const minContainsNode = siblingKeyword(context.schemaNode, "https://json-schema.org/keyword/minContains");
     const maxContainsNode = siblingKeyword(context.schemaNode, "https://json-schema.org/keyword/maxContains");

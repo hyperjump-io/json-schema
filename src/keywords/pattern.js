@@ -1,3 +1,5 @@
+import keywordSchema from "./pattern.schema.json" with { type: "json" };
+
 /**
  * @import { Keyword } from "../keyword.d.ts"
  */
@@ -11,7 +13,7 @@
 export default {
   uri: "https://json-schema.org/keyword/pattern",
   shape: "data",
-  valueSchema: new URL("./pattern.schema.json", import.meta.url).href,
+  schema: keywordSchema,
   evaluate(pattern, { instance }) {
     const regExp = new RegExp(pattern, "u");
     return (node) => instance.typeOf(node) !== "string" || regExp.test(/** @type string */ (instance.value(node)));

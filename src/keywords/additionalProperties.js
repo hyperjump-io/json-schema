@@ -1,4 +1,5 @@
 import { siblingKeyword } from "./utilities.js";
+import keywordSchema from "./additionalProperties.schema.json" with { type: "json" };
 
 /**
  * @import { Keyword, SchemaHandle } from "../keyword.d.ts"
@@ -13,7 +14,7 @@ import { siblingKeyword } from "./utilities.js";
 export default {
   uri: "https://json-schema.org/keyword/additionalProperties",
   shape: "schema",
-  valueSchema: new URL("./additionalProperties.schema.json", import.meta.url).href,
+  schema: keywordSchema,
   async compile(valueNode, context) {
     /** @type string[] */
     const properties = [];

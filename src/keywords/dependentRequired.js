@@ -1,3 +1,5 @@
+import keywordSchema from "./dependentRequired.schema.json" with { type: "json" };
+
 /**
  * @import { Keyword } from "../keyword.d.ts"
  */
@@ -10,7 +12,7 @@
 export default {
   uri: "https://json-schema.org/keyword/dependentRequired",
   shape: "data",
-  valueSchema: new URL("./dependentRequired.schema.json", import.meta.url).href,
+  schema: keywordSchema,
   evaluate(dependentRequired, { instance }) {
     const dependencies = Object.entries(dependentRequired);
 

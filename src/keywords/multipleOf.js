@@ -1,3 +1,5 @@
+import keywordSchema from "./multipleOf.schema.json" with { type: "json" };
+
 /**
  * @import { Keyword } from "../keyword.d.ts"
  */
@@ -11,7 +13,7 @@
 export default {
   uri: "https://json-schema.org/keyword/multipleOf",
   shape: "data",
-  valueSchema: new URL("./multipleOf.schema.json", import.meta.url).href,
+  schema: keywordSchema,
   evaluate: (multipleOf, { instance }) => (node) => {
     if (instance.typeOf(node) !== "number") {
       return true;

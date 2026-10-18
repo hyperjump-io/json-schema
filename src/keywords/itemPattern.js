@@ -1,6 +1,9 @@
+import keywordSchema from "./itemPattern.schema.json" with { type: "json" };
+
 /**
  * @import { Keyword, SchemaHandle, Shape } from "../keyword.d.ts"
  * @import { JsonSchemaNode } from "../schema-ast.d.ts"
+ * @import { Json } from "@hyperjump/browser/json"
  */
 
 /**
@@ -40,7 +43,7 @@ ruleShapes.push(shape);
 export default {
   uri: "https://json-schema.org/keyword/itemPattern",
   shape: shape,
-  valueSchema: new URL("./itemPattern.schema.json", import.meta.url).href,
+  schema: /** @type Json */ (/** @type unknown */ (keywordSchema)),
   async compile(valueNode, context) {
     /** @type State[] */
     const states = [];

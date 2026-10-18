@@ -1,3 +1,5 @@
+import keywordSchema from "./ref.schema.json" with { type: "json" };
+
 /**
  * @import { Keyword } from "../../keyword.d.ts"
  */
@@ -11,7 +13,7 @@
 export default {
   uri: "https://json-schema.org/keyword/draft-04/ref",
   shape: "data",
-  valueSchema: new URL("./ref.schema.json", import.meta.url).href,
+  schema: keywordSchema,
   resolve(valueNode, context) {
     if (valueNode.type === "json" && valueNode.jsonType === "string") {
       context.setReference(valueNode.value);

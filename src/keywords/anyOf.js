@@ -1,4 +1,5 @@
 import { compileSchemaArray } from "./utilities.js";
+import keywordSchema from "./anyOf.schema.json" with { type: "json" };
 
 /**
  * @import { Keyword, SchemaHandle } from "../keyword.d.ts"
@@ -12,7 +13,7 @@ import { compileSchemaArray } from "./utilities.js";
 export default {
   uri: "https://json-schema.org/keyword/anyOf",
   shape: { array: "schema" },
-  valueSchema: new URL("./anyOf.schema.json", import.meta.url).href,
+  schema: keywordSchema,
   compile: compileSchemaArray,
   evaluate(anyOf, { schema, exhaustive, markEvaluated }) {
     const evaluators = anyOf.map(schema);

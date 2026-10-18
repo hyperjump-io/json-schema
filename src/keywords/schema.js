@@ -1,3 +1,5 @@
+import keywordSchema from "./schema.schema.json" with { type: "json" };
+
 /**
  * @import { Keyword } from "../keyword.d.ts"
  * @import { JsonSchema } from "../json-schema.d.ts"
@@ -14,5 +16,5 @@
 export default {
   uri: "https://json-schema.org/keyword/schema",
   shape: "data",
-  valueSchema: new URL("./schema.schema.json", import.meta.url).href
+  schema: keywordSchema
 };

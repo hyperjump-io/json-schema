@@ -1,3 +1,5 @@
+import keywordSchema from "./maxContains.schema.json" with { type: "json" };
+
 /**
  * @import { Keyword } from "../keyword.d.ts"
  */
@@ -10,5 +12,5 @@
 export default {
   uri: "https://json-schema.org/keyword/maxContains",
   shape: "data",
-  valueSchema: new URL("./maxContains.schema.json", import.meta.url).href
+  schema: keywordSchema
 };

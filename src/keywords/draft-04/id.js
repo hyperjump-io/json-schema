@@ -1,4 +1,5 @@
 import { parseIri, resolveIri, toAbsoluteIri } from "@hyperjump/uri";
+import keywordSchema from "./id.schema.json" with { type: "json" };
 
 /**
  * @import { Keyword } from "../../keyword.d.ts"
@@ -14,7 +15,7 @@ import { parseIri, resolveIri, toAbsoluteIri } from "@hyperjump/uri";
 export default {
   uri: "https://json-schema.org/keyword/draft-04/id",
   shape: "data",
-  valueSchema: new URL("./id.schema.json", import.meta.url).href,
+  schema: keywordSchema,
   resolve(valueNode, context) {
     if (valueNode.type !== "json" || valueNode.jsonType !== "string") {
       return;

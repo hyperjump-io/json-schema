@@ -1,3 +1,5 @@
+import keywordSchema from "./minItems.schema.json" with { type: "json" };
+
 /**
  * @import { Keyword } from "../keyword.d.ts"
  */
@@ -10,7 +12,7 @@
 export default {
   uri: "https://json-schema.org/keyword/minItems",
   shape: "data",
-  valueSchema: new URL("./minItems.schema.json", import.meta.url).href,
+  schema: keywordSchema,
   evaluate: (minItems, { instance }) => (node) => {
     return instance.typeOf(node) !== "array" || instance.length(node) >= minItems;
   }

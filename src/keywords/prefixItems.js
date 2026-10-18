@@ -1,4 +1,5 @@
 import { compileSchemaArray } from "./utilities.js";
+import keywordSchema from "./prefixItems.schema.json" with { type: "json" };
 
 /**
  * @import { Keyword, SchemaHandle } from "../keyword.d.ts"
@@ -12,7 +13,7 @@ import { compileSchemaArray } from "./utilities.js";
 export default {
   uri: "https://json-schema.org/keyword/prefixItems",
   shape: { array: "schema" },
-  valueSchema: new URL("./prefixItems.schema.json", import.meta.url).href,
+  schema: keywordSchema,
   compile: compileSchemaArray,
   evaluate(prefixItems, { instance, schema, exhaustive, markEvaluated }) {
     const evaluators = prefixItems.map(schema);

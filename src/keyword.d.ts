@@ -27,15 +27,16 @@ export type Keyword<C extends Json = Json> = {
   shape: Shape;
 
   /**
-   * The URI of a schema for the keyword's value, used to validate schemas.
-   * It doesn't need to describe the subschemas in the value. They're
-   * validated as schemas in their own right. A keyword that allows any value
-   * still needs one.
+   * A schema for the keyword's value, used to validate schemas. It doesn't
+   * need to describe the subschemas in the value. They're validated as
+   * schemas in their own right. A keyword that allows any value still needs
+   * one.
    *
-   * It's retrieved like any other schema and has to declare its dialect with
-   * `$schema`. Value schemas aren't validated with value schemas themselves.
+   * It's identified by the keyword's {@link uri}, so it can't have an `$id`
+   * that's anything else. It has to declare its dialect with `$schema`.
+   * Keyword schemas aren't validated themselves.
    */
-  valueSchema: string;
+  schema: Json;
 
   /**
    * Called while a schema document is resolved, for keywords that affect how

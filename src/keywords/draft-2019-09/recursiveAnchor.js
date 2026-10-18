@@ -1,3 +1,5 @@
+import keywordSchema from "./recursiveAnchor.schema.json" with { type: "json" };
+
 /**
  * @import { Keyword } from "../../keyword.d.ts"
  */
@@ -11,7 +13,7 @@
 export default {
   uri: "https://json-schema.org/keyword/draft-2019-09/recursiveAnchor",
   shape: "data",
-  valueSchema: new URL("./recursiveAnchor.schema.json", import.meta.url).href,
+  schema: keywordSchema,
   resolve(valueNode, context) {
     if (valueNode.type === "json" && valueNode.jsonType === "boolean" && valueNode.value) {
       context.addDynamicAnchor("");

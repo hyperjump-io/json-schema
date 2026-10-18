@@ -1,4 +1,5 @@
 import { instanceEqual } from "./utilities.js";
+import keywordSchema from "./uniqueItems.schema.json" with { type: "json" };
 
 /**
  * @import { Keyword } from "../keyword.d.ts"
@@ -13,7 +14,7 @@ import { instanceEqual } from "./utilities.js";
 export default {
   uri: "https://json-schema.org/keyword/uniqueItems",
   shape: "data",
-  valueSchema: new URL("./uniqueItems.schema.json", import.meta.url).href,
+  schema: keywordSchema,
   evaluate(uniqueItems, { instance }) {
     if (!uniqueItems) {
       return () => true;

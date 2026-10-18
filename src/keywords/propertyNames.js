@@ -1,3 +1,5 @@
+import keywordSchema from "./propertyNames.schema.json" with { type: "json" };
+
 /**
  * @import { Keyword, SchemaHandle } from "../keyword.d.ts"
  */
@@ -11,7 +13,7 @@
 export default {
   uri: "https://json-schema.org/keyword/propertyNames",
   shape: "schema",
-  valueSchema: new URL("./propertyNames.schema.json", import.meta.url).href,
+  schema: keywordSchema,
   compile: (valueNode, context) => context.compileSchema(valueNode),
   evaluate(handle, { instance, schema, exhaustive }) {
     const evaluate = schema(handle);

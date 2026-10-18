@@ -2,10 +2,8 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, test, beforeAll, expect } from "vitest";
 import { JsonPointerError, pointerGet } from "@hyperjump/browser/json";
-import { JsonSchema } from "../json-schema.js";
 import { v1Dialect } from "./index.js";
-import { MemoryUriSchemePlugin, isCompatible, isSkipped } from "./test-suite.js";
-import { addFullFormats } from "../formats/full.js";
+import { compileTestCase, isCompatible, isSkipped, testSuiteJsonSchema } from "./test-suite.js";
 
 /**
  * @import { Json, JsonNode } from "@hyperjump/browser/json"
@@ -102,6 +100,10 @@ const annotationsAt = (node, location, keyword) => {
   return subject?.data?.annotations?.get(keywordUri) ?? [];
 };
 
+// One JsonSchema for every test case. Each test case's schemas are only in its
+// own session.
+const jsonSchema = testSuiteJsonSchema();
+
 describe("JSON-Schema-Test-Suite v1 annotations", () => {
   for (const file in testFiles) {
     describe(file, () => {
@@ -118,17 +120,8 @@ describe("JSON-Schema-Test-Suite v1 annotations", () => {
               return;
             }
 
-            // External schema URIs aren't unique across test cases, so each
-            // test case gets its own JsonSchema
             const uri = `${testCaseUri}${file}/${index}`;
-            const jsonSchema = new JsonSchema();
-            addFullFormats(jsonSchema);
-            jsonSchema.addUriSchemePlugin(new MemoryUriSchemePlugin({
-              ...testCase.externalSchemas,
-              [uri]: testCase.schema
-            }));
-
-            validator = await jsonSchema.compile(uri);
+            validator = await compileTestCase(jsonSchema, uri, testCase.schema, testCase.externalSchemas);
           });
 
           for (const { instance, assertions } of testCase.tests) {

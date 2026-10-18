@@ -1,4 +1,5 @@
 import { siblingKeyword } from "./utilities.js";
+import keywordSchema from "./items.schema.json" with { type: "json" };
 
 /**
  * @import { Keyword, SchemaHandle } from "../keyword.d.ts"
@@ -13,7 +14,7 @@ import { siblingKeyword } from "./utilities.js";
 export default {
   uri: "https://json-schema.org/keyword/items",
   shape: "schema",
-  valueSchema: new URL("./items.schema.json", import.meta.url).href,
+  schema: keywordSchema,
   async compile(valueNode, context) {
     const prefixItemsNode = siblingKeyword(context.schemaNode, "https://json-schema.org/keyword/prefixItems");
     const start = prefixItemsNode?.jsonType === "array" ? prefixItemsNode.children.length : 0;
