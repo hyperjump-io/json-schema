@@ -35,7 +35,7 @@ export default {
   evaluate(compiled, context) {
     const annotate = context.annotate;
     if (compiled === null || annotate === undefined) {
-      return () => true;
+      return;
     }
 
     return () => {

@@ -15,7 +15,7 @@ export default {
   schema: keywordSchema,
   evaluate(contentEncoding, { instance, annotate }) {
     if (annotate === undefined) {
-      return () => true;
+      return;
     }
 
     return (node) => {

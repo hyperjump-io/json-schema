@@ -65,9 +65,15 @@ const titleKeyword = {
   uri: "https://example.com/keyword/title",
   shape: "data",
   schema: anyValue,
-  evaluate: (title, { annotate }) => () => {
-    annotate?.(title);
-    return true;
+  evaluate(title, { annotate }) {
+    if (annotate === undefined) {
+      return;
+    }
+
+    return () => {
+      annotate(title);
+      return true;
+    };
   }
 };
 
@@ -335,6 +341,17 @@ describe("Validator", () => {
       expect(validator.validate({ foo: 2 })).to.equal(false);
       expect(validator.validate({ foo: "3" })).to.equal(false);
       expect(validator.validate([])).to.equal(false);
+    });
+
+    test("keywords that always pass", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({
+        title: "foo",
+        properties: { foo: { title: "bar" }, bar: { title: "baz", type: "number" } }
+      }));
+
+      expect(validator.validate({ foo: 1, bar: 1 })).to.equal(true);
+      expect(validator.validate({ foo: 1, bar: "1" })).to.equal(false);
+      expect(validator.validateJson(`{ "foo": 1, "bar": "1" }`)).to.equal(false);
     });
 
     test("boolean schemas", async () => {
@@ -747,6 +764,18 @@ describe("Validator", () => {
         "afterKeyword keyword /properties true",
         "afterSchema schema  true"
       ]);
+    });
+
+    test("plugins see keywords that always pass", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({ title: "foo", type: "number" }));
+
+      /** @type [string, boolean][] */
+      const calls = [];
+      /** @type EvaluationPlugin */
+      const plugin = { afterKeyword: (keyword, _at, valid) => calls.push([keyword.keywordUri, valid]) };
+
+      expect(validator.validate(1, { plugins: [plugin] })).to.equal(true);
+      expect(calls).to.eql([[titleKeyword.uri, true], [typeKeyword.uri, true]]);
     });
 
     test("plugins see every keyword once, even with an output format", async () => {

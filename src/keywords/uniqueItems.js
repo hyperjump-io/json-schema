@@ -17,7 +17,7 @@ export default {
   schema: keywordSchema,
   evaluate(uniqueItems, { instance }) {
     if (!uniqueItems) {
-      return () => true;
+      return;
     }
 
     return (node) => {

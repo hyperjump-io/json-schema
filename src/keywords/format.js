@@ -34,7 +34,7 @@ export default {
   evaluate({ name, uri }, { jsonSchema, instance, annotate }) {
     if (uri === null) {
       if (annotate === undefined) {
-        return () => true;
+        return;
       }
 
       return () => {

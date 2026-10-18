@@ -26,7 +26,7 @@ export default {
     return { handle: await context.compileSchema(valueNode), start: itemsNode.children.length };
   },
   evaluate: (compiled, context) => compiled === null
-    ? () => true
+    ? undefined
     : /** @type NonNullable<typeof itemsKeyword.evaluate> */ (itemsKeyword.evaluate)(compiled, context),
   simpleApplicator: true
 };

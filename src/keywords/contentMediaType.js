@@ -15,7 +15,7 @@ export default {
   schema: keywordSchema,
   evaluate(contentMediaType, { instance, annotate }) {
     if (annotate === undefined) {
-      return () => true;
+      return;
     }
 
     return (node) => {

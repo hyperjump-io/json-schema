@@ -25,7 +25,7 @@ export default {
   },
   evaluate(contentSchema, { instance, annotate }) {
     if (contentSchema === null || annotate === undefined) {
-      return () => true;
+      return;
     }
 
     return (node) => {

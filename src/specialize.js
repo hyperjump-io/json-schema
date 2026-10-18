@@ -55,6 +55,9 @@ const nothingEvaluated = new Set();
 /** @type Readonly<Record<string, string>> */
 const noDynamicAnchors = {};
 
+/** @type () => boolean */
+const alwaysPasses = () => true;
+
 /**
  * Turn compiled schemas into an evaluation function for one kind of instance
  * and one mode. Evaluation keeps its state in this closure rather than
@@ -246,10 +249,17 @@ export const specialize = (jsonSchema, compiled, options) => {
       context.resourceDynamicAnchors = (resourceUri) => compiled.resources[resourceUri]?.dynamicAnchors ?? noDynamicAnchors;
     }
 
+    // A keyword that passes every instance is left out, unless plugins
+    // need to see it
+    const evaluate = keyword.evaluate(compiledValue, context);
+    if (evaluate === undefined && !instrumented) {
+      return;
+    }
+
     return {
       info: { keywordUri, absoluteKeywordLocation: location, keyword, compiled: compiledValue },
       step: decodeURIComponent(location.slice(handle.length)),
-      evaluate: keyword.evaluate(compiledValue, context)
+      evaluate: evaluate ?? alwaysPasses
     };
   };
 

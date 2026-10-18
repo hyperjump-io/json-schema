@@ -64,8 +64,13 @@ export type Keyword<C extends Json = Json> = {
    *
    * The evaluator returns whether the instance is valid. Without
    * `evaluate`, the keyword has no effect on evaluation, like `$id`.
+   *
+   * Return `undefined` if the keyword passes every instance in this
+   * context, like an annotation when annotations aren't being collected
+   * (`annotate` is undefined) or `uniqueItems: false`. Then it isn't
+   * evaluated at all, unless there are plugins, which still see it pass.
    */
-  evaluate?<I>(compiled: C, context: EvaluateContext<I>): Evaluator<I>;
+  evaluate?<I>(compiled: C, context: EvaluateContext<I>): Evaluator<I> | undefined;
 
   /**
    * Evaluation state the keyword reads. The core only tracks a kind of

@@ -16,7 +16,7 @@ export const annotationKeyword = (uri, schema) => ({
   schema: schema,
   evaluate(value, { annotate }) {
     if (annotate === undefined) {
-      return () => true;
+      return;
     }
 
     return () => {
