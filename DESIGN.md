@@ -653,16 +653,18 @@ objects the caller reads results from afterwards.
 
 The benchmark is ported from `@hyperjump/json-schema`'s and isn't committed.
 It compares implementations over the v1 test cases of the
-JSON-Schema-Test-Suite, and over the draft-07, 2019-09, and 2020-12 test
-cases, which json-schema-next evaluates with those presets. Test cases
-tagged for `format` are left out. A test case that any implementation gets
-wrong is left out for every implementation. In draft-07, 2019-09, and
-2020-12, json-schema-next only gets the two `file:` `$id` test cases
-wrong, which it rejects on purpose. In draft-07, `@hyperjump/json-schema`
-also gets two legacy `$id` test cases wrong. json-schema-next and
-`@hyperjump/json-schema` both validate draft-07 formats by default, but
-the untagged test cases only use `format` on values that aren't strings,
-which `format` skips.
+JSON-Schema-Test-Suite, and over the draft-06, draft-07, 2019-09, and
+2020-12 test cases, which json-schema-next evaluates with those presets.
+Test cases tagged for `format` are left out. A test case that any
+implementation gets wrong is left out for every implementation. In those
+drafts, json-schema-next only gets the two `file:` `$id` test cases wrong,
+which it rejects on purpose. In draft-06 and draft-07,
+`@hyperjump/json-schema` also gets two legacy `$id` test cases wrong.
+json-schema-next and `@hyperjump/json-schema` both validate draft-06 and
+draft-07 formats by default. That doesn't matter, because the untagged
+test cases that are run only use `format` on values that aren't strings,
+which `format` skips. The unknown format test case is the exception, and
+it's left out because `@exodus/schemasafe` can't compile it.
 
 Results (mean time per run of the suite, FLAG unless it says errors):
 
@@ -671,6 +673,8 @@ Results (mean time per run of the suite, FLAG unless it says errors):
 | v1 | 0.26–0.28 ms | 0.75 ms |
 | v1, after evaluating ASTs | 0.31–0.33 ms | 0.75 ms |
 | v1, all errors | 1.52–1.54 ms | 1.35–1.36 ms |
+| draft-06 | 0.11 ms | 0.26 ms |
+| draft-06, all errors | 0.74–0.76 ms | 0.56–0.57 ms |
 | draft-07 | 0.12 ms | 0.29 ms |
 | draft-07, all errors | 0.77–0.78 ms | 0.62–0.63 ms |
 | 2019-09 | 0.29 ms | 0.76–0.79 ms |
@@ -679,19 +683,19 @@ Results (mean time per run of the suite, FLAG unless it says errors):
 | 2020-12, all errors | 1.78–1.83 ms | 1.53–1.63 ms |
 
 - FLAG is about 2.7–2.9 times faster than `@hyperjump/json-schema` in v1,
-  about 2.4 times faster in draft-07, about 2.7 times faster in 2019-09,
-  and about 2.85 times faster in 2020-12.
+  about 2.4 times faster in draft-06 and draft-07, about 2.7 times faster
+  in 2019-09, and about 2.85 times faster in 2020-12.
 - `validate` is about 15% slower in a process that has also evaluated
   ASTs, because keyword code is shared (see "Compile and evaluate").
 - Collecting errors (BASIC) is about 1.13 times slower than
-  `@hyperjump/json-schema` in v1, about 1.24 times slower in draft-07,
-  about 1.15–1.22 times slower in 2019-09, and about 1.12–1.16 times
-  slower in 2020-12. It was about 5 times slower until errors stopped
-  capturing stack traces (see "Validation API").
+  `@hyperjump/json-schema` in v1, about 1.30–1.36 times slower in draft-06,
+  about 1.24 times slower in draft-07, about 1.15–1.22 times slower in
+  2019-09, and about 1.12–1.16 times slower in 2020-12. It was about 5 times
+  slower until errors stopped capturing stack traces (see "Validation API").
 - `@exodus/schemasafe`, which generates code, is the fastest at collecting
-  errors. It's about 10 times faster than json-schema-next in draft-07,
-  about 6.8–7.3 times faster in 2019-09, and about 4.6–4.7 times faster in
-  2020-12.
+  errors. It's about 10 times faster than json-schema-next in draft-06 and
+  draft-07, about 6.8–7.3 times faster in 2019-09, and about 4.6–4.7 times
+  faster in 2020-12.
 - With the `format` test cases, format validators take most of the time,
   and FLAG is only about 1.4 times faster.
 
