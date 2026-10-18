@@ -11,6 +11,10 @@ import { specialize } from "./specialize.js";
  * @import { InstanceNode } from "./instance.js"
  */
 
+// Shared by every evaluation of an instance that wasn't parsed from JSON text
+/** @type API.JsonSyntaxError[] */
+const noSyntaxErrors = /** @type API.JsonSyntaxError[] */ (/** @type unknown */ (Object.freeze([])));
+
 /** @implements API.Validator */
 export class Validator {
   /** @type API.JsonSchema */
@@ -30,6 +34,14 @@ export class Validator {
   #astSpecializations;
 
   /**
+   * The specialization for `validate` without output or plugins. It's the
+   * most common call, so it doesn't go through `#evaluate`.
+   *
+   * @type Specialization<Json> | undefined
+   */
+  #jsFlag;
+
+  /**
    * @param {API.JsonSchema} jsonSchema
    * @param {CompiledSchemas} compiled
    */
@@ -46,20 +58,30 @@ export class Validator {
 
   /** @type API.Validator["validate"] */
   validate(instance, options) {
+    if (options === undefined) {
+      this.#jsFlag ??= this.#jsSpecialization(false);
+      return /** @type API.ValidationResult<any> */ (this.#jsFlag(instance));
+    }
+
     return this.#evaluate((annotating, instrumented) => {
       if (annotating) {
         throw Error("Annotating needs an AST");
       }
 
-      const key = `${instrumented}`;
-      this.#jsSpecializations[key] ??= specialize(this.#jsonSchema, this.#compiled, {
-        instance: jsInstance,
-        isAst: false,
-        annotating: false,
-        instrumented: instrumented
-      });
-      return this.#jsSpecializations[key];
-    }, instance, false, options, []);
+      return this.#jsSpecialization(instrumented);
+    }, instance, false, options, noSyntaxErrors);
+  }
+
+  /** @type (instrumented: boolean) => Specialization<Json> */
+  #jsSpecialization(instrumented) {
+    const key = `${instrumented}`;
+    this.#jsSpecializations[key] ??= specialize(this.#jsonSchema, this.#compiled, {
+      instance: jsInstance,
+      isAst: false,
+      annotating: false,
+      instrumented: instrumented
+    });
+    return this.#jsSpecializations[key];
   }
 
   /** @type API.Validator["validateJson"] */
@@ -70,13 +92,13 @@ export class Validator {
 
   /** @type API.Validator["validateNode"] */
   validateNode(node, options) {
-    return this.#evaluateAst(/** @type InstanceNode */ (node), false, options, []);
+    return this.#evaluateAst(/** @type InstanceNode */ (node), false, options, noSyntaxErrors);
   }
 
   /** @type API.Validator["annotate"] */
   annotate(instance, options) {
     const node = fromJs(instance);
-    const output = this.#evaluateAst(node, true, options, []);
+    const output = this.#evaluateAst(node, true, options, noSyntaxErrors);
     return { output, status: "success", node };
   }
 
