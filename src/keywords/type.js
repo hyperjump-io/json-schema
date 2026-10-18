@@ -24,6 +24,15 @@ export default {
     const types = new Set(Array.isArray(type) ? type : [type]);
     const allowsInteger = types.has("integer");
 
+    // Most schemas have one type, which is compared without a lookup
+    if (types.size === 1 && !allowsInteger) {
+      const [onlyType] = types;
+      return (node) => {
+        const nodeType = instance.typeOf(node);
+        return nodeType === undefined || nodeType === onlyType;
+      };
+    }
+
     return (node) => {
       const nodeType = instance.typeOf(node);
       if (nodeType === undefined || types.has(nodeType)) {
