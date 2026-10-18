@@ -23,7 +23,7 @@ const validateKeywords = async (jsonSchema, json) => {
   const file = new VFile(json);
   const processor = unified()
     .use(rejsonParse)
-    .use(jsonSchemaResolve, { jsonSchema, uri: baseUri })
+    .use(jsonSchemaResolve, { session: jsonSchema.session(), uri: baseUri })
     .use(jsonSchemaValidateKeywords, { jsonSchema });
   await processor.run(processor.parse(file), file);
 
@@ -100,7 +100,8 @@ describe("jsonSchemaValidateKeywords", () => {
   });
 
   test("a keyword's value schema is a schema file", async () => {
-    const valueSchema = await jsonSchema.get(jsonSchema.getKeyword("https://json-schema.org/keyword/minLength").valueSchema);
+    const session = jsonSchema.session();
+    const valueSchema = await session.get(jsonSchema.getKeyword("https://json-schema.org/keyword/minLength").valueSchema);
 
     expect(valueSchema.type).to.equal("json-schema");
   });

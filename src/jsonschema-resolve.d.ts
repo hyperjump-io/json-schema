@@ -1,11 +1,14 @@
 import type { Plugin } from "unified";
 import type { JsonDocumentNode } from "@hyperjump/browser/json";
-import type { JsonSchema } from "./json-schema.d.ts";
+import type { JsonSchema, JsonSchemaSession } from "./json-schema.d.ts";
 import type { JsonSchemaDocumentNode } from "./schema-ast.d.ts";
 
 export type JsonSchemaResolveOptions = {
-  /** Provides the dialects and keywords */
-  jsonSchema: JsonSchema;
+  /**
+   * Provides the dialects and keywords. Meta-schemas are retrieved in this
+   * session, and dialects built from them belong to it.
+   */
+  session: JsonSchemaSession;
 
   /**
    * The document's base URI. Defaults to the file's path as a `file:` URI.

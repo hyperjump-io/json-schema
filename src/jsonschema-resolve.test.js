@@ -93,7 +93,7 @@ const resolve = async (jsonSchema, json, options = {}) => {
   const file = new VFile({ value: json, path });
   const processor = unified()
     .use(rejsonParse, { accept })
-    .use(jsonSchemaResolve, { jsonSchema, uri: path ? undefined : baseUri, ...resolveOptions });
+    .use(jsonSchemaResolve, { session: jsonSchema.session(), uri: path ? undefined : baseUri, ...resolveOptions });
   const document = await processor.run(processor.parse(file), file);
 
   return { document, file, root: /** @type JsonSchemaTolerantNode */ (document.children[0]) };
@@ -568,6 +568,7 @@ describe("jsonSchemaResolve", () => {
       });
 
       test("a meta-schema that describes itself", { timeout: 2000 }, async () => {
+        const session = jsonSchema.session();
         const path = join(directory, "self.schema.json");
         const uri = pathToFileURL(path).toString();
         await writeFile(path, JSON.stringify({
@@ -580,7 +581,7 @@ describe("jsonSchemaResolve", () => {
         expect(file.messages).to.eql([]);
         expect(at("/$defs/foo", root).type).to.equal("json-schema");
 
-        const metaSchema = await jsonSchema.get(uri);
+        const metaSchema = await session.get(uri);
         expect(metaSchema).to.include({ type: "json-schema", dialectUri: uri });
       });
 
@@ -605,17 +606,19 @@ describe("jsonSchemaResolve", () => {
         expect(causes(file.messages[0])).to.contain("depend on each other");
       });
 
-      test("a document that describes itself defines its dialect", async () => {
+      test("a document that describes itself defines its dialect in the session", async () => {
+        const session = jsonSchema.session();
         const { root, file } = await resolve(jsonSchema, `{
           "$schema": "${baseUri}",
           "$vocabulary": { "https://example.com/vocab/core": true },
           "$defs": { "foo": {} }
-        }`);
+        }`, { session });
 
         expect(file.messages).to.eql([]);
         expect(root).to.include({ type: "json-schema", dialectUri: baseUri });
         expect(at("/$defs/foo", root).type).to.equal("json-schema");
-        expect(await jsonSchema.getDialect(baseUri)).to.eql({ uri: baseUri, keywords: { $id: idKeyword.uri, $defs: "https://example.com/keyword/defs" }, unknownKeywords: "annotation" });
+        expect(await session.getDialect(baseUri)).to.eql({ uri: baseUri, keywords: { $id: idKeyword.uri, $defs: "https://example.com/keyword/defs" }, unknownKeywords: "annotation" });
+        expect(jsonSchema.hasDialect(baseUri)).to.equal(false);
       });
 
       test("a meta-schema without $vocabulary", async () => {
@@ -627,7 +630,7 @@ describe("jsonSchemaResolve", () => {
       });
 
       test("a self-describing meta-schema doesn't replace a dialect that's already defined", async () => {
-        const dialect = await jsonSchema.getDialect(dialectUri);
+        const dialect = jsonSchema.getDialect(dialectUri);
         const { root, file } = await resolve(jsonSchema, `{
           "$schema": "${dialectUri}",
           "$vocabulary": { "https://example.com/vocab/core": true }
@@ -635,7 +638,7 @@ describe("jsonSchemaResolve", () => {
 
         expect(file.messages).to.eql([]);
         expect(root).to.include({ type: "json-schema", dialectUri: dialectUri });
-        expect(await jsonSchema.getDialect(dialectUri)).to.equal(dialect);
+        expect(jsonSchema.getDialect(dialectUri)).to.equal(dialect);
       });
     });
   });
@@ -751,16 +754,18 @@ describe("jsonSchemaResolve", () => {
     });
 
     test("a .schema.json file is a schema", async () => {
+      const session = jsonSchema.session();
       const uri = await schemaFile("main.schema.json", {
         $schema: dialectUri,
         $defs: { foo: { $anchor: "foo", type: "string" } }
       });
 
-      const foo = await jsonSchema.get(`${uri}#foo`);
+      const foo = await session.get(`${uri}#foo`);
       expect(foo).to.include({ type: "json-schema", location: `${uri}#/$defs/foo` });
     });
 
     test("references between embedded resources", async () => {
+      const session = jsonSchema.session();
       const uri = await schemaFile("embedded.schema.json", {
         $schema: legacyDialectUri,
         properties: { foo: { $ref: "https://example.com/a" } },
@@ -770,14 +775,15 @@ describe("jsonSchemaResolve", () => {
         }
       });
 
-      const a = await jsonSchema.get(`${uri}#/properties/foo`);
+      const a = await session.get(`${uri}#/properties/foo`);
       expect(a.location).to.equal("https://example.com/a#");
 
-      const b = await jsonSchema.step("b", await jsonSchema.step("properties", a));
+      const b = await session.step("b", await session.step("properties", a));
       expect(b.location).to.equal("https://example.com/b#");
     });
 
     test("an embedded resource can reference the document that embeds it", async () => {
+      const session = jsonSchema.session();
       const rootUri = pathToFileURL(join(directory, "embedding.schema.json")).toString();
       const uri = await schemaFile("embedding.schema.json", {
         $schema: legacyDialectUri,
@@ -788,27 +794,29 @@ describe("jsonSchemaResolve", () => {
         }
       });
 
-      const c = await jsonSchema.get(`${uri}#/properties/foo`);
-      const d = await jsonSchema.step("root", await jsonSchema.step("properties", c));
+      const c = await session.get(`${uri}#/properties/foo`);
+      const d = await session.step("root", await session.step("properties", c));
       expect(d.location).to.equal(`${uri}#/definitions/d`);
     });
 
     test("an embedded resource isn't visible outside the document that embeds it", async () => {
+      const session = jsonSchema.session();
       const embeddedUri = pathToFileURL(join(directory, "not-a-file.schema.json")).toString();
       const uri = await schemaFile("embeds-a-file.schema.json", {
         $schema: legacyDialectUri,
         definitions: { e: { $id: embeddedUri, type: "string" } }
       });
 
-      await jsonSchema.get(uri);
-      expect((await jsonSchema.getDocument(embeddedUri, { referencedFrom: uri })).uri).to.equal(embeddedUri);
-      await expect(jsonSchema.get(embeddedUri)).rejects.toThrow("Unable to load resource");
+      await session.get(uri);
+      expect((await session.getDocument(embeddedUri, { referencedFrom: uri })).uri).to.equal(embeddedUri);
+      await expect(session.get(embeddedUri)).rejects.toThrow("Unable to load resource");
     });
 
     test("a schema with problems can't be retrieved", async () => {
+      const session = jsonSchema.session();
       const uri = await schemaFile("invalid.schema.json", { type: "string" });
 
-      await expect(jsonSchema.get(uri)).rejects.toMatchObject({ cause: { ruleId: "missing-dialect" } });
+      await expect(session.get(uri)).rejects.toMatchObject({ cause: { ruleId: "missing-dialect" } });
     });
   });
 });

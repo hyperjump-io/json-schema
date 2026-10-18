@@ -1,5 +1,11 @@
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 import { describe, test, beforeEach, expect } from "vitest";
+import { Session } from "@hyperjump/browser";
 import { JsonSchema } from "./json-schema.js";
+import { v1DialectUri } from "./v1/index.js";
 import unknownKeyword from "./keywords/unknown.js";
 
 /** A value schema that allows any value, for keywords defined in tests */
@@ -29,18 +35,18 @@ describe("JsonSchema", () => {
       unknownKeywords: "error"
     };
 
-    test("addDialect", async () => {
+    test("addDialect", () => {
       jsonSchema.addDialect(dialect);
 
       expect(jsonSchema.hasDialect(dialect.uri)).to.equal(true);
-      expect(await jsonSchema.getDialect(dialect.uri)).to.eql(dialect);
+      expect(jsonSchema.getDialect(dialect.uri)).to.eql(dialect);
     });
 
-    test("an empty fragment identifies the same dialect", async () => {
+    test("an empty fragment identifies the same dialect", () => {
       jsonSchema.addDialect({ ...dialect, uri: `${dialect.uri}#` });
 
       expect(jsonSchema.hasDialect(dialect.uri)).to.equal(true);
-      expect(await jsonSchema.getDialect(dialect.uri)).to.eql(dialect);
+      expect(jsonSchema.getDialect(dialect.uri)).to.eql(dialect);
     });
 
     test("a dialect can't be replaced", () => {
@@ -50,7 +56,7 @@ describe("JsonSchema", () => {
       expect(() => jsonSchema.addDialectFromVocabularies(dialect.uri, {})).to.throw("already defined");
     });
 
-    test("a dialect can be replaced after it's removed", async () => {
+    test("a dialect can be replaced after it's removed", () => {
       jsonSchema.addDialect(dialect);
       jsonSchema.removeDialect(dialect.uri);
 
@@ -58,28 +64,28 @@ describe("JsonSchema", () => {
 
       const replacement = { ...dialect, keywords: {} };
       jsonSchema.addDialect(replacement);
-      expect(await jsonSchema.getDialect(dialect.uri)).to.eql(replacement);
+      expect(jsonSchema.getDialect(dialect.uri)).to.eql(replacement);
     });
 
-    test("addDialectFromVocabularies", async () => {
+    test("addDialectFromVocabularies", () => {
       const added = jsonSchema.addDialectFromVocabularies(dialect.uri, {
         "https://example.com/vocab/core": true,
         "https://example.com/vocab/optional": false
       });
 
       expect(added).to.eql({ ...dialect, unknownKeywords: "annotation" });
-      expect(await jsonSchema.getDialect(dialect.uri)).to.eql(added);
+      expect(jsonSchema.getDialect(dialect.uri)).to.eql(added);
     });
 
-    test("extendDialect", async () => {
+    test("extendDialect", () => {
       jsonSchema.addDialect(dialect);
-      const original = await jsonSchema.getDialect(dialect.uri);
+      const original = jsonSchema.getDialect(dialect.uri);
       jsonSchema.extendDialect(dialect.uri, {
         keywords: { foo: "https://example.com/keyword/foo" },
         formats: { bar: "https://example.com/format/bar" }
       });
 
-      expect(await jsonSchema.getDialect(dialect.uri)).to.eql({
+      expect(jsonSchema.getDialect(dialect.uri)).to.eql({
         ...dialect,
         keywords: { ...dialect.keywords, foo: "https://example.com/keyword/foo" },
         formats: { bar: "https://example.com/format/bar" }
@@ -137,11 +143,60 @@ describe("JsonSchema", () => {
       expect(jsonSchema.hasDialect("https://example.com/x")).to.equal(false);
     });
 
-    test("extendDialect", async () => {
+    test("extendDialect", () => {
       jsonSchema.addDialect({ uri: "https://example.com/x", keywords: {}, unknownKeywords: "error" });
 
       expect(() => jsonSchema.extendDialect("https://example.com/x", { keywords })).to.throw("reserved");
-      expect((await jsonSchema.getDialect("https://example.com/x")).keywords).to.eql({});
+      expect(jsonSchema.getDialect("https://example.com/x").keywords).to.eql({});
+    });
+  });
+
+  describe("sessions", () => {
+    test("a dialect built in a session only belongs to that session", async () => {
+      const session = jsonSchema.session();
+      const dialect = session.addDialectFromVocabularies("https://example.com/session-dialect", {
+        "https://example.com/vocab/core": true
+      });
+
+      expect(await session.getDialect(dialect.uri)).to.equal(dialect);
+      expect(session.hasDialect(dialect.uri)).to.equal(true);
+      expect(jsonSchema.hasDialect(dialect.uri)).to.equal(false);
+      expect(jsonSchema.session().hasDialect(dialect.uri)).to.equal(false);
+    });
+
+    test("a session sees dialects added to its JsonSchema", async () => {
+      const dialect = jsonSchema.addDialectFromVocabularies("https://example.com/added-dialect", {
+        "https://example.com/vocab/core": true
+      });
+      const session = jsonSchema.session();
+
+      expect(session.hasDialect(dialect.uri)).to.equal(true);
+      expect(await session.getDialect(dialect.uri)).to.eql(dialect);
+      expect(() => session.addDialectFromVocabularies(dialect.uri, {})).to.throw("already defined");
+    });
+
+    test("each compile has its own session, so it sees changes", async () => {
+      const directory = await mkdtemp(join(tmpdir(), "json-schema-next-"));
+      try {
+        const path = join(directory, "schema.schema.json");
+        const uri = pathToFileURL(path).toString();
+
+        await writeFile(path, JSON.stringify({ $schema: v1DialectUri, type: "string" }));
+        expect((await jsonSchema.compile(uri)).validate(42)).to.equal(false);
+
+        await writeFile(path, JSON.stringify({ $schema: v1DialectUri, type: "number" }));
+        expect((await jsonSchema.compile(uri)).validate(42)).to.equal(true);
+      } finally {
+        await rm(directory, { recursive: true });
+      }
+    });
+
+    test("a schema can't be retrieved without a JsonSchemaSession", async () => {
+      const valueSchema = jsonSchema.getKeyword("https://json-schema.org/keyword/schema").valueSchema;
+
+      await expect(new Session(jsonSchema).get(valueSchema)).rejects.toMatchObject({
+        cause: { message: expect.stringContaining("JsonSchemaSession") }
+      });
     });
   });
 

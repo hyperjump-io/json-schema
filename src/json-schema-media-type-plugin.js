@@ -5,6 +5,7 @@ import { rejsonParse } from "@hyperjump/browser/json";
 import { toAbsoluteIri } from "@hyperjump/uri";
 import { jsonSchemaResolve } from "./jsonschema-resolve.js";
 import { jsonSchemaValidateKeywords } from "./jsonschema-validate-keywords.js";
+import { JsonSchemaSession } from "./json-schema.js";
 
 /**
  * @import { MediaTypePlugin } from "@hyperjump/browser"
@@ -43,14 +44,20 @@ export class JsonSchemaMediaTypePlugin {
   }
 
   /** @type MediaTypePlugin<JsonSchemaDocumentNode<"success">>["parse"] */
-  async parse(response) {
+  async parse(response, session) {
+    // Resolving a schema can mean retrieving its meta-schema, which belongs
+    // to the session
+    if (!(session instanceof JsonSchemaSession)) {
+      throw Error("A schema can only be retrieved in a JsonSchemaSession. Use the 'session' function of a JsonSchema to create one.");
+    }
+
     const contentType = parseContentType(response.headers.get("content-type") ?? "");
     const dialectUri = contentType.parameters.schema ?? contentType.parameters.profile;
 
     const file = new VFile(await response.text());
     const processor = unified()
       .use(rejsonParse)
-      .use(jsonSchemaResolve, { jsonSchema: this.#jsonSchema, uri: response.url, dialectUri });
+      .use(jsonSchemaResolve, { session, uri: response.url, dialectUri });
 
     // Value schemas aren't validated, or validating one would need itself
     if (this.#jsonSchema.config.validateSchemas !== false && !this.#isValueSchema(toAbsoluteIri(response.url))) {

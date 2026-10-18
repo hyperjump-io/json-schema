@@ -27,10 +27,9 @@ text ─ rejsonParse ─▶ JSON AST ─ jsonSchemaResolve ─▶ Schema AST ─
        (browser)                  (async)                                                  (async)         (sync, lazy)
 ```
 
-- `JsonSchema` extends browser's `Hyperjump<JsonSchemaNode>`, so the same
-  object browses and validates schemas. That's going to change to a
-  long-lived `JsonSchema` and sessions created from it (see "Sessions and
-  registries").
+- `JsonSchema` extends browser's `Hyperjump<JsonSchemaNode>`, and
+  `JsonSchemaSession` extends its `Session`. Schemas are retrieved, browsed,
+  and compiled in a session (see "Sessions and registries").
 - Schemas are retrieved with browser's `get`. The schema media type plugin
   (`application/schema+json`, `.schema.json`) runs `rejsonParse` and
   `jsonSchemaResolve`. Any message from either is fatal there.
@@ -58,7 +57,7 @@ its position.
   in a document shares one `embedded` map that includes all of them,
   including the root.
 - Only a reference from the same document (`referencedFrom`) finds an
-  embedded resource, so `compile` can't start from one. `JsonSchema`
+  embedded resource, so `compile` can't start from one. `JsonSchemaSession`
   overrides browser's `getDocument` to do that, and browser knows nothing
   about embedding. If two documents embed a resource with the same URI,
   references from it find the resources alongside it in whichever document
@@ -183,7 +182,8 @@ an internal meta-schema.
 
 ## Sessions and registries
 
-Decided, not implemented yet. Today, `JsonSchema` is a `Hyperjump` with one
+Sessions and the HTTP cache are implemented. Registries and the internal
+registry aren't yet. `JsonSchema` used to be a `Hyperjump` with one
 document cache for its whole life. That's what made registries hard: a
 registry for one compilation would be visible to compilations running at the
 same time, and nothing could be removed without leaving resolved documents
@@ -213,8 +213,19 @@ Both libraries have a long-lived object and sessions created from it, and
   compilation. Compilations that run at the same time each have their own
   session, so they can't see each other's registries. A `Validator` doesn't
   need its session after compiling, because its IR is self-contained.
-- The `getDocument` override and the embedded index (see "Schema AST") move
-  from `JsonSchema` to `JsonSchemaSession`.
+- The `getDocument` override and the embedded index (see "Schema AST") are
+  on `JsonSchemaSession`.
+- `JsonSchema.compile(uri)` compiles in a new session, so each compilation
+  sees changes. `JsonSchemaSession.compile` compiles in that session.
+- Dialects from `addDialect` belong to `JsonSchema`, and its `getDialect`
+  only finds those. A dialect built from a retrieved meta-schema's
+  `$vocabulary`, including a self-describing one, belongs to the session that
+  retrieved it. `JsonSchemaSession.getDialect` finds both, and it's what the
+  resolver and the compiler use.
+- Browser gives a media type plugin the session a document is being
+  retrieved in (`parse(response, session)`), so the schema media type plugin
+  resolves schemas in that session. Retrieving a schema in a plain `Session`
+  is an error.
 
 ### HTTP cache (browser)
 
@@ -222,13 +233,17 @@ Both libraries have a long-lived object and sessions created from it, and
   headers. It's under the URI scheme plugins and stores responses, not
   documents, so it doesn't depend on dialects or registries and is shared by
   every session.
-- The store is pluggable: in memory for the life of the process, or on disk
-  so it outlives the process. `http-cache-semantics` and undici's cache
-  interceptor are candidates for the implementation.
-- In a browser, `fetch` already respects caching headers.
+- It's part of `HttpUriSchemePlugin` (a `cache` option), because caching
+  headers are HTTP's. It uses `http-cache-semantics`, as a private cache.
+  A stale response with an `ETag` or `Last-Modified` is revalidated. A 304
+  that doesn't match the cached response is retried without revalidating.
+- The store is pluggable (`HttpCacheStore`): `MemoryHttpCacheStore`, the
+  default in Node.js, or `FileHttpCacheStore`, which outlives the process.
+- In a browser, `fetch` already respects caching headers, so there's no
+  cache by default.
 - A session's document cache keeps it from retrieving the same resource
-  twice. Two sessions retrieving the same URI at the same time should share
-  one request.
+  twice. Sessions retrieving the same URL at the same time share one
+  request.
 - `file:` responses aren't cached, so each new session reads files again.
 
 ### Registries (`SchemaRegistry`)
@@ -674,9 +689,11 @@ Changes made to browser for this (on its `v2` branch):
 - `content-type` v3, with the parsed type validated.
 - Methods are declared as methods, not function-valued properties, so a
   subclass can override them.
+- Sessions, and an HTTP cache in the `http(s):` URI scheme plugin. A media
+  type plugin's `parse` gets the session.
 - `getDocument` gets the document a URI identifies, for what it has beyond
   its values. Compiling uses it for a resource's dynamic anchors.
-- `jsonValue` supports arrays and objects. `Hyperjump.value` still doesn't,
+- `jsonValue` supports arrays and objects. `Session.value` still doesn't,
   because it would need to follow references.
 - Node locations are valid IRIs. Each pointer segment is percent-encoded
   with `appendToLocation` (`@hyperjump/uri`'s new `encodeIriFragment`),

@@ -1,6 +1,6 @@
 import type { Position } from "unist";
 import type { VFileMessage } from "vfile-message";
-import type { Hyperjump, HyperjumpConfig } from "@hyperjump/browser";
+import type { DocumentNode, GetOptions, Hyperjump, HyperjumpConfig, Session } from "@hyperjump/browser";
 import type {
   Json,
   JsonErrorNode,
@@ -40,6 +40,13 @@ export class JsonSchema extends Hyperjump<JsonSchemaNode> {
   constructor(config?: JsonSchemaConfig);
 
   readonly config: JsonSchemaConfig;
+
+  /**
+   * Start a session for retrieving and compiling schemas. Dialects built
+   * from meta-schemas belong to the session, like the documents it
+   * retrieves.
+   */
+  session(): JsonSchemaSession;
 
   // TODO: A registry for schemas that aren't retrieved from a URI
 
@@ -104,28 +111,33 @@ export class JsonSchema extends Hyperjump<JsonSchemaNode> {
    */
   addDialectFromVocabularies(uri: string, vocabularies: Record<string, boolean>): Dialect;
 
-  /** Whether a dialect is defined. A dialect that hasn't been used yet isn't. */
+  /**
+   * Build a dialect from a `$vocabulary` value, as
+   * {@link addDialectFromVocabularies} does, without adding it.
+   *
+   * @throws Error if a required vocabulary hasn't been added.
+   */
+  dialectFromVocabularies(uri: string, vocabularies: Record<string, boolean>): Dialect;
+
+  /**
+   * Whether a dialect has been added. A dialect a session built from its
+   * meta-schema isn't.
+   */
   hasDialect(uri: string): boolean;
 
   /** Remove a dialect so it can be replaced. */
   removeDialect(uri: string): void;
 
   /**
-   * Get a dialect. If it isn't defined, its meta-schema is retrieved with
-   * {@link get} and the dialect is built from the meta-schema's `$vocabulary`.
-   * The meta-schema must be retrieved as a schema (`application/schema+json`
-   * or a `.schema.json` file). A JSON document isn't used even if it has a
-   * `$vocabulary`.
+   * Get a dialect that has been added.
    *
-   * @throws Error if the meta-schema can't be retrieved, isn't a schema,
-   * doesn't have `$vocabulary`, requires a vocabulary that hasn't been added,
-   * or depends on a meta-schema that depends on it.
+   * @throws Error if the dialect hasn't been added.
    */
-  getDialect(uri: string, options?: GetDialectOptions): Promise<Dialect>;
+  getDialect(uri: string): Dialect;
 
   /**
    * Compile a schema into a {@link Validator} that can be used for any
-   * number of instances.
+   * number of instances, in a new session.
    *
    * @throws {@link InvalidSchemaError}
    * @throws RetrievalError from `@hyperjump/browser`
@@ -167,6 +179,59 @@ export class JsonSchema extends Hyperjump<JsonSchemaNode> {
 
   /** A shortcut for `(await compile(uri)).annotateJson(json, options)` */
   annotateJson<F extends OutputFormat = "FLAG">(uri: string, json: string, options?: ValidationOptions<F>): Promise<AnnotationResult<F>>;
+}
+
+/**
+ * Retrieves, browses, and compiles schemas. Everything resolved belongs to
+ * the session: the documents it retrieves and the dialects it builds from
+ * meta-schemas. Create one with {@link JsonSchema.session}.
+ */
+export class JsonSchemaSession extends Session<JsonSchemaNode> {
+  constructor(jsonSchema: JsonSchema);
+
+  readonly jsonSchema: JsonSchema;
+
+  /**
+   * An embedded resource is only found by a reference from the document
+   * that contains it (`referencedFrom`).
+   */
+  getDocument(uri: string, options?: GetOptions): Promise<DocumentNode<JsonSchemaNode>>;
+
+  /**
+   * Get a dialect. If it hasn't been added to the {@link JsonSchema} or
+   * built in this session, its meta-schema is retrieved with {@link get}
+   * and the dialect is built from the meta-schema's `$vocabulary`. The
+   * meta-schema must be retrieved as a schema (`application/schema+json` or
+   * a `.schema.json` file). A JSON document isn't used even if it has a
+   * `$vocabulary`.
+   *
+   * @throws Error if the meta-schema can't be retrieved, isn't a schema,
+   * doesn't have `$vocabulary`, requires a vocabulary that hasn't been added,
+   * or depends on a meta-schema that depends on it.
+   */
+  getDialect(uri: string, options?: GetDialectOptions): Promise<Dialect>;
+
+  /** Whether a dialect has been added to the {@link JsonSchema} or built in this session */
+  hasDialect(uri: string): boolean;
+
+  /**
+   * Build a dialect from a `$vocabulary` value for this session only. A
+   * self-describing meta-schema defines its dialect this way while it's
+   * resolved.
+   *
+   * @throws Error if a required vocabulary hasn't been added or the dialect
+   * is already defined.
+   */
+  addDialectFromVocabularies(uri: string, vocabularies: Record<string, boolean>): Dialect;
+
+  /**
+   * Compile a schema into a {@link Validator}. The validator doesn't need
+   * the session after it's compiled.
+   *
+   * @throws {@link InvalidSchemaError}
+   * @throws RetrievalError from `@hyperjump/browser`
+   */
+  compile(uri: string): Promise<Validator>;
 }
 
 export type GetDialectOptions = {

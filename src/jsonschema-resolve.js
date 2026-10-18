@@ -9,7 +9,7 @@ import { vocabulariesOf } from "./vocabularies.js";
  * @import { VFile } from "vfile"
  * @import { VFileMessage } from "vfile-message"
  * @import { JsonDocumentNode, JsonErrorNode } from "@hyperjump/browser/json"
- * @import { JsonSchema } from "./json-schema.d.ts"
+ * @import { JsonSchemaSession } from "./json-schema.d.ts"
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaTolerantNode } from "./schema-ast.d.ts"
  * @import { Keyword, ResolveContext, Shape } from "./keyword.d.ts"
  * @import { Dialect } from "./dialect.d.ts"
@@ -49,8 +49,8 @@ export function jsonSchemaResolve(options) {
       });
     }
 
-    const dialectUri = options.dialectUri ?? options.jsonSchema.config.defaultDialectUri;
-    const resolver = new Resolver(options.jsonSchema, file, tree);
+    const dialectUri = options.dialectUri ?? options.session.jsonSchema.config.defaultDialectUri;
+    const resolver = new Resolver(options.session, file, tree);
     return resolver.resolve(toAbsoluteIri(uri), dialectUri);
   };
 }
@@ -69,8 +69,8 @@ const fileUri = (file) => {
 };
 
 class Resolver {
-  /** @type JsonSchema */
-  #jsonSchema;
+  /** @type JsonSchemaSession */
+  #session;
 
   /** @type VFile */
   #file;
@@ -85,12 +85,12 @@ class Resolver {
   #documentUri = "";
 
   /**
-   * @param {JsonSchema} jsonSchema
+   * @param {JsonSchemaSession} session
    * @param {VFile} file
    * @param {JsonDocumentNode} tree
    */
-  constructor(jsonSchema, file, tree) {
-    this.#jsonSchema = jsonSchema;
+  constructor(session, file, tree) {
+    this.#session = session;
     this.#file = file;
     this.#tree = tree;
     this.#embedded = {};
@@ -254,7 +254,7 @@ class Resolver {
           this.#message(`'${name}' isn't a keyword in the '${dialect.uri}' dialect`, property, "unknown-keyword");
         }
 
-        return [keywordNode, `${unknownKeyword.uri}#${encodeIriFragment(name)}`, this.#jsonSchema.getKeyword(unknownKeyword.uri)];
+        return [keywordNode, `${unknownKeyword.uri}#${encodeIriFragment(name)}`, this.#session.jsonSchema.getKeyword(unknownKeyword.uri)];
       }
 
       const keywordUri = name === "$schema" ? schemaKeyword.uri : dialect.keywords[name];
@@ -262,7 +262,7 @@ class Resolver {
       /** @type Keyword */
       let keyword;
       try {
-        keyword = this.#jsonSchema.getKeyword(keywordUri);
+        keyword = this.#session.jsonSchema.getKeyword(keywordUri);
       } catch (error) {
         this.#message(/** @type Error */ (error).message, property, "unsupported-keyword");
         keyword = { uri: keywordUri, shape: "data", valueSchema: unknownKeyword.valueSchema };
@@ -410,7 +410,7 @@ class Resolver {
   /** @type (uri: string, node: Node) => Promise<Dialect | undefined> */
   async #getDialect(uri, node) {
     try {
-      return await this.#jsonSchema.getDialect(toAbsoluteIri(uri), { referencedFrom: this.#documentUri });
+      return await this.#session.getDialect(toAbsoluteIri(uri), { referencedFrom: this.#documentUri });
     } catch (error) {
       const cause = /** @type Error */ (error);
       this.#message(cause.message, node, "unknown-dialect", cause);
@@ -443,12 +443,12 @@ class Resolver {
    */
   async #selfDescribingDialect(node, $schemaNode) {
     const vocabularies = vocabulariesOf(node);
-    if (!vocabularies || this.#jsonSchema.hasDialect($schemaNode.value)) {
+    if (!vocabularies || this.#session.hasDialect($schemaNode.value)) {
       return this.#getDialect($schemaNode.value, $schemaNode);
     }
 
     try {
-      return this.#jsonSchema.addDialectFromVocabularies($schemaNode.value, vocabularies);
+      return this.#session.addDialectFromVocabularies($schemaNode.value, vocabularies);
     } catch (error) {
       const cause = /** @type Error */ (error);
       this.#message(cause.message, $schemaNode, "unknown-dialect", cause);

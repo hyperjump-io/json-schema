@@ -4,7 +4,7 @@ import { appendToLocation, jsonValue, pointerGet } from "@hyperjump/browser/json
 
 /**
  * @import { Json, JsonErrorNode } from "@hyperjump/browser/json"
- * @import { JsonSchema } from "./json-schema.d.ts"
+ * @import { JsonSchemaSession } from "./json-schema.d.ts"
  * @import { CompileContext } from "./keyword.d.ts"
  * @import { JsonSchemaDocumentNode, JsonSchemaNode } from "./schema-ast.d.ts"
  */
@@ -41,9 +41,9 @@ import { appendToLocation, jsonValue, pointerGet } from "@hyperjump/browser/json
  * }} CompiledSchemas
  */
 
-/** @type (jsonSchema: JsonSchema, uri: string) => Promise<CompiledSchemas> */
-export const compile = async (jsonSchema, uri) => {
-  const compiler = new Compiler(jsonSchema);
+/** @type (session: JsonSchemaSession, uri: string) => Promise<CompiledSchemas> */
+export const compile = async (session, uri) => {
+  const compiler = new Compiler(session);
   return compiler.compile(uri);
 };
 
@@ -59,8 +59,8 @@ export const keywordDefinitionUri = (keywordUri) => {
 };
 
 class Compiler {
-  /** @type JsonSchema */
-  #jsonSchema;
+  /** @type JsonSchemaSession */
+  #session;
 
   /** @type CompiledSchemas["schemas"] */
   #schemas;
@@ -69,10 +69,10 @@ class Compiler {
   #resources;
 
   /**
-   * @param {JsonSchema} jsonSchema
+   * @param {JsonSchemaSession} session
    */
-  constructor(jsonSchema) {
-    this.#jsonSchema = jsonSchema;
+  constructor(session) {
+    this.#session = session;
     this.#schemas = {};
     this.#resources = {};
   }
@@ -85,7 +85,7 @@ class Compiler {
 
   /** @type (uri: string, referencedFrom?: string) => Promise<string> */
   async #compileUri(uri, referencedFrom) {
-    const node = await this.#jsonSchema.get(uri, referencedFrom === undefined ? undefined : { referencedFrom });
+    const node = await this.#session.get(uri, referencedFrom === undefined ? undefined : { referencedFrom });
     return this.#compileNode(node);
   }
 
@@ -116,7 +116,7 @@ class Compiler {
       throw Error(`No schema found at '${handle}'`);
     }
 
-    const dialect = await this.#jsonSchema.getDialect(node.dialectUri);
+    const dialect = await this.#session.getDialect(node.dialectUri);
 
     /** @type CompiledKeyword[] */
     const keywords = [];
@@ -130,7 +130,7 @@ class Compiler {
     for (const property of node.children) {
       const [nameNode, valueNode] = property.children;
       const keywordUri = /** @type string */ (property.keywordUri);
-      const keyword = this.#jsonSchema.getKeyword(keywordDefinitionUri(keywordUri));
+      const keyword = this.#session.jsonSchema.getKeyword(keywordDefinitionUri(keywordUri));
       const keywordLocation = appendToLocation(nameNode.value, handle);
 
       /** @type Record<string, string> | undefined */
@@ -138,7 +138,7 @@ class Compiler {
 
       /** @type CompileContext */
       const context = {
-        jsonSchema: this.#jsonSchema,
+        jsonSchema: this.#session.jsonSchema,
         schemaNode: node,
         dialect: dialect,
         keywordName: nameNode.value,
@@ -198,7 +198,7 @@ class Compiler {
     const dynamicAnchors = {};
     this.#resources[uri] = { dynamicAnchors };
 
-    const resource = /** @type JsonSchemaDocumentNode */ (await this.#jsonSchema.getDocument(uri, { referencedFrom: uri }));
+    const resource = /** @type JsonSchemaDocumentNode */ (await this.#session.getDocument(uri, { referencedFrom: uri }));
     const root = /** @type JsonSchemaNode */ (resource.children[0]);
     for (const name in resource.dynamicAnchors) {
       const pointer = resource.dynamicAnchors[name];
