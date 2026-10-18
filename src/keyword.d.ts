@@ -291,6 +291,19 @@ export type ResolveContext = {
   setReference: (href: string) => void;
 
   /**
+   * Make the schema a meta-schema that defines a dialect from a
+   * `$vocabulary` value. Vocabularies whose value is `false` are optional.
+   * The dialect is the one identified by any URI the schema resource is found
+   * by. It's only built when a schema uses it, so a required vocabulary that
+   * hasn't been added is a problem for that schema, not this one. A dialect
+   * that's already defined isn't replaced.
+   *
+   * It's only allowed where a schema resource starts. Anywhere else, it's
+   * ignored with a message.
+   */
+  defineDialect: (vocabularies: Record<string, boolean>) => void;
+
+  /**
    * Report a problem with the keyword, such as an invalid identifier. It's
    * added to the file's messages. The node defaults to the keyword's value.
    */

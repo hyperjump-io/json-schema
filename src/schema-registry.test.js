@@ -3,6 +3,7 @@ import { RetrievalError } from "@hyperjump/browser";
 import { JsonSchema } from "./json-schema.js";
 import { SchemaRegistry } from "./schema-registry.js";
 import { v1DialectUri } from "./v1/index.js";
+import vocabularyKeyword from "./keywords/vocabulary.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
@@ -251,6 +252,103 @@ describe("SchemaRegistry", () => {
       other.addDialect({ uri: dialectUri, keywords: { $id: "https://json-schema.org/keyword/id" }, unknownKeywords: "error" });
 
       expect(() => registry.add({ $schema: dialectUri, $id: "a" })).to.throw();
+    });
+
+    describe("from a meta-schema in the same registry", () => {
+      const metaDialectUri = "https://example.com/meta-dialect";
+      const coreVocabularyUri = "https://example.com/vocab/core";
+
+      /** @type (vocabularies?: Record<string, boolean>) => Json */
+      const metaSchema = (vocabularies = { [coreVocabularyUri]: true }) => ({
+        $schema: metaDialectUri,
+        $id: dialectUri,
+        $vocabulary: vocabularies
+      });
+
+      /** @type Json */
+      const schema = { $schema: dialectUri, $id: "https://example.com/a", type: "string" };
+
+      /** @type (jsonSchema: JsonSchema) => JsonSchema */
+      const addMetaDialect = (jsonSchema) => {
+        jsonSchema.addKeyword(vocabularyKeyword);
+        jsonSchema.addVocabulary({
+          uri: coreVocabularyUri,
+          keywords: { $id: "https://json-schema.org/keyword/id", type: "https://json-schema.org/keyword/type" }
+        });
+        jsonSchema.addDialect({
+          uri: metaDialectUri,
+          keywords: { $id: "https://json-schema.org/keyword/id", $vocabulary: vocabularyKeyword.uri },
+          unknownKeywords: "annotation"
+        });
+        return jsonSchema;
+      };
+
+      beforeEach(() => {
+        addMetaDialect(jsonSchema);
+      });
+
+      test("a schema is identified with the dialect its meta-schema defines", async () => {
+        registry.add(metaSchema());
+        registry.add(schema);
+
+        expect((await jsonSchema.compile("https://example.com/a")).validate(42)).to.equal(false);
+      });
+
+      test("a schema added before its meta-schema", async () => {
+        registry.add(schema);
+        const before = jsonSchema.session();
+        registry.add(metaSchema());
+
+        expect((await jsonSchema.compile("https://example.com/a")).validate(42)).to.equal(false);
+        // The schema can't be identified without the meta-schema
+        await expect(before.compile("https://example.com/a")).rejects.toThrow(RetrievalError);
+      });
+
+      test("a JsonSchema created after both are added", async () => {
+        registry.add(schema);
+        registry.add(metaSchema());
+
+        const other = addMetaDialect(offline());
+
+        expect((await other.compile("https://example.com/a", { registries: [registry] })).validate(42)).to.equal(false);
+      });
+
+      test("removing the meta-schema", async () => {
+        registry.add(metaSchema(), { retrievalUri: dialectUri });
+        registry.add(schema);
+        const before = jsonSchema.session();
+
+        registry.remove(dialectUri);
+
+        await expect(jsonSchema.compile("https://example.com/a")).rejects.toMatchObject({
+          cause: { message: expect.stringContaining(dialectUri) }
+        });
+        expect((await before.compile("https://example.com/a")).validate(42)).to.equal(false);
+      });
+
+      test("replacing the meta-schema", async () => {
+        registry.add(metaSchema(), { retrievalUri: dialectUri });
+        registry.add(schema);
+
+        registry.remove(dialectUri);
+        registry.add(metaSchema(), { retrievalUri: dialectUri });
+
+        expect((await jsonSchema.compile("https://example.com/a")).validate(42)).to.equal(false);
+      });
+
+      test("a meta-schema in another registry doesn't identify schemas", async () => {
+        const other = new SchemaRegistry();
+        other.add(metaSchema());
+        registry.add(schema);
+
+        await expect(jsonSchema.compile("https://example.com/a", { registries: [other] })).rejects.toThrow(RetrievalError);
+      });
+
+      test("a schema whose meta-schema requires a vocabulary that isn't supported can't be added", () => {
+        registry.add(metaSchema({ "https://example.com/vocab/unknown": true }));
+
+        expect(() => registry.add(schema)).to.throw("https://example.com/vocab/unknown");
+      });
     });
   });
 

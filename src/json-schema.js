@@ -8,7 +8,6 @@ import { jsonSchemaResolve } from "./jsonschema-resolve.js";
 import { jsonSchemaValidateKeywords } from "./jsonschema-validate-keywords.js";
 import { SchemaRegistry } from "./schema-registry.js";
 import { RegistryIndex, entryText } from "./registry-index.js";
-import { vocabulariesOf } from "./vocabularies.js";
 import schemaKeyword from "./keywords/schema.js";
 import unknownKeyword from "./keywords/unknown.js";
 import { addV1 } from "./v1/dialect.js";
@@ -332,7 +331,7 @@ export class JsonSchemaSession extends Session {
   #embedded;
 
   /**
-   * Dialects built from meta-schemas retrieved in this session
+   * Dialects built from meta-schemas in this session
    *
    * @type Record<string, Dialect>
    */
@@ -559,17 +558,6 @@ export class JsonSchemaSession extends Session {
     return this.#dialect(toAbsoluteIri(uri)) !== undefined;
   }
 
-  /** @type API.JsonSchemaSession["addDialectFromVocabularies"] */
-  addDialectFromVocabularies(uri, vocabularies) {
-    const dialect = this.#jsonSchema.dialectFromVocabularies(uri, vocabularies);
-    if (this.#dialect(dialect.uri)) {
-      throw Error(`The '${dialect.uri}' dialect is already defined`);
-    }
-
-    this.#dialects[dialect.uri] = dialect;
-    return dialect;
-  }
-
   /** @type (uri: string) => Dialect | undefined */
   #dialect(uri) {
     return this.#jsonSchema.hasDialect(uri) ? this.#jsonSchema.getDialect(uri) : this.#dialects[uri];
@@ -625,28 +613,24 @@ export class JsonSchemaSession extends Session {
     try {
       let metaSchema;
       try {
-        metaSchema = await this.get(uri);
+        metaSchema = await this.getDocument(uri);
       } catch (error) {
         throw Error(`Unable to retrieve the meta-schema for the '${uri}' dialect`, { cause: error });
       }
 
-      // A meta-schema that describes itself defines its dialect while it's
-      // resolved
-      const dialect = this.#dialect(uri);
-      if (dialect) {
-        return dialect;
-      }
-
-      if (metaSchema.type !== "json-schema") {
+      if (metaSchema.type !== "json-schema-document") {
         throw Error(`The meta-schema for the '${uri}' dialect isn't a schema. It needs to be retrieved as 'application/schema+json' or from a '.schema.json' file.`);
       }
 
-      const vocabularies = vocabulariesOf(metaSchema);
+      // The dialect is identified by whichever URI found the meta-schema
+      const { vocabularies } = /** @type JsonSchemaDocumentNode */ (/** @type unknown */ (metaSchema));
       if (!vocabularies) {
-        throw Error(`The meta-schema for the '${uri}' dialect doesn't have a '$vocabulary'. Use the 'addDialect' function to add support for this dialect.`);
+        throw Error(`The meta-schema for the '${uri}' dialect doesn't define a dialect (with '$vocabulary', for example). Use the 'addDialect' function to add support for this dialect.`);
       }
 
-      return this.addDialectFromVocabularies(uri, vocabularies);
+      const dialect = this.#jsonSchema.dialectFromVocabularies(uri, vocabularies);
+      this.#dialects[uri] = dialect;
+      return dialect;
     } finally {
       this.#loading.delete(uri);
     }

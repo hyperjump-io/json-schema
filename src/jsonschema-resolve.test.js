@@ -15,6 +15,7 @@ import legacyIdKeyword from "./keywords/draft-04/id.js";
 import legacyRefKeyword from "./keywords/draft-04/ref.js";
 import recursiveAnchorKeyword from "./keywords/draft-2019-09/recursiveAnchor.js";
 import unknownKeyword from "./keywords/unknown.js";
+import vocabularyKeyword from "./keywords/vocabulary.js";
 
 /**
  * @import { JsonParseStatus } from "@hyperjump/browser/json"
@@ -32,7 +33,7 @@ const anyValue = unknownKeyword.schema;
 
 /** @type (jsonSchema: JsonSchema) => void */
 const addTestDialects = (jsonSchema) => {
-  for (const keyword of [idKeyword, anchorKeyword, dynamicAnchorKeyword, legacyIdKeyword, legacyRefKeyword, recursiveAnchorKeyword]) {
+  for (const keyword of [idKeyword, anchorKeyword, dynamicAnchorKeyword, legacyIdKeyword, legacyRefKeyword, recursiveAnchorKeyword, vocabularyKeyword]) {
     jsonSchema.addKeyword(keyword);
   }
   jsonSchema.addKeyword({ uri: "https://example.com/keyword/defs", shape: { map: "schema" }, schema: anyValue });
@@ -49,6 +50,7 @@ const addTestDialects = (jsonSchema) => {
       $anchor: anchorKeyword.uri,
       $dynamicAnchor: dynamicAnchorKeyword.uri,
       $recursiveAnchor: recursiveAnchorKeyword.uri,
+      $vocabulary: vocabularyKeyword.uri,
       $defs: "https://example.com/keyword/defs",
       properties: "https://example.com/keyword/properties",
       allOf: "https://example.com/keyword/allOf",
@@ -567,31 +569,49 @@ describe("jsonSchemaResolve", () => {
         expect(root.type).to.equal("json");
       });
 
-      test("a meta-schema that describes itself", { timeout: 2000 }, async () => {
-        const session = jsonSchema.session();
-        const path = join(directory, "self.schema.json");
-        const uri = pathToFileURL(path).toString();
-        await writeFile(path, JSON.stringify({
-          $schema: uri,
-          $vocabulary: { "https://example.com/vocab/core": true },
-          $defs: { foo: {} }
-        }));
-        const { root, file } = await resolve(jsonSchema, `{ "$schema": "${uri}", "$defs": { "foo": {} } }`);
+      test("the meta-schema records the vocabularies", async () => {
+        const { document, file } = await resolve(jsonSchema, `{
+          "$schema": "${dialectUri}",
+          "$vocabulary": { "https://example.com/vocab/core": true, "https://example.com/vocab/optional": false, "https://example.com/vocab/other": 42 }
+        }`);
 
         expect(file.messages).to.eql([]);
-        expect(at("/$defs/foo", root).type).to.equal("json-schema");
-
-        const metaSchema = await session.get(uri);
-        expect(metaSchema).to.include({ type: "json-schema", dialectUri: uri });
+        expect(document.vocabularies).to.eql({ "https://example.com/vocab/core": true, "https://example.com/vocab/optional": false });
       });
 
-      test("a self-describing meta-schema without $vocabulary", { timeout: 2000 }, async () => {
-        const path = join(directory, "self-no-vocabulary.schema.json");
+      test("an embedded resource can define a dialect", async () => {
+        const { document, file } = await resolve(jsonSchema, `{
+          "$schema": "${dialectUri}",
+          "$defs": {
+            "meta": { "$id": "meta", "$vocabulary": { "https://example.com/vocab/core": true } }
+          }
+        }`);
+
+        expect(file.messages).to.eql([]);
+        expect(document.vocabularies).to.equal(undefined);
+        expect(document.embedded["https://example.com/meta"].vocabularies).to.eql({ "https://example.com/vocab/core": true });
+      });
+
+      test("a dialect can only be defined where a schema resource starts", async () => {
+        const { document, file } = await resolve(jsonSchema, `{
+          "$schema": "${dialectUri}",
+          "$defs": {
+            "foo": { "$vocabulary": { "https://example.com/vocab/core": true } }
+          }
+        }`);
+
+        expect(ruleIds(file)).to.eql([vocabularyKeyword.uri]);
+        expect(Object.values(document.embedded).map((resource) => resource.vocabularies)).to.eql([undefined]);
+      });
+
+      test("a self-describing meta-schema's dialect has to be added", { timeout: 2000 }, async () => {
+        const path = join(directory, "self.schema.json");
         const uri = pathToFileURL(path).toString();
-        await writeFile(path, JSON.stringify({ $schema: uri }));
+        await writeFile(path, JSON.stringify({ $schema: uri, $vocabulary: { "https://example.com/vocab/core": true } }));
         const { file } = await resolve(jsonSchema, `{ "$schema": "${uri}" }`);
 
         expect(ruleIds(file)).to.eql(["unknown-dialect"]);
+        expect(causes(file.messages[0])).to.contain("describes itself");
       });
 
       test("meta-schemas that depend on each other", { timeout: 2000 }, async () => {
@@ -606,27 +626,12 @@ describe("jsonSchemaResolve", () => {
         expect(causes(file.messages[0])).to.contain("depend on each other");
       });
 
-      test("a document that describes itself defines its dialect in the session", async () => {
-        const session = jsonSchema.session();
-        const { root, file } = await resolve(jsonSchema, `{
-          "$schema": "${baseUri}",
-          "$vocabulary": { "https://example.com/vocab/core": true },
-          "$defs": { "foo": {} }
-        }`, { session });
-
-        expect(file.messages).to.eql([]);
-        expect(root).to.include({ type: "json-schema", dialectUri: baseUri });
-        expect(at("/$defs/foo", root).type).to.equal("json-schema");
-        expect(await session.getDialect(baseUri)).to.eql({ uri: baseUri, keywords: { $id: idKeyword.uri, $defs: "https://example.com/keyword/defs" }, unknownKeywords: "annotation" });
-        expect(jsonSchema.hasDialect(baseUri)).to.equal(false);
-      });
-
       test("a meta-schema without $vocabulary", async () => {
         const uri = await schemaFile("none.schema.json", { $schema: dialectUri });
         const { file } = await resolve(jsonSchema, `{ "$schema": "${uri}" }`);
 
         expect(ruleIds(file)).to.eql(["unknown-dialect"]);
-        expect(causes(file.messages[0])).to.contain("doesn't have a '$vocabulary'");
+        expect(causes(file.messages[0])).to.contain("doesn't define a dialect");
       });
 
       test("a self-describing meta-schema doesn't replace a dialect that's already defined", async () => {

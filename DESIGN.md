@@ -89,10 +89,11 @@ were considered. See "Open questions".)
   schemas. It declares its dialect with `$schema` (see "Schema
   validation").
 - `resolve`: An optional hook for keywords that identify schemas (`$id`,
-  `$anchor`, `$dynamicAnchor`, legacy `id`/`$id`/`$ref`, `$recursiveAnchor`).
-  It records effects (`setBaseUri`, `addAnchor`, `addDynamicAnchor`,
-  `setReference`) that are applied after every keyword in the schema has been
-  seen, so keyword order doesn't matter. `setReference` makes the schema a
+  `$anchor`, `$dynamicAnchor`, legacy `id`/`$id`/`$ref`, `$recursiveAnchor`)
+  or define dialects (`$vocabulary`). It records effects (`setBaseUri`,
+  `addAnchor`, `addDynamicAnchor`, `setReference`, `defineDialect`) that are
+  applied after every keyword in the schema has been seen, so keyword order
+  doesn't matter. `setReference` makes the schema a
   reference node and discards everything else in it, including messages.
 - Draft-specific identifier rules live in keyword definitions, not the core.
 - `$schema` and unknown keywords are part of every dialect. The resolver maps
@@ -134,10 +135,25 @@ were considered. See "Open questions".)
   `extendDialect`). They're always allowed in schemas, even when unknown
   keywords are errors, and then they're annotations (v1).
 - `$vocabulary` was removed in v1 but is still supported for 2019-09 and
-  2020-12. A dialect that isn't defined is built from its meta-schema's
-  `$vocabulary`. The meta-schema is retrieved with `get` and must be a schema.
-  A self-describing meta-schema (its `$schema` is the URI it was retrieved
-  from) defines its dialect while it's resolved. Meta-schemas that depend on
+  2020-12. The core doesn't know about it. It's a keyword
+  (`src/keywords/vocabulary.js`) whose resolve hook calls `defineDialect`,
+  which records the vocabularies on the schema resource
+  (`JsonSchemaDocumentNode.vocabularies`). It's only allowed where a schema
+  resource starts. Anywhere else, it's ignored with a message.
+- A dialect that isn't defined is built from its meta-schema's
+  vocabularies. `JsonSchemaSession.getDialect` gets the meta-schema with
+  `getDocument`, so it can come from a registry, and it must be a schema. The
+  dialect is identified by the URI it was asked for, which can be any URI the
+  meta-schema is found by. It's only built when it's used, so a required
+  vocabulary that hasn't been added is a problem for the schemas that use it,
+  not for the meta-schema. The dialect is built in each session that uses it,
+  because it isn't stored anywhere a resolved document is shared from. A
+  dialect that's already defined isn't replaced.
+- A self-describing meta-schema (its `$schema` is the URI it was retrieved
+  from) can't define its own dialect, because the dialect is needed to find
+  out what it defines. Its dialect has to be added, which the presets do for
+  2019-09 and 2020-12. Custom meta-schemas normally use `$schema` for one of
+  those, so they still define their dialects. Meta-schemas that depend on
   each other are detected with `getDialect`'s `referencedFrom` option instead
   of waiting forever.
 
@@ -186,8 +202,7 @@ an internal meta-schema.
 
 ## Sessions and registries
 
-Implemented, except the `$vocabulary` resolve hook, which comes with the
-presets (see "Plan"). `JsonSchema` used to be a `Hyperjump` with one
+Implemented. `JsonSchema` used to be a `Hyperjump` with one
 document cache for its whole life. That's what made registries hard: a
 registry for one compilation would be visible to compilations running at the
 same time, and nothing could be removed without leaving resolved documents
@@ -222,10 +237,9 @@ Both libraries have a long-lived object and sessions created from it, and
 - `JsonSchema.compile(uri)` compiles in a new session, so each compilation
   sees changes. `JsonSchemaSession.compile` compiles in that session.
 - Dialects from `addDialect` belong to `JsonSchema`, and its `getDialect`
-  only finds those. A dialect built from a retrieved meta-schema's
-  `$vocabulary`, including a self-describing one, belongs to the session that
-  retrieved it. `JsonSchemaSession.getDialect` finds both, and it's what the
-  resolver and the compiler use.
+  only finds those. A dialect built from a meta-schema belongs to the
+  session that built it. `JsonSchemaSession.getDialect` finds both, and it's
+  what the resolver and the compiler use.
 - Browser gives a media type plugin the session a document is being
   retrieved in (`parse(response, session)`), so the schema media type plugin
   resolves schemas in that session. Retrieving a schema in a plain `Session`
@@ -305,33 +319,32 @@ entries. Each `JsonSchema` indexes each registry it's used with.
 - Every `JsonSchema` a registry is used with identifies an entry when
   it's added. Identification is synchronous: it gets the dialect and runs
   only the root's resolve hooks (`identify` in `src/registry-index.js`).
-  Full resolution comes later, separately. A self-describing meta-schema
-  (its `$schema` is its `retrievalUri`) is read with the dialect its own
-  `$vocabulary` defines, as the resolver does.
+  Full resolution comes later, separately.
 - If any `JsonSchema` finds a problem, such as a duplicate `$id`, `add`
   throws (an `AggregateError` if there's more than one) and the entry isn't
   added.
+- An entry's dialect is one added to the `JsonSchema` or one defined by
+  another entry in the same registry (its root's `defineDialect` effect).
+  Only the same registry, because an index doesn't depend on which other
+  registries a session sees. A schema in a registry that uses a
+  `$vocabulary` dialect needs that dialect's meta-schema in the same registry
+  or added with `addDialect`.
+- An entry identified with another entry's dialect can't be seen before
+  that entry: its version is the later of the two. Removing the meta-schema
+  identifies its dependents again at that version, so sessions that could
+  see the meta-schema keep seeing them as they were. Replacing it (`remove`
+  then `add`) identifies them again with the new one.
 - An entry whose dialect isn't defined yet waits in a list by dialect URI.
   Nothing is retrieved to identify an entry. Waiting entries are tried
-  again when a lookup misses, so a dialect added with `addDialect` later is
-  picked up. The dialects they're waiting for are in the error when the
-  lookup fails. Once the `$vocabulary` hook exists, another registry entry
-  can define the dialect too. Until then, a registry schema whose dialect
-  only comes from a meta-schema can't be found. A schema in a registry that
-  uses a `$vocabulary` dialect needs that dialect's meta-schema in a
-  registry too.
-- `$vocabulary` is a resolve hook in the 2019-09 and 2020-12 presets. Its
-  effect defines a dialect from the vocabularies, with the resource's base
-  URI after `$id` as the dialect URI. A dialect defined that way is part of
-  the entry. A session sees it exactly when it sees the entry, so removing
-  the entry removes the dialect. A dialect that's already defined isn't
-  replaced.
+  again when an entry that defines a dialect is added and when a lookup
+  misses, so a dialect added with `addDialect` later is picked up. The
+  dialects they're waiting for are in the error when the lookup fails.
+- A session sees a dialect defined by an entry exactly when it sees the
+  entry, because the dialect comes from the entry's resolved document.
+  Removing the entry removes the dialect.
 - Full resolution is lazy, the first time a session asks for the entry.
   Problems are thrown as fatal messages then, as they are for a retrieved
   schema.
-- A self-describing meta-schema (its `$schema` is its own `$id`) needs a
-  `retrievalUri` equal to its `$id`, because the resolver can't read `$id`
-  without the dialect the meta-schema defines (see "Known limitations").
 
 ### Making sessions cheap
 
@@ -667,8 +680,9 @@ Done:
 - The unknown keyword is an annotation in dialects whose `unknownKeywords` is
   `annotation`.
 - Keyword definitions with resolve hooks: `$schema`, unknown, `$id`,
-  `$anchor`, `$dynamicAnchor`, draft-04 `id`/`$ref`, and 2019-09
-  `$recursiveAnchor`. Other keywords only need shapes and schemas, so
+  `$anchor`, `$dynamicAnchor`, draft-04 `id`/`$ref`, 2019-09
+  `$recursiveAnchor`, and `$vocabulary`, which defines dialects in the
+  resolver, in sessions, and in registries. Other keywords only need shapes and schemas, so
   they'll be added with the compile side.
 - The v1 dialect (`src/v1`) is built into every `JsonSchema`. It used to be
   added with `addV1`. The JSON-Schema-Test-Suite (its `unify`
@@ -749,9 +763,9 @@ Changes made to browser for this (on its `v2` branch):
    sessions and the HTTP cache. Here: `JsonSchemaSession`, `SchemaRegistry`,
    and the internal registry with the keyword schemas, which fixes them in
    browsers. Done.
-4. Presets for 2020-12, 2019-09, and draft-04 through draft-07. Move the
-   `$vocabulary` support into the 2019-09 and 2020-12 presets as a resolve
-   hook the core doesn't need.
+4. Presets for 2020-12, 2019-09, and draft-04 through draft-07. The
+   `$vocabulary` resolve hook is done. The 2019-09 and 2020-12 presets add it
+   and their own dialects, since their meta-schemas describe themselves.
 5. Later: annotations, bundling, OpenAPI, a CLI, a unified plugin for
    validating JSON files, and migrating dependent projects.
 
@@ -763,9 +777,8 @@ Changes made to browser for this (on its `v2` branch):
 - The base URI from a file's path only handles POSIX paths.
 - The `JsonSchema` shortcuts (`validate(uri, ...)` and the others) compile the
   schema every time.
-- A registry schema whose dialect is only defined by a meta-schema can't be
-  found until the `$vocabulary` resolve hook exists (step 4).
-- A self-describing meta-schema is recognized by the URI it was retrieved
-  from. A copy retrieved from a different URI than its `$id` isn't recognized,
-  and that's reported as an error. In a registry, that URI is the
-  `retrievalUri`.
+- A registry schema whose dialect is only defined by a meta-schema in a
+  different registry can't be found.
+- A self-describing meta-schema's dialect has to be added. One retrieved
+  from a URI other than its `$schema` isn't recognized as self-describing,
+  so its dialect is looked up like any other.

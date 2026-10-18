@@ -2,7 +2,6 @@ import * as JsonPointer from "@hyperjump/json-pointer";
 import { encodeIriFragment, parseIri, resolveIri, toAbsoluteIri } from "@hyperjump/uri";
 import schemaKeyword from "./keywords/schema.js";
 import unknownKeyword from "./keywords/unknown.js";
-import { vocabulariesOf } from "./vocabularies.js";
 
 /**
  * @import { Node } from "unist"
@@ -35,6 +34,7 @@ import { vocabulariesOf } from "./vocabularies.js";
  *   anchors: [string, Node][];
  *   dynamicAnchors: [string, Node][];
  *   reference?: string;
+ *   dialect?: { vocabularies: Record<string, boolean>; node: Node; keywordUri: string };
  * }} Effects
  */
 
@@ -142,7 +142,7 @@ class Resolver {
     if ($schemaNode !== undefined && !isErrorNode($schemaNode)) {
       if ($schemaNode.jsonType === "string") {
         dialect = isDocumentRoot && this.#isSelfDescribing($schemaNode.value)
-          ? await this.#selfDescribingDialect(node, $schemaNode)
+          ? this.#selfDescribingDialect($schemaNode.value, $schemaNode)
           : await this.#getDialect($schemaNode.value, $schemaNode);
       } else {
         this.#message("'$schema' must be a string", $schemaNode, "invalid-dialect");
@@ -201,6 +201,12 @@ class Resolver {
       } else {
         this.#embedded[resource.uri] = resource;
       }
+
+      if (effects.dialect) {
+        resource.vocabularies = effects.dialect.vocabularies;
+      }
+    } else if (effects.dialect) {
+      this.#message("A dialect can only be defined at the root of a schema resource. It's ignored.", effects.dialect.node, effects.dialect.keywordUri);
     }
 
     for (const [name, anchorNode] of effects.anchors) {
@@ -320,6 +326,9 @@ class Resolver {
             context.message(`'${href}' isn't a valid URI reference`);
           }
         },
+        defineDialect: (vocabularies) => {
+          effects.dialect = { vocabularies, node: valueNode, keywordUri: keyword.uri };
+        },
         message: (reason, node = valueNode) => this.#message(reason, node, keyword.uri)
       };
 
@@ -434,25 +443,20 @@ class Resolver {
   }
 
   /**
-   * Build the dialect of a self-describing meta-schema from its own
-   * `$vocabulary` if the dialect isn't already defined. A meta-schema without
-   * `$vocabulary` gets its dialect the usual way, which works if the dialect
-   * was added.
+   * A self-describing meta-schema can't define its own dialect, because the
+   * dialect is needed to find out what the meta-schema defines. Retrieving
+   * it as its own meta-schema would wait for itself, so its dialect has to
+   * have been added.
    *
-   * @type (node: TreeNode, $schemaNode: JsonSchemaTolerantNode & { jsonType: "string" }) => Promise<Dialect | undefined>
+   * @type (uri: string, node: Node) => Dialect | undefined
    */
-  async #selfDescribingDialect(node, $schemaNode) {
-    const vocabularies = vocabulariesOf(node);
-    if (!vocabularies || this.#session.hasDialect($schemaNode.value)) {
-      return this.#getDialect($schemaNode.value, $schemaNode);
+  #selfDescribingDialect(uri, node) {
+    uri = toAbsoluteIri(uri);
+    if (this.#session.jsonSchema.hasDialect(uri)) {
+      return this.#session.jsonSchema.getDialect(uri);
     }
 
-    try {
-      return this.#session.addDialectFromVocabularies($schemaNode.value, vocabularies);
-    } catch (error) {
-      const cause = /** @type Error */ (error);
-      this.#message(cause.message, $schemaNode, "unknown-dialect", cause);
-    }
+    this.#message(`The '${uri}' meta-schema describes itself, so its dialect has to be added. Use the 'addDialect' function to add support for it.`, node, "unknown-dialect");
   }
 
   /** @type (reason: string, node: Node, ruleId: string, cause?: Error) => VFileMessage */

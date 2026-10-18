@@ -1,0 +1,6 @@
+{
+  "$schema": "https://json-schema.org/v1",
+  "type": "object",
+  "propertyNames": { "format": "iri" },
+  "additionalProperties": { "type": "boolean" }
+}

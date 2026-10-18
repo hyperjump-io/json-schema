@@ -230,30 +230,22 @@ export class JsonSchemaSession extends Session<JsonSchemaNode> {
 
   /**
    * Get a dialect. If it hasn't been added to the {@link JsonSchema} or
-   * built in this session, its meta-schema is retrieved with {@link get}
-   * and the dialect is built from the meta-schema's `$vocabulary`. The
-   * meta-schema must be retrieved as a schema (`application/schema+json` or
-   * a `.schema.json` file). A JSON document isn't used even if it has a
-   * `$vocabulary`.
+   * built in this session, its meta-schema is found with
+   * {@link getDocument}, which can find it in a registry, and the dialect is
+   * built from the vocabularies the meta-schema defines it with (see
+   * `JsonSchemaDocumentNode.vocabularies`). That's `$vocabulary` in 2019-09
+   * and 2020-12. The meta-schema must be a schema (`application/schema+json`
+   * or a `.schema.json` file). A JSON document isn't used even if it has a
+   * `$vocabulary`. A self-describing meta-schema's dialect has to be added.
    *
    * @throws Error if the meta-schema can't be retrieved, isn't a schema,
-   * doesn't have `$vocabulary`, requires a vocabulary that hasn't been added,
+   * doesn't define a dialect, requires a vocabulary that hasn't been added,
    * or depends on a meta-schema that depends on it.
    */
   getDialect(uri: string, options?: GetDialectOptions): Promise<Dialect>;
 
   /** Whether a dialect has been added to the {@link JsonSchema} or built in this session */
   hasDialect(uri: string): boolean;
-
-  /**
-   * Build a dialect from a `$vocabulary` value for this session only. A
-   * self-describing meta-schema defines its dialect this way while it's
-   * resolved.
-   *
-   * @throws Error if a required vocabulary hasn't been added or the dialect
-   * is already defined.
-   */
-  addDialectFromVocabularies(uri: string, vocabularies: Record<string, boolean>): Dialect;
 
   /**
    * Compile a schema into a {@link Validator}. The validator doesn't need

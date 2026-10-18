@@ -6,7 +6,9 @@ import { describe, test, beforeEach, expect } from "vitest";
 import { Session } from "@hyperjump/browser";
 import { JsonSchema } from "./json-schema.js";
 import { v1DialectUri } from "./v1/index.js";
+import { SchemaRegistry } from "./schema-registry.js";
 import unknownKeyword from "./keywords/unknown.js";
+import vocabularyKeyword from "./keywords/vocabulary.js";
 
 /** A keyword schema that allows any value, for keywords defined in tests */
 const anyValue = unknownKeyword.schema;
@@ -153,16 +155,26 @@ describe("JsonSchema", () => {
   });
 
   describe("sessions", () => {
-    test("a dialect built in a session only belongs to that session", async () => {
-      const session = jsonSchema.session();
-      const dialect = session.addDialectFromVocabularies("https://example.com/session-dialect", {
-        "https://example.com/vocab/core": true
+    test("a dialect built from a meta-schema only belongs to the session", async () => {
+      jsonSchema.addKeyword(vocabularyKeyword);
+      jsonSchema.addDialect({
+        uri: "https://example.com/meta-dialect",
+        keywords: { $id: "https://json-schema.org/keyword/id", $vocabulary: vocabularyKeyword.uri },
+        unknownKeywords: "annotation"
       });
+      const uri = "https://example.com/session-dialect";
+      const registry = new SchemaRegistry();
+      registry.add({
+        $schema: "https://example.com/meta-dialect",
+        $id: uri,
+        $vocabulary: { "https://example.com/vocab/core": true }
+      });
+      const session = jsonSchema.session({ registries: [registry] });
 
-      expect(await session.getDialect(dialect.uri)).to.equal(dialect);
-      expect(session.hasDialect(dialect.uri)).to.equal(true);
-      expect(jsonSchema.hasDialect(dialect.uri)).to.equal(false);
-      expect(jsonSchema.session().hasDialect(dialect.uri)).to.equal(false);
+      expect(await session.getDialect(uri)).to.eql({ uri, keywords: { $id: "https://json-schema.org/keyword/id" }, unknownKeywords: "annotation" });
+      expect(session.hasDialect(uri)).to.equal(true);
+      expect(jsonSchema.hasDialect(uri)).to.equal(false);
+      expect(jsonSchema.session().hasDialect(uri)).to.equal(false);
     });
 
     test("a session sees dialects added to its JsonSchema", async () => {
@@ -173,7 +185,6 @@ describe("JsonSchema", () => {
 
       expect(session.hasDialect(dialect.uri)).to.equal(true);
       expect(await session.getDialect(dialect.uri)).to.eql(dialect);
-      expect(() => session.addDialectFromVocabularies(dialect.uri, {})).to.throw("already defined");
     });
 
     test("each compile has its own session, so it sees changes", async () => {

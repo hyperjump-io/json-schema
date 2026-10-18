@@ -2,7 +2,6 @@ import { VFileMessage } from "vfile-message";
 import { fromJson } from "@hyperjump/browser/json";
 import { parseIri, toAbsoluteIri } from "@hyperjump/uri";
 import { listenToRegistry, registryVersion } from "./registry-state.js";
-import { vocabulariesOf } from "./vocabularies.js";
 
 /**
  * @import { JsonNode } from "@hyperjump/browser/json"
@@ -22,11 +21,32 @@ import { vocabulariesOf } from "./vocabularies.js";
  *   uri: string;
  *   addedIn: number;
  *   removedIn?: number;
+ *   vocabularies?: Record<string, boolean>;
+ *   dialectFrom?: DialectSource;
  * }} IndexedEntry
  */
 
 /**
- * @typedef {{ uri: string } | { waitingFor: string }} Identification
+ * The entry in the same registry that defines the dialect an entry was
+ * identified with
+ *
+ * @typedef {{ entry: RegistryEntry; dialectUri: string }} DialectSource
+ */
+
+/**
+ * @typedef {{
+ *   uri: string;
+ *   vocabularies?: Record<string, boolean>;
+ *   dialectFrom?: DialectSource;
+ * } | {
+ *   waitingFor: string;
+ * }} Identification
+ */
+
+/**
+ * Finds a dialect defined by an entry in the same registry
+ *
+ * @typedef {(dialectUri: string) => IndexedEntry | undefined} RegistryDialects
  */
 
 /**
@@ -50,6 +70,13 @@ export class RegistryIndex {
 
   /** @type Map<RegistryEntry, IndexedEntry> */
   #indexed;
+
+  /**
+   * The entries that define dialects, by each URI they're found by
+   *
+   * @type Map<string, IndexedEntry>
+   */
+  #dialects;
 
   /**
    * Entries whose dialect isn't defined yet, with the version they were
@@ -77,6 +104,7 @@ export class RegistryIndex {
     this.#isInternal = isInternal;
     this.#byUri = new Map();
     this.#indexed = new Map();
+    this.#dialects = new Map();
     this.#waiting = new Map();
     this.#openSessions = new Map();
 
@@ -105,7 +133,7 @@ export class RegistryIndex {
 
   /** @type (entry: RegistryEntry, addedIn: number) => () => void */
   #prepare(entry, addedIn) {
-    const identification = identify(this.#jsonSchema, entry, this.#isInternal);
+    const identification = identify(this.#jsonSchema, entry, this.#isInternal, this.#registryDialect);
     if ("waitingFor" in identification) {
       return () => {
         this.#waiting.set(entry, { addedIn, dialectUri: identification.waitingFor });
@@ -114,9 +142,15 @@ export class RegistryIndex {
 
     this.#assertNotIndexed(entry, identification.uri);
     return () => {
-      this.#index(entry, identification.uri, addedIn);
+      this.#index(entry, identification, addedIn);
+      if (identification.vocabularies) {
+        this.#identifyWaiting();
+      }
     };
   }
+
+  /** @type RegistryDialects */
+  #registryDialect = (dialectUri) => this.#dialects.get(dialectUri);
 
   /**
    * An entry is found by the URI it's identified by and by its retrieval
@@ -137,10 +171,17 @@ export class RegistryIndex {
     }
   }
 
-  /** @type (entry: RegistryEntry, uri: string, addedIn: number) => void */
-  #index(entry, uri, addedIn) {
+  /**
+   * An entry identified with a dialect from another entry can't be seen
+   * before that entry is.
+   *
+   * @type (entry: RegistryEntry, identification: Extract<Identification, { uri: string }>, addedIn: number) => void
+   */
+  #index(entry, { uri, vocabularies, dialectFrom }, addedIn) {
+    const dialectAddedIn = dialectFrom && this.#indexed.get(dialectFrom.entry)?.addedIn;
+
     /** @type IndexedEntry */
-    const indexed = { entry, uri, addedIn };
+    const indexed = { entry, uri, addedIn: Math.max(addedIn, dialectAddedIn ?? addedIn), vocabularies, dialectFrom };
     this.#indexed.set(entry, indexed);
 
     for (const key of this.#keys(entry, uri)) {
@@ -149,6 +190,10 @@ export class RegistryIndex {
         entries.push(indexed);
       } else {
         this.#byUri.set(key, [indexed]);
+      }
+
+      if (vocabularies) {
+        this.#dialects.set(key, indexed);
       }
     }
   }
@@ -159,11 +204,31 @@ export class RegistryIndex {
 
     const indexed = this.#indexed.get(entry);
     if (indexed) {
-      indexed.removedIn = version;
-      this.#indexed.delete(entry);
+      this.#unindex(indexed, version);
+
+      // Entries identified with the dialect this one defined have to be
+      // identified again
+      for (const dependent of [...this.#indexed.values()]) {
+        if (dependent.dialectFrom?.entry === entry) {
+          this.#unindex(dependent, version);
+          this.#waiting.set(dependent.entry, { addedIn: version, dialectUri: dependent.dialectFrom.dialectUri });
+        }
+      }
+      this.#identifyWaiting();
     }
 
     this.#prune();
+  }
+
+  /** @type (indexed: IndexedEntry, version: number) => void */
+  #unindex(indexed, version) {
+    indexed.removedIn = version;
+    this.#indexed.delete(indexed.entry);
+    for (const [key, definer] of this.#dialects) {
+      if (definer === indexed) {
+        this.#dialects.delete(key);
+      }
+    }
   }
 
   /**
@@ -189,18 +254,27 @@ export class RegistryIndex {
     });
   }
 
+  /**
+   * Identifying an entry can define a dialect another entry is waiting for,
+   * so this goes until nothing changes.
+   */
   #identifyWaiting() {
-    for (const [entry, { addedIn }] of this.#waiting) {
-      try {
-        const identification = identify(this.#jsonSchema, entry, this.#isInternal);
-        if ("uri" in identification) {
-          this.#assertNotIndexed(entry, identification.uri);
-          this.#waiting.delete(entry);
-          this.#index(entry, identification.uri, addedIn);
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (const [entry, { addedIn }] of this.#waiting) {
+        try {
+          const identification = identify(this.#jsonSchema, entry, this.#isInternal, this.#registryDialect);
+          if ("uri" in identification) {
+            this.#assertNotIndexed(entry, identification.uri);
+            this.#waiting.delete(entry);
+            this.#index(entry, identification, addedIn);
+            changed = true;
+          }
+        } catch (_error) {
+          // It stays unidentified. It's reported when it's added if its
+          // dialect is defined by then.
         }
-      } catch (_error) {
-        // It stays unidentified. It's reported when it's added if its dialect
-        // is defined by then.
       }
     }
   }
@@ -257,13 +331,14 @@ export class RegistryIndex {
 
 /**
  * Find the URI an entry is identified by. That depends on the dialect, so
- * only the root's resolve hooks (`$id`) run. Nothing is retrieved, so an
- * entry whose dialect isn't defined has to wait for it.
+ * only the root's resolve hooks (`$id`, `$vocabulary`) run. Nothing is
+ * retrieved, so an entry whose dialect isn't defined by the JsonSchema or
+ * another entry in the same registry has to wait for it.
  *
- * @type (jsonSchema: JsonSchema, entry: RegistryEntry, isInternal?: boolean) => Identification
+ * @type (jsonSchema: JsonSchema, entry: RegistryEntry, isInternal: boolean, registryDialect: RegistryDialects) => Identification
  * @throws Error if the entry can't be identified
  */
-export const identify = (jsonSchema, entry, isInternal = false) => {
+export const identify = (jsonSchema, entry, isInternal, registryDialect) => {
   const { retrievalUri } = entry;
   const result = fromJson(entryText(entry));
   if (result.status !== "success" || result.node === undefined) {
@@ -276,13 +351,25 @@ export const identify = (jsonSchema, entry, isInternal = false) => {
   const dialectUri = $schema ?? entry.dialectUri ?? jsonSchema.config.defaultDialectUri;
 
   let uri = retrievalUri;
+  /** @type Record<string, boolean> | undefined */
+  let vocabularies;
+  /** @type DialectSource | undefined */
+  let dialectFrom;
   if (root.jsonType === "object" && dialectUri !== undefined) {
-    const dialect = identifyingDialect(jsonSchema, toAbsoluteIri(dialectUri), root, retrievalUri);
-    if (dialect === undefined) {
-      return { waitingFor: toAbsoluteIri(dialectUri) };
+    const absoluteDialectUri = toAbsoluteIri(dialectUri);
+    let dialect;
+    if (jsonSchema.hasDialect(absoluteDialectUri)) {
+      dialect = jsonSchema.getDialect(absoluteDialectUri);
+    } else {
+      const definer = registryDialect(absoluteDialectUri);
+      if (definer === undefined) {
+        return { waitingFor: absoluteDialectUri };
+      }
+      dialect = jsonSchema.dialectFromVocabularies(absoluteDialectUri, /** @type Record<string, boolean> */ (definer.vocabularies));
+      dialectFrom = { entry: definer.entry, dialectUri: absoluteDialectUri };
     }
 
-    uri = baseUri(jsonSchema, root, dialect, retrievalUri);
+    ({ uri, vocabularies } = rootEffects(jsonSchema, root, dialect, retrievalUri));
   }
 
   if (uri === undefined) {
@@ -299,34 +386,21 @@ export const identify = (jsonSchema, entry, isInternal = false) => {
     }
   }
 
-  return { uri };
+  return { uri, vocabularies, dialectFrom };
 };
 
 /**
- * The dialect needed to read a schema's identifier. A self-describing
- * meta-schema is read with the dialect its own `$vocabulary` defines, as the
- * resolver does.
+ * The base URI the root's identifier sets, if any, and the dialect it
+ * defines. A root that's a reference (draft-04 through draft-07 `$ref`)
+ * ignores both.
  *
- * @type (jsonSchema: JsonSchema, dialectUri: string, root: JsonNode, retrievalUri: string | undefined) => Dialect | undefined
+ * @type (jsonSchema: JsonSchema, root: JsonNode & { jsonType: "object" }, dialect: Dialect, retrievalUri: string | undefined) => { uri?: string; vocabularies?: Record<string, boolean> }
  */
-const identifyingDialect = (jsonSchema, dialectUri, root, retrievalUri) => {
-  if (jsonSchema.hasDialect(dialectUri)) {
-    return jsonSchema.getDialect(dialectUri);
-  }
-
-  const vocabularies = dialectUri === retrievalUri ? vocabulariesOf(/** @type any */ (root)) : undefined;
-  return vocabularies && jsonSchema.dialectFromVocabularies(dialectUri, vocabularies);
-};
-
-/**
- * The base URI the root's identifier sets, if any. A root that's a reference
- * (draft-04 through draft-07 `$ref`) ignores its identifier.
- *
- * @type (jsonSchema: JsonSchema, root: JsonNode & { jsonType: "object" }, dialect: Dialect, retrievalUri: string | undefined) => string | undefined
- */
-const baseUri = (jsonSchema, root, dialect, retrievalUri) => {
+const rootEffects = (jsonSchema, root, dialect, retrievalUri) => {
   /** @type string | undefined */
   let uri;
+  /** @type Record<string, boolean> | undefined */
+  let vocabularies;
   let isReference = false;
 
   for (const property of root.children) {
@@ -349,6 +423,9 @@ const baseUri = (jsonSchema, root, dialect, retrievalUri) => {
       setReference: () => {
         isReference = true;
       },
+      defineDialect: (dialectVocabularies) => {
+        vocabularies = dialectVocabularies;
+      },
       message: (reason) => {
         throw new VFileMessage(reason, { place: valueNode.position, ruleId: keyword.uri, source: "json-schema" });
       }
@@ -356,7 +433,7 @@ const baseUri = (jsonSchema, root, dialect, retrievalUri) => {
     keyword.resolve(/** @type any */ (valueNode), context);
   }
 
-  return isReference ? retrievalUri : uri ?? retrievalUri;
+  return isReference ? { uri: retrievalUri } : { uri: uri ?? retrievalUri, vocabularies };
 };
 
 /**

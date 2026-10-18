@@ -101,6 +101,14 @@ export type JsonSchemaDocumentNode<S extends JsonParseStatus = JsonParseStatus> 
   dialectUri?: string;
 
   /**
+   * The vocabularies of the dialect the resource defines as a meta-schema,
+   * from a resolve hook such as `$vocabulary`'s. Vocabulary URIs are mapped to
+   * whether they're required. The dialect is identified by any URI the
+   * resource is found by.
+   */
+  vocabularies?: Record<string, boolean>;
+
+  /**
    * Always `application/schema+json`, so `@hyperjump/browser` interprets
    * fragments with the schema media type plugin, even for an embedded
    * resource it didn't parse.
