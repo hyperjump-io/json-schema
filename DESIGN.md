@@ -104,7 +104,8 @@ were considered. See "Open questions".)
 ## Dialects (`src/dialect.d.ts`)
 
 - A dialect is `{ uri, keywords, unknownKeywords }`. `keywords` maps names to
-  keyword URIs. `unknownKeywords` is `"error"` (v1), `"annotation"` (2019-09,
+  keyword URIs. The core has no vocabularies. A dialect is one flat map of
+  keywords, and vocabularies are only how `$vocabulary` builds one. `unknownKeywords` is `"error"` (v1), `"annotation"` (2019-09,
   2020-12), or `"ignore"` (draft-04 through draft-07).
 - There's no default dialect unless the user sets `defaultDialectUri` in the
   config. Otherwise, a schema whose dialect can't be determined is an error.
@@ -131,24 +132,37 @@ were considered. See "Open questions".)
   from `@hyperjump/json-schema-formats`.
 - Keyword names starting with `x-` are reserved for schema authors in every
   dialect. They're guaranteed to never collide with a keyword, so they must
-  never assert. Registering one throws (`addVocabulary`, `addDialect`,
-  `extendDialect`). They're always allowed in schemas, even when unknown
+  never assert. Registering one throws (`addDialect`,
+  `extendDialect`), and so does a meta-schema defining a dialect with one. They're always allowed in schemas, even when unknown
   keywords are errors, and then they're annotations (v1).
-- `$vocabulary` was removed in v1 but is still supported for 2019-09 and
-  2020-12. The core doesn't know about it. It's a keyword
-  (`src/keywords/vocabulary.js`) whose resolve hook calls `defineDialect`,
-  which records the vocabularies on the schema resource
-  (`JsonSchemaDocumentNode.vocabularies`). It's only allowed where a schema
+- A meta-schema can define a dialect. A resolve hook calls
+  `defineDialect` with the dialect without its URI (`DialectDefinition`),
+  and the resolver records it on the schema resource
+  (`JsonSchemaDocumentNode.definedDialect`). It's only allowed where a schema
   resource starts. Anywhere else, it's ignored with a message.
-- A dialect that isn't defined is built from its meta-schema's
-  vocabularies. `JsonSchemaSession.getDialect` gets the meta-schema with
-  `getDocument`, so it can come from a registry, and it must be a schema. The
-  dialect is identified by the URI it was asked for, which can be any URI the
-  meta-schema is found by. It's only built when it's used, so a required
-  vocabulary that hasn't been added is a problem for the schemas that use it,
-  not for the meta-schema. The dialect is built in each session that uses it,
-  because it isn't stored anywhere a resolved document is shared from. A
-  dialect that's already defined isn't replaced.
+- `$vocabulary` was removed in v1 but is still supported for 2019-09 and
+  2020-12. The core doesn't know about it or about vocabularies. The
+  `$vocabulary` keyword (`src/keywords/vocabulary.js`) knows a map of
+  vocabulary URIs to keyword maps. Its hook merges the listed vocabularies
+  into one keyword map, with unknown keywords as annotations. A required
+  vocabulary the keyword doesn't know is a problem with the meta-schema,
+  reported on the vocabulary's URI, so the meta-schema can't be used.
+- `addVocabulary(jsonSchema, uri, keywords)`, defined with the keyword, adds
+  a vocabulary by replacing the `JsonSchema`'s `$vocabulary` keyword with one
+  whose map has it too. Keyword definitions never change, so it's still per
+  instance. 2019-09 and 2020-12 share the keyword, because `$vocabulary`
+  means the same thing in both and their vocabulary URIs don't overlap. So a
+  vocabulary is added once and works in every dialect that has
+  `$vocabulary`, and vocabularies added by different code compose. The
+  presets add their vocabularies with it too, and they export it. Users get
+  it from a preset, not from the keyword's module, which isn't public.
+- A dialect that isn't defined is the one its meta-schema defines.
+  `JsonSchemaSession.getDialect` gets the meta-schema with `getDocument`, so
+  it can come from a registry, and it must be a schema. The dialect is
+  identified by the URI it was asked for, which can be any URI the
+  meta-schema is found by. It's cached in each session that uses it, because
+  that's where the URI it was asked for is known. A dialect that's already
+  defined isn't replaced.
 - A self-describing meta-schema (its `$schema` is the URI it was retrieved
   from) can't define its own dialect, because the dialect is needed to find
   out what it defines. Its dialect has to be added, which the presets do for
@@ -681,9 +695,10 @@ Done:
   `annotation`.
 - Keyword definitions with resolve hooks: `$schema`, unknown, `$id`,
   `$anchor`, `$dynamicAnchor`, draft-04 `id`/`$ref`, 2019-09
-  `$recursiveAnchor`, and `$vocabulary`, which defines dialects in the
-  resolver, in sessions, and in registries. Other keywords only need shapes and schemas, so
-  they'll be added with the compile side.
+  `$recursiveAnchor`, and `$vocabulary` (with `addVocabulary`), which
+  defines dialects in the resolver, in sessions, and in registries.
+  Other keywords only need shapes and schemas, so they'll be added with the
+  compile side.
 - The v1 dialect (`src/v1`) is built into every `JsonSchema`. It used to be
   added with `addV1`. The JSON-Schema-Test-Suite (its `unify`
   branch, which will replace `main`) runs in
@@ -764,8 +779,10 @@ Changes made to browser for this (on its `v2` branch):
    and the internal registry with the keyword schemas, which fixes them in
    browsers. Done.
 4. Presets for 2020-12, 2019-09, and draft-04 through draft-07. The
-   `$vocabulary` resolve hook is done. The 2019-09 and 2020-12 presets add it
-   and their own dialects, since their meta-schemas describe themselves.
+   `$vocabulary` resolve hook is done. The 2019-09 and 2020-12 presets add
+   their vocabularies with `addVocabulary` and add their own dialects, since
+   their meta-schemas describe themselves. Each of them exports
+   `addVocabulary`.
 5. Later: annotations, bundling, OpenAPI, a CLI, a unified plugin for
    validating JSON files, and migrating dependent projects.
 

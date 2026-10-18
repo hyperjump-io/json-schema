@@ -8,7 +8,7 @@ import { JsonSchema } from "./json-schema.js";
 import { v1DialectUri } from "./v1/index.js";
 import { SchemaRegistry } from "./schema-registry.js";
 import unknownKeyword from "./keywords/unknown.js";
-import vocabularyKeyword from "./keywords/vocabulary.js";
+import vocabularyKeyword, { addVocabulary } from "./keywords/vocabulary.js";
 
 /** A keyword schema that allows any value, for keywords defined in tests */
 const anyValue = unknownKeyword.schema;
@@ -24,10 +24,6 @@ describe("JsonSchema", () => {
 
   beforeEach(() => {
     jsonSchema = new JsonSchema();
-    jsonSchema.addVocabulary({
-      uri: "https://example.com/vocab/core",
-      keywords: { $id: "https://json-schema.org/keyword/id" }
-    });
   });
 
   describe("dialects", () => {
@@ -56,7 +52,6 @@ describe("JsonSchema", () => {
       jsonSchema.addDialect(dialect);
 
       expect(() => jsonSchema.addDialect(dialect)).to.throw("already defined");
-      expect(() => jsonSchema.addDialectFromVocabularies(dialect.uri, {})).to.throw("already defined");
     });
 
     test("a dialect can be replaced after it's removed", () => {
@@ -68,16 +63,6 @@ describe("JsonSchema", () => {
       const replacement = { ...dialect, keywords: {} };
       jsonSchema.addDialect(replacement);
       expect(jsonSchema.getDialect(dialect.uri)).to.eql(replacement);
-    });
-
-    test("addDialectFromVocabularies", () => {
-      const added = jsonSchema.addDialectFromVocabularies(dialect.uri, {
-        "https://example.com/vocab/core": true,
-        "https://example.com/vocab/optional": false
-      });
-
-      expect(added).to.eql({ ...dialect, unknownKeywords: "annotation" });
-      expect(jsonSchema.getDialect(dialect.uri)).to.eql(added);
     });
 
     test("extendDialect", () => {
@@ -112,13 +97,6 @@ describe("JsonSchema", () => {
     test("extendDialect for a dialect that isn't defined", () => {
       expect(() => jsonSchema.extendDialect(dialect.uri, {})).to.throw("isn't defined");
     });
-
-    test("addDialectFromVocabularies with a required vocabulary that isn't supported", () => {
-      expect(() => jsonSchema.addDialectFromVocabularies(dialect.uri, {
-        "https://example.com/vocab/required": true
-      })).to.throw("https://example.com/vocab/required");
-      expect(jsonSchema.hasDialect(dialect.uri)).to.equal(false);
-    });
   });
 
   describe("formats", () => {
@@ -137,10 +115,6 @@ describe("JsonSchema", () => {
   describe("x- keywords are reserved", () => {
     const keywords = { "x-foo": "https://example.com/keyword/foo" };
 
-    test("addVocabulary", () => {
-      expect(() => jsonSchema.addVocabulary({ uri: "https://example.com/vocab/x", keywords })).to.throw("reserved");
-    });
-
     test("addDialect", () => {
       expect(() => jsonSchema.addDialect({ uri: "https://example.com/x", keywords, unknownKeywords: "error" })).to.throw("reserved");
       expect(jsonSchema.hasDialect("https://example.com/x")).to.equal(false);
@@ -156,7 +130,7 @@ describe("JsonSchema", () => {
 
   describe("sessions", () => {
     test("a dialect built from a meta-schema only belongs to the session", async () => {
-      jsonSchema.addKeyword(vocabularyKeyword);
+      addVocabulary(jsonSchema, "https://example.com/vocab/core", { $id: "https://json-schema.org/keyword/id" });
       jsonSchema.addDialect({
         uri: "https://example.com/meta-dialect",
         keywords: { $id: "https://json-schema.org/keyword/id", $vocabulary: vocabularyKeyword.uri },
@@ -178,9 +152,9 @@ describe("JsonSchema", () => {
     });
 
     test("a session sees dialects added to its JsonSchema", async () => {
-      const dialect = jsonSchema.addDialectFromVocabularies("https://example.com/added-dialect", {
-        "https://example.com/vocab/core": true
-      });
+      /** @type Dialect */
+      const dialect = { uri: "https://example.com/added-dialect", keywords: {}, unknownKeywords: "annotation" };
+      jsonSchema.addDialect(dialect);
       const session = jsonSchema.session();
 
       expect(session.hasDialect(dialect.uri)).to.equal(true);

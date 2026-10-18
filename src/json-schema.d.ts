@@ -10,7 +10,7 @@ import type {
 } from "@hyperjump/browser/json";
 import type { JsonSchemaNode } from "./schema-ast.d.ts";
 import type { Keyword } from "./keyword.d.ts";
-import type { Dialect, DialectExtension, Vocabulary } from "./dialect.d.ts";
+import type { Dialect, DialectExtension } from "./dialect.d.ts";
 import type { Format } from "./format.d.ts";
 import type { EvaluationPlugin } from "./evaluation-plugin.d.ts";
 import type { SchemaRegistry } from "./schema-registry.d.ts";
@@ -100,17 +100,10 @@ export class JsonSchema extends Hyperjump<JsonSchemaNode> {
   getFormat(uri: string): Format;
 
   /**
-   * Add or replace a vocabulary.
-   *
-   * @throws Error if a keyword name starts with `x-`
-   */
-  addVocabulary(vocabulary: Vocabulary): void;
-
-  /**
-   * Add a dialect. Most dialects don't need to be added. They're built from
-   * their meta-schema's `$vocabulary` the first time they're used. Add one
-   * only for a dialect whose meta-schema doesn't have `$vocabulary`, such as
-   * draft-04 through draft-07.
+   * Add a dialect. Most dialects don't need to be added. A meta-schema can
+   * define one, as `$vocabulary` does, and it's found the first time it's
+   * used. Add one for a dialect whose meta-schema doesn't define it, such as
+   * draft-04 through draft-07, or one whose meta-schema describes itself.
    *
    * @throws Error if the dialect is already defined (use {@link removeDialect}
    * first to replace it) or a keyword name starts with `x-`.
@@ -126,24 +119,6 @@ export class JsonSchema extends Hyperjump<JsonSchemaNode> {
    * format with one of the names, or a keyword name starts with `x-`.
    */
   extendDialect(uri: string, extension: DialectExtension): void;
-
-  /**
-   * Build a dialect from a `$vocabulary` value and add it. Vocabularies whose
-   * value is `false` are optional and are skipped if they haven't been added.
-   * Unknown keywords are annotations, as they are in 2019-09 and 2020-12.
-   *
-   * @throws Error if a required vocabulary hasn't been added or the dialect is
-   * already defined.
-   */
-  addDialectFromVocabularies(uri: string, vocabularies: Record<string, boolean>): Dialect;
-
-  /**
-   * Build a dialect from a `$vocabulary` value, as
-   * {@link addDialectFromVocabularies} does, without adding it.
-   *
-   * @throws Error if a required vocabulary hasn't been added.
-   */
-  dialectFromVocabularies(uri: string, vocabularies: Record<string, boolean>): Dialect;
 
   /**
    * Whether a dialect has been added. A dialect a session built from its
@@ -232,15 +207,15 @@ export class JsonSchemaSession extends Session<JsonSchemaNode> {
    * Get a dialect. If it hasn't been added to the {@link JsonSchema} or
    * built in this session, its meta-schema is found with
    * {@link getDocument}, which can find it in a registry, and the dialect is
-   * built from the vocabularies the meta-schema defines it with (see
-   * `JsonSchemaDocumentNode.vocabularies`). That's `$vocabulary` in 2019-09
+   * the one the meta-schema defines (see
+   * `JsonSchemaDocumentNode.definedDialect`). That's `$vocabulary` in 2019-09
    * and 2020-12. The meta-schema must be a schema (`application/schema+json`
    * or a `.schema.json` file). A JSON document isn't used even if it has a
    * `$vocabulary`. A self-describing meta-schema's dialect has to be added.
    *
    * @throws Error if the meta-schema can't be retrieved, isn't a schema,
-   * doesn't define a dialect, requires a vocabulary that hasn't been added,
-   * or depends on a meta-schema that depends on it.
+   * doesn't define a dialect, or depends on a meta-schema that depends on
+   * it.
    */
   getDialect(uri: string, options?: GetDialectOptions): Promise<Dialect>;
 

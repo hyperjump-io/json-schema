@@ -15,7 +15,7 @@ import legacyIdKeyword from "./keywords/draft-04/id.js";
 import legacyRefKeyword from "./keywords/draft-04/ref.js";
 import recursiveAnchorKeyword from "./keywords/draft-2019-09/recursiveAnchor.js";
 import unknownKeyword from "./keywords/unknown.js";
-import vocabularyKeyword from "./keywords/vocabulary.js";
+import vocabularyKeyword, { addVocabulary } from "./keywords/vocabulary.js";
 
 /**
  * @import { JsonParseStatus } from "@hyperjump/browser/json"
@@ -33,9 +33,10 @@ const anyValue = unknownKeyword.schema;
 
 /** @type (jsonSchema: JsonSchema) => void */
 const addTestDialects = (jsonSchema) => {
-  for (const keyword of [idKeyword, anchorKeyword, dynamicAnchorKeyword, legacyIdKeyword, legacyRefKeyword, recursiveAnchorKeyword, vocabularyKeyword]) {
+  for (const keyword of [idKeyword, anchorKeyword, dynamicAnchorKeyword, legacyIdKeyword, legacyRefKeyword, recursiveAnchorKeyword]) {
     jsonSchema.addKeyword(keyword);
   }
+  addVocabulary(jsonSchema, "https://example.com/vocab/core", { $id: idKeyword.uri, $defs: "https://example.com/keyword/defs" });
   jsonSchema.addKeyword({ uri: "https://example.com/keyword/defs", shape: { map: "schema" }, schema: anyValue });
   jsonSchema.addKeyword({ uri: "https://example.com/keyword/properties", shape: { map: "schema" }, schema: anyValue });
   jsonSchema.addKeyword({ uri: "https://example.com/keyword/allOf", shape: { array: "schema" }, schema: anyValue });
@@ -533,13 +534,6 @@ describe("jsonSchemaResolve", () => {
         await rm(directory, { recursive: true });
       });
 
-      beforeEach(() => {
-        jsonSchema.addVocabulary({
-          uri: "https://example.com/vocab/core",
-          keywords: { $id: idKeyword.uri, $defs: "https://example.com/keyword/defs" }
-        });
-      });
-
       test("the dialect is built from the vocabularies", async () => {
         const uri = await metaSchema("meta", {
           "https://example.com/vocab/core": true,
@@ -569,14 +563,48 @@ describe("jsonSchemaResolve", () => {
         expect(root.type).to.equal("json");
       });
 
-      test("the meta-schema records the vocabularies", async () => {
+      test("the meta-schema records the dialect it defines", async () => {
         const { document, file } = await resolve(jsonSchema, `{
           "$schema": "${dialectUri}",
           "$vocabulary": { "https://example.com/vocab/core": true, "https://example.com/vocab/optional": false, "https://example.com/vocab/other": 42 }
         }`);
 
         expect(file.messages).to.eql([]);
-        expect(document.vocabularies).to.eql({ "https://example.com/vocab/core": true, "https://example.com/vocab/optional": false });
+        expect(document.definedDialect).to.eql({
+          keywords: { $id: idKeyword.uri, $defs: "https://example.com/keyword/defs" },
+          unknownKeywords: "annotation"
+        });
+      });
+
+      test("a required vocabulary that isn't supported is a problem with the meta-schema", async () => {
+        const { document, file } = await resolve(jsonSchema, `{
+          "$schema": "${dialectUri}",
+          "$vocabulary": { "https://example.com/vocab/required": true }
+        }`);
+
+        expect(ruleIds(file)).to.eql([vocabularyKeyword.uri]);
+        expect(file.messages[0].reason).to.contain("https://example.com/vocab/required");
+        expect(document.definedDialect).to.equal(undefined);
+      });
+
+      test("a defined dialect can't have x- keywords", async () => {
+        const keywordUri = "https://example.com/keyword/define-reserved";
+        jsonSchema.addKeyword({
+          uri: keywordUri,
+          shape: "data",
+          schema: anyValue,
+          resolve: (_valueNode, context) => {
+            context.defineDialect({ keywords: { "x-foo": "https://example.com/keyword/foo" }, unknownKeywords: "annotation" });
+          }
+        });
+        jsonSchema.extendDialect(dialectUri, { keywords: { defineReserved: keywordUri } });
+        const { document, file } = await resolve(jsonSchema, `{
+          "$schema": "${dialectUri}",
+          "defineReserved": true
+        }`);
+
+        expect(ruleIds(file)).to.eql([keywordUri]);
+        expect(document.definedDialect).to.equal(undefined);
       });
 
       test("an embedded resource can define a dialect", async () => {
@@ -588,8 +616,8 @@ describe("jsonSchemaResolve", () => {
         }`);
 
         expect(file.messages).to.eql([]);
-        expect(document.vocabularies).to.equal(undefined);
-        expect(document.embedded["https://example.com/meta"].vocabularies).to.eql({ "https://example.com/vocab/core": true });
+        expect(document.definedDialect).to.equal(undefined);
+        expect(document.embedded["https://example.com/meta"].definedDialect).to.include({ unknownKeywords: "annotation" });
       });
 
       test("a dialect can only be defined where a schema resource starts", async () => {
@@ -601,7 +629,7 @@ describe("jsonSchemaResolve", () => {
         }`);
 
         expect(ruleIds(file)).to.eql([vocabularyKeyword.uri]);
-        expect(Object.values(document.embedded).map((resource) => resource.vocabularies)).to.eql([undefined]);
+        expect(Object.values(document.embedded).map((resource) => resource.definedDialect)).to.eql([undefined]);
       });
 
       test("a self-describing meta-schema's dialect has to be added", { timeout: 2000 }, async () => {

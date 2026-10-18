@@ -20,7 +20,7 @@ export { ValidationError, DetailedValidationError, InvalidSchemaError } from "./
 /**
  * @import { Keyword } from "./keyword.d.ts"
  * @import { Format } from "./format.d.ts"
- * @import { Dialect, Vocabulary } from "./dialect.d.ts"
+ * @import { Dialect } from "./dialect.d.ts"
  * @import { CompiledSchemas } from "./compile.js"
  * @import { DocumentNode, GetOptions } from "@hyperjump/browser"
  * @import { JsonSchemaDocumentNode, JsonSchemaNode } from "./schema-ast.d.ts"
@@ -43,9 +43,6 @@ export class JsonSchema extends Hyperjump {
   /** @type Record<string, Format> */
   #formats;
 
-  /** @type Record<string, Vocabulary> */
-  #vocabularies;
-
   /** @type Record<string, Dialect> */
   #dialects;
 
@@ -61,7 +58,6 @@ export class JsonSchema extends Hyperjump {
     this.#config = config;
     this.#keywords = {};
     this.#formats = {};
-    this.#vocabularies = {};
     this.#dialects = {};
     this.#outputFormats = {};
 
@@ -160,12 +156,6 @@ export class JsonSchema extends Hyperjump {
     return this.#formats[uri];
   }
 
-  /** @type API.JsonSchema["addVocabulary"] */
-  addVocabulary(vocabulary) {
-    assertNoReservedKeywords(vocabulary.keywords);
-    this.#vocabularies[vocabulary.uri] = vocabulary;
-  }
-
   /** @type API.JsonSchema["addDialect"] */
   addDialect(dialect) {
     const uri = toAbsoluteIri(dialect.uri);
@@ -206,32 +196,6 @@ export class JsonSchema extends Hyperjump {
       keywords: { ...dialect.keywords, ...keywords },
       formats: { ...dialectFormats, ...formats }
     };
-  }
-
-  /** @type API.JsonSchema["addDialectFromVocabularies"] */
-  addDialectFromVocabularies(uri, vocabularies) {
-    const dialect = this.dialectFromVocabularies(uri, vocabularies);
-    this.addDialect(dialect);
-
-    return dialect;
-  }
-
-  /** @type API.JsonSchema["dialectFromVocabularies"] */
-  dialectFromVocabularies(uri, vocabularies) {
-    uri = toAbsoluteIri(uri);
-
-    /** @type Record<string, string> */
-    const keywords = {};
-    for (const vocabularyUri in vocabularies) {
-      const vocabulary = this.#vocabularies[vocabularyUri];
-      if (vocabulary) {
-        Object.assign(keywords, vocabulary.keywords);
-      } else if (vocabularies[vocabularyUri]) {
-        throw Error(`The '${uri}' dialect requires the '${vocabularyUri}' vocabulary, which isn't supported. Use the 'addVocabulary' function to add support for it.`);
-      }
-    }
-
-    return { uri, keywords, unknownKeywords: "annotation" };
   }
 
   /** @type API.JsonSchema["hasDialect"] */
@@ -622,13 +586,13 @@ export class JsonSchemaSession extends Session {
         throw Error(`The meta-schema for the '${uri}' dialect isn't a schema. It needs to be retrieved as 'application/schema+json' or from a '.schema.json' file.`);
       }
 
-      // The dialect is identified by whichever URI found the meta-schema
-      const { vocabularies } = /** @type JsonSchemaDocumentNode */ (/** @type unknown */ (metaSchema));
-      if (!vocabularies) {
+      const { definedDialect } = /** @type JsonSchemaDocumentNode */ (/** @type unknown */ (metaSchema));
+      if (!definedDialect) {
         throw Error(`The meta-schema for the '${uri}' dialect doesn't define a dialect (with '$vocabulary', for example). Use the 'addDialect' function to add support for this dialect.`);
       }
 
-      const dialect = this.#jsonSchema.dialectFromVocabularies(uri, vocabularies);
+      // The dialect is identified by whichever URI found the meta-schema
+      const dialect = { ...definedDialect, uri };
       this.#dialects[uri] = dialect;
       return dialect;
     } finally {

@@ -2,7 +2,7 @@ import type { Node } from "unist";
 import type { VFileMessage } from "vfile-message";
 import type { Json, JsonErrorNode, JsonNode, JsonType } from "@hyperjump/browser/json";
 import type { JsonSchemaNode } from "./schema-ast.d.ts";
-import type { Dialect } from "./dialect.d.ts";
+import type { Dialect, DialectDefinition } from "./dialect.d.ts";
 import type { JsonSchema } from "./json-schema.d.ts";
 
 /**
@@ -291,17 +291,15 @@ export type ResolveContext = {
   setReference: (href: string) => void;
 
   /**
-   * Make the schema a meta-schema that defines a dialect from a
-   * `$vocabulary` value. Vocabularies whose value is `false` are optional.
-   * The dialect is the one identified by any URI the schema resource is found
-   * by. It's only built when a schema uses it, so a required vocabulary that
-   * hasn't been added is a problem for that schema, not this one. A dialect
-   * that's already defined isn't replaced.
+   * Make the schema a meta-schema that defines a dialect, like `$vocabulary`
+   * does. The dialect is identified by any URI the schema resource is found
+   * by. A dialect that's already defined isn't replaced. Keyword names can't
+   * start with `x-`.
    *
    * It's only allowed where a schema resource starts. Anywhere else, it's
    * ignored with a message.
    */
-  defineDialect: (vocabularies: Record<string, boolean>) => void;
+  defineDialect: (dialect: DialectDefinition) => void;
 
   /**
    * Report a problem with the keyword, such as an invalid identifier. It's

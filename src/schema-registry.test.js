@@ -3,7 +3,7 @@ import { RetrievalError } from "@hyperjump/browser";
 import { JsonSchema } from "./json-schema.js";
 import { SchemaRegistry } from "./schema-registry.js";
 import { v1DialectUri } from "./v1/index.js";
-import vocabularyKeyword from "./keywords/vocabulary.js";
+import vocabularyKeyword, { addVocabulary } from "./keywords/vocabulary.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
@@ -270,11 +270,7 @@ describe("SchemaRegistry", () => {
 
       /** @type (jsonSchema: JsonSchema) => JsonSchema */
       const addMetaDialect = (jsonSchema) => {
-        jsonSchema.addKeyword(vocabularyKeyword);
-        jsonSchema.addVocabulary({
-          uri: coreVocabularyUri,
-          keywords: { $id: "https://json-schema.org/keyword/id", type: "https://json-schema.org/keyword/type" }
-        });
+        addVocabulary(jsonSchema, coreVocabularyUri, { $id: "https://json-schema.org/keyword/id", type: "https://json-schema.org/keyword/type" });
         jsonSchema.addDialect({
           uri: metaDialectUri,
           keywords: { $id: "https://json-schema.org/keyword/id", $vocabulary: vocabularyKeyword.uri },
@@ -344,10 +340,8 @@ describe("SchemaRegistry", () => {
         await expect(jsonSchema.compile("https://example.com/a", { registries: [other] })).rejects.toThrow(RetrievalError);
       });
 
-      test("a schema whose meta-schema requires a vocabulary that isn't supported can't be added", () => {
-        registry.add(metaSchema({ "https://example.com/vocab/unknown": true }));
-
-        expect(() => registry.add(schema)).to.throw("https://example.com/vocab/unknown");
+      test("a meta-schema that requires a vocabulary that isn't supported can't be added", () => {
+        expect(() => registry.add(metaSchema({ "https://example.com/vocab/unknown": true }))).to.throw("https://example.com/vocab/unknown");
       });
     });
   });

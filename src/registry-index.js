@@ -8,7 +8,7 @@ import { listenToRegistry, registryVersion } from "./registry-state.js";
  * @import { JsonSchema } from "./json-schema.d.ts"
  * @import { SchemaRegistry } from "./schema-registry.d.ts"
  * @import { RegistryEntry, RegistryListener } from "./registry-state.js"
- * @import { Dialect } from "./dialect.d.ts"
+ * @import { Dialect, DialectDefinition } from "./dialect.d.ts"
  * @import { ResolveContext } from "./keyword.d.ts"
  */
 
@@ -21,7 +21,7 @@ import { listenToRegistry, registryVersion } from "./registry-state.js";
  *   uri: string;
  *   addedIn: number;
  *   removedIn?: number;
- *   vocabularies?: Record<string, boolean>;
+ *   definedDialect?: DialectDefinition;
  *   dialectFrom?: DialectSource;
  * }} IndexedEntry
  */
@@ -36,7 +36,7 @@ import { listenToRegistry, registryVersion } from "./registry-state.js";
 /**
  * @typedef {{
  *   uri: string;
- *   vocabularies?: Record<string, boolean>;
+ *   definedDialect?: DialectDefinition;
  *   dialectFrom?: DialectSource;
  * } | {
  *   waitingFor: string;
@@ -143,7 +143,7 @@ export class RegistryIndex {
     this.#assertNotIndexed(entry, identification.uri);
     return () => {
       this.#index(entry, identification, addedIn);
-      if (identification.vocabularies) {
+      if (identification.definedDialect) {
         this.#identifyWaiting();
       }
     };
@@ -177,11 +177,11 @@ export class RegistryIndex {
    *
    * @type (entry: RegistryEntry, identification: Extract<Identification, { uri: string }>, addedIn: number) => void
    */
-  #index(entry, { uri, vocabularies, dialectFrom }, addedIn) {
+  #index(entry, { uri, definedDialect, dialectFrom }, addedIn) {
     const dialectAddedIn = dialectFrom && this.#indexed.get(dialectFrom.entry)?.addedIn;
 
     /** @type IndexedEntry */
-    const indexed = { entry, uri, addedIn: Math.max(addedIn, dialectAddedIn ?? addedIn), vocabularies, dialectFrom };
+    const indexed = { entry, uri, addedIn: Math.max(addedIn, dialectAddedIn ?? addedIn), definedDialect, dialectFrom };
     this.#indexed.set(entry, indexed);
 
     for (const key of this.#keys(entry, uri)) {
@@ -192,7 +192,7 @@ export class RegistryIndex {
         this.#byUri.set(key, [indexed]);
       }
 
-      if (vocabularies) {
+      if (definedDialect) {
         this.#dialects.set(key, indexed);
       }
     }
@@ -351,8 +351,8 @@ export const identify = (jsonSchema, entry, isInternal, registryDialect) => {
   const dialectUri = $schema ?? entry.dialectUri ?? jsonSchema.config.defaultDialectUri;
 
   let uri = retrievalUri;
-  /** @type Record<string, boolean> | undefined */
-  let vocabularies;
+  /** @type DialectDefinition | undefined */
+  let definedDialect;
   /** @type DialectSource | undefined */
   let dialectFrom;
   if (root.jsonType === "object" && dialectUri !== undefined) {
@@ -365,11 +365,12 @@ export const identify = (jsonSchema, entry, isInternal, registryDialect) => {
       if (definer === undefined) {
         return { waitingFor: absoluteDialectUri };
       }
-      dialect = jsonSchema.dialectFromVocabularies(absoluteDialectUri, /** @type Record<string, boolean> */ (definer.vocabularies));
+      const definition = /** @type DialectDefinition */ (definer.definedDialect);
+      dialect = { ...definition, uri: absoluteDialectUri };
       dialectFrom = { entry: definer.entry, dialectUri: absoluteDialectUri };
     }
 
-    ({ uri, vocabularies } = rootEffects(jsonSchema, root, dialect, retrievalUri));
+    ({ uri, definedDialect } = rootEffects(jsonSchema, root, dialect, retrievalUri));
   }
 
   if (uri === undefined) {
@@ -386,7 +387,7 @@ export const identify = (jsonSchema, entry, isInternal, registryDialect) => {
     }
   }
 
-  return { uri, vocabularies, dialectFrom };
+  return { uri, definedDialect, dialectFrom };
 };
 
 /**
@@ -394,13 +395,13 @@ export const identify = (jsonSchema, entry, isInternal, registryDialect) => {
  * defines. A root that's a reference (draft-04 through draft-07 `$ref`)
  * ignores both.
  *
- * @type (jsonSchema: JsonSchema, root: JsonNode & { jsonType: "object" }, dialect: Dialect, retrievalUri: string | undefined) => { uri?: string; vocabularies?: Record<string, boolean> }
+ * @type (jsonSchema: JsonSchema, root: JsonNode & { jsonType: "object" }, dialect: Dialect, retrievalUri: string | undefined) => { uri?: string; definedDialect?: DialectDefinition }
  */
 const rootEffects = (jsonSchema, root, dialect, retrievalUri) => {
   /** @type string | undefined */
   let uri;
-  /** @type Record<string, boolean> | undefined */
-  let vocabularies;
+  /** @type DialectDefinition | undefined */
+  let definedDialect;
   let isReference = false;
 
   for (const property of root.children) {
@@ -423,8 +424,8 @@ const rootEffects = (jsonSchema, root, dialect, retrievalUri) => {
       setReference: () => {
         isReference = true;
       },
-      defineDialect: (dialectVocabularies) => {
-        vocabularies = dialectVocabularies;
+      defineDialect: (definition) => {
+        definedDialect = definition;
       },
       message: (reason) => {
         throw new VFileMessage(reason, { place: valueNode.position, ruleId: keyword.uri, source: "json-schema" });
@@ -433,7 +434,7 @@ const rootEffects = (jsonSchema, root, dialect, retrievalUri) => {
     keyword.resolve(/** @type any */ (valueNode), context);
   }
 
-  return isReference ? { uri: retrievalUri } : { uri: uri ?? retrievalUri, vocabularies };
+  return isReference ? { uri: retrievalUri } : { uri: uri ?? retrievalUri, definedDialect };
 };
 
 /**

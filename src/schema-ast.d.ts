@@ -7,6 +7,7 @@ import type {
   JsonPropertyNode,
   JsonStatusChildren
 } from "@hyperjump/browser/json";
+import type { DialectDefinition } from "./dialect.d.ts";
 
 /**
  * A node in a schema document. A schema AST is a JSON AST with some nodes
@@ -101,12 +102,11 @@ export type JsonSchemaDocumentNode<S extends JsonParseStatus = JsonParseStatus> 
   dialectUri?: string;
 
   /**
-   * The vocabularies of the dialect the resource defines as a meta-schema,
-   * from a resolve hook such as `$vocabulary`'s. Vocabulary URIs are mapped to
-   * whether they're required. The dialect is identified by any URI the
-   * resource is found by.
+   * The dialect the resource defines as a meta-schema, from a resolve hook
+   * such as `$vocabulary`'s. It's identified by any URI the resource is found
+   * by.
    */
-  vocabularies?: Record<string, boolean>;
+  definedDialect?: DialectDefinition;
 
   /**
    * Always `application/schema+json`, so `@hyperjump/browser` interprets

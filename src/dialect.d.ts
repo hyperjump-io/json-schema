@@ -1,16 +1,4 @@
 /**
- * A named set of keywords, such as JSON Schema's Validation Vocabulary.
- * Keyword names can't start with `x-`. Those are reserved for schema authors
- * and must never assert.
- */
-export type Vocabulary = {
-  uri: string;
-
-  /** Keyword names mapped to {@link Keyword} URIs */
-  keywords: Record<string, string>;
-};
-
-/**
  * The keywords that are available in a schema. A schema's dialect is
  * identified by its `$schema`, which is also the URI of the dialect's
  * meta-schema.
@@ -57,6 +45,13 @@ export type Dialect = {
 };
 
 /** Keywords and formats to add to a dialect with `extendDialect` */
+/**
+ * A dialect without its URI, as a meta-schema defines it (see
+ * `ResolveContext.defineDialect`). The dialect is identified by any URI the
+ * meta-schema is found by.
+ */
+export type DialectDefinition = Omit<Dialect, "uri">;
+
 export type DialectExtension = {
   /** Keyword names mapped to {@link Keyword} URIs */
   keywords?: Record<string, string>;

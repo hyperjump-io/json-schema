@@ -11,7 +11,7 @@ import unknownKeyword from "./keywords/unknown.js";
  * @import { JsonSchemaSession } from "./json-schema.d.ts"
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaTolerantNode } from "./schema-ast.d.ts"
  * @import { Keyword, ResolveContext, Shape } from "./keyword.d.ts"
- * @import { Dialect } from "./dialect.d.ts"
+ * @import { Dialect, DialectDefinition } from "./dialect.d.ts"
  * @import * as API from "./jsonschema-resolve.d.ts"
  */
 
@@ -34,7 +34,7 @@ import unknownKeyword from "./keywords/unknown.js";
  *   anchors: [string, Node][];
  *   dynamicAnchors: [string, Node][];
  *   reference?: string;
- *   dialect?: { vocabularies: Record<string, boolean>; node: Node; keywordUri: string };
+ *   dialect?: { definition: DialectDefinition; node: Node; keywordUri: string };
  * }} Effects
  */
 
@@ -203,7 +203,7 @@ class Resolver {
       }
 
       if (effects.dialect) {
-        resource.vocabularies = effects.dialect.vocabularies;
+        resource.definedDialect = effects.dialect.definition;
       }
     } else if (effects.dialect) {
       this.#message("A dialect can only be defined at the root of a schema resource. It's ignored.", effects.dialect.node, effects.dialect.keywordUri);
@@ -326,8 +326,14 @@ class Resolver {
             context.message(`'${href}' isn't a valid URI reference`);
           }
         },
-        defineDialect: (vocabularies) => {
-          effects.dialect = { vocabularies, node: valueNode, keywordUri: keyword.uri };
+        defineDialect: (definition) => {
+          const reserved = reservedKeyword(definition.keywords);
+          if (reserved !== undefined) {
+            context.message(`'${reserved}' can't be a keyword. Keywords starting with 'x-' are reserved for schema authors.`);
+            return;
+          }
+
+          effects.dialect = { definition, node: valueNode, keywordUri: keyword.uri };
         },
         message: (reason, node = valueNode) => this.#message(reason, node, keyword.uri)
       };
@@ -469,6 +475,9 @@ class Resolver {
     });
   }
 }
+
+/** @type (keywords: Record<string, string>) => string | undefined */
+const reservedKeyword = (keywords) => Object.keys(keywords).find((name) => name.startsWith("x-"));
 
 /** @type (resource: JsonSchemaDocumentNode, pointer: string) => string */
 const location = (resource, pointer) => `${resource.uri}#${encodeIriFragment(pointer)}`;
