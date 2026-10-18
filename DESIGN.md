@@ -653,11 +653,12 @@ objects the caller reads results from afterwards.
 
 The benchmark is ported from `@hyperjump/json-schema`'s and isn't committed.
 It compares implementations over the v1 test cases of the
-JSON-Schema-Test-Suite, and over the 2020-12 test cases, which
-json-schema-next evaluates with the 2020-12 preset. Test cases tagged for
+JSON-Schema-Test-Suite, and over the 2019-09 and 2020-12 test cases,
+which json-schema-next evaluates with those presets. Test cases tagged for
 `format` are left out. A test case that any implementation gets wrong is
-left out for every implementation. In 2020-12, json-schema-next only gets
-the two `file:` `$id` test cases wrong, which it rejects on purpose.
+left out for every implementation. In 2019-09 and 2020-12,
+json-schema-next only gets the two `file:` `$id` test cases wrong, which
+it rejects on purpose.
 
 Results (mean time per run of the suite, FLAG unless it says errors):
 
@@ -666,19 +667,24 @@ Results (mean time per run of the suite, FLAG unless it says errors):
 | v1 | 0.26–0.28 ms | 0.75 ms |
 | v1, after evaluating ASTs | 0.31–0.33 ms | 0.75 ms |
 | v1, all errors | 1.52–1.54 ms | 1.35–1.36 ms |
+| 2019-09 | 0.29 ms | 0.76–0.79 ms |
+| 2019-09, all errors | 1.64–1.80 ms | 1.43–1.47 ms |
 | 2020-12 | 0.30 ms | 0.84–0.85 ms |
 | 2020-12, all errors | 1.78–1.83 ms | 1.53–1.63 ms |
 
 - FLAG is about 2.7–2.9 times faster than `@hyperjump/json-schema` in v1,
-  and about 2.85 times faster in 2020-12.
+  about 2.7 times faster in 2019-09, and about 2.85 times faster in
+  2020-12.
 - `validate` is about 15% slower in a process that has also evaluated
   ASTs, because keyword code is shared (see "Compile and evaluate").
 - Collecting errors (BASIC) is about 1.13 times slower than
-  `@hyperjump/json-schema` in v1, and about 1.12–1.16 times slower in
-  2020-12. It was about 5 times slower until errors stopped capturing
-  stack traces (see "Validation API").
-- In 2020-12, `@exodus/schemasafe`, which generates code, is the fastest
-  at collecting errors, about 4.6–4.7 times faster than json-schema-next.
+  `@hyperjump/json-schema` in v1, about 1.15–1.22 times slower in 2019-09,
+  and about 1.12–1.16 times slower in 2020-12. It was about 5 times
+  slower until errors stopped capturing stack traces (see "Validation
+  API").
+- `@exodus/schemasafe`, which generates code, is the fastest at collecting
+  errors, about 6.8–7.3 times faster than json-schema-next in 2019-09 and
+  about 4.6–4.7 times faster in 2020-12.
 - With the `format` test cases, format validators take most of the time,
   and FLAG is only about 1.4 times faster.
 
