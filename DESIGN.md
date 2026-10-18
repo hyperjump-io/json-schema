@@ -418,9 +418,10 @@ Creating a session takes O(1) per registry, however large the registry is.
   validation"). A schema from any other registry or retrieved is.
 - Keyword schemas don't depend on `import.meta.url`, so they work in
   browsers and with bundlers.
-- The 2020-12 preset adds a registry with its meta-schemas, so they're
-  never retrieved. It's one `SchemaRegistry` shared by every `JsonSchema`
-  the preset is added to. Each identifies the entries itself.
+- The 2019-09 and 2020-12 presets each add a registry with their
+  meta-schemas, so they're never retrieved. Each is one `SchemaRegistry`
+  shared by every `JsonSchema` the preset is added to. Each `JsonSchema`
+  identifies the entries itself.
 
 ### The language server
 
@@ -760,6 +761,17 @@ Done:
   `src/draft-2020-12/json-schema-test-suite.test.js`. Test cases tagged
   `format-assertion` run with `validateFormats`. The annotation suite
   doesn't run for 2020-12 yet.
+- The 2019-09 preset (`src/draft-2019-09`, `addDraft201909`), built the
+  same way. It adds `$recursiveAnchor`, `$recursiveRef`, and its own
+  `$anchor`, whose names can contain `:` but can't start with `_`. It also
+  adds draft-04's `items`, which is a schema or an array of schemas, and
+  `additionalItems`, which only has an effect after an array of schemas.
+  They reuse the `items` and `prefixItems` evaluators. `$recursiveRef`
+  resolves like `$ref`, and if the schema it resolves to has
+  `$recursiveAnchor: true` (the dynamic anchor `""`), the outermost schema
+  in the dynamic scope with it applies instead. Both presets can be added
+  to one `JsonSchema`. The suite's 2019-09 test cases run like 2020-12's,
+  and the annotation suite doesn't run for 2019-09 yet.
 - The suite runners share `describeValidationTestSuite` and
   `describeAnnotationTestSuite` in `src/test-suite.js`. Each one gives the
   release, the dialect, the `JsonSchema` to use, and what to skip. The
@@ -804,10 +816,7 @@ Changes made to browser for this (on its `v2` branch):
    and the internal registry with the keyword schemas, which fixes them in
    browsers. Done.
 4. Presets for 2020-12, 2019-09, and draft-04 through draft-07. The
-   `$vocabulary` resolve hook and the 2020-12 preset are done. The 2019-09
-   preset adds its vocabularies with `addVocabulary` and adds its own
-   dialect, since its meta-schema describes itself, like 2020-12's. It
-   exports `addVocabulary` too.
+   `$vocabulary` resolve hook and the 2020-12 and 2019-09 presets are done.
 5. Later: annotations, bundling, OpenAPI, a CLI, a unified plugin for
    validating JSON files, and migrating dependent projects.
 
