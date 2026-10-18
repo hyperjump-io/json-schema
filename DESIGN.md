@@ -757,9 +757,14 @@ Done:
   resolves to has a dynamic anchor named by the fragment, the outermost
   schema in the dynamic scope with that anchor applies instead. The
   suite's 2020-12 test cases run in
-  `src/draft-2020-12/json-schema-test-suite.test.js`, sharing
-  `src/test-suite.js` with v1. Test cases tagged `format-assertion` run
-  with `validateFormats`. The annotation suite doesn't run for 2020-12 yet.
+  `src/draft-2020-12/json-schema-test-suite.test.js`. Test cases tagged
+  `format-assertion` run with `validateFormats`. The annotation suite
+  doesn't run for 2020-12 yet.
+- The suite runners share `describeValidationTestSuite` and
+  `describeAnnotationTestSuite` in `src/test-suite.js`. Each one gives the
+  release, the dialect, the `JsonSchema` to use, and what to skip. The
+  annotation runner gets the dialect itself, because the suite names
+  keywords and annotations are identified by keyword URI.
 
 Changes made to browser for this (on its `v2` branch):
 
