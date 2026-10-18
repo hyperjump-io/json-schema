@@ -759,8 +759,8 @@ Done:
   schema in the dynamic scope with that anchor applies instead. The
   suite's 2020-12 test cases run in
   `src/draft-2020-12/json-schema-test-suite.test.js`. Test cases tagged
-  `format-assertion` run with `validateFormats`. The annotation suite
-  doesn't run for 2020-12 yet.
+  `format-assertion` run with `validateFormats`. The annotation suite runs
+  in `src/draft-2020-12/annotation-test-suite.test.js`.
 - The 2019-09 preset (`src/draft-2019-09`, `addDraft201909`), built the
   same way. It adds `$recursiveAnchor`, `$recursiveRef`, and its own
   `$anchor`, whose names can contain `:` but can't start with `_`. It also
@@ -771,7 +771,7 @@ Done:
   `$recursiveAnchor: true` (the dynamic anchor `""`), the outermost schema
   in the dynamic scope with it applies instead. Both presets can be added
   to one `JsonSchema`. The suite's 2019-09 test cases run like 2020-12's,
-  and the annotation suite doesn't run for 2019-09 yet.
+  and so do its annotation tests.
 - The suite runners share `describeValidationTestSuite` and
   `describeAnnotationTestSuite` in `src/test-suite.js`. Each one gives the
   release, the dialect, the `JsonSchema` to use, and what to skip. The
