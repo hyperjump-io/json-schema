@@ -491,7 +491,7 @@ There are two phases:
    are plugins (see "Plugins"). Each combination is built the first time
    it's needed and cached on the `Validator`. No `eval`.
 
-The IR is where optimization passes can go later. It's JSON, so a compiled
+The IR is where optimization passes go (see "Plan"). It's JSON, so a compiled
 schema can be serialized (`Validator.serialize`,
 `JsonSchema.restoreValidator`). That means a keyword's compiled value must be
 JSON.
@@ -871,7 +871,23 @@ Changes made to browser for this (on its `v2` branch):
    and the internal registry with the keyword schemas, which fixes them in
    browsers. Done.
 4. Presets for 2020-12, 2019-09, and draft-04 through draft-07. Done.
-5. Later: annotations, bundling, OpenAPI, a CLI, a unified plugin for
+5. Benchmark bytecode against closures. Lower the IR for the keywords the
+   v1 suite uses most (`type`, `properties`, `required`, `items`, `$ref`,
+   `allOf`, `anyOf`, `const`, `enum`) to a flat instruction array run by one
+   interpreter loop, with an instruction that calls a closure for every
+   other keyword, because user keywords can run arbitrary code. Compare FLAG
+   with the closures over the test cases it supports, using the benchmark
+   in `scratch/bench`. Include a process that has also evaluated ASTs. The
+   result decides what specialize produces.
+6. Optimization passes on the IR. Candidates: drop keywords that have no
+   effect in FLAG (annotations, `$comment`), fold constants (`true` in
+   `allOf`, `not: true`, an `enum` with one value), inline `$ref` targets
+   that are only used once, evaluate cheap keywords first, and share
+   identical subschemas. Errors must keep their exact locations, so a pass
+   that loses them only applies to FLAG. Passes either run before
+   `serialize`, so a restored `Validator` has them, or at specialize time,
+   where they can depend on the specialization.
+7. Later: annotations, bundling, OpenAPI, a CLI, a unified plugin for
    validating JSON files, and migrating dependent projects.
 
 ## Known limitations
