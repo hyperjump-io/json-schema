@@ -411,13 +411,33 @@ export const specialize = (jsonSchema, compiled, options) => {
         : () => schema;
     }
 
-    return (instance) => {
-      if (isAst && ops.typeOf(instance) === undefined) {
-        return true;
-      }
+    if (isAst) {
+      return (instance) => {
+        if (ops.typeOf(instance) === undefined) {
+          return true;
+        }
 
-      for (const evaluate of keywords) {
-        if (!evaluate(instance)) {
+        for (const evaluate of keywords) {
+          if (!evaluate(instance)) {
+            return false;
+          }
+        }
+
+        return true;
+      };
+    }
+
+    // Plain values are always parsed, so a schema with one keyword is that
+    // keyword
+    if (keywords.length === 0) {
+      return () => true;
+    } else if (keywords.length === 1) {
+      return keywords[0];
+    }
+
+    return (instance) => {
+      for (let index = 0; index < keywords.length; index++) {
+        if (!keywords[index](instance)) {
           return false;
         }
       }
