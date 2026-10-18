@@ -1,29 +1,23 @@
 import { resolveIri, toAbsoluteIri } from "@hyperjump/uri";
-import { JsonSchema } from "../json-schema.js";
-import { SchemaRegistry } from "../schema-registry.js";
-import { addFullFormats } from "../formats/full.js";
-import { v1DialectUri } from "./index.js";
+import { JsonSchema } from "./json-schema.js";
+import { SchemaRegistry } from "./schema-registry.js";
+import { addFullFormats } from "./formats/full.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
- * @import { Validator } from "../json-schema.d.ts"
+ * @import { JsonSchemaConfig, Validator } from "./json-schema.d.ts"
  */
 
 // Shared by the JSON-Schema-Test-Suite runners
 
 /**
- * The suite's number for v1. It's in the spec but not released, which the
- * suite calls 9999.
- */
-export const version = 9999;
-
-/**
- * Whether a test case's `compatibility` includes {@link version}. This is
- * the algorithm from the suite's README.
+ * Whether a test case's `compatibility` includes a release. Releases are
+ * numbered by year, except v1, which is in the spec but not released, so the
+ * suite calls it 9999. This is the algorithm from the suite's README.
  *
- * @type (compatibility: string | undefined) => boolean
+ * @type (compatibility: string | undefined, version: number) => boolean
  */
-export const isCompatible = (compatibility) => {
+export const isCompatible = (compatibility, version) => {
   if (compatibility === undefined) {
     return true;
   }
@@ -71,10 +65,10 @@ export const isSkipped = (skip, path) => {
  * session registry, so nothing is retrieved. The suite's URIs aren't real,
  * so `http(s):` is removed to make sure of that.
  *
- * @type () => JsonSchema
+ * @type (config?: JsonSchemaConfig) => JsonSchema
  */
-export const testSuiteJsonSchema = () => {
-  const jsonSchema = new JsonSchema();
+export const testSuiteJsonSchema = (config) => {
+  const jsonSchema = new JsonSchema(config);
   addFullFormats(jsonSchema);
   jsonSchema.removeUriSchemePlugin("http");
   jsonSchema.removeUriSchemePlugin("https");
@@ -85,16 +79,16 @@ export const testSuiteJsonSchema = () => {
 /**
  * Compile a test case's schema. External schema URIs aren't unique across
  * test cases, so each test case has its own registry. The suite's schemas
- * don't have `$schema`, so they're v1.
+ * don't have `$schema`, so the dialect under test is given for them.
  *
- * @type (jsonSchema: JsonSchema, uri: string, schema: Json, externalSchemas?: Record<string, Json>) => Promise<Validator>
+ * @type (jsonSchema: JsonSchema, dialectUri: string, uri: string, schema: Json, externalSchemas?: Record<string, Json>) => Promise<Validator>
  */
-export const compileTestCase = async (jsonSchema, uri, schema, externalSchemas = {}) => {
+export const compileTestCase = async (jsonSchema, dialectUri, uri, schema, externalSchemas = {}) => {
   const registry = new SchemaRegistry();
   for (const externalUri in externalSchemas) {
-    registry.add(externalSchemas[externalUri], { retrievalUri: externalUri, dialectUri: v1DialectUri });
+    registry.add(externalSchemas[externalUri], { retrievalUri: externalUri, dialectUri });
   }
-  registry.add(schema, { retrievalUri: uri, dialectUri: v1DialectUri });
+  registry.add(schema, { retrievalUri: uri, dialectUri });
 
   // A schema is identified by its `$id`, which is relative to the URI it was
   // retrieved from

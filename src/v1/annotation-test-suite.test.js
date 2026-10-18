@@ -2,8 +2,8 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, test, beforeAll, expect } from "vitest";
 import { JsonPointerError, pointerGet } from "@hyperjump/browser/json";
-import { v1Dialect } from "./index.js";
-import { compileTestCase, isCompatible, isSkipped, testSuiteJsonSchema } from "./test-suite.js";
+import { v1Dialect, v1DialectUri } from "./index.js";
+import { compileTestCase, isCompatible, isSkipped, testSuiteJsonSchema } from "../test-suite.js";
 
 /**
  * @import { Json, JsonNode } from "@hyperjump/browser/json"
@@ -39,6 +39,9 @@ import { compileTestCase, isCompatible, isSkipped, testSuiteJsonSchema } from ".
 const testsPath = join(import.meta.dirname, "../../node_modules/json-schema-test-suite/annotations/tests");
 const testCaseUri = "https://annotation-test-suite.json-schema.org/";
 
+/** v1 is in the spec but not released, so the suite calls it 9999 */
+const version = 9999;
+
 /**
  * Skipped test files, test cases, and tests, as `|file|test case|test`
  * paths. A prefix skips everything under it.
@@ -66,7 +69,7 @@ for (const entry of readdirSync(testsPath, { withFileTypes: true })) {
   /** @type TestCase[] */
   const testCases = [];
   for (const testCase of testFile.suite) {
-    if (isCompatible(testCase.compatibility)) {
+    if (isCompatible(testCase.compatibility, version)) {
       testCases.push(testCase);
     }
   }
@@ -121,7 +124,7 @@ describe("JSON-Schema-Test-Suite v1 annotations", () => {
             }
 
             const uri = `${testCaseUri}${file}/${index}`;
-            validator = await compileTestCase(jsonSchema, uri, testCase.schema, testCase.externalSchemas);
+            validator = await compileTestCase(jsonSchema, v1DialectUri, uri, testCase.schema, testCase.externalSchemas);
           });
 
           for (const { instance, assertions } of testCase.tests) {

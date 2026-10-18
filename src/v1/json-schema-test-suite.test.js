@@ -1,7 +1,8 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, test, beforeAll, expect } from "vitest";
-import { compileTestCase, isCompatible, isSkipped, testSuiteJsonSchema } from "./test-suite.js";
+import { compileTestCase, isCompatible, isSkipped, testSuiteJsonSchema } from "../test-suite.js";
+import { v1DialectUri } from "./index.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
@@ -50,6 +51,9 @@ testDirectories["extension-tests/"] = join(import.meta.dirname, "extension-tests
 
 const testCaseUri = "https://test-suite.json-schema.org/";
 
+/** v1 is in the spec but not released, so the suite calls it 9999 */
+const version = 9999;
+
 /** In v1, `format` asserts by default */
 const supportedTags = new Set(["format-assertion"]);
 
@@ -66,7 +70,7 @@ const skip = new Set([
 
 /** @type (testCase: TestCase) => boolean */
 const appliesToV1 = (testCase) => {
-  if (!isCompatible(testCase.compatibility)) {
+  if (!isCompatible(testCase.compatibility, version)) {
     return false;
   }
 
@@ -130,7 +134,7 @@ describe("JSON-Schema-Test-Suite v1", () => {
             }
 
             const uri = `${testCaseUri}${file}/${index}`;
-            validator = await compileTestCase(jsonSchema, uri, testCase.schema, testCase.externalSchemas);
+            validator = await compileTestCase(jsonSchema, v1DialectUri, uri, testCase.schema, testCase.externalSchemas);
           });
 
           for (const { description, data, valid } of testCase.tests) {
