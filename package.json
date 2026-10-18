@@ -16,6 +16,9 @@
   "exports": {
     ".": "./src/index.js",
     "./v1": "./src/v1/index.js",
+    "./draft-04": "./src/draft-04/index.js",
+    "./draft-06": "./src/draft-06/index.js",
+    "./draft-07": "./src/draft-07/index.js",
     "./draft-2019-09": "./src/draft-2019-09/index.js",
     "./draft-2020-12": "./src/draft-2020-12/index.js",
     "./formats/lite": "./src/formats/lite.js",

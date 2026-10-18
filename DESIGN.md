@@ -124,7 +124,9 @@ were considered. See "Open questions".)
   `validateFormats` config overrides that. When formats are validated, a
   format the dialect doesn't have, or whose definition hasn't been added,
   is an error when the schema is compiled. Otherwise, `format` is only an
-  annotation, so any name is fine.
+  annotation, so any name is fine. draft-04 through draft-07 have their own
+  `format` keyword that ignores formats the dialect doesn't have, rather
+  than a dialect option for it.
 - The lite formats (`src/formats/lite.js`) are every format JSON Schema
   defines except `hostname`, `idn-hostname`, and `idn-email`, which need large
   tables of Unicode data. Every `JsonSchema` has them, and v1 validates
@@ -418,8 +420,8 @@ Creating a session takes O(1) per registry, however large the registry is.
   validation"). A schema from any other registry or retrieved is.
 - Keyword schemas don't depend on `import.meta.url`, so they work in
   browsers and with bundlers.
-- The 2019-09 and 2020-12 presets each add a registry with their
-  meta-schemas, so they're never retrieved. Each is one `SchemaRegistry`
+- Every preset adds a registry with its meta-schemas, so they're never
+  retrieved. Each is one `SchemaRegistry`
   shared by every `JsonSchema` the preset is added to. Each `JsonSchema`
   identifies the entries itself.
 
@@ -772,6 +774,24 @@ Done:
   in the dynamic scope with it applies instead. Both presets can be added
   to one `JsonSchema`. The suite's 2019-09 test cases run like 2020-12's,
   and so do its annotation tests.
+- The draft-04, draft-06, and draft-07 presets (`src/draft-04`,
+  `src/draft-06`, `src/draft-07`, `addDraft04`, `addDraft06`,
+  `addDraft07`). They don't have `$vocabulary`, so each adds a dialect and
+  a registry with its one meta-schema. Their dialect URIs don't have the
+  empty fragment their `$schema` usually has, because `$schema` is
+  resolved to an absolute URI. Unknown keywords are ignored. `$ref` is
+  draft-04's, which makes the schema a reference, and `id`/`$id` is
+  draft-04's, which can also be an anchor. All three add draft-04's
+  `items`, `additionalItems`, and `dependencies`, which is
+  `dependentRequired` and `dependentSchemas` in one keyword. draft-04 adds
+  `maximum` and `minimum`, which read the sibling boolean
+  `exclusiveMaximum` and `exclusiveMinimum`. `format` validates by default,
+  as most implementations of these drafts did. Their `format` is
+  draft-04's, which makes a format the dialect doesn't have only an
+  annotation, as the drafts say. Each dialect only has the formats its draft
+  defines, so the draft-04 and draft-06 meta-schemas' `regex` is ignored. draft-04 and draft-06 use draft-04's
+  `hostname` (RFC 1123), which doesn't need Unicode data. Every other
+  keyword is shared with v1. Their suite and annotation tests run.
 - The suite runners share `describeValidationTestSuite` and
   `describeAnnotationTestSuite` in `src/test-suite.js`. Each one gives the
   release, the dialect, the `JsonSchema` to use, and what to skip. The
@@ -815,8 +835,7 @@ Changes made to browser for this (on its `v2` branch):
    sessions and the HTTP cache. Here: `JsonSchemaSession`, `SchemaRegistry`,
    and the internal registry with the keyword schemas, which fixes them in
    browsers. Done.
-4. Presets for 2020-12, 2019-09, and draft-04 through draft-07. The
-   `$vocabulary` resolve hook and the 2020-12 and 2019-09 presets are done.
+4. Presets for 2020-12, 2019-09, and draft-04 through draft-07. Done.
 5. Later: annotations, bundling, OpenAPI, a CLI, a unified plugin for
    validating JSON files, and migrating dependent projects.
 
@@ -830,6 +849,8 @@ Changes made to browser for this (on its `v2` branch):
   schema every time.
 - A registry schema whose dialect is only defined by a meta-schema in a
   different registry can't be found.
+- Boolean schemas are allowed in draft-04, which didn't have them. A
+  boolean where a schema goes is a boolean schema in every dialect.
 - A self-describing meta-schema's dialect has to be added. One retrieved
   from a URI other than its `$schema` isn't recognized as self-describing,
   so its dialect is looked up like any other.
