@@ -50,8 +50,8 @@ describe("addVocabulary", () => {
   };
 
   test("vocabularies added separately are both supported", async () => {
-    addVocabulary(jsonSchema, fooVocabularyUri, { foo: "https://example.com/keyword/foo" });
-    addVocabulary(jsonSchema, barVocabularyUri, { bar: "https://example.com/keyword/bar" });
+    addVocabulary(jsonSchema, fooVocabularyUri, { keywords: { foo: "https://example.com/keyword/foo" } });
+    addVocabulary(jsonSchema, barVocabularyUri, { keywords: { bar: "https://example.com/keyword/bar" } });
 
     const dialectUri = "https://example.com/dialect";
     const dialect = await getDialect(jsonSchema, [
@@ -61,12 +61,27 @@ describe("addVocabulary", () => {
     expect(dialect).to.eql({
       uri: dialectUri,
       keywords: { foo: "https://example.com/keyword/foo", bar: "https://example.com/keyword/bar" },
-      unknownKeywords: "annotation"
+      unknownKeywords: "annotation",
+      formats: {},
+      assertFormats: false
     });
   });
 
+  test("vocabularies add formats, and any of them can make formats assert", async () => {
+    addVocabulary(jsonSchema, fooVocabularyUri, { keywords: {}, formats: { foo: "https://example.com/format/foo" } });
+    addVocabulary(jsonSchema, barVocabularyUri, { keywords: {}, formats: { bar: "https://example.com/format/bar" }, assertFormats: true });
+
+    const dialectUri = "https://example.com/dialect";
+    const dialect = await getDialect(jsonSchema, [
+      metaSchema(dialectUri, metaDialectUri, { [fooVocabularyUri]: true, [barVocabularyUri]: false })
+    ], dialectUri);
+
+    expect(dialect).to.include({ assertFormats: true });
+    expect(dialect).to.have.deep.property("formats", { foo: "https://example.com/format/foo", bar: "https://example.com/format/bar" });
+  });
+
   test("a vocabulary works in every dialect that uses the keyword", async () => {
-    addVocabulary(jsonSchema, fooVocabularyUri, { foo: "https://example.com/keyword/foo" });
+    addVocabulary(jsonSchema, fooVocabularyUri, { keywords: { foo: "https://example.com/keyword/foo" } });
 
     const aUri = "https://example.com/a-dialect";
     const bUri = "https://example.com/b-dialect";
@@ -81,7 +96,7 @@ describe("addVocabulary", () => {
 
   test("a vocabulary is only supported by the JsonSchema it's added to", () => {
     const other = addMetaDialects(new JsonSchema());
-    addVocabulary(jsonSchema, fooVocabularyUri, { foo: "https://example.com/keyword/foo" });
+    addVocabulary(jsonSchema, fooVocabularyUri, { keywords: { foo: "https://example.com/keyword/foo" } });
 
     const registry = new SchemaRegistry();
     jsonSchema.addRegistry(registry);
@@ -93,18 +108,18 @@ describe("addVocabulary", () => {
 
   test("the keyword is added if it hasn't been", () => {
     const fresh = new JsonSchema();
-    addVocabulary(fresh, fooVocabularyUri, {});
+    addVocabulary(fresh, fooVocabularyUri, { keywords: {} });
 
     expect(fresh.hasKeyword(vocabularyKeyword.uri)).to.equal(true);
   });
 
   test("x- keywords are reserved", () => {
-    expect(() => addVocabulary(jsonSchema, fooVocabularyUri, { "x-foo": "https://example.com/keyword/foo" })).to.throw("reserved");
+    expect(() => addVocabulary(jsonSchema, fooVocabularyUri, { keywords: { "x-foo": "https://example.com/keyword/foo" } })).to.throw("reserved");
   });
 
   test("a $vocabulary keyword that doesn't support vocabularies", () => {
     jsonSchema.addKeyword({ ...idKeyword, uri: vocabularyKeyword.uri });
 
-    expect(() => addVocabulary(jsonSchema, fooVocabularyUri, {})).to.throw("doesn't support vocabularies");
+    expect(() => addVocabulary(jsonSchema, fooVocabularyUri, { keywords: {} })).to.throw("doesn't support vocabularies");
   });
 });

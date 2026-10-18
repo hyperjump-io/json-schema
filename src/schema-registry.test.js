@@ -270,7 +270,7 @@ describe("SchemaRegistry", () => {
 
       /** @type (jsonSchema: JsonSchema) => JsonSchema */
       const addMetaDialect = (jsonSchema) => {
-        addVocabulary(jsonSchema, coreVocabularyUri, { $id: "https://json-schema.org/keyword/id", type: "https://json-schema.org/keyword/type" });
+        addVocabulary(jsonSchema, coreVocabularyUri, { keywords: { $id: "https://json-schema.org/keyword/id", type: "https://json-schema.org/keyword/type" } });
         jsonSchema.addDialect({
           uri: metaDialectUri,
           keywords: { $id: "https://json-schema.org/keyword/id", $vocabulary: vocabularyKeyword.uri },

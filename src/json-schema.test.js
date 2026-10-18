@@ -130,7 +130,7 @@ describe("JsonSchema", () => {
 
   describe("sessions", () => {
     test("a dialect built from a meta-schema only belongs to the session", async () => {
-      addVocabulary(jsonSchema, "https://example.com/vocab/core", { $id: "https://json-schema.org/keyword/id" });
+      addVocabulary(jsonSchema, "https://example.com/vocab/core", { keywords: { $id: "https://json-schema.org/keyword/id" } });
       jsonSchema.addDialect({
         uri: "https://example.com/meta-dialect",
         keywords: { $id: "https://json-schema.org/keyword/id", $vocabulary: vocabularyKeyword.uri },
@@ -145,7 +145,7 @@ describe("JsonSchema", () => {
       });
       const session = jsonSchema.session({ registries: [registry] });
 
-      expect(await session.getDialect(uri)).to.eql({ uri, keywords: { $id: "https://json-schema.org/keyword/id" }, unknownKeywords: "annotation" });
+      expect(await session.getDialect(uri)).to.eql({ uri, keywords: { $id: "https://json-schema.org/keyword/id" }, unknownKeywords: "annotation", formats: {}, assertFormats: false });
       expect(session.hasDialect(uri)).to.equal(true);
       expect(jsonSchema.hasDialect(uri)).to.equal(false);
       expect(jsonSchema.session().hasDialect(uri)).to.equal(false);

@@ -6,10 +6,21 @@ import keywordSchema from "./vocabulary.schema.json" with { type: "json" };
  */
 
 /**
- * The `$vocabulary` keyword with the vocabularies it knows: vocabulary URIs
- * mapped to their keywords, as keyword names mapped to keyword URIs
+ * What a vocabulary adds to a dialect. `keywords` and `formats` are names
+ * mapped to URIs, as in a dialect. `assertFormats` makes `format` validate by
+ * default if any listed vocabulary says so (2020-12's format-assertion).
  *
- * @typedef {Keyword & { vocabularies: Readonly<Record<string, Readonly<Record<string, string>>>> }} VocabularyKeyword
+ * @typedef {{
+ *   keywords: Readonly<Record<string, string>>;
+ *   formats?: Readonly<Record<string, string>>;
+ *   assertFormats?: boolean;
+ * }} Vocabulary
+ */
+
+/**
+ * The `$vocabulary` keyword with the vocabularies it knows, by URI
+ *
+ * @typedef {Keyword & { vocabularies: Readonly<Record<string, Vocabulary>> }} VocabularyKeyword
  */
 
 const uri = "https://json-schema.org/keyword/vocabulary";
@@ -33,6 +44,10 @@ const vocabularyKeyword = (vocabularies) => ({
 
     /** @type Record<string, string> */
     const keywords = {};
+
+    /** @type Record<string, string> */
+    const formats = {};
+    let assertFormats = false;
     let isSupported = true;
     for (const property of valueNode.children) {
       const [nameNode, requiredNode] = property.children;
@@ -42,7 +57,9 @@ const vocabularyKeyword = (vocabularies) => ({
 
       const vocabulary = vocabularies[nameNode.value];
       if (vocabulary) {
-        Object.assign(keywords, vocabulary);
+        Object.assign(keywords, vocabulary.keywords);
+        Object.assign(formats, vocabulary.formats);
+        assertFormats ||= vocabulary.assertFormats ?? false;
       } else if (requiredNode.value) {
         context.message(`The '${nameNode.value}' vocabulary isn't supported. Use the 'addVocabulary' function to add support for it.`, nameNode);
         isSupported = false;
@@ -50,7 +67,7 @@ const vocabularyKeyword = (vocabularies) => ({
     }
 
     if (isSupported) {
-      context.defineDialect({ keywords, unknownKeywords: "annotation" });
+      context.defineDialect({ keywords, unknownKeywords: "annotation", formats, assertFormats });
     }
   }
 });
@@ -76,12 +93,11 @@ export default vocabularyKeyword({});
  *
  * @param {JsonSchema} jsonSchema
  * @param {string} vocabularyUri
- * @param {Record<string, string>} keywords - Keyword names mapped to keyword
- *   URIs
+ * @param {Vocabulary} vocabulary
  * @throws Error if a keyword name starts with `x-`, or the `$vocabulary`
  * keyword was replaced with one that doesn't support vocabularies
  */
-export const addVocabulary = (jsonSchema, vocabularyUri, keywords) => {
+export const addVocabulary = (jsonSchema, vocabularyUri, { keywords, formats, assertFormats }) => {
   for (const name in keywords) {
     if (name.startsWith("x-")) {
       throw Error(`'${name}' can't be a keyword. Keywords starting with 'x-' are reserved for schema authors and must never assert.`);
@@ -98,5 +114,14 @@ export const addVocabulary = (jsonSchema, vocabularyUri, keywords) => {
     vocabularies = /** @type VocabularyKeyword */ (keyword).vocabularies;
   }
 
-  jsonSchema.addKeyword(vocabularyKeyword({ ...vocabularies, [vocabularyUri]: { ...keywords } }));
+  /** @type Vocabulary */
+  const vocabulary = { keywords: { ...keywords } };
+  if (formats !== undefined) {
+    vocabulary.formats = { ...formats };
+  }
+  if (assertFormats !== undefined) {
+    vocabulary.assertFormats = assertFormats;
+  }
+
+  jsonSchema.addKeyword(vocabularyKeyword({ ...vocabularies, [vocabularyUri]: vocabulary }));
 };

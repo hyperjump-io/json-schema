@@ -36,7 +36,7 @@ const addTestDialects = (jsonSchema) => {
   for (const keyword of [idKeyword, anchorKeyword, dynamicAnchorKeyword, legacyIdKeyword, legacyRefKeyword, recursiveAnchorKeyword]) {
     jsonSchema.addKeyword(keyword);
   }
-  addVocabulary(jsonSchema, "https://example.com/vocab/core", { $id: idKeyword.uri, $defs: "https://example.com/keyword/defs" });
+  addVocabulary(jsonSchema, "https://example.com/vocab/core", { keywords: { $id: idKeyword.uri, $defs: "https://example.com/keyword/defs" } });
   jsonSchema.addKeyword({ uri: "https://example.com/keyword/defs", shape: { map: "schema" }, schema: anyValue });
   jsonSchema.addKeyword({ uri: "https://example.com/keyword/properties", shape: { map: "schema" }, schema: anyValue });
   jsonSchema.addKeyword({ uri: "https://example.com/keyword/allOf", shape: { array: "schema" }, schema: anyValue });
@@ -572,7 +572,9 @@ describe("jsonSchemaResolve", () => {
         expect(file.messages).to.eql([]);
         expect(document.definedDialect).to.eql({
           keywords: { $id: idKeyword.uri, $defs: "https://example.com/keyword/defs" },
-          unknownKeywords: "annotation"
+          unknownKeywords: "annotation",
+          formats: {},
+          assertFormats: false
         });
       });
 
