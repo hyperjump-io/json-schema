@@ -97,6 +97,18 @@ export const specialize = (jsonSchema, compiled, options) => {
 
   const isSimple = !exhaustive && !tracksEvaluated && !tracksDynamicScope;
 
+  // Evaluating a schema that passes every instance has no effect unless
+  // something is collected or tracked
+  const canSkip = !exhaustive && !tracksEvaluated;
+
+  /**
+   * The schemas that pass every instance, once they're built. A schema that
+   * isn't built yet, because it refers to itself, doesn't count.
+   *
+   * @type Set<string>
+   */
+  const passing = new Set();
+
   // Evaluation state. Schema evaluators save what they change and restore it
   // before they return.
 
@@ -210,6 +222,14 @@ export const specialize = (jsonSchema, compiled, options) => {
       jsonSchema: jsonSchema,
       instance: ops,
       schema: (subschemaHandle) => subschemaEvaluator(subschemaHandle, handle, location, steps),
+      alwaysPasses: (subschemaHandle) => {
+        if (!canSkip) {
+          return false;
+        }
+
+        evaluatorFor(subschemaHandle);
+        return passing.has(subschemaHandle);
+      },
       exhaustive: exhaustive
     };
 
@@ -276,6 +296,10 @@ export const specialize = (jsonSchema, compiled, options) => {
           keywords.push(keyword);
         }
       }
+    }
+
+    if (canSkip && (schema === true || (typeof schema !== "boolean" && keywords.length === 0))) {
+      passing.add(handle);
     }
 
     if (isSimple) {

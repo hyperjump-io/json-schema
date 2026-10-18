@@ -15,7 +15,12 @@ export default {
   shape: { array: "schema" },
   schema: keywordSchema,
   compile: compileSchemaArray,
-  evaluate(anyOf, { schema, exhaustive, markEvaluated }) {
+  evaluate(anyOf, { schema, alwaysPasses, exhaustive, markEvaluated }) {
+    // One subschema that always passes is enough
+    if (anyOf.some(alwaysPasses)) {
+      return;
+    }
+
     const evaluators = anyOf.map(schema);
 
     // Every subschema has to be evaluated to mark what the passing ones

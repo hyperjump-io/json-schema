@@ -162,4 +162,57 @@ describe("applicator errors", () => {
       ]);
     });
   });
+
+  describe("subschemas that always pass", () => {
+    /** @type Record<string, Json> */
+    const schema = {
+      properties: { foo: {}, bar: { type: "number" } },
+      patternProperties: { "^x-": { description: "An extension" } },
+      additionalProperties: true,
+      allOf: [true, { title: "Always" }],
+      anyOf: [{ type: "object" }, {}],
+      items: {}
+    };
+
+    test("are left out without changing the result", async () => {
+      const validator = await jsonSchema.compile(await schemaFile(schema));
+
+      expect(validator.validate({ "foo": "a", "bar": 1, "x-a": 1, "baz": null })).to.equal(true);
+      expect(validator.validate({ foo: "a", bar: "1" })).to.equal(false);
+      expect(validator.validateJson(`{ "foo": "a", "bar": "1" }`)).to.equal(false);
+      expect(validator.validate([1, "a"])).to.equal(true);
+    });
+
+    test("still mark what they evaluate", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({
+        patternProperties: { "^x-": true },
+        unevaluatedProperties: false
+      }));
+
+      expect(validator.validate({ "x-a": 1 })).to.equal(true);
+      expect(validator.validate({ "x-a": 1, "foo": 1 })).to.equal(false);
+    });
+
+    test("still annotate", async () => {
+      const validator = await jsonSchema.compile(await schemaFile(schema));
+
+      const { node } = validator.annotate({ "x-a": 1 });
+      const property = /** @type any */ (node).children[0].children[1];
+      expect(property.data.annotations.get("https://json-schema.org/keyword/description")).to.eql(["An extension"]);
+    });
+
+    test("are still seen by plugins", async () => {
+      const validator = await jsonSchema.compile(await schemaFile(schema));
+
+      /** @type string[] */
+      const locations = [];
+      validator.validate({ "foo": 1, "x-a": 1 }, {
+        plugins: [{
+          afterSchema: (_schema, at) => locations.push(at.keywordLocation),
+          afterKeyword: (_keyword, at) => locations.push(at.keywordLocation)
+        }]
+      });
+      expect(locations).to.include.members(["/properties/foo", "/allOf/0", "/patternProperties/^x-/description", "/allOf/1/title"]);
+    });
+  });
 });

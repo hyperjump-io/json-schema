@@ -21,7 +21,11 @@ export default {
 
     return { handle: await context.compileSchema(valueNode), start };
   },
-  evaluate({ handle, start }, { instance, schema, exhaustive, markEvaluated }) {
+  evaluate({ handle, start }, { instance, schema, alwaysPasses, exhaustive, markEvaluated }) {
+    if (alwaysPasses(handle)) {
+      return;
+    }
+
     const evaluate = schema(handle);
 
     return (node) => {

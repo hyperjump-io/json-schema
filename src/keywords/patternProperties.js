@@ -16,11 +16,17 @@ export default {
   shape: { map: "schema" },
   schema: keywordSchema,
   compile: compileSchemaMap,
-  evaluate(patternProperties, { instance, schema, exhaustive, markEvaluated }) {
+  evaluate(patternProperties, { instance, schema, alwaysPasses, exhaustive, markEvaluated }) {
     /** @type [RegExp, ReturnType<typeof schema>][] */
     const patterns = [];
     for (const [pattern, handle] of patternProperties) {
-      patterns.push([new RegExp(pattern, "u"), schema(handle)]);
+      if (!alwaysPasses(handle)) {
+        patterns.push([new RegExp(pattern, "u"), schema(handle)]);
+      }
+    }
+
+    if (patterns.length === 0) {
+      return;
     }
 
     return (node) => {

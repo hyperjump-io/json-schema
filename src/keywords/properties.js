@@ -15,10 +15,16 @@ export default {
   shape: { map: "schema" },
   schema: keywordSchema,
   compile: compileSchemaMap,
-  evaluate(properties, { instance, schema, exhaustive, markEvaluated }) {
+  evaluate(properties, { instance, schema, alwaysPasses, exhaustive, markEvaluated }) {
     const evaluators = new Map();
     for (const [name, handle] of properties) {
-      evaluators.set(name, schema(handle));
+      if (!alwaysPasses(handle)) {
+        evaluators.set(name, schema(handle));
+      }
+    }
+
+    if (evaluators.size === 0) {
+      return;
     }
 
     return (node) => {

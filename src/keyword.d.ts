@@ -156,6 +156,17 @@ export type EvaluateContext<I> = {
   schema: (handle: SchemaHandle) => (instance: I, segment?: string | number) => boolean;
 
   /**
+   * Whether evaluating a compiled schema can be skipped, because it passes
+   * every instance and has no other effect, like `true` or a schema with
+   * only annotations when annotations aren't being collected. It's always
+   * false if annotations are collected, there are plugins, or a keyword in
+   * the compiled schema reads `evaluated`. An applicator can leave out
+   * subschemas it's true for, and return `undefined` from `evaluate` if
+   * that leaves nothing to do.
+   */
+  alwaysPasses: (handle: SchemaHandle) => boolean;
+
+  /**
    * Add an annotation for the instance. It's kept only if the keyword and
    * every schema it was evaluated through pass. It's undefined unless
    * annotations are being collected, so a keyword can skip work it only does

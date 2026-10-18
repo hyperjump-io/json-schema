@@ -36,7 +36,11 @@ export default {
 
     return { handle: await context.compileSchema(valueNode), properties, patterns };
   },
-  evaluate({ handle, properties, patterns }, { instance, schema, exhaustive, markEvaluated }) {
+  evaluate({ handle, properties, patterns }, { instance, schema, alwaysPasses, exhaustive, markEvaluated }) {
+    if (alwaysPasses(handle)) {
+      return;
+    }
+
     const evaluate = schema(handle);
     const defined = new Set(properties);
 

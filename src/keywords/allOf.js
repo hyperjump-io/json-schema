@@ -15,8 +15,11 @@ export default {
   shape: { array: "schema" },
   schema: keywordSchema,
   compile: compileSchemaArray,
-  evaluate(allOf, { schema, exhaustive }) {
-    const evaluators = allOf.map(schema);
+  evaluate(allOf, { schema, alwaysPasses, exhaustive }) {
+    const evaluators = allOf.filter((handle) => !alwaysPasses(handle)).map(schema);
+    if (evaluators.length === 0) {
+      return;
+    }
 
     return (node) => {
       let valid = true;
