@@ -14,21 +14,48 @@
   },
   "type": "module",
   "exports": {
-    ".": "./src/index.js",
-    "./v1": "./src/dialects/v1/index.js",
-    "./draft-04": "./src/dialects/draft-04/index.js",
-    "./draft-06": "./src/dialects/draft-06/index.js",
-    "./draft-07": "./src/dialects/draft-07/index.js",
-    "./draft-2019-09": "./src/dialects/draft-2019-09/index.js",
-    "./draft-2020-12": "./src/dialects/draft-2020-12/index.js",
-    "./formats/lite": "./src/formats/lite.js",
-    "./formats/full": "./src/formats/full.js"
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    },
+    "./v1": {
+      "types": "./src/dialects/v1/index.d.ts",
+      "default": "./src/dialects/v1/index.js"
+    },
+    "./draft-04": {
+      "types": "./src/dialects/draft-04/index.d.ts",
+      "default": "./src/dialects/draft-04/index.js"
+    },
+    "./draft-06": {
+      "types": "./src/dialects/draft-06/index.d.ts",
+      "default": "./src/dialects/draft-06/index.js"
+    },
+    "./draft-07": {
+      "types": "./src/dialects/draft-07/index.d.ts",
+      "default": "./src/dialects/draft-07/index.js"
+    },
+    "./draft-2019-09": {
+      "types": "./src/dialects/draft-2019-09/index.d.ts",
+      "default": "./src/dialects/draft-2019-09/index.js"
+    },
+    "./draft-2020-12": {
+      "types": "./src/dialects/draft-2020-12/index.d.ts",
+      "default": "./src/dialects/draft-2020-12/index.js"
+    },
+    "./formats/lite": {
+      "types": "./src/formats/lite.d.ts",
+      "default": "./src/formats/lite.js"
+    },
+    "./formats/full": {
+      "types": "./src/formats/full.d.ts",
+      "default": "./src/formats/full.js"
+    }
   },
   "scripts": {
     "lint": "oxlint",
     "test": "vitest run",
     "type-check": "tsc --noEmit",
-    "docs": "typedoc --excludeExternals"
+    "docs": "typedoc"
   },
   "devDependencies": {
     "@stylistic/eslint-plugin": "*",

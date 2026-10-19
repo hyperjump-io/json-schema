@@ -9,4 +9,4 @@ import type { Format } from "../format.d.ts";
 export const fullFormats: Format[];
 
 /** Add the {@link fullFormats} to a {@link JsonSchema} */
-export const addFullFormats: (jsonSchema: JsonSchema) => void;
+export function addFullFormats(jsonSchema: JsonSchema): void;

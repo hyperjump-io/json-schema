@@ -1,0 +1,24 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "excludeExternals": true,
+  "sourceLinkTemplate": "https://github.com/hyperjump-io/json-schema-next/blob/{gitRevision}/{path}#L{line}",
+  "externalSymbolLinkMappings": {
+    "@hyperjump/browser": {
+      "Hyperjump.addMediaTypePlugin": "https://hyperjump-io.github.io/browser/classes/hyperjump.Hyperjump.html#addmediatypeplugin",
+      "Hyperjump.addUriSchemePlugin": "https://hyperjump-io.github.io/browser/classes/hyperjump.Hyperjump.html#addurischemeplugin",
+      "FileUriSchemePlugin": "https://hyperjump-io.github.io/browser/classes/hyperjump.FileUriSchemePlugin.html",
+      "HttpUriSchemePlugin": "https://hyperjump-io.github.io/browser/classes/hyperjump.HttpUriSchemePlugin.html",
+      "JrefMediaTypePlugin": "https://hyperjump-io.github.io/browser/classes/hyperjump.JrefMediaTypePlugin.html",
+      "JsonMediaTypePlugin": "https://hyperjump-io.github.io/browser/classes/hyperjump.JsonMediaTypePlugin.html",
+      "MediaTypePlugin": "https://hyperjump-io.github.io/browser/interfaces/hyperjump.MediaTypePlugin.html",
+      "UriSchemePlugin": "https://hyperjump-io.github.io/browser/interfaces/hyperjump.UriSchemePlugin.html",
+      "UriSchemePlugin.retrieve": "https://hyperjump-io.github.io/browser/interfaces/hyperjump.UriSchemePlugin.html#retrieve",
+      "RetrievalError": "https://hyperjump-io.github.io/browser/classes/hyperjump.RetrievalError.html",
+      "ReferenceCycleError": "https://hyperjump-io.github.io/browser/classes/hyperjump.ReferenceCycleError.html",
+      "UnknownMediaTypeError": "https://hyperjump-io.github.io/browser/classes/hyperjump.UnknownMediaTypeError.html",
+      "UnsupportedMediaTypeError": "https://hyperjump-io.github.io/browser/classes/hyperjump.UnsupportedMediaTypeError.html",
+      "JsonErrorNode": "https://hyperjump-io.github.io/browser/types/json.JsonErrorNode.html",
+      "JsonPointerError": "https://hyperjump-io.github.io/browser/classes/json.JsonPointerError.html"
+    }
+  }
+}

@@ -10,18 +10,10 @@ import { JsonSchemaSession } from "../session.js";
  * @import { MediaTypePlugin } from "@hyperjump/browser"
  * @import { JsonSchema } from "../json-schema.d.ts"
  * @import { JsonSchemaDocumentNode } from "./schema-ast.d.ts"
+ * @import * as API from "./media-type-plugin.d.ts"
  */
 
-/**
- * Supports JSON Schema
- * - Media type: application/schema+json
- * - Extensions: .schema.json
- *
- * The `schema` parameter of the media type (or `profile`, which was used
- * before 2020-12) is the dialect of a schema that doesn't have `$schema`.
- *
- * @implements MediaTypePlugin<JsonSchemaDocumentNode<"success">>
- */
+/** @implements API.JsonSchemaMediaTypePlugin */
 export class JsonSchemaMediaTypePlugin {
   /** @type JsonSchema */
   #jsonSchema;

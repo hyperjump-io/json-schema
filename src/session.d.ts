@@ -28,8 +28,9 @@ export class JsonSchemaSession extends Session<JsonSchemaNode> {
    * keyword's schema; a schema in a session registry, then in one of the
    * {@link JsonSchema}'s registries; then it's retrieved.
    *
-   * @throws {@link RetrievalError} if more than one schema in the registries
-   * is found by the URI, or the schema found by it can't be identified.
+   * @throws RetrievalError from `@hyperjump/browser` if more than one schema
+   * in the registries is found by the URI, or the schema found by it can't be
+   * identified.
    */
   getDocument(uri: string, options?: GetOptions): Promise<DocumentNode<JsonSchemaNode>>;
 

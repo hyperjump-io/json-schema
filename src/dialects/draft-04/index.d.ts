@@ -26,4 +26,4 @@ export const draft04Dialect: Dialect;
  *
  * @throws Error if it's already been added
  */
-export const addDraft04: (jsonSchema: JsonSchema) => void;
+export function addDraft04(jsonSchema: JsonSchema): void;

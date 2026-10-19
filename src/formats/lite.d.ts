@@ -9,4 +9,4 @@ import type { Format } from "../format.d.ts";
 export const liteFormats: Format[];
 
 /** Add the {@link liteFormats} to a {@link JsonSchema} */
-export const addLiteFormats: (jsonSchema: JsonSchema) => void;
+export function addLiteFormats(jsonSchema: JsonSchema): void;
