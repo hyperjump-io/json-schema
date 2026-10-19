@@ -103,7 +103,7 @@ class Resolver {
     const document = this.#createResource(uri, root);
 
     if (root) {
-      if (isErrorNode(root) || (root.jsonType !== "object" && root.jsonType !== "boolean")) {
+      if (!isSchemaNode(root)) {
         this.#message("The root of a schema document must be an object or a boolean", root, "invalid-schema");
         this.#data(root, document, "");
       } else {
@@ -130,7 +130,7 @@ class Resolver {
    * @param {boolean} isDocumentRoot
    */
   async #schema(node, resource, pointer, parentDialect, isDocumentRoot) {
-    if (isErrorNode(node) || (node.jsonType !== "object" && node.jsonType !== "boolean")) {
+    if (!isSchemaNode(node)) {
       this.#data(node, resource, pointer);
       return;
     }
@@ -209,21 +209,8 @@ class Resolver {
       this.#message("A dialect can only be defined at the root of a schema resource. It's ignored.", effects.dialect.node, effects.dialect.keywordUri);
     }
 
-    for (const [name, anchorNode] of effects.anchors) {
-      if (name in resource.anchors) {
-        this.#message(`The '${name}' anchor is already defined in '${resource.uri}'`, anchorNode, "duplicate-anchor");
-      } else {
-        resource.anchors[name] = pointer;
-      }
-    }
-
-    for (const [name, anchorNode] of effects.dynamicAnchors) {
-      if (name in resource.dynamicAnchors) {
-        this.#message(`The '${name}' dynamic anchor is already defined in '${resource.uri}'`, anchorNode, "duplicate-anchor");
-      } else {
-        resource.dynamicAnchors[name] = pointer;
-      }
-    }
+    this.#addAnchors(effects.anchors, resource.anchors, resource.uri, pointer, "anchor");
+    this.#addAnchors(effects.dynamicAnchors, resource.dynamicAnchors, resource.uri, pointer, "dynamic anchor");
 
     Object.assign(node, {
       type: "json-schema",
@@ -276,6 +263,22 @@ class Resolver {
 
       return [keywordNode, keywordUri, keyword];
     });
+  }
+
+  /**
+   * Add the anchors a schema defines to its resource. A name can only be
+   * defined once in a resource.
+   *
+   * @type (found: [string, Node][], anchors: Record<string, string>, resourceUri: string, pointer: string, label: string) => void
+   */
+  #addAnchors(found, anchors, resourceUri, pointer, label) {
+    for (const [name, anchorNode] of found) {
+      if (name in anchors) {
+        this.#message(`The '${name}' ${label} is already defined in '${resourceUri}'`, anchorNode, "duplicate-anchor");
+      } else {
+        anchors[name] = pointer;
+      }
+    }
   }
 
   /** @type (keywords: KeywordProperty[], resource: JsonSchemaDocumentNode, dialect: Dialect) => Effects */
@@ -485,16 +488,19 @@ const location = (resource, pointer) => `${resource.uri}#${encodeIriFragment(poi
 /** @type (node: TreeNode) => node is JsonErrorNode */
 const isErrorNode = (node) => node.type === "json-invalid" || node.type === "json-missing";
 
+/** @type (node: TreeNode) => node is JsonSchemaTolerantNode & { jsonType: "object" | "boolean" } */
+const isSchemaNode = (node) => !isErrorNode(node) && (node.jsonType === "object" || node.jsonType === "boolean");
+
 /** @type (shape: Shape, node: TreeNode) => boolean */
 const matchesShape = (shape, node) => {
   if (Array.isArray(shape)) {
     return shape.some((alternative) => matchesShape(alternative, node));
   } else if (shape === "data") {
     return true;
+  } else if (shape === "schema") {
+    return isSchemaNode(node);
   } else if (isErrorNode(node)) {
     return false;
-  } else if (shape === "schema") {
-    return node.jsonType === "object" || node.jsonType === "boolean";
   } else if ("array" in shape) {
     return node.jsonType === "array";
   } else {
