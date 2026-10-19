@@ -5,7 +5,7 @@ import { pathToFileURL } from "node:url";
 import { describe, test, beforeEach, beforeAll, afterAll, expect } from "vitest";
 import { VFileMessage } from "vfile-message";
 import { resolveIri, toAbsoluteIri } from "@hyperjump/uri";
-import { pointerGet } from "@hyperjump/browser/json";
+import { fromJson, pointerGet } from "@hyperjump/browser/json";
 import { JsonSchema, ValidationError } from "../json-schema.js";
 import idKeyword from "../keywords/id.js";
 import anchorKeyword from "../keywords/anchor.js";
@@ -647,6 +647,14 @@ describe("Validator", () => {
       const { output, status, node } = validator.annotateJson(`{ "foo": 1, }`);
       expect(output).to.equal(false);
       expect(status).to.equal("recovered");
+      expect(pointerGet("/foo", /** @type any */ (node)).data.annotations.get(titleKeyword.uri)).to.eql(["foo"]);
+    });
+
+    test("annotateNode", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({ properties: { foo: { title: "foo" } } }));
+      const { node } = fromJson(`{ "foo": 1 }`);
+
+      expect(validator.annotateNode(node)).to.equal(true);
       expect(pointerGet("/foo", /** @type any */ (node)).data.annotations.get(titleKeyword.uri)).to.eql(["foo"]);
     });
   });

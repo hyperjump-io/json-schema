@@ -181,7 +181,8 @@ export class JsonSchema extends Hyperjump<JsonSchemaNode> {
  * Each has a `Json` variant that takes JSON text instead of a value. A JSON
  * string is also a valid instance, so the two can't share a function. With
  * text, syntax errors are reported in `errors` along with validation errors,
- * and every error has a position.
+ * and every error has a position. Each also has a `Node` variant that takes a
+ * JSON AST you already have.
  */
 export type Validator = {
   /** The URI of the compiled schema */
@@ -213,6 +214,14 @@ export type Validator = {
    * nodes, so the syntax error is the only error reported for them.
    */
   annotateJson<F extends OutputFormat = "FLAG">(json: string, options?: ValidationOptions<F>): AnnotationResult<F>;
+
+  /**
+   * Validate and annotate a JSON AST, such as a value in a schema AST. The
+   * annotations are attached to the node you pass, so annotating the same
+   * node again adds to them. Values that couldn't be parsed (`json-missing`
+   * and `json-invalid` nodes) aren't evaluated.
+   */
+  annotateNode<F extends OutputFormat = "FLAG">(node: JsonNode<unknown, JsonErrorNode> | JsonErrorNode, options?: ValidationOptions<F>): ValidationResult<F>;
 
   /**
    * The compiled schema as JSON, to be restored with

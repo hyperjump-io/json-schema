@@ -119,6 +119,11 @@ export class Validator {
     return { output, status: result.status, node: result.node };
   }
 
+  /** @type API.Validator["annotateNode"] */
+  annotateNode(node, options) {
+    return this.#evaluateAst(/** @type InstanceNode */ (node), true, options, noSyntaxErrors);
+  }
+
   /** @type API.Validator["serialize"] */
   serialize() {
     return structuredClone(this.#compiled);
