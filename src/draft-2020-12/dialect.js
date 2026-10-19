@@ -1,19 +1,8 @@
-import { SchemaRegistry } from "../schema-registry.js";
 import { v1Dialect } from "../v1/index.js";
 import { addVocabulary } from "../keywords/vocabulary.js";
 import dynamicRefKeyword from "../keywords/draft-2020-12/dynamicRef.js";
-import metaSchema from "./schema.schema.json" with { type: "json" };
-import coreMetaSchema from "./meta/core.schema.json" with { type: "json" };
-import applicatorMetaSchema from "./meta/applicator.schema.json" with { type: "json" };
-import unevaluatedMetaSchema from "./meta/unevaluated.schema.json" with { type: "json" };
-import validationMetaSchema from "./meta/validation.schema.json" with { type: "json" };
-import metaDataMetaSchema from "./meta/meta-data.schema.json" with { type: "json" };
-import formatAnnotationMetaSchema from "./meta/format-annotation.schema.json" with { type: "json" };
-import formatAssertionMetaSchema from "./meta/format-assertion.schema.json" with { type: "json" };
-import contentMetaSchema from "./meta/content.schema.json" with { type: "json" };
 
 /**
- * @import { Json } from "@hyperjump/browser/json"
  * @import { Vocabulary } from "../keywords/vocabulary.js"
  * @import * as API from "./index.d.ts"
  */
@@ -136,25 +125,6 @@ export const draft202012Dialect = {
   assertFormats: false
 };
 
-/**
- * The 2020-12 meta-schemas, so they don't have to be retrieved to build a
- * dialect that extends 2020-12 or to compile a schema that references them.
- * One registry is shared by every JsonSchema. Each identifies its entries
- * itself.
- */
-// TypeScript infers types for the JSON that aren't assignable to Json
-const metaSchemas = new SchemaRegistry((/** @type Json[] */ (/** @type unknown */ ([
-  metaSchema,
-  coreMetaSchema,
-  applicatorMetaSchema,
-  unevaluatedMetaSchema,
-  validationMetaSchema,
-  metaDataMetaSchema,
-  formatAnnotationMetaSchema,
-  formatAssertionMetaSchema,
-  contentMetaSchema
-]))).map((schema) => ({ schema })));
-
 /** @type API.addDraft202012 */
 export const addDraft202012 = (jsonSchema) => {
   jsonSchema.addKeyword(dynamicRefKeyword);
@@ -163,5 +133,4 @@ export const addDraft202012 = (jsonSchema) => {
   }
 
   jsonSchema.addDialect(draft202012Dialect);
-  jsonSchema.addRegistry(metaSchemas);
 };

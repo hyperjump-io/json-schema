@@ -38,14 +38,6 @@ describe("draft-07", () => {
     expect(() => addDraft07(jsonSchema)).to.throw();
   });
 
-  test("the meta-schema is available without retrieving it", async () => {
-    const validator = await jsonSchema.compile($schema);
-
-    expect(validator.validate({ type: "string", minLength: 1 })).to.equal(true);
-    expect(validator.validate({ minLength: -1 })).to.equal(false);
-    expect(validator.validate({ properties: { foo: { type: 1 } } })).to.equal(false);
-  });
-
   test("$ref replaces the whole schema", async () => {
     const validator = await compile(jsonSchema, {
       $schema,

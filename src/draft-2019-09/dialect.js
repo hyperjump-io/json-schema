@@ -1,4 +1,3 @@
-import { SchemaRegistry } from "../schema-registry.js";
 import { v1Dialect } from "../v1/index.js";
 import { addVocabulary } from "../keywords/vocabulary.js";
 import anchorKeyword from "../keywords/draft-2019-09/anchor.js";
@@ -6,16 +5,8 @@ import recursiveAnchorKeyword from "../keywords/draft-2019-09/recursiveAnchor.js
 import recursiveRefKeyword from "../keywords/draft-2019-09/recursiveRef.js";
 import itemsKeyword from "../keywords/draft-04/items.js";
 import additionalItemsKeyword from "../keywords/draft-04/additionalItems.js";
-import metaSchema from "./schema.schema.json" with { type: "json" };
-import coreMetaSchema from "./meta/core.schema.json" with { type: "json" };
-import applicatorMetaSchema from "./meta/applicator.schema.json" with { type: "json" };
-import validationMetaSchema from "./meta/validation.schema.json" with { type: "json" };
-import metaDataMetaSchema from "./meta/meta-data.schema.json" with { type: "json" };
-import formatMetaSchema from "./meta/format.schema.json" with { type: "json" };
-import contentMetaSchema from "./meta/content.schema.json" with { type: "json" };
 
 /**
- * @import { Json } from "@hyperjump/browser/json"
  * @import { Vocabulary } from "../keywords/vocabulary.js"
  * @import * as API from "./index.d.ts"
  */
@@ -118,23 +109,6 @@ export const draft201909Dialect = {
   assertFormats: false
 };
 
-/**
- * The 2019-09 meta-schemas, so they don't have to be retrieved to build a
- * dialect that extends 2019-09 or to compile a schema that references them.
- * One registry is shared by every JsonSchema. Each identifies its entries
- * itself.
- */
-// TypeScript infers types for the JSON that aren't assignable to Json
-const metaSchemas = new SchemaRegistry((/** @type Json[] */ (/** @type unknown */ ([
-  metaSchema,
-  coreMetaSchema,
-  applicatorMetaSchema,
-  validationMetaSchema,
-  metaDataMetaSchema,
-  formatMetaSchema,
-  contentMetaSchema
-]))).map((schema) => ({ schema })));
-
 /** @type API.addDraft201909 */
 export const addDraft201909 = (jsonSchema) => {
   jsonSchema.addKeyword(anchorKeyword);
@@ -147,5 +121,4 @@ export const addDraft201909 = (jsonSchema) => {
   }
 
   jsonSchema.addDialect(draft201909Dialect);
-  jsonSchema.addRegistry(metaSchemas);
 };

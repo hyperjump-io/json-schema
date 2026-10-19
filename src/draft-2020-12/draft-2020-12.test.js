@@ -35,37 +35,6 @@ describe("draft-2020-12", () => {
     expect(() => addDraft202012(jsonSchema)).to.throw();
   });
 
-  describe("the meta-schema", () => {
-    test("is available without retrieving it", async () => {
-      const validator = await jsonSchema.compile(draft202012DialectUri);
-
-      expect(validator.validate({ type: "string", minLength: 1 })).to.equal(true);
-      expect(validator.validate({ type: 1 })).to.equal(false);
-    });
-
-    test("validates subschemas through $dynamicRef", async () => {
-      const validator = await jsonSchema.compile(draft202012DialectUri);
-
-      expect(validator.validate({ properties: { foo: { minLength: -1 } } })).to.equal(false);
-      expect(validator.validate({ $defs: { foo: { items: { type: 1 } } } })).to.equal(false);
-    });
-
-    test("an extended meta-schema's $dynamicAnchor applies to subschemas", async () => {
-      const metaUri = "https://example.com/strict-meta";
-      const validator = await compile(jsonSchema, [{
-        $schema: draft202012DialectUri,
-        $id: metaUri,
-        $dynamicAnchor: "meta",
-        $ref: draft202012DialectUri,
-        unevaluatedProperties: false
-      }], metaUri);
-
-      expect(validator.validate({ type: "string" })).to.equal(true);
-      expect(validator.validate({ properties: { foo: { type: "string" } } })).to.equal(true);
-      expect(validator.validate({ properties: { foo: { unknown: true } } })).to.equal(false);
-    });
-  });
-
   describe("format", () => {
     const uri = "https://example.com/format";
     const schema = { $schema: draft202012DialectUri, $id: uri, format: "date" };

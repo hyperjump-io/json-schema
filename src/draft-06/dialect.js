@@ -1,4 +1,3 @@
-import { SchemaRegistry } from "../schema-registry.js";
 import idKeyword from "../keywords/draft-04/id.js";
 import refKeyword from "../keywords/draft-04/ref.js";
 import itemsKeyword from "../keywords/draft-04/items.js";
@@ -6,10 +5,8 @@ import additionalItemsKeyword from "../keywords/draft-04/additionalItems.js";
 import dependenciesKeyword from "../keywords/draft-04/dependencies.js";
 import formatKeyword from "../keywords/draft-04/format.js";
 import hostnameFormat from "../formats/draft-04/hostname.js";
-import metaSchema from "./schema.schema.json" with { type: "json" };
 
 /**
- * @import { Json } from "@hyperjump/browser/json"
  * @import * as API from "./index.d.ts"
  */
 
@@ -73,14 +70,6 @@ export const draft06Dialect = {
   assertFormats: true
 };
 
-/**
- * The draft-06 meta-schema, so it doesn't have to be retrieved to compile a
- * schema that references it. One registry is shared by every JsonSchema.
- * Each identifies its entries itself.
- */
-// TypeScript infers a type for the JSON that isn't assignable to Json
-const metaSchemas = new SchemaRegistry([{ schema: /** @type Json */ (/** @type unknown */ (metaSchema)) }]);
-
 /** @type API.addDraft06 */
 export const addDraft06 = (jsonSchema) => {
   jsonSchema.addKeyword(idKeyword);
@@ -92,5 +81,4 @@ export const addDraft06 = (jsonSchema) => {
   jsonSchema.addFormat(hostnameFormat);
 
   jsonSchema.addDialect(draft06Dialect);
-  jsonSchema.addRegistry(metaSchemas);
 };

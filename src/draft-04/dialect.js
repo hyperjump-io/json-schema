@@ -1,4 +1,3 @@
-import { SchemaRegistry } from "../schema-registry.js";
 import idKeyword from "../keywords/draft-04/id.js";
 import refKeyword from "../keywords/draft-04/ref.js";
 import itemsKeyword from "../keywords/draft-04/items.js";
@@ -10,10 +9,8 @@ import minimumKeyword from "../keywords/draft-04/minimum.js";
 import exclusiveMaximumKeyword from "../keywords/draft-04/exclusiveMaximum.js";
 import exclusiveMinimumKeyword from "../keywords/draft-04/exclusiveMinimum.js";
 import hostnameFormat from "../formats/draft-04/hostname.js";
-import metaSchema from "./schema.schema.json" with { type: "json" };
 
 /**
- * @import { Json } from "@hyperjump/browser/json"
  * @import * as API from "./index.d.ts"
  */
 
@@ -70,14 +67,6 @@ export const draft04Dialect = {
   assertFormats: true
 };
 
-/**
- * The draft-04 meta-schema, so it doesn't have to be retrieved to compile a
- * schema that references it. One registry is shared by every JsonSchema.
- * Each identifies its entries itself.
- */
-// TypeScript infers a type for the JSON that isn't assignable to Json
-const metaSchemas = new SchemaRegistry([{ schema: /** @type Json */ (/** @type unknown */ (metaSchema)) }]);
-
 /** @type API.addDraft04 */
 export const addDraft04 = (jsonSchema) => {
   jsonSchema.addKeyword(idKeyword);
@@ -93,5 +82,4 @@ export const addDraft04 = (jsonSchema) => {
   jsonSchema.addFormat(hostnameFormat);
 
   jsonSchema.addDialect(draft04Dialect);
-  jsonSchema.addRegistry(metaSchemas);
 };

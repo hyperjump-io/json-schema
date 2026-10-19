@@ -416,10 +416,11 @@ and a registry that's one edit away from another is cheap to index.
   validation"). A schema from any other registry or retrieved is.
 - Keyword schemas don't depend on `import.meta.url`, so they work in
   browsers and with bundlers.
-- Every preset adds a registry with its meta-schemas, so they're never
-  retrieved. Each is one `SchemaRegistry`
-  shared by every `JsonSchema` the preset is added to. Each `JsonSchema`
-  identifies the entries itself.
+- The presets don't include the official meta-schemas. They aren't needed
+  to identify, resolve, or validate schemas, because each preset adds its
+  dialect and schemas are validated keyword by keyword. Compiling a
+  meta-schema, or a schema that references one, retrieves it like any other
+  schema.
 
 ### The language server
 
@@ -693,11 +694,10 @@ schemas, which are written in v1. Any presets can be added to one
 `JsonSchema`.
 
 - **2020-12** (`src/draft-2020-12`, `addDraft202012`) adds 2020-12's
-  `$dynamicRef`, its vocabularies with `addVocabulary`, its dialect, and a
-  registry with the official meta-schemas. `$dynamicRef` resolves like
-  `$ref`, and if the schema it resolves to has a dynamic anchor named by the
-  fragment, the outermost schema in the dynamic scope with that anchor
-  applies instead.
+  `$dynamicRef`, its vocabularies with `addVocabulary`, and its dialect.
+  `$dynamicRef` resolves like `$ref`, and if the schema it resolves to has a
+  dynamic anchor named by the fragment, the outermost schema in the dynamic
+  scope with that anchor applies instead.
 - **2019-09** (`src/draft-2019-09`, `addDraft201909`) is built the same way.
   It adds `$recursiveAnchor`, `$recursiveRef`, and its own `$anchor`, whose
   names can contain `:` but can't start with `_`. It also adds draft-04's
@@ -709,8 +709,8 @@ schemas, which are written in v1. Any presets can be added to one
   it applies instead.
 - **draft-04, draft-06, and draft-07** (`src/draft-04`, `src/draft-06`,
   `src/draft-07`, `addDraft04`, `addDraft06`, `addDraft07`) don't have
-  `$vocabulary`, so each adds a dialect and a registry with its one
-  meta-schema. Their dialect URIs don't have the empty fragment their
+  `$vocabulary`, so each adds a dialect. Their dialect URIs don't have the
+  empty fragment their
   `$schema` usually has, because `$schema` is resolved to an absolute URI.
   Unknown keywords are ignored. `$ref` is draft-04's, which makes the schema
   a reference, and `id`/`$id` is draft-04's, which can also be an anchor.
