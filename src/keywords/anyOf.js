@@ -1,5 +1,5 @@
 import { compileSchemaArray } from "./utilities.js";
-import keywordSchema from "./anyOf.schema.json" with { type: "json" };
+import { nonEmpty } from "./checks.js";
 
 /**
  * @import { Keyword, SchemaHandle } from "../keyword.d.ts"
@@ -13,7 +13,7 @@ import keywordSchema from "./anyOf.schema.json" with { type: "json" };
 export default {
   uri: "https://json-schema.org/keyword/anyOf",
   shape: { array: "schema" },
-  schema: keywordSchema,
+  check: nonEmpty,
   compile: compileSchemaArray,
   evaluate(anyOf, { schema, alwaysPasses, exhaustive, markEvaluated }) {
     // One subschema that always passes is enough

@@ -1,4 +1,4 @@
-import keywordSchema from "./multipleOf.schema.json" with { type: "json" };
+import { positiveNumber } from "./checks.js";
 
 /**
  * @import { Keyword } from "../keyword.d.ts"
@@ -13,7 +13,7 @@ import keywordSchema from "./multipleOf.schema.json" with { type: "json" };
 export default {
   uri: "https://json-schema.org/keyword/multipleOf",
   shape: "data",
-  schema: keywordSchema,
+  check: positiveNumber,
   evaluate: (multipleOf, { instance }) => (node) => {
     if (instance.typeOf(node) !== "number") {
       return true;

@@ -1,5 +1,5 @@
 import { jsonValue } from "@hyperjump/browser/json";
-import keywordSchema from "./dynamicRef.schema.json" with { type: "json" };
+import { anchorName } from "./checks.js";
 
 /**
  * @import { Keyword } from "../keyword.d.ts"
@@ -15,7 +15,7 @@ import keywordSchema from "./dynamicRef.schema.json" with { type: "json" };
 export default {
   uri: "https://json-schema.org/keyword/dynamicRef",
   shape: "data",
-  schema: keywordSchema,
+  check: anchorName,
   compile: (valueNode) => /** @type string */ (jsonValue(valueNode)),
   evaluate(name, context) {
     const dynamicAnchor = /** @type NonNullable<typeof context.dynamicAnchor> */ (context.dynamicAnchor);

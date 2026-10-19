@@ -1,6 +1,6 @@
 import { jsonValue } from "@hyperjump/browser/json";
 import { siblingKeyword } from "../utilities.js";
-import keywordSchema from "./minimum.schema.json" with { type: "json" };
+import { number } from "../checks.js";
 
 /**
  * @import { Keyword } from "../../keyword.d.ts"
@@ -15,7 +15,7 @@ import keywordSchema from "./minimum.schema.json" with { type: "json" };
 export default {
   uri: "https://json-schema.org/keyword/draft-04/minimum",
   shape: "data",
-  schema: keywordSchema,
+  check: number,
   compile(valueNode, context) {
     const exclusiveNode = siblingKeyword(context.schemaNode, "https://json-schema.org/keyword/draft-04/exclusiveMinimum");
     return {

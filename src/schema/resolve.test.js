@@ -14,7 +14,6 @@ import dynamicAnchorKeyword from "../keywords/dynamicAnchor.js";
 import legacyIdKeyword from "../keywords/draft-04/id.js";
 import legacyRefKeyword from "../keywords/draft-04/ref.js";
 import recursiveAnchorKeyword from "../keywords/draft-2019-09/recursiveAnchor.js";
-import unknownKeyword from "../keywords/unknown.js";
 import vocabularyKeyword, { addVocabulary } from "../keywords/vocabulary.js";
 
 /**
@@ -28,21 +27,18 @@ const legacyDialectUri = "https://example.com/legacy";
 const strictDialectUri = "https://example.com/strict";
 const baseUri = "https://example.com/schema";
 
-/** A keyword schema that allows any value, for keywords defined in tests */
-const anyValue = unknownKeyword.schema;
-
 /** @type (jsonSchema: JsonSchema) => void */
 const addTestDialects = (jsonSchema) => {
   for (const keyword of [idKeyword, anchorKeyword, dynamicAnchorKeyword, legacyIdKeyword, legacyRefKeyword, recursiveAnchorKeyword]) {
     jsonSchema.addKeyword(keyword);
   }
   addVocabulary(jsonSchema, "https://example.com/vocab/core", { keywords: { $id: idKeyword.uri, $defs: "https://example.com/keyword/defs" } });
-  jsonSchema.addKeyword({ uri: "https://example.com/keyword/defs", shape: { map: "schema" }, schema: anyValue });
-  jsonSchema.addKeyword({ uri: "https://example.com/keyword/properties", shape: { map: "schema" }, schema: anyValue });
-  jsonSchema.addKeyword({ uri: "https://example.com/keyword/allOf", shape: { array: "schema" }, schema: anyValue });
-  jsonSchema.addKeyword({ uri: "https://example.com/keyword/items", shape: ["schema", { array: "schema" }], schema: anyValue });
-  jsonSchema.addKeyword({ uri: "https://example.com/keyword/type", shape: "data", schema: anyValue });
-  jsonSchema.addKeyword({ uri: "https://example.com/keyword/const", shape: "data", schema: anyValue });
+  jsonSchema.addKeyword({ uri: "https://example.com/keyword/defs", shape: { map: "schema" } });
+  jsonSchema.addKeyword({ uri: "https://example.com/keyword/properties", shape: { map: "schema" } });
+  jsonSchema.addKeyword({ uri: "https://example.com/keyword/allOf", shape: { array: "schema" } });
+  jsonSchema.addKeyword({ uri: "https://example.com/keyword/items", shape: ["schema", { array: "schema" }] });
+  jsonSchema.addKeyword({ uri: "https://example.com/keyword/type", shape: "data" });
+  jsonSchema.addKeyword({ uri: "https://example.com/keyword/const", shape: "data" });
 
   jsonSchema.addDialect({
     uri: dialectUri,
@@ -177,7 +173,7 @@ describe("jsonSchemaResolve", () => {
     });
 
     test("unknown keywords use the unknown keyword's definition", async () => {
-      jsonSchema.addKeyword({ uri: "https://json-schema.org/keyword/unknown", shape: "schema", schema: anyValue });
+      jsonSchema.addKeyword({ uri: "https://json-schema.org/keyword/unknown", shape: "schema" });
       const { root } = await resolve(jsonSchema, `{ "$schema": "${dialectUri}", "foo": { "type": "string" } }`);
 
       expect(keywordNode(root, "foo").keywordUri).to.equal("https://json-schema.org/keyword/unknown#foo");
@@ -269,7 +265,7 @@ describe("jsonSchemaResolve", () => {
     });
 
     test("a data alternative leaves a value that doesn't match the others to the keyword", async () => {
-      jsonSchema.addKeyword({ uri: "https://example.com/keyword/pattern", shape: { array: ["schema", "data"] }, schema: anyValue });
+      jsonSchema.addKeyword({ uri: "https://example.com/keyword/pattern", shape: { array: ["schema", "data"] } });
       jsonSchema.extendDialect(dialectUri, { keywords: { pattern: "https://example.com/keyword/pattern" } });
       const { root, file } = await resolve(jsonSchema, `{ "$schema": "${dialectUri}", "pattern": [{}, "*", 42] }`);
 
@@ -614,7 +610,8 @@ describe("jsonSchemaResolve", () => {
           "$vocabulary": { "https://example.com/vocab/core": true, "https://example.com/vocab/optional": false, "https://example.com/vocab/other": 42 }
         }`);
 
-        expect(file.messages).to.eql([]);
+        // A value that isn't a boolean is ignored, though its check reports it
+        expect(ruleIds(file)).to.eql([vocabularyKeyword.uri]);
         expect(document.definedDialect).to.eql({
           keywords: { $id: idKeyword.uri, $defs: "https://example.com/keyword/defs" },
           unknownKeywords: "annotation",
@@ -639,7 +636,6 @@ describe("jsonSchemaResolve", () => {
         jsonSchema.addKeyword({
           uri: keywordUri,
           shape: "data",
-          schema: anyValue,
           resolve: (_valueNode, context) => {
             context.defineDialect({ keywords: { "x-foo": "https://example.com/keyword/foo" }, unknownKeywords: "annotation" });
           }

@@ -1,5 +1,5 @@
 import { codePointLength } from "./utilities.js";
-import keywordSchema from "./maxLength.schema.json" with { type: "json" };
+import { nonNegativeInteger } from "./checks.js";
 
 /**
  * @import { Keyword } from "../keyword.d.ts"
@@ -13,7 +13,7 @@ import keywordSchema from "./maxLength.schema.json" with { type: "json" };
 export default {
   uri: "https://json-schema.org/keyword/maxLength",
   shape: "data",
-  schema: keywordSchema,
+  check: nonNegativeInteger,
   evaluate: (maxLength, { instance }) => (node) => {
     return instance.typeOf(node) !== "string" || codePointLength(/** @type string */ (instance.value(node))) <= maxLength;
   }

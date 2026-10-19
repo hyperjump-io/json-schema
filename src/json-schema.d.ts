@@ -32,12 +32,6 @@ export type JsonSchemaConfig = HyperjumpConfig & {
    * annotation in most dialects.
    */
   validateFormats?: boolean;
-
-  /**
-   * Validate schemas against their meta-schema before using them. Defaults to
-   * `true`.
-   */
-  validateSchemas?: boolean;
 };
 
 export class JsonSchema extends Hyperjump<JsonSchemaNode> {

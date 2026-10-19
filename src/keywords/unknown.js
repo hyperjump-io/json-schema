@@ -1,5 +1,4 @@
 import { jsonValue } from "@hyperjump/browser/json";
-import keywordSchema from "./unknown.schema.json" with { type: "json" };
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
@@ -25,7 +24,6 @@ import keywordSchema from "./unknown.schema.json" with { type: "json" };
 export default {
   uri: "https://json-schema.org/keyword/unknown",
   shape: "data",
-  schema: keywordSchema,
   compile(valueNode, context) {
     const { unknownKeywords } = context.dialect;
     const isAnnotation = unknownKeywords === "annotation"

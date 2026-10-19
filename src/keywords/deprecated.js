@@ -1,7 +1,7 @@
 import { annotationKeyword } from "./utilities.js";
-import keywordSchema from "./deprecated.schema.json" with { type: "json" };
+import { boolean } from "./checks.js";
 
 /**
  * `deprecated`
  */
-export default annotationKeyword("https://json-schema.org/keyword/deprecated", keywordSchema);
+export default annotationKeyword("https://json-schema.org/keyword/deprecated", boolean);

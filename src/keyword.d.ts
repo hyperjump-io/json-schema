@@ -1,7 +1,7 @@
 import type { Node } from "unist";
 import type { VFileMessage } from "vfile-message";
 import type { Json, JsonErrorNode, JsonNode, JsonType } from "@hyperjump/browser/json";
-import type { JsonSchemaNode } from "./schema/schema-ast.d.ts";
+import type { JsonSchemaNode, JsonSchemaTolerantNode } from "./schema/schema-ast.d.ts";
 import type { Dialect, DialectDefinition } from "./dialect.d.ts";
 import type { JsonSchema } from "./json-schema.d.ts";
 
@@ -27,16 +27,18 @@ export type Keyword<C extends Json = Json> = {
   shape: Shape;
 
   /**
-   * A schema for the keyword's value, used to validate schemas. It only
-   * describes what the {@link shape} doesn't: the resolver reports a value
-   * that doesn't fit the shape, and subschemas are validated as schemas in
-   * their own right. A keyword that allows any value still needs one.
+   * Report problems with the keyword's value that its {@link shape} doesn't
+   * describe, like `minLength` being negative. Without it, any value that
+   * fits the shape is allowed.
    *
-   * It's identified by the keyword's {@link uri}, so it can't have an `$id`
-   * that's anything else. It has to declare its dialect with `$schema`.
-   * Keyword schemas aren't validated themselves.
+   * It's called while the schema is resolved, after the value is annotated,
+   * so the subschemas in it are `json-schema` nodes. They're checked as
+   * schemas in their own right, and a value that doesn't fit the shape has
+   * already been reported. It isn't called for a value that couldn't be
+   * parsed, but a value inside it can be a `json-invalid` or `json-missing`
+   * node, which already has a syntax error.
    */
-  schema: Json;
+  check?: (valueNode: JsonSchemaTolerantNode, context: CheckContext) => void;
 
   /**
    * Called while a schema document is resolved, for keywords that affect how
@@ -269,7 +271,7 @@ export type InstanceOps<I> = {
  * where `"schema"` is the whole shape (`invalid-schema`), a map or array of
  * the wrong type, or a value that matches no alternative. A `"data"`
  * alternative matches anything, so it leaves values that don't match the
- * other alternatives to the keyword's {@link Keyword.schema}. Only use it for
+ * other alternatives to the keyword's {@link Keyword.check}. Only use it for
  * values a shape can't describe, like `itemPattern`'s operators.
  *
  * | Keyword                    | Shape                                         |
@@ -284,6 +286,15 @@ export type InstanceOps<I> = {
  * | `const`, `enum`, `default` | `"data"`                                      |
  */
 export type Shape = "schema" | "data" | { array: Shape } | { map: Shape } | Shape[];
+
+export type CheckContext = {
+  /**
+   * Report a problem with the keyword's value. It's added to the file's
+   * messages with the keyword's URI as the `ruleId`. The node defaults to the
+   * keyword's value.
+   */
+  message: (reason: string, node?: Node) => VFileMessage;
+};
 
 export type ResolveContext = {
   /**

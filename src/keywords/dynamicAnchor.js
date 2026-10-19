@@ -1,4 +1,4 @@
-import keywordSchema from "./dynamicAnchor.schema.json" with { type: "json" };
+import { anchorName } from "./checks.js";
 
 /**
  * @import { Keyword } from "../keyword.d.ts"
@@ -13,7 +13,7 @@ import keywordSchema from "./dynamicAnchor.schema.json" with { type: "json" };
 export default {
   uri: "https://json-schema.org/keyword/dynamicAnchor",
   shape: "data",
-  schema: keywordSchema,
+  check: anchorName,
   resolve(valueNode, context) {
     if (valueNode.type === "json" && valueNode.jsonType === "string") {
       context.addAnchor(valueNode.value);

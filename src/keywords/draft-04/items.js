@@ -1,7 +1,7 @@
 import { compileSchemaArray } from "../utilities.js";
 import itemsKeyword from "../items.js";
 import prefixItemsKeyword from "../prefixItems.js";
-import keywordSchema from "./items.schema.json" with { type: "json" };
+import { nonEmpty } from "../checks.js";
 
 /**
  * @import { Keyword, SchemaHandle } from "../../keyword.d.ts"
@@ -17,7 +17,7 @@ import keywordSchema from "./items.schema.json" with { type: "json" };
 export default {
   uri: "https://json-schema.org/keyword/draft-04/items",
   shape: ["schema", { array: "schema" }],
-  schema: keywordSchema,
+  check: nonEmpty,
   compile: (valueNode, context) => valueNode.jsonType === "array"
     ? compileSchemaArray(valueNode, context)
     : context.compileSchema(valueNode),

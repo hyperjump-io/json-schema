@@ -229,20 +229,24 @@ addFullFormats(jsonSchema);
 
 ### Invalid schemas
 
-Schemas are validated before they're used. A schema that isn't valid can't be
-retrieved, so `compile` throws a `RetrievalError` from `@hyperjump/browser`.
-Its `cause` is the problem, as a `VFileMessage` with a position if the schema
-was JSON text.
+Schemas are always validated before they're used. A schema that isn't valid
+can't be retrieved, so `compile` throws a `RetrievalError` from
+`@hyperjump/browser`. Its `cause` is the problem, as a `VFileMessage` with a
+position if the schema was JSON text.
 
 ```javascript
+jsonSchema.addRegistry(new SchemaRegistry().with(`{
+  "$schema": "https://json-schema.org/v1",
+  "$id": "https://example.com/bad",
+  "minLength": -1
+}`));
+
 try {
   await jsonSchema.compile("https://example.com/bad");
 } catch (error) {
-  String(error.cause); // "3:11-3:18: The value of 'type' isn't valid"
+  String(error.cause); // "4:16-4:18: Expected a non-negative integer"
 }
 ```
-
-Set `validateSchemas: false` to skip this.
 
 ### Linting schemas
 
@@ -287,7 +291,11 @@ import { v1DialectUri } from "@hyperjump/json-schema-next/v1";
 jsonSchema.addKeyword({
   uri: "https://example.com/keyword/even",
   shape: "data", // Where the keyword's value contains schemas
-  schema: { $schema: "https://json-schema.org/v1", type: "boolean" }, // Validates the keyword's value
+  check(valueNode, { message }) { // Reports problems with the keyword's value
+    if (valueNode.jsonType !== "boolean") {
+      message("Expected a boolean");
+    }
+  },
   evaluate(even, { instance }) {
     if (!even) {
       return undefined; // Every instance passes

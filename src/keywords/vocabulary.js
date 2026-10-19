@@ -1,4 +1,5 @@
-import keywordSchema from "./vocabulary.schema.json" with { type: "json" };
+import { isIri } from "@hyperjump/json-schema-formats";
+import { boolean } from "./checks.js";
 
 /**
  * @import { Keyword } from "../keyword.d.ts"
@@ -93,7 +94,20 @@ function vocabularyKeyword(vocabularies) {
   return {
     uri: uri,
     shape: "data",
-    schema: keywordSchema,
+    check(valueNode, context) {
+      if (valueNode.jsonType !== "object") {
+        context.message("Expected an object");
+        return;
+      }
+
+      for (const property of valueNode.children) {
+        const [nameNode, requiredNode] = property.children;
+        if (!isIri(nameNode.value)) {
+          context.message("Expected a URI", nameNode);
+        }
+        boolean(requiredNode, context);
+      }
+    },
     vocabularies: vocabularies,
     resolve(valueNode, context) {
       if (valueNode.type !== "json" || valueNode.jsonType !== "object") {

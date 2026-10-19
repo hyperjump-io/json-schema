@@ -1,4 +1,4 @@
-import keywordSchema from "./pattern.schema.json" with { type: "json" };
+import { regex } from "./checks.js";
 
 /**
  * @import { Keyword } from "../keyword.d.ts"
@@ -13,7 +13,7 @@ import keywordSchema from "./pattern.schema.json" with { type: "json" };
 export default {
   uri: "https://json-schema.org/keyword/pattern",
   shape: "data",
-  schema: keywordSchema,
+  check: regex,
   evaluate(pattern, { instance }) {
     const regExp = new RegExp(pattern, "u");
     return (node) => instance.typeOf(node) !== "string" || regExp.test(/** @type string */ (instance.value(node)));

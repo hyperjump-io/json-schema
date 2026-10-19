@@ -4,7 +4,6 @@ import { VFile } from "vfile";
 import { pointerGet, rejsonParse } from "@hyperjump/browser/json";
 import { JsonSchema } from "../json-schema.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
-import { jsonSchemaValidateKeywords } from "../schema/validate-keywords.js";
 import { v1DialectUri } from "../dialects/v1/index.js";
 import { addDraft04, draft04DialectUri } from "../dialects/draft-04/index.js";
 import { addDraft06, draft06DialectUri } from "../dialects/draft-06/index.js";
@@ -23,7 +22,7 @@ import { addDraft202012, draft202012DialectUri } from "../dialects/draft-2020-12
  * - `"schema"`: the resolver, because a schema goes there
  * - `"shape"`: the resolver, because it isn't any of the shape's alternatives,
  *   or it's a map or array of the wrong type
- * - `"keyword"`: the keyword's schema, because a `"data"` alternative left it
+ * - `"keyword"`: the keyword's check, because a `"data"` alternative left it
  *   to the keyword
  *
  * @typedef {{ value: Json; pointer: string; reportedBy: "schema" | "shape" | "keyword" }} Case
@@ -93,20 +92,13 @@ describe("A keyword's value that doesn't fit its shape is reported once", () => 
         const file = new VFile(JSON.stringify({ $schema: dialectUri, [name]: value }));
         const processor = unified()
           .use(rejsonParse)
-          .use(jsonSchemaResolve, { session: jsonSchema.session(), uri: "https://example.com/schema" })
-          .use(jsonSchemaValidateKeywords, { jsonSchema });
+          .use(jsonSchemaResolve, { session: jsonSchema.session(), uri: "https://example.com/schema" });
         const document = await processor.run(processor.parse(file), file);
 
-        // The resolver reports the value that doesn't fit. A keyword's
-        // schema reports the keyword's whole value.
         const root = /** @type any */ (document.children[0]);
         const misfit = pointerGet(`/${name}${pointer}`, root).position;
-        const expected = {
-          schema: ["invalid-schema", misfit],
-          shape: [keywordUri, misfit],
-          keyword: [keywordUri, pointerGet(`/${name}`, root).position]
-        }[reportedBy];
-        expect(file.messages.map((message) => [message.ruleId, message.place])).to.eql([expected]);
+        const ruleId = reportedBy === "schema" ? "invalid-schema" : keywordUri;
+        expect(file.messages.map((message) => [message.ruleId, message.place])).to.eql([[ruleId, misfit]]);
       });
     }
   }

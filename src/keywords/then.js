@@ -1,5 +1,3 @@
-import keywordSchema from "./then.schema.json" with { type: "json" };
-
 /**
  * @import { Keyword } from "../keyword.d.ts"
  */
@@ -12,6 +10,5 @@ import keywordSchema from "./then.schema.json" with { type: "json" };
 export default {
   uri: "https://json-schema.org/keyword/then",
   shape: "schema",
-  schema: keywordSchema,
   compile: () => null
 };

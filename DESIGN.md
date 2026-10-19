@@ -48,7 +48,7 @@ text ─ rejsonParse ─▶ JSON AST ─ jsonSchemaResolve ─▶ Schema AST ─
 | `src/output/` | Output formats and validation errors |
 | `src/registry/` | `SchemaRegistry`, indexing registries, and how a session finds schemas in them |
 | `src/dialects/` | The presets: `v1`, `draft-04` … `draft-2020-12`. Each has the dialect and its tests, including the test suite runners |
-| `src/keywords/` | Keyword definitions, each next to its keyword schema (`*.schema.json`) |
+| `src/keywords/` | Keyword definitions, and `checks.js`, the checks they share for their values |
 | `src/formats/` | Format definitions and the lite and full presets |
 | `src/cli/` | The `jsonschema` CLI, which lints schemas |
 | `test/test-suite.js` | Runs the JSON Schema Test Suite and the annotation test suite |
@@ -113,18 +113,12 @@ were considered. See "Open questions".)
   value. A value that matches none of them, or a map or array that's the
   wrong type, is reported with the keyword's URI as the `ruleId` and is
   data. A `"data"` alternative matches anything, so it hands the rest to the
-  keyword's schema. Only `itemPattern` uses one, because its operators are
+  keyword's check. Only `itemPattern` uses one, because its operators are
   strings, which a shape can't describe.
-- `schema`: The schema for the keyword's own value, used for schema
-  validation. It's the schema itself, not a URI. It's identified by the
-  keyword's `uri`, so it doesn't need an `$id`, and one that has an `$id`
-  must use the keyword's URI. It's required, even for a keyword that allows
-  any value. It only describes what the shape doesn't, so it never checks
-  the JSON types the shape describes, and subschemas are validated as
-  schemas. A keyword whose value is a schema, like `not`, has a schema that
-  allows any value, and `allOf`'s only says `minItems: 1`. `itemPattern`'s is
-  the exception, because of its `"data"` alternative. It declares its dialect with `$schema` (see "Schema
-  validation").
+- `check`: An optional hook that reports what the shape can't say about
+  the keyword's value, like `minLength` being negative or `allOf` being
+  empty (see "Schema validation"). Without it, any value that fits the
+  shape is allowed.
 - `resolve`: An optional hook for keywords that identify schemas (`$id`,
   `$anchor`, `$dynamicAnchor`, legacy `id`/`$id`/`$ref`, `$recursiveAnchor`)
   or define dialects (`$vocabulary`). It records effects (`setBaseUri`,
@@ -223,24 +217,27 @@ an internal meta-schema.
   never validated against a meta-schema.
 - Unsupported keywords are reported by the resolver according to the
   dialect's `unknownKeywords`.
-- Each keyword's `schema` validates its value.
-  `jsonSchemaValidateKeywords` is a unified plugin that runs after
-  `jsonSchemaResolve`. The schema media
-  type plugin runs it unless the `validateSchemas` config is `false`. It
-  validates each keyword's value node with `Validator.validateNode`. An
-  invalid value gets one message, placed on the value, with the keyword's URI
-  as the `ruleId` and the keyword schema's BASIC errors as its `cause` (an
-  `AggregateError`).
-- `addKeyword` adds the keyword's schema to the `JsonSchema`'s internal
-  registry (see "The internal registry"), so it's found by the keyword's
-  URI like any other schema. The built-in keywords' schemas are
-  `.schema.json` files next to the keywords, imported as JSON. Keyword
-  schemas aren't validated themselves, because validating one could need
-  itself, so being files lets tooling like a language server or a CI check
-  validate them. Every keyword has one, even if it allows any value.
-- The built-in keyword schemas declare their dialect with `$schema`.
-  They're written in v1, so every `JsonSchema` has the v1 dialect,
-  keywords, and lite formats, like it has `$schema` and the unknown keyword.
+- Every problem with a schema is found while it's resolved, and a schema is
+  always checked. There's no option to skip it. A trusted schema that has
+  to start fast can be compiled once and restored with
+  `JsonSchema.restoreValidator`, which doesn't resolve anything.
+- The shape describes a keyword's structure, and the resolver reports a
+  value that doesn't fit it (see "Keywords").
+- A keyword's `check` reports everything else about its value. It's code,
+  not a schema. Keyword schemas were tried first, but almost all of them
+  said "a non-negative integer" or "a string", and they needed an internal
+  registry, a validator for each keyword, and v1 in every `JsonSchema`,
+  because they were written in v1. Their errors were generic BASIC errors.
+  A check's messages are specific ("Expected a non-negative integer") and
+  placed on the exact value that's wrong.
+- A check runs right after its keyword's value is annotated, so it can see
+  which parts of the value are schemas. That's how `itemPattern`'s check
+  only looks at what isn't a schema or a group. It isn't called for a value
+  that couldn't be parsed, or for keywords a reference ignores.
+- The checks keywords share, like `nonNegativeInteger` and `uniqueStrings`,
+  are in `src/keywords/checks.js`. They aren't exported.
+- `$schema` has no check. The resolver reads it to find the dialect and
+  reports what's wrong with it then.
 - Dialect schemas (meta-schemas) are for dev-time tooling, not validators.
   There's no generated "what this implementation supports" meta-schema.
 - A schema that wasn't retrieved from a `file:` URI can't be identified by
@@ -252,7 +249,8 @@ an internal meta-schema.
   `file:` identifiers) are schema validation too.
   Every problem is a
   `VFileMessage` with `source: "json-schema"` and a `ruleId`. Messages from a
-  keyword hook use the keyword's URI as the `ruleId`.
+  keyword's shape, `check`, or `resolve` hook use the keyword's URI as the
+  `ruleId`.
 
 ## Sessions and registries
 
@@ -347,9 +345,6 @@ a session finds schemas in the registries it sees is in
   JSON-Schema-Test-Suite tests and a language server needs for references
   by relative path. Its `$id` is still its canonical URI, so locations use
   it.
-- A keyword's URI always finds the keyword's schema, because the internal
-  registry is checked first. A schema in another registry that's
-  identified by one is still found by its `retrievalUri`.
 - `without` takes the `retrievalUri`. A schema added without one can't be
   removed, and removing a `retrievalUri` that isn't there returns the same
   registry. Adding a `retrievalUri` that's already in the registry throws,
@@ -437,25 +432,9 @@ and a registry that's one edit away from another is cheap to index.
 
 ### The internal registry
 
-- Every `JsonSchema` has a `SchemaRegistry` for its keywords' schemas, so
-  there's only one way schemas are stored. `addKeyword` replaces it with one
-  that has the keyword's schema with the keyword's URI as its
-  `retrievalUri`, and replacing a keyword replaces its schema (`without`,
-  then `with`). Custom keywords' schemas
-  work the same way, so they don't have to be served from anywhere.
-- It's checked right after embedded resources and can't be removed, so
-  nothing else can replace a keyword's schema.
-- Its index is built the first time a session needs it, so a `JsonSchema`
-  that's never used doesn't identify every keyword schema. That's about
-  0.5 ms for the built-in keywords.
-- Keyword schemas use only dialects added to the `JsonSchema`, so each is
-  resolved once and shared by every session, like other registry schemas
-  that do. Their validators are cached for each keyword definition, so a
-  replaced keyword's schema is compiled again.
-- Nothing from the internal registry is validated (see "Schema
-  validation"). A schema from any other registry or retrieved is.
-- Keyword schemas don't depend on `import.meta.url`, so they work in
-  browsers and with bundlers.
+- It held keyword schemas, which keywords no longer have (see "Schema
+  validation"), so it's always empty. It's still checked right after
+  embedded resources until it's removed (see "Plan").
 - The presets don't include the official meta-schemas. They aren't needed
   to identify, resolve, or validate schemas, because each preset adds its
   dialect and schemas are validated keyword by keyword. Compiling a
@@ -767,9 +746,8 @@ objects the caller reads results from afterwards.
 
 ## Presets
 
-Every keyword a preset doesn't add is shared with v1, including the keyword
-schemas, which are written in v1. Any presets can be added to one
-`JsonSchema`.
+Every keyword a preset doesn't add is shared with v1. Any presets can be
+added to one `JsonSchema`.
 
 - **2020-12** (`src/dialects/draft-2020-12`, `addDraft202012`) adds 2020-12's
   `$dynamicRef`, its vocabularies with `addVocabulary`, and its dialect.
@@ -810,9 +788,8 @@ schemas, which are written in v1. Any presets can be added to one
 `rejson` and `jref`, with `.jsonschemarc`, `.jsonschemaignore`, and a
 `jsonSchemaConfig` field in `package.json`.
 
-- It runs `rejsonParse`, `jsonSchemaResolve`, and
-  `jsonSchemaValidateKeywords`, and reports their messages. Nothing is
-  compiled. Syntax errors don't stop the file from being resolved, so every
+- It runs `rejsonParse` and `jsonSchemaResolve`, which finds every problem
+  with a schema, and reports their messages. Nothing is compiled. Syntax errors don't stop the file from being resolved, so every
   problem is reported at once.
 - Its `JsonSchema` has every preset and no default dialect.
 - The engine makes a processor for each file, and each one resolves in a new
@@ -892,13 +869,16 @@ What this relies on from browser's `v2` branch:
 
 ## Plan
 
-1. Optimization passes on the IR (see "Optimizations"). Candidates: fold
+1. Remove the internal registry, which is empty now, and make v1 a preset
+   like the others. Keyword schemas, which were written in v1, were the
+   only reason every `JsonSchema` has it.
+2. Optimization passes on the IR (see "Optimizations"). Candidates: fold
    constants (`not: true`, an `enum` with one value), inline `$ref` targets
    that are only used once, evaluate cheap keywords first, and share
    identical subschemas.
-2. Decide whether keywords can provide a separate evaluator for plain
+3. Decide whether keywords can provide a separate evaluator for plain
    values (see "Compile and evaluate").
-3. Later: annotations, bundling, OpenAPI, a unified plugin for validating
+4. Later: annotations, bundling, OpenAPI, a unified plugin for validating
    JSON files (and validating instances from the CLI), and migrating
    dependent projects.
 

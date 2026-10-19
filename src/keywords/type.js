@@ -1,13 +1,16 @@
-import keywordSchema from "./type.schema.json" with { type: "json" };
+import { isErrorNode } from "./checks.js";
 
 /**
- * @import { Json, JsonType } from "@hyperjump/browser/json"
+ * @import { JsonType } from "@hyperjump/browser/json"
  * @import { Keyword } from "../keyword.d.ts"
  */
 
 /**
  * @typedef {JsonType | "integer"} SchemaType
  */
+
+const types = ["null", "boolean", "object", "array", "number", "string", "integer"];
+const expectedType = `Expected one of ${types.map((type) => `'${type}'`).join(", ")}`;
 
 /**
  * `type`. A number with no fractional part is an `integer`, including one
@@ -18,7 +21,31 @@ import keywordSchema from "./type.schema.json" with { type: "json" };
 export default {
   uri: "https://json-schema.org/keyword/type",
   shape: "data",
-  schema: /** @type Json */ (/** @type unknown */ (keywordSchema)),
+  check(valueNode, context) {
+    if (valueNode.jsonType !== "array") {
+      if (valueNode.jsonType !== "string" || !types.includes(valueNode.value)) {
+        context.message(`${expectedType}, or an array of them`);
+      }
+      return;
+    }
+
+    if (valueNode.children.length === 0) {
+      context.message("Expected at least one type");
+    }
+
+    const seen = new Set();
+    for (const itemNode of valueNode.children) {
+      if (isErrorNode(itemNode)) {
+        continue;
+      } else if (itemNode.jsonType !== "string" || !types.includes(itemNode.value)) {
+        context.message(expectedType, itemNode);
+      } else if (seen.has(itemNode.value)) {
+        context.message(`'${itemNode.value}' is a duplicate`, itemNode);
+      } else {
+        seen.add(itemNode.value);
+      }
+    }
+  },
   evaluate(type, { instance }) {
     /** @type Set<string> */
     const types = new Set(Array.isArray(type) ? type : [type]);

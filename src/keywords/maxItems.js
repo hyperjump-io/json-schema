@@ -1,4 +1,4 @@
-import keywordSchema from "./maxItems.schema.json" with { type: "json" };
+import { nonNegativeInteger } from "./checks.js";
 
 /**
  * @import { Keyword } from "../keyword.d.ts"
@@ -12,7 +12,7 @@ import keywordSchema from "./maxItems.schema.json" with { type: "json" };
 export default {
   uri: "https://json-schema.org/keyword/maxItems",
   shape: "data",
-  schema: keywordSchema,
+  check: nonNegativeInteger,
   evaluate: (maxItems, { instance }) => (node) => {
     return instance.typeOf(node) !== "array" || instance.length(node) <= maxItems;
   }

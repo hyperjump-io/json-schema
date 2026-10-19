@@ -1,4 +1,4 @@
-import keywordSchema from "./contentMediaType.schema.json" with { type: "json" };
+import { string } from "./checks.js";
 
 /**
  * @import { Keyword } from "../keyword.d.ts"
@@ -12,7 +12,7 @@ import keywordSchema from "./contentMediaType.schema.json" with { type: "json" }
 export default {
   uri: "https://json-schema.org/keyword/contentMediaType",
   shape: "data",
-  schema: keywordSchema,
+  check: string,
   evaluate(contentMediaType, { instance, annotate }) {
     if (annotate === undefined) {
       return;

@@ -229,6 +229,14 @@ class Resolver {
       property.keywordUri = keywordUri;
       const [nameNode, valueNode] = property.children;
       await this.#shape(valueNode, keyword.shape, keywordUri, resource, JsonPointer.append(nameNode.value, pointer), dialect);
+
+      // Checked after its value is annotated, so a check can tell which
+      // parts are schemas
+      if (keyword.check && !isErrorNode(valueNode)) {
+        keyword.check(valueNode, {
+          message: (reason, node = valueNode) => this.#message(reason, node, keyword.uri)
+        });
+      }
     }
   }
 
@@ -265,7 +273,7 @@ class Resolver {
         keyword = this.#session.jsonSchema.getKeyword(keywordUri);
       } catch (error) {
         this.#message(/** @type Error */ (error).message, property, "unsupported-keyword");
-        keyword = { uri: keywordUri, shape: "data", schema: unknownKeyword.schema };
+        keyword = { uri: keywordUri, shape: "data" };
       }
 
       return [keywordNode, keywordUri, keyword];
@@ -357,7 +365,7 @@ class Resolver {
   /**
    * Annotate a keyword's value by its shape. A value that doesn't fit the
    * shape is reported, unless the shape has a `"data"` alternative, which
-   * leaves anything else to the keyword's schema.
+   * leaves anything else to the keyword's check.
    *
    * @type (node: TreeNode, shape: Shape, keywordUri: string, resource: JsonSchemaDocumentNode, pointer: string, dialect: Dialect) => Promise<void>
    */

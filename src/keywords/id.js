@@ -1,5 +1,5 @@
 import { parseIri, resolveIri } from "@hyperjump/uri";
-import keywordSchema from "./id.schema.json" with { type: "json" };
+import { string } from "./checks.js";
 
 /**
  * @import { Keyword } from "../keyword.d.ts"
@@ -14,7 +14,7 @@ import keywordSchema from "./id.schema.json" with { type: "json" };
 export default {
   uri: "https://json-schema.org/keyword/id",
   shape: "data",
-  schema: keywordSchema,
+  check: string,
   resolve(valueNode, context) {
     if (valueNode.type !== "json" || valueNode.jsonType !== "string") {
       return;

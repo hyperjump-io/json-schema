@@ -1,4 +1,4 @@
-import keywordSchema from "./conditional.schema.json" with { type: "json" };
+import { nonEmpty } from "./checks.js";
 
 /**
  * @import { Keyword, SchemaHandle } from "../keyword.d.ts"
@@ -16,7 +16,7 @@ import keywordSchema from "./conditional.schema.json" with { type: "json" };
 export default {
   uri: "https://json-schema.org/keyword/conditional",
   shape: { array: ["schema", { array: "schema" }] },
-  schema: keywordSchema,
+  check: nonEmpty,
   async compile(valueNode, context) {
     /** @type SchemaHandle[] */
     const handles = [];

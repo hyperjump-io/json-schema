@@ -1,5 +1,5 @@
 import anchorKeyword from "../anchor.js";
-import keywordSchema from "./anchor.schema.json" with { type: "json" };
+import { expected } from "../checks.js";
 
 /**
  * @import { Keyword } from "../../keyword.d.ts"
@@ -14,5 +14,7 @@ import keywordSchema from "./anchor.schema.json" with { type: "json" };
 export default {
   ...anchorKeyword,
   uri: "https://json-schema.org/keyword/draft-2019-09/anchor",
-  schema: keywordSchema
+  check: expected("an anchor name: a letter followed by letters, digits, '-', '.', ':', or '_'", (node) => {
+    return node.jsonType === "string" && /^[A-Za-z][-A-Za-z0-9.:_]*$/.test(node.value);
+  })
 };

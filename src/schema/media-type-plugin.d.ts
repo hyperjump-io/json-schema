@@ -14,8 +14,6 @@ import type { JsonSchemaDocumentNode } from "./schema-ast.d.ts";
  * `JsonSchemaSession`.
  */
 export class JsonSchemaMediaTypePlugin implements MediaTypePlugin<JsonSchemaDocumentNode<"success">> {
-  constructor(jsonSchema: JsonSchema);
-
   mediaType: string;
   extensions: string[];
   parse: MediaTypePlugin<JsonSchemaDocumentNode<"success">>["parse"];

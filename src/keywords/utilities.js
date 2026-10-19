@@ -8,12 +8,12 @@
  * A keyword whose value is an annotation for every instance it applies to,
  * like `title`. It never fails.
  *
- * @type (uri: string, schema: Json) => Keyword
+ * @type (uri: string, check?: Keyword["check"]) => Keyword
  */
-export const annotationKeyword = (uri, schema) => ({
+export const annotationKeyword = (uri, check) => ({
   uri: uri,
   shape: "data",
-  schema: schema,
+  check: check,
   evaluate(value, { annotate }) {
     if (annotate === undefined) {
       return;

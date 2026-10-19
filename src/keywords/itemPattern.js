@@ -1,4 +1,4 @@
-import keywordSchema from "./itemPattern.schema.json" with { type: "json" };
+import { isErrorNode } from "./checks.js";
 
 /**
  * @import { Keyword, SchemaHandle, Shape } from "../keyword.d.ts"
@@ -26,13 +26,37 @@ import keywordSchema from "./itemPattern.schema.json" with { type: "json" };
  */
 
 // Groups are arrays, and they can be nested. Operators are strings, which a
-// shape can't describe, so the keyword's schema checks everything that isn't a
-// schema or a group.
+// shape can't describe, so the shape leaves everything that isn't a schema or
+// a group to the check.
 /** @type Shape[] */
 const ruleShapes = ["schema"];
 /** @type Shape */
 const shape = { array: ruleShapes };
 ruleShapes.push(shape, "data");
+
+const operators = ["*", "+", "?", "|"];
+
+/**
+ * Everything in a pattern that isn't a schema or a group has to be an
+ * operator. The resolver already checked the schemas.
+ *
+ * @type NonNullable<Keyword["check"]>
+ */
+const checkPattern = (node, context) => {
+  if (node.jsonType !== "array") {
+    return;
+  }
+
+  for (const itemNode of node.children) {
+    if (isErrorNode(itemNode) || itemNode.type === "json-schema") {
+      continue;
+    } else if (itemNode.jsonType === "array") {
+      checkPattern(itemNode, context);
+    } else if (itemNode.jsonType !== "string" || !operators.includes(itemNode.value)) {
+      context.message("Expected a schema, an array, or one of '*', '+', '?', '|'", itemNode);
+    }
+  }
+};
 
 /**
  * `itemPattern`. The items have to match a pattern like a regular
@@ -45,7 +69,7 @@ ruleShapes.push(shape, "data");
 export default {
   uri: "https://json-schema.org/keyword/itemPattern",
   shape: shape,
-  schema: /** @type Json */ (/** @type unknown */ (keywordSchema)),
+  check: checkPattern,
   async compile(valueNode, context) {
     /** @type State[] */
     const states = [];

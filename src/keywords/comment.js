@@ -1,4 +1,4 @@
-import keywordSchema from "./comment.schema.json" with { type: "json" };
+import { string } from "./checks.js";
 
 /**
  * @import { Keyword } from "../keyword.d.ts"
@@ -12,5 +12,5 @@ import keywordSchema from "./comment.schema.json" with { type: "json" };
 export default {
   uri: "https://json-schema.org/keyword/comment",
   shape: "data",
-  schema: keywordSchema
+  check: string
 };

@@ -4,7 +4,6 @@ import { RetrievalError } from "@hyperjump/browser";
 import { rejsonParse } from "@hyperjump/browser/json";
 import { toAbsoluteIri } from "@hyperjump/uri";
 import { jsonSchemaResolve } from "../schema/resolve.js";
-import { jsonSchemaValidateKeywords } from "../schema/validate-keywords.js";
 import { RegistryIndex, entryText } from "./registry-index.js";
 
 /**
@@ -106,12 +105,12 @@ export class SessionRegistries {
   get(uri) {
     const keywordSchema = this.#keywordSchema(uri);
     if (keywordSchema) {
-      return this.#document(keywordSchema, false);
+      return this.#document(keywordSchema);
     }
 
     const indexed = this.#registryEntry(uri);
     if (indexed) {
-      return this.#document(indexed, true);
+      return this.#document(indexed);
     }
   }
 
@@ -201,9 +200,9 @@ export class SessionRegistries {
    * uses dialects added to the JsonSchema, it's resolved once for every
    * session.
    *
-   * @type (indexed: IndexedEntry, validate: boolean) => Promise<JsonSchemaDocumentNode>
+   * @type (indexed: IndexedEntry) => Promise<JsonSchemaDocumentNode>
    */
-  async #document(indexed, validate) {
+  async #document(indexed) {
     const jsonSchema = this.#session.jsonSchema;
     const shared = sharedDocuments.get(jsonSchema)?.get(indexed.entry);
     if (shared) {
@@ -212,7 +211,7 @@ export class SessionRegistries {
 
     let pending = this.#documents.get(indexed.entry);
     if (!pending) {
-      pending = resolveEntry(this.#session, indexed, validate);
+      pending = resolveEntry(this.#session, indexed);
       this.#documents.set(indexed.entry, pending);
     }
 
@@ -270,20 +269,15 @@ const sharedDocuments = new WeakMap();
 
 /**
  * A registry entry is resolved like a retrieved schema, with its retrieval
- * URI as the document's URI. A keyword schema isn't validated, because
- * validating it could need itself.
+ * URI as the document's URI.
  *
- * @type (session: JsonSchemaSession, indexed: IndexedEntry, validate: boolean) => Promise<JsonSchemaDocumentNode>
+ * @type (session: JsonSchemaSession, indexed: IndexedEntry) => Promise<JsonSchemaDocumentNode>
  */
-const resolveEntry = async (session, { entry, uri }, validate) => {
+const resolveEntry = async (session, { entry, uri }) => {
   const file = new VFile(entryText(entry));
   const processor = unified()
     .use(rejsonParse)
     .use(jsonSchemaResolve, { session, uri: entry.retrievalUri ?? uri, dialectUri: entry.dialectUri });
-
-  if (validate && session.jsonSchema.config.validateSchemas !== false) {
-    processor.use(jsonSchemaValidateKeywords, { jsonSchema: session.jsonSchema });
-  }
   const document = await processor.run(processor.parse(file), file);
 
   // A schema with problems can't be used reliably, so any problem is fatal

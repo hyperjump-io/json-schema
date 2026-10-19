@@ -241,8 +241,7 @@ const keywords = [
 ];
 
 /**
- * Add the v1 keywords, formats, and dialect. Every `JsonSchema` has them,
- * because keyword schemas are written in v1.
+ * Add the v1 keywords, formats, and dialect. Every `JsonSchema` has them.
  *
  * @type (jsonSchema: JsonSchema) => void
  */

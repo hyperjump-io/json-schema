@@ -1,6 +1,6 @@
 import { jsonValue } from "@hyperjump/browser/json";
 import { siblingKeyword } from "./utilities.js";
-import keywordSchema from "./requireAllExcept.schema.json" with { type: "json" };
+import { uniqueStrings } from "./checks.js";
 
 /**
  * @import { Keyword } from "../keyword.d.ts"
@@ -15,7 +15,7 @@ import keywordSchema from "./requireAllExcept.schema.json" with { type: "json" }
 export default {
   uri: "https://json-schema.org/keyword/requireAllExcept",
   shape: "data",
-  schema: keywordSchema,
+  check: uniqueStrings,
   compile(valueNode, { schemaNode }) {
     const except = new Set(/** @type string[] */ (jsonValue(valueNode)));
 

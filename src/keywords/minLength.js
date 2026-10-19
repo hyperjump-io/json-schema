@@ -1,5 +1,5 @@
 import { codePointLength } from "./utilities.js";
-import keywordSchema from "./minLength.schema.json" with { type: "json" };
+import { nonNegativeInteger } from "./checks.js";
 
 /**
  * @import { Keyword } from "../keyword.d.ts"
@@ -13,7 +13,7 @@ import keywordSchema from "./minLength.schema.json" with { type: "json" };
 export default {
   uri: "https://json-schema.org/keyword/minLength",
   shape: "data",
-  schema: keywordSchema,
+  check: nonNegativeInteger,
   evaluate: (minLength, { instance }) => (node) => {
     return instance.typeOf(node) !== "string" || codePointLength(/** @type string */ (instance.value(node))) >= minLength;
   }

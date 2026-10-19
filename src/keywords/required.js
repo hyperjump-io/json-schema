@@ -1,4 +1,4 @@
-import keywordSchema from "./required.schema.json" with { type: "json" };
+import { uniqueStrings } from "./checks.js";
 
 /**
  * @import { Keyword } from "../keyword.d.ts"
@@ -13,7 +13,7 @@ import keywordSchema from "./required.schema.json" with { type: "json" };
 export default {
   uri: "https://json-schema.org/keyword/required",
   shape: "data",
-  schema: keywordSchema,
+  check: uniqueStrings,
   evaluate: (required, { instance }) => (node) => {
     if (instance.typeOf(node) !== "object") {
       return true;

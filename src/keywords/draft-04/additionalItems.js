@@ -1,6 +1,5 @@
 import { siblingKeyword } from "../utilities.js";
 import itemsKeyword from "../items.js";
-import keywordSchema from "./additionalItems.schema.json" with { type: "json" };
 
 /**
  * @import { Keyword, SchemaHandle } from "../../keyword.d.ts"
@@ -16,7 +15,6 @@ import keywordSchema from "./additionalItems.schema.json" with { type: "json" };
 export default {
   uri: "https://json-schema.org/keyword/draft-04/additionalItems",
   shape: "schema",
-  schema: keywordSchema,
   async compile(valueNode, context) {
     const itemsNode = siblingKeyword(context.schemaNode, "https://json-schema.org/keyword/draft-04/items");
     if (itemsNode?.jsonType !== "array") {

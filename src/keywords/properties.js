@@ -1,5 +1,4 @@
 import { compileSchemaMap } from "./utilities.js";
-import keywordSchema from "./properties.schema.json" with { type: "json" };
 
 /**
  * @import { Keyword, SchemaHandle } from "../keyword.d.ts"
@@ -13,7 +12,6 @@ import keywordSchema from "./properties.schema.json" with { type: "json" };
 export default {
   uri: "https://json-schema.org/keyword/properties",
   shape: { map: "schema" },
-  schema: keywordSchema,
   compile: compileSchemaMap,
   evaluate(properties, { instance, schema, alwaysPasses, exhaustive, markEvaluated }) {
     const evaluators = new Map();

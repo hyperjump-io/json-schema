@@ -1,5 +1,5 @@
 import formatKeyword from "../format.js";
-import keywordSchema from "./format.schema.json" with { type: "json" };
+import { string } from "../checks.js";
 
 /**
  * @import { Keyword } from "../../keyword.d.ts"
@@ -15,7 +15,7 @@ import keywordSchema from "./format.schema.json" with { type: "json" };
 export default {
   ...formatKeyword,
   uri: "https://json-schema.org/keyword/draft-04/format",
-  schema: keywordSchema,
+  check: string,
   compile(valueNode, context) {
     const { formats } = context.dialect;
     if (valueNode.type === "json" && valueNode.jsonType === "string" && !(formats && Object.hasOwn(formats, valueNode.value))) {

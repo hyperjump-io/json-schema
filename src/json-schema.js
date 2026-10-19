@@ -3,7 +3,7 @@ import { toAbsoluteIri } from "@hyperjump/uri";
 import { JsonSchemaMediaTypePlugin } from "./schema/media-type-plugin.js";
 import { JsonSchemaSession } from "./session.js";
 import { SchemaRegistry } from "./registry/schema-registry.js";
-import { addedRegistriesOf, keywordSchemasOf, setKeywordSchemas } from "./registry/session-registries.js";
+import { addedRegistriesOf, setKeywordSchemas } from "./registry/session-registries.js";
 import schemaKeyword from "./keywords/schema.js";
 import unknownKeyword, { keywordDefinitionUri } from "./keywords/unknown.js";
 import { addV1 } from "./dialects/v1/dialect.js";
@@ -65,7 +65,7 @@ export class JsonSchema extends Hyperjump {
     // Value schemas are written in v1
     addV1(this);
 
-    this.addMediaTypePlugin(new JsonSchemaMediaTypePlugin(this));
+    this.addMediaTypePlugin(new JsonSchemaMediaTypePlugin());
 
     this.addOutputFormat("BASIC", basicOutputFormat);
     this.addOutputFormat("DETAILED", detailedOutputFormat);
@@ -101,17 +101,6 @@ export class JsonSchema extends Hyperjump {
 
   /** @type API.JsonSchema["addKeyword"] */
   addKeyword(keyword) {
-    const schema = keyword.schema;
-    if (typeof schema === "object" && schema !== null && !Array.isArray(schema) && "$id" in schema) {
-      if (typeof schema.$id !== "string" || toAbsoluteIri(schema.$id) !== keyword.uri) {
-        throw Error(`The schema for the '${keyword.uri}' keyword can only be identified by the keyword's URI`);
-      }
-    }
-
-    // The keyword's schema is identified by the keyword's URI
-    const registry = keywordSchemasOf(this);
-    setKeywordSchemas(this, registry.without(keyword.uri).with(schema, { retrievalUri: keyword.uri }));
-
     this.#keywords[keyword.uri] = keyword;
   }
 

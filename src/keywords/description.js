@@ -1,7 +1,7 @@
 import { annotationKeyword } from "./utilities.js";
-import keywordSchema from "./description.schema.json" with { type: "json" };
+import { string } from "./checks.js";
 
 /**
  * `description`
  */
-export default annotationKeyword("https://json-schema.org/keyword/description", keywordSchema);
+export default annotationKeyword("https://json-schema.org/keyword/description", string);

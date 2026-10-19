@@ -1,7 +1,7 @@
 import { annotationKeyword } from "./utilities.js";
-import keywordSchema from "./readOnly.schema.json" with { type: "json" };
+import { boolean } from "./checks.js";
 
 /**
  * `readOnly`
  */
-export default annotationKeyword("https://json-schema.org/keyword/readOnly", keywordSchema);
+export default annotationKeyword("https://json-schema.org/keyword/readOnly", boolean);

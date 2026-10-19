@@ -1,5 +1,5 @@
 import { jsonValue } from "@hyperjump/browser/json";
-import keywordSchema from "./dependencies.schema.json" with { type: "json" };
+import { isErrorNode, string } from "../checks.js";
 
 /**
  * @import { Keyword, SchemaHandle } from "../../keyword.d.ts"
@@ -16,7 +16,20 @@ import keywordSchema from "./dependencies.schema.json" with { type: "json" };
 export default {
   uri: "https://json-schema.org/keyword/draft-04/dependencies",
   shape: { map: ["schema", { array: "data" }] },
-  schema: keywordSchema,
+  check(valueNode, context) {
+    if (valueNode.jsonType !== "object") {
+      return;
+    }
+
+    for (const property of valueNode.children) {
+      const dependencyNode = property.children[1];
+      if (!isErrorNode(dependencyNode) && dependencyNode.jsonType === "array") {
+        for (const itemNode of dependencyNode.children) {
+          string(itemNode, context);
+        }
+      }
+    }
+  },
   async compile(valueNode, context) {
     /** @type [string, SchemaHandle | string[]][] */
     const dependencies = [];

@@ -1,4 +1,4 @@
-import keywordSchema from "./minContains.schema.json" with { type: "json" };
+import { nonNegativeInteger } from "./checks.js";
 
 /**
  * @import { Keyword } from "../keyword.d.ts"
@@ -12,5 +12,5 @@ import keywordSchema from "./minContains.schema.json" with { type: "json" };
 export default {
   uri: "https://json-schema.org/keyword/minContains",
   shape: "data",
-  schema: keywordSchema
+  check: nonNegativeInteger
 };

@@ -1,6 +1,6 @@
 import { jsonValue } from "@hyperjump/browser/json";
 import { parseIri, resolveIri, toAbsoluteIri } from "@hyperjump/uri";
-import keywordSchema from "./dynamicRef.schema.json" with { type: "json" };
+import { iriReference } from "../checks.js";
 
 /**
  * @import { Keyword, SchemaHandle } from "../../keyword.d.ts"
@@ -18,7 +18,7 @@ import keywordSchema from "./dynamicRef.schema.json" with { type: "json" };
 export default {
   uri: "https://json-schema.org/keyword/draft-2020-12/dynamicRef",
   shape: "data",
-  schema: keywordSchema,
+  check: iriReference,
   async compile(valueNode, context) {
     const reference = /** @type string */ (jsonValue(valueNode));
     const uri = resolveIri(reference, toAbsoluteIri(context.schemaNode.location));

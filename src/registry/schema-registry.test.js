@@ -79,13 +79,6 @@ describe("SchemaRegistry", () => {
       await expect(compile(registry, "https://example.com/b")).resolves.toBeDefined();
     });
 
-    test("a schema can't replace a keyword's schema", async () => {
-      const registry = new SchemaRegistry().with(v1({ type: "number" }), { retrievalUri: "https://json-schema.org/keyword/type" });
-
-      // The keyword's schema is found first
-      expect((await compile(registry, "https://json-schema.org/keyword/type")).validate("string")).to.equal(true);
-    });
-
     test("JSON text", async () => {
       const registry = registryOf(`{ "$schema": "${v1DialectUri}", "$id": "https://example.com/a", "type": "string" }`);
 
@@ -124,14 +117,6 @@ describe("SchemaRegistry", () => {
       await expect(compile(registry, "https://example.com/a")).rejects.toMatchObject({
         cause: { message: expect.stringContaining("'file:'") }
       });
-    });
-
-    test("a schema identified by a keyword's URI is found by its retrieval URI", async () => {
-      const registry = new SchemaRegistry().with(v1({ $id: "https://json-schema.org/keyword/type", type: "number" }), { retrievalUri: "https://example.com/a" });
-
-      expect((await compile(registry, "https://example.com/a")).validate("string")).to.equal(false);
-      // The keyword's URI still finds the keyword's schema
-      expect((await compile(registry, "https://json-schema.org/keyword/type")).validate("string")).to.equal(true);
     });
 
     test("an embedded resource isn't identified", async () => {

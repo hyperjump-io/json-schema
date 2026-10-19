@@ -1,5 +1,5 @@
 import { jsonValue } from "@hyperjump/browser/json";
-import keywordSchema from "./format.schema.json" with { type: "json" };
+import { string } from "./checks.js";
 
 /**
  * @import { Keyword } from "../keyword.d.ts"
@@ -16,7 +16,7 @@ import keywordSchema from "./format.schema.json" with { type: "json" };
 export default {
   uri: "https://json-schema.org/keyword/format",
   shape: "data",
-  schema: keywordSchema,
+  check: string,
   compile(valueNode, { jsonSchema, dialect }) {
     const name = /** @type string */ (jsonValue(valueNode));
     if (!(jsonSchema.config.validateFormats ?? dialect.assertFormats ?? false)) {

@@ -1,5 +1,5 @@
 import { compileSchemaMap } from "./utilities.js";
-import keywordSchema from "./patternProperties.schema.json" with { type: "json" };
+import { isRegex } from "@hyperjump/json-schema-formats";
 
 /**
  * @import { Keyword, SchemaHandle } from "../keyword.d.ts"
@@ -14,7 +14,18 @@ import keywordSchema from "./patternProperties.schema.json" with { type: "json" 
 export default {
   uri: "https://json-schema.org/keyword/patternProperties",
   shape: { map: "schema" },
-  schema: keywordSchema,
+  check(valueNode, context) {
+    if (valueNode.jsonType !== "object") {
+      return;
+    }
+
+    for (const property of valueNode.children) {
+      const nameNode = property.children[0];
+      if (!isRegex(nameNode.value)) {
+        context.message("Expected a regular expression", nameNode);
+      }
+    }
+  },
   compile: compileSchemaMap,
   evaluate(patternProperties, { instance, schema, alwaysPasses, exhaustive, markEvaluated }) {
     /** @type [RegExp, ReturnType<typeof schema>][] */

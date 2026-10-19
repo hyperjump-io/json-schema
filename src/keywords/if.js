@@ -1,5 +1,4 @@
 import { siblingKeyword } from "./utilities.js";
-import keywordSchema from "./if.schema.json" with { type: "json" };
 
 /**
  * @import { Keyword, SchemaHandle } from "../keyword.d.ts"
@@ -15,7 +14,6 @@ import keywordSchema from "./if.schema.json" with { type: "json" };
 export default {
   uri: "https://json-schema.org/keyword/if",
   shape: "schema",
-  schema: keywordSchema,
   async compile(valueNode, context) {
     const thenNode = siblingKeyword(context.schemaNode, "https://json-schema.org/keyword/then");
     const elseNode = siblingKeyword(context.schemaNode, "https://json-schema.org/keyword/else");

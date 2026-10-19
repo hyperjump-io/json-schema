@@ -1,4 +1,4 @@
-import keywordSchema from "./dependentRequired.schema.json" with { type: "json" };
+import { mapOf, uniqueStrings } from "./checks.js";
 
 /**
  * @import { Keyword } from "../keyword.d.ts"
@@ -12,7 +12,7 @@ import keywordSchema from "./dependentRequired.schema.json" with { type: "json" 
 export default {
   uri: "https://json-schema.org/keyword/dependentRequired",
   shape: "data",
-  schema: keywordSchema,
+  check: mapOf(uniqueStrings),
   evaluate(dependentRequired, { instance }) {
     const dependencies = Object.entries(dependentRequired);
 

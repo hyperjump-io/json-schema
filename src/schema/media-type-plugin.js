@@ -3,29 +3,19 @@ import { unified } from "unified";
 import { VFile } from "vfile";
 import { rejsonParse } from "@hyperjump/browser/json";
 import { jsonSchemaResolve } from "./resolve.js";
-import { jsonSchemaValidateKeywords } from "./validate-keywords.js";
 import { JsonSchemaSession } from "../session.js";
 
 /**
  * @import { MediaTypePlugin } from "@hyperjump/browser"
- * @import { JsonSchema } from "../json-schema.d.ts"
  * @import { JsonSchemaDocumentNode } from "./schema-ast.d.ts"
  * @import * as API from "./media-type-plugin.d.ts"
  */
 
 /** @implements API.JsonSchemaMediaTypePlugin */
 export class JsonSchemaMediaTypePlugin {
-  /** @type JsonSchema */
-  #jsonSchema;
-
-  /**
-   * @param {JsonSchema} jsonSchema
-   */
-  constructor(jsonSchema) {
+  constructor() {
     this.mediaType = "application/schema+json";
     this.extensions = [".schema.json"];
-
-    this.#jsonSchema = jsonSchema;
   }
 
   /** @type MediaTypePlugin<JsonSchemaDocumentNode<"success">>["parse"] */
@@ -43,10 +33,6 @@ export class JsonSchemaMediaTypePlugin {
     const processor = unified()
       .use(rejsonParse)
       .use(jsonSchemaResolve, { session, uri: response.url, dialectUri });
-
-    if (this.#jsonSchema.config.validateSchemas !== false) {
-      processor.use(jsonSchemaValidateKeywords, { jsonSchema: this.#jsonSchema });
-    }
     const document = await processor.run(processor.parse(file), file);
 
     // A schema with problems can't be used reliably, so any problem is fatal

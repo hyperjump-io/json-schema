@@ -1,5 +1,5 @@
 import { compileSchemaArray } from "./utilities.js";
-import keywordSchema from "./allOf.schema.json" with { type: "json" };
+import { nonEmpty } from "./checks.js";
 
 /**
  * @import { Keyword, SchemaHandle } from "../keyword.d.ts"
@@ -13,7 +13,7 @@ import keywordSchema from "./allOf.schema.json" with { type: "json" };
 export default {
   uri: "https://json-schema.org/keyword/allOf",
   shape: { array: "schema" },
-  schema: keywordSchema,
+  check: nonEmpty,
   compile: compileSchemaArray,
   evaluate(allOf, { schema, alwaysPasses, exhaustive }) {
     const evaluators = allOf.filter((handle) => !alwaysPasses(handle)).map(schema);

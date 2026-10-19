@@ -1,6 +1,6 @@
 import { jsInstance } from "../evaluate/instance.js";
 import { instanceEqual } from "./utilities.js";
-import keywordSchema from "./enum.schema.json" with { type: "json" };
+import { array } from "./checks.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
@@ -15,7 +15,7 @@ import keywordSchema from "./enum.schema.json" with { type: "json" };
 export default {
   uri: "https://json-schema.org/keyword/enum",
   shape: "data",
-  schema: keywordSchema,
+  check: array,
   evaluate(values, { instance }) {
     // Primitives are compared with a lookup. Only arrays and objects need
     // instanceEqual.

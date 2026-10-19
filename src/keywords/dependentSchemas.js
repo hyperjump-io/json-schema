@@ -1,5 +1,4 @@
 import { compileSchemaMap } from "./utilities.js";
-import keywordSchema from "./dependentSchemas.schema.json" with { type: "json" };
 
 /**
  * @import { Keyword, SchemaHandle } from "../keyword.d.ts"
@@ -14,7 +13,6 @@ import keywordSchema from "./dependentSchemas.schema.json" with { type: "json" }
 export default {
   uri: "https://json-schema.org/keyword/dependentSchemas",
   shape: { map: "schema" },
-  schema: keywordSchema,
   compile: compileSchemaMap,
   evaluate(dependentSchemas, { instance, schema, exhaustive }) {
     /** @type [string, ReturnType<typeof schema>][] */

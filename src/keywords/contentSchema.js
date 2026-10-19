@@ -1,6 +1,5 @@
 import { jsonValue } from "@hyperjump/browser/json";
 import { siblingKeyword } from "./utilities.js";
-import keywordSchema from "./contentSchema.schema.json" with { type: "json" };
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
@@ -18,7 +17,6 @@ import keywordSchema from "./contentSchema.schema.json" with { type: "json" };
 export default {
   uri: "https://json-schema.org/keyword/contentSchema",
   shape: "schema",
-  schema: keywordSchema,
   compile(valueNode, context) {
     const contentMediaTypeNode = siblingKeyword(context.schemaNode, "https://json-schema.org/keyword/contentMediaType");
     return contentMediaTypeNode === undefined ? null : jsonValue(valueNode);

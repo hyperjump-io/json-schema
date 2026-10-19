@@ -1,7 +1,7 @@
 import { annotationKeyword } from "./utilities.js";
-import keywordSchema from "./examples.schema.json" with { type: "json" };
+import { array } from "./checks.js";
 
 /**
  * `examples`
  */
-export default annotationKeyword("https://json-schema.org/keyword/examples", keywordSchema);
+export default annotationKeyword("https://json-schema.org/keyword/examples", array);
