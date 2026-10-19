@@ -53,12 +53,28 @@ import formatKeyword from "../../keywords/format.js";
 import contentEncodingKeyword from "../../keywords/contentEncoding.js";
 import contentMediaTypeKeyword from "../../keywords/contentMediaType.js";
 import contentSchemaKeyword from "../../keywords/contentSchema.js";
-import { v1Dialect } from "../v1/index.js";
+import dateTimeFormat from "../../formats/date-time.js";
+import dateFormat from "../../formats/date.js";
+import timeFormat from "../../formats/time.js";
+import durationFormat from "../../formats/duration.js";
+import emailFormat from "../../formats/email.js";
+import ipv4Format from "../../formats/ipv4.js";
+import ipv6Format from "../../formats/ipv6.js";
+import uriFormat from "../../formats/uri.js";
+import uriReferenceFormat from "../../formats/uri-reference.js";
+import iriFormat from "../../formats/iri.js";
+import iriReferenceFormat from "../../formats/iri-reference.js";
+import uuidFormat from "../../formats/uuid.js";
+import uriTemplateFormat from "../../formats/uri-template.js";
+import jsonPointerFormat from "../../formats/json-pointer.js";
+import relativeJsonPointerFormat from "../../formats/relative-json-pointer.js";
+import regexFormat from "../../formats/regex.js";
 import vocabularyKeyword, { addVocabulary } from "../../keywords/vocabulary.js";
 import { addPreset } from "../add-preset.js";
 
 /**
  * @import { Keyword } from "../../keyword.d.ts"
+ * @import { Format } from "../../format.d.ts"
  * @import { Vocabulary } from "../../keywords/vocabulary.js"
  * @import * as API from "./index.d.ts"
  */
@@ -66,8 +82,28 @@ import { addPreset } from "../add-preset.js";
 /** @type API.draft201909DialectUri */
 export const draft201909DialectUri = "https://json-schema.org/draft/2019-09/schema";
 
-/** The formats JSON Schema defines are the same in 2019-09 and v1 */
-const formats = /** @type Record<string, string> */ (v1Dialect.formats);
+/** The formats 2019-09 defines */
+const dialectFormats = {
+  "date-time": "https://json-schema.org/format/date-time",
+  "date": "https://json-schema.org/format/date",
+  "time": "https://json-schema.org/format/time",
+  "duration": "https://json-schema.org/format/duration",
+  "email": "https://json-schema.org/format/email",
+  "idn-email": "https://json-schema.org/format/idn-email",
+  "hostname": "https://json-schema.org/format/hostname",
+  "idn-hostname": "https://json-schema.org/format/idn-hostname",
+  "ipv4": "https://json-schema.org/format/ipv4",
+  "ipv6": "https://json-schema.org/format/ipv6",
+  "uri": "https://json-schema.org/format/uri",
+  "uri-reference": "https://json-schema.org/format/uri-reference",
+  "iri": "https://json-schema.org/format/iri",
+  "iri-reference": "https://json-schema.org/format/iri-reference",
+  "uuid": "https://json-schema.org/format/uuid",
+  "uri-template": "https://json-schema.org/format/uri-template",
+  "json-pointer": "https://json-schema.org/format/json-pointer",
+  "relative-json-pointer": "https://json-schema.org/format/relative-json-pointer",
+  "regex": "https://json-schema.org/format/regex"
+};
 
 /** @type Record<string, Vocabulary> */
 const vocabularies = {
@@ -141,7 +177,7 @@ const vocabularies = {
   },
   "https://json-schema.org/draft/2019-09/vocab/format": {
     keywords: { format: "https://json-schema.org/keyword/format" },
-    formats: formats
+    formats: dialectFormats
   },
   "https://json-schema.org/draft/2019-09/vocab/content": {
     keywords: {
@@ -157,7 +193,7 @@ export const draft201909Dialect = {
   uri: draft201909DialectUri,
   keywords: Object.assign({}, ...Object.values(vocabularies).map((vocabulary) => vocabulary.keywords)),
   unknownKeywords: "annotation",
-  formats: formats,
+  formats: dialectFormats,
   assertFormats: false
 };
 
@@ -225,9 +261,34 @@ const keywords = [
   contentSchemaKeyword
 ];
 
+/**
+ * The format definitions the dialect uses. Formats that need large tables of
+ * Unicode data aren't included. They're added with the full formats.
+ *
+ * @type Format[]
+ */
+const formats = [
+  dateTimeFormat,
+  dateFormat,
+  timeFormat,
+  durationFormat,
+  emailFormat,
+  ipv4Format,
+  ipv6Format,
+  uriFormat,
+  uriReferenceFormat,
+  iriFormat,
+  iriReferenceFormat,
+  uuidFormat,
+  uriTemplateFormat,
+  jsonPointerFormat,
+  relativeJsonPointerFormat,
+  regexFormat
+];
+
 /** @type API.addDraft201909 */
 export const addDraft201909 = (jsonSchema) => {
-  addPreset(jsonSchema, draft201909Dialect, { keywords });
+  addPreset(jsonSchema, draft201909Dialect, { keywords, formats });
 
   for (const uri in vocabularies) {
     addVocabulary(jsonSchema, uri, vocabularies[uri]);

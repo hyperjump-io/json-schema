@@ -57,10 +57,27 @@ import unevaluatedPropertiesKeyword from "../../keywords/unevaluatedProperties.j
 import conditionalKeyword from "../../keywords/conditional.js";
 import itemPatternKeyword from "../../keywords/itemPattern.js";
 import requireAllExceptKeyword from "../../keywords/requireAllExcept.js";
+import dateTimeFormat from "../../formats/date-time.js";
+import dateFormat from "../../formats/date.js";
+import timeFormat from "../../formats/time.js";
+import durationFormat from "../../formats/duration.js";
+import emailFormat from "../../formats/email.js";
+import ipv4Format from "../../formats/ipv4.js";
+import ipv6Format from "../../formats/ipv6.js";
+import uriFormat from "../../formats/uri.js";
+import uriReferenceFormat from "../../formats/uri-reference.js";
+import iriFormat from "../../formats/iri.js";
+import iriReferenceFormat from "../../formats/iri-reference.js";
+import uuidFormat from "../../formats/uuid.js";
+import uriTemplateFormat from "../../formats/uri-template.js";
+import jsonPointerFormat from "../../formats/json-pointer.js";
+import relativeJsonPointerFormat from "../../formats/relative-json-pointer.js";
+import regexFormat from "../../formats/regex.js";
 import { addPreset } from "../add-preset.js";
 
 /**
  * @import { Keyword } from "../../keyword.d.ts"
+ * @import { Format } from "../../format.d.ts"
  * @import * as API from "./index.d.ts"
  */
 
@@ -243,7 +260,32 @@ const keywords = [
   requireAllExceptKeyword
 ];
 
+/**
+ * The format definitions the dialect uses. Formats that need large tables of
+ * Unicode data aren't included. They're added with the full formats.
+ *
+ * @type Format[]
+ */
+const formats = [
+  dateTimeFormat,
+  dateFormat,
+  timeFormat,
+  durationFormat,
+  emailFormat,
+  ipv4Format,
+  ipv6Format,
+  uriFormat,
+  uriReferenceFormat,
+  iriFormat,
+  iriReferenceFormat,
+  uuidFormat,
+  uriTemplateFormat,
+  jsonPointerFormat,
+  relativeJsonPointerFormat,
+  regexFormat
+];
+
 /** @type API.addV1 */
 export const addV1 = (jsonSchema) => {
-  addPreset(jsonSchema, v1Dialect, { keywords, extension: { keywords: extensionKeywords } });
+  addPreset(jsonSchema, v1Dialect, { keywords, formats, extension: { keywords: extensionKeywords } });
 };

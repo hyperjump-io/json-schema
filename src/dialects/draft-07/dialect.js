@@ -43,10 +43,25 @@ import titleKeyword from "../../keywords/title.js";
 import typeKeyword from "../../keywords/type.js";
 import uniqueItemsKeyword from "../../keywords/uniqueItems.js";
 import writeOnlyKeyword from "../../keywords/writeOnly.js";
+import dateTimeFormat from "../../formats/date-time.js";
+import dateFormat from "../../formats/date.js";
+import timeFormat from "../../formats/time.js";
+import emailFormat from "../../formats/email.js";
+import ipv4Format from "../../formats/ipv4.js";
+import ipv6Format from "../../formats/ipv6.js";
+import uriFormat from "../../formats/uri.js";
+import uriReferenceFormat from "../../formats/uri-reference.js";
+import iriFormat from "../../formats/iri.js";
+import iriReferenceFormat from "../../formats/iri-reference.js";
+import uriTemplateFormat from "../../formats/uri-template.js";
+import jsonPointerFormat from "../../formats/json-pointer.js";
+import relativeJsonPointerFormat from "../../formats/relative-json-pointer.js";
+import regexFormat from "../../formats/regex.js";
 import { addPreset } from "../add-preset.js";
 
 /**
  * @import { Keyword } from "../../keyword.d.ts"
+ * @import { Format } from "../../format.d.ts"
  * @import * as API from "./index.d.ts"
  */
 
@@ -179,7 +194,30 @@ const keywords = [
   writeOnlyKeyword
 ];
 
+/**
+ * The format definitions the dialect uses. Formats that need large tables of
+ * Unicode data aren't included. They're added with the full formats.
+ *
+ * @type Format[]
+ */
+const formats = [
+  dateTimeFormat,
+  dateFormat,
+  timeFormat,
+  emailFormat,
+  ipv4Format,
+  ipv6Format,
+  uriFormat,
+  uriReferenceFormat,
+  iriFormat,
+  iriReferenceFormat,
+  uriTemplateFormat,
+  jsonPointerFormat,
+  relativeJsonPointerFormat,
+  regexFormat
+];
+
 /** @type API.addDraft07 */
 export const addDraft07 = (jsonSchema) => {
-  addPreset(jsonSchema, draft07Dialect, { keywords });
+  addPreset(jsonSchema, draft07Dialect, { keywords, formats });
 };

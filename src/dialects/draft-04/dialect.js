@@ -31,11 +31,17 @@ import requiredKeyword from "../../keywords/required.js";
 import titleKeyword from "../../keywords/title.js";
 import typeKeyword from "../../keywords/type.js";
 import uniqueItemsKeyword from "../../keywords/uniqueItems.js";
+import dateTimeFormat from "../../formats/date-time.js";
+import emailFormat from "../../formats/email.js";
 import hostnameFormat from "../../formats/draft-04/hostname.js";
+import ipv4Format from "../../formats/ipv4.js";
+import ipv6Format from "../../formats/ipv6.js";
+import uriFormat from "../../formats/uri.js";
 import { addPreset } from "../add-preset.js";
 
 /**
  * @import { Keyword } from "../../keyword.d.ts"
+ * @import { Format } from "../../format.d.ts"
  * @import * as API from "./index.d.ts"
  */
 
@@ -133,7 +139,22 @@ const keywords = [
   uniqueItemsKeyword
 ];
 
+/**
+ * The format definitions the dialect uses. Formats that need large tables of
+ * Unicode data aren't included. They're added with the full formats.
+ *
+ * @type Format[]
+ */
+const formats = [
+  dateTimeFormat,
+  emailFormat,
+  hostnameFormat,
+  ipv4Format,
+  ipv6Format,
+  uriFormat
+];
+
 /** @type API.addDraft04 */
 export const addDraft04 = (jsonSchema) => {
-  addPreset(jsonSchema, draft04Dialect, { keywords, formats: [hostnameFormat] });
+  addPreset(jsonSchema, draft04Dialect, { keywords, formats });
 };

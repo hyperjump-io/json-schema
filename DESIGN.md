@@ -160,8 +160,9 @@ were considered. See "Open questions".)
   than a dialect option for it.
 - The lite formats (`src/formats/lite.js`) are every format JSON Schema
   defines except `hostname`, `idn-hostname`, and `idn-email`, which need large
-  tables of Unicode data. Each preset adds the ones its dialect uses, and v1
-  validates formats by default. `src/formats/full.js` adds the rest. The validators come
+  tables of Unicode data. Presets don't use the list. Each lists the
+  formats its dialect uses, which never include those three. v1 validates
+  formats by default. `src/formats/full.js` adds the rest. The validators come
   from `@hyperjump/json-schema-formats`.
 - Keyword names starting with `x-` are reserved for schema authors in every
   dialect. They're guaranteed to never collide with a keyword, so they must
@@ -749,15 +750,16 @@ A `JsonSchema` starts with no dialects, only `$schema` and the unknown
 keyword, which every dialect has. Presets are independent, and any of them
 can be added to one `JsonSchema`.
 
-- A preset adds its dialect, then each keyword and lite format its dialect
-  uses that hasn't been added yet (`addPreset` in
+- A preset adds its dialect, then each keyword and format its dialect uses
+  that hasn't been added yet (`addPreset` in
   `src/dialects/add-preset.js`). So a keyword someone replaced stays
   replaced, whatever order presets are added in, and adding a preset twice
   throws before it changes anything.
-- Each preset imports and lists every keyword definition its dialect uses,
-  even though most are the same in every preset. A preset is read on its
-  own, and a shared list would hide what each one uses. `addPreset` throws
-  if the dialect names a keyword that isn't in the list.
+- Each preset imports and lists every keyword and format definition its
+  dialect uses, and defines its own format names, even though most are the
+  same in every preset. A preset is read on its own, and a shared list
+  would hide what each one uses. `addPreset` throws if the dialect names a
+  keyword that isn't in the list.
 - v1 used to be in every `JsonSchema`, because keyword schemas were written
   in v1. Now it's a preset like the others (`addV1`).
 - Formats that need Unicode data aren't added by any preset. A dialect can

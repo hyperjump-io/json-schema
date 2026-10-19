@@ -34,7 +34,7 @@ describe("presets", () => {
   });
 
   describe.each(presets)("%s", (_name, addPreset, dialectUri) => {
-    test("adds every keyword and lite format its dialect uses, on its own", () => {
+    test("adds every keyword and format its dialect uses, on its own", () => {
       const jsonSchema = new JsonSchema();
       addPreset(jsonSchema);
 
