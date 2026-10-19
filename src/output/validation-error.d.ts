@@ -41,8 +41,9 @@ export class DetailedValidationError extends ValidationError {
 }
 
 /**
- * Thrown when compiling a schema that isn't valid according to its
- * meta-schema.
+ * Not thrown yet. An invalid schema can't be retrieved, so compiling one
+ * throws a `RetrievalError` from `@hyperjump/browser` whose `cause` is the
+ * problem.
  */
 export class InvalidSchemaError extends Error {
   /** Errors are positioned in the schema document if it was parsed from text. */

@@ -127,8 +127,9 @@ export class JsonSchema extends Hyperjump<JsonSchemaNode> {
    * Compile a schema into a {@link Validator} that can be used for any
    * number of instances, in a new session.
    *
-   * @throws {@link InvalidSchemaError}
-   * @throws RetrievalError from `@hyperjump/browser`
+   * @throws RetrievalError from `@hyperjump/browser` if a schema can't be
+   * retrieved or isn't valid. For an invalid schema, the `cause` is the
+   * problem, as a `VFileMessage`.
    */
   compile(uri: string, options?: SessionOptions): Promise<Validator>;
 

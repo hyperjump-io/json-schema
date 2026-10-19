@@ -2,7 +2,7 @@ import type { DocumentNode, GetOptions, Session } from "@hyperjump/browser";
 import type { JsonSchemaNode } from "./schema/schema-ast.d.ts";
 import type { Dialect } from "./dialect.d.ts";
 import type { SchemaRegistry } from "./registry/schema-registry.d.ts";
-import type { InvalidSchemaError, JsonSchema, Validator } from "./json-schema.d.ts";
+import type { JsonSchema, Validator } from "./json-schema.d.ts";
 
 export type SessionOptions = {
   /**
@@ -57,8 +57,9 @@ export class JsonSchemaSession extends Session<JsonSchemaNode> {
    * Compile a schema into a {@link Validator}. The validator doesn't need
    * the session after it's compiled.
    *
-   * @throws {@link InvalidSchemaError}
-   * @throws RetrievalError from `@hyperjump/browser`
+   * @throws RetrievalError from `@hyperjump/browser` if a schema can't be
+   * retrieved or isn't valid. For an invalid schema, the `cause` is the
+   * problem, as a `VFileMessage`.
    */
   compile(uri: string): Promise<Validator>;
 }
