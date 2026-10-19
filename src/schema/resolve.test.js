@@ -231,6 +231,16 @@ describe("jsonSchemaResolve", () => {
       expect(at("/properties/neither/items", root).type).to.equal("json");
     });
 
+    test("every problem is an error, and the rest of the document is still resolved", async () => {
+      const { root, file } = await resolve(jsonSchema, `{ "$schema": "${dialectUri}", "properties": [], "allOf": [1] }`);
+
+      expect(file.messages.map(({ ruleId, fatal }) => [ruleId, fatal])).to.eql([
+        ["https://example.com/keyword/properties", true],
+        ["invalid-schema", true]
+      ]);
+      expect(root.type).to.equal("json-schema");
+    });
+
     test("a map or array of the wrong type is reported and is data", async () => {
       const { root, file } = await resolve(jsonSchema, `{ "$schema": "${dialectUri}", "properties": [{}], "allOf": {} }`);
 

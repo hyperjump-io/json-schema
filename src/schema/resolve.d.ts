@@ -29,7 +29,9 @@ export type JsonSchemaResolveOptions = {
  *
  * It determines the dialect of each schema resource, annotates schemas and
  * keywords, and finds embedded resources and anchors. Problems, such as a
- * missing dialect or an invalid `$id`, are added to the file as messages.
+ * missing dialect or an invalid `$id`, are added to the file as errors
+ * (`fatal: true`), because a schema with a problem can't be used. They
+ * aren't thrown, so every problem in the document is reported.
  *
  * It's asynchronous because a dialect that hasn't been added has to be
  * retrieved from its meta-schema. It doesn't validate the document against

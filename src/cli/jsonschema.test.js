@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -63,6 +63,8 @@ describe("jsonschema CLI", () => {
   beforeAll(async () => {
     dir = await mkdtemp(join(tmpdir(), "jsonschema-cli-"));
     await writeFile(join(dir, "a.schema.json"), `{ "$schema": "https://json-schema.org/v1", "minLength": -1 }`);
+    await mkdir(join(dir, "valid"));
+    await writeFile(join(dir, "valid", "b.schema.json"), `{ "$schema": "https://json-schema.org/v1", "minLength": 1 }`);
     await writeFile(join(dir, "package.json"), `{ "name": "example" }`);
   });
 
@@ -70,21 +72,37 @@ describe("jsonschema CLI", () => {
     await rm(dir, { recursive: true, force: true });
   });
 
-  /** @type (args: string[]) => Promise<string> */
+  /** @type (args: string[]) => Promise<{ output: string; exitCode: number }> */
   const report = async (args) => {
-    const { stderr } = await run(process.execPath, [cli, ...args, "--no-color"], { cwd: dir });
-    return stderr;
+    try {
+      const { stderr } = await run(process.execPath, [cli, ...args, "--no-color"], { cwd: dir });
+      return { output: stderr, exitCode: 0 };
+    } catch (error) {
+      const { stderr, code } = /** @type {{ stderr: string; code: number }} */ (error);
+      return { output: stderr, exitCode: code };
+    }
   };
 
+  test("a schema problem is an error, which fails the command", async () => {
+    const { output, exitCode } = await report(["a.schema.json", "-q"]);
+    expect(output).to.match(/error\s+Expected a non-negative integer/);
+    expect(exitCode).to.equal(1);
+  });
+
+  test("valid schemas pass", async () => {
+    const { exitCode } = await report(["valid", "-q"]);
+    expect(exitCode).to.equal(0);
+  });
+
   test("only .schema.json files are linted in a folder", async () => {
-    const output = await report([".", "-q"]);
+    const { output } = await report([".", "-q"]);
     expect(output).to.contain("a.schema.json");
     expect(output).to.contain("https://json-schema.org/keyword/minLength");
     expect(output).not.to.contain("package.json");
   });
 
   test("a plain JSON file can be included with an ignore pattern", async () => {
-    const output = await report([".", "-q", "--ignore-pattern", "!package.json"]);
+    const { output } = await report([".", "-q", "--ignore-pattern", "!package.json"]);
     expect(output).to.contain("package.json");
     expect(output).to.contain("missing-dialect");
   });

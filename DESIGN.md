@@ -248,7 +248,10 @@ an internal meta-schema.
   misplaced `$schema`, duplicate ids and anchors, invalid identifiers,
   `file:` identifiers) are schema validation too.
   Every problem is a
-  `VFileMessage` with `source: "json-schema"` and a `ruleId`. Messages from a
+  `VFileMessage` with `source: "json-schema"`, a `ruleId`, and `fatal: true`,
+  because a schema with a problem can't be used. It's an error that isn't
+  thrown, as a lint rule configured as an error is in unified, so the rest of
+  the document is still checked. Messages from a
   keyword's shape, `check`, or `resolve` hook use the keyword's URI as the
   `ruleId`.
 
@@ -810,7 +813,9 @@ can be added to one `JsonSchema`.
   `.schema.json` file. The CLI adds the ignore patterns `*.json` and
   `!*.schema.json` before the user's own, so plain JSON files aren't linted
   unless a user's pattern includes them.
-- Problems are warnings, as in other unified CLIs. `--frail` fails on them.
+- Schema problems are errors, so an invalid schema fails the command. In
+  unified, warnings are for findings that don't stop a file from being used,
+  like style, and none of these are.
 - Its processor isn't exported. Validating instances from the CLI waits for
   the unified plugin for validating JSON files (see "Plan").
 

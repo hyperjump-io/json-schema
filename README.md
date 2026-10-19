@@ -263,9 +263,9 @@ npx jsonschema schemas/
 ```
 
 Only `.schema.json` files are linted. To lint a plain JSON file, include it with
-an ignore pattern, such as `--ignore-pattern '!schema.json'`. Problems are
-warnings, so use `--frail` to make them fail the command. Use `-q` to only see
-files with problems.
+an ignore pattern, such as `--ignore-pattern '!schema.json'`. Schema problems
+are errors, so an invalid schema fails the command. Use `-q` to only see files
+with problems.
 
 ### Serializing compiled schemas
 

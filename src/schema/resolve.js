@@ -502,12 +502,17 @@ class Resolver {
 
   /** @type (reason: string, node: Node, ruleId: string, cause?: Error) => VFileMessage */
   #message(reason, node, ruleId, cause) {
-    return this.#file.message(reason, {
+    const message = this.#file.message(reason, {
       place: node.position,
       ruleId: ruleId,
       source: "json-schema",
       cause: cause
     });
+
+    // A schema with a problem can't be used, so every problem is an error.
+    // It's not thrown, so the rest of the document is still checked.
+    message.fatal = true;
+    return message;
   }
 }
 
