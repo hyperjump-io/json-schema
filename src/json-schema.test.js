@@ -5,7 +5,7 @@ import { pathToFileURL } from "node:url";
 import { describe, test, beforeEach, expect } from "vitest";
 import { Session } from "@hyperjump/browser";
 import { JsonSchema } from "./json-schema.js";
-import { v1DialectUri } from "./dialects/v1/index.js";
+import { addV1, v1DialectUri } from "./dialects/v1/index.js";
 import { SchemaRegistry } from "./registry/schema-registry.js";
 import vocabularyKeyword, { addVocabulary } from "./keywords/vocabulary.js";
 
@@ -20,6 +20,7 @@ describe("JsonSchema", () => {
 
   beforeEach(() => {
     jsonSchema = new JsonSchema();
+    addV1(jsonSchema);
   });
 
   describe("dialects", () => {

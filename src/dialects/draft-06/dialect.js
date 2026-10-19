@@ -1,12 +1,45 @@
-import idKeyword from "../../keywords/draft-04/id.js";
-import refKeyword from "../../keywords/draft-04/ref.js";
-import itemsKeyword from "../../keywords/draft-04/items.js";
 import additionalItemsKeyword from "../../keywords/draft-04/additionalItems.js";
+import additionalPropertiesKeyword from "../../keywords/additionalProperties.js";
+import allOfKeyword from "../../keywords/allOf.js";
+import anyOfKeyword from "../../keywords/anyOf.js";
+import constKeyword from "../../keywords/const.js";
+import containsKeyword from "../../keywords/contains.js";
+import defaultKeyword from "../../keywords/default.js";
+import definitionsKeyword from "../../keywords/definitions.js";
 import dependenciesKeyword from "../../keywords/draft-04/dependencies.js";
+import descriptionKeyword from "../../keywords/description.js";
+import enumKeyword from "../../keywords/enum.js";
+import examplesKeyword from "../../keywords/examples.js";
+import exclusiveMaximumKeyword from "../../keywords/exclusiveMaximum.js";
+import exclusiveMinimumKeyword from "../../keywords/exclusiveMinimum.js";
 import formatKeyword from "../../keywords/draft-04/format.js";
+import idKeyword from "../../keywords/draft-04/id.js";
+import itemsKeyword from "../../keywords/draft-04/items.js";
+import maximumKeyword from "../../keywords/maximum.js";
+import maxItemsKeyword from "../../keywords/maxItems.js";
+import maxLengthKeyword from "../../keywords/maxLength.js";
+import maxPropertiesKeyword from "../../keywords/maxProperties.js";
+import minimumKeyword from "../../keywords/minimum.js";
+import minItemsKeyword from "../../keywords/minItems.js";
+import minLengthKeyword from "../../keywords/minLength.js";
+import minPropertiesKeyword from "../../keywords/minProperties.js";
+import multipleOfKeyword from "../../keywords/multipleOf.js";
+import notKeyword from "../../keywords/not.js";
+import oneOfKeyword from "../../keywords/oneOf.js";
+import patternKeyword from "../../keywords/pattern.js";
+import patternPropertiesKeyword from "../../keywords/patternProperties.js";
+import propertiesKeyword from "../../keywords/properties.js";
+import propertyNamesKeyword from "../../keywords/propertyNames.js";
+import refKeyword from "../../keywords/draft-04/ref.js";
+import requiredKeyword from "../../keywords/required.js";
+import titleKeyword from "../../keywords/title.js";
+import typeKeyword from "../../keywords/type.js";
+import uniqueItemsKeyword from "../../keywords/uniqueItems.js";
 import hostnameFormat from "../../formats/draft-04/hostname.js";
+import { addPreset } from "../add-preset.js";
 
 /**
+ * @import { Keyword } from "../../keyword.d.ts"
  * @import * as API from "./index.d.ts"
  */
 
@@ -70,15 +103,52 @@ export const draft06Dialect = {
   assertFormats: true
 };
 
+/**
+ * The keyword definitions the dialect uses
+ *
+ * @type Keyword<any>[]
+ */
+const keywords = [
+  additionalItemsKeyword,
+  additionalPropertiesKeyword,
+  allOfKeyword,
+  anyOfKeyword,
+  constKeyword,
+  containsKeyword,
+  defaultKeyword,
+  definitionsKeyword,
+  dependenciesKeyword,
+  descriptionKeyword,
+  enumKeyword,
+  examplesKeyword,
+  exclusiveMaximumKeyword,
+  exclusiveMinimumKeyword,
+  formatKeyword,
+  idKeyword,
+  itemsKeyword,
+  maximumKeyword,
+  maxItemsKeyword,
+  maxLengthKeyword,
+  maxPropertiesKeyword,
+  minimumKeyword,
+  minItemsKeyword,
+  minLengthKeyword,
+  minPropertiesKeyword,
+  multipleOfKeyword,
+  notKeyword,
+  oneOfKeyword,
+  patternKeyword,
+  patternPropertiesKeyword,
+  propertiesKeyword,
+  propertyNamesKeyword,
+  refKeyword,
+  requiredKeyword,
+  titleKeyword,
+  typeKeyword,
+  uniqueItemsKeyword
+];
+
 /** @type API.addDraft06 */
 export const addDraft06 = (jsonSchema) => {
-  jsonSchema.addKeyword(idKeyword);
-  jsonSchema.addKeyword(refKeyword);
-  jsonSchema.addKeyword(itemsKeyword);
-  jsonSchema.addKeyword(additionalItemsKeyword);
-  jsonSchema.addKeyword(dependenciesKeyword);
-  jsonSchema.addKeyword(formatKeyword);
-  jsonSchema.addFormat(hostnameFormat);
-
-  jsonSchema.addDialect(draft06Dialect);
+  addPreset(jsonSchema, draft06Dialect, { keywords, formats: [hostnameFormat] });
 };

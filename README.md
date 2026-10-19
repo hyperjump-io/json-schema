@@ -32,8 +32,10 @@ npm install @hyperjump/json-schema-next
 
 ```javascript
 import { JsonSchema, SchemaRegistry } from "@hyperjump/json-schema-next";
+import { addV1 } from "@hyperjump/json-schema-next/v1";
 
 const jsonSchema = new JsonSchema();
+addV1(jsonSchema);
 
 jsonSchema.addRegistry(new SchemaRegistry().with({
   $schema: "https://json-schema.org/v1",
@@ -171,8 +173,8 @@ A schema is looked up in registries first, then retrieved by its URI.
 
 ### Dialects
 
-Every `JsonSchema` has the v1 dialect. Add the others you need from their
-module.
+A `JsonSchema` starts without any dialects. Add the ones you need from their
+modules. Presets don't depend on each other, so add only what you use.
 
 ```javascript
 import { addDraft202012 } from "@hyperjump/json-schema-next/draft-2020-12";
@@ -184,7 +186,7 @@ addDraft07(jsonSchema);
 
 | Module | Add with | Dialect URI |
 | --- | --- | --- |
-| `@hyperjump/json-schema-next/v1` | (always added) | `https://json-schema.org/v1` |
+| `@hyperjump/json-schema-next/v1` | `addV1` | `https://json-schema.org/v1` |
 | `@hyperjump/json-schema-next/draft-2020-12` | `addDraft202012` | `https://json-schema.org/draft/2020-12/schema` |
 | `@hyperjump/json-schema-next/draft-2019-09` | `addDraft201909` | `https://json-schema.org/draft/2019-09/schema` |
 | `@hyperjump/json-schema-next/draft-07` | `addDraft07` | `http://json-schema.org/draft-07/schema` |
@@ -216,7 +218,7 @@ dialect.
 const jsonSchema = new JsonSchema({ validateFormats: true });
 ```
 
-Every format JSON Schema defines is included, except `hostname`,
+Each preset adds the formats its dialect defines, except `hostname`,
 `idn-hostname`, and `idn-email`. Those need large tables of Unicode data, so
 they're only loaded if you ask for them. (draft-04 and draft-06 have their own
 `hostname`, which doesn't.)

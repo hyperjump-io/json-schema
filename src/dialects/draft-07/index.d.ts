@@ -18,10 +18,13 @@ export const draft07DialectUri: "http://json-schema.org/draft-07/schema";
 export const draft07Dialect: Dialect;
 
 /**
- * Add JSON Schema draft-07: its keywords, its dialect, and a registry with its
- * meta-schema. It adds draft-04's `$id` (`id`), `$ref`, `items`,
- * `additionalItems`, `dependencies`, and `format`. Every other keyword is
- * shared with v1, which every {@link JsonSchema} has.
+ * Add JSON Schema draft-07: its keywords, formats, and dialect. Its own are
+ * draft-04's `$id` (`id`), `$ref`, `items`, `additionalItems`,
+ * `dependencies`, and `format`.
+ *
+ * Every other keyword and format it uses is shared with the other presets.
+ * Each preset adds the ones it uses that haven't been added, so presets don't
+ * depend on each other, and a keyword or format you replaced stays replaced.
  *
  * @throws Error if it's already been added
  */

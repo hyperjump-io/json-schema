@@ -2,7 +2,7 @@ import { describe, test, beforeEach, expect } from "vitest";
 import { RetrievalError } from "@hyperjump/browser";
 import { JsonSchema } from "../json-schema.js";
 import { SchemaRegistry } from "./schema-registry.js";
-import { v1DialectUri } from "../dialects/v1/index.js";
+import { addV1, v1DialectUri } from "../dialects/v1/index.js";
 import vocabularyKeyword, { addVocabulary } from "../keywords/vocabulary.js";
 
 /**
@@ -18,6 +18,7 @@ import vocabularyKeyword, { addVocabulary } from "../keywords/vocabulary.js";
  */
 const offline = (config) => {
   const jsonSchema = new JsonSchema(config);
+  addV1(jsonSchema);
   jsonSchema.removeUriSchemePlugin("http");
   jsonSchema.removeUriSchemePlugin("https");
   return jsonSchema;

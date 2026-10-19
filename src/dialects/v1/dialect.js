@@ -1,67 +1,66 @@
-import idKeyword from "../../keywords/id.js";
 import anchorKeyword from "../../keywords/anchor.js";
 import commentKeyword from "../../keywords/comment.js";
-import dynamicAnchorKeyword from "../../keywords/dynamicAnchor.js";
-import typeKeyword from "../../keywords/type.js";
-import constKeyword from "../../keywords/const.js";
-import enumKeyword from "../../keywords/enum.js";
-import maximumKeyword from "../../keywords/maximum.js";
-import minimumKeyword from "../../keywords/minimum.js";
-import exclusiveMaximumKeyword from "../../keywords/exclusiveMaximum.js";
-import exclusiveMinimumKeyword from "../../keywords/exclusiveMinimum.js";
-import multipleOfKeyword from "../../keywords/multipleOf.js";
-import maxLengthKeyword from "../../keywords/maxLength.js";
-import minLengthKeyword from "../../keywords/minLength.js";
-import patternKeyword from "../../keywords/pattern.js";
-import maxItemsKeyword from "../../keywords/maxItems.js";
-import minItemsKeyword from "../../keywords/minItems.js";
-import uniqueItemsKeyword from "../../keywords/uniqueItems.js";
-import maxPropertiesKeyword from "../../keywords/maxProperties.js";
-import minPropertiesKeyword from "../../keywords/minProperties.js";
-import requiredKeyword from "../../keywords/required.js";
-import dependentRequiredKeyword from "../../keywords/dependentRequired.js";
-import requireAllExceptKeyword from "../../keywords/requireAllExcept.js";
 import definitionsKeyword from "../../keywords/definitions.js";
-import propertiesKeyword from "../../keywords/properties.js";
-import patternPropertiesKeyword from "../../keywords/patternProperties.js";
+import dynamicAnchorKeyword from "../../keywords/dynamicAnchor.js";
+import dynamicRefKeyword from "../../keywords/dynamicRef.js";
+import idKeyword from "../../keywords/id.js";
+import refKeyword from "../../keywords/ref.js";
 import additionalPropertiesKeyword from "../../keywords/additionalProperties.js";
-import propertyNamesKeyword from "../../keywords/propertyNames.js";
-import dependentSchemasKeyword from "../../keywords/dependentSchemas.js";
-import propertyDependenciesKeyword from "../../keywords/propertyDependencies.js";
-import prefixItemsKeyword from "../../keywords/prefixItems.js";
-import itemsKeyword from "../../keywords/items.js";
+import allOfKeyword from "../../keywords/allOf.js";
+import anyOfKeyword from "../../keywords/anyOf.js";
 import containsKeyword from "../../keywords/contains.js";
 import minContainsKeyword from "../../keywords/minContains.js";
 import maxContainsKeyword from "../../keywords/maxContains.js";
-import allOfKeyword from "../../keywords/allOf.js";
-import anyOfKeyword from "../../keywords/anyOf.js";
-import oneOfKeyword from "../../keywords/oneOf.js";
-import notKeyword from "../../keywords/not.js";
-import conditionalKeyword from "../../keywords/conditional.js";
-import itemPatternKeyword from "../../keywords/itemPattern.js";
+import dependentSchemasKeyword from "../../keywords/dependentSchemas.js";
 import ifKeyword from "../../keywords/if.js";
 import thenKeyword from "../../keywords/then.js";
 import elseKeyword from "../../keywords/else.js";
-import refKeyword from "../../keywords/ref.js";
-import dynamicRefKeyword from "../../keywords/dynamicRef.js";
-import unevaluatedPropertiesKeyword from "../../keywords/unevaluatedProperties.js";
-import unevaluatedItemsKeyword from "../../keywords/unevaluatedItems.js";
-import titleKeyword from "../../keywords/title.js";
-import descriptionKeyword from "../../keywords/description.js";
+import itemsKeyword from "../../keywords/items.js";
+import notKeyword from "../../keywords/not.js";
+import oneOfKeyword from "../../keywords/oneOf.js";
+import patternPropertiesKeyword from "../../keywords/patternProperties.js";
+import prefixItemsKeyword from "../../keywords/prefixItems.js";
+import propertiesKeyword from "../../keywords/properties.js";
+import propertyDependenciesKeyword from "../../keywords/propertyDependencies.js";
+import propertyNamesKeyword from "../../keywords/propertyNames.js";
+import constKeyword from "../../keywords/const.js";
+import dependentRequiredKeyword from "../../keywords/dependentRequired.js";
+import enumKeyword from "../../keywords/enum.js";
+import exclusiveMaximumKeyword from "../../keywords/exclusiveMaximum.js";
+import exclusiveMinimumKeyword from "../../keywords/exclusiveMinimum.js";
+import maxItemsKeyword from "../../keywords/maxItems.js";
+import maxLengthKeyword from "../../keywords/maxLength.js";
+import maxPropertiesKeyword from "../../keywords/maxProperties.js";
+import maximumKeyword from "../../keywords/maximum.js";
+import minItemsKeyword from "../../keywords/minItems.js";
+import minLengthKeyword from "../../keywords/minLength.js";
+import minPropertiesKeyword from "../../keywords/minProperties.js";
+import minimumKeyword from "../../keywords/minimum.js";
+import multipleOfKeyword from "../../keywords/multipleOf.js";
+import patternKeyword from "../../keywords/pattern.js";
+import requiredKeyword from "../../keywords/required.js";
+import typeKeyword from "../../keywords/type.js";
+import uniqueItemsKeyword from "../../keywords/uniqueItems.js";
 import defaultKeyword from "../../keywords/default.js";
 import deprecatedKeyword from "../../keywords/deprecated.js";
+import descriptionKeyword from "../../keywords/description.js";
 import examplesKeyword from "../../keywords/examples.js";
 import readOnlyKeyword from "../../keywords/readOnly.js";
+import titleKeyword from "../../keywords/title.js";
 import writeOnlyKeyword from "../../keywords/writeOnly.js";
+import formatKeyword from "../../keywords/format.js";
 import contentEncodingKeyword from "../../keywords/contentEncoding.js";
 import contentMediaTypeKeyword from "../../keywords/contentMediaType.js";
 import contentSchemaKeyword from "../../keywords/contentSchema.js";
-import formatKeyword from "../../keywords/format.js";
-import { addLiteFormats } from "../../formats/lite.js";
+import unevaluatedItemsKeyword from "../../keywords/unevaluatedItems.js";
+import unevaluatedPropertiesKeyword from "../../keywords/unevaluatedProperties.js";
+import conditionalKeyword from "../../keywords/conditional.js";
+import itemPatternKeyword from "../../keywords/itemPattern.js";
+import requireAllExceptKeyword from "../../keywords/requireAllExcept.js";
+import { addPreset } from "../add-preset.js";
 
 /**
  * @import { Keyword } from "../../keyword.d.ts"
- * @import { JsonSchema } from "../../json-schema.d.ts"
  * @import * as API from "./index.d.ts"
  */
 
@@ -177,81 +176,74 @@ const extensionKeywords = {
   requireAllExcept: "https://json-schema.org/keyword/requireAllExcept"
 };
 
-/** @type Keyword<any>[] */
+/**
+ * The keyword definitions the dialect uses
+ *
+ * @type Keyword<any>[]
+ */
 const keywords = [
-  idKeyword,
   anchorKeyword,
   commentKeyword,
-  dynamicAnchorKeyword,
-  typeKeyword,
-  constKeyword,
-  enumKeyword,
-  maximumKeyword,
-  minimumKeyword,
-  exclusiveMaximumKeyword,
-  exclusiveMinimumKeyword,
-  multipleOfKeyword,
-  maxLengthKeyword,
-  minLengthKeyword,
-  patternKeyword,
-  maxItemsKeyword,
-  minItemsKeyword,
-  uniqueItemsKeyword,
-  maxPropertiesKeyword,
-  minPropertiesKeyword,
-  requiredKeyword,
-  dependentRequiredKeyword,
-  requireAllExceptKeyword,
   definitionsKeyword,
-  propertiesKeyword,
-  patternPropertiesKeyword,
+  dynamicAnchorKeyword,
+  dynamicRefKeyword,
+  idKeyword,
+  refKeyword,
   additionalPropertiesKeyword,
-  propertyNamesKeyword,
-  dependentSchemasKeyword,
-  propertyDependenciesKeyword,
-  prefixItemsKeyword,
-  itemsKeyword,
+  allOfKeyword,
+  anyOfKeyword,
   containsKeyword,
   minContainsKeyword,
   maxContainsKeyword,
-  allOfKeyword,
-  anyOfKeyword,
-  oneOfKeyword,
-  notKeyword,
-  conditionalKeyword,
-  itemPatternKeyword,
+  dependentSchemasKeyword,
   ifKeyword,
   thenKeyword,
   elseKeyword,
-  refKeyword,
-  dynamicRefKeyword,
-  unevaluatedPropertiesKeyword,
-  unevaluatedItemsKeyword,
-  titleKeyword,
-  descriptionKeyword,
+  itemsKeyword,
+  notKeyword,
+  oneOfKeyword,
+  patternPropertiesKeyword,
+  prefixItemsKeyword,
+  propertiesKeyword,
+  propertyDependenciesKeyword,
+  propertyNamesKeyword,
+  constKeyword,
+  dependentRequiredKeyword,
+  enumKeyword,
+  exclusiveMaximumKeyword,
+  exclusiveMinimumKeyword,
+  maxItemsKeyword,
+  maxLengthKeyword,
+  maxPropertiesKeyword,
+  maximumKeyword,
+  minItemsKeyword,
+  minLengthKeyword,
+  minPropertiesKeyword,
+  minimumKeyword,
+  multipleOfKeyword,
+  patternKeyword,
+  requiredKeyword,
+  typeKeyword,
+  uniqueItemsKeyword,
   defaultKeyword,
   deprecatedKeyword,
+  descriptionKeyword,
   examplesKeyword,
   readOnlyKeyword,
+  titleKeyword,
   writeOnlyKeyword,
+  formatKeyword,
   contentEncodingKeyword,
   contentMediaTypeKeyword,
   contentSchemaKeyword,
-  formatKeyword
+  unevaluatedItemsKeyword,
+  unevaluatedPropertiesKeyword,
+  conditionalKeyword,
+  itemPatternKeyword,
+  requireAllExceptKeyword
 ];
 
-/**
- * Add the v1 keywords, formats, and dialect. Every `JsonSchema` has them.
- *
- * @type (jsonSchema: JsonSchema) => void
- */
+/** @type API.addV1 */
 export const addV1 = (jsonSchema) => {
-  for (const keyword of keywords) {
-    jsonSchema.addKeyword(keyword);
-  }
-
-  addLiteFormats(jsonSchema);
-
-  jsonSchema.addDialect(v1Dialect);
-  jsonSchema.extendDialect(v1DialectUri, { keywords: extensionKeywords });
+  addPreset(jsonSchema, v1Dialect, { keywords, extension: { keywords: extensionKeywords } });
 };

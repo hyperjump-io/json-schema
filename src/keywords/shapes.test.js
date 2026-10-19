@@ -4,7 +4,7 @@ import { VFile } from "vfile";
 import { pointerGet, rejsonParse } from "@hyperjump/browser/json";
 import { JsonSchema } from "../json-schema.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
-import { v1DialectUri } from "../dialects/v1/index.js";
+import { addV1, v1DialectUri } from "../dialects/v1/index.js";
 import { addDraft04, draft04DialectUri } from "../dialects/draft-04/index.js";
 import { addDraft06, draft06DialectUri } from "../dialects/draft-06/index.js";
 import { addDraft07, draft07DialectUri } from "../dialects/draft-07/index.js";
@@ -69,6 +69,7 @@ const misfits = (shape, depth = 0) => {
 };
 
 const jsonSchema = new JsonSchema();
+addV1(jsonSchema);
 addDraft04(jsonSchema);
 addDraft06(jsonSchema);
 addDraft07(jsonSchema);

@@ -37,34 +37,11 @@ export const addedRegistriesOf = (jsonSchema) => {
 };
 
 /**
- * Each JsonSchema's keyword schemas, identified by the keywords' URIs
- *
- * @type WeakMap<JsonSchema, SchemaRegistry>
- */
-const keywordSchemas = new WeakMap();
-
-/** @type (jsonSchema: JsonSchema) => SchemaRegistry */
-export const keywordSchemasOf = (jsonSchema) => /** @type SchemaRegistry */ (keywordSchemas.get(jsonSchema));
-
-/** @type (jsonSchema: JsonSchema, registry: SchemaRegistry) => void */
-export const setKeywordSchemas = (jsonSchema, registry) => {
-  keywordSchemas.set(jsonSchema, registry);
-};
-
-/**
- * The schemas a session finds in registries: its JsonSchema's keyword
- * schemas, then the registries it sees.
+ * The schemas a session finds in the registries it sees
  */
 export class SessionRegistries {
   /** @type JsonSchemaSession */
   #session;
-
-  /**
-   * The keyword schemas this session sees
-   *
-   * @type RegistryIndex
-   */
-  #keywordSchemas;
 
   /**
    * The registries this session sees, session registries first
@@ -90,24 +67,17 @@ export class SessionRegistries {
 
     this.#session = session;
     this.#documents = new Map();
-    this.#keywordSchemas = registryIndex(jsonSchema, keywordSchemasOf(jsonSchema));
 
     const registries = new Set([...sessionRegistries, ...addedRegistriesOf(jsonSchema)]);
     this.#registries = [...registries].map((registry) => registryIndex(jsonSchema, registry));
   }
 
   /**
-   * The schema document a URI finds in the registries, if any. Keyword
-   * schemas come first, so they can't be replaced by anything else.
+   * The schema document a URI finds in the registries, if any
    *
    * @type (uri: string) => Promise<JsonSchemaDocumentNode> | undefined
    */
   get(uri) {
-    const keywordSchema = this.#keywordSchema(uri);
-    if (keywordSchema) {
-      return this.#document(keywordSchema);
-    }
-
     const indexed = this.#registryEntry(uri);
     if (indexed) {
       return this.#document(indexed);
@@ -147,19 +117,6 @@ export class SessionRegistries {
     }
 
     return new RetrievalError(`Unable to load resource '${uri}'`, { cause: new AggregateError([error, ...reasons], reasons[0].message) });
-  }
-
-  /**
-   * The keyword schema this session sees for a URI
-   *
-   * @type (uri: string) => IndexedEntry | undefined
-   */
-  #keywordSchema(uri) {
-    try {
-      return this.#keywordSchemas.lookup(toAbsoluteIri(uri));
-    } catch (_error) {
-      return;
-    }
   }
 
   /**
@@ -238,8 +195,7 @@ export class SessionRegistries {
 const registryIndexes = new WeakMap();
 
 /**
- * A registry is indexed the first time it's used, so the keyword schemas
- * aren't identified until a session needs them.
+ * A registry is indexed the first time a session uses it.
  *
  * @type (jsonSchema: JsonSchema, registry: SchemaRegistry) => RegistryIndex
  */

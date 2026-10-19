@@ -2,6 +2,7 @@ import { unified } from "unified";
 import { rejsonParse, rejsonStringify } from "@hyperjump/browser/json";
 import { JsonSchema } from "../json-schema.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
+import { addV1 } from "../dialects/v1/index.js";
 import { addDraft04 } from "../dialects/draft-04/index.js";
 import { addDraft06 } from "../dialects/draft-06/index.js";
 import { addDraft07 } from "../dialects/draft-07/index.js";
@@ -15,6 +16,7 @@ import { addDraft202012 } from "../dialects/draft-2020-12/index.js";
  */
 
 const jsonSchema = new JsonSchema();
+addV1(jsonSchema);
 addDraft04(jsonSchema);
 addDraft06(jsonSchema);
 addDraft07(jsonSchema);

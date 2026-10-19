@@ -19,12 +19,13 @@ export const draft202012Dialect: Dialect;
 
 /**
  * Add JSON Schema 2020-12: its `$dynamicRef`, its vocabularies (with
- * {@link addVocabulary}), its dialect, and a registry with its meta-schemas.
- * Meta-schemas that extend 2020-12 with `$vocabulary` define their own
- * dialects. Use {@link addVocabulary} to add vocabularies they can use.
+ * {@link addVocabulary}), and its dialect. Meta-schemas that extend 2020-12
+ * with `$vocabulary` define their own dialects. Use {@link addVocabulary} to
+ * add vocabularies they can use.
  *
- * Every other keyword is shared with v1, which every {@link JsonSchema}
- * has.
+ * Every other keyword and format it uses is shared with the other presets.
+ * Each preset adds the ones it uses that haven't been added, so presets don't
+ * depend on each other, and a keyword or format you replaced stays replaced.
  *
  * @throws Error if it's already been added
  */

@@ -8,7 +8,7 @@ import { VFile } from "vfile";
 import { rejsonParse } from "@hyperjump/browser/json";
 import { JsonSchema } from "../json-schema.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
-import { v1DialectUri } from "../dialects/v1/index.js";
+import { addV1, v1DialectUri } from "../dialects/v1/index.js";
 import { addDraft07, draft07DialectUri } from "../dialects/draft-07/index.js";
 import { addDraft201909, draft201909DialectUri } from "../dialects/draft-2019-09/index.js";
 import { addDraft202012, draft202012DialectUri } from "../dialects/draft-2020-12/index.js";
@@ -44,6 +44,7 @@ describe("keyword checks", () => {
 
   beforeEach(() => {
     jsonSchema = new JsonSchema();
+    addV1(jsonSchema);
   });
 
   test("valid keyword values", async () => {
@@ -205,7 +206,9 @@ describe("a schema with an invalid keyword value", () => {
     const path = join(directory, "invalid.schema.json");
     await writeFile(path, `{ "$schema": "${v1DialectUri}", "minLength": -1 }`);
 
-    await expect(new JsonSchema().compile(pathToFileURL(path).toString())).rejects.toSatisfy((/** @type Error */ error) => {
+    const jsonSchema = new JsonSchema();
+    addV1(jsonSchema);
+    await expect(jsonSchema.compile(pathToFileURL(path).toString())).rejects.toSatisfy((/** @type Error */ error) => {
       return /** @type VFileMessage */ (error.cause).ruleId === "https://json-schema.org/keyword/minLength";
     });
   });

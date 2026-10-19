@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { describe, test, beforeAll, afterAll, expect } from "vitest";
 import { JsonSchema } from "../json-schema.js";
-import { v1DialectUri } from "../dialects/v1/index.js";
+import { addV1, v1DialectUri } from "../dialects/v1/index.js";
 import { addFullFormats } from "../formats/full.js";
 
 /**
@@ -25,7 +25,11 @@ describe("format", () => {
   };
 
   /** @type (config?: JsonSchemaConfig) => JsonSchema */
-  const v1 = (config) => new JsonSchema(config);
+  const v1 = (config) => {
+    const jsonSchema = new JsonSchema(config);
+    addV1(jsonSchema);
+    return jsonSchema;
+  };
 
   beforeAll(async () => {
     directory = await mkdtemp(join(tmpdir(), "json-schema-next-"));

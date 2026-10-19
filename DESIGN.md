@@ -47,7 +47,7 @@ text ─ rejsonParse ─▶ JSON AST ─ jsonSchemaResolve ─▶ Schema AST ─
 | `src/evaluate/optimizations/` | Optimization passes on the IR, one per file. `index.js` lists them in the order they run |
 | `src/output/` | Output formats and validation errors |
 | `src/registry/` | `SchemaRegistry`, indexing registries, and how a session finds schemas in them |
-| `src/dialects/` | The presets: `v1`, `draft-04` … `draft-2020-12`. Each has the dialect and its tests, including the test suite runners |
+| `src/dialects/` | The presets: `v1`, `draft-04` … `draft-2020-12`. Each has the dialect and its tests, including the test suite runners. `add-preset.js` adds a preset's dialect and the definitions it uses |
 | `src/keywords/` | Keyword definitions, and `checks.js`, the checks they share for their values |
 | `src/formats/` | Format definitions and the lite and full presets |
 | `src/cli/` | The `jsonschema` CLI, which lints schemas |
@@ -160,8 +160,8 @@ were considered. See "Open questions".)
   than a dialect option for it.
 - The lite formats (`src/formats/lite.js`) are every format JSON Schema
   defines except `hostname`, `idn-hostname`, and `idn-email`, which need large
-  tables of Unicode data. Every `JsonSchema` has them, and v1 validates
-  formats by default. `src/formats/full.js` adds the rest. The validators come
+  tables of Unicode data. Each preset adds the ones its dialect uses, and v1
+  validates formats by default. `src/formats/full.js` adds the rest. The validators come
   from `@hyperjump/json-schema-formats`.
 - Keyword names starting with `x-` are reserved for schema authors in every
   dialect. They're guaranteed to never collide with a keyword, so they must
@@ -356,11 +356,10 @@ a session finds schemas in the registries it sees is in
 - Registries are attached two ways: `addRegistry`/`removeRegistry` on
   `JsonSchema`, which every new session sees, and session registries
   (`session({ registries })`, `compile(uri, { registries })`). There's no
-  `registries` config, because presets add registries after the
-  `JsonSchema` is created, so `addRegistry` is needed anyway.
-- Lookup order is: embedded resources, the internal registry, session
-  registries, instance registries, then browser (the session's cache, the
-  HTTP cache, a URI scheme plugin). Two entries found by the same URI are an
+  `registries` config, because `addRegistry` covers it.
+- Lookup order is: embedded resources, session registries, instance
+  registries, then browser (the session's cache, the HTTP cache, a URI
+  scheme plugin). Two entries found by the same URI are an
   error when the URI is looked up, whether they're in one registry or
   different ones a session sees. A registry can't check that itself,
   because identity depends on the dialect, and it means a language server
@@ -430,11 +429,8 @@ and a registry that's one edit away from another is cheap to index.
   when it was made. A later `addKeyword` or `extendDialect` doesn't change
   it, as with any schema that's already been resolved.
 
-### The internal registry
+### Meta-schemas
 
-- It held keyword schemas, which keywords no longer have (see "Schema
-  validation"), so it's always empty. It's still checked right after
-  embedded resources until it's removed (see "Plan").
 - The presets don't include the official meta-schemas. They aren't needed
   to identify, resolve, or validate schemas, because each preset adds its
   dialect and schemas are validated keyword by keyword. Compiling a
@@ -746,8 +742,24 @@ objects the caller reads results from afterwards.
 
 ## Presets
 
-Every keyword a preset doesn't add is shared with v1. Any presets can be
-added to one `JsonSchema`.
+A `JsonSchema` starts with no dialects, only `$schema` and the unknown
+keyword, which every dialect has. Presets are independent, and any of them
+can be added to one `JsonSchema`.
+
+- A preset adds its dialect, then each keyword and lite format its dialect
+  uses that hasn't been added yet (`addPreset` in
+  `src/dialects/add-preset.js`). So a keyword someone replaced stays
+  replaced, whatever order presets are added in, and adding a preset twice
+  throws before it changes anything.
+- Each preset imports and lists every keyword definition its dialect uses,
+  even though most are the same in every preset. A preset is read on its
+  own, and a shared list would hide what each one uses. `addPreset` throws
+  if the dialect names a keyword that isn't in the list.
+- v1 used to be in every `JsonSchema`, because keyword schemas were written
+  in v1. Now it's a preset like the others (`addV1`).
+- Formats that need Unicode data aren't added by any preset. A dialect can
+  still name them, and they're only supported once the full formats are
+  added.
 
 - **2020-12** (`src/dialects/draft-2020-12`, `addDraft202012`) adds 2020-12's
   `$dynamicRef`, its vocabularies with `addVocabulary`, and its dialect.
@@ -869,16 +881,13 @@ What this relies on from browser's `v2` branch:
 
 ## Plan
 
-1. Remove the internal registry, which is empty now, and make v1 a preset
-   like the others. Keyword schemas, which were written in v1, were the
-   only reason every `JsonSchema` has it.
-2. Optimization passes on the IR (see "Optimizations"). Candidates: fold
+1. Optimization passes on the IR (see "Optimizations"). Candidates: fold
    constants (`not: true`, an `enum` with one value), inline `$ref` targets
    that are only used once, evaluate cheap keywords first, and share
    identical subschemas.
-3. Decide whether keywords can provide a separate evaluator for plain
+2. Decide whether keywords can provide a separate evaluator for plain
    values (see "Compile and evaluate").
-4. Later: annotations, bundling, OpenAPI, a unified plugin for validating
+3. Later: annotations, bundling, OpenAPI, a unified plugin for validating
    JSON files (and validating instances from the CLI), and migrating
    dependent projects.
 

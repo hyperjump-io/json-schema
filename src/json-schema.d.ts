@@ -73,6 +73,9 @@ export class JsonSchema extends Hyperjump<JsonSchemaNode> {
   /** Add or replace a format definition */
   addFormat(format: Format): void;
 
+  /** Whether a format definition has been added */
+  hasFormat(uri: string): boolean;
+
   /**
    * Get a format definition.
    *

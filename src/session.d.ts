@@ -24,9 +24,9 @@ export class JsonSchemaSession extends Session<JsonSchemaNode> {
 
   /**
    * Documents are found in this order: an embedded resource, if the
-   * reference is from the document that contains it (`referencedFrom`); an
-   * keyword's schema; a schema in a session registry, then in one of the
-   * {@link JsonSchema}'s registries; then it's retrieved.
+   * reference is from the document that contains it (`referencedFrom`); a
+   * schema in a session registry, then in one of the {@link JsonSchema}'s
+   * registries; then it's retrieved.
    *
    * @throws RetrievalError from `@hyperjump/browser` if more than one schema
    * in the registries is found by the URI, or the schema found by it can't be

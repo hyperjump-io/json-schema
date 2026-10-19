@@ -1,7 +1,7 @@
 import { readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describeValidationTestSuite, testSuiteJsonSchema, validationTestsPath } from "../../../test/test-suite.js";
-import { v1DialectUri } from "./index.js";
+import { addV1, v1DialectUri } from "./index.js";
 
 const proposalsPath = join(validationTestsPath, "proposals");
 
@@ -24,6 +24,7 @@ testDirectories["extension-tests/"] = join(import.meta.dirname, "extension-tests
 const supportedTags = new Set(["format-assertion"]);
 
 const jsonSchema = testSuiteJsonSchema();
+addV1(jsonSchema);
 
 describeValidationTestSuite({
   description: "JSON-Schema-Test-Suite v1",

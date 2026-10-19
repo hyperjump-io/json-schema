@@ -2,11 +2,9 @@ import { Hyperjump } from "@hyperjump/browser";
 import { toAbsoluteIri } from "@hyperjump/uri";
 import { JsonSchemaMediaTypePlugin } from "./schema/media-type-plugin.js";
 import { JsonSchemaSession } from "./session.js";
-import { SchemaRegistry } from "./registry/schema-registry.js";
-import { addedRegistriesOf, setKeywordSchemas } from "./registry/session-registries.js";
+import { addedRegistriesOf } from "./registry/session-registries.js";
 import schemaKeyword from "./keywords/schema.js";
 import unknownKeyword, { keywordDefinitionUri } from "./keywords/unknown.js";
-import { addV1 } from "./dialects/v1/dialect.js";
 import { Validator } from "./evaluate/validator.js";
 import { basicOutputFormat } from "./output/basic.js";
 import { detailedOutputFormat } from "./output/detailed.js";
@@ -55,15 +53,9 @@ export class JsonSchema extends Hyperjump {
     this.#dialects = {};
     this.#outputFormats = {};
 
-    // Keyword schemas
-    setKeywordSchemas(this, new SchemaRegistry());
-
     // Every dialect has these
     this.addKeyword(schemaKeyword);
     this.addKeyword(unknownKeyword);
-
-    // Value schemas are written in v1
-    addV1(this);
 
     this.addMediaTypePlugin(new JsonSchemaMediaTypePlugin());
 
@@ -121,6 +113,11 @@ export class JsonSchema extends Hyperjump {
   /** @type API.JsonSchema["addFormat"] */
   addFormat(format) {
     this.#formats[format.uri] = format;
+  }
+
+  /** @type API.JsonSchema["hasFormat"] */
+  hasFormat(uri) {
+    return uri in this.#formats;
   }
 
   /** @type API.JsonSchema["getFormat"] */
