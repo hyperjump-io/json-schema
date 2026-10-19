@@ -8,7 +8,8 @@ import schemaKeyword from "./keywords/schema.js";
 import unknownKeyword, { keywordDefinitionUri } from "./keywords/unknown.js";
 import { addV1 } from "./dialects/v1/dialect.js";
 import { Validator } from "./evaluate/validator.js";
-import { basicOutputFormat, detailedOutputFormat } from "./output/output-formats.js";
+import { basicOutputFormat } from "./output/basic.js";
+import { detailedOutputFormat } from "./output/detailed.js";
 
 export { ValidationError, DetailedValidationError, InvalidSchemaError } from "./output/validation-error.js";
 
