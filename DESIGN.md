@@ -35,6 +35,30 @@ text ─ rejsonParse ─▶ JSON AST ─ jsonSchemaResolve ─▶ Schema AST ─
   `jsonSchemaResolve`. Any message from either is fatal there.
 - Plain JSON files are never treated as schemas.
 
+### Code map
+
+| Where | What |
+| --- | --- |
+| `src/json-schema.js` | `JsonSchema`, and the validation API types (`Validator`, …) |
+| `src/session.js` | `JsonSchemaSession` |
+| `src/keyword.d.ts`, `src/dialect.d.ts`, `src/format.d.ts` | What a keyword, dialect, and format are |
+| `src/schema/` | Text to schema AST: the media type plugin, `jsonSchemaResolve`, schema validation, and the schema AST types |
+| `src/evaluate/` | Schema AST to results: `compile` (the IR), `specialize`, `Validator`, instance operations, and evaluation plugin types |
+| `src/output/` | Output formats and validation errors |
+| `src/registry/` | `SchemaRegistry`, indexing registries, and how a session finds schemas in them |
+| `src/dialects/` | The presets: `v1`, `draft-04` … `draft-2020-12`. Each has the dialect and its tests, including the test suite runners |
+| `src/keywords/` | Keyword definitions, each next to its keyword schema (`*.schema.json`) |
+| `src/formats/` | Format definitions and the lite and full presets |
+| `test/test-suite.js` | Runs the JSON Schema Test Suite and the annotation test suite |
+
+- A `.d.ts` next to a `.js` file declares that module's API. One without a
+  `.js` file declares a concept (`keyword.d.ts`, `output-format.d.ts`).
+- A keyword's or format's path mirrors its URI.
+  `https://json-schema.org/keyword/draft-04/items` is
+  `src/keywords/draft-04/items.js`. A variant is named after the draft that
+  introduced it, so draft-07 uses `draft-04/items`.
+- Tests are next to the code they test.
+
 ## Schema AST (`src/schema/schema-ast.d.ts`)
 
 A schema AST is a JSON AST with annotations. Nothing is moved, added, or
@@ -295,7 +319,9 @@ class SchemaRegistry {
 
 Implemented in `src/registry/schema-registry.js`, with each `JsonSchema`'s
 index of a registry in `src/registry/registry-index.js`. A registry's
-entries are in `src/registry/registry-entries.js`, which isn't exported.
+entries are in `src/registry/registry-entries.js`, which isn't exported. How
+a session finds schemas in the registries it sees is in
+`src/registry/session-registries.js`.
 
 - A schema is identified the way JSON Schema identifies it: by its `$id`
   (or `id` in draft-04), resolved against `retrievalUri`, or by
