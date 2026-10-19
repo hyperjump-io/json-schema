@@ -133,16 +133,19 @@ export class Validator {
    * @returns {ValidationResult<F>}
    */
   #evaluateAst(node, annotating, options, syntaxErrors) {
-    return this.#evaluate((annotating, instrumented) => {
-      const key = `${annotating}-${instrumented}`;
-      this.#astSpecializations[key] ??= specialize(this.#jsonSchema, this.#compiledFor(annotating, instrumented), {
-        instance: astInstance,
-        isAst: true,
-        annotating: annotating,
-        instrumented: instrumented
-      });
-      return this.#astSpecializations[key];
-    }, node, annotating, options, syntaxErrors);
+    return this.#evaluate((annotating, instrumented) => this.#astSpecialization(annotating, instrumented), node, annotating, options, syntaxErrors);
+  }
+
+  /** @type (annotating: boolean, instrumented: boolean) => Specialization<InstanceNode> */
+  #astSpecialization(annotating, instrumented) {
+    const key = `${annotating}-${instrumented}`;
+    this.#astSpecializations[key] ??= specialize(this.#jsonSchema, this.#compiledFor(annotating, instrumented), {
+      instance: astInstance,
+      isAst: true,
+      annotating: annotating,
+      instrumented: instrumented
+    });
+    return this.#astSpecializations[key];
   }
 
   /** @type (annotating: boolean, instrumented: boolean) => CompiledSchemas */
