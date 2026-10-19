@@ -4,8 +4,8 @@ A from-scratch rewrite of [`@hyperjump/json-schema`](../json-schema) built on
 [`@hyperjump/browser`](../browser) v2 and [unified](https://unifiedjs.com/).
 Most of the same concepts are included, but often reimagined.
 
-This document records the decisions made so far, what's done, and what's
-next. The `.d.ts` files in `src/` are the source of truth for the API. They're
+This document records the decisions made so far and what's next.
+Measurements are in [BENCHMARKS.md](BENCHMARKS.md). The `.d.ts` files in `src/` are the source of truth for the API. They're
 written by hand and have JSDoc explaining the details.
 
 ## Goals
@@ -197,15 +197,13 @@ an internal meta-schema.
 - `addKeyword` adds the keyword's schema to the `JsonSchema`'s internal
   registry (see "The internal registry"), so it's found by the keyword's
   URI like any other schema. The built-in keywords' schemas are
-  `.schema.json` files next to the keywords, imported as JSON. Being files
-  lets tooling like a language server or a CI check validate them, since
-  they aren't validated themselves. Every keyword has one, even if it
-  allows any value.
+  `.schema.json` files next to the keywords, imported as JSON. Keyword
+  schemas aren't validated themselves, because validating one could need
+  itself, so being files lets tooling like a language server or a CI check
+  validate them. Every keyword has one, even if it allows any value.
 - The built-in keyword schemas declare their dialect with `$schema`.
   They're written in v1, so every `JsonSchema` has the v1 dialect,
   keywords, and lite formats, like it has `$schema` and the unknown keyword.
-  Keyword schemas aren't validated themselves, because validating one could
-  need itself.
 - Dialect schemas (meta-schemas) are for dev-time tooling, not validators.
   There's no generated "what this implementation supports" meta-schema.
 - A schema that wasn't retrieved from a `file:` URI can't be identified by
@@ -220,12 +218,10 @@ an internal meta-schema.
 
 ## Sessions and registries
 
-Implemented. `JsonSchema` used to be a `Hyperjump` with one
-document cache for its whole life. That's what made registries hard: a
-registry for one compilation would be visible to compilations running at the
-same time, and nothing could be removed without leaving resolved documents
-behind that depended on it. The fix is to separate state by how long it
-lives.
+With one document cache for a `JsonSchema`'s whole life, a registry for
+one compilation would be visible to compilations running at the same time,
+and nothing could be removed without leaving resolved documents behind that
+depended on it. So state is separated by how long it lives.
 
 ### Two levels
 
@@ -490,7 +486,9 @@ There are two phases:
    of instance representation (plain JS values for `validate`, AST nodes for
    everything else), whether annotations are collected, and whether there
    are plugins (see "Plugins"). Each combination is built the first time
-   it's needed and cached on the `Validator`. No `eval`.
+   it's needed and cached on the `Validator`. No `eval`. Bytecode run by
+   one interpreter loop was tried instead of closures and wasn't faster
+   (see [BENCHMARKS.md](BENCHMARKS.md)).
 
 The IR is where optimization passes go (see "Plan"). It's JSON, so a compiled
 schema can be serialized (`Validator.serialize`,
@@ -552,15 +550,13 @@ Keywords:
 `fromJson` and then evaluate the AST. Validating while parsing is a possible
 optimization later. The two-phase design doesn't rule it out.
 
-Sharing one keyword implementation between representations might make call
-sites polymorphic, because V8 may share type feedback between closures
-created from the same code. The benchmark (see "Benchmark") shows it does:
-`validate` is about 15% slower in a process that has also evaluated ASTs.
-Closures written for plain values were 1.25–1.8 times faster than the
-specialization for plain values (see "Bytecode and closures"). Speeding up
-the shared keywords brought that down to 1.06–1.23 times on real schemas.
-What's left is mostly iterating an object's properties and the
-polymorphism. Keywords could provide a separate evaluator for plain values
+Sharing one keyword implementation between representations makes call
+sites polymorphic, because V8 shares type feedback between closures created
+from the same code. `validate` is about 15% slower in a process that has
+also evaluated ASTs, and closures written for plain values are 1.06–1.23
+times faster than the specialization on real schemas (see
+[BENCHMARKS.md](BENCHMARKS.md)). What's left is mostly iterating an
+object's properties and the polymorphism. Keywords could provide a separate evaluator for plain values
 for those. That would be an addition to the interface, not a redesign. It's
 undecided until after the optimization passes.
 
@@ -666,142 +662,122 @@ objects the caller reads results from afterwards.
   keyword. Explaining errors is left to other output formats, such as
   `json-schema-errors`, so messages aren't part of the keyword interface.
 
-## Benchmark
+## Built-in keywords
 
-The benchmark is ported from `@hyperjump/json-schema`'s and isn't committed.
-It compares implementations over the v1 test cases of the
-JSON-Schema-Test-Suite, and over the draft-04, draft-06, draft-07, 2019-09,
-and 2020-12 test cases, which json-schema-next evaluates with those presets.
-ata-validator doesn't support draft-04, so it isn't in that comparison. Test
-cases tagged for `format` are left out. A test case that any implementation
-gets wrong is left out for every implementation. In those drafts,
-json-schema-next only gets the two `file:` identifier test cases wrong, which
-it rejects on purpose. In draft-04 through draft-07, `@hyperjump/json-schema`
-also gets two legacy identifier test cases wrong. json-schema-next and
-`@hyperjump/json-schema` both validate draft-04 through draft-07 formats by
-default. That doesn't matter, because the untagged test cases that are run
-only use `format` on values that aren't strings, which `format` skips. The
-unknown format test case is the exception, and it's left out because
-`@exodus/schemasafe` can't compile it.
+- The v1 dialect (`src/v1`) includes the `propertyDependencies` proposal.
+  `conditional`, `itemPattern`, and `requireAllExcept` are added with
+  `extendDialect`, as a reminder that they aren't full proposals yet.
+- Equality (`const`, `enum`, `uniqueItems`) compares through `InstanceOps`,
+  so an AST isn't copied. A value that couldn't be parsed counts as equal
+  for `const` and `enum` and as different for `uniqueItems`, so it never
+  causes an error of its own.
+- Keywords that depend on a sibling (`additionalProperties`, `items`,
+  `contains`, and `if`) read it from the schema AST when they're compiled.
+  `then`, `else`, `minContains`, and `maxContains` have no effect on their
+  own.
+- Compiled maps of schemas are `[name, handle]` pairs because a name like
+  `__proto__` can't be a property of a plain object.
+- The meta-data and content keywords are annotations. `contentEncoding`,
+  `contentMediaType`, and `contentSchema` only annotate strings, and
+  `contentSchema` only annotates if there's a `contentMediaType`. Content
+  isn't decoded or validated.
+- In v1, `$dynamicRef` is the name of a dynamic anchor, not a URI. It uses
+  the outermost schema in the dynamic scope with that anchor, with no
+  lexical fallback. If none is in scope, evaluation throws, because that's
+  a problem with the schema, not the instance.
 
-Results (mean time per run of the suite, FLAG unless it says errors):
+## Presets
 
-| | json-schema-next | `@hyperjump/json-schema` |
-| --- | --- | --- |
-| v1 | 0.27–0.28 ms | 0.74–0.79 ms |
-| v1, after evaluating ASTs | 0.31–0.33 ms | 0.75 ms |
-| v1, all errors | 1.58–1.64 ms | 1.36–1.39 ms |
-| draft-04 | 0.08 ms | 0.21 ms |
-| draft-04, all errors | 0.56–0.57 ms | 0.43–0.44 ms |
-| draft-06 | 0.11 ms | 0.26 ms |
-| draft-06, all errors | 0.74–0.76 ms | 0.56–0.57 ms |
-| draft-07 | 0.12 ms | 0.29 ms |
-| draft-07, all errors | 0.77–0.78 ms | 0.62–0.63 ms |
-| 2019-09 | 0.29 ms | 0.76–0.79 ms |
-| 2019-09, all errors | 1.64–1.80 ms | 1.43–1.47 ms |
-| 2020-12 | 0.30 ms | 0.84–0.85 ms |
-| 2020-12, all errors | 1.78–1.83 ms | 1.53–1.63 ms |
+Every keyword a preset doesn't add is shared with v1, including the keyword
+schemas, which are written in v1. Any presets can be added to one
+`JsonSchema`.
 
-- FLAG is about 2.7–2.9 times faster than `@hyperjump/json-schema` in v1,
-  about 2.5 times faster in draft-04, about 2.4 times faster in draft-06 and
-  draft-07, about 2.7 times faster in 2019-09, and about 2.85 times faster in
-  2020-12.
-- `validate` is about 15% slower in a process that has also evaluated
-  ASTs, because keyword code is shared (see "Compile and evaluate").
-- Collecting errors (BASIC) is about 1.16–1.18 times slower than
-  `@hyperjump/json-schema` in v1, about 1.29–1.31 times slower in draft-04,
-  about 1.30–1.36 times slower in draft-06, about 1.24 times slower in
-  draft-07, about 1.15–1.22 times slower in 2019-09, and about 1.12–1.16 times
-  slower in 2020-12. It was about 5 times slower until errors stopped
-  capturing stack traces (see "Validation API").
-- Measurements drift by several percent between sessions. The v1 errors
-  row was first measured at 1.52–1.54 ms (about 1.13 times slower). Run
-  side by side later, the code from then and the current code both took
-  1.60–1.66 ms, so it wasn't a regression. The "after evaluating ASTs" row
-  is from the first session.
-- `@exodus/schemasafe`, which generates code, is the fastest at collecting
-  errors. It's about 14 times faster than json-schema-next in draft-04, about
-  10 times faster in draft-06 and draft-07, about 6.8–7.3 times faster in
-  2019-09, and about 4.6–4.7 times faster in 2020-12.
-- With the `format` test cases, format validators take most of the time,
-  and FLAG is only about 1.4 times faster.
+- **2020-12** (`src/draft-2020-12`, `addDraft202012`) adds 2020-12's
+  `$dynamicRef`, its vocabularies with `addVocabulary`, its dialect, and a
+  registry with the official meta-schemas. `$dynamicRef` resolves like
+  `$ref`, and if the schema it resolves to has a dynamic anchor named by the
+  fragment, the outermost schema in the dynamic scope with that anchor
+  applies instead.
+- **2019-09** (`src/draft-2019-09`, `addDraft201909`) is built the same way.
+  It adds `$recursiveAnchor`, `$recursiveRef`, and its own `$anchor`, whose
+  names can contain `:` but can't start with `_`. It also adds draft-04's
+  `items`, which is a schema or an array of schemas, and `additionalItems`,
+  which only has an effect after an array of schemas. They reuse the
+  `items` and `prefixItems` evaluators. `$recursiveRef` resolves like
+  `$ref`, and if the schema it resolves to has `$recursiveAnchor: true`
+  (the dynamic anchor `""`), the outermost schema in the dynamic scope with
+  it applies instead.
+- **draft-04, draft-06, and draft-07** (`src/draft-04`, `src/draft-06`,
+  `src/draft-07`, `addDraft04`, `addDraft06`, `addDraft07`) don't have
+  `$vocabulary`, so each adds a dialect and a registry with its one
+  meta-schema. Their dialect URIs don't have the empty fragment their
+  `$schema` usually has, because `$schema` is resolved to an absolute URI.
+  Unknown keywords are ignored. `$ref` is draft-04's, which makes the schema
+  a reference, and `id`/`$id` is draft-04's, which can also be an anchor.
+  All three add draft-04's `items`, `additionalItems`, and `dependencies`,
+  which is `dependentRequired` and `dependentSchemas` in one keyword.
+  draft-04 adds `maximum` and `minimum`, which read the sibling boolean
+  `exclusiveMaximum` and `exclusiveMinimum`. `format` validates by default,
+  as most implementations of these drafts did. Their `format` is
+  draft-04's, which makes a format the dialect doesn't have only an
+  annotation, as the drafts say. Each dialect only has the formats its
+  draft defines, so the draft-04 and draft-06 meta-schemas' `regex` is
+  ignored. draft-04 and draft-06 use draft-04's `hostname` (RFC 1123),
+  which doesn't need Unicode data.
 
-### Bytecode and closures
+## Testing
 
-A prototype in `scratch/bench` (`bytecode.ts`) lowers the IR once and then
-turns it into either bytecode (one `Int32Array` run by an interpreter loop)
-or closures with the same logic. Both only evaluate plain values in FLAG.
-The lowered keywords are `type`, `const`, `enum`, `required`, the numeric,
-length, and size bounds, `pattern`, `uniqueItems`, `properties`,
-`patternProperties`, `additionalProperties`, `prefixItems`, `items`,
-draft-04's `items` and `additionalItems`, `$ref`, `allOf`, `anyOf`, `oneOf`,
-and `not`. Any other keyword is a call to its own evaluator. Schemas with a
-keyword that reads evaluation state (`unevaluated*`, `$dynamicRef`) aren't
-supported. It's compared with `Validator.validate` and with the
-specialization for plain values called directly.
+- The JSON-Schema-Test-Suite's `unify` branch (which will replace `main`)
+  runs for every release: v1 (the suite's `9999`), 2020-12, 2019-09, and
+  draft-04 through draft-07, each in its directory's
+  `json-schema-test-suite.test.js`. v1 also runs the suite's proposal
+  tests.
+- One `JsonSchema` runs every test case of a release. Each test case's
+  schema and `externalSchemas` are in a session registry, which keeps test
+  cases from seeing each other's schemas, and `http(s):` is removed so
+  nothing is retrieved. Each test is checked with `validate`,
+  `validateJson`, BASIC, and `annotate`. Test cases tagged
+  `format-assertion` run with `validateFormats`.
+- The suite's annotation tests run in each directory's
+  `annotation-test-suite.test.js` with `annotate` and `annotateJson`. Only
+  annotation values are compared, in any order, because annotations don't
+  record the schema they came from.
+- The runners share `describeValidationTestSuite` and
+  `describeAnnotationTestSuite` in `src/test-suite.js`. Each one gives the
+  release, the dialect, the `JsonSchema` to use, and what to skip. The
+  annotation runner gets the dialect itself, because the suite names
+  keywords and annotations are identified by keyword URI.
+- Tests for `conditional`, `itemPattern`, and `requireAllExcept` are in
+  `src/v1/extension-tests`, ported from v1 except for `requireAllExcept`,
+  which v1 didn't have tests for.
 
-`bytecode.bench.ts` and `bytecode-polymorphic.bench.ts` use the test suite.
-`corpus.bench.ts` uses real schemas: SchemaStore's `package.json` schema
-with 3000 `package.json` files and its `tsconfig.json` schema with 196
-`tsconfig.json` files (from `~/Projects`), the OpenAPI 3.0 schema with its
-examples, and the draft-07 and draft-04 meta-schemas with every schema in
-the test suite. `build-corpus.mjs` builds the corpora. Every variant agrees
-with json-schema-next on every instance.
+## Browser v2
 
-Real schemas (mean time per run of the corpus, FLAG):
+What this relies on from browser's `v2` branch:
 
-| | `validate` | specialization | closures | bytecode | closures, no-ops dropped |
-| --- | --- | --- | --- | --- | --- |
-| `package.json` | 17.9 ms | 17.9 ms | 13.4 ms | 13.9 ms | 12.7 ms |
-| `tsconfig.json` | 0.78 ms | 0.74 ms | 0.41 ms | 0.45 ms | 0.36 ms |
-| OpenAPI 3.0 | 0.159 ms | 0.157 ms | 0.106 ms | 0.101 ms | 0.104 ms |
-| draft-07 meta-schema | 0.137 ms | 0.126 ms | 0.100 ms | 0.103 ms | 0.088 ms |
-| draft-04 meta-schema | 0.100 ms | 0.095 ms | 0.065 ms | 0.069 ms | 0.057 ms |
-
-- Bytecode and closures are within about 10% of each other, and neither
-  wins consistently. Closures were faster on four of the five corpora and
-  on the test suite when every keyword was lowered. Bytecode was slightly
-  faster when some keywords were calls, probably because it finds the
-  instance's type once per schema, which closures could do too. Specialize
-  keeps producing closures.
-- Closures written for plain values were 1.25–1.8 times faster than the
-  specialization, and about 1.65 times faster on the test suite (1.86
-  times after evaluating ASTs).
-- `Validator.validate` adds 15–20% on the test suite, whose instances are
-  tiny, and 0–9% on real schemas.
-
-Profiling the specialization on the real schemas found where the gap was.
-`enum` compared every value with `instanceEqual`, `type` looked up a `Set`,
-and the fastest schema evaluator checked for an AST on every call. `enum`
-now looks up primitives in a `Set` and only compares arrays and objects,
-`type` compares a single type directly, and plain values have their own
-fastest schema evaluator, which is the keyword itself for a schema with
-one keyword. The specialization compared with the closures:
-
-| | Before | After |
-| --- | --- | --- |
-| `package.json` | 1.24× | 1.16× |
-| `tsconfig.json` | 1.84× | 0.95× |
-| OpenAPI 3.0 | 1.56× | 1.23× |
-| draft-07 meta-schema | 1.29× | 1.06× |
-| draft-04 meta-schema | 1.46× | 1.15× |
-| v1 suite, every keyword lowered | 1.65× | 1.18× |
-| v1 suite, after evaluating ASTs | 1.86× | 1.43× |
-
-- Iterating an object's properties (`properties`, `additionalProperties`,
-  `patternProperties`) is most of what's left in `package.json` and
-  OpenAPI 3.0. For plain values, `properties` could look up its own names
-  instead, but that's a linear search for each name in an AST, where it
-  also behaves differently for duplicate names. Only a separate evaluator
-  for plain values can do both.
-- A generator for `jsInstance.entries` was 10–18% faster than
-  `Object.entries` in a standalone script but 35–45% slower on
-  `package.json` in the benchmark, so it isn't used.
-- Results drift between sessions by more than some of these differences,
-  so changes are compared by running the old and new code back to back.
-- Most calls in real schemas are to keywords that always pass in FLAG
-  (`description`, `default`, `title`, unknown keywords). Dropping them saves
-  5–15%. The prototype lists them by hand.
+- A type parameter for property node annotations, JSON AST utilities that
+  are generic over the node type, and a generic `DocumentNode<T>`.
+- Embedding and anchors aren't in browser, because only JSON Schema uses
+  them. Every document lookup, including following references, goes
+  through `getDocument`, which a subclass can override. `getDocument` also
+  gets the document a URI identifies, for what it has beyond its values,
+  like a resource's dynamic anchors. A media type plugin's
+  `fragmentPointer` defines what fragments identify, and each document
+  records the media type of the plugin that parsed it.
+- A file's media type uses the longest matching extension.
+- `content-type` v3, with the parsed type validated.
+- Methods are declared as methods, not function-valued properties, so a
+  subclass can override them.
+- Sessions, and an HTTP cache in the `http(s):` URI scheme plugin. A media
+  type plugin's `parse` gets the session.
+- `jsonValue` supports arrays and objects. `Session.value` doesn't, because
+  it would need to follow references.
+- Node locations are valid IRIs. Each pointer segment is percent-encoded
+  with `appendToLocation` (`@hyperjump/uri`'s `encodeIriFragment`), which
+  produces normalized IRIs, and `get` decodes a fragment before following
+  it as a JSON Pointer. The resolver and compiler build locations the same
+  way. Keyword and instance locations in output are JSON Pointers, so they
+  aren't encoded.
 
 ## Open questions
 
@@ -814,184 +790,19 @@ one keyword. The specialization compared with the closures:
   failing schemas, which leaves the language server without them. Explore
   alternative annotation behavior.
 
-## Status
-
-Done:
-
-- Project setup (`oxlint`, `vitest`, `tsc` with declaration files checked,
-  `typedoc`).
-- Validation API types.
-- Keyword compile and evaluate types, and the two-phase design.
-- Evaluation state for `unevaluated*` and `$dynamicRef`.
-- Evaluation plugin and output format types.
-- Schema AST, keyword, and dialect types.
-- `jsonSchemaResolve`, `JsonSchema` registries, and the schema media type
-  plugin, with tests.
-- Compile (the IR, serialization), specialize (fast, instrumented, and
-  annotating evaluators for plain values and ASTs, evaluation state, frames,
-  plugins), the `Validator`, BASIC and DETAILED, and the runtime error
-  classes, with tests that use keywords defined in the tests.
-- The unknown keyword is an annotation in dialects whose `unknownKeywords` is
-  `annotation`.
-- Keyword definitions with resolve hooks: `$schema`, unknown, `$id`,
-  `$anchor`, `$dynamicAnchor`, draft-04 `id`/`$ref`, 2019-09
-  `$recursiveAnchor`, and `$vocabulary` (with `addVocabulary`), which
-  defines dialects in the resolver, in sessions, and in registries.
-  Other keywords only need shapes and schemas, so they'll be added with the
-  compile side.
-- The v1 dialect (`src/v1`) is built into every `JsonSchema`. It used to be
-  added with `addV1`. The JSON-Schema-Test-Suite (its `unify`
-  branch, which will replace `main`) runs in
-  `src/v1/json-schema-test-suite.test.js`. v1 is the suite's `9999`. One
-  `JsonSchema` runs every test case. Each test case's schema and
-  `externalSchemas` are in a session registry, which keeps test cases from
-  seeing each other's schemas, and `http(s):` is removed so nothing is
-  retrieved. Each test is checked with
-  `validate`, `validateJson`, BASIC, and `annotate`. Files for keywords that
-  don't exist yet are skipped.
-- The v1 dialect includes the `propertyDependencies` proposal, and the
-  suite's proposal tests run too. `conditional`, `itemPattern`, and
-  `requireAllExcept` are added too, but with `extendDialect` as a reminder
-  that they aren't full proposals yet. Their tests are in
-  `src/v1/extension-tests`, ported from v1 except for `requireAllExcept`,
-  which v1 didn't have tests for.
-- The validation keywords (`type`, `const`, `enum`, the numeric, string,
-  array, and object assertions, `required`, `dependentRequired`, and
-  `requireAllExcept`) and `$comment`. Their test suite files pass, except
-  test cases that need applicators.
-  Equality (`const`, `enum`, `uniqueItems`) compares through
-  `InstanceOps`, so an AST isn't copied. A value that couldn't be parsed
-  counts as equal for `const` and `enum` and as different for
-  `uniqueItems`, so it never causes an error of its own.
-- The applicators. Keywords
-  that depend on a sibling (`additionalProperties`, `items`, `contains`, and
-  `if`) read it from the schema AST when they're compiled. `then`, `else`,
-  `minContains`, and `maxContains` have no effect on their own. Compiled
-  maps of schemas are `[name, handle]` pairs because a name like
-  `__proto__` can't be a property of a plain object.
-- The meta-data and content keywords are annotations. `contentEncoding`,
-  `contentMediaType`, and `contentSchema` only annotate strings, and
-  `contentSchema` only annotates if there's a `contentMediaType`. Content
-  isn't decoded or validated.
-- The suite's annotation tests run in `src/v1/annotation-test-suite.test.js`
-  with `annotate` and `annotateJson`. Only annotation values are compared,
-  in any order, because annotations don't record the schema they came from.
-- In v1, `$dynamicRef` is the name of a dynamic anchor, not a URI. It uses
-  the outermost schema in the dynamic scope with that anchor, with no
-  lexical fallback. If none is in scope, evaluation throws, because that's a
-  problem with the schema, not the instance.
-
-- The 2020-12 preset (`src/draft-2020-12`, `addDraft202012`). It adds
-  2020-12's `$dynamicRef`, its vocabularies with `addVocabulary`, its
-  dialect, and a registry with the official meta-schemas. Every other
-  keyword is shared with v1, including the keyword schemas, which are
-  written in v1. `$dynamicRef` resolves like `$ref`, and if the schema it
-  resolves to has a dynamic anchor named by the fragment, the outermost
-  schema in the dynamic scope with that anchor applies instead. The
-  suite's 2020-12 test cases run in
-  `src/draft-2020-12/json-schema-test-suite.test.js`. Test cases tagged
-  `format-assertion` run with `validateFormats`. The annotation suite runs
-  in `src/draft-2020-12/annotation-test-suite.test.js`.
-- The 2019-09 preset (`src/draft-2019-09`, `addDraft201909`), built the
-  same way. It adds `$recursiveAnchor`, `$recursiveRef`, and its own
-  `$anchor`, whose names can contain `:` but can't start with `_`. It also
-  adds draft-04's `items`, which is a schema or an array of schemas, and
-  `additionalItems`, which only has an effect after an array of schemas.
-  They reuse the `items` and `prefixItems` evaluators. `$recursiveRef`
-  resolves like `$ref`, and if the schema it resolves to has
-  `$recursiveAnchor: true` (the dynamic anchor `""`), the outermost schema
-  in the dynamic scope with it applies instead. Both presets can be added
-  to one `JsonSchema`. The suite's 2019-09 test cases run like 2020-12's,
-  and so do its annotation tests.
-- The draft-04, draft-06, and draft-07 presets (`src/draft-04`,
-  `src/draft-06`, `src/draft-07`, `addDraft04`, `addDraft06`,
-  `addDraft07`). They don't have `$vocabulary`, so each adds a dialect and
-  a registry with its one meta-schema. Their dialect URIs don't have the
-  empty fragment their `$schema` usually has, because `$schema` is
-  resolved to an absolute URI. Unknown keywords are ignored. `$ref` is
-  draft-04's, which makes the schema a reference, and `id`/`$id` is
-  draft-04's, which can also be an anchor. All three add draft-04's
-  `items`, `additionalItems`, and `dependencies`, which is
-  `dependentRequired` and `dependentSchemas` in one keyword. draft-04 adds
-  `maximum` and `minimum`, which read the sibling boolean
-  `exclusiveMaximum` and `exclusiveMinimum`. `format` validates by default,
-  as most implementations of these drafts did. Their `format` is
-  draft-04's, which makes a format the dialect doesn't have only an
-  annotation, as the drafts say. Each dialect only has the formats its draft
-  defines, so the draft-04 and draft-06 meta-schemas' `regex` is ignored. draft-04 and draft-06 use draft-04's
-  `hostname` (RFC 1123), which doesn't need Unicode data. Every other
-  keyword is shared with v1. Their suite and annotation tests run.
-- The suite runners share `describeValidationTestSuite` and
-  `describeAnnotationTestSuite` in `src/test-suite.js`. Each one gives the
-  release, the dialect, the `JsonSchema` to use, and what to skip. The
-  annotation runner gets the dialect itself, because the suite names
-  keywords and annotations are identified by keyword URI.
-
-Changes made to browser for this (on its `v2` branch):
-
-- A type parameter for property node annotations, and JSON AST utilities that
-  are generic over the node type.
-- A generic `DocumentNode<T>`.
-- Embedding and anchors aren't in browser, because only JSON Schema uses
-  them. Every document lookup, including following references, goes through
-  `getDocument`, which a subclass can override. A media type plugin's
-  `fragmentPointer` defines what fragments identify, and each document
-  records the media type of the plugin that parsed it.
-- A file's media type uses the longest matching extension.
-- `content-type` v3, with the parsed type validated.
-- Methods are declared as methods, not function-valued properties, so a
-  subclass can override them.
-- Sessions, and an HTTP cache in the `http(s):` URI scheme plugin. A media
-  type plugin's `parse` gets the session.
-- `getDocument` gets the document a URI identifies, for what it has beyond
-  its values. Compiling uses it for a resource's dynamic anchors.
-- `jsonValue` supports arrays and objects. `Session.value` still doesn't,
-  because it would need to follow references.
-- Node locations are valid IRIs. Each pointer segment is percent-encoded
-  with `appendToLocation` (`@hyperjump/uri`'s new `encodeIriFragment`),
-  which produces normalized IRIs, and `get` decodes a fragment before
-  following it as a JSON Pointer. The resolver and compiler build locations
-  the same way. Keyword and instance locations in output are JSON Pointers,
-  so they aren't encoded.
-
 ## Plan
 
-1. Implement the v1 keywords (shapes, keyword schemas, compile, and evaluate)
-   and a v1 preset. Run the JSON-Schema-Test-Suite. Benchmark whether sharing
-   keyword code between plain values and ASTs slows down `validate`. Done.
-2. Schema validation with keyword schemas. Done.
-3. Sessions and registries (see "Sessions and registries"). In browser:
-   sessions and the HTTP cache. Here: `JsonSchemaSession`, `SchemaRegistry`,
-   and the internal registry with the keyword schemas, which fixes them in
-   browsers. Done.
-4. Presets for 2020-12, 2019-09, and draft-04 through draft-07. Done.
-5. Benchmark bytecode against closures. Lower the IR for the keywords the
-   v1 suite uses most (`type`, `properties`, `required`, `items`, `$ref`,
-   `allOf`, `anyOf`, `const`, `enum`) to a flat instruction array run by one
-   interpreter loop, with an instruction that calls a closure for every
-   other keyword, because user keywords can run arbitrary code. Compare FLAG
-   with the closures over the test cases it supports, using the benchmark
-   in `scratch/bench`. Include a process that has also evaluated ASTs. The
-   result decides what specialize produces. Done. Bytecode isn't faster,
-   so specialize keeps producing closures (see "Bytecode and closures").
-6. Faster evaluation of plain values. Speed up the shared keywords where
-   profiling finds them slow (`enum`, `type`, and the fastest schema
-   evaluator are done) and reduce the overhead of each
-   `Validator.validate` call (done: without options, it calls the FLAG
-   specialization directly, which halved its overhead on the test suite
-   to about 10–15%). Whether keywords can provide a separate
-   evaluator for plain values is decided after step 7.
-7. Optimization passes on the IR. Keywords that always pass are left out
-   (done: `evaluate` returns `undefined` for them, see "Compile and
-   evaluate"), and so are subschemas that always pass (done:
-   `context.alwaysPasses`). Other candidates: fold constants
-   (`not: true`, an `enum` with one value), inline `$ref` targets that are
-   only used once, evaluate cheap keywords first, and share identical
-   subschemas. Errors must keep their exact locations, so a pass that
-   loses them only applies to FLAG. Passes either run before
+1. Optimization passes on the IR. Keywords and subschemas that always pass
+   are already left out (see "Compile and evaluate"). Other candidates:
+   fold constants (`not: true`, an `enum` with one value), inline `$ref`
+   targets that are only used once, evaluate cheap keywords first, and
+   share identical subschemas. Errors must keep their exact locations, so a
+   pass that loses them only applies to FLAG. Passes either run before
    `serialize`, so a restored `Validator` has them, or at specialize time,
    where they can depend on the specialization.
-8. Later: annotations, bundling, OpenAPI, a CLI, a unified plugin for
+2. Decide whether keywords can provide a separate evaluator for plain
+   values (see "Compile and evaluate").
+3. Later: annotations, bundling, OpenAPI, a CLI, a unified plugin for
    validating JSON files, and migrating dependent projects.
 
 ## Known limitations

@@ -2,7 +2,7 @@
 
 A rewrite of `@hyperjump/json-schema` on `@hyperjump/browser` v2 and unified.
 Read `DESIGN.md` first. It has the decisions made so far, open questions, and
-the plan.
+the plan. Measurements are in `BENCHMARKS.md`.
 
 ## Development
 
