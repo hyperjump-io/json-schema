@@ -6,10 +6,11 @@ A JSON Schema validator built on
 [`@hyperjump/json-schema`](https://github.com/hyperjump-io/json-schema).
 
 - Dialects: v1, draft-2020-12, draft-2019-09, draft-07, draft-06, draft-04
-- Validate plain JS values, or JSON text with positions in every error.
-  Syntax errors and validation errors are reported together.
-- Annotate an instance and get it back as an AST with annotations on its
-  nodes
+- Get a boolean, errors, or annotations, for a plain JS value, JSON text, or
+  a JSON AST. See [Modes](#modes).
+- With JSON text, every error has a position, and syntax errors are reported
+  with validation errors
+- Annotations come back as an AST with annotations on its nodes
 - Errors are [`VFileMessage`](https://github.com/vfile/vfile-message)s, so
   they work with unified tooling
 - Schemas from `http(s):`, `file:`, or in-memory registries
@@ -54,6 +55,90 @@ validator.validate({ age: -1 }); // false
 
 A `Validator` can be used for any number of instances. `jsonSchema.validate(uri,
 instance)` is a shortcut, but it compiles the schema every time.
+
+### Modes
+
+A validator works in three modes, on three kinds of instance.
+
+| | JS value | JSON text | JSON AST |
+| --- | --- | --- | --- |
+| **Flag** | `validate(value)` | `validateJson(text)` | `validateNode(node)` |
+| **Errors** | `validate(value, { output })` | `validateJson(text, { output })` | `validateNode(node, { output })` |
+| **Annotations** | `annotate(value)` | `annotateJson(text)` | |
+
+- **Flag** is just a boolean. It's the default, and the fastest.
+- **Errors** says why an instance is invalid. Use the BASIC or DETAILED
+  output format.
+- **Annotations** validates and returns the instance as an AST with
+  annotations on its nodes. It takes an `output` option too.
+- **JSON text** is parsed error-tolerantly. Syntax errors are reported with
+  validation errors, and every error has a position.
+- **JSON AST** is a node you already have, such as a value in a schema AST.
+
+### Output
+
+The default output is FLAG: just a boolean, which is the fastest. Use BASIC or
+DETAILED to find out why an instance is invalid.
+
+```javascript
+const result = validator.validate({ age: -1 }, { output: "BASIC" });
+// {
+//   valid: false,
+//   errors: [
+//     ValidationError {
+//       reason: "Expected the instance to pass 'minimum'",
+//       ruleId: "https://json-schema.org/keyword/minimum",
+//       instanceLocation: "/age",
+//       keywordLocation: "/properties/age/minimum",
+//       absoluteKeywordLocation: "https://example.com/person#/properties/age/minimum",
+//       ...
+//     },
+//     ...
+//   ]
+// }
+```
+
+- BASIC is a flat list of errors.
+- DETAILED nests errors by schema structure.
+
+The built-in output formats give errors a generic `reason` that names the
+keyword. Writing messages that explain the error is left to other output
+formats. Add your own with `addOutputFormat`.
+
+### JSON text
+
+`validateJson` parses JSON text and validates it. The parse is error-tolerant,
+so syntax errors are reported along with validation errors, and every error has
+a position.
+
+```javascript
+const result = validator.validateJson(`{ "name": "Jason", "age": -1, }`, { output: "BASIC" });
+
+result.errors.map(String);
+// [
+//   "1:27-1:29: Expected the instance to pass 'minimum'",
+//   "1:29-1:30: Trailing commas are not allowed"
+// ]
+```
+
+`validateNode` validates a JSON AST node, such as a value in a schema AST.
+
+### Annotations
+
+`annotate` validates and returns the instance as a JSON AST
+([unist](https://github.com/syntax-tree/unist)) with annotations attached to its
+nodes. `annotateJson` does the same for JSON text. Annotations are a `Map` of
+keyword URI to the values collected for that node.
+
+```javascript
+const { output, node } = validator.annotate({ name: "Jason" });
+
+node.data.annotations;
+// Map { "https://json-schema.org/keyword/title" => ["Person"] }
+```
+
+Annotations follow the spec. They're only kept for the parts of the schema the
+instance passed.
 
 ### Where schemas come from
 
@@ -140,71 +225,6 @@ import { addFullFormats } from "@hyperjump/json-schema-next/formats/full";
 
 addFullFormats(jsonSchema);
 ```
-
-### Output
-
-The default output is FLAG: just a boolean, which is the fastest. Use BASIC or
-DETAILED to find out why an instance is invalid.
-
-```javascript
-const result = validator.validate({ age: -1 }, { output: "BASIC" });
-// {
-//   valid: false,
-//   errors: [
-//     ValidationError {
-//       reason: "Expected the instance to pass 'minimum'",
-//       ruleId: "https://json-schema.org/keyword/minimum",
-//       instanceLocation: "/age",
-//       keywordLocation: "/properties/age/minimum",
-//       absoluteKeywordLocation: "https://example.com/person#/properties/age/minimum",
-//       ...
-//     },
-//     ...
-//   ]
-// }
-```
-
-- BASIC is a flat list of errors.
-- DETAILED nests errors by schema structure.
-
-The built-in output formats give errors a generic `reason` that names the
-keyword. Writing messages that explain the error is left to other output
-formats. Add your own with `addOutputFormat`.
-
-### JSON text
-
-`validateJson` parses JSON text and validates it. The parse is error-tolerant,
-so syntax errors are reported along with validation errors, and every error has
-a position.
-
-```javascript
-const result = validator.validateJson(`{ "name": "Jason", "age": -1, }`, { output: "BASIC" });
-
-result.errors.map(String);
-// [
-//   "1:27-1:29: Expected the instance to pass 'minimum'",
-//   "1:29-1:30: Trailing commas are not allowed"
-// ]
-```
-
-`validateNode` validates a JSON AST node, such as a value in a schema AST.
-
-### Annotations
-
-`annotate` validates and returns the instance as a JSON AST
-([unist](https://github.com/syntax-tree/unist)) with annotations attached to its
-nodes. `annotateJson` does the same for JSON text. Annotations are a `Map` of
-keyword URI to the values collected for that node.
-
-```javascript
-const { output, node } = validator.annotate({ name: "Jason" });
-
-node.data.annotations;
-// Map { "https://json-schema.org/keyword/title" => ["Person"] }
-```
-
-Annotations follow the spec. They're only kept for the parts of the schema the
-instance passed.
 
 ### Invalid schemas
 
