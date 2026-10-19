@@ -27,10 +27,10 @@ export type Keyword<C extends Json = Json> = {
   shape: Shape;
 
   /**
-   * A schema for the keyword's value, used to validate schemas. It doesn't
-   * need to describe the subschemas in the value. They're validated as
-   * schemas in their own right. A keyword that allows any value still needs
-   * one.
+   * A schema for the keyword's value, used to validate schemas. It only
+   * describes what the {@link shape} doesn't: the resolver reports a value
+   * that doesn't fit the shape, and subschemas are validated as schemas in
+   * their own right. A keyword that allows any value still needs one.
    *
    * It's identified by the keyword's {@link uri}, so it can't have an `$id`
    * that's anything else. It has to declare its dialect with `$schema`.
@@ -265,8 +265,12 @@ export type InstanceOps<I> = {
  * - An array of shapes uses the first alternative that matches the value's
  *   JSON type.
  *
- * A value that doesn't match is treated as `"data"`. It's up to the
- * meta-schema to report it.
+ * The resolver reports a value that doesn't fit: one that isn't a schema
+ * where `"schema"` is the whole shape (`invalid-schema`), a map or array of
+ * the wrong type, or a value that matches no alternative. A `"data"`
+ * alternative matches anything, so it leaves values that don't match the
+ * other alternatives to the keyword's {@link Keyword.schema}. Only use it for
+ * values a shape can't describe, like `itemPattern`'s operators.
  *
  * | Keyword                    | Shape                                         |
  * | -------------------------- | --------------------------------------------- |
@@ -274,7 +278,7 @@ export type InstanceOps<I> = {
  * | `allOf`, `prefixItems`     | `{ array: "schema" }`                         |
  * | `properties`, `$defs`      | `{ map: "schema" }`                           |
  * | `items` (draft-04)         | `["schema", { array: "schema" }]`             |
- * | `dependencies` (draft-04)  | `{ map: ["schema", "data"] }`                 |
+ * | `dependencies` (draft-04)  | `{ map: ["schema", { array: "data" }] }`      |
  * | `propertyDependencies`     | `{ map: { map: "schema" } }`                  |
  * | `conditional`              | `{ array: ["schema", { array: "schema" }] }`  |
  * | `const`, `enum`, `default` | `"data"`                                      |

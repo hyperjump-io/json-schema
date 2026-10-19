@@ -235,10 +235,13 @@ describe("jsonSchemaResolve", () => {
       expect(at("/properties/neither/items", root).type).to.equal("json");
     });
 
-    test("a value that doesn't match its shape is data", async () => {
-      const { root, file } = await resolve(jsonSchema, `{ "$schema": "${dialectUri}", "properties": [{}] }`);
+    test("a map or array of the wrong type is reported and is data", async () => {
+      const { root, file } = await resolve(jsonSchema, `{ "$schema": "${dialectUri}", "properties": [{}], "allOf": {} }`);
 
-      expect(file.messages).to.eql([]);
+      expect(file.messages.map(({ reason, ruleId }) => [reason, ruleId])).to.eql([
+        ["Expected an object", "https://example.com/keyword/properties"],
+        ["Expected an array", "https://example.com/keyword/allOf"]
+      ]);
       expect(at("/properties/0", root).type).to.equal("json");
     });
 
@@ -256,11 +259,24 @@ describe("jsonSchemaResolve", () => {
       expect(at("/items/0", root)).to.include({ type: "json-schema", dialectUri: dialectUri });
     });
 
-    test("a value that doesn't match any shape alternative is left to the keyword's schema", async () => {
+    test("a value that doesn't match any shape alternative is reported and is data", async () => {
       const { root, file } = await resolve(jsonSchema, `{ "$schema": "${dialectUri}", "items": 42 }`);
 
-      expect(file.messages).to.eql([]);
+      expect(file.messages.map(({ reason, ruleId }) => [reason, ruleId])).to.eql([
+        ["Expected a schema or an array", "https://example.com/keyword/items"]
+      ]);
       expect(at("/items", root).type).to.equal("json");
+    });
+
+    test("a data alternative leaves a value that doesn't match the others to the keyword", async () => {
+      jsonSchema.addKeyword({ uri: "https://example.com/keyword/pattern", shape: { array: ["schema", "data"] }, schema: anyValue });
+      jsonSchema.extendDialect(dialectUri, { keywords: { pattern: "https://example.com/keyword/pattern" } });
+      const { root, file } = await resolve(jsonSchema, `{ "$schema": "${dialectUri}", "pattern": [{}, "*", 42] }`);
+
+      expect(file.messages).to.eql([]);
+      expect(at("/pattern/0", root).type).to.equal("json-schema");
+      expect(at("/pattern/1", root).type).to.equal("json");
+      expect(at("/pattern/2", root).type).to.equal("json");
     });
 
     test("a document root that isn't a schema", async () => {

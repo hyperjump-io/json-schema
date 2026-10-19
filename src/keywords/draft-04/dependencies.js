@@ -15,7 +15,7 @@ import keywordSchema from "./dependencies.schema.json" with { type: "json" };
  */
 export default {
   uri: "https://json-schema.org/keyword/draft-04/dependencies",
-  shape: { map: ["schema", "data"] },
+  shape: { map: ["schema", { array: "data" }] },
   schema: keywordSchema,
   async compile(valueNode, context) {
     /** @type [string, SchemaHandle | string[]][] */

@@ -106,18 +106,24 @@ were considered. See "Open questions".)
 - `uri`: Identifies the keyword independent of its name in any dialect.
 - `shape`: Where the value contains schemas, using combinators: `"schema"`,
   `"data"`, `{ array: Shape }`, `{ map: Shape }`, or `Shape[]` (the first
-  alternative whose JSON type matches). A value where the shape says
-  `"schema"` is a schema node even if it isn't an object or boolean, and the
-  resolver reports it (`invalid-schema`). Only alternatives are chosen by the
+  alternative whose JSON type matches). The shape owns the JSON types of
+  what it describes, and the resolver reports a value that doesn't fit. A
+  value where the shape says `"schema"` is a schema node even if it isn't an
+  object or boolean (`invalid-schema`). Only alternatives are chosen by the
   value. A value that matches none of them, or a map or array that's the
-  wrong type, is data, and the keyword's schema rejects it.
+  wrong type, is reported with the keyword's URI as the `ruleId` and is
+  data. A `"data"` alternative matches anything, so it hands the rest to the
+  keyword's schema. Only `itemPattern` uses one, because its operators are
+  strings, which a shape can't describe.
 - `schema`: The schema for the keyword's own value, used for schema
   validation. It's the schema itself, not a URI. It's identified by the
   keyword's `uri`, so it doesn't need an `$id`, and one that has an `$id`
   must use the keyword's URI. It's required, even for a keyword that allows
-  any value. It doesn't describe subschemas, not even that they're objects
-  or booleans; those are validated as schemas. So a keyword whose value is a
-  schema, like `not`, has a schema that allows any value. It declares its dialect with `$schema` (see "Schema
+  any value. It only describes what the shape doesn't, so it never checks
+  the JSON types the shape describes, and subschemas are validated as
+  schemas. A keyword whose value is a schema, like `not`, has a schema that
+  allows any value, and `allOf`'s only says `minItems: 1`. `itemPattern`'s is
+  the exception, because of its `"data"` alternative. It declares its dialect with `$schema` (see "Schema
   validation").
 - `resolve`: An optional hook for keywords that identify schemas (`$id`,
   `$anchor`, `$dynamicAnchor`, legacy `id`/`$id`/`$ref`, `$recursiveAnchor`)

@@ -18,43 +18,54 @@ import { addDraft202012, draft202012DialectUri } from "../dialects/draft-2020-12
  */
 
 /**
- * A value with something that isn't a schema at `pointer`, and who should
- * report it: the resolver, because the shape says a schema goes there, or the
- * keyword's schema, because the value doesn't match any of the shape's
- * alternatives.
+ * A value with something that doesn't fit the shape at `pointer`, and who
+ * should report it:
+ * - `"schema"`: the resolver, because a schema goes there
+ * - `"shape"`: the resolver, because it isn't any of the shape's alternatives,
+ *   or it's a map or array of the wrong type
+ * - `"keyword"`: the keyword's schema, because a `"data"` alternative left it
+ *   to the keyword
  *
- * @typedef {{ value: Json; pointer: string; reportedBy: "resolver" | "keyword" }} Case
+ * @typedef {{ value: Json; pointer: string; reportedBy: "schema" | "shape" | "keyword" }} Case
  */
 
 /**
- * Shapes can refer to themselves (`itemPattern`), so this only goes a few
- * levels deep
+ * `1` is never a schema, a map, or an array, so it doesn't fit anywhere a
+ * shape describes. Shapes can refer to themselves (`itemPattern`), so this
+ * only goes a few levels deep.
  *
  * @type (shape: Shape, depth?: number) => Case[]
  */
-const notSchemas = (shape, depth = 0) => {
+const misfits = (shape, depth = 0) => {
   if (depth > 3 || shape === "data") {
     return [];
   } else if (shape === "schema") {
-    return [{ value: 1, pointer: "", reportedBy: "resolver" }];
+    return [{ value: 1, pointer: "", reportedBy: "schema" }];
   } else if (Array.isArray(shape)) {
     /** @type Case[] */
-    const cases = shape.includes("data") ? [] : [{ value: 1, pointer: "", reportedBy: "keyword" }];
+    const cases = [{ value: 1, pointer: "", reportedBy: shape.includes("data") ? "keyword" : "shape" }];
 
-    // A value that isn't a schema never chooses the "schema" alternative
+    // `1` doesn't choose any alternative, so only what's inside a map or
+    // array alternative is a different case
     for (const alternative of shape) {
       if (typeof alternative === "object") {
-        cases.push(...notSchemas(alternative, depth + 1));
+        cases.push(...misfits(alternative, depth + 1).filter(({ pointer }) => pointer !== ""));
       }
     }
 
     return cases;
   } else if ("array" in shape) {
-    return notSchemas(shape.array, depth + 1)
-      .map(({ value, pointer, reportedBy }) => ({ value: [value], pointer: `/0${pointer}`, reportedBy }));
+    return [
+      { value: 1, pointer: "", reportedBy: "shape" },
+      ...misfits(shape.array, depth + 1)
+        .map(({ value, pointer, reportedBy }) => ({ value: [value], pointer: `/0${pointer}`, reportedBy }))
+    ];
   } else {
-    return notSchemas(shape.map, depth + 1)
-      .map(({ value, pointer, reportedBy }) => ({ value: { a: value }, pointer: `/a${pointer}`, reportedBy }));
+    return [
+      { value: 1, pointer: "", reportedBy: "shape" },
+      ...misfits(shape.map, depth + 1)
+        .map(({ value, pointer, reportedBy }) => ({ value: { a: value }, pointer: `/a${pointer}`, reportedBy }))
+    ];
   }
 };
 
@@ -75,9 +86,9 @@ for (const dialectUri of [v1DialectUri, draft202012DialectUri, draft201909Dialec
   }
 }
 
-describe("A keyword's value that isn't a schema where its shape expects one is reported once", () => {
+describe("A keyword's value that doesn't fit its shape is reported once", () => {
   for (const [keywordUri, { name, dialectUri, shape }] of keywords) {
-    for (const { value, pointer, reportedBy } of notSchemas(shape)) {
+    for (const { value, pointer, reportedBy } of misfits(shape)) {
       test(`${name} (${keywordUri}): ${JSON.stringify(value)}`, async () => {
         const file = new VFile(JSON.stringify({ $schema: dialectUri, [name]: value }));
         const processor = unified()
@@ -86,12 +97,15 @@ describe("A keyword's value that isn't a schema where its shape expects one is r
           .use(jsonSchemaValidateKeywords, { jsonSchema });
         const document = await processor.run(processor.parse(file), file);
 
-        // The resolver reports the value that isn't a schema. A keyword's
+        // The resolver reports the value that doesn't fit. A keyword's
         // schema reports the keyword's whole value.
         const root = /** @type any */ (document.children[0]);
-        const expected = reportedBy === "resolver"
-          ? ["invalid-schema", pointerGet(`/${name}${pointer}`, root).position]
-          : [keywordUri, pointerGet(`/${name}`, root).position];
+        const misfit = pointerGet(`/${name}${pointer}`, root).position;
+        const expected = {
+          schema: ["invalid-schema", misfit],
+          shape: [keywordUri, misfit],
+          keyword: [keywordUri, pointerGet(`/${name}`, root).position]
+        }[reportedBy];
         expect(file.messages.map((message) => [message.ruleId, message.place])).to.eql([expected]);
       });
     }

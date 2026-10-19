@@ -1,8 +1,4 @@
 {
   "$schema": "https://json-schema.org/v1",
-  "type": "array",
-  "minItems": 1,
-  "items": {
-    "type": ["object", "boolean", "array"]
-  }
+  "minItems": 1
 }

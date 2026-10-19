@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/v1",
-  "type": "object",
   "additionalProperties": {
-    "type": ["object", "boolean", "array"],
-    "items": { "type": "string" }
+    "items": {
+      "type": "string"
+    }
   }
 }

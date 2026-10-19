@@ -25,12 +25,14 @@ import keywordSchema from "./itemPattern.schema.json" with { type: "json" };
  * @typedef {{ start: number; end: number }} Fragment
  */
 
-// Groups are arrays, and they can be nested
+// Groups are arrays, and they can be nested. Operators are strings, which a
+// shape can't describe, so the keyword's schema checks everything that isn't a
+// schema or a group.
 /** @type Shape[] */
 const ruleShapes = ["schema"];
 /** @type Shape */
 const shape = { array: ruleShapes };
-ruleShapes.push(shape);
+ruleShapes.push(shape, "data");
 
 /**
  * `itemPattern`. The items have to match a pattern like a regular

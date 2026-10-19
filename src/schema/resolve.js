@@ -228,7 +228,7 @@ class Resolver {
     for (const [property, keywordUri, keyword] of keywords) {
       property.keywordUri = keywordUri;
       const [nameNode, valueNode] = property.children;
-      await this.#shape(valueNode, keyword.shape, resource, JsonPointer.append(nameNode.value, pointer), dialect);
+      await this.#shape(valueNode, keyword.shape, keywordUri, resource, JsonPointer.append(nameNode.value, pointer), dialect);
     }
   }
 
@@ -354,36 +354,51 @@ class Resolver {
     return effects;
   }
 
-  /** @type (node: TreeNode, shape: Shape, resource: JsonSchemaDocumentNode, pointer: string, dialect: Dialect) => Promise<void> */
-  async #shape(node, shape, resource, pointer, dialect) {
+  /**
+   * Annotate a keyword's value by its shape. A value that doesn't fit the
+   * shape is reported, unless the shape has a `"data"` alternative, which
+   * leaves anything else to the keyword's schema.
+   *
+   * @type (node: TreeNode, shape: Shape, keywordUri: string, resource: JsonSchemaDocumentNode, pointer: string, dialect: Dialect) => Promise<void>
+   */
+  async #shape(node, shape, keywordUri, resource, pointer, dialect) {
     if (Array.isArray(shape)) {
       const alternative = shape.find((alternative) => matchesShape(alternative, node));
       if (alternative === undefined) {
-        this.#data(node, resource, pointer);
+        this.#mismatch(node, shape, keywordUri, resource, pointer);
       } else {
-        await this.#shape(node, alternative, resource, pointer, dialect);
+        await this.#shape(node, alternative, keywordUri, resource, pointer, dialect);
       }
     } else if (shape === "schema") {
       // A position the shape says is a schema holds a schema, even one that
       // isn't valid. Only alternatives are chosen by the value.
       await this.#schema(node, resource, pointer, dialect, false);
-    } else if (!matchesShape(shape, node)) {
-      this.#data(node, resource, pointer);
     } else if (shape === "data") {
       this.#data(node, resource, pointer);
+    } else if (!matchesShape(shape, node)) {
+      this.#mismatch(node, shape, keywordUri, resource, pointer);
     } else if ("array" in shape && !isErrorNode(node) && node.jsonType === "array") {
       node.location = location(resource, pointer);
       let index = 0;
       for (const itemNode of node.children) {
-        await this.#shape(itemNode, shape.array, resource, JsonPointer.append(`${index++}`, pointer), dialect);
+        await this.#shape(itemNode, shape.array, keywordUri, resource, JsonPointer.append(`${index++}`, pointer), dialect);
       }
     } else if ("map" in shape && !isErrorNode(node) && node.jsonType === "object") {
       node.location = location(resource, pointer);
       for (const property of node.children) {
         const [nameNode, valueNode] = property.children;
-        await this.#shape(valueNode, shape.map, resource, JsonPointer.append(nameNode.value, pointer), dialect);
+        await this.#shape(valueNode, shape.map, keywordUri, resource, JsonPointer.append(nameNode.value, pointer), dialect);
       }
     }
+  }
+
+  /** @type (node: TreeNode, shape: Shape, keywordUri: string, resource: JsonSchemaDocumentNode, pointer: string) => void */
+  #mismatch(node, shape, keywordUri, resource, pointer) {
+    // A value that couldn't be parsed already has a syntax error
+    if (!isErrorNode(node)) {
+      this.#message(`Expected ${describeShape(shape)}`, node, keywordUri);
+    }
+    this.#data(node, resource, pointer);
   }
 
   /**
@@ -514,6 +529,24 @@ const matchesShape = (shape, node) => {
     return node.jsonType === "array";
   } else {
     return node.jsonType === "object";
+  }
+};
+
+/** @type (shape: Shape) => string */
+const describeShape = (shape) => {
+  if (Array.isArray(shape)) {
+    const descriptions = shape.map(describeShape);
+    return descriptions.length > 2
+      ? `${descriptions.slice(0, -1).join(", ")}, or ${descriptions.at(-1)}`
+      : descriptions.join(" or ");
+  } else if (shape === "schema") {
+    return "a schema";
+  } else if (shape === "data") {
+    return "any value";
+  } else if ("array" in shape) {
+    return "an array";
+  } else {
+    return "an object";
   }
 };
 

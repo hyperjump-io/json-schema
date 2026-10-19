@@ -1,17 +1,16 @@
 {
   "$schema": "https://json-schema.org/v1",
-  "type": "array",
-  "items": {
-    "anyOf": [
-      {
-        "type": ["object", "boolean"]
-      },
-      {
-        "$ref": "#"
-      },
-      {
-        "enum": ["*", "+", "?", "|"]
-      }
-    ]
+  "items": { "$ref": "#/$defs/item" },
+  "$defs": {
+    "item": {
+      "anyOf": [
+        { "type": ["object", "boolean"] },
+        {
+          "type": "array",
+          "items": { "$ref": "#/$defs/item" }
+        },
+        { "enum": ["*", "+", "?", "|"] }
+      ]
+    }
   }
 }
