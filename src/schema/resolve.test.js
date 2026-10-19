@@ -242,6 +242,35 @@ describe("jsonSchemaResolve", () => {
       expect(at("/properties/0", root).type).to.equal("json");
     });
 
+    test("a value that isn't a schema where its shape expects one is an invalid schema", async () => {
+      const { root, file } = await resolve(jsonSchema, `{
+        "$schema": "${dialectUri}",
+        "properties": { "foo": 1 },
+        "allOf": ["nope"],
+        "items": [null]
+      }`);
+
+      expect(ruleIds(file)).to.eql(["invalid-schema", "invalid-schema", "invalid-schema"]);
+      expect(at("/properties/foo", root)).to.include({ type: "json-schema", dialectUri: dialectUri, location: `${baseUri}#/properties/foo` });
+      expect(at("/allOf/0", root)).to.include({ type: "json-schema", dialectUri: dialectUri });
+      expect(at("/items/0", root)).to.include({ type: "json-schema", dialectUri: dialectUri });
+    });
+
+    test("a value that doesn't match any shape alternative is left to the keyword's schema", async () => {
+      const { root, file } = await resolve(jsonSchema, `{ "$schema": "${dialectUri}", "items": 42 }`);
+
+      expect(file.messages).to.eql([]);
+      expect(at("/items", root).type).to.equal("json");
+    });
+
+    test("a document root that isn't a schema", async () => {
+      const { root, file } = await resolve(jsonSchema, `[{ "$schema": "${dialectUri}" }]`);
+
+      expect(ruleIds(file)).to.eql(["invalid-schema"]);
+      expect(root.type).to.equal("json");
+      expect(at("/0", root).type).to.equal("json");
+    });
+
     test("locations", async () => {
       const { root } = await resolve(jsonSchema, `{
         "$schema": "${dialectUri}",

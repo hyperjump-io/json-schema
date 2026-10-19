@@ -106,13 +106,18 @@ were considered. See "Open questions".)
 - `uri`: Identifies the keyword independent of its name in any dialect.
 - `shape`: Where the value contains schemas, using combinators: `"schema"`,
   `"data"`, `{ array: Shape }`, `{ map: Shape }`, or `Shape[]` (the first
-  alternative whose JSON type matches). A value that doesn't match is data.
+  alternative whose JSON type matches). A value where the shape says
+  `"schema"` is a schema node even if it isn't an object or boolean, and the
+  resolver reports it (`invalid-schema`). Only alternatives are chosen by the
+  value. A value that matches none of them, or a map or array that's the
+  wrong type, is data, and the keyword's schema rejects it.
 - `schema`: The schema for the keyword's own value, used for schema
   validation. It's the schema itself, not a URI. It's identified by the
   keyword's `uri`, so it doesn't need an `$id`, and one that has an `$id`
   must use the keyword's URI. It's required, even for a keyword that allows
-  any value. It doesn't describe subschemas; those are validated as
-  schemas. It declares its dialect with `$schema` (see "Schema
+  any value. It doesn't describe subschemas, not even that they're objects
+  or booleans; those are validated as schemas. So a keyword whose value is a
+  schema, like `not`, has a schema that allows any value. It declares its dialect with `$schema` (see "Schema
   validation").
 - `resolve`: An optional hook for keywords that identify schemas (`$id`,
   `$anchor`, `$dynamicAnchor`, legacy `id`/`$id`/`$ref`, `$recursiveAnchor`)
@@ -236,8 +241,9 @@ an internal meta-schema.
   one, in every dialect. Its references would be resolved as if it were a
   file, which would get around browser's rule that only files can reference
   files. v1 had the same rule for registered schemas.
-- The resolver's own checks (misplaced `$schema`, duplicate ids and anchors,
-  invalid identifiers, `file:` identifiers) are schema validation too.
+- The resolver's own checks (schemas that aren't objects or booleans,
+  misplaced `$schema`, duplicate ids and anchors, invalid identifiers,
+  `file:` identifiers) are schema validation too.
   Every problem is a
   `VFileMessage` with `source: "json-schema"` and a `ruleId`. Messages from a
   keyword hook use the keyword's URI as the `ruleId`.

@@ -103,18 +103,13 @@ class Resolver {
     const document = this.#createResource(uri, root);
 
     if (root) {
-      if (!isSchemaNode(root)) {
-        this.#message("The root of a schema document must be an object or a boolean", root, "invalid-schema");
-        this.#data(root, document, "");
-      } else {
-        let dialect;
-        if (dialectUri !== undefined) {
-          dialect = await this.#getDialect(dialectUri, root);
-        } else if (!hasProperty(root, "$schema")) {
-          this.#message("Unable to determine the dialect of the schema. Add '$schema' or configure a default dialect.", root, "missing-dialect");
-        }
-        await this.#schema(root, document, "", dialect, true);
+      let dialect;
+      if (dialectUri !== undefined) {
+        dialect = await this.#getDialect(dialectUri, root);
+      } else if (isSchemaNode(root) && !hasProperty(root, "$schema")) {
+        this.#message("Unable to determine the dialect of the schema. Add '$schema' or configure a default dialect.", root, "missing-dialect");
       }
+      await this.#schema(root, document, "", dialect, true);
     }
 
     this.#embedded[document.uri] ??= document;
@@ -130,8 +125,20 @@ class Resolver {
    * @param {boolean} isDocumentRoot
    */
   async #schema(node, resource, pointer, parentDialect, isDocumentRoot) {
-    if (!isSchemaNode(node)) {
+    if (isErrorNode(node)) {
+      // The syntax error is already reported
       this.#data(node, resource, pointer);
+      return;
+    }
+
+    if (!isSchemaNode(node)) {
+      // It's still a schema, because that's what its position holds. It's
+      // just not a valid one.
+      this.#message("A schema must be an object or a boolean", node, "invalid-schema");
+      this.#data(node, resource, pointer);
+      if (parentDialect !== undefined) {
+        Object.assign(node, { type: "json-schema", dialectUri: parentDialect.uri });
+      }
       return;
     }
 
@@ -356,10 +363,12 @@ class Resolver {
       } else {
         await this.#shape(node, alternative, resource, pointer, dialect);
       }
+    } else if (shape === "schema") {
+      // A position the shape says is a schema holds a schema, even one that
+      // isn't valid. Only alternatives are chosen by the value.
+      await this.#schema(node, resource, pointer, dialect, false);
     } else if (!matchesShape(shape, node)) {
       this.#data(node, resource, pointer);
-    } else if (shape === "schema") {
-      await this.#schema(node, resource, pointer, dialect, false);
     } else if (shape === "data") {
       this.#data(node, resource, pointer);
     } else if ("array" in shape && !isErrorNode(node) && node.jsonType === "array") {

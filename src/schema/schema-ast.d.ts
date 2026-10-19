@@ -18,7 +18,9 @@ import type { DialectDefinition } from "../dialect.d.ts";
  *   item in `required`, or the object that holds the subschemas of
  *   `properties`.
  * - `json-schema`: An object or boolean schema. Each property of an object
- *   schema is a {@link JsonSchemaKeywordNode}.
+ *   schema is a {@link JsonSchemaKeywordNode}. A value where a keyword's
+ *   shape expects a schema is a schema even if it isn't an object or boolean.
+ *   It's invalid, and the resolver reports it.
  * - `reference`: A `$ref` in a dialect where `$ref` replaces the whole
  *   object, such as draft-04 through draft-07. It works like a JRef
  *   reference, so `@hyperjump/browser` follows it automatically. Its other

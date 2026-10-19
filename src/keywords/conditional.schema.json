@@ -3,9 +3,6 @@
   "type": "array",
   "minItems": 1,
   "items": {
-    "type": ["object", "boolean", "array"],
-    "items": {
-      "type": ["object", "boolean"]
-    }
+    "type": ["object", "boolean", "array"]
   }
 }
