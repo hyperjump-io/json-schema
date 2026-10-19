@@ -1015,6 +1015,12 @@ Changes made to browser for this (on its `v2` branch):
   a profile, an index could build on its parent's index.
 - Boolean schemas are allowed in draft-04, which didn't have them. A
   boolean where a schema goes is a boolean schema in every dialect.
+- Meta-schemas that depend on each other hang instead of being an error
+  if they're retrieved through a redirect. The cycle is detected with the
+  resolver's `referencedFrom`, which is the meta-schema's document URI,
+  but dialects being loaded are recorded by the URI they were requested
+  by. After a redirect, those differ. Fixing it needs browser to give a
+  media type plugin the URI that was requested along with the response.
 - A self-describing meta-schema's dialect has to be added. One retrieved
   from a URI other than its `$schema` isn't recognized as self-describing,
   so its dialect is looked up like any other.
