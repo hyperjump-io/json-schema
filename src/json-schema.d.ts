@@ -59,17 +59,15 @@ export class JsonSchema extends Hyperjump<JsonSchemaNode> {
   /**
    * Start a session for retrieving and compiling schemas. Dialects built
    * from meta-schemas belong to the session, like the documents it
-   * retrieves. A session sees each registry as it was when the session was
-   * created.
+   * retrieves.
    */
   session(options?: SessionOptions): JsonSchemaSession;
 
   /**
    * Add a registry that every new session sees. Its schemas are identified
-   * now, and as they're added.
+   * the first time a session needs them.
    *
-   * @throws Error if the registry was already added, or it has schemas that
-   * can't be identified or are identified by the same URI.
+   * @throws Error if the registry was already added
    */
   addRegistry(registry: SchemaRegistry): void;
 
@@ -198,8 +196,8 @@ export class JsonSchemaSession extends Session<JsonSchemaNode> {
    * keyword's schema; a schema in a session registry, then in one of the
    * {@link JsonSchema}'s registries; then it's retrieved.
    *
-   * @throws {@link RetrievalError} if more than one registry has a schema
-   * identified by the URI.
+   * @throws {@link RetrievalError} if more than one schema in the registries
+   * is found by the URI, or the schema found by it can't be identified.
    */
   getDocument(uri: string, options?: GetOptions): Promise<DocumentNode<JsonSchemaNode>>;
 

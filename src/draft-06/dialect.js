@@ -78,10 +78,8 @@ export const draft06Dialect = {
  * schema that references it. One registry is shared by every JsonSchema.
  * Each identifies its entries itself.
  */
-const metaSchemas = new SchemaRegistry();
-
 // TypeScript infers a type for the JSON that isn't assignable to Json
-metaSchemas.add(/** @type Json */ (/** @type unknown */ (metaSchema)));
+const metaSchemas = new SchemaRegistry([{ schema: /** @type Json */ (/** @type unknown */ (metaSchema)) }]);
 
 /** @type API.addDraft06 */
 export const addDraft06 = (jsonSchema) => {

@@ -30,147 +30,164 @@ describe("SchemaRegistry", () => {
   /** @type JsonSchema */
   let jsonSchema;
 
-  /** @type SchemaRegistry */
-  let registry;
-
   beforeEach(() => {
-    registry = new SchemaRegistry();
-    jsonSchema = offline({ registries: [registry] });
+    jsonSchema = offline();
   });
+
+  /** @type (registry: SchemaRegistry, uri: string) => ReturnType<JsonSchema["compile"]> */
+  const compile = (registry, uri) => jsonSchema.compile(uri, { registries: [registry] });
+
+  /** @type (...schemas: (Json | string)[]) => SchemaRegistry */
+  const registryOf = (...schemas) => new SchemaRegistry(schemas.map((schema) => ({ schema })));
 
   describe("identification", () => {
     test("a schema is identified by its $id", async () => {
-      registry.add(v1({ $id: "https://example.com/a", type: "string" }));
+      const registry = registryOf(v1({ $id: "https://example.com/a", type: "string" }));
 
-      const validator = await jsonSchema.compile("https://example.com/a");
+      const validator = await compile(registry, "https://example.com/a");
       expect(validator.validate("foo")).to.equal(true);
       expect(validator.validate(42)).to.equal(false);
     });
 
     test("a schema without an $id is identified by its retrieval URI", async () => {
-      registry.add(v1({ type: "string" }), { retrievalUri: "https://example.com/a" });
+      const registry = new SchemaRegistry().with(v1({ type: "string" }), { retrievalUri: "https://example.com/a" });
 
-      expect((await jsonSchema.compile("https://example.com/a")).validate(42)).to.equal(false);
+      expect((await compile(registry, "https://example.com/a")).validate(42)).to.equal(false);
     });
 
     test("a relative $id is resolved against the retrieval URI", async () => {
-      registry.add(v1({ $id: "b", type: "string" }), { retrievalUri: "https://example.com/a" });
+      const registry = new SchemaRegistry().with(v1({ $id: "b", type: "string" }), { retrievalUri: "https://example.com/a" });
 
-      expect((await jsonSchema.compile("https://example.com/b")).validate(42)).to.equal(false);
+      expect((await compile(registry, "https://example.com/b")).validate(42)).to.equal(false);
     });
 
     test("a schema with an $id is also found by its retrieval URI", async () => {
-      registry.add(v1({ $id: "https://example.com/b", type: "string" }), { retrievalUri: "https://example.com/a" });
+      const registry = new SchemaRegistry().with(v1({ $id: "https://example.com/b", type: "string" }), { retrievalUri: "https://example.com/a" });
 
-      const node = await jsonSchema.session().get("https://example.com/a");
+      const node = await jsonSchema.session({ registries: [registry] }).get("https://example.com/a");
       expect(node.location).to.equal("https://example.com/b#");
-      expect((await jsonSchema.compile("https://example.com/a")).validate(42)).to.equal(false);
+      expect((await compile(registry, "https://example.com/a")).validate(42)).to.equal(false);
     });
 
-    test("a retrieval URI that's another schema's $id can't be added", () => {
-      registry.add(v1({ $id: "https://example.com/a" }));
+    test("a retrieval URI that's another schema's $id is an error when it's looked up", async () => {
+      const registry = registryOf(v1({ $id: "https://example.com/a" }))
+        .with(v1({ $id: "https://example.com/b" }), { retrievalUri: "https://example.com/a" });
 
-      expect(() => registry.add(v1({ $id: "https://example.com/b" }), { retrievalUri: "https://example.com/a" })).to.throw("already a schema");
+      await expect(compile(registry, "https://example.com/a")).rejects.toMatchObject({
+        cause: { message: expect.stringContaining("More than one schema") }
+      });
+      await expect(compile(registry, "https://example.com/b")).resolves.toBeDefined();
     });
 
-    test("a retrieval URI that's a keyword's URI can't be added", () => {
-      expect(() => registry.add(v1({}), { retrievalUri: "https://json-schema.org/keyword/type" })).to.throw("keyword's schema");
+    test("a schema can't replace a keyword's schema", async () => {
+      const registry = new SchemaRegistry().with(v1({ type: "number" }), { retrievalUri: "https://json-schema.org/keyword/type" });
+
+      // The keyword's schema is found first
+      expect((await compile(registry, "https://json-schema.org/keyword/type")).validate("string")).to.equal(true);
     });
 
     test("JSON text", async () => {
-      registry.add(`{ "$schema": "${v1DialectUri}", "$id": "https://example.com/a", "type": "string" }`);
+      const registry = registryOf(`{ "$schema": "${v1DialectUri}", "$id": "https://example.com/a", "type": "string" }`);
 
-      expect((await jsonSchema.compile("https://example.com/a")).validate(42)).to.equal(false);
+      expect((await compile(registry, "https://example.com/a")).validate(42)).to.equal(false);
     });
 
     test("the dialect option is for a schema without $schema", async () => {
-      registry.add({ $id: "https://example.com/a", type: "string" }, { dialectUri: v1DialectUri });
+      const registry = new SchemaRegistry().with({ $id: "https://example.com/a", type: "string" }, { dialectUri: v1DialectUri });
 
-      expect((await jsonSchema.compile("https://example.com/a")).validate(42)).to.equal(false);
+      expect((await compile(registry, "https://example.com/a")).validate(42)).to.equal(false);
     });
 
-    test("a schema without an $id or a retrieval URI can't be added", () => {
-      expect(() => registry.add(v1({ type: "string" }))).to.throw("needs an '$id' or a retrieval URI");
+    test("a schema without an $id or a retrieval URI is reported when a lookup fails", async () => {
+      const registry = registryOf(v1({ type: "string" }));
+
+      await expect(compile(registry, "https://example.com/a")).rejects.toMatchObject({
+        cause: { errors: expect.arrayContaining([expect.objectContaining({ errors: [expect.objectContaining({ message: expect.stringContaining("needs an '$id' or a retrieval URI") })] })]) }
+      });
     });
 
-    test("a relative $id without a retrieval URI can't be added", () => {
-      expect(() => registry.add(v1({ $id: "a" }))).to.throw();
-    });
+    test("a schema can't be identified as a file without a file retrieval URI", async () => {
+      const registry = registryOf(v1({ $id: "file:///a.schema.json" }));
 
-    test("a schema can't be identified as a file without a file retrieval URI", () => {
-      expect(() => registry.add(v1({ $id: "file:///a.schema.json" }))).to.throw("'file:'");
+      await expect(compile(registry, "file:///a.schema.json")).rejects.toThrow(RetrievalError);
     });
 
     test("a schema with a file retrieval URI", async () => {
-      registry.add(v1({ type: "string" }), { retrievalUri: "file:///not/on/disk.schema.json" });
+      const registry = new SchemaRegistry().with(v1({ type: "string" }), { retrievalUri: "file:///not/on/disk.schema.json" });
 
-      expect((await jsonSchema.compile("file:///not/on/disk.schema.json")).validate(42)).to.equal(false);
+      expect((await compile(registry, "file:///not/on/disk.schema.json")).validate(42)).to.equal(false);
     });
 
-    test("a keyword's schema can't be replaced", () => {
-      expect(() => registry.add(v1({ $id: "https://json-schema.org/keyword/type" }))).to.throw("keyword's schema");
+    test("a schema that can't be identified throws when it's found by its retrieval URI", async () => {
+      const registry = new SchemaRegistry().with(v1({ $id: "https://json-schema.org/keyword/type" }), { retrievalUri: "https://example.com/a" });
+
+      await expect(compile(registry, "https://example.com/a")).rejects.toMatchObject({
+        cause: { message: expect.stringContaining("keyword's schema") }
+      });
     });
 
     test("an embedded resource isn't identified", async () => {
-      registry.add(v1({ $id: "https://example.com/a", $defs: { b: { $id: "https://example.com/b" } } }));
+      const registry = registryOf(v1({ $id: "https://example.com/a", $defs: { b: { $id: "https://example.com/b" } } }));
 
-      await expect(jsonSchema.compile("https://example.com/b")).rejects.toThrow(RetrievalError);
+      await expect(compile(registry, "https://example.com/b")).rejects.toThrow(RetrievalError);
     });
 
     test("references between schemas in registries", async () => {
-      registry.add(v1({ $id: "https://example.com/a", $ref: "b" }));
-      registry.add(v1({ $id: "https://example.com/b", type: "string" }));
+      const registry = registryOf(
+        v1({ $id: "https://example.com/a", $ref: "b" }),
+        v1({ $id: "https://example.com/b", type: "string" })
+      );
 
-      expect((await jsonSchema.compile("https://example.com/a")).validate(42)).to.equal(false);
+      expect((await compile(registry, "https://example.com/a")).validate(42)).to.equal(false);
     });
   });
 
   describe("adding and removing", () => {
     test("a retrieval URI can only be added once", () => {
-      registry.add(v1({}), { retrievalUri: "https://example.com/a" });
+      const registry = new SchemaRegistry().with(v1({}), { retrievalUri: "https://example.com/a" });
 
-      expect(() => registry.add(v1({}), { retrievalUri: "https://example.com/a" })).to.throw("remove");
+      expect(() => registry.with(v1({}), { retrievalUri: "https://example.com/a" })).to.throw("without");
+      expect(() => new SchemaRegistry([
+        { schema: v1({}), retrievalUri: "https://example.com/a" },
+        { schema: v1({}), retrievalUri: "https://example.com/a" }
+      ])).to.throw("More than one schema");
     });
 
-    test("a schema that's identified by a URI that's already in the registry isn't added", async () => {
-      registry.add(v1({ $id: "https://example.com/a", type: "string" }));
+    test("a registry never changes", async () => {
+      const empty = new SchemaRegistry();
+      const added = empty.with(v1({}), { retrievalUri: "https://example.com/a" });
+      const removed = added.without("https://example.com/a");
 
-      expect(() => registry.add(v1({ $id: "https://example.com/a", type: "number" }), { retrievalUri: "https://example.com/b" })).to.throw("already a schema");
-      expect((await jsonSchema.compile("https://example.com/a")).validate("foo")).to.equal(true);
-
-      // It wasn't added, so its retrieval URI is still available
-      registry.add(v1({}), { retrievalUri: "https://example.com/b" });
+      await expect(compile(empty, "https://example.com/a")).rejects.toThrow(RetrievalError);
+      await expect(compile(added, "https://example.com/a")).resolves.toBeDefined();
+      await expect(compile(removed, "https://example.com/a")).rejects.toThrow(RetrievalError);
     });
 
-    test("an edit is a remove and an add", async () => {
-      registry.add(v1({ type: "string" }), { retrievalUri: "https://example.com/a" });
-      registry.remove("https://example.com/a");
-      registry.add(v1({ type: "number" }), { retrievalUri: "https://example.com/a" });
+    test("an edit is without and then with", async () => {
+      const registry = new SchemaRegistry()
+        .with(v1({ type: "string" }), { retrievalUri: "https://example.com/a" })
+        .without("https://example.com/a")
+        .with(v1({ type: "number" }), { retrievalUri: "https://example.com/a" });
 
-      expect((await jsonSchema.compile("https://example.com/a")).validate(42)).to.equal(true);
+      expect((await compile(registry, "https://example.com/a")).validate(42)).to.equal(true);
     });
 
     test("removing a retrieval URI that isn't in the registry does nothing", () => {
-      expect(() => registry.remove("https://example.com/a")).not.to.throw();
-    });
+      const registry = new SchemaRegistry();
 
-    test("a removed schema isn't found", async () => {
-      registry.add(v1({}), { retrievalUri: "https://example.com/a" });
-      registry.remove("https://example.com/a");
-
-      await expect(jsonSchema.compile("https://example.com/a")).rejects.toThrow(RetrievalError);
+      expect(registry.without("https://example.com/a")).to.equal(registry);
     });
   });
 
   describe("sessions", () => {
-    test("a session sees a registry as it was when the session was created", async () => {
-      registry.add(v1({ type: "string" }), { retrievalUri: "https://example.com/a" });
-      const before = jsonSchema.session();
+    test("a session sees the registries it was created with", async () => {
+      const registry = new SchemaRegistry().with(v1({ type: "string" }), { retrievalUri: "https://example.com/a" });
+      const before = jsonSchema.session({ registries: [registry] });
 
-      registry.remove("https://example.com/a");
-      registry.add(v1({ type: "number" }), { retrievalUri: "https://example.com/a" });
-      registry.add(v1({}), { retrievalUri: "https://example.com/b" });
-      const after = jsonSchema.session();
+      const edited = registry.without("https://example.com/a")
+        .with(v1({ type: "number" }), { retrievalUri: "https://example.com/a" })
+        .with(v1({}), { retrievalUri: "https://example.com/b" });
+      const after = jsonSchema.session({ registries: [edited] });
 
       expect((await before.compile("https://example.com/a")).validate(42)).to.equal(false);
       await expect(before.compile("https://example.com/b")).rejects.toThrow(RetrievalError);
@@ -179,24 +196,30 @@ describe("SchemaRegistry", () => {
     });
 
     test("a session registry is only seen by that session", async () => {
-      const sessionRegistry = new SchemaRegistry();
-      sessionRegistry.add(v1({ $id: "https://example.com/a", type: "string" }));
+      const registry = registryOf(v1({ $id: "https://example.com/a", type: "string" }));
 
-      expect((await jsonSchema.compile("https://example.com/a", { registries: [sessionRegistry] })).validate(42)).to.equal(false);
+      expect((await compile(registry, "https://example.com/a")).validate(42)).to.equal(false);
       await expect(jsonSchema.compile("https://example.com/a")).rejects.toThrow(RetrievalError);
     });
 
     test("a registry can be added to a JsonSchema", async () => {
-      const added = new SchemaRegistry();
-      added.add(v1({ $id: "https://example.com/a" }));
-      jsonSchema.addRegistry(added);
+      const registry = registryOf(v1({ $id: "https://example.com/a" }));
+      jsonSchema.addRegistry(registry);
 
       await expect(jsonSchema.compile("https://example.com/a")).resolves.toBeDefined();
-      expect(() => jsonSchema.addRegistry(added)).to.throw("already been added");
+      expect(() => jsonSchema.addRegistry(registry)).to.throw("already been added");
+    });
+
+    test("a registry can be given to a JsonSchema", async () => {
+      const registry = registryOf(v1({ $id: "https://example.com/a" }));
+      const configured = offline({ registries: [registry] });
+
+      await expect(configured.compile("https://example.com/a")).resolves.toBeDefined();
     });
 
     test("a removed registry isn't seen by new sessions", async () => {
-      registry.add(v1({ $id: "https://example.com/a" }));
+      const registry = registryOf(v1({ $id: "https://example.com/a" }));
+      jsonSchema.addRegistry(registry);
       const before = jsonSchema.session();
       jsonSchema.removeRegistry(registry);
 
@@ -205,20 +228,29 @@ describe("SchemaRegistry", () => {
     });
 
     test("a URI in more than one registry is an error", async () => {
-      const other = new SchemaRegistry();
-      other.add(v1({ $id: "https://example.com/a" }));
-      registry.add(v1({ $id: "https://example.com/a" }));
+      const registry = registryOf(v1({ $id: "https://example.com/a" }));
+      const other = registryOf(v1({ $id: "https://example.com/a" }));
 
-      await expect(jsonSchema.compile("https://example.com/a", { registries: [other] })).rejects.toMatchObject({
+      await expect(jsonSchema.compile("https://example.com/a", { registries: [registry, other] })).rejects.toMatchObject({
         cause: { message: expect.stringContaining("More than one registry") }
       });
     });
 
     test("a schema is resolved once for every session", async () => {
-      registry.add(v1({ $id: "https://example.com/a" }));
+      const registry = registryOf(v1({ $id: "https://example.com/a" }));
 
-      const first = await jsonSchema.session().getDocument("https://example.com/a");
-      const second = await jsonSchema.session().getDocument("https://example.com/a");
+      const first = await jsonSchema.session({ registries: [registry] }).getDocument("https://example.com/a");
+      const second = await jsonSchema.session({ registries: [registry] }).getDocument("https://example.com/a");
+
+      expect(second).to.equal(first);
+    });
+
+    test("a schema is resolved once for every registry it's in", async () => {
+      const registry = registryOf(v1({ $id: "https://example.com/a" }));
+      const edited = registry.with(v1({}), { retrievalUri: "https://example.com/b" });
+
+      const first = await jsonSchema.session({ registries: [registry] }).getDocument("https://example.com/a");
+      const second = await jsonSchema.session({ registries: [edited] }).getDocument("https://example.com/a");
 
       expect(second).to.equal(first);
     });
@@ -228,30 +260,23 @@ describe("SchemaRegistry", () => {
     const dialectUri = "https://example.com/dialect";
 
     test("a schema waits for its dialect to be defined", async () => {
-      registry.add({ $schema: dialectUri, $id: "https://example.com/a" });
-      await expect(jsonSchema.compile("https://example.com/a")).rejects.toMatchObject({
+      const registry = registryOf({ $schema: dialectUri, $id: "https://example.com/a" });
+      await expect(compile(registry, "https://example.com/a")).rejects.toMatchObject({
         cause: { message: expect.stringContaining(dialectUri) }
       });
 
       jsonSchema.addDialect({ uri: dialectUri, keywords: { $id: "https://json-schema.org/keyword/id" }, unknownKeywords: "error" });
 
-      await expect(jsonSchema.compile("https://example.com/a")).resolves.toBeDefined();
+      await expect(compile(registry, "https://example.com/a")).resolves.toBeDefined();
     });
 
     test("each JsonSchema identifies a schema with its own dialects", async () => {
-      registry.add({ $schema: dialectUri, $id: "https://example.com/a" });
-      const other = offline({ registries: [registry] });
+      const registry = registryOf({ $schema: dialectUri, $id: "https://example.com/a" });
+      const other = offline();
       other.addDialect({ uri: dialectUri, keywords: { $id: "https://json-schema.org/keyword/id" }, unknownKeywords: "error" });
 
-      await expect(other.compile("https://example.com/a")).resolves.toBeDefined();
-      await expect(jsonSchema.compile("https://example.com/a")).rejects.toThrow(RetrievalError);
-    });
-
-    test("a JsonSchema that can't identify a schema keeps it from being added", () => {
-      const other = offline({ registries: [registry] });
-      other.addDialect({ uri: dialectUri, keywords: { $id: "https://json-schema.org/keyword/id" }, unknownKeywords: "error" });
-
-      expect(() => registry.add({ $schema: dialectUri, $id: "a" })).to.throw();
+      await expect(other.compile("https://example.com/a", { registries: [registry] })).resolves.toBeDefined();
+      await expect(compile(registry, "https://example.com/a")).rejects.toThrow(RetrievalError);
     });
 
     describe("from a meta-schema in the same registry", () => {
@@ -284,79 +309,73 @@ describe("SchemaRegistry", () => {
       });
 
       test("a schema is identified with the dialect its meta-schema defines", async () => {
-        registry.add(metaSchema());
-        registry.add(schema);
+        const registry = registryOf(metaSchema(), schema);
 
-        expect((await jsonSchema.compile("https://example.com/a")).validate(42)).to.equal(false);
+        expect((await compile(registry, "https://example.com/a")).validate(42)).to.equal(false);
       });
 
       test("a schema added before its meta-schema", async () => {
-        registry.add(schema);
-        const before = jsonSchema.session();
-        registry.add(metaSchema());
+        const before = registryOf(schema);
+        const registry = before.with(metaSchema());
 
-        expect((await jsonSchema.compile("https://example.com/a")).validate(42)).to.equal(false);
+        expect((await compile(registry, "https://example.com/a")).validate(42)).to.equal(false);
         // The schema can't be identified without the meta-schema
-        await expect(before.compile("https://example.com/a")).rejects.toThrow(RetrievalError);
-      });
-
-      test("a JsonSchema created after both are added", async () => {
-        registry.add(schema);
-        registry.add(metaSchema());
-
-        const other = addMetaDialect(offline());
-
-        expect((await other.compile("https://example.com/a", { registries: [registry] })).validate(42)).to.equal(false);
+        await expect(compile(before, "https://example.com/a")).rejects.toThrow(RetrievalError);
       });
 
       test("removing the meta-schema", async () => {
-        registry.add(metaSchema(), { retrievalUri: dialectUri });
-        registry.add(schema);
-        const before = jsonSchema.session();
+        const registry = new SchemaRegistry()
+          .with(metaSchema(), { retrievalUri: dialectUri })
+          .with(schema);
 
-        registry.remove(dialectUri);
-
-        await expect(jsonSchema.compile("https://example.com/a")).rejects.toMatchObject({
+        await expect(compile(registry.without(dialectUri), "https://example.com/a")).rejects.toMatchObject({
           cause: { message: expect.stringContaining(dialectUri) }
         });
-        expect((await before.compile("https://example.com/a")).validate(42)).to.equal(false);
+        expect((await compile(registry, "https://example.com/a")).validate(42)).to.equal(false);
       });
 
       test("replacing the meta-schema", async () => {
-        registry.add(metaSchema(), { retrievalUri: dialectUri });
-        registry.add(schema);
+        const registry = new SchemaRegistry()
+          .with(metaSchema(), { retrievalUri: dialectUri })
+          .with(schema)
+          .without(dialectUri)
+          .with(metaSchema(), { retrievalUri: dialectUri });
 
-        registry.remove(dialectUri);
-        registry.add(metaSchema(), { retrievalUri: dialectUri });
-
-        expect((await jsonSchema.compile("https://example.com/a")).validate(42)).to.equal(false);
+        expect((await compile(registry, "https://example.com/a")).validate(42)).to.equal(false);
       });
 
       test("a meta-schema in another registry doesn't identify schemas", async () => {
-        const other = new SchemaRegistry();
-        other.add(metaSchema());
-        registry.add(schema);
+        const other = registryOf(metaSchema());
+        const registry = registryOf(schema);
 
-        await expect(jsonSchema.compile("https://example.com/a", { registries: [other] })).rejects.toThrow(RetrievalError);
+        await expect(jsonSchema.compile("https://example.com/a", { registries: [registry, other] })).rejects.toThrow(RetrievalError);
       });
 
-      test("a meta-schema that requires a vocabulary that isn't supported can't be added", () => {
-        expect(() => registry.add(metaSchema({ "https://example.com/vocab/unknown": true }))).to.throw("https://example.com/vocab/unknown");
+      test("a meta-schema that requires a vocabulary that isn't supported can't be found", async () => {
+        const registry = new SchemaRegistry().with(metaSchema({ "https://example.com/vocab/unknown": true }), { retrievalUri: dialectUri });
+
+        await expect(compile(registry, dialectUri)).rejects.toMatchObject({
+          cause: { message: expect.stringContaining("https://example.com/vocab/unknown") }
+        });
       });
     });
   });
 
   describe("problems", () => {
     test("a schema with problems can't be retrieved", async () => {
-      registry.add(v1({ $id: "https://example.com/a", type: 42 }));
+      const registry = registryOf(v1({ $id: "https://example.com/a", type: 42 }));
 
-      await expect(jsonSchema.compile("https://example.com/a")).rejects.toMatchObject({
+      await expect(compile(registry, "https://example.com/a")).rejects.toMatchObject({
         cause: { ruleId: "https://json-schema.org/keyword/type" }
       });
     });
 
-    test("invalid JSON can't be added", () => {
-      expect(() => registry.add("{", { retrievalUri: "https://example.com/a" })).to.throw("isn't valid JSON");
+    test("invalid JSON is an error when it's found by its retrieval URI", async () => {
+      const registry = new SchemaRegistry().with("{", { retrievalUri: "https://example.com/a" });
+
+      await expect(compile(registry, "https://example.com/a")).rejects.toMatchObject({
+        cause: { message: expect.stringContaining("isn't valid JSON") }
+      });
     });
   });
 });

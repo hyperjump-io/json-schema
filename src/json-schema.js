@@ -24,7 +24,7 @@ export { ValidationError, DetailedValidationError, InvalidSchemaError } from "./
  * @import { CompiledSchemas } from "./compile.js"
  * @import { DocumentNode, GetOptions } from "@hyperjump/browser"
  * @import { JsonSchemaDocumentNode, JsonSchemaNode } from "./schema-ast.d.ts"
- * @import { RegistryEntry } from "./registry-state.js"
+ * @import { RegistryEntry } from "./registry-entries.js"
  * @import { IndexedEntry } from "./registry-index.js"
  * @import * as API from "./json-schema.d.ts"
  */
@@ -98,7 +98,6 @@ export class JsonSchema extends Hyperjump {
       throw Error("The registry has already been added");
     }
 
-    registryIndex(this, registry);
     registries.push(registry);
   }
 
@@ -122,8 +121,7 @@ export class JsonSchema extends Hyperjump {
 
     // The keyword's schema is identified by the keyword's URI
     const registry = /** @type SchemaRegistry */ (internalRegistries.get(this));
-    registry.remove(keyword.uri);
-    registry.add(schema, { retrievalUri: keyword.uri });
+    internalRegistries.set(this, registry.without(keyword.uri).with(schema, { retrievalUri: keyword.uri }));
 
     this.#keywords[keyword.uri] = keyword;
   }
@@ -302,17 +300,16 @@ export class JsonSchemaSession extends Session {
   #dialects;
 
   /**
-   * The keyword schemas this session sees, with the version it sees
+   * The keyword schemas this session sees
    *
-   * @type [RegistryIndex, number]
+   * @type RegistryIndex
    */
   #internalRegistry;
 
   /**
-   * The registries this session sees, each with the version it sees,
-   * session registries first
+   * The registries this session sees, session registries first
    *
-   * @type [RegistryIndex, number][]
+   * @type RegistryIndex[]
    */
   #registries;
 
@@ -341,9 +338,6 @@ export class JsonSchemaSession extends Session {
 
   /**
    * @param {JsonSchema} jsonSchema
-   */
-  /**
-   * @param {JsonSchema} jsonSchema
    * @param {API.SessionOptions} [options]
    */
   constructor(jsonSchema, options = {}) {
@@ -356,18 +350,11 @@ export class JsonSchemaSession extends Session {
     this.#pendingDialects = {};
     this.#loading = new Map();
 
-    const internalIndex = registryIndex(jsonSchema, /** @type SchemaRegistry */ (internalRegistries.get(jsonSchema)), true);
-    this.#internalRegistry = [internalIndex, internalIndex.open()];
+    this.#internalRegistry = registryIndex(jsonSchema, /** @type SchemaRegistry */ (internalRegistries.get(jsonSchema)), true);
 
     const added = /** @type SchemaRegistry[] */ (instanceRegistries.get(jsonSchema));
     const registries = new Set([...options.registries ?? [], ...added]);
-    this.#registries = [...registries].map((registry) => {
-      const index = registryIndex(jsonSchema, registry);
-      return [index, index.open()];
-    });
-
-    // Removed registry entries are kept until no open session can see them
-    openSessions.register(this, [this.#internalRegistry, ...this.#registries]);
+    this.#registries = [...registries].map((registry) => registryIndex(jsonSchema, registry));
   }
 
   get jsonSchema() {
@@ -410,8 +397,8 @@ export class JsonSchemaSession extends Session {
   }
 
   /**
-   * A schema in a registry that's waiting for its dialect might be the one
-   * that was asked for, so a failure says so.
+   * A schema in a registry that's waiting for its dialect or can't be
+   * identified might be the one that was asked for, so a failure says so.
    *
    * @type (uri: string, options: GetOptions) => Promise<DocumentNode<JsonSchemaNode>>
    */
@@ -419,13 +406,31 @@ export class JsonSchemaSession extends Session {
     try {
       return await super.getDocument(uri, options);
     } catch (error) {
-      const dialects = new Set(this.#registries.flatMap(([index, version]) => [...index.waitingFor(version)]));
-      if (dialects.size === 0) {
+      /** @type Set<string> */
+      const dialects = new Set();
+      /** @type Error[] */
+      const unidentified = [];
+      for (const index of this.#registries) {
+        const missing = index.missing();
+        for (const dialect of missing.waitingFor) {
+          dialects.add(dialect);
+        }
+        unidentified.push(...missing.unidentified);
+      }
+
+      /** @type Error[] */
+      const reasons = [];
+      if (dialects.size > 0) {
+        reasons.push(Error(`Some schemas in registries can't be identified until these dialects are defined: ${[...dialects].join(", ")}`));
+      }
+      if (unidentified.length > 0) {
+        reasons.push(new AggregateError(unidentified, "Some schemas in registries can't be identified"));
+      }
+      if (reasons.length === 0) {
         throw error;
       }
 
-      const waiting = Error(`Some schemas in registries can't be identified until these dialects are defined: ${[...dialects].join(", ")}`);
-      throw new RetrievalError(`Unable to load resource '${uri}'`, { cause: new AggregateError([error, waiting], waiting.message) });
+      throw new RetrievalError(`Unable to load resource '${uri}'`, { cause: new AggregateError([error, ...reasons], reasons[0].message) });
     }
   }
 
@@ -436,8 +441,7 @@ export class JsonSchemaSession extends Session {
    */
   #keywordSchema(uri) {
     try {
-      const [index, version] = this.#internalRegistry;
-      return index.lookup(toAbsoluteIri(uri), version);
+      return this.#internalRegistry.lookup(toAbsoluteIri(uri));
     } catch (_error) {
       return;
     }
@@ -458,8 +462,13 @@ export class JsonSchemaSession extends Session {
 
     /** @type IndexedEntry | undefined */
     let found;
-    for (const [index, version] of this.#registries) {
-      const indexed = index.lookup(id, version);
+    for (const index of this.#registries) {
+      let indexed;
+      try {
+        indexed = index.lookup(id);
+      } catch (error) {
+        throw new RetrievalError(`Unable to load resource '${uri}'`, { cause: error });
+      }
       if (indexed && found && indexed.entry !== found.entry) {
         throw new RetrievalError(`Unable to load resource '${uri}'`, {
           cause: Error(`More than one registry has a schema identified as '${id}'`)
@@ -649,17 +658,6 @@ const registryIndex = (jsonSchema, registry, isInternal = false) => {
 
   return index;
 };
-
-/**
- * Closes a session's view of its registries when the session goes away
- *
- * @type FinalizationRegistry<[RegistryIndex, number][]>
- */
-const openSessions = new FinalizationRegistry((registries) => {
-  for (const [index, version] of registries) {
-    index.close(version);
-  }
-});
 
 /**
  * Registry entries resolved with only the dialects added to a JsonSchema,

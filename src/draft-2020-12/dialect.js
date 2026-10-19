@@ -142,10 +142,8 @@ export const draft202012Dialect = {
  * One registry is shared by every JsonSchema. Each identifies its entries
  * itself.
  */
-const metaSchemas = new SchemaRegistry();
-
 // TypeScript infers types for the JSON that aren't assignable to Json
-for (const schema of /** @type Json[] */ (/** @type unknown */ ([
+const metaSchemas = new SchemaRegistry((/** @type Json[] */ (/** @type unknown */ ([
   metaSchema,
   coreMetaSchema,
   applicatorMetaSchema,
@@ -155,9 +153,7 @@ for (const schema of /** @type Json[] */ (/** @type unknown */ ([
   formatAnnotationMetaSchema,
   formatAssertionMetaSchema,
   contentMetaSchema
-]))) {
-  metaSchemas.add(schema);
-}
+]))).map((schema) => ({ schema })));
 
 /** @type API.addDraft202012 */
 export const addDraft202012 = (jsonSchema) => {

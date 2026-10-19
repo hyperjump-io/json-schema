@@ -20,10 +20,7 @@ describe("draft-2020-12", () => {
 
   /** @type (jsonSchema: JsonSchema, schemas: Json[], uri: string) => ReturnType<JsonSchema["compile"]> */
   const compile = (jsonSchema, schemas, uri) => {
-    const registry = new SchemaRegistry();
-    for (const schema of schemas) {
-      registry.add(schema);
-    }
+    const registry = new SchemaRegistry(schemas.map((schema) => ({ schema })));
     return jsonSchema.compile(uri, { registries: [registry] });
   };
 

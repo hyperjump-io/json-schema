@@ -1,43 +1,39 @@
 import { VFileMessage } from "vfile-message";
 import { fromJson } from "@hyperjump/browser/json";
 import { parseIri, toAbsoluteIri } from "@hyperjump/uri";
-import { listenToRegistry, registryVersion } from "./registry-state.js";
+import { entriesOf } from "./registry-entries.js";
 
 /**
  * @import { JsonNode } from "@hyperjump/browser/json"
  * @import { JsonSchema } from "./json-schema.d.ts"
  * @import { SchemaRegistry } from "./schema-registry.d.ts"
- * @import { RegistryEntry, RegistryListener } from "./registry-state.js"
+ * @import { RegistryEntry } from "./registry-entries.js"
  * @import { Dialect, DialectDefinition } from "./dialect.d.ts"
  * @import { ResolveContext } from "./keyword.d.ts"
  */
 
 /**
- * An identified entry. A session at version `v` sees it if it was added at
- * or before `v` and wasn't removed by then.
+ * An entry by a URI it's found by. One that can't be identified is found by
+ * its retrieval URI, and finding it throws the problem.
  *
  * @typedef {{
  *   entry: RegistryEntry;
  *   uri: string;
- *   addedIn: number;
- *   removedIn?: number;
- *   definedDialect?: DialectDefinition;
- *   dialectFrom?: DialectSource;
+ *   error?: Error;
  * }} IndexedEntry
  */
 
 /**
- * The entry in the same registry that defines the dialect an entry was
- * identified with
+ * `fromRegistry` is set if the entry was identified with a dialect another
+ * entry in the same registry defines.
  *
- * @typedef {{ entry: RegistryEntry; dialectUri: string }} DialectSource
- */
-
-/**
  * @typedef {{
  *   uri: string;
  *   definedDialect?: DialectDefinition;
- *   dialectFrom?: DialectSource;
+ *   fromRegistry?: true;
+ * } | {
+ *   error: Error;
+ *   fromRegistry?: true;
  * } | {
  *   waitingFor: string;
  * }} Identification
@@ -46,21 +42,27 @@ import { listenToRegistry, registryVersion } from "./registry-state.js";
 /**
  * Finds a dialect defined by an entry in the same registry
  *
- * @typedef {(dialectUri: string) => IndexedEntry | undefined} RegistryDialects
+ * @typedef {(dialectUri: string) => DialectDefinition | undefined} RegistryDialects
  */
 
 /**
- * A JsonSchema's index of a registry: each entry by the URI it's identified
- * by with the JsonSchema's dialects.
+ * Identifications that only depend on the JsonSchema and the entry, which
+ * every index of a registry with the entry can share. That's what keeps a
+ * registry that's one edit away from another cheap to index.
  *
- * @implements RegistryListener
+ * @type WeakMap<JsonSchema, WeakMap<RegistryEntry, Identification>>
+ */
+const identifications = new WeakMap();
+
+/**
+ * A JsonSchema's index of a registry: each entry by the URI it's identified
+ * by with the JsonSchema's dialects. A registry never changes, so neither
+ * does its index, except that entries waiting for a dialect are identified
+ * once the JsonSchema has it.
  */
 export class RegistryIndex {
   /** @type JsonSchema */
   #jsonSchema;
-
-  /** @type SchemaRegistry */
-  #registry;
 
   /** Whether this is a JsonSchema's registry of keyword schemas */
   #isInternal;
@@ -68,30 +70,28 @@ export class RegistryIndex {
   /** @type Map<string, IndexedEntry[]> */
   #byUri;
 
-  /** @type Map<RegistryEntry, IndexedEntry> */
-  #indexed;
-
   /**
-   * The entries that define dialects, by each URI they're found by
+   * The dialects entries define, by each URI the entry is found by
    *
-   * @type Map<string, IndexedEntry>
+   * @type Map<string, DialectDefinition>
    */
   #dialects;
 
   /**
-   * Entries whose dialect isn't defined yet, with the version they were
-   * added in and the dialect they're waiting for
+   * Entries whose dialect isn't defined yet, with the dialect they're
+   * waiting for
    *
-   * @type Map<RegistryEntry, { addedIn: number; dialectUri: string }>
+   * @type Map<RegistryEntry, string>
    */
   #waiting;
 
   /**
-   * How many open sessions see each version of the registry
+   * The problems with entries that can't be identified and don't have a
+   * retrieval URI to be found by
    *
-   * @type Map<number, number>
+   * @type Error[]
    */
-  #openSessions;
+  #unidentified;
 
   /**
    * @param {JsonSchema} jsonSchema
@@ -100,159 +100,79 @@ export class RegistryIndex {
    */
   constructor(jsonSchema, registry, isInternal = false) {
     this.#jsonSchema = jsonSchema;
-    this.#registry = registry;
     this.#isInternal = isInternal;
     this.#byUri = new Map();
-    this.#indexed = new Map();
     this.#dialects = new Map();
     this.#waiting = new Map();
-    this.#openSessions = new Map();
+    this.#unidentified = [];
 
-    /** @type Error[] */
-    const errors = [];
-    for (const [entry, addedIn] of listenToRegistry(registry, this)) {
-      try {
-        this.#prepare(entry, addedIn)();
-      } catch (error) {
-        errors.push(/** @type Error */ (error));
+    for (const entry of entriesOf(registry)) {
+      this.#identify(entry);
+    }
+    this.#identifyWaiting();
+  }
+
+  /**
+   * Index an entry, unless it's waiting for a dialect
+   *
+   * @type (entry: RegistryEntry) => boolean
+   */
+  #identify(entry) {
+    let cache = identifications.get(this.#jsonSchema);
+    if (!cache) {
+      cache = new WeakMap();
+      identifications.set(this.#jsonSchema, cache);
+    }
+
+    let identification = cache.get(entry);
+    if (!identification) {
+      identification = identify(this.#jsonSchema, entry, this.#isInternal, this.#registryDialect);
+      if (!("waitingFor" in identification) && !identification.fromRegistry) {
+        cache.set(entry, identification);
       }
     }
 
-    if (errors.length === 1) {
-      throw errors[0];
-    } else if (errors.length > 1) {
-      throw new AggregateError(errors, "The registry has schemas that can't be identified");
-    }
-  }
-
-  /** @type RegistryListener["prepareAdd"] */
-  prepareAdd(entry) {
-    // The registry's version goes up by one when the entry is committed
-    return this.#prepare(entry, registryVersion(this.#registry) + 1);
-  }
-
-  /** @type (entry: RegistryEntry, addedIn: number) => () => void */
-  #prepare(entry, addedIn) {
-    const identification = identify(this.#jsonSchema, entry, this.#isInternal, this.#registryDialect);
     if ("waitingFor" in identification) {
-      return () => {
-        this.#waiting.set(entry, { addedIn, dialectUri: identification.waitingFor });
-      };
+      this.#waiting.set(entry, identification.waitingFor);
+      return false;
+    }
+    this.#waiting.delete(entry);
+
+    if ("error" in identification) {
+      if (entry.retrievalUri === undefined) {
+        this.#unidentified.push(identification.error);
+      } else {
+        this.#add(entry.retrievalUri, { entry, uri: entry.retrievalUri, error: identification.error });
+      }
+      return true;
     }
 
-    this.#assertNotIndexed(entry, identification.uri);
-    return () => {
-      this.#index(entry, identification, addedIn);
-      if (identification.definedDialect) {
-        this.#identifyWaiting();
+    const { uri, definedDialect } = identification;
+
+    // An entry is found by the URI it's identified by and by its retrieval
+    // URI, like a retrieved schema is found by the URI it was retrieved from
+    const keys = entry.retrievalUri === undefined || entry.retrievalUri === uri ? [uri] : [uri, entry.retrievalUri];
+    for (const key of keys) {
+      this.#add(key, { entry, uri });
+      if (definedDialect) {
+        this.#dialects.set(key, definedDialect);
       }
-    };
+    }
+    return true;
+  }
+
+  /** @type (key: string, indexed: IndexedEntry) => void */
+  #add(key, indexed) {
+    const entries = this.#byUri.get(key);
+    if (entries) {
+      entries.push(indexed);
+    } else {
+      this.#byUri.set(key, [indexed]);
+    }
   }
 
   /** @type RegistryDialects */
   #registryDialect = (dialectUri) => this.#dialects.get(dialectUri);
-
-  /**
-   * An entry is found by the URI it's identified by and by its retrieval
-   * URI, like a retrieved schema is found by the URI it was retrieved from.
-   *
-   * @type (entry: RegistryEntry, uri: string) => string[]
-   */
-  #keys(entry, uri) {
-    return entry.retrievalUri === undefined || entry.retrievalUri === uri ? [uri] : [uri, entry.retrievalUri];
-  }
-
-  /** @type (entry: RegistryEntry, uri: string) => void */
-  #assertNotIndexed(entry, uri) {
-    for (const key of this.#keys(entry, uri)) {
-      if (this.#byUri.get(key)?.some((indexed) => indexed.removedIn === undefined)) {
-        throw Error(`There's already a schema found by '${key}' in the registry`);
-      }
-    }
-  }
-
-  /**
-   * An entry identified with a dialect from another entry can't be seen
-   * before that entry is.
-   *
-   * @type (entry: RegistryEntry, identification: Extract<Identification, { uri: string }>, addedIn: number) => void
-   */
-  #index(entry, { uri, definedDialect, dialectFrom }, addedIn) {
-    const dialectAddedIn = dialectFrom && this.#indexed.get(dialectFrom.entry)?.addedIn;
-
-    /** @type IndexedEntry */
-    const indexed = { entry, uri, addedIn: Math.max(addedIn, dialectAddedIn ?? addedIn), definedDialect, dialectFrom };
-    this.#indexed.set(entry, indexed);
-
-    for (const key of this.#keys(entry, uri)) {
-      const entries = this.#byUri.get(key);
-      if (entries) {
-        entries.push(indexed);
-      } else {
-        this.#byUri.set(key, [indexed]);
-      }
-
-      if (definedDialect) {
-        this.#dialects.set(key, indexed);
-      }
-    }
-  }
-
-  /** @type RegistryListener["removed"] */
-  removed(entry, version) {
-    this.#waiting.delete(entry);
-
-    const indexed = this.#indexed.get(entry);
-    if (indexed) {
-      this.#unindex(indexed, version);
-
-      // Entries identified with the dialect this one defined have to be
-      // identified again
-      for (const dependent of [...this.#indexed.values()]) {
-        if (dependent.dialectFrom?.entry === entry) {
-          this.#unindex(dependent, version);
-          this.#waiting.set(dependent.entry, { addedIn: version, dialectUri: dependent.dialectFrom.dialectUri });
-        }
-      }
-      this.#identifyWaiting();
-    }
-
-    this.#prune();
-  }
-
-  /** @type (indexed: IndexedEntry, version: number) => void */
-  #unindex(indexed, version) {
-    indexed.removedIn = version;
-    this.#indexed.delete(indexed.entry);
-    for (const [key, definer] of this.#dialects) {
-      if (definer === indexed) {
-        this.#dialects.delete(key);
-      }
-    }
-  }
-
-  /**
-   * The entry identified by a URI that a session at a version sees
-   *
-   * @type (uri: string, version: number) => IndexedEntry | undefined
-   */
-  lookup(uri, version) {
-    const found = this.#find(uri, version);
-    if (found || this.#waiting.size === 0) {
-      return found;
-    }
-
-    // An entry might be waiting for a dialect that's been defined since
-    this.#identifyWaiting();
-    return this.#find(uri, version);
-  }
-
-  /** @type (uri: string, version: number) => IndexedEntry | undefined */
-  #find(uri, version) {
-    return this.#byUri.get(uri)?.find((indexed) => {
-      return indexed.addedIn <= version && (indexed.removedIn === undefined || indexed.removedIn > version);
-    });
-  }
 
   /**
    * Identifying an entry can define a dialect another entry is waiting for,
@@ -262,70 +182,47 @@ export class RegistryIndex {
     let changed = true;
     while (changed) {
       changed = false;
-      for (const [entry, { addedIn }] of this.#waiting) {
-        try {
-          const identification = identify(this.#jsonSchema, entry, this.#isInternal, this.#registryDialect);
-          if ("uri" in identification) {
-            this.#assertNotIndexed(entry, identification.uri);
-            this.#waiting.delete(entry);
-            this.#index(entry, identification, addedIn);
-            changed = true;
-          }
-        } catch (_error) {
-          // It stays unidentified. It's reported when it's added if its
-          // dialect is defined by then.
-        }
+      for (const entry of this.#waiting.keys()) {
+        changed = this.#identify(entry) || changed;
       }
     }
   }
 
   /**
-   * The dialects that entries a session at a version sees are waiting for.
-   * Those entries can't be found until the dialects are defined.
+   * The entry found by a URI
    *
-   * @type (version: number) => Set<string>
+   * @type (uri: string) => IndexedEntry | undefined
+   * @throws Error if more than one entry is found by the URI, or the entry
+   * can't be identified
    */
-  waitingFor(version) {
-    const dialects = new Set();
-    for (const { addedIn, dialectUri } of this.#waiting.values()) {
-      if (addedIn <= version) {
-        dialects.add(dialectUri);
-      }
+  lookup(uri) {
+    let found = this.#byUri.get(uri);
+    if (!found && this.#waiting.size > 0) {
+      // An entry might be waiting for a dialect that's been added since
+      this.#identifyWaiting();
+      found = this.#byUri.get(uri);
     }
 
-    return dialects;
-  }
-
-  /** The version a new session sees */
-  open() {
-    const version = registryVersion(this.#registry);
-    this.#openSessions.set(version, (this.#openSessions.get(version) ?? 0) + 1);
-    return version;
-  }
-
-  /** @type (version: number) => void */
-  close(version) {
-    const count = (this.#openSessions.get(version) ?? 1) - 1;
-    if (count === 0) {
-      this.#openSessions.delete(version);
-    } else {
-      this.#openSessions.set(version, count);
+    if (!found) {
+      return;
+    } else if (found.length > 1) {
+      throw Error(`More than one schema in the registry is found by '${uri}'`);
+    } else if (found[0].error) {
+      throw found[0].error;
     }
 
-    this.#prune();
+    return found[0];
   }
 
-  /** Forget removed entries that no open session can see */
-  #prune() {
-    const oldest = Math.min(...this.#openSessions.keys());
-    for (const [uri, entries] of this.#byUri) {
-      const kept = entries.filter((indexed) => indexed.removedIn === undefined || indexed.removedIn > oldest);
-      if (kept.length === 0) {
-        this.#byUri.delete(uri);
-      } else if (kept.length !== entries.length) {
-        this.#byUri.set(uri, kept);
-      }
-    }
+  /**
+   * Why a lookup might not have found what it was looking for: the dialects
+   * entries are waiting for, and the problems with entries that can't be
+   * identified and don't have a retrieval URI to be found by
+   *
+   * @type () => { waitingFor: Set<string>; unidentified: Error[] }
+   */
+  missing() {
+    return { waitingFor: new Set(this.#waiting.values()), unidentified: this.#unidentified };
   }
 }
 
@@ -336,13 +233,12 @@ export class RegistryIndex {
  * another entry in the same registry has to wait for it.
  *
  * @type (jsonSchema: JsonSchema, entry: RegistryEntry, isInternal: boolean, registryDialect: RegistryDialects) => Identification
- * @throws Error if the entry can't be identified
  */
 export const identify = (jsonSchema, entry, isInternal, registryDialect) => {
   const { retrievalUri } = entry;
   const result = fromJson(entryText(entry));
   if (result.status !== "success" || result.node === undefined) {
-    throw Error(`The schema${retrievalUri ? ` at '${retrievalUri}'` : ""} isn't valid JSON`, { cause: result.messages[0] });
+    return { error: Error(`The schema${retrievalUri ? ` at '${retrievalUri}'` : ""} isn't valid JSON`, { cause: result.messages[0] }) };
   }
 
   const root = result.node;
@@ -350,44 +246,56 @@ export const identify = (jsonSchema, entry, isInternal, registryDialect) => {
   const $schema = $schemaNode?.jsonType === "string" ? $schemaNode.value : undefined;
   const dialectUri = $schema ?? entry.dialectUri ?? jsonSchema.config.defaultDialectUri;
 
-  let uri = retrievalUri;
-  /** @type DialectDefinition | undefined */
-  let definedDialect;
-  /** @type DialectSource | undefined */
-  let dialectFrom;
+  /** @type Dialect | undefined */
+  let dialect;
+  /** @type true | undefined */
+  let fromRegistry;
   if (root.jsonType === "object" && dialectUri !== undefined) {
-    const absoluteDialectUri = toAbsoluteIri(dialectUri);
-    let dialect;
+    let absoluteDialectUri;
+    try {
+      absoluteDialectUri = toAbsoluteIri(dialectUri);
+    } catch (error) {
+      return { error: /** @type Error */ (error) };
+    }
+
     if (jsonSchema.hasDialect(absoluteDialectUri)) {
       dialect = jsonSchema.getDialect(absoluteDialectUri);
     } else {
-      const definer = registryDialect(absoluteDialectUri);
-      if (definer === undefined) {
+      const definition = registryDialect(absoluteDialectUri);
+      if (definition === undefined) {
         return { waitingFor: absoluteDialectUri };
       }
-      const definition = /** @type DialectDefinition */ (definer.definedDialect);
       dialect = { ...definition, uri: absoluteDialectUri };
-      dialectFrom = { entry: definer.entry, dialectUri: absoluteDialectUri };
-    }
-
-    ({ uri, definedDialect } = rootEffects(jsonSchema, root, dialect, retrievalUri));
-  }
-
-  if (uri === undefined) {
-    throw Error("A schema in a registry needs an '$id' or a retrieval URI");
-  }
-
-  uri = toAbsoluteIri(uri);
-  if (parseIri(uri).scheme === "file" && (retrievalUri === undefined || parseIri(retrievalUri).scheme !== "file")) {
-    throw Error(`A schema that doesn't have a 'file:' retrieval URI can't be identified by one: ${uri}`);
-  }
-  for (const key of [uri, retrievalUri]) {
-    if (!isInternal && key !== undefined && jsonSchema.hasKeyword(key)) {
-      throw Error(`'${key}' identifies a keyword's schema, which can't be replaced`);
+      fromRegistry = true;
     }
   }
 
-  return { uri, definedDialect, dialectFrom };
+  try {
+    let uri = retrievalUri;
+    /** @type DialectDefinition | undefined */
+    let definedDialect;
+    if (root.jsonType === "object" && dialect !== undefined) {
+      ({ uri, definedDialect } = rootEffects(jsonSchema, root, dialect, retrievalUri));
+    }
+
+    if (uri === undefined) {
+      throw Error("A schema in a registry needs an '$id' or a retrieval URI");
+    }
+
+    uri = toAbsoluteIri(uri);
+    if (parseIri(uri).scheme === "file" && (retrievalUri === undefined || parseIri(retrievalUri).scheme !== "file")) {
+      throw Error(`A schema that doesn't have a 'file:' retrieval URI can't be identified by one: ${uri}`);
+    }
+    for (const key of [uri, retrievalUri]) {
+      if (!isInternal && key !== undefined && jsonSchema.hasKeyword(key)) {
+        throw Error(`'${key}' identifies a keyword's schema, which can't be replaced`);
+      }
+    }
+
+    return { uri, definedDialect, fromRegistry };
+  } catch (error) {
+    return { error: /** @type Error */ (error), fromRegistry };
+  }
 };
 
 /**

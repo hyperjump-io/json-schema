@@ -41,10 +41,7 @@ describe("addVocabulary", () => {
 
   /** @type (jsonSchema: JsonSchema, schemas: Json[], dialectUri: string) => Promise<unknown> */
   const getDialect = async (jsonSchema, schemas, dialectUri) => {
-    const registry = new SchemaRegistry();
-    for (const schema of schemas) {
-      registry.add(schema);
-    }
+    const registry = new SchemaRegistry(schemas.map((schema) => ({ schema })));
 
     return jsonSchema.session({ registries: [registry] }).getDialect(dialectUri);
   };
@@ -94,15 +91,14 @@ describe("addVocabulary", () => {
     expect(await getDialect(jsonSchema, schemas, bUri)).to.include({ uri: bUri });
   });
 
-  test("a vocabulary is only supported by the JsonSchema it's added to", () => {
+  test("a vocabulary is only supported by the JsonSchema it's added to", async () => {
     const other = addMetaDialects(new JsonSchema());
     addVocabulary(jsonSchema, fooVocabularyUri, { keywords: { foo: "https://example.com/keyword/foo" } });
 
-    const registry = new SchemaRegistry();
-    jsonSchema.addRegistry(registry);
-    other.addRegistry(registry);
+    const schemas = [metaSchema("https://example.com/dialect", metaDialectUri, { [fooVocabularyUri]: true })];
 
-    expect(() => registry.add(metaSchema("https://example.com/dialect", metaDialectUri, { [fooVocabularyUri]: true }))).to.throw(fooVocabularyUri);
+    await expect(getDialect(jsonSchema, schemas, "https://example.com/dialect")).resolves.toBeDefined();
+    await expect(getDialect(other, schemas, "https://example.com/dialect")).rejects.toThrow();
     expect(vocabularyKeyword.vocabularies).to.eql({});
   });
 

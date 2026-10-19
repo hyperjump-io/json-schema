@@ -7,49 +7,19 @@ import { v1DialectUri } from "./v1/index.js";
 describe("RegistryIndex", () => {
   const uri = "https://example.com/a";
 
-  test("a removed entry is kept while an open session can see it", () => {
-    const registry = new SchemaRegistry();
-    const index = new RegistryIndex(new JsonSchema(), registry);
-    registry.add({ $schema: v1DialectUri }, { retrievalUri: uri });
+  test("an entry is found by the URI it's identified by", () => {
+    const registry = new SchemaRegistry().with({ $schema: v1DialectUri }, { retrievalUri: uri });
 
-    const version = index.open();
-    registry.remove(uri);
-
-    expect(index.lookup(uri, version)).to.include({ uri });
-
-    index.close(version);
-    expect(index.lookup(uri, version)).to.equal(undefined);
+    expect(new RegistryIndex(new JsonSchema(), registry).lookup(uri)).to.include({ uri });
   });
 
-  test("a removed entry is forgotten if no session can see it", () => {
-    const registry = new SchemaRegistry();
-    const index = new RegistryIndex(new JsonSchema(), registry);
-    registry.add({ $schema: v1DialectUri }, { retrievalUri: uri });
-    const version = index.open();
-    index.close(version);
-
-    registry.remove(uri);
-
-    expect(index.lookup(uri, version)).to.equal(undefined);
-  });
-
-  test("an entry added after a session was opened isn't seen by it", () => {
-    const registry = new SchemaRegistry();
-    const index = new RegistryIndex(new JsonSchema(), registry);
-    const version = index.open();
-
-    registry.add({ $schema: v1DialectUri }, { retrievalUri: uri });
-
-    expect(index.lookup(uri, version)).to.equal(undefined);
-    expect(index.lookup(uri, index.open())).to.include({ uri });
-  });
-
-  test("entries already in the registry are indexed", () => {
-    const registry = new SchemaRegistry();
-    registry.add({ $schema: v1DialectUri }, { retrievalUri: uri });
-
+  test("two entries found by the same URI are an error when it's looked up", () => {
+    const registry = new SchemaRegistry()
+      .with({ $schema: v1DialectUri, $id: uri })
+      .with({ $schema: v1DialectUri, $id: uri }, { retrievalUri: "https://example.com/b" });
     const index = new RegistryIndex(new JsonSchema(), registry);
 
-    expect(index.lookup(uri, index.open())).to.include({ uri });
+    expect(() => index.lookup(uri)).to.throw("More than one schema");
+    expect(index.lookup("https://example.com/b")).to.include({ uri });
   });
 });

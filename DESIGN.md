@@ -286,19 +286,20 @@ Both libraries have a long-lived object and sessions created from it, and
 
 A registry holds schemas that aren't retrieved from a URI. It's separate
 from `JsonSchema` so one registry can be shared by several `JsonSchema`s and
-sessions. Registries are edited only through their own methods. A
-`JsonSchema` only reacts to the changes.
+sessions. A registry never changes. `with` and `without` return a new one,
+so a session's registries are its snapshot of them.
 
 ```ts
 class SchemaRegistry {
-  add(schema: Json | string, options?: { retrievalUri?: string; dialectUri?: string }): void;
-  remove(retrievalUri: string): void;
+  constructor(entries?: Iterable<{ schema: Json | string; retrievalUri?: string; dialectUri?: string }>);
+  with(schema: Json | string, options?: { retrievalUri?: string; dialectUri?: string }): SchemaRegistry;
+  without(retrievalUri: string): SchemaRegistry;
 }
 ```
 
 Implemented in `src/schema-registry.js`, with each `JsonSchema`'s index of a
-registry in `src/registry-index.js`. The state a registry shares with its
-indexes is in `src/registry-state.js`, which isn't exported.
+registry in `src/registry-index.js`. A registry's entries are in
+`src/registry-entries.js`, which isn't exported.
 
 - A schema is identified the way JSON Schema identifies it: by its `$id`
   (or `id` in draft-04), resolved against `retrievalUri`, or by
@@ -312,10 +313,11 @@ indexes is in `src/registry-state.js`, which isn't exported.
   it.
 - A schema can't be identified, or have a `retrievalUri`, that's a
   keyword's URI. That's a keyword's schema.
-- `remove` takes the `retrievalUri`. A schema added without one can't be
-  removed, and removing a `retrievalUri` that isn't there does nothing.
-  Adding a `retrievalUri` that's already in the registry throws, so an edit
-  is `remove` then `add`.
+- `without` takes the `retrievalUri`. A schema added without one can't be
+  removed, and removing a `retrievalUri` that isn't there returns the same
+  registry. Adding a `retrievalUri` that's already in the registry throws,
+  so an edit is `without` then `with`. The constructor is for creating a
+  registry in one step, like the presets and the test suite do.
 - `retrievalUri` can be a `file:` URI, because the code calling `add` is
   trusted. The resolver's rule that only a schema retrieved from a `file:`
   URI can be identified by one still applies.
@@ -324,87 +326,80 @@ indexes is in `src/registry-state.js`, which isn't exported.
   (`session({ registries })`, `compile(uri, { registries })`).
 - Lookup order is: embedded resources, the internal registry, session
   registries, instance registries, then browser (the session's cache, the
-  HTTP cache, a URI scheme plugin). Two entries with the same URI in one
-  registry are an error when the second is added. Two in different
-  registries that a session sees are an error when the URI is looked up,
-  which only costs checking each registry's index.
+  HTTP cache, a URI scheme plugin). Two entries found by the same URI are an
+  error when the URI is looked up, whether they're in one registry or
+  different ones a session sees. A registry can't check that itself,
+  because identity depends on the dialect, and it means a language server
+  can have two files with the same `$id` for a moment without an
+  exception.
 
 ### Identification
 
 Identity depends on the dialect, so a registry can't index its own
 entries. Each `JsonSchema` indexes each registry it's used with.
 
-- Every `JsonSchema` a registry is used with identifies an entry when
-  it's added. Identification is synchronous: it gets the dialect and runs
-  only the root's resolve hooks (`identify` in `src/registry-index.js`).
-  Full resolution comes later, separately.
-- If any `JsonSchema` finds a problem, such as a duplicate `$id`, `add`
-  throws (an `AggregateError` if there's more than one) and the entry isn't
-  added.
+- A `JsonSchema` identifies a registry's entries the first time a session
+  uses the registry. Identification is synchronous: it gets the dialect and
+  runs only the root's resolve hooks (`identify` in
+  `src/registry-index.js`). Full resolution comes later, separately.
+- An entry that can't be identified, such as one that isn't valid JSON or
+  has an invalid `$id`, is found by its `retrievalUri`, and finding it
+  throws the problem, like a retrieved file that can't be parsed. One
+  without a `retrievalUri` can't be found, so its problem is reported when
+  a lookup misses.
 - An entry's dialect is one added to the `JsonSchema` or one defined by
   another entry in the same registry (its root's `defineDialect` effect).
   Only the same registry, because an index doesn't depend on which other
   registries a session sees. A schema in a registry that uses a
   `$vocabulary` dialect needs that dialect's meta-schema in the same registry
   or added with `addDialect`.
-- An entry identified with another entry's dialect can't be seen before
-  that entry: its version is the later of the two. Removing the meta-schema
-  identifies its dependents again at that version, so sessions that could
-  see the meta-schema keep seeing them as they were. Replacing it (`remove`
-  then `add`) identifies them again with the new one.
 - An entry whose dialect isn't defined yet waits in a list by dialect URI.
   Nothing is retrieved to identify an entry. Waiting entries are tried
-  again when an entry that defines a dialect is added and when a lookup
+  again once the rest of the registry is identified and when a lookup
   misses, so a dialect added with `addDialect` later is picked up. The
   dialects they're waiting for are in the error when the lookup fails.
 - A session sees a dialect defined by an entry exactly when it sees the
-  entry, because the dialect comes from the entry's resolved document.
-  Removing the entry removes the dialect.
+  entry, because the dialect comes from the entry's resolved document. A
+  registry without the entry doesn't have the dialect.
 - Full resolution is lazy, the first time a session asks for the entry.
   Problems are thrown as fatal messages then, as they are for a retrieved
   schema.
 
 ### Making sessions cheap
 
-Creating a session takes O(1) per registry, however large the registry is.
+Creating a session costs nothing for a registry that's been used before,
+and a registry that's one edit away from another is cheap to index.
 
-- An entry never changes after it's added, so everything derived from it is
-  cached once per `JsonSchema` (a `WeakMap` keyed by the entry) and shared by
-  every session: its identification and, lazily, its resolved document. A
-  resolved document is only shared if every resource in it uses a dialect
-  added to the `JsonSchema`. One that used a dialect only its session had
-  belongs to that session.
-- A `JsonSchema` keeps an index for each registry (URI to entry), updated as
-  the registry changes. Sessions point at the indexes. They don't build
-  anything.
-- Sessions see a snapshot of each registry without copying it. A registry's
-  version goes up on every `add` and `remove`. Each index entry records the
-  version it was added in and the version it was removed in. A session
-  records each registry's version when it's created and only sees entries
-  that existed at that version. A URI rarely has more than one or two
-  versions, so lookups stay O(1). A removed entry is dropped once no open
-  session can see it. Each index counts open sessions per version, and a
-  `FinalizationRegistry` closes a session when it's garbage collected.
-  Sessions can't be closed explicitly.
-- Registries hold their indexes weakly, and each `JsonSchema` holds its
-  indexes in a `WeakMap` keyed by registry, so a registry that was only
-  used for one session can go away.
-- A session registry costs the same as an instance registry. Its entries are
-  identified the first time it's used with a `JsonSchema`, and every session
-  after that is O(1).
+- An entry never changes, and `with` and `without` carry the same entry
+  objects into the new registry. Everything derived from an entry is cached
+  once per `JsonSchema` (a `WeakMap` keyed by the entry) and shared by every
+  registry and session: its identification and, lazily, its resolved
+  document. An identification that used a dialect from another entry isn't
+  cached, because it depends on the registry. A resolved document is only
+  shared if every resource in it uses a dialect added to the `JsonSchema`.
+  One that used a dialect only its session had belongs to that session.
+- A `JsonSchema` builds an index (URI to entry) for each registry the first
+  time a session uses it, and keeps it in a `WeakMap` keyed by the registry.
+  Sessions point at the indexes. A new registry from `with` or `without`
+  gets a new index, which only identifies the new entry. The rest is
+  copying cached identifications into a `Map`.
+- An old registry, its index, and the sessions that use it are garbage
+  collected when nothing refers to them. Nothing keeps track of open
+  sessions.
 - What a session still builds itself is its document cache and embedded
   index for what it actually uses, plus anything that depends on a dialect
   only that session has.
-- A cached resolved document reflects the definitions when it was resolved.
-  A later `addKeyword` or `extendDialect` doesn't change it, as with any
-  schema that's already been resolved.
+- A cached identification or resolved document reflects the definitions
+  when it was made. A later `addKeyword` or `extendDialect` doesn't change
+  it, as with any schema that's already been resolved.
 
 ### The internal registry
 
 - Every `JsonSchema` has a `SchemaRegistry` for its keywords' schemas, so
-  there's only one way schemas are stored. `addKeyword` adds the keyword's
-  schema with the keyword's URI as its `retrievalUri`, and replacing a
-  keyword replaces its schema (`remove`, then `add`). Custom keywords' schemas
+  there's only one way schemas are stored. `addKeyword` replaces it with one
+  that has the keyword's schema with the keyword's URI as its
+  `retrievalUri`, and replacing a keyword replaces its schema (`without`,
+  then `with`). Custom keywords' schemas
   work the same way, so they don't have to be served from anywhere.
 - It's checked right after embedded resources and can't be removed. Another
   registry can't have a schema that's identified by, or retrieved from, a
@@ -427,8 +422,9 @@ Creating a session takes O(1) per registry, however large the registry is.
 
 ### The language server
 
-- Workspace schemas with an `$id` go in an instance registry with their
-  `file:` URI as the `retrievalUri`. An edit is `remove` then `add`.
+- Workspace schemas with an `$id` go in a registry with their `file:` URI
+  as the `retrievalUri`. An edit makes a new registry (`without` then
+  `with`), which the next session is created with.
 - Schemas without an `$id` are retrieved from their `file:` URIs. Files
   aren't HTTP cached, so a new session sees the edits.
 - A new session for each change to the workspace sees a consistent snapshot,
@@ -1003,6 +999,9 @@ Changes made to browser for this (on its `v2` branch):
   schema every time.
 - A registry schema whose dialect is only defined by a meta-schema in a
   different registry can't be found.
+- Copying a registry's entries for `with` and indexing the new registry is
+  O(n). That's fast for a language server's workspace. If it shows up in
+  a profile, an index could build on its parent's index.
 - Boolean schemas are allowed in draft-04, which didn't have them. A
   boolean where a schema goes is a boolean schema in every dialect.
 - A self-describing meta-schema's dialect has to be added. One retrieved

@@ -145,11 +145,10 @@ export const testSuiteJsonSchema = (config) => {
  * @type (jsonSchema: JsonSchema, dialectUri: string, uri: string, schema: Json, externalSchemas?: Record<string, Json>) => Promise<Validator>
  */
 export const compileTestCase = async (jsonSchema, dialectUri, uri, schema, externalSchemas = {}) => {
-  const registry = new SchemaRegistry();
-  for (const externalUri in externalSchemas) {
-    registry.add(externalSchemas[externalUri], { retrievalUri: externalUri, dialectUri });
-  }
-  registry.add(schema, { retrievalUri: uri, dialectUri });
+  const registry = new SchemaRegistry([
+    ...Object.entries(externalSchemas).map(([retrievalUri, schema]) => ({ schema, retrievalUri, dialectUri })),
+    { schema, retrievalUri: uri, dialectUri }
+  ]);
 
   // A schema is identified by its `$id`, which is relative to the URI it was
   // retrieved from

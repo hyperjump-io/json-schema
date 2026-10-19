@@ -8,41 +8,50 @@ import type { Json } from "@hyperjump/browser/json";
  * resource is identified. Embedded resources are only found from the same
  * document.
  *
- * A registry isn't tied to a {@link JsonSchema}. One registry can be used by
- * any number of them and their sessions, which each identify its schemas
- * with their own dialects. A registry is only changed with `add` and
- * `remove`. A session sees the registry as it was when the session was
- * created.
+ * A registry never changes. `with` and `without` return a new registry, and
+ * a session sees the registries it was created with. A registry isn't tied
+ * to a {@link JsonSchema}. One registry can be used by any number of them
+ * and their sessions, which each identify its schemas with their own
+ * dialects when they look one up. A schema that can't be identified is
+ * found by its `retrievalUri`, and finding it throws the problem. One
+ * without a `retrievalUri` is reported when a lookup doesn't find anything.
+ * Two schemas found by the same URI are an error when that URI is looked
+ * up.
  */
 export class SchemaRegistry {
   /**
-   * Every {@link JsonSchema} the registry is used with identifies the schema
-   * when it's added. A schema whose dialect isn't defined yet is identified
-   * once it is.
-   *
-   * @param schema - JSON text keeps its positions in messages.
-   * @param options.retrievalUri - The schema's URI if it doesn't have an
-   * `$id`, and the base URI for a relative `$id`. It's also how the schema
-   * is removed. It can be a `file:` URI.
-   * @param options.dialectUri - The dialect if the schema doesn't have
-   * `$schema`
-   *
-   * @throws Error if the `retrievalUri` is already in the registry, or a
-   * {@link JsonSchema} the registry is used with can't identify the schema,
-   * its URI is already in the registry, or it's a keyword's URI. If
-   * there's more than one problem, it's an `AggregateError`. The schema isn't
-   * added.
+   * @throws Error if two entries have the same `retrievalUri`
    */
-  add(schema: Json | string, options?: SchemaRegistryAddOptions): void;
+  constructor(entries?: Iterable<SchemaRegistryEntry>);
 
   /**
-   * Remove the schema added with this `retrievalUri`. A schema added without
-   * one can't be removed. Sessions that already exist still see it.
+   * A registry that also has this schema
+   *
+   * @throws Error if the `retrievalUri` is already in the registry
    */
-  remove(retrievalUri: string): void;
+  with(schema: Json | string, options?: SchemaRegistryAddOptions): SchemaRegistry;
+
+  /**
+   * A registry without the schema added with this `retrievalUri`. A schema
+   * added without one can't be removed. If the registry doesn't have the
+   * `retrievalUri`, it's returned unchanged.
+   */
+  without(retrievalUri: string): SchemaRegistry;
 }
 
 export type SchemaRegistryAddOptions = {
+  /**
+   * The schema's URI if it doesn't have an `$id`, and the base URI for a
+   * relative `$id`. It's also how the schema is removed. It can be a
+   * `file:` URI.
+   */
   retrievalUri?: string;
+
+  /** The dialect if the schema doesn't have `$schema` */
   dialectUri?: string;
+};
+
+export type SchemaRegistryEntry = SchemaRegistryAddOptions & {
+  /** JSON text keeps its positions in messages. */
+  schema: Json | string;
 };

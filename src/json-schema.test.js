@@ -137,8 +137,7 @@ describe("JsonSchema", () => {
         unknownKeywords: "annotation"
       });
       const uri = "https://example.com/session-dialect";
-      const registry = new SchemaRegistry();
-      registry.add({
+      const registry = new SchemaRegistry().with({
         $schema: "https://example.com/meta-dialect",
         $id: uri,
         $vocabulary: { "https://example.com/vocab/core": true }
