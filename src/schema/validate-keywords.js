@@ -4,6 +4,7 @@ import { keywordDefinitionUri } from "../keywords/unknown.js";
  * @import { JsonErrorNode } from "@hyperjump/browser/json"
  * @import { JsonSchema, Validator } from "../json-schema.d.ts"
  * @import { Keyword } from "../keyword.d.ts"
+ * @import { OutputError } from "../output/output-format.d.ts"
  * @import { JsonSchemaKeywordNode, JsonSchemaTolerantNode } from "./schema-ast.d.ts"
  * @import * as API from "./validate-keywords.d.ts"
  */
@@ -27,7 +28,7 @@ export function jsonSchemaValidateKeywords(options) {
           place: valueNode.position,
           ruleId: keywordUri,
           source: "json-schema",
-          cause: new AggregateError(output.errors, `The value of '${nameNode.value}' doesn't match the keyword's schema`)
+          cause: keywordSchemaErrors(output.errors, `The value of '${nameNode.value}' doesn't match the keyword's schema`)
         });
       }
     }
@@ -35,6 +36,25 @@ export function jsonSchemaValidateKeywords(options) {
     return tree;
   };
 }
+
+/**
+ * Reporters like `vfile-reporter` show a cause's stack, which would only say
+ * where the error was created. The keyword schema's errors explain the
+ * problem, so the stack lists them instead.
+ *
+ * @type (errors: OutputError[], message: string) => AggregateError
+ */
+const keywordSchemaErrors = (errors, message) => {
+  const error = new AggregateError(errors, message);
+  error.stack = [
+    `${error.name}: ${message}`,
+    ...errors.map((error) => "absoluteKeywordLocation" in error
+      ? `    ${String(error)} (${error.absoluteKeywordLocation})`
+      : `    ${String(error)}`)
+  ].join("\n");
+
+  return error;
+};
 
 /**
  * Every property of a schema in the tree that's a keyword, including the

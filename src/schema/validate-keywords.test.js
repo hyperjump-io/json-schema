@@ -76,6 +76,16 @@ describe("jsonSchemaValidateKeywords", () => {
     ]);
   });
 
+  test("the cause's stack lists its errors instead of where it was created", async () => {
+    const file = await validateKeywords(jsonSchema, `{ "$schema": "${v1DialectUri}", "required": ["a", 1] }`);
+
+    const cause = /** @type AggregateError */ (file.messages[0].cause);
+    expect(cause.stack).to.equal([
+      "AggregateError: The value of 'required' doesn't match the keyword's schema",
+      "    1:62-1:63: Expected the instance to pass 'type' (https://json-schema.org/keyword/required#/items/type)"
+    ].join("\n"));
+  });
+
   test("a keyword schema that refers to itself", async () => {
     const file = await validateKeywords(jsonSchema, `{
       "$schema": "${v1DialectUri}",
