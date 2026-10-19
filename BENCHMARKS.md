@@ -61,6 +61,39 @@ Results (mean time per run of the suite, FLAG unless it says errors):
 - With the `format` test cases, format validators take most of the time,
   and FLAG is only about 1.4 times faster.
 
+## Modes
+
+The same benchmark (`json-schema.bench.ts`) times every mode of a
+`Validator` against the others, without other implementations. It runs on
+the v1 test cases json-schema-next gets right. Each instance is a JS value,
+its JSON text, or a JSON AST built from it with browser's `fromJs` before
+the timed part. Annotating a node adds to the annotations already on it, so
+`annotateNode` gets new nodes before each run, which isn't timed. Error modes
+go through every error.
+
+Results (mean time per run of the suite):
+
+| Mode | JS value | JSON text | JSON AST |
+| --- | --- | --- | --- |
+| FLAG | 0.23 ms | 2.26 ms | 0.46 ms |
+| BASIC | 1.70 ms | 4.07 ms | 2.08 ms |
+| DETAILED | 1.98 ms | 4.38 ms | 2.39 ms |
+| Annotations | 0.99 ms | 2.45 ms | 0.84 ms |
+
+- Parsing JSON text costs more than evaluating in every mode. FLAG on text
+  is about 10 times slower than on a value, and about 2 ms of every text
+  row is parsing.
+- FLAG on an AST is about 2 times slower than on a value. An AST is
+  evaluated by its own specialization, which reads values through the nodes
+  (see "Compile and evaluate" in DESIGN.md).
+- DETAILED is about 1.08–1.16 times slower than BASIC.
+- Annotations are faster than BASIC, which creates an error object for each
+  failure. `annotateNode` is faster than `annotate`, which builds the AST
+  from the value itself.
+- 2020-12 gives results within a few percent of v1. The suite's test cases
+  mostly don't have `$schema`, so both run nearly the same test cases with
+  mostly the same keywords.
+
 ## Bytecode and closures
 
 A prototype in `scratch/bench` (`bytecode.ts`) lowers the IR once and then
