@@ -1,5 +1,6 @@
 import { fromJs, fromJson } from "@hyperjump/browser/json";
 import { astInstance, jsInstance } from "./instance.js";
+import { optimize } from "./optimize.js";
 import { specialize } from "./specialize.js";
 
 /**
@@ -23,6 +24,14 @@ export class Validator {
 
   /** @type CompiledSchemas */
   #compiled;
+
+  /**
+   * The IR with the `fastOnly` optimizations too, for the specializations
+   * without plugins or annotations. It's built the first time it's needed.
+   *
+   * @type CompiledSchemas | undefined
+   */
+  #fastCompiled;
 
   /**
    * Specializations are built the first time they're needed
@@ -76,7 +85,7 @@ export class Validator {
   /** @type (instrumented: boolean) => Specialization<Json> */
   #jsSpecialization(instrumented) {
     const key = `${instrumented}`;
-    this.#jsSpecializations[key] ??= specialize(this.#jsonSchema, this.#compiled, {
+    this.#jsSpecializations[key] ??= specialize(this.#jsonSchema, this.#compiledFor(false, instrumented), {
       instance: jsInstance,
       isAst: false,
       annotating: false,
@@ -126,7 +135,7 @@ export class Validator {
   #evaluateAst(node, annotating, options, syntaxErrors) {
     return this.#evaluate((annotating, instrumented) => {
       const key = `${annotating}-${instrumented}`;
-      this.#astSpecializations[key] ??= specialize(this.#jsonSchema, this.#compiled, {
+      this.#astSpecializations[key] ??= specialize(this.#jsonSchema, this.#compiledFor(annotating, instrumented), {
         instance: astInstance,
         isAst: true,
         annotating: annotating,
@@ -134,6 +143,16 @@ export class Validator {
       });
       return this.#astSpecializations[key];
     }, node, annotating, options, syntaxErrors);
+  }
+
+  /** @type (annotating: boolean, instrumented: boolean) => CompiledSchemas */
+  #compiledFor(annotating, instrumented) {
+    if (annotating || instrumented) {
+      return this.#compiled;
+    }
+
+    this.#fastCompiled ??= optimize(this.#compiled, true);
+    return this.#fastCompiled;
   }
 
   /**

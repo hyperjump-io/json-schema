@@ -2,6 +2,7 @@ import { Session } from "@hyperjump/browser";
 import { toAbsoluteIri } from "@hyperjump/uri";
 import { SessionRegistries } from "./registry/session-registries.js";
 import { compile } from "./evaluate/compile.js";
+import { optimize } from "./evaluate/optimize.js";
 import { Validator } from "./evaluate/validator.js";
 
 /**
@@ -206,6 +207,6 @@ export class JsonSchemaSession extends Session {
 
   /** @type API.JsonSchemaSession["compile"] */
   async compile(uri) {
-    return new Validator(this.#jsonSchema, await compile(this, uri));
+    return new Validator(this.#jsonSchema, optimize(await compile(this, uri), false));
   }
 }

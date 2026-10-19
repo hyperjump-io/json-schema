@@ -23,8 +23,8 @@ written by hand and have JSDoc explaining the details.
 ## Architecture
 
 ```text
-text ─ rejsonParse ─▶ JSON AST ─ jsonSchemaResolve ─▶ Schema AST ─ (schema validation) ─▶ compile ─▶ IR ─ specialize ─▶ closures
-       (browser)                  (async)                                                  (async)         (sync, lazy)
+text ─ rejsonParse ─▶ JSON AST ─ jsonSchemaResolve ─▶ Schema AST ─ (schema validation) ─▶ compile ─▶ IR ─ optimize ─▶ IR ─ specialize ─▶ closures
+       (browser)                  (async)                                                  (async)                         (sync, lazy)
 ```
 
 - `JsonSchema` extends browser's `Hyperjump<JsonSchemaNode>`, and
@@ -43,7 +43,8 @@ text ─ rejsonParse ─▶ JSON AST ─ jsonSchemaResolve ─▶ Schema AST ─
 | `src/session.js` | `JsonSchemaSession` |
 | `src/keyword.d.ts`, `src/dialect.d.ts`, `src/format.d.ts` | What a keyword, dialect, and format are |
 | `src/schema/` | Text to schema AST: the media type plugin, `jsonSchemaResolve`, schema validation, and the schema AST types |
-| `src/evaluate/` | Schema AST to results: `compile` (the IR), `specialize`, `Validator`, instance operations, and evaluation plugin types |
+| `src/evaluate/` | Schema AST to results: `compile` (the IR), `optimize`, `specialize`, `Validator`, instance operations, and evaluation plugin types |
+| `src/evaluate/optimizations/` | Optimization passes on the IR, one per file. `index.js` lists them in the order they run |
 | `src/output/` | Output formats and validation errors |
 | `src/registry/` | `SchemaRegistry`, indexing registries, and how a session finds schemas in them |
 | `src/dialects/` | The presets: `v1`, `draft-04` … `draft-2020-12`. Each has the dialect and its tests, including the test suite runners |
@@ -518,8 +519,8 @@ There are two phases:
    one interpreter loop was tried instead of closures and wasn't faster
    (see [BENCHMARKS.md](BENCHMARKS.md)).
 
-The IR is where optimization passes go (see "Plan"). It's JSON, so a compiled
-schema can be serialized (`Validator.serialize`,
+Between the two, the IR is optimized (see "Optimizations"). It's JSON, so a
+compiled schema can be serialized (`Validator.serialize`,
 `JsonSchema.restoreValidator`). That means a keyword's compiled value must be
 JSON.
 
@@ -593,6 +594,43 @@ schema they were evaluated through pass. An invalid instance gets no
 annotations from the failing parts of the schema. The language server has its
 own annotation implementation for that reason. Alternative annotation
 behavior should be explored later.
+
+### Optimizations (`src/evaluate/optimizations/`)
+
+Each optimization pass is a file in `src/evaluate/optimizations/`, so what
+the optimizer can do and where each pass is implemented can be seen from the
+file structure, like keywords and dialects. `optimizations/index.js` lists
+them, and `src/evaluate/optimize.js` runs them. There aren't any yet (see
+"Plan").
+
+- A pass is an `Optimization`: `{ fastOnly, optimize }`. `optimize` takes
+  the IR and returns a new one. It doesn't change the one it's given,
+  because the `Validator` keeps it for its other specializations and for
+  `serialize`.
+- Passes run in the order `index.js` lists them, because one can leave work
+  for another, like folding a constant leaving a subschema nothing
+  references. Unlike keywords, they aren't independent.
+- A pass that keeps error locations runs once, when a schema is compiled,
+  so a serialized IR already has it. A pass that loses them is `fastOnly`.
+  It runs on that IR when the `Validator` builds a fast specialization (no
+  plugins, no annotations), which only says whether an instance is valid.
+  Errors come from an instrumented evaluation, which doesn't use it.
+- A pass that depends on what a keyword means, like folding `not: true`,
+  has rules for that keyword's URI. The knowledge stays in the pass, and a
+  keyword it doesn't know about is left alone. If user keywords ever need
+  to take part, keywords could provide the rules instead.
+- Passes aren't part of the API. There's no `addOptimization`.
+
+Some optimizations aren't passes, because they're about how specialization
+works rather than what the IR says, so they stay in `specialize.js`:
+
+- Keywords whose `evaluate` returns `undefined` and subschemas that always
+  pass are left out (see "Compile and evaluate"). Whether a keyword always
+  passes is only known by building its evaluator.
+- Evaluation state is only tracked if a keyword in the compiled schema
+  `reads` it (see "Evaluation state").
+- Evaluation state is kept in the specialization's closure instead of being
+  passed through every call.
 
 ### Evaluation state
 
@@ -820,14 +858,10 @@ What this relies on from browser's `v2` branch:
 
 ## Plan
 
-1. Optimization passes on the IR. Keywords and subschemas that always pass
-   are already left out (see "Compile and evaluate"). Other candidates:
-   fold constants (`not: true`, an `enum` with one value), inline `$ref`
-   targets that are only used once, evaluate cheap keywords first, and
-   share identical subschemas. Errors must keep their exact locations, so a
-   pass that loses them only applies to FLAG. Passes either run before
-   `serialize`, so a restored `Validator` has them, or at specialize time,
-   where they can depend on the specialization.
+1. Optimization passes on the IR (see "Optimizations"). Candidates: fold
+   constants (`not: true`, an `enum` with one value), inline `$ref` targets
+   that are only used once, evaluate cheap keywords first, and share
+   identical subschemas.
 2. Decide whether keywords can provide a separate evaluator for plain
    values (see "Compile and evaluate").
 3. Later: annotations, bundling, OpenAPI, a CLI, a unified plugin for
