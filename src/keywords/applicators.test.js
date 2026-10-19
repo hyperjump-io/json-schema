@@ -4,11 +4,12 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { describe, test, beforeAll, afterAll, expect } from "vitest";
 import { JsonSchema } from "../json-schema.js";
-import { v1DialectUri } from "../v1/index.js";
+import { v1DialectUri } from "../dialects/v1/index.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
- * @import { DetailedValidationError, OutputError } from "../json-schema.d.ts"
+ * @import { OutputError } from "../output/output-format.d.ts"
+ * @import { DetailedValidationError } from "../output/validation-error.d.ts"
  */
 
 /** @type (error: OutputError) => unknown */

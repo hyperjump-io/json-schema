@@ -1,14 +1,14 @@
 import { Session } from "@hyperjump/browser";
 import { toAbsoluteIri } from "@hyperjump/uri";
-import { SessionRegistries } from "./session-registries.js";
-import { compile } from "./compile.js";
-import { Validator } from "./validator.js";
+import { SessionRegistries } from "./registry/session-registries.js";
+import { compile } from "./evaluate/compile.js";
+import { Validator } from "./evaluate/validator.js";
 
 /**
  * @import { DocumentNode, GetOptions } from "@hyperjump/browser"
  * @import { Dialect } from "./dialect.d.ts"
  * @import { JsonSchema } from "./json-schema.d.ts"
- * @import { JsonSchemaDocumentNode, JsonSchemaNode } from "./schema-ast.d.ts"
+ * @import { JsonSchemaDocumentNode, JsonSchemaNode } from "./schema/schema-ast.d.ts"
  * @import * as API from "./session.d.ts"
  */
 

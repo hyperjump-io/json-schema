@@ -35,7 +35,7 @@ text ─ rejsonParse ─▶ JSON AST ─ jsonSchemaResolve ─▶ Schema AST ─
   `jsonSchemaResolve`. Any message from either is fatal there.
 - Plain JSON files are never treated as schemas.
 
-## Schema AST (`src/schema-ast.d.ts`)
+## Schema AST (`src/schema/schema-ast.d.ts`)
 
 A schema AST is a JSON AST with annotations. Nothing is moved, added, or
 removed, so it stringifies back to the original document and every node keeps
@@ -293,9 +293,9 @@ class SchemaRegistry {
 }
 ```
 
-Implemented in `src/schema-registry.js`, with each `JsonSchema`'s index of a
-registry in `src/registry-index.js`. A registry's entries are in
-`src/registry-entries.js`, which isn't exported.
+Implemented in `src/registry/schema-registry.js`, with each `JsonSchema`'s
+index of a registry in `src/registry/registry-index.js`. A registry's
+entries are in `src/registry/registry-entries.js`, which isn't exported.
 
 - A schema is identified the way JSON Schema identifies it: by its `$id`
   (or `id` in draft-04), resolved against `retrievalUri`, or by
@@ -340,7 +340,7 @@ entries. Each `JsonSchema` indexes each registry it's used with.
 - A `JsonSchema` identifies a registry's entries the first time a session
   uses the registry. Identification is synchronous: it gets the dialect and
   runs only the root's resolve hooks (`identify` in
-  `src/registry-index.js`). Full resolution comes later, separately.
+  `src/registry/registry-index.js`). Full resolution comes later, separately.
 - An entry that can't be identified, such as one that isn't valid JSON or
   has an invalid `$id`, is found by its `retrievalUri`, and finding it
   throws the problem, like a retrieved file that can't be parsed. One
@@ -436,7 +436,7 @@ and a registry that's one edit away from another is cheap to index.
 
 ## Validation API (`src/json-schema.d.ts`)
 
-Implemented in `src/validator.js`.
+Implemented in `src/evaluate/validator.js`.
 
 - `compile(uri)` returns a `Validator` with `validate`, `validateJson`,
   `annotate`, and `annotateJson`. `JsonSchema` has the same four as
@@ -470,8 +470,9 @@ Implemented in `src/validator.js`.
 
 ## Compile and evaluate (`src/keyword.d.ts`)
 
-Implemented in `src/compile.js` (the IR) and `src/specialize.js`, with the
-instance operations in `src/instance.js`. Requirements: fast on plain JS values, exact
+Implemented in `src/evaluate/compile.js` (the IR) and
+`src/evaluate/specialize.js`, with the instance operations in
+`src/evaluate/instance.js`. Requirements: fast on plain JS values, exact
 error locations, and extensibility (user keywords and plugins can run
 arbitrary code) can't be traded away for speed.
 
@@ -610,7 +611,7 @@ failure. It must not stop at a passing subschema while `markEvaluated` is
 defined. `context.exhaustive` is true when errors or annotations are being
 collected, and then nothing may stop early.
 
-### Plugins (`src/evaluation-plugin.d.ts`)
+### Plugins (`src/evaluate/evaluation-plugin.d.ts`)
 
 Plugins only observe evaluation. Nothing built in needs to change it. They're
 passed per call (`ValidationOptions.plugins`) and are usually stateful
@@ -665,9 +666,9 @@ objects the caller reads results from afterwards.
 
 ## Built-in keywords
 
-- The v1 dialect (`src/v1`) includes the `propertyDependencies` proposal.
-  `conditional`, `itemPattern`, and `requireAllExcept` are added with
-  `extendDialect`, as a reminder that they aren't full proposals yet.
+- The v1 dialect (`src/dialects/v1`) includes the `propertyDependencies`
+  proposal. `conditional`, `itemPattern`, and `requireAllExcept` are added
+  with `extendDialect`, as a reminder that they aren't full proposals yet.
 - Equality (`const`, `enum`, `uniqueItems`) compares through `InstanceOps`,
   so an AST isn't copied. A value that couldn't be parsed counts as equal
   for `const` and `enum` and as different for `uniqueItems`, so it never
@@ -693,22 +694,23 @@ Every keyword a preset doesn't add is shared with v1, including the keyword
 schemas, which are written in v1. Any presets can be added to one
 `JsonSchema`.
 
-- **2020-12** (`src/draft-2020-12`, `addDraft202012`) adds 2020-12's
+- **2020-12** (`src/dialects/draft-2020-12`, `addDraft202012`) adds 2020-12's
   `$dynamicRef`, its vocabularies with `addVocabulary`, and its dialect.
   `$dynamicRef` resolves like `$ref`, and if the schema it resolves to has a
   dynamic anchor named by the fragment, the outermost schema in the dynamic
   scope with that anchor applies instead.
-- **2019-09** (`src/draft-2019-09`, `addDraft201909`) is built the same way.
-  It adds `$recursiveAnchor`, `$recursiveRef`, and its own `$anchor`, whose
-  names can contain `:` but can't start with `_`. It also adds draft-04's
-  `items`, which is a schema or an array of schemas, and `additionalItems`,
-  which only has an effect after an array of schemas. They reuse the
-  `items` and `prefixItems` evaluators. `$recursiveRef` resolves like
-  `$ref`, and if the schema it resolves to has `$recursiveAnchor: true`
-  (the dynamic anchor `""`), the outermost schema in the dynamic scope with
-  it applies instead.
-- **draft-04, draft-06, and draft-07** (`src/draft-04`, `src/draft-06`,
-  `src/draft-07`, `addDraft04`, `addDraft06`, `addDraft07`) don't have
+- **2019-09** (`src/dialects/draft-2019-09`, `addDraft201909`) is built the
+  same way. It adds `$recursiveAnchor`, `$recursiveRef`, and its own
+  `$anchor`, whose names can contain `:` but can't start with `_`. It also
+  adds draft-04's `items`, which is a schema or an array of schemas, and
+  `additionalItems`, which only has an effect after an array of schemas.
+  They reuse the `items` and `prefixItems` evaluators. `$recursiveRef`
+  resolves like `$ref`, and if the schema it resolves to has
+  `$recursiveAnchor: true` (the dynamic anchor `""`), the outermost schema
+  in the dynamic scope with it applies instead.
+- **draft-04, draft-06, and draft-07** (`src/dialects/draft-04`,
+  `src/dialects/draft-06`, `src/dialects/draft-07`, `addDraft04`,
+  `addDraft06`, `addDraft07`) don't have
   `$vocabulary`, so each adds a dialect. Their dialect URIs don't have the
   empty fragment their
   `$schema` usually has, because `$schema` is resolved to an absolute URI.
@@ -743,13 +745,13 @@ schemas, which are written in v1. Any presets can be added to one
   annotation values are compared, in any order, because annotations don't
   record the schema they came from.
 - The runners share `describeValidationTestSuite` and
-  `describeAnnotationTestSuite` in `src/test-suite.js`. Each one gives the
+  `describeAnnotationTestSuite` in `test/test-suite.js`. Each one gives the
   release, the dialect, the `JsonSchema` to use, and what to skip. The
   annotation runner gets the dialect itself, because the suite names
   keywords and annotations are identified by keyword URI.
 - Tests for `conditional`, `itemPattern`, and `requireAllExcept` are in
-  `src/v1/extension-tests`, ported from v1 except for `requireAllExcept`,
-  which v1 didn't have tests for.
+  `src/dialects/v1/extension-tests`, ported from v1 except for
+  `requireAllExcept`, which v1 didn't have tests for.
 
 ## Browser v2
 

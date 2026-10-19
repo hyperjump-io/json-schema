@@ -1,20 +1,22 @@
-import type { Position } from "unist";
-import type { VFileMessage } from "vfile-message";
 import type { Hyperjump, HyperjumpConfig } from "@hyperjump/browser";
 import type {
   Json,
   JsonErrorNode,
   JsonNode,
-  JsonParseStatus,
-  JsonSyntaxErrorCode
+  JsonParseStatus
 } from "@hyperjump/browser/json";
-import type { JsonSchemaNode } from "./schema-ast.d.ts";
+import type { JsonSchemaNode } from "./schema/schema-ast.d.ts";
 import type { Keyword } from "./keyword.d.ts";
 import type { Dialect, DialectExtension } from "./dialect.d.ts";
 import type { Format } from "./format.d.ts";
-import type { EvaluationPlugin } from "./evaluation-plugin.d.ts";
-import type { SchemaRegistry } from "./schema-registry.d.ts";
+import type { EvaluationPlugin } from "./evaluate/evaluation-plugin.d.ts";
+import type { SchemaRegistry } from "./registry/schema-registry.d.ts";
 import type { JsonSchemaSession, SessionOptions } from "./session.d.ts";
+import type { OutputFormat, OutputFormatDefinition, ValidationResult } from "./output/output-format.d.ts";
+
+export { ValidationError, DetailedValidationError, InvalidSchemaError } from "./output/validation-error.js";
+export type { ValidationErrorOptions } from "./output/validation-error.js";
+export type { OutputError, OutputFormat, OutputFormatDefinition, OutputFormats, JsonSyntaxError, ValidationResult } from "./output/output-format.d.ts";
 
 export type JsonSchemaConfig = HyperjumpConfig & {
   /**
@@ -229,70 +231,6 @@ export type ValidationOptions<F extends OutputFormat = OutputFormat> = {
 };
 
 /**
- * How an output format is produced. It's called for each evaluation that
- * uses the format.
- *
- * Evaluation without plugins is fastest, so an instance is evaluated without
- * the format's plugin first unless other plugins are used. The plugin only
- * runs if the instance is invalid. So `output(true)` can be called without
- * the plugin having seen anything.
- */
-export type OutputFormatDefinition<F extends OutputFormat> = () => {
-  plugin?: EvaluationPlugin;
-
-  /**
-   * @param valid - False if there are syntax errors, even if the instance
-   * passed the schema
-   * @param syntaxErrors - Errors from parsing JSON text. It's empty for an
-   * instance that wasn't parsed.
-   */
-  output: (valid: boolean, syntaxErrors: JsonSyntaxError[]) => ValidationResult<F>;
-};
-
-/**
- * The output format determines what's included in `errors`. To add an output
- * format, augment this interface and add its implementation with
- * {@link JsonSchema.addOutputFormat}.
- *
- * ```ts
- * declare module "@hyperjump/json-schema" {
- *   interface OutputFormats {
- *     MY_FORMAT: { valid: boolean; errors: MyError[] };
- *   }
- * }
- * ```
- *
- * The built-in formats give errors a generic `reason` that names the keyword.
- * Messages that explain the error are left to other output formats, such as
- * `@hyperjump/json-schema-errors`.
- */
-// TODO: Support the output format being developed for the next spec release
-export interface OutputFormats {
-  /**
-   * Only whether the instance is valid. It's a plain boolean rather than an
-   * object so the fastest path doesn't allocate anything.
-   */
-  FLAG: boolean;
-
-  /**
-   * A flat list of every error. A keyword whose failure is fully explained
-   * by its subschemas' failures ({@link Keyword.simpleApplicator}) doesn't get
-   * an error of its own.
-   */
-  BASIC: { valid: boolean; errors: OutputError[] };
-
-  /**
-   * Errors nested by schema structure. Applicators that fail because a
-   * subschema failed contain those failures in `errors`.
-   */
-  DETAILED: { valid: boolean; errors: OutputError<DetailedValidationError>[] };
-}
-
-export type OutputFormat = keyof OutputFormats;
-
-export type ValidationResult<F extends OutputFormat> = OutputFormats[F];
-
-/**
  * The validation output is a separate property because the FLAG output is a
  * boolean and can't be combined with the other properties.
  */
@@ -308,69 +246,6 @@ export type AnnotationResult<F extends OutputFormat> = {
    */
   node: JsonNode<{ type: "json" }, JsonErrorNode> | JsonErrorNode;
 };
-
-/**
- * Errors are in document order. Syntax errors only occur with JSON text.
- */
-export type OutputError<V extends ValidationError = ValidationError> = V | JsonSyntaxError;
-
-/**
- * A syntax error from parsing JSON text. These come from the parser in
- * `@hyperjump/browser`.
- */
-export type JsonSyntaxError = VFileMessage & {
-  source: "json";
-  ruleId: JsonSyntaxErrorCode;
-};
-
-/**
- * An instance location failed a keyword. This is a VFileMessage so it can be
- * used with unified tooling. `place` is set when the instance came from JSON
- * text.
- */
-export class ValidationError extends VFileMessage {
-  source: "json-schema";
-
-  /** The URI of the keyword that failed */
-  ruleId: string;
-
-  /** A JSON Pointer to the keyword relative to the schema evaluation started from, following references. */
-  keywordLocation: string;
-
-  /** The URI of the keyword in the schema it's defined in */
-  absoluteKeywordLocation: string;
-
-  /** A JSON Pointer to the value in the instance that failed */
-  instanceLocation: string;
-
-  constructor(reason: string, options: ValidationErrorOptions);
-}
-
-export type ValidationErrorOptions = {
-  ruleId: string;
-  keywordLocation: string;
-  absoluteKeywordLocation: string;
-  instanceLocation: string;
-
-  /** Where the instance is in the JSON text it came from */
-  place?: Position;
-};
-
-export class DetailedValidationError extends ValidationError {
-  /** The subschema failures that caused this keyword to fail */
-  errors?: DetailedValidationError[];
-}
-
-/**
- * Thrown when compiling a schema that isn't valid according to its
- * meta-schema.
- */
-export class InvalidSchemaError extends Error {
-  /** Errors are positioned in the schema document if it was parsed from text. */
-  errors: OutputError[];
-
-  constructor(errors: OutputError[]);
-}
 
 declare module "unist" {
   interface Data {

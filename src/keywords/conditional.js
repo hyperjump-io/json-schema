@@ -2,7 +2,7 @@ import keywordSchema from "./conditional.schema.json" with { type: "json" };
 
 /**
  * @import { Keyword, SchemaHandle } from "../keyword.d.ts"
- * @import { JsonSchemaNode } from "../schema-ast.d.ts"
+ * @import { JsonSchemaNode } from "../schema/schema-ast.d.ts"
  */
 
 /**

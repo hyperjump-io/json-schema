@@ -1,7 +1,7 @@
 import type { DocumentNode, GetOptions, Session } from "@hyperjump/browser";
-import type { JsonSchemaNode } from "./schema-ast.d.ts";
+import type { JsonSchemaNode } from "./schema/schema-ast.d.ts";
 import type { Dialect } from "./dialect.d.ts";
-import type { SchemaRegistry } from "./schema-registry.d.ts";
+import type { SchemaRegistry } from "./registry/schema-registry.d.ts";
 import type { InvalidSchemaError, JsonSchema, Validator } from "./json-schema.d.ts";
 
 export type SessionOptions = {

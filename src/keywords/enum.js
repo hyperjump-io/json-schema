@@ -1,4 +1,4 @@
-import { jsInstance } from "../instance.js";
+import { jsInstance } from "../evaluate/instance.js";
 import { instanceEqual } from "./utilities.js";
 import keywordSchema from "./enum.schema.json" with { type: "json" };
 

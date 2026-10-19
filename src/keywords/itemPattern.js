@@ -2,7 +2,7 @@ import keywordSchema from "./itemPattern.schema.json" with { type: "json" };
 
 /**
  * @import { Keyword, SchemaHandle, Shape } from "../keyword.d.ts"
- * @import { JsonSchemaNode } from "../schema-ast.d.ts"
+ * @import { JsonSchemaNode } from "../schema/schema-ast.d.ts"
  * @import { Json } from "@hyperjump/browser/json"
  */
 

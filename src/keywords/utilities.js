@@ -1,6 +1,6 @@
 /**
  * @import { CompileContext, InstanceOps, Keyword, SchemaHandle } from "../keyword.d.ts"
- * @import { JsonSchemaKeywordNode, JsonSchemaNode } from "../schema-ast.d.ts"
+ * @import { JsonSchemaKeywordNode, JsonSchemaNode } from "../schema/schema-ast.d.ts"
  * @import { Json } from "@hyperjump/browser/json"
  */
 

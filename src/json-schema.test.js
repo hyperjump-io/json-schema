@@ -5,8 +5,8 @@ import { pathToFileURL } from "node:url";
 import { describe, test, beforeEach, expect } from "vitest";
 import { Session } from "@hyperjump/browser";
 import { JsonSchema } from "./json-schema.js";
-import { v1DialectUri } from "./v1/index.js";
-import { SchemaRegistry } from "./schema-registry.js";
+import { v1DialectUri } from "./dialects/v1/index.js";
+import { SchemaRegistry } from "./registry/schema-registry.js";
 import unknownKeyword from "./keywords/unknown.js";
 import vocabularyKeyword, { addVocabulary } from "./keywords/vocabulary.js";
 

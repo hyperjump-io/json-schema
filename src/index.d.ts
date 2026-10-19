@@ -1,11 +1,11 @@
 export * from "./json-schema.js";
 export * from "./session.js";
-export * from "./jsonschema-resolve.js";
-export * from "./jsonschema-validate-keywords.js";
-export * from "./json-schema-media-type-plugin.js";
-export type * from "./schema-ast.d.ts";
+export * from "./schema/resolve.js";
+export * from "./schema/validate-keywords.js";
+export * from "./schema/media-type-plugin.js";
+export type * from "./schema/schema-ast.d.ts";
 export type * from "./keyword.d.ts";
 export type * from "./dialect.d.ts";
 export type * from "./format.d.ts";
-export type * from "./evaluation-plugin.d.ts";
-export * from "./schema-registry.js";
+export type * from "./evaluate/evaluation-plugin.d.ts";
+export * from "./registry/schema-registry.js";

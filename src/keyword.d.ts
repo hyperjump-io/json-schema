@@ -1,7 +1,7 @@
 import type { Node } from "unist";
 import type { VFileMessage } from "vfile-message";
 import type { Json, JsonErrorNode, JsonNode, JsonType } from "@hyperjump/browser/json";
-import type { JsonSchemaNode } from "./schema-ast.d.ts";
+import type { JsonSchemaNode } from "./schema/schema-ast.d.ts";
 import type { Dialect, DialectDefinition } from "./dialect.d.ts";
 import type { JsonSchema } from "./json-schema.d.ts";
 

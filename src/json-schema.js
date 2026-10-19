@@ -1,24 +1,25 @@
 import { Hyperjump } from "@hyperjump/browser";
 import { toAbsoluteIri } from "@hyperjump/uri";
-import { JsonSchemaMediaTypePlugin } from "./json-schema-media-type-plugin.js";
+import { JsonSchemaMediaTypePlugin } from "./schema/media-type-plugin.js";
 import { JsonSchemaSession } from "./session.js";
-import { SchemaRegistry } from "./schema-registry.js";
-import { addedRegistriesOf, keywordSchemasOf, setKeywordSchemas } from "./session-registries.js";
+import { SchemaRegistry } from "./registry/schema-registry.js";
+import { addedRegistriesOf, keywordSchemasOf, setKeywordSchemas } from "./registry/session-registries.js";
 import schemaKeyword from "./keywords/schema.js";
 import unknownKeyword, { keywordDefinitionUri } from "./keywords/unknown.js";
-import { addV1 } from "./v1/dialect.js";
-import { Validator } from "./validator.js";
-import { basicOutputFormat, detailedOutputFormat } from "./output-formats.js";
+import { addV1 } from "./dialects/v1/dialect.js";
+import { Validator } from "./evaluate/validator.js";
+import { basicOutputFormat, detailedOutputFormat } from "./output/output-formats.js";
 
-export { ValidationError, DetailedValidationError, InvalidSchemaError } from "./validation-error.js";
+export { ValidationError, DetailedValidationError, InvalidSchemaError } from "./output/validation-error.js";
 
 /**
  * @import { Keyword } from "./keyword.d.ts"
  * @import { Format } from "./format.d.ts"
  * @import { Dialect } from "./dialect.d.ts"
- * @import { CompiledSchemas } from "./compile.js"
- * @import { JsonSchemaNode } from "./schema-ast.d.ts"
+ * @import { CompiledSchemas } from "./evaluate/compile.js"
+ * @import { JsonSchemaNode } from "./schema/schema-ast.d.ts"
  * @import * as API from "./json-schema.d.ts"
+ * @import { OutputFormat, OutputFormatDefinition } from "./output/output-format.d.ts"
  */
 
 /**
@@ -38,7 +39,7 @@ export class JsonSchema extends Hyperjump {
   /** @type Record<string, Dialect> */
   #dialects;
 
-  /** @type Partial<{ [F in API.OutputFormat]: API.OutputFormatDefinition<F> }> */
+  /** @type Partial<{ [F in OutputFormat]: OutputFormatDefinition<F> }> */
   #outputFormats;
 
   /**

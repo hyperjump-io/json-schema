@@ -1,6 +1,6 @@
 import { describe, test, beforeEach, expect } from "vitest";
 import { JsonSchema } from "../json-schema.js";
-import { SchemaRegistry } from "../schema-registry.js";
+import { SchemaRegistry } from "../registry/schema-registry.js";
 import idKeyword from "./id.js";
 import vocabularyKeyword, { addVocabulary } from "./vocabulary.js";
 

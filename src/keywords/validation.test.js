@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { describe, test, beforeAll, afterAll, expect } from "vitest";
 import { JsonSchema } from "../json-schema.js";
-import { v1DialectUri } from "../v1/index.js";
+import { v1DialectUri } from "../dialects/v1/index.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
