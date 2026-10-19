@@ -72,14 +72,16 @@ describe("jsonschema CLI", () => {
     await rm(dir, { recursive: true, force: true });
   });
 
-  /** @type (args: string[]) => Promise<{ output: string; exitCode: number }> */
-  const report = async (args) => {
+  /** @type (args: string[], stdin?: string) => Promise<{ output: string; stdout: string; exitCode: number }> */
+  const report = async (args, stdin) => {
+    const child = run(process.execPath, [cli, ...args, "--no-color"], { cwd: dir });
+    child.child.stdin?.end(stdin ?? "");
     try {
-      const { stderr } = await run(process.execPath, [cli, ...args, "--no-color"], { cwd: dir });
-      return { output: stderr, exitCode: 0 };
+      const { stdout, stderr } = await child;
+      return { output: stderr, stdout, exitCode: 0 };
     } catch (error) {
-      const { stderr, code } = /** @type {{ stderr: string; code: number }} */ (error);
-      return { output: stderr, exitCode: code };
+      const { stdout, stderr, code } = /** @type {{ stdout: string; stderr: string; code: number }} */ (error);
+      return { output: stderr, stdout, exitCode: code };
     }
   };
 
@@ -87,6 +89,26 @@ describe("jsonschema CLI", () => {
     const { output, exitCode } = await report(["a.schema.json", "-q"]);
     expect(output).to.match(/error\s+Expected a non-negative integer/);
     expect(exitCode).to.equal(1);
+  });
+
+  test("the schema isn't written to stdout", async () => {
+    const { stdout } = await report(["valid/b.schema.json"]);
+    expect(stdout).to.equal("");
+  });
+
+  test("the schema is written to stdout if it's asked for", async () => {
+    const { stdout } = await report(["valid/b.schema.json", "--stdout"]);
+    expect(JSON.parse(stdout)).to.eql({ $schema: "https://json-schema.org/v1", minLength: 1 });
+  });
+
+  test("a schema from stdin", async () => {
+    const valid = await report([], `{ "$schema": "https://json-schema.org/v1", "minLength": 1 }`);
+    expect(valid.exitCode).to.equal(0);
+    expect(valid.stdout).to.equal("");
+
+    const invalid = await report([], `{ "$schema": "https://json-schema.org/v1", "minLength": -1 }`);
+    expect(invalid.output).to.contain("Expected a non-negative integer");
+    expect(invalid.exitCode).to.equal(1);
   });
 
   test("valid schemas pass", async () => {

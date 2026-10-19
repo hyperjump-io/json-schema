@@ -1,3 +1,4 @@
+import { pathToFileURL } from "node:url";
 import { unified } from "unified";
 import { rejsonParse, rejsonStringify } from "@hyperjump/browser/json";
 import { JsonSchema } from "../json-schema.js";
@@ -28,11 +29,18 @@ addDraft202012(jsonSchema);
  * processor for each file, so each file is resolved in its own session and
  * sees meta-schemas as they are now, which matters in watch mode.
  *
+ * Input from stdin has no path. It's resolved as if it were in the working
+ * directory, so relative identifiers and references resolve against it.
+ *
  * @this {Processor}
  * @returns {Transformer<JsonDocumentNode, JsonSchemaDocumentNode>}
  */
 function jsonSchemaLint() {
-  return /** @type Function */ (jsonSchemaResolve).call(this, { session: jsonSchema.session() });
+  const session = jsonSchema.session();
+  return (tree, file) => {
+    const uri = file.path === undefined ? pathToFileURL(`${file.cwd}/`).href : undefined;
+    return /** @type Function */ (jsonSchemaResolve).call(this, { session, uri })(tree, file);
+  };
 }
 
 /**

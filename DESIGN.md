@@ -813,6 +813,11 @@ can be added to one `JsonSchema`.
   `.schema.json` file. The CLI adds the ignore patterns `*.json` and
   `!*.schema.json` before the user's own, so plain JSON files aren't linted
   unless a user's pattern includes them.
+- Input from stdin has no path, so it's resolved as if it were in the
+  working directory: its base URI is the directory's `file:` URL.
+- It doesn't write files to stdout by default (`--no-stdout` comes before
+  the user's arguments), because it's a linter. `--stdout` and `--output`
+  still work.
 - Schema problems are errors, so an invalid schema fails the command. In
   unified, warnings are for findings that don't stop a file from being used,
   like style, and none of these are.

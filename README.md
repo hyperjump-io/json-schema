@@ -267,6 +267,10 @@ an ignore pattern, such as `--ignore-pattern '!schema.json'`. Schema problems
 are errors, so an invalid schema fails the command. Use `-q` to only see files
 with problems.
 
+It reads a schema from stdin if no files are given, as if it were a file in the
+working directory. It doesn't write schemas back out unless you ask with
+`--stdout` or `--output`.
+
 ### Serializing compiled schemas
 
 A compiled schema is JSON, so it can be cached and restored without retrieving

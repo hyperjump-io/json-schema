@@ -20,6 +20,10 @@ const packageJson = JSON.parse(await readFile(packageJsonUrl, "utf8"));
 // These come before the user's patterns, so `!file.json` still includes one.
 process.argv.splice(2, 0, "--ignore-pattern", "*.json,!*.schema.json");
 
+// It's a linter, so it doesn't write the schema back out unless it's asked
+// to with `--stdout` or `--output`, which come after this and win
+process.argv.splice(2, 0, "--no-stdout");
+
 args({
   description: "CLI to lint JSON Schemas",
   extensions: ["json"],
