@@ -50,6 +50,7 @@ text ─ rejsonParse ─▶ JSON AST ─ jsonSchemaResolve ─▶ Schema AST ─
 | `src/dialects/` | The presets: `v1`, `draft-04` … `draft-2020-12`. Each has the dialect and its tests, including the test suite runners |
 | `src/keywords/` | Keyword definitions, each next to its keyword schema (`*.schema.json`) |
 | `src/formats/` | Format definitions and the lite and full presets |
+| `src/cli/` | The `jsonschema` CLI, which lints schemas |
 | `test/test-suite.js` | Runs the JSON Schema Test Suite and the annotation test suite |
 
 - A `.d.ts` next to a `.js` file declares that module's API. One without a
@@ -791,6 +792,27 @@ schemas, which are written in v1. Any presets can be added to one
   ignored. draft-04 and draft-06 use draft-04's `hostname` (RFC 1123),
   which doesn't need Unicode data.
 
+## CLI (`src/cli/`)
+
+`jsonschema` lints schemas. It's a `unified-args` CLI like browser's
+`rejson` and `jref`, with `.jsonschemarc`, `.jsonschemaignore`, and a
+`jsonSchemaConfig` field in `package.json`.
+
+- It runs `rejsonParse`, `jsonSchemaResolve`, and
+  `jsonSchemaValidateKeywords`, and reports their messages. Nothing is
+  compiled. Syntax errors don't stop the file from being resolved, so every
+  problem is reported at once.
+- Its `JsonSchema` has every preset and no default dialect.
+- The engine makes a processor for each file, and each one resolves in a new
+  session, so watch mode sees edited meta-schemas.
+- The engine finds files in folders by `path.extname`, which is `.json` for a
+  `.schema.json` file. The CLI adds the ignore patterns `*.json` and
+  `!*.schema.json` before the user's own, so plain JSON files aren't linted
+  unless a user's pattern includes them.
+- Problems are warnings, as in other unified CLIs. `--frail` fails on them.
+- Its processor isn't exported. Validating instances from the CLI waits for
+  the unified plugin for validating JSON files (see "Plan").
+
 ## Testing
 
 - The JSON-Schema-Test-Suite's `unify` branch (which will replace `main`)
@@ -864,8 +886,9 @@ What this relies on from browser's `v2` branch:
    identical subschemas.
 2. Decide whether keywords can provide a separate evaluator for plain
    values (see "Compile and evaluate").
-3. Later: annotations, bundling, OpenAPI, a CLI, a unified plugin for
-   validating JSON files, and migrating dependent projects.
+3. Later: annotations, bundling, OpenAPI, a unified plugin for validating
+   JSON files (and validating instances from the CLI), and migrating
+   dependent projects.
 
 ## Known limitations
 

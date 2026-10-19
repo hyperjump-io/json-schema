@@ -51,6 +51,9 @@
       "default": "./src/formats/full.js"
     }
   },
+  "bin": {
+    "jsonschema": "./src/cli/jsonschema-cli.js"
+  },
   "scripts": {
     "lint": "oxlint",
     "test": "vitest run",
@@ -76,6 +79,7 @@
     "@types/unist": "^3.0.3",
     "content-type": "^3.1.1",
     "unified": "^11.0.5",
+    "unified-args": "^11.0.1",
     "vfile": "^6.0.3",
     "vfile-message": "^4.0.3"
   }

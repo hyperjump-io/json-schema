@@ -244,6 +244,23 @@ try {
 
 Set `validateSchemas: false` to skip this.
 
+### Linting schemas
+
+The `jsonschema` CLI reports every problem in a schema without compiling it:
+syntax errors, a missing dialect, unknown keywords, invalid keyword values.
+It's built on [`unified-args`](https://github.com/unifiedjs/unified-args), so
+it has the same options as other unified CLIs. It knows every dialect this
+package has.
+
+```bash
+npx jsonschema schemas/
+```
+
+Only `.schema.json` files are linted. To lint a plain JSON file, include it with
+an ignore pattern, such as `--ignore-pattern '!schema.json'`. Problems are
+warnings, so use `--frail` to make them fail the command. Use `-q` to only see
+files with problems.
+
 ### Serializing compiled schemas
 
 A compiled schema is JSON, so it can be cached and restored without retrieving
