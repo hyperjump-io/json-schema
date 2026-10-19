@@ -26,53 +26,6 @@ import keywordSchema from "./vocabulary.schema.json" with { type: "json" };
 const uri = "https://json-schema.org/keyword/vocabulary";
 
 /**
- * The definition never changes. Adding a vocabulary replaces it with one
- * that knows more vocabularies, so it's still stateless and only the
- * JsonSchema it's added to sees the new vocabulary.
- *
- * @type (vocabularies: VocabularyKeyword["vocabularies"]) => VocabularyKeyword
- */
-const vocabularyKeyword = (vocabularies) => ({
-  uri: uri,
-  shape: "data",
-  schema: keywordSchema,
-  vocabularies: vocabularies,
-  resolve(valueNode, context) {
-    if (valueNode.type !== "json" || valueNode.jsonType !== "object") {
-      return;
-    }
-
-    /** @type Record<string, string> */
-    const keywords = {};
-
-    /** @type Record<string, string> */
-    const formats = {};
-    let assertFormats = false;
-    let isSupported = true;
-    for (const property of valueNode.children) {
-      const [nameNode, requiredNode] = property.children;
-      if (requiredNode.type !== "json" || requiredNode.jsonType !== "boolean") {
-        continue;
-      }
-
-      const vocabulary = vocabularies[nameNode.value];
-      if (vocabulary) {
-        Object.assign(keywords, vocabulary.keywords);
-        Object.assign(formats, vocabulary.formats);
-        assertFormats ||= vocabulary.assertFormats ?? false;
-      } else if (requiredNode.value) {
-        context.message(`The '${nameNode.value}' vocabulary isn't supported. Use the 'addVocabulary' function to add support for it.`, nameNode);
-        isSupported = false;
-      }
-    }
-
-    if (isSupported) {
-      context.defineDialect({ keywords, unknownKeywords: "annotation", formats, assertFormats });
-    }
-  }
-});
-
-/**
  * `$vocabulary` (2019-09, 2020-12). It makes a meta-schema define the dialect
  * it identifies, with the keywords of the vocabularies it lists. A required
  * vocabulary (`true`) that the keyword doesn't know is a problem with the
@@ -125,3 +78,55 @@ export const addVocabulary = (jsonSchema, vocabularyUri, { keywords, formats, as
 
   jsonSchema.addKeyword(vocabularyKeyword({ ...vocabularies, [vocabularyUri]: vocabulary }));
 };
+
+/**
+ * The definition never changes. Adding a vocabulary replaces it with one
+ * that knows more vocabularies, so it's still stateless and only the
+ * JsonSchema it's added to sees the new vocabulary.
+ *
+ * It's a function declaration, not an arrow function, so it's hoisted for
+ * the default export.
+ *
+ * @type (vocabularies: VocabularyKeyword["vocabularies"]) => VocabularyKeyword
+ */
+function vocabularyKeyword(vocabularies) {
+  return {
+    uri: uri,
+    shape: "data",
+    schema: keywordSchema,
+    vocabularies: vocabularies,
+    resolve(valueNode, context) {
+      if (valueNode.type !== "json" || valueNode.jsonType !== "object") {
+        return;
+      }
+
+      /** @type Record<string, string> */
+      const keywords = {};
+
+      /** @type Record<string, string> */
+      const formats = {};
+      let assertFormats = false;
+      let isSupported = true;
+      for (const property of valueNode.children) {
+        const [nameNode, requiredNode] = property.children;
+        if (requiredNode.type !== "json" || requiredNode.jsonType !== "boolean") {
+          continue;
+        }
+
+        const vocabulary = vocabularies[nameNode.value];
+        if (vocabulary) {
+          Object.assign(keywords, vocabulary.keywords);
+          Object.assign(formats, vocabulary.formats);
+          assertFormats ||= vocabulary.assertFormats ?? false;
+        } else if (requiredNode.value) {
+          context.message(`The '${nameNode.value}' vocabulary isn't supported. Use the 'addVocabulary' function to add support for it.`, nameNode);
+          isSupported = false;
+        }
+      }
+
+      if (isSupported) {
+        context.defineDialect({ keywords, unknownKeywords: "annotation", formats, assertFormats });
+      }
+    }
+  };
+}

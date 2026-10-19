@@ -14,42 +14,6 @@ export const falseSchemaRuleId = "https://json-schema.org/validation";
  * @typedef {E[] & { conditions?: ReadonlySet<string> }} KeywordErrors
  */
 
-/** @type WeakMap<KeywordInfo, ReadonlySet<string> | undefined> */
-const conditionsCache = new WeakMap();
-
-/**
- * `if` and `conditional` evaluate conditions, subschemas whose result only
- * decides which other subschema applies. A failing condition isn't an error,
- * so its errors aren't reported. This is a special case for these keywords
- * rather than something a keyword can declare, so keywords aren't encouraged
- * to depend on the result of another subschema.
- *
- * @type (keyword: KeywordInfo) => ReadonlySet<string> | undefined
- */
-const conditionsOf = (keyword) => {
-  if (conditionsCache.has(keyword)) {
-    return conditionsCache.get(keyword);
-  }
-
-  /** @type Set<string> | undefined */
-  let conditions;
-  if (keyword.keywordUri === "https://json-schema.org/keyword/if") {
-    const compiled = /** @type Record<"if", string> */ (keyword.compiled);
-    conditions = new Set([compiled.if]);
-  } else if (keyword.keywordUri === "https://json-schema.org/keyword/conditional") {
-    // Conditions are followed by the schema that applies if they pass. A
-    // schema at the end without a condition is the fallback.
-    const handles = /** @type string[] */ (keyword.compiled);
-    conditions = new Set();
-    for (let index = 0; index + 1 < handles.length; index += 2) {
-      conditions.add(handles[index]);
-    }
-  }
-
-  conditionsCache.set(keyword, conditions);
-  return conditions;
-};
-
 /** @type <E>(keyword: KeywordInfo) => KeywordErrors<E> */
 export const keywordErrors = (keyword) => {
   /** @type KeywordErrors<any> */
@@ -87,4 +51,40 @@ const offset = (error) => {
   const place = error.place;
   const point = place && "start" in place ? place.start : place;
   return point?.offset ?? 0;
+};
+
+/** @type WeakMap<KeywordInfo, ReadonlySet<string> | undefined> */
+const conditionsCache = new WeakMap();
+
+/**
+ * `if` and `conditional` evaluate conditions, subschemas whose result only
+ * decides which other subschema applies. A failing condition isn't an error,
+ * so its errors aren't reported. This is a special case for these keywords
+ * rather than something a keyword can declare, so keywords aren't encouraged
+ * to depend on the result of another subschema.
+ *
+ * @type (keyword: KeywordInfo) => ReadonlySet<string> | undefined
+ */
+const conditionsOf = (keyword) => {
+  if (conditionsCache.has(keyword)) {
+    return conditionsCache.get(keyword);
+  }
+
+  /** @type Set<string> | undefined */
+  let conditions;
+  if (keyword.keywordUri === "https://json-schema.org/keyword/if") {
+    const compiled = /** @type Record<"if", string> */ (keyword.compiled);
+    conditions = new Set([compiled.if]);
+  } else if (keyword.keywordUri === "https://json-schema.org/keyword/conditional") {
+    // Conditions are followed by the schema that applies if they pass. A
+    // schema at the end without a condition is the fallback.
+    const handles = /** @type string[] */ (keyword.compiled);
+    conditions = new Set();
+    for (let index = 0; index + 1 < handles.length; index += 2) {
+      conditions.add(handles[index]);
+    }
+  }
+
+  conditionsCache.set(keyword, conditions);
+  return conditions;
 };

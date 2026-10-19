@@ -8,32 +8,6 @@ import { keywordDefinitionUri } from "../keywords/unknown.js";
  * @import * as API from "./validate-keywords.d.ts"
  */
 
-/**
- * Keyword schemas are compiled once for each keyword definition in each
- * `JsonSchema`. A keyword that's replaced has a new definition, so its schema
- * is compiled again.
- *
- * @type WeakMap<JsonSchema, WeakMap<Keyword, Promise<Validator>>>
- */
-const validatorCache = new WeakMap();
-
-/** @type (jsonSchema: JsonSchema, keyword: Keyword) => Promise<Validator> */
-const keywordSchemaValidator = (jsonSchema, keyword) => {
-  let validators = validatorCache.get(jsonSchema);
-  if (validators === undefined) {
-    validators = new WeakMap();
-    validatorCache.set(jsonSchema, validators);
-  }
-
-  let validator = validators.get(keyword);
-  if (validator === undefined) {
-    validator = jsonSchema.compile(keyword.uri);
-    validators.set(keyword, validator);
-  }
-
-  return validator;
-};
-
 /** @type API.jsonSchemaValidateKeywords */
 export function jsonSchemaValidateKeywords(options) {
   return async (tree, file) => {
@@ -85,4 +59,30 @@ const keywordProperties = function* (node) {
       yield* keywordProperties(property.children[1]);
     }
   }
+};
+
+/**
+ * Keyword schemas are compiled once for each keyword definition in each
+ * `JsonSchema`. A keyword that's replaced has a new definition, so its schema
+ * is compiled again.
+ *
+ * @type WeakMap<JsonSchema, WeakMap<Keyword, Promise<Validator>>>
+ */
+const validatorCache = new WeakMap();
+
+/** @type (jsonSchema: JsonSchema, keyword: Keyword) => Promise<Validator> */
+const keywordSchemaValidator = (jsonSchema, keyword) => {
+  let validators = validatorCache.get(jsonSchema);
+  if (validators === undefined) {
+    validators = new WeakMap();
+    validatorCache.set(jsonSchema, validators);
+  }
+
+  let validator = validators.get(keyword);
+  if (validator === undefined) {
+    validator = jsonSchema.compile(keyword.uri);
+    validators.set(keyword, validator);
+  }
+
+  return validator;
 };

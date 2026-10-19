@@ -310,6 +310,11 @@ export const identify = (jsonSchema, entry, registryDialect) => {
   }
 };
 
+/** @type (entry: RegistryEntry) => string */
+export const entryText = (entry) => {
+  return typeof entry.schema === "string" ? entry.schema : JSON.stringify(entry.schema, null, "  ");
+};
+
 /**
  * The base URI the root's identifier sets, if any, and the dialect it
  * defines. A root that's a reference (draft-04 through draft-07 `$ref`)
@@ -364,9 +369,4 @@ const rootEffects = (jsonSchema, root, dialect, retrievalUri) => {
  */
 const propertyValue = (node, name) => {
   return /** @type JsonNode | undefined */ (node.children.find((property) => property.children[0].value === name)?.children[1]);
-};
-
-/** @type (entry: RegistryEntry) => string */
-export const entryText = (entry) => {
-  return typeof entry.schema === "string" ? entry.schema : JSON.stringify(entry.schema, null, "  ");
 };
