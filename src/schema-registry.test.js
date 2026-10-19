@@ -346,9 +346,13 @@ describe("SchemaRegistry", () => {
 
       test("a meta-schema in another registry doesn't identify schemas", async () => {
         const other = registryOf(metaSchema());
-        const registry = registryOf(schema);
+        const registry = new SchemaRegistry().with(schema, { retrievalUri: "https://example.com/b" });
+        const registries = [registry, other];
 
-        await expect(jsonSchema.compile("https://example.com/a", { registries: [registry, other] })).rejects.toThrow(RetrievalError);
+        await expect(jsonSchema.compile("https://example.com/a", { registries })).rejects.toThrow(RetrievalError);
+
+        // It's found by its retrieval URI, and resolving it finds the meta-schema
+        expect((await jsonSchema.compile("https://example.com/b", { registries })).validate(42)).to.equal(false);
       });
 
       test("a meta-schema that requires a vocabulary that isn't supported can't be found", async () => {

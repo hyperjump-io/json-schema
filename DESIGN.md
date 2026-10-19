@@ -318,7 +318,7 @@ registry in `src/registry-index.js`. A registry's entries are in
   registry. Adding a `retrievalUri` that's already in the registry throws,
   so an edit is `without` then `with`. The constructor is for creating a
   registry in one step, like the presets and the test suite do.
-- `retrievalUri` can be a `file:` URI, because the code calling `add` is
+- `retrievalUri` can be a `file:` URI, because the code calling `with` is
   trusted. The resolver's rule that only a schema retrieved from a `file:`
   URI can be identified by one still applies.
 - Registries are attached three ways: the `registries` config,
@@ -358,6 +358,9 @@ entries. Each `JsonSchema` indexes each registry it's used with.
   again once the rest of the registry is identified and when a lookup
   misses, so a dialect added with `addDialect` later is picked up. The
   dialects they're waiting for are in the error when the lookup fails.
+  Until then, a waiting entry is found by its `retrievalUri`. Resolving it
+  gets its dialect with `JsonSchemaSession.getDialect`, which can find the
+  meta-schema anywhere.
 - A session sees a dialect defined by an entry exactly when it sees the
   entry, because the dialect comes from the entry's resolved document. A
   registry without the entry doesn't have the dialect.
@@ -997,8 +1000,14 @@ Changes made to browser for this (on its `v2` branch):
 - The base URI from a file's path only handles POSIX paths.
 - The `JsonSchema` shortcuts (`validate(uri, ...)` and the others) compile the
   schema every time.
-- A registry schema whose dialect is only defined by a meta-schema in a
-  different registry can't be found.
+- A registry schema can only be identified with a dialect added to the
+  `JsonSchema` or defined by a meta-schema in the same registry, because
+  identification is synchronous and never retrieves. If its dialect is
+  defined by a meta-schema in a different registry or one that's only
+  retrievable, it's found by its `retrievalUri` but not by its `$id`.
+  Identifying entries per session, across all of its registries, would fix
+  that, but then an index would depend on more than its registry, and
+  sessions wouldn't be cheap.
 - Copying a registry's entries for `with` and indexing the new registry is
   O(n). That's fast for a language server's workspace. If it shows up in
   a profile, an index could build on its parent's index.

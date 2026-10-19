@@ -113,7 +113,9 @@ export class RegistryIndex {
   }
 
   /**
-   * Index an entry, unless it's waiting for a dialect
+   * Index an entry. One that's waiting for a dialect is only found by its
+   * retrieval URI until it's identified. Resolving it can still retrieve its
+   * dialect's meta-schema, which identifying it can't.
    *
    * @type (entry: RegistryEntry) => boolean
    */
@@ -132,11 +134,21 @@ export class RegistryIndex {
       }
     }
 
+    const wasWaiting = this.#waiting.has(entry);
     if ("waitingFor" in identification) {
+      if (!wasWaiting && entry.retrievalUri !== undefined) {
+        this.#add(entry.retrievalUri, { entry, uri: entry.retrievalUri });
+      }
       this.#waiting.set(entry, identification.waitingFor);
       return false;
     }
-    this.#waiting.delete(entry);
+
+    if (wasWaiting) {
+      this.#waiting.delete(entry);
+      if (entry.retrievalUri !== undefined) {
+        this.#remove(entry.retrievalUri, entry);
+      }
+    }
 
     if ("error" in identification) {
       if (entry.retrievalUri === undefined) {
@@ -168,6 +180,16 @@ export class RegistryIndex {
       entries.push(indexed);
     } else {
       this.#byUri.set(key, [indexed]);
+    }
+  }
+
+  /** @type (key: string, entry: RegistryEntry) => void */
+  #remove(key, entry) {
+    const entries = /** @type IndexedEntry[] */ (this.#byUri.get(key)).filter((indexed) => indexed.entry !== entry);
+    if (entries.length === 0) {
+      this.#byUri.delete(key);
+    } else {
+      this.#byUri.set(key, entries);
     }
   }
 
