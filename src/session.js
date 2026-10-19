@@ -141,16 +141,8 @@ export class JsonSchemaSession extends Session {
       return dialect;
     }
 
-    // A meta-schema that's being retrieved to build a dialect is asking for
-    // another dialect. If that one is waiting on this one, neither will ever
-    // finish.
-    const referencedFrom = options.referencedFrom === undefined ? undefined : toAbsoluteIri(options.referencedFrom);
-    const waitingOn = referencedFrom === undefined ? undefined : this.#loading.get(referencedFrom);
-    if (referencedFrom !== undefined && waitingOn) {
-      if (this.#isWaitingOn(uri, referencedFrom)) {
-        throw Error(`The meta-schemas for the '${referencedFrom}' and '${uri}' dialects depend on each other`);
-      }
-      waitingOn.add(uri);
+    if (options.referencedFrom !== undefined) {
+      this.#waitOn(toAbsoluteIri(options.referencedFrom), uri);
     }
 
     this.#pendingDialects[uri] ??= this.#loadDialect(uri).finally(() => {
@@ -158,6 +150,25 @@ export class JsonSchemaSession extends Session {
     });
 
     return this.#pendingDialects[uri];
+  }
+
+  /**
+   * If the reference is from a meta-schema that's being retrieved to build a
+   * dialect, that dialect is waiting on the one it asked for. If that one is
+   * waiting on this one, neither will ever finish.
+   *
+   * @type (referencedFrom: string, uri: string) => void
+   */
+  #waitOn(referencedFrom, uri) {
+    const waitingOn = this.#loading.get(referencedFrom);
+    if (!waitingOn) {
+      return;
+    }
+
+    if (this.#isWaitingOn(uri, referencedFrom)) {
+      throw Error(`The meta-schemas for the '${referencedFrom}' and '${uri}' dialects depend on each other`);
+    }
+    waitingOn.add(uri);
   }
 
   /** @type (uri: string, target: string, visited?: Set<string>) => boolean */
