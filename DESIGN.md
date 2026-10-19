@@ -321,9 +321,11 @@ registry in `src/registry-index.js`. A registry's entries are in
 - `retrievalUri` can be a `file:` URI, because the code calling `with` is
   trusted. The resolver's rule that only a schema retrieved from a `file:`
   URI can be identified by one still applies.
-- Registries are attached three ways: the `registries` config,
-  `addRegistry`/`removeRegistry` on `JsonSchema`, and session registries
-  (`session({ registries })`, `compile(uri, { registries })`).
+- Registries are attached two ways: `addRegistry`/`removeRegistry` on
+  `JsonSchema`, which every new session sees, and session registries
+  (`session({ registries })`, `compile(uri, { registries })`). There's no
+  `registries` config, because presets add registries after the
+  `JsonSchema` is created, so `addRegistry` is needed anyway.
 - Lookup order is: embedded resources, the internal registry, session
   registries, instance registries, then browser (the session's cache, the
   HTTP cache, a URI scheme plugin). Two entries found by the same URI are an

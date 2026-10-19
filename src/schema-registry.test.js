@@ -210,13 +210,6 @@ describe("SchemaRegistry", () => {
       expect(() => jsonSchema.addRegistry(registry)).to.throw("already been added");
     });
 
-    test("a registry can be given to a JsonSchema", async () => {
-      const registry = registryOf(v1({ $id: "https://example.com/a" }));
-      const configured = offline({ registries: [registry] });
-
-      await expect(configured.compile("https://example.com/a")).resolves.toBeDefined();
-    });
-
     test("a removed registry isn't seen by new sessions", async () => {
       const registry = registryOf(v1({ $id: "https://example.com/a" }));
       jsonSchema.addRegistry(registry);

@@ -77,9 +77,6 @@ export class JsonSchema extends Hyperjump {
     this.addOutputFormat("DETAILED", detailedOutputFormat);
 
     instanceRegistries.set(this, []);
-    for (const registry of config.registries ?? []) {
-      this.addRegistry(registry);
-    }
   }
 
   get config() {

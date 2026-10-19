@@ -35,12 +35,6 @@ export type JsonSchemaConfig = HyperjumpConfig & {
    * `true`.
    */
   validateSchemas?: boolean;
-
-  /**
-   * Registries every session sees. The same as adding each with
-   * {@link JsonSchema.addRegistry}.
-   */
-  registries?: SchemaRegistry[];
 };
 
 export type SessionOptions = {
