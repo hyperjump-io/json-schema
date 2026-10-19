@@ -1,6 +1,7 @@
 import * as JsonPointer from "@hyperjump/json-pointer";
 import { toAbsoluteIri } from "@hyperjump/uri";
 import { appendToLocation, jsonValue, pointerGet } from "@hyperjump/browser/json";
+import { keywordDefinitionUri } from "./keywords/unknown.js";
 
 /**
  * @import { Json, JsonErrorNode } from "@hyperjump/browser/json"
@@ -45,17 +46,6 @@ import { appendToLocation, jsonValue, pointerGet } from "@hyperjump/browser/json
 export const compile = async (session, uri) => {
   const compiler = new Compiler(session);
   return compiler.compile(uri);
-};
-
-/**
- * The keyword URI of an unknown keyword has the keyword's name as its
- * fragment, but the definition is registered without it.
- *
- * @type (keywordUri: string) => string
- */
-export const keywordDefinitionUri = (keywordUri) => {
-  const fragmentIndex = keywordUri.indexOf("#");
-  return fragmentIndex === -1 ? keywordUri : keywordUri.slice(0, fragmentIndex);
 };
 
 class Compiler {

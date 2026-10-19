@@ -1,4 +1,4 @@
-import { keywordDefinitionUri } from "./compile.js";
+import { keywordDefinitionUri } from "./keywords/unknown.js";
 
 /**
  * @import { JsonErrorNode } from "@hyperjump/browser/json"

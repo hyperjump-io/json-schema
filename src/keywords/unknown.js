@@ -44,3 +44,15 @@ export default {
     };
   }
 };
+
+/**
+ * The URI a keyword's definition is registered by. An unknown keyword's URI
+ * has the keyword's name as its fragment, but the definition is registered
+ * without it.
+ *
+ * @type (keywordUri: string) => string
+ */
+export const keywordDefinitionUri = (keywordUri) => {
+  const fragmentIndex = keywordUri.indexOf("#");
+  return fragmentIndex === -1 ? keywordUri : keywordUri.slice(0, fragmentIndex);
+};

@@ -1,6 +1,6 @@
 import * as JsonPointer from "@hyperjump/json-pointer";
 import { toAbsoluteIri } from "@hyperjump/uri";
-import { keywordDefinitionUri } from "./compile.js";
+import { keywordDefinitionUri } from "./keywords/unknown.js";
 
 /**
  * @import { Data, Node } from "unist"

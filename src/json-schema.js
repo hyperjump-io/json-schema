@@ -9,9 +9,9 @@ import { jsonSchemaValidateKeywords } from "./jsonschema-validate-keywords.js";
 import { SchemaRegistry } from "./schema-registry.js";
 import { RegistryIndex, entryText } from "./registry-index.js";
 import schemaKeyword from "./keywords/schema.js";
-import unknownKeyword from "./keywords/unknown.js";
+import unknownKeyword, { keywordDefinitionUri } from "./keywords/unknown.js";
 import { addV1 } from "./v1/dialect.js";
-import { compile, keywordDefinitionUri } from "./compile.js";
+import { compile } from "./compile.js";
 import { Validator } from "./validator.js";
 import { basicOutputFormat, detailedOutputFormat } from "./output-formats.js";
 
