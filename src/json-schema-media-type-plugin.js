@@ -4,7 +4,7 @@ import { VFile } from "vfile";
 import { rejsonParse } from "@hyperjump/browser/json";
 import { jsonSchemaResolve } from "./jsonschema-resolve.js";
 import { jsonSchemaValidateKeywords } from "./jsonschema-validate-keywords.js";
-import { JsonSchemaSession } from "./json-schema.js";
+import { JsonSchemaSession } from "./session.js";
 
 /**
  * @import { MediaTypePlugin } from "@hyperjump/browser"

@@ -8,7 +8,7 @@ import unknownKeyword from "./keywords/unknown.js";
  * @import { VFile } from "vfile"
  * @import { VFileMessage } from "vfile-message"
  * @import { JsonDocumentNode, JsonErrorNode } from "@hyperjump/browser/json"
- * @import { JsonSchemaSession } from "./json-schema.d.ts"
+ * @import { JsonSchemaSession } from "./session.d.ts"
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaTolerantNode } from "./schema-ast.d.ts"
  * @import { Keyword, ResolveContext, Shape } from "./keyword.d.ts"
  * @import { Dialect, DialectDefinition } from "./dialect.d.ts"

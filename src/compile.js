@@ -5,7 +5,7 @@ import { keywordDefinitionUri } from "./keywords/unknown.js";
 
 /**
  * @import { Json, JsonErrorNode } from "@hyperjump/browser/json"
- * @import { JsonSchemaSession } from "./json-schema.d.ts"
+ * @import { JsonSchemaSession } from "./session.d.ts"
  * @import { CompileContext } from "./keyword.d.ts"
  * @import { JsonSchemaDocumentNode, JsonSchemaNode } from "./schema-ast.d.ts"
  */

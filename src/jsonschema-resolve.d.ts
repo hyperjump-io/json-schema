@@ -1,6 +1,7 @@
 import type { Plugin } from "unified";
 import type { JsonDocumentNode } from "@hyperjump/browser/json";
-import type { JsonSchema, JsonSchemaSession } from "./json-schema.d.ts";
+import type { JsonSchema } from "./json-schema.d.ts";
+import type { JsonSchemaSession } from "./session.d.ts";
 import type { JsonSchemaDocumentNode } from "./schema-ast.d.ts";
 
 export type JsonSchemaResolveOptions = {
