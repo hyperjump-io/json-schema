@@ -119,11 +119,19 @@ describe("SchemaRegistry", () => {
     });
 
     test("a schema that can't be identified throws when it's found by its retrieval URI", async () => {
-      const registry = new SchemaRegistry().with(v1({ $id: "https://json-schema.org/keyword/type" }), { retrievalUri: "https://example.com/a" });
+      const registry = new SchemaRegistry().with(v1({ $id: "file:///a.schema.json" }), { retrievalUri: "https://example.com/a" });
 
       await expect(compile(registry, "https://example.com/a")).rejects.toMatchObject({
-        cause: { message: expect.stringContaining("keyword's schema") }
+        cause: { message: expect.stringContaining("'file:'") }
       });
+    });
+
+    test("a schema identified by a keyword's URI is found by its retrieval URI", async () => {
+      const registry = new SchemaRegistry().with(v1({ $id: "https://json-schema.org/keyword/type", type: "number" }), { retrievalUri: "https://example.com/a" });
+
+      expect((await compile(registry, "https://example.com/a")).validate("string")).to.equal(false);
+      // The keyword's URI still finds the keyword's schema
+      expect((await compile(registry, "https://json-schema.org/keyword/type")).validate("string")).to.equal(true);
     });
 
     test("an embedded resource isn't identified", async () => {

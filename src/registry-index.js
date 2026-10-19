@@ -64,9 +64,6 @@ export class RegistryIndex {
   /** @type JsonSchema */
   #jsonSchema;
 
-  /** Whether this is a JsonSchema's registry of keyword schemas */
-  #isInternal;
-
   /** @type Map<string, IndexedEntry[]> */
   #byUri;
 
@@ -96,11 +93,9 @@ export class RegistryIndex {
   /**
    * @param {JsonSchema} jsonSchema
    * @param {SchemaRegistry} registry
-   * @param {boolean} [isInternal]
    */
-  constructor(jsonSchema, registry, isInternal = false) {
+  constructor(jsonSchema, registry) {
     this.#jsonSchema = jsonSchema;
-    this.#isInternal = isInternal;
     this.#byUri = new Map();
     this.#dialects = new Map();
     this.#waiting = new Map();
@@ -128,7 +123,7 @@ export class RegistryIndex {
 
     let identification = cache.get(entry);
     if (!identification) {
-      identification = identify(this.#jsonSchema, entry, this.#isInternal, this.#registryDialect);
+      identification = identify(this.#jsonSchema, entry, this.#registryDialect);
       if (!("waitingFor" in identification) && !identification.fromRegistry) {
         cache.set(entry, identification);
       }
@@ -254,9 +249,9 @@ export class RegistryIndex {
  * retrieved, so an entry whose dialect isn't defined by the JsonSchema or
  * another entry in the same registry has to wait for it.
  *
- * @type (jsonSchema: JsonSchema, entry: RegistryEntry, isInternal: boolean, registryDialect: RegistryDialects) => Identification
+ * @type (jsonSchema: JsonSchema, entry: RegistryEntry, registryDialect: RegistryDialects) => Identification
  */
-export const identify = (jsonSchema, entry, isInternal, registryDialect) => {
+export const identify = (jsonSchema, entry, registryDialect) => {
   const { retrievalUri } = entry;
   const result = fromJson(entryText(entry));
   if (result.status !== "success" || result.node === undefined) {
@@ -307,11 +302,6 @@ export const identify = (jsonSchema, entry, isInternal, registryDialect) => {
     uri = toAbsoluteIri(uri);
     if (parseIri(uri).scheme === "file" && (retrievalUri === undefined || parseIri(retrievalUri).scheme !== "file")) {
       throw Error(`A schema that doesn't have a 'file:' retrieval URI can't be identified by one: ${uri}`);
-    }
-    for (const key of [uri, retrievalUri]) {
-      if (!isInternal && key !== undefined && jsonSchema.hasKeyword(key)) {
-        throw Error(`'${key}' identifies a keyword's schema, which can't be replaced`);
-      }
     }
 
     return { uri, definedDialect, fromRegistry };

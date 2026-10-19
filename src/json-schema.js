@@ -347,7 +347,7 @@ export class JsonSchemaSession extends Session {
     this.#pendingDialects = {};
     this.#loading = new Map();
 
-    this.#internalRegistry = registryIndex(jsonSchema, /** @type SchemaRegistry */ (internalRegistries.get(jsonSchema)), true);
+    this.#internalRegistry = registryIndex(jsonSchema, /** @type SchemaRegistry */ (internalRegistries.get(jsonSchema)));
 
     const added = /** @type SchemaRegistry[] */ (instanceRegistries.get(jsonSchema));
     const registries = new Set([...options.registries ?? [], ...added]);
@@ -638,9 +638,9 @@ const registryIndexes = new WeakMap();
  * A registry is indexed the first time it's used, so the keyword schemas
  * aren't identified until a session needs them.
  *
- * @type (jsonSchema: JsonSchema, registry: SchemaRegistry, isInternal?: boolean) => RegistryIndex
+ * @type (jsonSchema: JsonSchema, registry: SchemaRegistry) => RegistryIndex
  */
-const registryIndex = (jsonSchema, registry, isInternal = false) => {
+const registryIndex = (jsonSchema, registry) => {
   let indexes = registryIndexes.get(jsonSchema);
   if (!indexes) {
     indexes = new WeakMap();
@@ -649,7 +649,7 @@ const registryIndex = (jsonSchema, registry, isInternal = false) => {
 
   let index = indexes.get(registry);
   if (!index) {
-    index = new RegistryIndex(jsonSchema, registry, isInternal);
+    index = new RegistryIndex(jsonSchema, registry);
     indexes.set(registry, index);
   }
 

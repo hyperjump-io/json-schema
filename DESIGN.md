@@ -311,8 +311,9 @@ registry in `src/registry-index.js`. A registry's entries are in
   JSON-Schema-Test-Suite tests and a language server needs for references
   by relative path. Its `$id` is still its canonical URI, so locations use
   it.
-- A schema can't be identified, or have a `retrievalUri`, that's a
-  keyword's URI. That's a keyword's schema.
+- A keyword's URI always finds the keyword's schema, because the internal
+  registry is checked first. A schema in another registry that's
+  identified by one is still found by its `retrievalUri`.
 - `without` takes the `retrievalUri`. A schema added without one can't be
   removed, and removing a `retrievalUri` that isn't there returns the same
   registry. Adding a `retrievalUri` that's already in the registry throws,
@@ -406,9 +407,8 @@ and a registry that's one edit away from another is cheap to index.
   `retrievalUri`, and replacing a keyword replaces its schema (`without`,
   then `with`). Custom keywords' schemas
   work the same way, so they don't have to be served from anywhere.
-- It's checked right after embedded resources and can't be removed. Another
-  registry can't have a schema that's identified by, or retrieved from, a
-  keyword's URI.
+- It's checked right after embedded resources and can't be removed, so
+  nothing else can replace a keyword's schema.
 - Its index is built the first time a session needs it, so a `JsonSchema`
   that's never used doesn't identify every keyword schema. That's about
   0.5 ms for the built-in keywords.
