@@ -20,7 +20,7 @@ const interpret = (format, instance) => {
 const annotation = (format) => format;
 
 const formats = {
-  "date-time": "https://json-schema.org/format/date-time",
+  "date-time": "https://json-schema.org/format/draft-04/date-time",
   "email": "https://json-schema.org/format/email",
   "hostname": "https://json-schema.org/format/draft-04/hostname",
   "ipv4": "https://json-schema.org/format/ipv4",

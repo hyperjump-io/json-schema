@@ -19,7 +19,7 @@ const interpret = (format, instance) => {
 const annotation = (format) => format;
 
 const formats = {
-  "date-time": "https://json-schema.org/format/date-time",
+  "date-time": "https://json-schema.org/format/draft-04/date-time",
   "date": "https://json-schema.org/format/date",
   "time": "https://json-schema.org/format/time",
   "duration": "https://json-schema.org/format/duration",

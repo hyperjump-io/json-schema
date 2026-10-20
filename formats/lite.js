@@ -1,6 +1,7 @@
 import { addFormat } from "../lib/keywords.js";
 
 import draft04Hostname from "./handlers/draft-04/hostname.js";
+import draft04DateTime from "./handlers/draft-04/date-time.js";
 import dateTime from "./handlers/date-time.js";
 import date from "./handlers/date.js";
 import time from "./handlers/time.js";
@@ -20,6 +21,7 @@ import regex from "./handlers/regex.js";
 
 
 addFormat(draft04Hostname);
+addFormat(draft04DateTime);
 addFormat(dateTime);
 addFormat(date);
 addFormat(time);
