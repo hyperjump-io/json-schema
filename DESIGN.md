@@ -1054,10 +1054,10 @@ plugins, configured per project, with presets, like remark-lint.
     by source, and this only controls rules made with `lintRule`.
 - A rule made with `unified-lint-rule` directly ignores configuration
   comments, and naming it in a directive is an `unknown-rule` warning.
-- JSONC comments cover from the comment on, as in remark. They need JSONC
-  support, which browser's parser has (`allowComments`) and the CLI doesn't
-  yet, because it also decides which files are schemas. They'll be applied
-  by `lintRule` too.
+- Configuration comments from JSONC comments are deferred (see "Plan"). They
+  would cover from the comment on, as in remark, and need JSONC support,
+  which browser's parser has (`allowComments`) and the CLI doesn't, because
+  it also decides which files are schemas.
 
 ### Other schemas
 
@@ -1186,22 +1186,21 @@ What this relies on from browser's `v2` branch:
   customize them effectively. remark-lint gives each rule a README with
   examples. A rule's `url` in its `lintRule` meta could link to its docs
   from every message. The README's table of rules won't scale.
-- **Which files are JSONC.** A `.schema.jsonc` extension, a setting, or
-  always allowing comments.
 
 ## Plan
 
-1. Linting (see "Linting"): JSONC support in the CLI, and configuration
-   comments from it.
-2. Optimization passes on the IR (see "Optimizations"). Candidates: fold
+1. Optimization passes on the IR (see "Optimizations"). Candidates: fold
    constants (`not: true`, an `enum` with one value), inline `$ref` targets
    that are only used once, evaluate cheap keywords first, and share
    identical subschemas.
-3. Decide whether keywords can provide a separate evaluator for plain
+2. Decide whether keywords can provide a separate evaluator for plain
    values (see "Compile and evaluate").
-4. Later: annotations, bundling, OpenAPI, a unified plugin for validating
+3. Later: annotations, bundling, OpenAPI, a unified plugin for validating
    JSON files (and validating instances from the CLI), and migrating
    dependent projects.
+
+JSONC support in the CLI, with configuration comments from JSONC comments,
+was planned and is deferred, because it may not be worth it.
 
 ## Known limitations
 
