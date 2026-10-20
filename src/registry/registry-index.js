@@ -1,5 +1,5 @@
 import { VFileMessage } from "vfile-message";
-import { fromJson } from "@hyperjump/browser/json";
+import { fromJs, fromJson } from "@hyperjump/browser/json";
 import { parseIri, toAbsoluteIri } from "@hyperjump/uri";
 import { entriesOf } from "./registry-entries.js";
 
@@ -244,30 +244,97 @@ export class RegistryIndex {
 }
 
 /**
+ * What identifying an entry needs from its root: whether it's an object, its
+ * `$schema`, and its properties. A property's value is only made into a node
+ * for a keyword whose resolve hook runs.
+ *
+ * @typedef {{
+ *   isObject: boolean;
+ *   $schema?: string;
+ *   properties: [string, () => JsonNode][];
+ * }} Root
+ */
+
+/**
  * Find the URI an entry is identified by. That depends on the dialect, so
  * only the root's resolve hooks (`$id`, `$vocabulary`) run. Nothing is
  * retrieved, so an entry whose dialect isn't defined by the JsonSchema or
  * another entry in the same registry has to wait for it.
  *
+ * Every entry is identified when a registry is first used, so it's parsed
+ * with `JSON.parse`, which is much faster than building a tree with
+ * positions. Only a problem needs positions, so the entry is parsed again
+ * into a tree if there is one.
+ *
  * @type (jsonSchema: JsonSchema, entry: RegistryEntry, registryDialect: RegistryDialects) => Identification
  */
 export const identify = (jsonSchema, entry, registryDialect) => {
+  const root = parsedRoot(entry);
+  if (root) {
+    const identification = identifyRoot(jsonSchema, entry, registryDialect, root);
+    if (!("error" in identification)) {
+      return identification;
+    }
+  }
+
   const { retrievalUri } = entry;
   const result = fromJson(entryText(entry));
   if (result.status !== "success" || result.node === undefined) {
     return { error: Error(`The schema${retrievalUri ? ` at '${retrievalUri}'` : ""} isn't valid JSON`, { cause: result.messages[0] }) };
   }
 
-  const root = result.node;
-  const $schemaNode = root.jsonType === "object" ? propertyValue(root, "$schema") : undefined;
-  const $schema = $schemaNode?.jsonType === "string" ? $schemaNode.value : undefined;
-  const dialectUri = $schema ?? entry.dialectUri ?? jsonSchema.config.defaultDialectUri;
+  return identifyRoot(jsonSchema, entry, registryDialect, nodeRoot(result.node));
+};
+
+/**
+ * The root of an entry from `JSON.parse`. Its nodes don't have positions.
+ * It's undefined if the entry isn't valid JSON.
+ *
+ * @type (entry: RegistryEntry) => Root | undefined
+ */
+const parsedRoot = (entry) => {
+  let value;
+  try {
+    value = typeof entry.schema === "string" ? JSON.parse(entry.schema) : entry.schema;
+  } catch {
+    return;
+  }
+
+  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    return { isObject: false, properties: [] };
+  }
+
+  return {
+    isObject: true,
+    $schema: typeof value.$schema === "string" ? value.$schema : undefined,
+    properties: Object.entries(value).map(([name, propertyValue]) => [name, () => fromJs(propertyValue)])
+  };
+};
+
+/** @type (node: JsonNode) => Root */
+const nodeRoot = (node) => {
+  if (node.jsonType !== "object") {
+    return { isObject: false, properties: [] };
+  }
+
+  const $schemaNode = propertyValue(node, "$schema");
+  return {
+    isObject: true,
+    $schema: $schemaNode?.jsonType === "string" ? $schemaNode.value : undefined,
+    properties: node.children.map((property) => [property.children[0].value, () => /** @type JsonNode */ (property.children[1])])
+  };
+};
+
+/** @type (jsonSchema: JsonSchema, entry: RegistryEntry, registryDialect: RegistryDialects, root: Root) => Identification */
+const identifyRoot = (jsonSchema, entry, registryDialect, root) => {
+  const { retrievalUri } = entry;
+  const dialectUri = root.$schema ?? entry.dialectUri ?? jsonSchema.config.defaultDialectUri;
 
   /** @type Dialect | undefined */
   let dialect;
   /** @type true | undefined */
   let fromRegistry;
-  if (root.jsonType === "object" && dialectUri !== undefined) {
+  if (root.isObject && dialectUri !== undefined) {
     let absoluteDialectUri;
     try {
       absoluteDialectUri = toAbsoluteIri(dialectUri);
@@ -291,7 +358,7 @@ export const identify = (jsonSchema, entry, registryDialect) => {
     let uri = retrievalUri;
     /** @type DialectDefinition | undefined */
     let definedDialect;
-    if (root.jsonType === "object" && dialect !== undefined) {
+    if (root.isObject && dialect !== undefined) {
       ({ uri, definedDialect } = rootEffects(jsonSchema, root, dialect, retrievalUri));
     }
 
@@ -320,7 +387,7 @@ export const entryText = (entry) => {
  * defines. A root that's a reference (draft-04 through draft-07 `$ref`)
  * ignores both.
  *
- * @type (jsonSchema: JsonSchema, root: JsonNode & { jsonType: "object" }, dialect: Dialect, retrievalUri: string | undefined) => { uri?: string; definedDialect?: DialectDefinition }
+ * @type (jsonSchema: JsonSchema, root: Root, dialect: Dialect, retrievalUri: string | undefined) => { uri?: string; definedDialect?: DialectDefinition }
  */
 const rootEffects = (jsonSchema, root, dialect, retrievalUri) => {
   /** @type string | undefined */
@@ -329,13 +396,14 @@ const rootEffects = (jsonSchema, root, dialect, retrievalUri) => {
   let definedDialect;
   let isReference = false;
 
-  for (const property of root.children) {
-    const [nameNode, valueNode] = property.children;
-    const keywordUri = dialect.keywords[nameNode.value];
+  for (const [name, valueNodeOf] of root.properties) {
+    const keywordUri = dialect.keywords[name];
     const keyword = keywordUri !== undefined && jsonSchema.hasKeyword(keywordUri) ? jsonSchema.getKeyword(keywordUri) : undefined;
     if (!keyword?.resolve) {
       continue;
     }
+
+    const valueNode = valueNodeOf();
 
     /** @type ResolveContext */
     const context = {

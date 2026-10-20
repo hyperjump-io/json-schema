@@ -30,6 +30,41 @@ describe("RegistryIndex", () => {
     expect(index.lookup("https://example.com/b")).to.include({ uri });
   });
 
+  test("a problem identifying an entry has its position", () => {
+    const registry = new SchemaRegistry().with(`{
+  "$schema": "${v1DialectUri}",
+  "$id": "https://example.com/a#foo"
+}`, { retrievalUri: uri });
+    const index = new RegistryIndex(v1(), registry);
+
+    let error;
+    try {
+      index.lookup(uri);
+    } catch (thrown) {
+      error = thrown;
+    }
+    expect(error).toMatchObject({
+      reason: expect.stringContaining("can't have a fragment"),
+      place: { start: { line: 3, column: 10, offset: 54 }, end: { line: 3, column: 37, offset: 81 } }
+    });
+  });
+
+  test("an entry that isn't valid JSON can't be identified", () => {
+    const registry = new SchemaRegistry().with(`{ "$schema": "${v1DialectUri}", }`, { retrievalUri: uri });
+    const index = new RegistryIndex(v1(), registry);
+
+    expect(() => index.lookup(uri)).to.throw("isn't valid JSON");
+  });
+
+  test("text and values are identified the same way", () => {
+    const schema = { $schema: v1DialectUri, $id: "https://example.com/id" };
+    const fromText = new RegistryIndex(v1(), new SchemaRegistry().with(JSON.stringify(schema)));
+    const fromValue = new RegistryIndex(v1(), new SchemaRegistry().with(schema));
+
+    expect(fromText.lookup("https://example.com/id")).to.include({ uri: "https://example.com/id" });
+    expect(fromValue.lookup("https://example.com/id")).to.include({ uri: "https://example.com/id" });
+  });
+
   test("a session doesn't identify entries until it looks for a schema", async () => {
     const jsonSchema = v1();
     let identified = 0;

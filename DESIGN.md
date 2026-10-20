@@ -385,6 +385,11 @@ entries. Each `JsonSchema` indexes each registry it's used with.
   that never looks doesn't pay for it. Identification is synchronous: it
   gets the dialect and runs only the root's resolve hooks (`identify` in
   `src/registry/registry-index.js`). Full resolution comes later, separately.
+- An entry is parsed with `JSON.parse` to identify it, and only the root
+  keywords whose resolve hooks run are made into nodes (with `fromJs`). A
+  tree with positions is much slower to build and is only needed for a
+  problem, so an entry that has one is parsed again into a tree, and the
+  problem has a position.
 - An entry that can't be identified, such as one that isn't valid JSON or
   has an invalid `$id`, is found by its `retrievalUri`, and finding it
   throws the problem, like a retrieved file that can't be parsed. One
