@@ -12,18 +12,18 @@ import { AnchorNotFoundError } from "../schema/media-type-plugin.js";
  */
 
 /**
- * Whether a retrieval failed because there's nothing there, rather than
- * because it couldn't be told
+ * Why there's nothing at a URI, if a retrieval failed because there's
+ * nothing there, rather than because it couldn't be told
  *
- * @type (error: unknown) => boolean
+ * @type (uri: string, error: unknown) => Error | undefined
  */
-const isAbsent = (error) => {
+const absence = (uri, error) => {
   const code = /** @type {{ code?: unknown }} */ (error).code;
   if (code === "ENOENT" || code === "ENOTDIR") {
-    return true;
+    return Error(`There's no file at '${uri}'`, { cause: error });
+  } else if (error instanceof HttpError && (error.response.status === 404 || error.response.status === 410)) {
+    return Error(`There's nothing at '${uri}' (${error.response.status})`, { cause: error });
   }
-
-  return error instanceof HttpError && (error.response.status === 404 || error.response.status === 410);
 };
 
 /** @type API.findSchema */
@@ -40,7 +40,8 @@ export const findSchema = async (session, uri, options = {}) => {
     if (error instanceof RetrievalNotAllowedError) {
       return { status: "unknown", reason: error };
     } else if (error instanceof RetrievalError) {
-      return { status: isAbsent(error.cause) ? "missing" : "unknown", reason: error };
+      const reason = absence(toAbsoluteIri(uri), error.cause);
+      return reason ? { status: "missing", reason } : { status: "unknown", reason: error };
     }
     throw error;
   }

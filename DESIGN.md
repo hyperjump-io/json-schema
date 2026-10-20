@@ -1097,8 +1097,21 @@ document finds something. They can see what's in registries and what
   the session, which retrieves the file. That's the same text for the CLI.
   The language server's `file:` plugin reads open files from their buffers.
 - Rules follow references the way browser does: resolve the reference
-  against its resource's URI and find that. There's no special utility for
-  following them.
+  against its resource's URI and find that. `visitReferences` does the
+  first part for every static reference, in every dialect: a `$ref`
+  keyword (2019-09 and later), resolved against its schema's location, or
+  a schema that's a reference (`$ref` in draft-04 through draft-07, whose
+  `href` is already resolved). Following one is `findSchema` on its URI.
+  Dynamic references aren't visited, because what they find depends on
+  evaluation.
+- `reference-without-target` reports a static reference whose target is
+  `missing`, with `findSchema`'s reason. It covers references within the
+  document as well as to other documents, because both are a schema that
+  can't be compiled. It's an error in the recommended preset, where every
+  other rule is a warning, because `compile` fails on the same reference.
+  A target that isn't a schema is `missing` too, such as `#/definitions/foo`
+  in 2020-12, where `definitions` isn't a keyword, which `compile` also
+  can't find. A reference that's `unknown` isn't reported.
 - Schemas aren't trusted, but plugins are. A plugin could make its own
   unrestricted `JsonSchema`. Nothing can stop code that sets out to do that.
   The restriction keeps a schema from making rules retrieve what it names.
@@ -1178,9 +1191,8 @@ What this relies on from browser's `v2` branch:
 
 ## Plan
 
-1. Linting (see "Linting" and "What can be retrieved"), in this order:
-   1. A rule for references to other documents.
-   2. JSONC support in the CLI, and configuration comments from it.
+1. Linting (see "Linting"): JSONC support in the CLI, and configuration
+   comments from it.
 2. Optimization passes on the IR (see "Optimizations"). Candidates: fold
    constants (`not: true`, an `enum` with one value), inline `$ref` targets
    that are only used once, evaluate cheap keywords first, and share

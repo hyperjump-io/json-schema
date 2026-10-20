@@ -1,3 +1,5 @@
+import { resolveIri, toAbsoluteIri } from "@hyperjump/uri";
+
 /**
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode } from "../schema/schema-ast.d.ts"
  */
@@ -5,6 +7,19 @@
 /**
  * @typedef {{ type: string; children?: TreeNode[] }} TreeNode
  */
+
+/** @type (tree: JsonSchemaDocumentNode, visitor: (node: TreeNode) => void) => void */
+const visitNodes = (tree, visitor) => {
+  /** @type (node: TreeNode) => void */
+  const visit = (node) => {
+    visitor(node);
+    for (const child of node.children ?? []) {
+      visit(child);
+    }
+  };
+
+  visit(/** @type TreeNode */ (tree));
+};
 
 /**
  * Call `visitor` with every schema in the document, including embedded
@@ -14,18 +29,45 @@
  * @type (tree: JsonSchemaDocumentNode, visitor: (schemaNode: JsonSchemaNode) => void) => void
  */
 export const visitSchemas = (tree, visitor) => {
-  /** @type (node: TreeNode) => void */
-  const visit = (node) => {
+  visitNodes(tree, (node) => {
     if (node.type === "json-schema") {
       visitor(/** @type JsonSchemaNode */ (node));
     }
+  });
+};
 
-    for (const child of node.children ?? []) {
-      visit(child);
+const refUri = "https://json-schema.org/keyword/ref";
+
+/**
+ * Call `visitor` with every static reference in the document and the
+ * absolute URI it refers to. That's the value of a `$ref` keyword (2019-09
+ * and later), resolved against the schema resource it's in, or a schema
+ * that's a reference (`$ref` in draft-04 through draft-07). `node` is the
+ * `$ref` keyword's value or the reference. A `$ref` whose value isn't a
+ * valid IRI reference is a schema problem, so it isn't visited.
+ *
+ * @type (tree: JsonSchemaDocumentNode, visitor: (uri: string, node: JsonSchemaNode) => void) => void
+ */
+export const visitReferences = (tree, visitor) => {
+  visitNodes(tree, (node) => {
+    const schemaNode = /** @type JsonSchemaNode */ (node);
+    if (schemaNode.type === "reference") {
+      visitor(schemaNode.href, schemaNode);
+    } else if (schemaNode.type === "json-schema" && schemaNode.jsonType === "object") {
+      for (const property of /** @type JsonSchemaKeywordNode[] */ (schemaNode.children)) {
+        const valueNode = property.children[1];
+        if (property.keywordUri === refUri && valueNode.jsonType === "string") {
+          let uri;
+          try {
+            uri = resolveIri(valueNode.value, toAbsoluteIri(schemaNode.location));
+          } catch {
+            continue;
+          }
+          visitor(uri, valueNode);
+        }
+      }
     }
-  };
-
-  visit(/** @type TreeNode */ (tree));
+  });
 };
 
 /**

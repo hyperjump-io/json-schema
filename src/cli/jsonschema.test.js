@@ -126,6 +126,12 @@ describe("jsonschema CLI", () => {
     await symlink(join(outside, "meta-with-id.schema.json"), join(dir, "skipped", "link.schema.json"));
     await writeFile(join(dir, "skipped", "uses-link.schema.json"), `{ "$schema": "https://example.com/outside-meta-with-id", "type": "string" }`);
 
+    await mkdir(join(dir, "refs"));
+    await writeFile(join(dir, "refs", ".jsonschemarc"), JSON.stringify({ plugins: [recommended] }));
+    await writeFile(join(dir, "refs", "target.schema.json"), `{ "$schema": "https://json-schema.org/v1", "$id": "https://example.com/target", "$defs": { "foo": true } }`);
+    await writeFile(join(dir, "refs", "found.schema.json"), `{ "$schema": "https://json-schema.org/v1", "$ref": "https://example.com/target#/$defs/foo" }`);
+    await writeFile(join(dir, "refs", "not-found.schema.json"), `{ "$schema": "https://json-schema.org/v1", "$ref": "https://example.com/target#/$defs/bar" }`);
+
     // Serves the meta-schema at every path
     server = createServer((_request, response) => {
       response.writeHead(200, { "Content-Type": "application/schema+json" });
@@ -224,6 +230,17 @@ describe("jsonschema CLI", () => {
   test("a $comment turns off rules from .jsonschemarc", async () => {
     const { output } = await report(["linted/disabled.schema.json"]);
     expect(output).not.to.contain("then-else-without-if");
+  });
+
+  test("a reference to another file is found by its identifier", async () => {
+    const { output } = await report(["refs/found.schema.json"]);
+    expect(output).not.to.contain("reference-without-target");
+  });
+
+  test("a reference to another file that doesn't find a schema is an error in the recommended preset", async () => {
+    const { output, exitCode } = await report(["refs/not-found.schema.json"]);
+    expect(output).to.match(/error\s+The reference doesn't find a schema\. Property 'bar' doesn't exist.*reference-without-target/);
+    expect(exitCode).to.equal(1);
   });
 
   test("a rule in .jsonschemarc can be made an error", async () => {

@@ -82,11 +82,11 @@ describe("findSchema", () => {
   describe("missing", () => {
     test("a file that doesn't exist", async () => {
       const result = await findSchema(session, "file:///nothing-here/a.schema.json");
-      expect(result.status).to.equal("missing");
+      expect(result).toMatchObject({ status: "missing", reason: { message: "There's no file at 'file:///nothing-here/a.schema.json'" } });
     });
 
     test("an HTTP resource that doesn't exist", async () => {
-      expect((await findSchema(session, "test:404")).status).to.equal("missing");
+      expect(await findSchema(session, "test:404")).toMatchObject({ status: "missing", reason: { message: "There's nothing at 'test:404' (404)" } });
       expect((await findSchema(session, "test:410")).status).to.equal("missing");
     });
 

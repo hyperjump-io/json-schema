@@ -1,8 +1,9 @@
 import type { Preset } from "unified";
 
 /**
- * The recommended lint rules. Each finds something that's likely a mistake,
- * and each is a warning, because the schema still works.
+ * The recommended lint rules. Each finds something that's likely a mistake.
+ * A rule is a warning if the schema still works, and an error if it can't
+ * be compiled, like `reference-without-target`.
  *
  * Use it in `.jsonschemarc` and adjust rules after it:
  *

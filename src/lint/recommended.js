@@ -1,6 +1,7 @@
 import thenElseWithoutIf from "./rules/then-else-without-if.js";
 import minMaxContainsWithoutContains from "./rules/min-max-contains-without-contains.js";
 import exclusiveWithoutMaximumMinimum from "./rules/exclusive-without-maximum-minimum.js";
+import referenceWithoutTarget from "./rules/reference-without-target.js";
 
 /**
  * @import { Preset } from "unified"
@@ -11,7 +12,8 @@ const recommended = {
   plugins: [
     [thenElseWithoutIf, ["warn"]],
     [minMaxContainsWithoutContains, ["warn"]],
-    [exclusiveWithoutMaximumMinimum, ["warn"]]
+    [exclusiveWithoutMaximumMinimum, ["warn"]],
+    [referenceWithoutTarget, ["error"]]
   ]
 };
 

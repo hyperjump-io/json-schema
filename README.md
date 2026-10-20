@@ -323,8 +323,10 @@ path.
 Lint rules find things that are likely mistakes in a schema that still works,
 such as `then` without `if`. They're off unless you turn them on in a
 `.jsonschemarc` file (or a `jsonSchemaConfig` field in `package.json`). The
-recommended preset turns on every rule that's likely a mistake, as warnings.
-Rules after it change their settings. A rule's setting is an array, with its
+recommended preset turns on every rule that's likely a mistake. They're
+warnings, except for ones that find a schema that can't be compiled, like a
+`$ref` that doesn't find a schema, which are errors. Rules after it change
+their settings. A rule's setting is an array, with its
 severity (`"off"`, `"warn"`, or `"error"`) first.
 
 ```json
@@ -343,6 +345,7 @@ Warnings don't fail the command unless you use `--frail`.
 | `then-else-without-if` | `then` or `else` without `if` |
 | `min-max-contains-without-contains` | `minContains` or `maxContains` without `contains` |
 | `exclusive-without-maximum-minimum` | draft-04's `exclusiveMaximum` or `exclusiveMinimum` without `maximum` or `minimum` |
+| `reference-without-target` | A `$ref` that doesn't find a schema, such as a file that doesn't exist or a JSON Pointer that doesn't point to anything |
 
 A `$comment` that starts with `jsonschema-lint-disable` turns rules off for the
 schema it's in and its subschemas, and `jsonschema-lint-enable` turns them back
@@ -475,14 +478,19 @@ registries and `allowRetrieval` allow. Pass the tree as `document`, so
 references into the schema being linted find what's in it. It says whether
 the schema is `found`, `missing`, or `unknown`. Report `missing` only.
 `unknown` means it can't be told, such as for a URL `allowRetrieval`
-refuses.
+refuses. `visitReferences` finds every `$ref` in every dialect, with the URI
+it refers to.
 
 ```javascript
-import { findSchema } from "@hyperjump/json-schema-next/lint";
+import { findSchema, visitReferences } from "@hyperjump/json-schema-next/lint";
 
-const result = await findSchema(file.data.jsonSchemaSession, uri, { document: tree });
-if (result.status === "missing") {
-  file.message(result.reason.message, { place: node.position });
+const references = [];
+visitReferences(tree, (uri, node) => references.push([uri, node]));
+for (const [uri, node] of references) {
+  const result = await findSchema(file.data.jsonSchemaSession, uri, { document: tree });
+  if (result.status === "missing") {
+    file.message(result.reason.message, { place: node.position });
+  }
 }
 ```
 
