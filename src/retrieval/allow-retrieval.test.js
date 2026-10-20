@@ -1,4 +1,4 @@
-import { mkdtemp, realpath, rm, symlink, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, realpath, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { cwd } from "node:process";
@@ -85,6 +85,19 @@ describe("allowRetrieval", () => {
     test("a reference to a file outside the working directory is refused", async () => {
       const uri = pathToFileURL(join(inside, "refers-outside.schema.json")).href;
       await expect(v1().compile(uri)).rejects.toThrow(RetrievalNotAllowedError);
+    });
+
+    test("a schema in a symlinked directory resolves references from the target", async () => {
+      // `linked/../other.schema.json` is the number schema, but
+      // `deep/real/../other.schema.json` is the string schema
+      await mkdir(join(inside, "deep", "real"), { recursive: true });
+      await writeFile(join(inside, "deep", "real", "refers-up.schema.json"), JSON.stringify({ $schema: v1DialectUri, $ref: "../other.schema.json" }));
+      await writeFile(join(inside, "deep", "other.schema.json"), schema);
+      await writeFile(join(inside, "other.schema.json"), JSON.stringify({ $schema: v1DialectUri, type: "number" }));
+      await symlink(join(inside, "deep", "real"), join(inside, "linked"));
+
+      const validator = await v1().compile(pathToFileURL(join(inside, "linked", "refers-up.schema.json")).href);
+      expect(validator.validate("foo")).to.equal(true);
     });
 
     test("http(s): is refused", async () => {

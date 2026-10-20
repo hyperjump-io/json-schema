@@ -486,13 +486,20 @@ to it.
 - Symlinks are handled by the library, so no predicate has to. A symlink
   inside an allowed directory can point outside it. In Node.js, a `file:`
   URL is replaced with its real path (`realpath`) before `allowRetrieval`
-  sees it, and the file should be read from that real path, so what's
-  checked is what's read. It's still read from the URL it was asked for,
-  which browser's file plugin opens (see "Open questions"). The document keeps the URL it was asked for, so its
-  relative references resolve the way its author expects. There's no
-  cheaper way to tell whether a path goes through a symlink than
-  `realpath`, so every `file:` retrieval costs a filesystem call. It can be
-  async for that reason too.
+  sees it. browser's file plugin reads the file from its real path, with
+  every symlink in the path resolved, and gives that real path as the
+  response's URL, which is checked again (see the next item). So what's
+  checked is what's read, even if the path changes between the first check
+  and the read. There's no cheaper way to tell whether a path goes through
+  a symlink than `realpath`, so every `file:` retrieval costs two
+  filesystem calls, ours and the plugin's. It can be async for that reason
+  too.
+- A document read through a symlink is identified by its real path, so its
+  relative references resolve from where the file really is, next to the
+  files its author wrote it with. That's browser's choice, and it's how
+  Node.js resolves modules. Keeping the URL it was asked for was
+  considered, but the author of a symlinked file didn't write it relative
+  to the link.
 - Redirects are checked after the fact. `allowRetrieval` is also called on
   the URL a response came from, after any redirects, and a response from a
   refused URL is a `RetrievalNotAllowedError` whose `uri` is that URL. Its
@@ -1081,10 +1088,6 @@ What this relies on from browser's `v2` branch:
   from every message. The README's table of rules won't scale.
 - **Which files are JSONC.** A `.schema.jsonc` extension, a setting, or
   always allowing comments.
-- **Reading a file from its real path.** A document should keep the URL it
-  was asked for while the file is read from its real path (see "What can
-  be retrieved"). A document's URL comes from what browser retrieved, so
-  this probably needs browser's support.
 
 ## Plan
 
@@ -1114,10 +1117,13 @@ What this relies on from browser's `v2` branch:
   (`redirect: "error"`), which breaks servers that redirect, or a `fetch`
   dispatcher could check the address it connects to, which also stops DNS
   rebinding but needs undici.
-- Someone who can change the filesystem could swap a path between
-  `realpath` and the read. Reading from the real path keeps that window
-  small. Schemas are what's untrusted, not the filesystem, so that's out of
-  scope.
+- Someone who can change the filesystem could swap a part of a path for a
+  symlink between browser's `realpath` and its read. The response's URL is
+  checked, but it's the path the plugin resolved, not necessarily what it
+  opened. The file is also opened before that second check, though nothing
+  is read from it if it's refused. Opening a FIFO or a device can have an
+  effect. Schemas are what's untrusted, not the filesystem, so that's out
+  of scope.
 
 - `@hyperjump/browser` v2 isn't published, so it's a `file:../browser`
   dependency. `@hyperjump/uri` is `file:../uri` until `encodeIriFragment` is
