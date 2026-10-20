@@ -441,8 +441,60 @@ and a registry that's one edit away from another is cheap to index.
   meta-schema, or a schema that references one, retrieves it like any other
   schema.
 
+### What can be retrieved (`allowRetrieval`, planned)
+
+Schemas aren't trusted. A schema shouldn't be able to make an application
+retrieve whatever it names, such as an internal address over HTTP or a file
+outside the project through a `file:` reference. So only what the
+application allows is retrieved, and the default allows only what's local
+to it.
+
+- The `allowRetrieval` config is a predicate on a URL,
+  `(url: URL) => boolean | Promise<boolean>`.
+- The default depends on where it runs, chosen with package export
+  conditions like browser's `context-uri.js`:
+  - In Node.js, a `file:` URL is allowed if its real path is in the working
+    directory's real path. Nothing else is, so `http(s):` isn't.
+  - In a browser, an `http(s):` URL with the page's origin is allowed.
+    Nothing else is. Browsers can't read `file:` URLs anyway.
+- A file that doesn't exist has no real path, so its path is checked as
+  it is. If it's allowed, retrieving it fails as missing instead of being
+  refused.
+- It's checked in `JsonSchemaSession.getDocument`, after embedded resources
+  and registries and before browser's retrieval. Everything that finds a
+  document goes through there, so it covers `get`, following references,
+  `compile`, and meta-schemas found by `getDialect`. It's checked before
+  the HTTP cache too, so a cached response isn't a way around it.
+- A URL the predicate refuses is a `RetrievalNotAllowedError`, distinct from
+  a `RetrievalError` for a URL that was allowed and couldn't be retrieved.
+  Tools use the difference: a refused URL is unknown, a failed one is
+  missing.
+- It's config, not a session option, because it's a property of the
+  application, like its URI scheme plugins, and every session should follow
+  it.
+- Symlinks are handled by the library, so no predicate has to. A symlink
+  inside an allowed directory can point outside it. In Node.js, a `file:`
+  URL is replaced with its real path (`realpath`) before `allowRetrieval`
+  sees it, and the file is read from that real path, so what's checked is
+  what's read. The document keeps the URL it was asked for, so its
+  relative references resolve the way its author expects. There's no
+  cheaper way to tell whether a path goes through a symlink than
+  `realpath`, so every `file:` retrieval costs a filesystem call. It can be
+  async for that reason too.
+- Redirects are checked after the fact. `allowRetrieval` is also called on
+  the URL a response came from, after any redirects, and a response from a
+  refused URL is a `RetrievalNotAllowedError`. browser doesn't follow
+  redirects manually, so the redirected request is still sent. Only its
+  response can't be used, which is what CORS does in browsers (see "Known
+  limitations").
+- `() => false` allows nothing, so only registries and embedded resources
+  are used. The test suite runners use it instead of removing the
+  `http(s):` URI scheme plugins.
+
 ### The language server
 
+- Its `allowRetrieval` allows the workspace folder. The library compares
+  real paths, so a symlink can't lead outside it.
 - Workspace schemas with an `$id` go in a registry with their `file:` URI
   as the `retrievalUri`. An edit makes a new registry (`without` then
   `with`), which the next session is created with.
@@ -825,6 +877,81 @@ can be added to one `JsonSchema`.
   like style, and none of these are.
 - Its processor isn't exported. Validating instances from the CLI waits for
   the unified plugin for validating JSON files (see "Plan").
+- Planned (see "Linting"): its `allowRetrieval` allows only the files it was
+  given, by real path, and the files with an `$id` are in a registry, so
+  they're found by it, as in the language server. Everything else is
+  refused, including custom meta-schemas, unless `.jsonschemarc` allows
+  more.
+
+## Linting (planned)
+
+The reason for building on unified is its linting ecosystem: rules that are
+plugins, configured per project, with presets, like remark-lint.
+
+### Validity and lint
+
+| | Validity | Lint |
+| --- | --- | --- |
+| Question | Can the schema be used? | Is the schema likely wrong, or badly written? |
+| Where | `shape`, `check`, and `resolve` hooks, while resolving | unified plugins that run after resolving, on the schema AST |
+| Configurable | No. The dialect and keywords define it | On or off, `warn` or `error`, and options |
+| Default | Always on, always errors | Off, unless a preset turns it on |
+
+- A keyword with no effect (`then` without `if`, `minContains` without
+  `contains`, draft-04's `exclusiveMaximum` without `maximum`), a reference
+  to something missing, and an unknown `format` that's only an annotation
+  are lint. The schema still works.
+- An unsupported `format` when formats are validated is validity, because
+  the schema can't be compiled. It's a compile error today and moves to the
+  `format` keyword's `check`.
+- `check` stays for validity only. Its context doesn't get access to
+  siblings, other schemas, or warnings. Rules read the resolved AST instead.
+
+### Rules
+
+- Rules and presets are in this package, in `src/lint/`.
+- A rule is made with `unified-lint-rule`, so its config is a severity
+  (`"off"`, `"warn"`, `"error"`, or 0–2) and its own options. Its origin is
+  `jsonschema-lint:<name>`.
+- Presets bundle rules with their settings, like remark's
+  `remark-preset-lint-recommended`. A project's `.jsonschemarc` uses a
+  preset and adjusts rules. The CLI loads plugins with the `jsonschema`
+  prefix.
+- Rules find keywords by keyword URI, never by name, so a rule works in
+  every dialect with the keyword and does nothing if the keyword isn't
+  loaded. A rule about a draft-specific keyword uses that keyword's URI.
+- Utilities in `src/lint/` keep rules short: visit every schema, visit every
+  keyword by URI, get a sibling keyword, and find what a reference points
+  to. They know nothing about particular keywords.
+
+### Configuration comments
+
+- `unified-message-control` turns rules off and on for ranges of the
+  document.
+- A `$comment` with a directive (`jsonschema-lint-disable <rule>`) covers
+  the schema it's in, including its subschemas. It's found by the `$comment`
+  keyword's URI, so a dialect without `$comment` (draft-04, draft-06)
+  doesn't have it.
+- JSONC comments cover from the comment on, as in remark. They need JSONC
+  support, which browser's parser has (`allowComments`) and the CLI doesn't
+  yet, because it also decides which files are schemas.
+
+### Other schemas
+
+Some rules need other schemas, like one that checks a reference to another
+document finds something. They can see what's in registries and what
+`allowRetrieval` allows, and nothing else.
+
+- The resolve step puts the file's session on `file.data`. Rules use it and
+  never create sessions, so they get the application's `allowRetrieval`
+  instead of each rule having to remember a restriction.
+- A utility, `findSchema(session, uri)`, says whether a reference's target
+  is `found`, `missing`, or `unknown`. A refused URL is unknown, which isn't
+  a finding. Otherwise every reference to a published schema would be
+  reported.
+- Schemas aren't trusted, but plugins are. A plugin could make its own
+  unrestricted `JsonSchema`. Nothing can stop code that sets out to do that.
+  The restriction keeps a schema from making rules retrieve what it names.
 
 ## Testing
 
@@ -891,19 +1018,47 @@ What this relies on from browser's `v2` branch:
   failing schemas, which leaves the language server without them. Explore
   alternative annotation behavior.
 
+- **Configuring the CLI's access.** How `.jsonschemarc` allows more than the
+  files it was given: URL prefixes, directories, registries, or a mix.
+- **Which files are JSONC.** A `.schema.jsonc` extension, a setting, or
+  always allowing comments.
+
 ## Plan
 
-1. Optimization passes on the IR (see "Optimizations"). Candidates: fold
+1. Linting (see "Linting" and "What can be retrieved"), in this order:
+   1. Lint infrastructure in `src/lint/`, the first rules, a recommended
+      preset, and `.jsonschemarc` support in the CLI.
+   2. Configuration comments from `$comment`.
+   3. `allowRetrieval`, `RetrievalNotAllowedError`, and `findSchema`, then
+      the CLI's registry of the files it was given and its predicate, then
+      a rule for references to other documents.
+   4. JSONC support in the CLI, and configuration comments from it.
+2. Optimization passes on the IR (see "Optimizations"). Candidates: fold
    constants (`not: true`, an `enum` with one value), inline `$ref` targets
    that are only used once, evaluate cheap keywords first, and share
    identical subschemas.
-2. Decide whether keywords can provide a separate evaluator for plain
+3. Decide whether keywords can provide a separate evaluator for plain
    values (see "Compile and evaluate").
-3. Later: annotations, bundling, OpenAPI, a unified plugin for validating
+4. Later: annotations, bundling, OpenAPI, a unified plugin for validating
    JSON files (and validating instances from the CLI), and migrating
    dependent projects.
 
 ## Known limitations
+
+- `allowRetrieval` can't stop a request that a redirect leads to. It's
+  checked on the URL that was asked for and the URL the response came from,
+  so a response from a refused URL is never used, but the redirected
+  request has already been sent. That's the same protection CORS gives in
+  browsers. In Node.js, a request whose sending is the harm, such as a GET
+  to an internal endpoint with side effects, isn't prevented. Two stronger
+  options: browser's `http(s):` plugin could refuse redirects
+  (`redirect: "error"`), which breaks servers that redirect, or a `fetch`
+  dispatcher could check the address it connects to, which also stops DNS
+  rebinding but needs undici.
+- Someone who can change the filesystem could swap a path between
+  `realpath` and the read. Reading from the real path keeps that window
+  small. Schemas are what's untrusted, not the filesystem, so that's out of
+  scope.
 
 - `@hyperjump/browser` v2 isn't published, so it's a `file:../browser`
   dependency. `@hyperjump/uri` is `file:../uri` until `encodeIriFragment` is
