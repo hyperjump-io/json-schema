@@ -51,8 +51,8 @@
       "default": "./src/formats/full.js"
     },
     "./lint": {
-      "types": "./src/lint/utilities.d.ts",
-      "default": "./src/lint/utilities.js"
+      "types": "./src/lint/index.d.ts",
+      "default": "./src/lint/index.js"
     },
     "./lint/recommended": {
       "types": "./src/lint/recommended.d.ts",

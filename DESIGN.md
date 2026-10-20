@@ -50,7 +50,7 @@ text ─ rejsonParse ─▶ JSON AST ─ jsonSchemaResolve ─▶ Schema AST ─
 | `src/dialects/` | The presets: `v1`, `draft-04` … `draft-2020-12`. Each has the dialect and its tests, including the test suite runners. `add-preset.js` adds a preset's dialect and the definitions it uses |
 | `src/keywords/` | Keyword definitions, and `checks.js`, the checks they share for their values |
 | `src/formats/` | Format definitions and the lite and full presets |
-| `src/lint/` | Lint rules (`rules/`, one per file), the recommended preset, and the utilities rules share |
+| `src/lint/` | Lint rules (`rules/`, one per file), the recommended preset, `lintRule`, which applies configuration comments, and the utilities rules share |
 | `src/cli/` | The `jsonschema` CLI, which lints schemas |
 | `test/test-suite.js` | Runs the JSON Schema Test Suite and the annotation test suite |
 
@@ -884,7 +884,7 @@ can be added to one `JsonSchema`.
   refused, including custom meta-schemas, unless `.jsonschemarc` allows
   more.
 
-## Linting (planned)
+## Linting
 
 The reason for building on unified is its linting ecosystem: rules that are
 plugins, configured per project, with presets, like remark-lint.
@@ -911,7 +911,8 @@ plugins, configured per project, with presets, like remark-lint.
 ### Rules
 
 - Rules and presets are in this package, in `src/lint/`.
-- A rule is made with `unified-lint-rule`, so its config is a severity
+- A rule is made with `lintRule` from `src/lint/`, which wraps
+  `unified-lint-rule`'s (see "Configuration comments"), so its config is a severity
   (`"off"`, `"warn"`, `"error"`, or 0–2) and its own options. Its origin is
   `jsonschema-lint:<name>`. The severity has to be in an array
   (`[rule, ["error"]]`, `[rule, [2, options]]`). A bare `"error"` is taken as
@@ -932,15 +933,47 @@ plugins, configured per project, with presets, like remark-lint.
 
 ### Configuration comments
 
-- `unified-message-control` turns rules off and on for ranges of the
-  document.
-- A `$comment` with a directive (`jsonschema-lint-disable <rule>`) covers
-  the schema it's in, including its subschemas. It's found by the `$comment`
-  keyword's URI, so a dialect without `$comment` (draft-04, draft-06)
-  doesn't have it.
+- A `$comment` that starts with `jsonschema-lint-disable` turns rules off
+  for the schema it's in, including its subschemas, and one that starts
+  with `jsonschema-lint-enable` turns them back on. The rule IDs after it
+  are the rules it covers, and without any, it covers every rule. A rule is
+  named by its rule ID, without its source.
+- Scopes nest. The innermost schema with a directive that covers a rule
+  decides whether it's on, so a subschema can turn a rule back on, or off
+  again, just for itself.
+- It's found by the `$comment` keyword's URI, and by the unknown keyword's
+  URI for `$comment` (`…/unknown#$comment`), so it works in dialects
+  without `$comment` (draft-04, draft-06) too.
+- A directive that names a rule the processor doesn't use is a warning
+  (`unknown-rule`), and so is a `$comment` that starts with
+  `jsonschema-lint-` but isn't a directive (`unknown-directive`). Both have
+  the source `jsonschema-lint` and can't be turned off. A rule is used if
+  it's made with `lintRule` and added to the processor, even if it's off.
+- Rules are made with this package's `lintRule`, which wraps
+  `unified-lint-rule`'s. When a rule's transformer finishes, it removes the
+  messages the rule just added where a directive turns the rule off. The
+  first rule to run on a file reports the directive warnings, before the
+  rule itself runs, because `unified-lint-rule` gives every message added
+  while a rule runs that rule's ID. Directives only affect lint rules, so
+  schema problems can't be turned off.
+- `unified-message-control` isn't used:
+  - It filters the messages already on the file, so it has to run after
+    every rule. The rules in `.jsonschemarc` are added after the CLI's
+    processor's plugins, so it would run first and see nothing.
+  - Its marks are points where rules turn off or on, in document order, not
+    ranges that nest. A directive in a subschema would change the state for
+    the rest of its parent, too.
+  - What it has that this doesn't: `ignore` (the next node only), its
+    `reset`, `enable`, and `disable` options for the initial state, which
+    `.jsonschemarc` severities cover, and dropping messages in gaps in the
+    tree, which a schema AST doesn't have. It controls any rule's messages
+    by source, and this only controls rules made with `lintRule`.
+- A rule made with `unified-lint-rule` directly ignores configuration
+  comments, and naming it in a directive is an `unknown-rule` warning.
 - JSONC comments cover from the comment on, as in remark. They need JSONC
   support, which browser's parser has (`allowComments`) and the CLI doesn't
-  yet, because it also decides which files are schemas.
+  yet, because it also decides which files are schemas. They'll be applied
+  by `lintRule` too.
 
 ### Other schemas
 
@@ -1041,14 +1074,11 @@ What this relies on from browser's `v2` branch:
 ## Plan
 
 1. Linting (see "Linting" and "What can be retrieved"), in this order:
-   1. Lint infrastructure in `src/lint/`, the first rules, a recommended
-      preset, and `.jsonschemarc` support in the CLI.
-   2. Configuration comments from `$comment`.
-   3. `allowRetrieval`, `RetrievalNotAllowedError`, and `findSchema`, then
+   1. `allowRetrieval`, `RetrievalNotAllowedError`, and `findSchema`, then
       the CLI's registry of the files it was given and its predicate, then
       a rule for references to other documents. The README's examples that
       retrieve `https:` in Node.js need to set `allowRetrieval`.
-   4. JSONC support in the CLI, and configuration comments from it.
+   2. JSONC support in the CLI, and configuration comments from it.
 2. Optimization passes on the IR (see "Optimizations"). Candidates: fold
    constants (`not: true`, an `enum` with one value), inline `$ref` targets
    that are only used once, evaluate cheap keywords first, and share

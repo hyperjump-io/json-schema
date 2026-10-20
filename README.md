@@ -295,6 +295,27 @@ Warnings don't fail the command unless you use `--frail`.
 | `min-max-contains-without-contains` | `minContains` or `maxContains` without `contains` |
 | `exclusive-without-maximum-minimum` | draft-04's `exclusiveMaximum` or `exclusiveMinimum` without `maximum` or `minimum` |
 
+A `$comment` that starts with `jsonschema-lint-disable` turns rules off for the
+schema it's in and its subschemas, and `jsonschema-lint-enable` turns them back
+on. Name the rules after it, or name none for every rule. The innermost schema
+with a directive for a rule decides. It works in every dialect, including
+draft-04 and draft-06, which don't have `$comment`. Schema problems can't be
+turned off.
+
+```json
+{
+  "$schema": "https://json-schema.org/v1",
+  "$comment": "jsonschema-lint-disable then-else-without-if",
+  "then": true,
+  "properties": {
+    "foo": { "$comment": "jsonschema-lint-enable then-else-without-if", "then": true }
+  }
+}
+```
+
+A directive that names a rule that isn't configured is a warning
+(`unknown-rule`), and so is a misspelled directive (`unknown-directive`).
+
 ### Serializing compiled schemas
 
 A compiled schema is JSON, so it can be cached and restored without retrieving
@@ -377,16 +398,17 @@ jsonSchema.addDialect({
 
 ### Lint rules
 
-A lint rule is a unified plugin made with
-[`unified-lint-rule`](https://github.com/remarkjs/remark-lint/tree/main/packages/unified-lint-rule).
-It runs on a schema AST, after every schema and keyword has been identified.
-Find keywords by keyword URI, not by name, so the rule works in every dialect
-with the keyword. The utilities in `@hyperjump/json-schema-next/lint` find
-schemas and keywords.
+A lint rule is a unified plugin made with `lintRule` from
+`@hyperjump/json-schema-next/lint`. It's
+[`unified-lint-rule`](https://github.com/remarkjs/remark-lint/tree/main/packages/unified-lint-rule)'s
+`lintRule`, and it also applies `$comment` directives to the rule's messages.
+A rule runs on a schema AST, after every schema and keyword has been
+identified. Find keywords by keyword URI, not by name, so the rule works in
+every dialect with the keyword. The same module has utilities to find schemas
+and keywords.
 
 ```javascript
-import { lintRule } from "unified-lint-rule";
-import { siblingKeyword, visitKeywords } from "@hyperjump/json-schema-next/lint";
+import { lintRule, siblingKeyword, visitKeywords } from "@hyperjump/json-schema-next/lint";
 
 export default lintRule({ origin: "jsonschema-lint-example:min-without-max" }, (tree, file) => {
   visitKeywords(tree, "https://json-schema.org/keyword/minimum", (keywordNode, schemaNode) => {

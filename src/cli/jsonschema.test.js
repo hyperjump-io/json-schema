@@ -72,6 +72,7 @@ describe("jsonschema CLI", () => {
     await mkdir(join(dir, "linted"));
     await writeFile(join(dir, "linted", ".jsonschemarc"), JSON.stringify({ plugins: [recommended] }));
     await writeFile(join(dir, "linted", "c.schema.json"), `{ "$schema": "https://json-schema.org/v1", "then": true }`);
+    await writeFile(join(dir, "linted", "disabled.schema.json"), `{ "$schema": "https://json-schema.org/v1", "$comment": "jsonschema-lint-disable then-else-without-if", "then": true }`);
     await mkdir(join(dir, "strict"));
     await writeFile(join(dir, "strict", ".jsonschemarc"), JSON.stringify({ plugins: [recommended, [rule, ["error"]]] }));
     await writeFile(join(dir, "strict", "d.schema.json"), `{ "$schema": "https://json-schema.org/v1", "then": true }`);
@@ -138,9 +139,14 @@ describe("jsonschema CLI", () => {
   });
 
   test("a preset in .jsonschemarc turns on lint rules as warnings", async () => {
-    const { output, exitCode } = await report(["linted"]);
+    const { output, exitCode } = await report(["linted/c.schema.json"]);
     expect(output).to.match(/warning\s+'then' has no effect without 'if'\s+then-else-without-if\s+jsonschema-lint/);
     expect(exitCode).to.equal(0);
+  });
+
+  test("a $comment turns off rules from .jsonschemarc", async () => {
+    const { output } = await report(["linted/disabled.schema.json"]);
+    expect(output).not.to.contain("then-else-without-if");
   });
 
   test("a rule in .jsonschemarc can be made an error", async () => {

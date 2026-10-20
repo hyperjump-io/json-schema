@@ -1,4 +1,4 @@
-import { lintRule } from "unified-lint-rule";
+import { lintRule } from "../lint-rule.js";
 import { siblingKeyword, visitKeywords } from "../utilities.js";
 
 /**
