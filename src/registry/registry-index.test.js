@@ -29,4 +29,25 @@ describe("RegistryIndex", () => {
     expect(() => index.lookup(uri)).to.throw("More than one schema");
     expect(index.lookup("https://example.com/b")).to.include({ uri });
   });
+
+  test("a session doesn't identify entries until it looks for a schema", async () => {
+    const jsonSchema = v1();
+    let identified = 0;
+    jsonSchema.addKeyword({
+      uri: "https://example.com/keyword/counted-id",
+      shape: "data",
+      resolve: (valueNode, context) => {
+        identified++;
+        context.setBaseUri(/** @type {{ value: string }} */ (valueNode).value);
+      }
+    });
+    jsonSchema.addDialect({ uri: "https://example.com/counted", keywords: { $id: "https://example.com/keyword/counted-id" }, unknownKeywords: "ignore" });
+    const registry = new SchemaRegistry().with({ $schema: "https://example.com/counted", $id: "https://example.com/counted-schema" });
+
+    const session = jsonSchema.session({ registries: [registry] });
+    expect(identified).to.equal(0);
+
+    await session.getDocument("https://example.com/counted-schema");
+    expect(identified).to.be.greaterThan(0);
+  });
 });

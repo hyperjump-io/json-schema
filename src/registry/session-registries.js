@@ -46,9 +46,17 @@ export class SessionRegistries {
   /**
    * The registries this session sees, session registries first
    *
-   * @type RegistryIndex[]
+   * @type SchemaRegistry[]
    */
   #registries;
+
+  /**
+   * Their indexes, which are made the first time the session looks for a
+   * schema, so a session that never does doesn't identify anything
+   *
+   * @type RegistryIndex[] | undefined
+   */
+  #indexes;
 
   /**
    * Registry entries resolved in this session, for the ones that can't be
@@ -68,8 +76,13 @@ export class SessionRegistries {
     this.#session = session;
     this.#documents = new Map();
 
-    const registries = new Set([...sessionRegistries, ...addedRegistriesOf(jsonSchema)]);
-    this.#registries = [...registries].map((registry) => registryIndex(jsonSchema, registry));
+    this.#registries = [...new Set([...sessionRegistries, ...addedRegistriesOf(jsonSchema)])];
+  }
+
+  /** @type () => RegistryIndex[] */
+  #registryIndexes() {
+    this.#indexes ??= this.#registries.map((registry) => registryIndex(this.#session.jsonSchema, registry));
+    return this.#indexes;
   }
 
   /**
@@ -96,7 +109,7 @@ export class SessionRegistries {
     const dialects = new Set();
     /** @type Error[] */
     const unidentified = [];
-    for (const index of this.#registries) {
+    for (const index of this.#registryIndexes()) {
       const missing = index.missing();
       for (const dialect of missing.waitingFor) {
         dialects.add(dialect);
@@ -134,7 +147,7 @@ export class SessionRegistries {
 
     /** @type IndexedEntry | undefined */
     let found;
-    for (const index of this.#registries) {
+    for (const index of this.#registryIndexes()) {
       let indexed;
       try {
         indexed = index.lookup(id);

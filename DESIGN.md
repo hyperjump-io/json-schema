@@ -381,8 +381,9 @@ Identity depends on the dialect, so a registry can't index its own
 entries. Each `JsonSchema` indexes each registry it's used with.
 
 - A `JsonSchema` identifies a registry's entries the first time a session
-  uses the registry. Identification is synchronous: it gets the dialect and
-  runs only the root's resolve hooks (`identify` in
+  looks for a schema in it, not when the session is created, so a session
+  that never looks doesn't pay for it. Identification is synchronous: it
+  gets the dialect and runs only the root's resolve hooks (`identify` in
   `src/registry/registry-index.js`). Full resolution comes later, separately.
 - An entry that can't be identified, such as one that isn't valid JSON or
   has an invalid `$id`, is found by its `retrievalUri`, and finding it
