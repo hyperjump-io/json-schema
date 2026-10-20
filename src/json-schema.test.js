@@ -7,6 +7,7 @@ import { Session } from "@hyperjump/browser";
 import { JsonSchema } from "./json-schema.js";
 import { addV1, v1DialectUri } from "./dialects/v1/index.js";
 import { SchemaRegistry } from "./registry/schema-registry.js";
+import { AnchorNotFoundError } from "./schema/media-type-plugin.js";
 import vocabularyKeyword, { addVocabulary } from "./keywords/vocabulary.js";
 
 /**
@@ -185,6 +186,36 @@ describe("JsonSchema", () => {
       } finally {
         await rm(directory, { recursive: true });
       }
+    });
+  });
+
+  describe("fragments", () => {
+    test("an anchor", async () => {
+      jsonSchema.addRegistry(new SchemaRegistry().with({
+        $schema: v1DialectUri,
+        $id: "https://example.com/anchor",
+        $ref: "#foo",
+        $defs: { foo: { $anchor: "foo", type: "string" } }
+      }));
+      expect((await jsonSchema.compile("https://example.com/anchor")).validate(42)).to.equal(false);
+    });
+
+    test("an anchor that isn't in the document", async () => {
+      jsonSchema.addRegistry(new SchemaRegistry().with({ $schema: v1DialectUri, $id: "https://example.com/no-anchor", $ref: "#foo" }));
+      const error = await jsonSchema.compile("https://example.com/no-anchor")
+        .catch((/** @type unknown */ error) => error);
+      expect(error).to.be.instanceOf(AnchorNotFoundError);
+      expect(error).toMatchObject({ anchor: "foo", uri: "https://example.com/no-anchor", message: "There's no 'foo' anchor in 'https://example.com/no-anchor'" });
+    });
+
+    test("a percent-encoded JSON Pointer", async () => {
+      jsonSchema.addRegistry(new SchemaRegistry().with({
+        $schema: v1DialectUri,
+        $id: "https://example.com/pointer",
+        $ref: "#%2F$defs%2Ffoo",
+        $defs: { foo: { type: "string" } }
+      }));
+      expect((await jsonSchema.compile("https://example.com/pointer")).validate(42)).to.equal(false);
     });
   });
 

@@ -21,6 +21,23 @@ export class JsonSchemaMediaTypePlugin implements MediaTypePlugin<JsonSchemaDocu
   /**
    * An anchor identifies a JSON Pointer. Otherwise, the fragment is a JSON
    * Pointer that's percent-encoded.
+   *
+   * @throws AnchorNotFoundError if the fragment isn't an anchor in the
+   * document or a JSON Pointer.
    */
   fragmentPointer: NonNullable<MediaTypePlugin<JsonSchemaDocumentNode<"success">>["fragmentPointer"]>;
+}
+
+/**
+ * A fragment that isn't a JSON Pointer names an anchor (`$anchor`), and the
+ * document doesn't have one by that name.
+ */
+export class AnchorNotFoundError extends Error {
+  /** The fragment, which names an anchor */
+  anchor: string;
+
+  /** The URI of the schema resource that doesn't have the anchor */
+  uri: string;
+
+  constructor(anchor: string, uri: string);
 }

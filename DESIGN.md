@@ -97,6 +97,9 @@ its position.
   doesn't know about them either. Every resource's `mediaType` is
   `application/schema+json`, so that works for embedded resources browser
   didn't parse.
+- A fragment that isn't a JSON Pointer is an anchor. If the resource
+  doesn't have it, `fragmentPointer` throws an `AnchorNotFoundError`, so it
+  never reaches browser as a pointer that isn't valid.
 
 ## Keywords (`src/keyword.d.ts`)
 

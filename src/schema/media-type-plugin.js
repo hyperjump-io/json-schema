@@ -47,13 +47,35 @@ export class JsonSchemaMediaTypePlugin {
 
   /**
    * An anchor identifies a JSON Pointer. Otherwise, the fragment is a JSON
-   * Pointer that's percent-encoded.
+   * Pointer that's percent-encoded. A fragment that's neither is an anchor
+   * that isn't in the document.
    *
    * @type NonNullable<MediaTypePlugin<JsonSchemaDocumentNode<"success">>["fragmentPointer"]>
    */
   fragmentPointer(document, fragment) {
-    return Object.hasOwn(document.anchors, fragment)
-      ? document.anchors[fragment]
-      : decodeURIComponent(fragment);
+    if (Object.hasOwn(document.anchors, fragment)) {
+      return document.anchors[fragment];
+    }
+
+    const pointer = decodeURIComponent(fragment);
+    if (pointer !== "" && !pointer.startsWith("/")) {
+      throw new AnchorNotFoundError(fragment, document.uri);
+    }
+
+    return pointer;
+  }
+}
+
+/** @implements API.AnchorNotFoundError */
+export class AnchorNotFoundError extends Error {
+  /**
+   * @param {string} anchor
+   * @param {string} uri
+   */
+  constructor(anchor, uri) {
+    super(`There's no '${anchor}' anchor in '${uri}'`);
+    this.name = this.constructor.name;
+    this.anchor = anchor;
+    this.uri = uri;
   }
 }
