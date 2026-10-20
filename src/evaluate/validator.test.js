@@ -312,7 +312,7 @@ describe("Validator", () => {
   });
 
   beforeEach(() => {
-    jsonSchema = new JsonSchema();
+    jsonSchema = new JsonSchema({ allowRetrieval: () => true });
     addTestDialect(jsonSchema);
   });
 

@@ -160,9 +160,10 @@ A schema is looked up in registries first, then retrieved by its URI.
   Add a registry to the `JsonSchema` with `addRegistry`, or use one for a
   single compilation with `compile(uri, { registries: [registry] })`.
 
-- **Files and HTTP:** `file:` and `http(s):` URIs are retrieved. Only
-  `application/schema+json` responses and `.schema.json` files are schemas. A
-  plain `.json` file isn't. Relative references work as you'd expect.
+- **Files and HTTP:** `file:` and `http(s):` URIs are retrieved, if
+  `allowRetrieval` allows them (see below). Only `application/schema+json`
+  responses and `.schema.json` files are schemas. A plain `.json` file isn't.
+  Relative references work as you'd expect.
 
   ```javascript
   import { pathToFileURL } from "node:url";
@@ -170,6 +171,26 @@ A schema is looked up in registries first, then retrieved by its URI.
   const uri = pathToFileURL("./person.schema.json").href;
   const validator = await jsonSchema.compile(uri);
   ```
+
+Schemas aren't trusted, so a schema can't make your application retrieve
+whatever it names, like an internal address or a file outside your project.
+Only what the `allowRetrieval` config allows is retrieved. By default, that's
+what's local to your application. In Node.js, that's files in the working
+directory, and not `http(s):`. In a browser, it's `http(s):` URLs with the
+page's origin. Anything else is a `RetrievalNotAllowedError`. Registries are
+never checked.
+
+```javascript
+const jsonSchema = new JsonSchema({
+  allowRetrieval: (url) => url.origin === "https://schemas.example.com"
+});
+```
+
+The predicate gets a `URL`. In Node.js, a `file:` URL is the file's real path,
+so a symlink can't lead outside a directory you allow. A response is checked
+again by the URL it came from, so a redirect can't lead somewhere you didn't
+allow. The redirected request is still sent, though. Its response just isn't
+used. Use `() => false` to allow nothing but registries.
 
 ### Dialects
 

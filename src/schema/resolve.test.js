@@ -121,7 +121,7 @@ describe("jsonSchemaResolve", () => {
   let jsonSchema;
 
   beforeEach(() => {
-    jsonSchema = new JsonSchema();
+    jsonSchema = new JsonSchema({ allowRetrieval: () => true });
     addTestDialects(jsonSchema);
   });
 
@@ -497,7 +497,7 @@ describe("jsonSchemaResolve", () => {
     });
 
     test("the default dialect", async () => {
-      jsonSchema = new JsonSchema({ defaultDialectUri: dialectUri });
+      jsonSchema = new JsonSchema({ defaultDialectUri: dialectUri, allowRetrieval: () => true });
       addTestDialects(jsonSchema);
       const { root } = await resolve(jsonSchema, `{ "type": "string" }`);
 

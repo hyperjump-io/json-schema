@@ -12,9 +12,7 @@ import { addDraft201909, draft201909DialectUri } from "./index.js";
 describe("draft-2019-09", () => {
   /** @type (config?: JsonSchemaConfig) => JsonSchema */
   const draft201909 = (config) => {
-    const jsonSchema = new JsonSchema(config);
-    jsonSchema.removeUriSchemePlugin("http");
-    jsonSchema.removeUriSchemePlugin("https");
+    const jsonSchema = new JsonSchema({ allowRetrieval: () => false, ...config });
     addDraft201909(jsonSchema);
     return jsonSchema;
   };

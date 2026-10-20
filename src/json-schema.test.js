@@ -19,7 +19,7 @@ describe("JsonSchema", () => {
   let jsonSchema;
 
   beforeEach(() => {
-    jsonSchema = new JsonSchema();
+    jsonSchema = new JsonSchema({ allowRetrieval: () => true });
     addV1(jsonSchema);
   });
 

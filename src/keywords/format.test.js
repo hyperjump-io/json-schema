@@ -26,7 +26,7 @@ describe("format", () => {
 
   /** @type (config?: JsonSchemaConfig) => JsonSchema */
   const v1 = (config) => {
-    const jsonSchema = new JsonSchema(config);
+    const jsonSchema = new JsonSchema({ allowRetrieval: () => true, ...config });
     addV1(jsonSchema);
     return jsonSchema;
   };

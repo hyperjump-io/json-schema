@@ -11,9 +11,7 @@ import { addDraft07, draft07DialectUri } from "./index.js";
 describe("draft-07", () => {
   /** @type (config?: JsonSchemaConfig) => JsonSchema */
   const draft07 = (config) => {
-    const jsonSchema = new JsonSchema(config);
-    jsonSchema.removeUriSchemePlugin("http");
-    jsonSchema.removeUriSchemePlugin("https");
+    const jsonSchema = new JsonSchema({ allowRetrieval: () => false, ...config });
     addDraft07(jsonSchema);
     return jsonSchema;
   };

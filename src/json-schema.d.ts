@@ -15,6 +15,7 @@ import type { JsonSchemaSession, SessionOptions } from "./session.d.ts";
 import type { OutputFormat, OutputFormatDefinition, ValidationResult } from "./output/output-format.d.ts";
 
 export { ValidationError, DetailedValidationError, InvalidSchemaError } from "./output/validation-error.js";
+export { RetrievalNotAllowedError } from "./retrieval/retrieval-not-allowed-error.js";
 export type { ValidationErrorOptions } from "./output/validation-error.js";
 export type { OutputError, OutputFormat, OutputFormatDefinition, OutputFormats, JsonSyntaxError, ValidationResult } from "./output/output-format.d.ts";
 
@@ -32,6 +33,30 @@ export type JsonSchemaConfig = HyperjumpConfig & {
    * annotation in most dialects.
    */
   validateFormats?: boolean;
+
+  /**
+   * Whether a URL can be retrieved. Schemas aren't trusted, so a schema
+   * shouldn't be able to make the application retrieve whatever it names,
+   * such as an internal address or a file outside the project. A URL it
+   * refuses is a {@link RetrievalNotAllowedError}.
+   *
+   * It's checked for everything that's retrieved: `get`, references,
+   * `compile`, and meta-schemas. Embedded resources and registries aren't
+   * retrieved, so they're never checked. It's checked before the HTTP cache,
+   * so a cached response isn't a way around it.
+   *
+   * In Node.js, a `file:` URL is the file's real path, so a symlink can't
+   * lead outside an allowed directory. A file that doesn't exist is checked
+   * by its path as it is. A response is checked again by the URL it came
+   * from, so a redirect can't lead to a refused URL. The redirected request
+   * is still sent, but its response isn't used.
+   *
+   * The default allows only what's local to the application. In Node.js,
+   * that's files in the working directory, and not `http(s):`. In a browser,
+   * it's `http(s):` URLs with the page's origin. `() => false` allows
+   * nothing, so only embedded resources and registries are used.
+   */
+  allowRetrieval?: (url: URL) => boolean | Promise<boolean>;
 };
 
 export class JsonSchema extends Hyperjump<JsonSchemaNode> {

@@ -124,15 +124,13 @@ export const isSkipped = (skip, path) => {
 /**
  * A JsonSchema for running test cases. Every test case's schemas are in a
  * session registry, so nothing is retrieved. The suite's URIs aren't real,
- * so `http(s):` is removed to make sure of that.
+ * so nothing is allowed to make sure of that.
  *
  * @type (config?: JsonSchemaConfig) => JsonSchema
  */
 export const testSuiteJsonSchema = (config) => {
-  const jsonSchema = new JsonSchema(config);
+  const jsonSchema = new JsonSchema({ allowRetrieval: () => false, ...config });
   addFullFormats(jsonSchema);
-  jsonSchema.removeUriSchemePlugin("http");
-  jsonSchema.removeUriSchemePlugin("https");
 
   return jsonSchema;
 };

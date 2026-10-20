@@ -1,6 +1,6 @@
 import { describe, test, beforeEach, expect } from "vitest";
 import { RetrievalError } from "@hyperjump/browser";
-import { JsonSchema } from "../json-schema.js";
+import { JsonSchema, RetrievalNotAllowedError } from "../json-schema.js";
 import { SchemaRegistry } from "./schema-registry.js";
 import { addV1, v1DialectUri } from "../dialects/v1/index.js";
 import vocabularyKeyword, { addVocabulary } from "../keywords/vocabulary.js";
@@ -12,15 +12,13 @@ import vocabularyKeyword, { addVocabulary } from "../keywords/vocabulary.js";
 
 /**
  * Nothing in these tests is retrieved, so a lookup that should find a
- * registry schema and doesn't fails right away.
+ * registry schema and doesn't is refused right away.
  *
  * @type (config?: JsonSchemaConfig) => JsonSchema
  */
 const offline = (config) => {
-  const jsonSchema = new JsonSchema(config);
+  const jsonSchema = new JsonSchema({ allowRetrieval: () => false, ...config });
   addV1(jsonSchema);
-  jsonSchema.removeUriSchemePlugin("http");
-  jsonSchema.removeUriSchemePlugin("https");
   return jsonSchema;
 };
 
@@ -123,7 +121,7 @@ describe("SchemaRegistry", () => {
     test("an embedded resource isn't identified", async () => {
       const registry = registryOf(v1({ $id: "https://example.com/a", $defs: { b: { $id: "https://example.com/b" } } }));
 
-      await expect(compile(registry, "https://example.com/b")).rejects.toThrow(RetrievalError);
+      await expect(compile(registry, "https://example.com/b")).rejects.toThrow(RetrievalNotAllowedError);
     });
 
     test("references between schemas in registries", async () => {
@@ -152,9 +150,9 @@ describe("SchemaRegistry", () => {
       const added = empty.with(v1({}), { retrievalUri: "https://example.com/a" });
       const removed = added.without("https://example.com/a");
 
-      await expect(compile(empty, "https://example.com/a")).rejects.toThrow(RetrievalError);
+      await expect(compile(empty, "https://example.com/a")).rejects.toThrow(RetrievalNotAllowedError);
       await expect(compile(added, "https://example.com/a")).resolves.toBeDefined();
-      await expect(compile(removed, "https://example.com/a")).rejects.toThrow(RetrievalError);
+      await expect(compile(removed, "https://example.com/a")).rejects.toThrow(RetrievalNotAllowedError);
     });
 
     test("an edit is without and then with", async () => {
@@ -184,7 +182,7 @@ describe("SchemaRegistry", () => {
       const after = jsonSchema.session({ registries: [edited] });
 
       expect((await before.compile("https://example.com/a")).validate(42)).to.equal(false);
-      await expect(before.compile("https://example.com/b")).rejects.toThrow(RetrievalError);
+      await expect(before.compile("https://example.com/b")).rejects.toThrow(RetrievalNotAllowedError);
       expect((await after.compile("https://example.com/a")).validate(42)).to.equal(true);
       await expect(after.compile("https://example.com/b")).resolves.toBeDefined();
     });
@@ -193,7 +191,7 @@ describe("SchemaRegistry", () => {
       const registry = registryOf(v1({ $id: "https://example.com/a", type: "string" }));
 
       expect((await compile(registry, "https://example.com/a")).validate(42)).to.equal(false);
-      await expect(jsonSchema.compile("https://example.com/a")).rejects.toThrow(RetrievalError);
+      await expect(jsonSchema.compile("https://example.com/a")).rejects.toThrow(RetrievalNotAllowedError);
     });
 
     test("a registry can be added to a JsonSchema", async () => {
@@ -211,7 +209,7 @@ describe("SchemaRegistry", () => {
       jsonSchema.removeRegistry(registry);
 
       await expect(before.compile("https://example.com/a")).resolves.toBeDefined();
-      await expect(jsonSchema.compile("https://example.com/a")).rejects.toThrow(RetrievalError);
+      await expect(jsonSchema.compile("https://example.com/a")).rejects.toThrow(RetrievalNotAllowedError);
     });
 
     test("a URI in more than one registry is an error", async () => {

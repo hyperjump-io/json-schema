@@ -46,6 +46,7 @@ text ─ rejsonParse ─▶ JSON AST ─ jsonSchemaResolve ─▶ Schema AST ─
 | `src/evaluate/` | Schema AST to results: `compile` (the IR), `optimize`, `specialize`, `Validator`, instance operations, and evaluation plugin types |
 | `src/evaluate/optimizations/` | Optimization passes on the IR, one per file. `index.js` lists them in the order they run |
 | `src/output/` | Output formats and validation errors |
+| `src/retrieval/` | `allowRetrieval`'s defaults for Node.js and browsers, and `RetrievalNotAllowedError` |
 | `src/registry/` | `SchemaRegistry`, indexing registries, and how a session finds schemas in them |
 | `src/dialects/` | The presets: `v1`, `draft-04` … `draft-2020-12`. Each has the dialect and its tests, including the test suite runners. `add-preset.js` adds a preset's dialect and the definitions it uses |
 | `src/keywords/` | Keyword definitions, and `checks.js`, the checks they share for their values |
@@ -442,7 +443,7 @@ and a registry that's one edit away from another is cheap to index.
   meta-schema, or a schema that references one, retrieves it like any other
   schema.
 
-### What can be retrieved (`allowRetrieval`, planned)
+### What can be retrieved (`allowRetrieval`)
 
 Schemas aren't trusted. A schema shouldn't be able to make an application
 retrieve whatever it names, such as an internal address over HTTP or a file
@@ -452,8 +453,9 @@ to it.
 
 - The `allowRetrieval` config is a predicate on a URL,
   `(url: URL) => boolean | Promise<boolean>`.
-- The default depends on where it runs, chosen with package export
-  conditions like browser's `context-uri.js`:
+- The default depends on where it runs, chosen with the package's
+  `#retrieval` import, whose conditions work like browser's `#context-uri`
+  (`src/retrieval/`):
   - In Node.js, a `file:` URL is allowed if its real path is in the working
     directory's real path. Nothing else is, so `http(s):` isn't.
   - In a browser, an `http(s):` URL with the page's origin is allowed.
@@ -461,11 +463,19 @@ to it.
 - A file that doesn't exist has no real path, so its path is checked as
   it is. If it's allowed, retrieving it fails as missing instead of being
   refused.
-- It's checked in `JsonSchemaSession.getDocument`, after embedded resources
-  and registries and before browser's retrieval. Everything that finds a
-  document goes through there, so it covers `get`, following references,
-  `compile`, and meta-schemas found by `getDialect`. It's checked before
-  the HTTP cache too, so a cached response isn't a way around it.
+- It's checked in `JsonSchema.retrieve`, which overrides browser's
+  `Hyperjump.retrieve`. browser's `Session` calls it for every document that
+  isn't in its cache, which is after embedded resources and registries,
+  because `JsonSchemaSession.getDocument` finds those first. So it covers
+  `get`, following references, `compile`, and meta-schemas found by
+  `getDialect`. It's before the URI scheme plugins, so it's before the HTTP
+  cache too, and a cached response isn't a way around it. It isn't checked
+  in `getDocument`, because a redirect is checked on the response's URL,
+  and a schema document's `uri` is its `$id` by then.
+- browser's `Session` wraps what `retrieve` throws in a `RetrievalError`.
+  `JsonSchemaSession.getDocument` unwraps a `RetrievalNotAllowedError`, so
+  it's what `get` and `compile` throw. A refusal while getting a dialect's
+  meta-schema is the `cause` of `getDialect`'s error.
 - A URL the predicate refuses is a `RetrievalNotAllowedError`, distinct from
   a `RetrievalError` for a URL that was allowed and couldn't be retrieved.
   Tools use the difference: a refused URL is unknown, a failed one is
@@ -476,21 +486,26 @@ to it.
 - Symlinks are handled by the library, so no predicate has to. A symlink
   inside an allowed directory can point outside it. In Node.js, a `file:`
   URL is replaced with its real path (`realpath`) before `allowRetrieval`
-  sees it, and the file is read from that real path, so what's checked is
-  what's read. The document keeps the URL it was asked for, so its
+  sees it, and the file should be read from that real path, so what's
+  checked is what's read. It's still read from the URL it was asked for,
+  which browser's file plugin opens (see "Open questions"). The document keeps the URL it was asked for, so its
   relative references resolve the way its author expects. There's no
   cheaper way to tell whether a path goes through a symlink than
   `realpath`, so every `file:` retrieval costs a filesystem call. It can be
   async for that reason too.
 - Redirects are checked after the fact. `allowRetrieval` is also called on
   the URL a response came from, after any redirects, and a response from a
-  refused URL is a `RetrievalNotAllowedError`. browser doesn't follow
+  refused URL is a `RetrievalNotAllowedError` whose `uri` is that URL. Its
+  body is cancelled. browser's file plugin also gives a symlinked file's
+  real path as its response URL, which is checked the same way. browser doesn't follow
   redirects manually, so the redirected request is still sent. Only its
   response can't be used, which is what CORS does in browsers (see "Known
   limitations").
 - `() => false` allows nothing, so only registries and embedded resources
-  are used. The test suite runners use it instead of removing the
-  `http(s):` URI scheme plugins.
+  are used. The test suite runners and the tests that only use registries
+  use it instead of removing the `http(s):` URI scheme plugins. Tests that
+  read files from a temporary directory, outside the working directory,
+  use `() => true`.
 
 ### The language server
 
@@ -1074,10 +1089,8 @@ What this relies on from browser's `v2` branch:
 ## Plan
 
 1. Linting (see "Linting" and "What can be retrieved"), in this order:
-   1. `allowRetrieval`, `RetrievalNotAllowedError`, and `findSchema`, then
-      the CLI's registry of the files it was given and its predicate, then
-      a rule for references to other documents. The README's examples that
-      retrieve `https:` in Node.js need to set `allowRetrieval`.
+   1. `findSchema`, then the CLI's registry of the files it was given and
+      its predicate, then a rule for references to other documents.
    2. JSONC support in the CLI, and configuration comments from it.
 2. Optimization passes on the IR (see "Optimizations"). Candidates: fold
    constants (`not: true`, an `enum` with one value), inline `$ref` targets

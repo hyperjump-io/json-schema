@@ -1,9 +1,10 @@
-import { Session } from "@hyperjump/browser";
+import { RetrievalError, Session } from "@hyperjump/browser";
 import { toAbsoluteIri } from "@hyperjump/uri";
 import { SessionRegistries } from "./registry/session-registries.js";
 import { compile } from "./evaluate/compile.js";
 import { optimize } from "./evaluate/optimize.js";
 import { Validator } from "./evaluate/validator.js";
+import { RetrievalNotAllowedError } from "./retrieval/retrieval-not-allowed-error.js";
 
 /**
  * @import { DocumentNode, GetOptions } from "@hyperjump/browser"
@@ -97,7 +98,10 @@ export class JsonSchemaSession extends Session {
       try {
         document = await super.getDocument(uri, options);
       } catch (error) {
-        throw this.#registries.retrievalError(uri, error);
+        // browser wraps whatever retrieval throws. A refused URL isn't one
+        // that couldn't be retrieved, so it isn't hidden in a RetrievalError.
+        const refused = error instanceof RetrievalError && error.cause instanceof RetrievalNotAllowedError;
+        throw this.#registries.retrievalError(uri, refused ? error.cause : error);
       }
     }
 

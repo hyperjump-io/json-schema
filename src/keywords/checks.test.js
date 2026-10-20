@@ -206,7 +206,7 @@ describe("a schema with an invalid keyword value", () => {
     const path = join(directory, "invalid.schema.json");
     await writeFile(path, `{ "$schema": "${v1DialectUri}", "minLength": -1 }`);
 
-    const jsonSchema = new JsonSchema();
+    const jsonSchema = new JsonSchema({ allowRetrieval: () => true });
     addV1(jsonSchema);
     await expect(jsonSchema.compile(pathToFileURL(path).toString())).rejects.toSatisfy((/** @type Error */ error) => {
       return /** @type VFileMessage */ (error.cause).ruleId === "https://json-schema.org/keyword/minLength";

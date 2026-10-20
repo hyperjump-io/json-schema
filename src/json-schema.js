@@ -1,5 +1,7 @@
 import { Hyperjump } from "@hyperjump/browser";
 import { toAbsoluteIri } from "@hyperjump/uri";
+import { defaultAllowRetrieval, realUrl } from "#retrieval";
+import { RetrievalNotAllowedError } from "./retrieval/retrieval-not-allowed-error.js";
 import { JsonSchemaMediaTypePlugin } from "./schema/media-type-plugin.js";
 import { JsonSchemaSession } from "./session.js";
 import { addedRegistriesOf } from "./registry/session-registries.js";
@@ -10,8 +12,10 @@ import { basicOutputFormat } from "./output/basic.js";
 import { detailedOutputFormat } from "./output/detailed.js";
 
 export { ValidationError, DetailedValidationError, InvalidSchemaError } from "./output/validation-error.js";
+export { RetrievalNotAllowedError } from "./retrieval/retrieval-not-allowed-error.js";
 
 /**
+ * @import { GetOptions } from "@hyperjump/browser"
  * @import { Keyword } from "./keyword.d.ts"
  * @import { Format } from "./format.d.ts"
  * @import { Dialect } from "./dialect.d.ts"
@@ -65,6 +69,41 @@ export class JsonSchema extends Hyperjump {
 
   get config() {
     return this.#config;
+  }
+
+  /**
+   * Every retrieval comes through here, after embedded resources and
+   * registries and before the URI scheme plugins and their HTTP cache. The
+   * response is checked too, because a redirect can lead somewhere else.
+   *
+   * @param {string} uri
+   * @param {GetOptions} options
+   * @returns {Promise<Response>}
+   */
+  async retrieve(uri, options) {
+    await this.#checkRetrieval(toAbsoluteIri(uri));
+    const response = await super.retrieve(uri, options);
+
+    if (response.url && response.url !== toAbsoluteIri(uri)) {
+      try {
+        await this.#checkRetrieval(response.url, uri);
+      } catch (error) {
+        await response.body?.cancel();
+        throw error;
+      }
+    }
+
+    return response;
+  }
+
+  /** @type (uri: string, requestedUri?: string) => Promise<void> */
+  async #checkRetrieval(uri, requestedUri) {
+    const allowRetrieval = this.#config.allowRetrieval ?? defaultAllowRetrieval;
+    if (!await allowRetrieval(await realUrl(new URL(uri)))) {
+      throw requestedUri === undefined
+        ? new RetrievalNotAllowedError(uri)
+        : new RetrievalNotAllowedError(uri, `Retrieving '${requestedUri}' led to '${uri}', which isn't allowed. Use the 'allowRetrieval' config to allow it.`);
+    }
   }
 
   /** @type API.JsonSchema["session"] */

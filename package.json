@@ -63,6 +63,12 @@
       "default": "./src/lint/rules/*.js"
     }
   },
+  "imports": {
+    "#retrieval": {
+      "node": "./src/retrieval/allow-retrieval.js",
+      "default": "./src/retrieval/allow-retrieval.browser.js"
+    }
+  },
   "bin": {
     "jsonschema": "./src/cli/jsonschema-cli.js"
   },
