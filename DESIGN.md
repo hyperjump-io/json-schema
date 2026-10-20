@@ -50,6 +50,7 @@ text ─ rejsonParse ─▶ JSON AST ─ jsonSchemaResolve ─▶ Schema AST ─
 | `src/dialects/` | The presets: `v1`, `draft-04` … `draft-2020-12`. Each has the dialect and its tests, including the test suite runners. `add-preset.js` adds a preset's dialect and the definitions it uses |
 | `src/keywords/` | Keyword definitions, and `checks.js`, the checks they share for their values |
 | `src/formats/` | Format definitions and the lite and full presets |
+| `src/lint/` | Lint rules (`rules/`, one per file), the recommended preset, and the utilities rules share |
 | `src/cli/` | The `jsonschema` CLI, which lints schemas |
 | `test/test-suite.js` | Runs the JSON Schema Test Suite and the annotation test suite |
 
@@ -912,7 +913,12 @@ plugins, configured per project, with presets, like remark-lint.
 - Rules and presets are in this package, in `src/lint/`.
 - A rule is made with `unified-lint-rule`, so its config is a severity
   (`"off"`, `"warn"`, `"error"`, or 0–2) and its own options. Its origin is
-  `jsonschema-lint:<name>`.
+  `jsonschema-lint:<name>`. The severity has to be in an array
+  (`[rule, ["error"]]`, `[rule, [2, options]]`). A bare `"error"` is taken as
+  the rule's options, at the default severity, which is a warning.
+- Rules are exported as `lint/rules/<name>`, the preset as
+  `lint/recommended`, and the utilities as `lint`, for rules in other
+  packages.
 - Presets bundle rules with their settings, like remark's
   `remark-preset-lint-recommended`. A project's `.jsonschemarc` uses a
   preset and adjusts rules. The CLI loads plugins with the `jsonschema`
@@ -1020,6 +1026,11 @@ What this relies on from browser's `v2` branch:
 
 - **Configuring the CLI's access.** How `.jsonschemarc` allows more than the
   files it was given: URL prefixes, directories, registries, or a mix.
+- **Documenting lint rules.** Users need to know what each rule reports,
+  why it matters, its options, and which presets turn it on, so they can
+  customize them effectively. remark-lint gives each rule a README with
+  examples. A rule's `url` in its `lintRule` meta could link to its docs
+  from every message. The README's table of rules won't scale.
 - **Which files are JSONC.** A `.schema.jsonc` extension, a setting, or
   always allowing comments.
 - **Reading a file from its real path.** A document should keep the URL it

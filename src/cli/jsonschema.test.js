@@ -66,6 +66,15 @@ describe("jsonschema CLI", () => {
     await mkdir(join(dir, "valid"));
     await writeFile(join(dir, "valid", "b.schema.json"), `{ "$schema": "https://json-schema.org/v1", "minLength": 1 }`);
     await writeFile(join(dir, "package.json"), `{ "name": "example" }`);
+
+    const recommended = fileURLToPath(new URL("../lint/recommended.js", import.meta.url));
+    const rule = fileURLToPath(new URL("../lint/rules/then-else-without-if.js", import.meta.url));
+    await mkdir(join(dir, "linted"));
+    await writeFile(join(dir, "linted", ".jsonschemarc"), JSON.stringify({ plugins: [recommended] }));
+    await writeFile(join(dir, "linted", "c.schema.json"), `{ "$schema": "https://json-schema.org/v1", "then": true }`);
+    await mkdir(join(dir, "strict"));
+    await writeFile(join(dir, "strict", ".jsonschemarc"), JSON.stringify({ plugins: [recommended, [rule, ["error"]]] }));
+    await writeFile(join(dir, "strict", "d.schema.json"), `{ "$schema": "https://json-schema.org/v1", "then": true }`);
   });
 
   afterAll(async () => {
@@ -121,6 +130,23 @@ describe("jsonschema CLI", () => {
     expect(output).to.contain("a.schema.json");
     expect(output).to.contain("https://json-schema.org/keyword/minLength");
     expect(output).not.to.contain("package.json");
+  });
+
+  test("lint rules aren't on without configuration", async () => {
+    const { output } = await report(["valid"]);
+    expect(output).not.to.contain("then-else-without-if");
+  });
+
+  test("a preset in .jsonschemarc turns on lint rules as warnings", async () => {
+    const { output, exitCode } = await report(["linted"]);
+    expect(output).to.match(/warning\s+'then' has no effect without 'if'\s+then-else-without-if\s+jsonschema-lint/);
+    expect(exitCode).to.equal(0);
+  });
+
+  test("a rule in .jsonschemarc can be made an error", async () => {
+    const { output, exitCode } = await report(["strict"]);
+    expect(output).to.match(/error\s+'then' has no effect without 'if'/);
+    expect(exitCode).to.equal(1);
   });
 
   test("a plain JSON file can be included with an ignore pattern", async () => {

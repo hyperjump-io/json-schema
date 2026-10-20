@@ -271,6 +271,28 @@ It reads a schema from stdin if no files are given, as if it were a file in the
 working directory. It doesn't write schemas back out unless you ask with
 `--stdout` or `--output`.
 
+Lint rules find things that are likely mistakes in a schema that still works,
+such as `then` without `if`. They're off unless you turn them on in a
+`.jsonschemarc` file (or a `jsonSchemaConfig` field in `package.json`). The
+recommended preset turns on every rule that's likely a mistake, as warnings.
+Rules after it change their settings. A rule's setting is an array, with its
+severity (`"off"`, `"warn"`, or `"error"`) first.
+
+```json
+{
+  "plugins": [
+    "@hyperjump/json-schema-next/lint/recommended",
+    ["@hyperjump/json-schema-next/lint/rules/then-else-without-if", ["error"]]
+  ]
+}
+```
+
+Warnings don't fail the command unless you use `--frail`.
+
+| Rule | Reports |
+| --- | --- |
+| `then-else-without-if` | `then` or `else` without `if` |
+
 ### Serializing compiled schemas
 
 A compiled schema is JSON, so it can be cached and restored without retrieving
@@ -350,6 +372,31 @@ jsonSchema.addDialect({
   unknownKeywords: "error"
 });
 ```
+
+### Lint rules
+
+A lint rule is a unified plugin made with
+[`unified-lint-rule`](https://github.com/remarkjs/remark-lint/tree/main/packages/unified-lint-rule).
+It runs on a schema AST, after every schema and keyword has been identified.
+Find keywords by keyword URI, not by name, so the rule works in every dialect
+with the keyword. The utilities in `@hyperjump/json-schema-next/lint` find
+schemas and keywords.
+
+```javascript
+import { lintRule } from "unified-lint-rule";
+import { siblingKeyword, visitKeywords } from "@hyperjump/json-schema-next/lint";
+
+export default lintRule({ origin: "jsonschema-lint-example:min-without-max" }, (tree, file) => {
+  visitKeywords(tree, "https://json-schema.org/keyword/minimum", (keywordNode, schemaNode) => {
+    if (siblingKeyword(schemaNode, "https://json-schema.org/keyword/maximum") === undefined) {
+      file.message("'minimum' without 'maximum'", { place: keywordNode.position });
+    }
+  });
+});
+```
+
+A package named `jsonschema-<name>` can be used in `.jsonschemarc` as
+`<name>`. See `src/lint/` for the built-in rules.
 
 ### Evaluation plugins
 

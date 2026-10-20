@@ -49,6 +49,18 @@
     "./formats/full": {
       "types": "./src/formats/full.d.ts",
       "default": "./src/formats/full.js"
+    },
+    "./lint": {
+      "types": "./src/lint/utilities.d.ts",
+      "default": "./src/lint/utilities.js"
+    },
+    "./lint/recommended": {
+      "types": "./src/lint/recommended.d.ts",
+      "default": "./src/lint/recommended.js"
+    },
+    "./lint/rules/*": {
+      "types": "./src/lint/rules/*.d.ts",
+      "default": "./src/lint/rules/*.js"
     }
   },
   "bin": {
@@ -80,6 +92,7 @@
     "content-type": "^3.1.1",
     "unified": "^11.0.5",
     "unified-args": "^11.0.1",
+    "unified-lint-rule": "^3.0.1",
     "vfile": "^6.0.3",
     "vfile-message": "^4.0.3"
   }
