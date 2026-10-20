@@ -440,6 +440,24 @@ export default lintRule({ origin: "jsonschema-lint-example:min-without-max" }, (
 });
 ```
 
+A rule that needs another schema, such as the target of a reference, uses
+`findSchema` with the session the schema was resolved in
+(`file.data.jsonSchemaSession`), so it only sees what your application's
+registries and `allowRetrieval` allow. Pass the tree as `document`, so
+references into the schema being linted find what's in it. It says whether
+the schema is `found`, `missing`, or `unknown`. Report `missing` only.
+`unknown` means it can't be told, such as for a URL `allowRetrieval`
+refuses.
+
+```javascript
+import { findSchema } from "@hyperjump/json-schema-next/lint";
+
+const result = await findSchema(file.data.jsonSchemaSession, uri, { document: tree });
+if (result.status === "missing") {
+  file.message(result.reason.message, { place: node.position });
+}
+```
+
 A package named `jsonschema-<name>` can be used in `.jsonschemarc` as
 `<name>`. See `src/lint/` for the built-in rules.
 

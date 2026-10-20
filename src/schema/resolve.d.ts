@@ -36,5 +36,16 @@ export type JsonSchemaResolveOptions = {
  * It's asynchronous because a dialect that hasn't been added has to be
  * retrieved from its meta-schema. It doesn't validate the document against
  * its meta-schema.
+ *
+ * The session is put on the file as `file.data.jsonSchemaSession`, so lint
+ * rules that run after it can find other schemas the way the document's
+ * references would.
  */
 export const jsonSchemaResolve: Plugin<[JsonSchemaResolveOptions], JsonDocumentNode, JsonSchemaDocumentNode>;
+
+declare module "vfile" {
+  interface DataMap {
+    /** The session the schema was resolved in. See {@link jsonSchemaResolve}. */
+    jsonSchemaSession: JsonSchemaSession;
+  }
+}

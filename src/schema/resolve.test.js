@@ -155,6 +155,13 @@ describe("jsonSchemaResolve", () => {
       expect(keywordNode(constValue, "type").keywordUri).to.equal(undefined);
     });
 
+    test("the session is on the file for lint rules", async () => {
+      const session = jsonSchema.session();
+      const { file } = await resolve(jsonSchema, `{ "$schema": "${dialectUri}" }`, { session });
+
+      expect(file.data.jsonSchemaSession).to.equal(session);
+    });
+
     test("unknown keywords", async () => {
       const { root, file } = await resolve(jsonSchema, `{ "$schema": "${dialectUri}", "foo": { "type": "string" } }`);
 

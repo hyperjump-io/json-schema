@@ -49,6 +49,9 @@ export function jsonSchemaResolve(options) {
       });
     }
 
+    // Lint rules find other schemas in the same session
+    file.data.jsonSchemaSession = options.session;
+
     const dialectUri = options.dialectUri ?? options.session.jsonSchema.config.defaultDialectUri;
     const resolver = new Resolver(options.session, file, tree);
     return resolver.resolve(toAbsoluteIri(uri), dialectUri);
