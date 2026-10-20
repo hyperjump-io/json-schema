@@ -1,6 +1,6 @@
 import { execFile } from "node:child_process";
 import { createServer } from "node:http";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -114,6 +114,17 @@ describe("jsonschema CLI", () => {
       $schema: pathToFileURL(join(outside, "meta.schema.json")).href,
       type: "string"
     }));
+
+    await mkdir(join(dir, "workspace", "vendor"), { recursive: true });
+    await writeFile(join(dir, "workspace", "vendor", "vendored.schema.json"), JSON.stringify({ ...JSON.parse(metaSchema), $id: "https://example.com/vendored" }));
+    await writeFile(join(dir, "workspace", "uses-vendored.schema.json"), `{ "$schema": "https://example.com/vendored", "type": "string" }`);
+
+    await mkdir(join(dir, "node_modules", "pkg"), { recursive: true });
+    await writeFile(join(dir, "node_modules", "pkg", "meta.schema.json"), JSON.stringify({ ...JSON.parse(metaSchema), $id: "https://example.com/in-node-modules" }));
+    await mkdir(join(dir, "skipped"));
+    await writeFile(join(dir, "skipped", "uses-node-modules.schema.json"), `{ "$schema": "https://example.com/in-node-modules", "type": "string" }`);
+    await symlink(join(outside, "meta-with-id.schema.json"), join(dir, "skipped", "link.schema.json"));
+    await writeFile(join(dir, "skipped", "uses-link.schema.json"), `{ "$schema": "https://example.com/outside-meta-with-id", "type": "string" }`);
 
     // Serves the meta-schema at every path
     server = createServer((_request, response) => {
@@ -231,9 +242,33 @@ describe("jsonschema CLI", () => {
     expect(exitCode).to.equal(0);
   });
 
-  test("a meta-schema it wasn't given isn't found by its identifier", async () => {
-    const { output, exitCode } = await report(["meta/by-id.schema.json", "-q"]);
-    expect(output).to.contain("Unable to retrieve the meta-schema for the 'https://example.com/meta' dialect");
+  test("a meta-schema in the working directory is found by its identifier, even if it wasn't given", async () => {
+    const { exitCode } = await report(["meta/by-id.schema.json", "-q"]);
+    expect(exitCode).to.equal(0);
+  });
+
+  test("a meta-schema outside the working directory that it wasn't given isn't found by its identifier", async () => {
+    const { output, exitCode } = await report(["outside-ref/outside-by-id.schema.json", "-q"]);
+    expect(output).to.contain("Unable to retrieve the meta-schema for the 'https://example.com/outside-meta-with-id' dialect");
+    expect(exitCode).to.equal(1);
+  });
+
+  test("an ignored meta-schema is found by its identifier, and isn't linted", async () => {
+    const { output, exitCode } = await report(["workspace", "--ignore-pattern", "vendor/"]);
+    expect(output).to.contain("workspace/uses-vendored.schema.json");
+    expect(output).not.to.contain("vendor/");
+    expect(exitCode).to.equal(0);
+  });
+
+  test("schemas in node_modules aren't found", async () => {
+    const { output, exitCode } = await report(["skipped/uses-node-modules.schema.json", "-q"]);
+    expect(output).to.contain("Unable to retrieve the meta-schema for the 'https://example.com/in-node-modules' dialect");
+    expect(exitCode).to.equal(1);
+  });
+
+  test("symlinks in the working directory aren't followed", async () => {
+    const { output, exitCode } = await report(["skipped/uses-link.schema.json", "-q"]);
+    expect(output).to.contain("Unable to retrieve the meta-schema for the 'https://example.com/outside-meta-with-id' dialect");
     expect(exitCode).to.equal(1);
   });
 

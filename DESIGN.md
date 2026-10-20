@@ -909,9 +909,25 @@ can be added to one `JsonSchema`.
   like style, and none of these are.
 - Its processor isn't exported. Validating instances from the CLI waits for
   the unified plugin for validating JSON files (see "Plan").
-- Every file it was given is in a registry, as in the language server, so
-  it's found by its `$id` and by its path, even outside the working
-  directory.
+- It can see the working directory, and it lints the files it's given.
+  Every `.schema.json` file in the working directory is in a registry, as a
+  language server has its workspace, so it's found by its `$id` and by its
+  path, whether or not it's linted. The files it was given are in the
+  registry too, even outside the working directory or with another
+  extension. Self-identifying meta-schemas, whose `$id` can't be retrieved,
+  are found this way without any configuration.
+- `.jsonschemaignore` and ignore patterns only decide what's linted. An
+  ignored file is still found, which is what a vendored meta-schema needs.
+- The search skips `node_modules` and `.git`, and it doesn't follow
+  symlinks. A symlink can point outside the working directory, and what's
+  in the registry isn't checked by `allowRetrieval`. A directory that can't
+  be read is skipped.
+- The working directory is searched and every file is read for each run,
+  even to lint one file. Entries are only resolved when they're needed, but
+  finding their identifiers parses each one. A very large repository pays
+  for that. Listing registry files in `.jsonschemarc` was considered
+  instead, but their paths would have nothing to be relative to (see the
+  `allowRetrieval` setting).
 - What it can retrieve is files in the working directory, as by default,
   and the URLs in the `allowRetrieval` setting from `.jsonschemarc`.
 - The setting is a list of `http:` or `https:` URLs. One that ends with `/`
@@ -934,11 +950,14 @@ can be added to one `JsonSchema`.
   (`src/cli/file-set.js`) with `--use`, before the user's arguments, and it
   records the file set for the processor. Every plugin is attached before
   any file is transformed, so the resolve step finds it.
-- Each run has its own registry. The files are read again for it, so
-  watch mode sees edits. A run in watch mode only has the file that
-  changed, so the files from earlier runs are kept.
+- Each run has its own registry, so watch mode sees new and edited files.
+  A run in watch mode only has the file that changed, so the files given in
+  earlier runs are kept.
 - A file the engine couldn't find, or was told to ignore, isn't one it was
-  given. Input from stdin can't be found by other files.
+  given, though an ignored one in the working directory is still found.
+  Input from stdin can't be found by other files.
+- Without the engine, such as when the processor is used directly in tests,
+  there's no run, so the registry is empty and nothing is searched.
 
 ## Linting
 
@@ -1140,10 +1159,6 @@ What this relies on from browser's `v2` branch:
   failing schemas, which leaves the language server without them. Explore
   alternative annotation behavior.
 
-- **Registry files in the CLI's configuration.** Schemas that aren't linted
-  but should be found, such as self-identifying meta-schemas, would be
-  listed in `.jsonschemarc`. Their paths have the same problem as files in
-  `allowRetrieval`: nothing to be relative to.
 - **Documenting lint rules.** Users need to know what each rule reports,
   why it matters, its options, and which presets turn it on, so they can
   customize them effectively. remark-lint gives each rule a README with

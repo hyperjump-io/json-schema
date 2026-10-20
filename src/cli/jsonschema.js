@@ -1,5 +1,6 @@
-import { readFile } from "node:fs/promises";
-import { resolve } from "node:path";
+import { readdir, readFile } from "node:fs/promises";
+import { join, resolve } from "node:path";
+import { cwd } from "node:process";
 import { pathToFileURL } from "node:url";
 import { unified } from "unified";
 import { rejsonParse, rejsonStringify } from "@hyperjump/browser/json";
@@ -62,23 +63,61 @@ export const recordFileSet = (processor, fileSet) => {
 const givenPaths = new Set();
 
 /**
- * Each run's registry of the files the CLI has been given
+ * Each run's registry
  *
  * @type WeakMap<FileSet, Promise<SchemaRegistry>>
  */
 const registries = new WeakMap();
 
 /**
- * Without the engine, such as when the processor is used directly, there
- * are no files
- *
- * @type FileSet
+ * Without the engine, such as when the processor is used directly, there's
+ * no run, so nothing is in the registry
  */
-const noFiles = { files: [] };
+const noRegistry = Promise.resolve(new SchemaRegistry());
+
+/** Directories that are never searched for schemas */
+const skippedDirectories = new Set(["node_modules", ".git"]);
 
 /**
- * Files are read again for each run, so the registry has what they are now.
- * Files that can't be read anymore are left out.
+ * Every schema file in a directory and the directories in it. Symlinks are
+ * skipped, because one can point outside the working directory, and what's
+ * in the registry isn't checked by `allowRetrieval`. A directory that can't
+ * be read is skipped.
+ *
+ * @type (directory: string) => Promise<string[]>
+ */
+const schemaFiles = async (directory) => {
+  let entries;
+  try {
+    entries = await readdir(directory, { withFileTypes: true });
+  } catch {
+    return [];
+  }
+
+  /** @type string[] */
+  const paths = [];
+  for (const entry of entries) {
+    const path = join(directory, entry.name);
+    if (entry.isDirectory() && !skippedDirectories.has(entry.name)) {
+      paths.push(...await schemaFiles(path));
+    } else if (entry.isFile() && entry.name.endsWith(".schema.json")) {
+      paths.push(path);
+    }
+  }
+
+  return paths;
+};
+
+/**
+ * The registry has every schema file in the working directory, whether or
+ * not it's linted, as a language server has its workspace, so a schema can
+ * find a meta-schema that's ignored by its `$id`. It also has the files the
+ * CLI was given, which can be outside the working directory or have another
+ * extension.
+ *
+ * The working directory is searched and files are read again for each run,
+ * so the registry has what they are now. Files that can't be read anymore
+ * are left out.
  *
  * @type (fileSet: FileSet) => Promise<SchemaRegistry>
  */
@@ -91,20 +130,25 @@ const createRegistry = async (fileSet) => {
     }
   }
 
+  const paths = new Set([...await schemaFiles(cwd()), ...givenPaths]);
   const entries = [];
-  for (const path of givenPaths) {
+  for (const path of paths) {
     try {
       entries.push({ schema: await readFile(path, "utf8"), retrievalUri: pathToFileURL(path).href });
     } catch {
-      // It was given, but it's gone
+      // It's gone
     }
   }
 
   return new SchemaRegistry(entries);
 };
 
-/** @type (fileSet: FileSet) => Promise<SchemaRegistry> */
+/** @type (fileSet: FileSet | undefined) => Promise<SchemaRegistry> */
 const registryFor = (fileSet) => {
+  if (fileSet === undefined) {
+    return noRegistry;
+  }
+
   let registry = registries.get(fileSet);
   if (!registry) {
     registry = createRegistry(fileSet);
@@ -169,9 +213,9 @@ const allowRetrievalFor = (allowed) => {
 
 /**
  * Resolves a schema, which finds every problem with it. Each file is
- * resolved in its own session, with a registry of every file the CLI was
- * given, so references and meta-schemas find the other files by their
- * identifiers, or by their paths if they don't have one. What can be
+ * resolved in its own session, with a registry of every schema file in the
+ * working directory and every file the CLI was given, so references and
+ * meta-schemas find them by their identifiers or paths. What can be
  * retrieved is files in the working directory and the URLs the
  * `allowRetrieval` setting allows.
  *
@@ -192,7 +236,7 @@ function jsonSchemaLint() {
       return file.fail(/** @type Error */ (error).message, { ruleId: "invalid-setting", source: "jsonschema" });
     }
 
-    const registry = await registryFor(fileSets.get(processor) ?? noFiles);
+    const registry = await registryFor(fileSets.get(processor));
     const session = jsonSchema.session({ registries: [registry], allowRetrieval: allowRetrievalFor(allowed) });
     const uri = file.path === undefined ? pathToFileURL(`${file.cwd}/`).href : undefined;
     return /** @type Function */ (jsonSchemaResolve).call(this, { session, uri })(tree, file);

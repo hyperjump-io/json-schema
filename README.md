@@ -299,9 +299,11 @@ It reads a schema from stdin if no files are given, as if it were a file in the
 working directory. It doesn't write schemas back out unless you ask with
 `--stdout` or `--output`.
 
-A schema finds the other files you give it by their `$id` or their paths,
-including custom meta-schemas. Other files are retrieved if they're in the
-working directory. URLs are only retrieved if the `allowRetrieval` setting
+Every `.schema.json` file in the working directory can be found by its `$id`
+or its path, including custom meta-schemas, whether or not it's linted. Only
+the files you give it are linted. So a vendored meta-schema can be ignored
+with `.jsonschemaignore` and still be found. `node_modules`, `.git`, and
+symlinks aren't searched. URLs are only retrieved if the `allowRetrieval` setting
 allows them. It's a list of `http:` or `https:` URLs. One that ends with `/`
 allows everything under it, and any other allows only itself.
 
