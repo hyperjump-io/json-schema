@@ -19,6 +19,11 @@ export { RetrievalNotAllowedError } from "./retrieval/retrieval-not-allowed-erro
 export type { ValidationErrorOptions } from "./output/validation-error.js";
 export type { OutputError, OutputFormat, OutputFormatDefinition, OutputFormats, JsonSyntaxError, ValidationResult } from "./output/output-format.d.ts";
 
+/**
+ * Whether a URL can be retrieved. See `allowRetrieval` in {@link JsonSchemaConfig}.
+ */
+export type AllowRetrieval = (url: URL) => boolean | Promise<boolean>;
+
 export type JsonSchemaConfig = HyperjumpConfig & {
   /**
    * The dialect of a schema that doesn't have `$schema` and doesn't get a
@@ -55,8 +60,11 @@ export type JsonSchemaConfig = HyperjumpConfig & {
    * that's files in the working directory, and not `http(s):`. In a browser,
    * it's `http(s):` URLs with the page's origin. `() => false` allows
    * nothing, so only embedded resources and registries are used.
+   *
+   * A session can have its own (see `SessionOptions`), which it uses
+   * instead.
    */
-  allowRetrieval?: (url: URL) => boolean | Promise<boolean>;
+  allowRetrieval?: AllowRetrieval;
 };
 
 export class JsonSchema extends Hyperjump<JsonSchemaNode> {

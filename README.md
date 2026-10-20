@@ -186,6 +186,13 @@ const jsonSchema = new JsonSchema({
 });
 ```
 
+A session can have its own predicate, which it uses instead, for when
+different parts of your application can retrieve different things.
+
+```javascript
+const session = jsonSchema.session({ allowRetrieval: (url) => url.protocol === "file:" });
+```
+
 The predicate gets a `URL`. In Node.js, a `file:` URL is the file's real path,
 so a symlink can't lead outside a directory you allow. A response is checked
 again by the URL it came from, so a redirect can't lead somewhere you didn't

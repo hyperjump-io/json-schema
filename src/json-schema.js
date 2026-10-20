@@ -25,6 +25,15 @@ export { RetrievalNotAllowedError } from "./retrieval/retrieval-not-allowed-erro
  * @import { OutputFormat, OutputFormatDefinition } from "./output/output-format.d.ts"
  */
 
+/** @type (allowRetrieval: API.AllowRetrieval, uri: string, requestedUri?: string) => Promise<void> */
+const checkRetrieval = async (allowRetrieval, uri, requestedUri) => {
+  if (!await allowRetrieval(await realUrl(new URL(uri)))) {
+    throw requestedUri === undefined
+      ? new RetrievalNotAllowedError(uri)
+      : new RetrievalNotAllowedError(uri, `Retrieving '${requestedUri}' led to '${uri}', which isn't allowed. Use the 'allowRetrieval' config to allow it.`);
+  }
+};
+
 /**
  * @implements API.JsonSchema
  * @augments {Hyperjump<JsonSchemaNode>}
@@ -76,17 +85,21 @@ export class JsonSchema extends Hyperjump {
    * registries and before the URI scheme plugins and their HTTP cache. The
    * response is checked too, because a redirect can lead somewhere else.
    *
+   * browser's `Session` passes on the options `getDocument` got, so a
+   * `JsonSchemaSession` adds its own `allowRetrieval` to them.
+   *
    * @param {string} uri
-   * @param {GetOptions} options
+   * @param {GetOptions & { allowRetrieval?: API.AllowRetrieval }} options
    * @returns {Promise<Response>}
    */
   async retrieve(uri, options) {
-    await this.#checkRetrieval(toAbsoluteIri(uri));
+    const allowRetrieval = options.allowRetrieval ?? this.#config.allowRetrieval ?? defaultAllowRetrieval;
+    await checkRetrieval(allowRetrieval, toAbsoluteIri(uri));
     const response = await super.retrieve(uri, options);
 
     if (response.url && response.url !== toAbsoluteIri(uri)) {
       try {
-        await this.#checkRetrieval(response.url, uri);
+        await checkRetrieval(allowRetrieval, response.url, uri);
       } catch (error) {
         await response.body?.cancel();
         throw error;
@@ -94,16 +107,6 @@ export class JsonSchema extends Hyperjump {
     }
 
     return response;
-  }
-
-  /** @type (uri: string, requestedUri?: string) => Promise<void> */
-  async #checkRetrieval(uri, requestedUri) {
-    const allowRetrieval = this.#config.allowRetrieval ?? defaultAllowRetrieval;
-    if (!await allowRetrieval(await realUrl(new URL(uri)))) {
-      throw requestedUri === undefined
-        ? new RetrievalNotAllowedError(uri)
-        : new RetrievalNotAllowedError(uri, `Retrieving '${requestedUri}' led to '${uri}', which isn't allowed. Use the 'allowRetrieval' config to allow it.`);
-    }
   }
 
   /** @type API.JsonSchema["session"] */

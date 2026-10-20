@@ -483,9 +483,15 @@ to it.
   a `RetrievalError` for a URL that was allowed and couldn't be retrieved.
   Tools use the difference: a refused URL is unknown, a failed one is
   missing.
-- It's config, not a session option, because it's a property of the
-  application, like its URI scheme plugins, and every session should follow
-  it.
+- It's config, because it's a property of the application, like its URI
+  scheme plugins, and every session should follow it by default. A session
+  can have its own (`SessionOptions.allowRetrieval`), which replaces the
+  config's rather than adding to it, for an application that allows
+  different things for different sessions, like the CLI does for files with
+  different settings. The application creates its sessions, so it's still
+  the application's decision. The session passes its predicate in the
+  options it gives browser's `getDocument`, which browser passes on to
+  `retrieve`, because `retrieve` isn't told which session called it.
 - Symlinks are handled by the library, so no predicate has to. A symlink
   inside an allowed directory can point outside it. In Node.js, a `file:`
   URL is replaced with its real path (`realpath`) before `allowRetrieval`

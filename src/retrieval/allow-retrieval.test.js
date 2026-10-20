@@ -160,6 +160,48 @@ describe("allowRetrieval", () => {
     });
   });
 
+  describe("a session's predicate", () => {
+    test("it's used instead of the config's", async () => {
+      const jsonSchema = v1({ allowRetrieval: () => false });
+      const session = jsonSchema.session({ allowRetrieval: (url) => url.protocol === "file:" });
+      const validator = await session.compile(pathToFileURL(join(outside, "outside.schema.json")).href);
+      expect(validator.validate("foo")).to.equal(true);
+    });
+
+    test("it can refuse what the config allows", async () => {
+      const jsonSchema = v1({ allowRetrieval: () => true });
+      const session = jsonSchema.session({ allowRetrieval: () => false });
+      await expect(session.compile(pathToFileURL(join(inside, "inside.schema.json")).href)).rejects.toThrow(RetrievalNotAllowedError);
+    });
+
+    test("other sessions use the config's", async () => {
+      const jsonSchema = v1({ allowRetrieval: () => false });
+      jsonSchema.session({ allowRetrieval: () => true });
+      await expect(jsonSchema.session().compile(pathToFileURL(join(inside, "inside.schema.json")).href)).rejects.toThrow(RetrievalNotAllowedError);
+    });
+
+    test("references use it", async () => {
+      const session = v1({ allowRetrieval: () => false }).session({ allowRetrieval: (url) => url.protocol === "file:" });
+      const validator = await session.compile(pathToFileURL(join(inside, "refers-outside.schema.json")).href);
+      expect(validator.validate("foo")).to.equal(true);
+    });
+
+    test("it checks where a response came from", async () => {
+      const jsonSchema = v1({ allowRetrieval: () => true });
+      jsonSchema.addUriSchemePlugin({
+        schemes: ["test"],
+        retrieve: async () => {
+          const response = new Response(schema, { headers: { "Content-Type": "application/schema+json" } });
+          Object.defineProperty(response, "url", { value: "https://internal.example.com/schema" });
+          return response;
+        }
+      });
+
+      const session = jsonSchema.session({ allowRetrieval: (url) => url.protocol === "test:" });
+      await expect(session.compile("test:schema")).rejects.toThrow("'test:schema' led to 'https://internal.example.com/schema'");
+    });
+  });
+
   describe("the default in a browser", () => {
     afterEach(() => {
       vi.unstubAllGlobals();

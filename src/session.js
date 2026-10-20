@@ -40,6 +40,9 @@ export class JsonSchemaSession extends Session {
   /** @type SessionRegistries */
   #registries;
 
+  /** @type API.SessionOptions["allowRetrieval"] */
+  #allowRetrieval;
+
   /**
    * Dialects whose meta-schemas are being retrieved
    *
@@ -68,6 +71,7 @@ export class JsonSchemaSession extends Session {
     this.#pendingDialects = {};
     this.#loading = new Map();
     this.#registries = new SessionRegistries(this, options.registries ?? []);
+    this.#allowRetrieval = options.allowRetrieval;
   }
 
   get jsonSchema() {
@@ -96,7 +100,9 @@ export class JsonSchemaSession extends Session {
       document = /** @type DocumentNode<JsonSchemaNode> */ (/** @type unknown */ (await registryDocument));
     } else {
       try {
-        document = await super.getDocument(uri, options);
+        // browser passes the options on to `JsonSchema.retrieve`
+        const retrieveOptions = this.#allowRetrieval === undefined ? options : { ...options, allowRetrieval: this.#allowRetrieval };
+        document = await super.getDocument(uri, retrieveOptions);
       } catch (error) {
         // browser wraps whatever retrieval throws. A refused URL isn't one
         // that couldn't be retrieved, so it isn't hidden in a RetrievalError.
