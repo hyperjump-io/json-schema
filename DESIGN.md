@@ -1022,6 +1022,10 @@ What this relies on from browser's `v2` branch:
   files it was given: URL prefixes, directories, registries, or a mix.
 - **Which files are JSONC.** A `.schema.jsonc` extension, a setting, or
   always allowing comments.
+- **Reading a file from its real path.** A document should keep the URL it
+  was asked for while the file is read from its real path (see "What can
+  be retrieved"). A document's URL comes from what browser retrieved, so
+  this probably needs browser's support.
 
 ## Plan
 
@@ -1031,7 +1035,8 @@ What this relies on from browser's `v2` branch:
    2. Configuration comments from `$comment`.
    3. `allowRetrieval`, `RetrievalNotAllowedError`, and `findSchema`, then
       the CLI's registry of the files it was given and its predicate, then
-      a rule for references to other documents.
+      a rule for references to other documents. The README's examples that
+      retrieve `https:` in Node.js need to set `allowRetrieval`.
    4. JSONC support in the CLI, and configuration comments from it.
 2. Optimization passes on the IR (see "Optimizations"). Candidates: fold
    constants (`not: true`, an `enum` with one value), inline `$ref` targets
