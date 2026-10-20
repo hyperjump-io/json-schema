@@ -96,16 +96,49 @@ const schemaFiles = async (directory) => {
 
   /** @type string[] */
   const paths = [];
+  /** @type Promise<string[]>[] */
+  const directories = [];
   for (const entry of entries) {
     const path = join(directory, entry.name);
     if (entry.isDirectory() && !skippedDirectories.has(entry.name)) {
-      paths.push(...await schemaFiles(path));
+      directories.push(schemaFiles(path));
     } else if (entry.isFile() && entry.name.endsWith(".schema.json")) {
       paths.push(path);
     }
   }
 
-  return paths;
+  return paths.concat(...await Promise.all(directories));
+};
+
+/**
+ * How many files are read at once. Reading them all at once could run out
+ * of file descriptors.
+ */
+const readConcurrency = 64;
+
+/**
+ * Read files with up to `readConcurrency` at once, keeping their order.
+ * A file that can't be read is undefined.
+ *
+ * @type (paths: string[]) => Promise<(string | undefined)[]>
+ */
+const readFiles = async (paths) => {
+  /** @type (string | undefined)[] */
+  const texts = [];
+  let next = 0;
+  const worker = async () => {
+    while (next < paths.length) {
+      const index = next++;
+      try {
+        texts[index] = await readFile(paths[index], "utf8");
+      } catch {
+        texts[index] = undefined;
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(readConcurrency, paths.length) }, worker));
+
+  return texts;
 };
 
 /**
@@ -130,13 +163,13 @@ const createRegistry = async (fileSet) => {
     }
   }
 
-  const paths = new Set([...await schemaFiles(cwd()), ...givenPaths]);
+  const paths = [...new Set([...await schemaFiles(cwd()), ...givenPaths])];
+  const texts = await readFiles(paths);
   const entries = [];
-  for (const path of paths) {
-    try {
-      entries.push({ schema: await readFile(path, "utf8"), retrievalUri: pathToFileURL(path).href });
-    } catch {
-      // It's gone
+  for (const [index, text] of texts.entries()) {
+    // A file that can't be read is gone
+    if (text !== undefined) {
+      entries.push({ schema: text, retrievalUri: pathToFileURL(paths[index]).href });
     }
   }
 

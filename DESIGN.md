@@ -389,7 +389,7 @@ entries. Each `JsonSchema` indexes each registry it's used with.
   keywords whose resolve hooks run are made into nodes (with `fromJs`). A
   tree with positions is much slower to build and is only needed for a
   problem, so an entry that has one is parsed again into a tree, and the
-  problem has a position.
+  problem has a position (see "CLI workspace registry" in BENCHMARKS.md).
 - An entry that can't be identified, such as one that isn't valid JSON or
   has an invalid `$id`, is found by its `retrievalUri`, and finding it
   throws the problem, like a retrieved file that can't be parsed. One
@@ -929,9 +929,12 @@ can be added to one `JsonSchema`.
   in the registry isn't checked by `allowRetrieval`. A directory that can't
   be read is skipped.
 - The working directory is searched and every file is read for each run,
-  even to lint one file. Entries are only resolved when they're needed, but
-  finding their identifiers parses each one. A very large repository pays
-  for that. Listing registry files in `.jsonschemarc` was considered
+  even to lint one file. Folders are searched and files are read
+  concurrently, up to 64 at a time, so it doesn't run out of file
+  descriptors. Entries are only identified when a session looks for a
+  schema, and only resolved when they're needed. For 3000 files, linting
+  one takes about 0.1–0.15 s more than in an empty folder (see "CLI
+  workspace registry" in BENCHMARKS.md). A very large repository pays more. Listing registry files in `.jsonschemarc` was considered
   instead, but their paths would have nothing to be relative to (see the
   `allowRetrieval` setting).
 - What it can retrieve is files in the working directory, as by default,
