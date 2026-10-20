@@ -894,7 +894,7 @@ can be added to one `JsonSchema`.
   problem is reported at once.
 - Its `JsonSchema` has every preset and no default dialect.
 - The engine makes a processor for each file, and each one resolves in a new
-  session, so watch mode sees edited meta-schemas.
+  session, with the run's registry.
 - The engine finds files in folders by `path.extname`, which is `.json` for a
   `.schema.json` file. The CLI adds the ignore patterns `*.json` and
   `!*.schema.json` before the user's own, so plain JSON files aren't linted
@@ -909,11 +909,36 @@ can be added to one `JsonSchema`.
   like style, and none of these are.
 - Its processor isn't exported. Validating instances from the CLI waits for
   the unified plugin for validating JSON files (see "Plan").
-- Planned (see "Linting"): its `allowRetrieval` allows only the files it was
-  given, by real path, and the files with an `$id` are in a registry, so
-  they're found by it, as in the language server. Everything else is
-  refused, including custom meta-schemas, unless `.jsonschemarc` allows
-  more.
+- Every file it was given is in a registry, as in the language server, so
+  it's found by its `$id` and by its path, even outside the working
+  directory.
+- What it can retrieve is files in the working directory, as by default,
+  and the URLs in the `allowRetrieval` setting from `.jsonschemarc`.
+- The setting is a list of `http:` or `https:` URLs. One that ends with `/`
+  allows everything under it, compared after the URL is parsed, so dot
+  segments and the host can't get around it. Any other allows only itself.
+  Anything else is an `invalid-setting` error.
+- Files can't be in the setting. A committed configuration file can't name
+  an absolute path, which differs for everyone and could point anywhere,
+  and a relative one has nothing to be relative to. The engine merges
+  settings without saying which configuration file they came from. Its
+  `configTransform` option has the file's path, but `unified-args` doesn't
+  pass it on. A file outside the working directory has to be given to the
+  CLI.
+- Files in different folders can have different `.jsonschemarc` files, so
+  each file's session gets its own `allowRetrieval`, and every file shares
+  one `JsonSchema`. A `JsonSchema` for each setting was considered, but each
+  would index the registry again.
+- The engine only gives the set of files it's processing to plugins from
+  configuration, as their third argument. So the CLI adds its own plugin
+  (`src/cli/file-set.js`) with `--use`, before the user's arguments, and it
+  records the file set for the processor. Every plugin is attached before
+  any file is transformed, so the resolve step finds it.
+- Each run has its own registry. The files are read again for it, so
+  watch mode sees edits. A run in watch mode only has the file that
+  changed, so the files from earlier runs are kept.
+- A file the engine couldn't find, or was told to ignore, isn't one it was
+  given. Input from stdin can't be found by other files.
 
 ## Linting
 
@@ -1115,8 +1140,10 @@ What this relies on from browser's `v2` branch:
   failing schemas, which leaves the language server without them. Explore
   alternative annotation behavior.
 
-- **Configuring the CLI's access.** How `.jsonschemarc` allows more than the
-  files it was given: URL prefixes, directories, registries, or a mix.
+- **Registry files in the CLI's configuration.** Schemas that aren't linted
+  but should be found, such as self-identifying meta-schemas, would be
+  listed in `.jsonschemarc`. Their paths have the same problem as files in
+  `allowRetrieval`: nothing to be relative to.
 - **Documenting lint rules.** Users need to know what each rule reports,
   why it matters, its options, and which presets turn it on, so they can
   customize them effectively. remark-lint gives each rule a README with
@@ -1128,8 +1155,7 @@ What this relies on from browser's `v2` branch:
 ## Plan
 
 1. Linting (see "Linting" and "What can be retrieved"), in this order:
-   1. The CLI's registry of the files it was given and its predicate, then
-      a rule for references to other documents.
+   1. A rule for references to other documents.
    2. JSONC support in the CLI, and configuration comments from it.
 2. Optimization passes on the IR (see "Optimizations"). Candidates: fold
    constants (`not: true`, an `enum` with one value), inline `$ref` targets
