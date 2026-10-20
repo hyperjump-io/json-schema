@@ -292,6 +292,8 @@ Warnings don't fail the command unless you use `--frail`.
 | Rule | Reports |
 | --- | --- |
 | `then-else-without-if` | `then` or `else` without `if` |
+| `min-max-contains-without-contains` | `minContains` or `maxContains` without `contains` |
+| `exclusive-without-maximum-minimum` | draft-04's `exclusiveMaximum` or `exclusiveMinimum` without `maximum` or `minimum` |
 
 ### Serializing compiled schemas
 
