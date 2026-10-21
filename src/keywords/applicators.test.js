@@ -76,6 +76,13 @@ describe("applicator errors", () => {
         { "/if": ["/else/minimum"] }
       ]);
     });
+
+    test("DETAILED gives if's errors as a plain array", async () => {
+      const validator = await jsonSchema.compile(await schemaFile(schema));
+
+      const [error] = validator.validate("abc", { output: "DETAILED" }).errors;
+      expect(Object.keys(/** @type DetailedValidationError */ (error).errors ?? {})).to.eql(["0"]);
+    });
   });
 
   describe("$ref", () => {

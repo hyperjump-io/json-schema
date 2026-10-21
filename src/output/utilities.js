@@ -1,30 +1,49 @@
 /**
- * @import { KeywordInfo } from "../evaluate/evaluation-plugin.d.ts"
+ * @import { EvaluationLocation, KeywordInfo } from "../evaluate/evaluation-plugin.d.ts"
  * @import { JsonSyntaxError, OutputError } from "./output-format.d.ts"
+ * @import { ValidationError } from "./validation-error.d.ts"
  */
 
 /** The `ruleId` of an error from a `false` schema */
 export const falseSchemaRuleId = "https://json-schema.org/validation";
 
 /**
- * A keyword's errors. For `if` and `conditional`, it also has the handles of
- * their conditions (see {@link conditionsOf}).
+ * Where a keyword's errors start in an error list. For `if` and
+ * `conditional`, it also has the handles of their conditions (see
+ * {@link conditionsOf}).
  *
- * @template E
- * @typedef {E[] & { conditions?: ReadonlySet<string> }} KeywordErrors
+ * @typedef {number | { start: number; conditions: ReadonlySet<string> }} KeywordStart
  */
 
-/** @type <E>(keyword: KeywordInfo) => KeywordErrors<E> */
-export const keywordErrors = (keyword) => {
-  /** @type KeywordErrors<any> */
-  const errors = [];
-  const conditions = conditionsOf(keyword);
-  if (conditions !== undefined) {
-    errors.conditions = conditions;
+/** @type (keyword: KeywordInfo, start: number) => KeywordStart */
+export const keywordStart = (keyword, start) => {
+  if (keyword.keywordUri !== ifUri && keyword.keywordUri !== conditionalUri) {
+    return start;
   }
 
-  return errors;
+  return { start, conditions: conditionsOf(keyword) };
 };
+
+/** @type (state: KeywordStart) => number */
+export const startOf = (state) => typeof state === "number" ? state : state.start;
+
+/**
+ * Whether a schema is a condition of the keyword that applied it, so its
+ * errors aren't reported
+ *
+ * @type (schemaHandle: string, parent: KeywordStart | undefined) => boolean
+ */
+export const isCondition = (schemaHandle, parent) => typeof parent === "object" && parent.conditions.has(schemaHandle);
+
+/** @type (ruleId: string, absoluteKeywordLocation: string, at: EvaluationLocation) => ValidationError */
+export const validationError = (ruleId, absoluteKeywordLocation, at) => ({
+  source: "json-schema",
+  ruleId: ruleId,
+  keywordLocation: at.keywordLocation,
+  absoluteKeywordLocation: absoluteKeywordLocation,
+  instanceLocation: at.instanceLocation,
+  place: at.node?.position
+});
 
 /**
  * Errors with positions are sorted by where they start. Errors without
@@ -43,7 +62,10 @@ const offset = (error) => {
   return point?.offset ?? 0;
 };
 
-/** @type WeakMap<KeywordInfo, ReadonlySet<string> | undefined> */
+const ifUri = "https://json-schema.org/keyword/if";
+const conditionalUri = "https://json-schema.org/keyword/conditional";
+
+/** @type WeakMap<KeywordInfo, ReadonlySet<string>> */
 const conditionsCache = new WeakMap();
 
 /**
@@ -53,26 +75,26 @@ const conditionsCache = new WeakMap();
  * rather than something a keyword can declare, so keywords aren't encouraged
  * to depend on the result of another subschema.
  *
- * @type (keyword: KeywordInfo) => ReadonlySet<string> | undefined
+ * @type (keyword: KeywordInfo) => ReadonlySet<string>
  */
 const conditionsOf = (keyword) => {
-  if (conditionsCache.has(keyword)) {
-    return conditionsCache.get(keyword);
+  let conditions = conditionsCache.get(keyword);
+  if (conditions !== undefined) {
+    return conditions;
   }
 
-  /** @type Set<string> | undefined */
-  let conditions;
-  if (keyword.keywordUri === "https://json-schema.org/keyword/if") {
+  if (keyword.keywordUri === ifUri) {
     const compiled = /** @type Record<"if", string> */ (keyword.compiled);
     conditions = new Set([compiled.if]);
-  } else if (keyword.keywordUri === "https://json-schema.org/keyword/conditional") {
+  } else {
     // Conditions are followed by the schema that applies if they pass. A
     // schema at the end without a condition is the fallback.
     const handles = /** @type string[] */ (keyword.compiled);
-    conditions = new Set();
+    const conditionHandles = new Set();
     for (let index = 0; index + 1 < handles.length; index += 2) {
-      conditions.add(handles[index]);
+      conditionHandles.add(handles[index]);
     }
+    conditions = conditionHandles;
   }
 
   conditionsCache.set(keyword, conditions);

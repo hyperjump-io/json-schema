@@ -227,9 +227,31 @@ Results (mean time per run of the suite, before and after the changes in
   took 0.32 ms (value) and 0.41 ms (AST). Tracking locations without
   creating them or calling hooks added about 0.1 ms, creating locations
   about 0.11 ms, and calling hooks about 0.06 ms.
-- BASIC's plugin costs about 0.24 ms more than hooks that do nothing. It
-  allocates an array for every schema and keyword evaluation and looks up
-  each keyword's conditions.
+- BASIC's plugin cost about 0.24 ms more than hooks that do nothing. It
+  allocated an array for every schema and keyword evaluation.
+
+BASIC and DETAILED collect errors in one list now (see "Output formats" in
+DESIGN.md). Measured back to back with the code before, twice each:
+
+| | Before | After |
+| --- | --- | --- |
+| BASIC's plugin, value | 0.73–0.76 ms | 0.60–0.61 ms |
+| BASIC's plugin, AST | 0.81–0.85 ms | 0.69–0.71 ms |
+| BASIC output, value | 0.76–0.79 ms | 0.67–0.68 ms |
+| BASIC output, AST | 0.86–0.88 ms | 0.78 ms |
+| BASIC, invalid instances only | 0.61–0.65 ms | 0.53–0.54 ms |
+| DETAILED, invalid instances only | 0.63–0.66 ms | 0.57 ms |
+
+- Replacing the arrays with one list didn't change anything by itself.
+  Cutting the list back by setting its length, which happens after every
+  passing schema and keyword, cost as much as the arrays had. Only setting
+  it when the list is longer made the difference.
+- BASIC's plugin now costs about the same as hooks that do nothing.
+- `scratch/bench/claude/output-equivalence.ts` checks that the output is
+  the same as before for every test case in every dialect, as values, as
+  JSON text, and with another plugin. The only difference was that
+  DETAILED's `errors` for `if` and `conditional` had a `conditions`
+  property, which they don't anymore.
 
 ## Bytecode and closures
 

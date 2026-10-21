@@ -870,6 +870,19 @@ objects the caller reads results from afterwards.
 - The built-in formats' errors don't have messages. Explaining errors is
   left to other output formats, such as `json-schema-errors`, so messages
   aren't part of the keyword interface.
+- BASIC and DETAILED collect errors in one list for the whole evaluation.
+  A schema's or keyword's plugin state is where its errors start in the
+  list, so nothing is allocated until something fails. A passing schema or
+  keyword cuts the list back to where it started, which drops what its
+  subschemas added. A failing keyword's error goes before its subschemas'
+  errors (BASIC) or takes them as its `errors` (DETAILED). Only `if` and
+  `conditional` have a state object, with their conditions. The list is
+  only cut when it's longer, because setting an array's length is slow even
+  when it doesn't change. That made BASIC's plugin cost about the same as
+  hooks that do nothing.
+- Output formats can share utility functions, but not a base class. Each
+  format's plugin has all of its own hooks, so it reads on its own and can
+  change without affecting the others.
 
 ## Bundling (`src/bundle/`)
 

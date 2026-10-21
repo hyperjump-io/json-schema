@@ -1,65 +1,75 @@
-import { falseSchemaRuleId, inDocumentOrder, keywordErrors } from "./utilities.js";
+import { falseSchemaRuleId, inDocumentOrder, isCondition, keywordStart, startOf, validationError } from "./utilities.js";
 
 /**
  * @import { EvaluationPlugin } from "../evaluate/evaluation-plugin.d.ts"
  * @import { OutputFormatDefinition } from "./output-format.d.ts"
  * @import { ValidationError } from "./validation-error.d.ts"
- * @import { KeywordErrors } from "./utilities.js"
+ * @import { KeywordStart } from "./utilities.js"
  */
 
 /**
- * Collects a flat list of errors. A failing keyword's state collects the
- * errors of its subschemas, which are only kept if the keyword fails.
+ * Collects a flat list of errors.
  *
- * @implements EvaluationPlugin<ValidationError[], KeywordErrors<ValidationError>>
+ * The errors are in one list for the whole evaluation. A schema's or
+ * keyword's state is where its errors start in the list, so collecting
+ * doesn't allocate anything until something fails. When a schema or keyword
+ * passes, the errors its subschemas added are dropped by cutting the list
+ * back to where it started.
+ *
+ * @implements EvaluationPlugin<number, KeywordStart>
  */
 export class BasicOutputPlugin {
   /** @type ValidationError[] */
   errors = [];
 
-  beforeSchema() {
-    return [];
-  }
-
-  /** @type NonNullable<EvaluationPlugin<ValidationError[], KeywordErrors<ValidationError>>["beforeKeyword"]> */
-  beforeKeyword(keyword) {
-    return keywordErrors(keyword);
-  }
-
-  /** @type NonNullable<EvaluationPlugin<ValidationError[], KeywordErrors<ValidationError>>["afterKeyword"]> */
-  afterKeyword(keyword, at, valid, state, schema) {
-    if (!valid) {
-      if (!keyword.keyword.simpleApplicator) {
-        schema.push({
-          source: "json-schema",
-          ruleId: keyword.keywordUri,
-          keywordLocation: at.keywordLocation,
-          absoluteKeywordLocation: keyword.absoluteKeywordLocation,
-          instanceLocation: at.instanceLocation,
-          place: at.node?.position
-        });
-      }
-      schema.push(...state);
-    }
-  }
-
-  /** @type NonNullable<EvaluationPlugin<ValidationError[], KeywordErrors<ValidationError>>["afterSchema"]> */
-  afterSchema(schema, at, valid, state, parent) {
-    if (!valid && schema.booleanSchema === false) {
-      state.push({
-        source: "json-schema",
-        ruleId: falseSchemaRuleId,
-        keywordLocation: at.keywordLocation,
-        absoluteKeywordLocation: schema.absoluteKeywordLocation,
-        instanceLocation: at.instanceLocation,
-        place: at.node?.position
-      });
-    }
-
+  /** @type NonNullable<EvaluationPlugin<number, KeywordStart>["beforeSchema"]> */
+  beforeSchema(_schema, _at, parent) {
     if (parent === undefined) {
-      this.errors = valid ? [] : state;
-    } else if (!valid && !parent.conditions?.has(schema.absoluteKeywordLocation)) {
-      parent.push(...state);
+      this.errors = [];
+    }
+
+    return this.errors.length;
+  }
+
+  /** @type NonNullable<EvaluationPlugin<number, KeywordStart>["beforeKeyword"]> */
+  beforeKeyword(keyword) {
+    return keywordStart(keyword, this.errors.length);
+  }
+
+  /** @type NonNullable<EvaluationPlugin<number, KeywordStart>["afterKeyword"]> */
+  afterKeyword(keyword, at, valid, state) {
+    const start = startOf(state);
+    if (valid) {
+      this.#dropFrom(start);
+    } else if (!keyword.keyword.simpleApplicator) {
+      // A failing keyword's error comes before its subschemas' errors
+      const error = validationError(keyword.keywordUri, keyword.absoluteKeywordLocation, at);
+      if (start === this.errors.length) {
+        this.errors.push(error);
+      } else {
+        this.errors.splice(start, 0, error);
+      }
+    }
+  }
+
+  /** @type NonNullable<EvaluationPlugin<number, KeywordStart>["afterSchema"]> */
+  afterSchema(schema, at, valid, start, parent) {
+    if (valid || isCondition(schema.absoluteKeywordLocation, parent)) {
+      this.#dropFrom(start);
+    } else if (schema.booleanSchema === false) {
+      this.errors.push(validationError(falseSchemaRuleId, schema.absoluteKeywordLocation, at));
+    }
+  }
+
+  /**
+   * Drop the errors after `start`. Setting an array's length is slow even
+   * when it doesn't change, and usually nothing failed.
+   *
+   * @param {number} start
+   */
+  #dropFrom(start) {
+    if (this.errors.length > start) {
+      this.errors.length = start;
     }
   }
 }
