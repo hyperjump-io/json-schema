@@ -1220,6 +1220,13 @@ What this relies on from browser's `v2` branch:
   examples. A rule's `url` in its `lintRule` meta could link to its docs
   from every message. The README's table of rules won't scale.
 
+- **Portable bundles.** A bundle that's a folder of schemas (a tar?) rather
+  than one compound document, so schemas can be moved between machines and
+  implementations (a JS frontend and a C# backend) and restored in one step,
+  straight into a registry. Paths would be the retrieval URIs. Unclear: how
+  paths map to URIs, whether `$id`-less schemas need a base, and what other
+  implementations would need to adopt it. v1-style bundling comes first.
+
 ## Plan
 
 1. Optimization passes on the IR (see "Optimizations"). Candidates: fold
