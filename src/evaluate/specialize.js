@@ -58,6 +58,82 @@ const noDynamicAnchors = {};
 /** @type () => boolean */
 const alwaysPasses = () => true;
 
+/** @type EvaluationPlugin */
+const noPlugin = {};
+
+/**
+ * Where a hook is called. `value` is a method rather than a closure, so a
+ * location is one allocation. It's one class for every specialization, so
+ * hooks always see the same shape. The keyword location is built when it's
+ * asked for, because most keywords pass and most plugins only need it for
+ * the ones that don't.
+ *
+ * @implements EvaluationLocation
+ */
+class Location {
+  /** @type string */
+  #schemaLocation;
+
+  /** @type string */
+  #step;
+
+  /** @type string | undefined */
+  #keywordLocation;
+
+  /** @type unknown */
+  #instance;
+
+  /** @type InstanceOps<any> */
+  #ops;
+
+  /**
+   * @param {string} instanceLocation
+   * @param {string} schemaLocation
+   * @param {string} step - From the schema to the keyword
+   * @param {EvaluationLocation["node"]} node
+   * @param {unknown} instance
+   * @param {InstanceOps<any>} ops
+   */
+  constructor(instanceLocation, schemaLocation, step, node, instance, ops) {
+    this.instanceLocation = instanceLocation;
+    this.#schemaLocation = schemaLocation;
+    this.#step = step;
+    this.node = node;
+    this.#instance = instance;
+    this.#ops = ops;
+  }
+
+  get keywordLocation() {
+    this.#keywordLocation ??= this.#schemaLocation + this.#step;
+    return this.#keywordLocation;
+  }
+
+  value() {
+    return this.#ops.typeOf(this.#instance) === undefined ? undefined : this.#ops.value(this.#instance);
+  }
+}
+
+/**
+ * Plugins that act as one. Each hook's state is an array of the plugins'
+ * states.
+ *
+ * @type (plugins: EvaluationPlugin[]) => EvaluationPlugin<unknown[], unknown[]>
+ */
+const combinePlugins = (plugins) => ({
+  beforeSchema: (schema, at, parent) => plugins.map((plugin, index) => plugin.beforeSchema?.(schema, at, parent?.[index])),
+  afterSchema: (schema, at, valid, state, parent) => {
+    for (let index = 0; index < plugins.length; index++) {
+      plugins[index].afterSchema?.(schema, at, valid, state[index], parent?.[index]);
+    }
+  },
+  beforeKeyword: (keyword, at, schema) => plugins.map((plugin, index) => plugin.beforeKeyword?.(keyword, at, schema[index])),
+  afterKeyword: (keyword, at, valid, state, schema) => {
+    for (let index = 0; index < plugins.length; index++) {
+      plugins[index].afterKeyword?.(keyword, at, valid, state[index], schema[index]);
+    }
+  }
+});
+
 /**
  * Turn compiled schemas into an evaluation function for one kind of instance
  * and one mode. Evaluation keeps its state in this closure rather than
@@ -133,13 +209,19 @@ export const specialize = (jsonSchema, compiled, options) => {
   /** @type Record<string, string> | undefined */
   let dynamicAnchors;
 
+  // The keyword location is `schemaLocation + keywordStep`. They're kept
+  // apart so the keyword location is only built when it's needed. While a
+  // keyword is evaluated, `schemaLocation` is its schema's keyword location.
   let instanceLocation = "";
-  let keywordLocation = "";
+  let schemaLocation = "";
+  let keywordStep = "";
 
-  /** @type EvaluationPlugin[] */
-  let plugins = [];
-  /** @type unknown[] | undefined */
-  let keywordStates;
+  // Several plugins are combined into one, so evaluating with one plugin,
+  // which is the usual case, doesn't loop or keep arrays of states
+  /** @type EvaluationPlugin */
+  let plugin = noPlugin;
+  /** @type unknown */
+  let keywordState;
 
   /** @typedef {Parameters<typeof ops.typeOf>[0]} I */
 
@@ -169,7 +251,9 @@ export const specialize = (jsonSchema, compiled, options) => {
   /**
    * The evaluator for a subschema of a keyword. When locations are tracked,
    * the keyword location is the schema's plus the path from the schema to
-   * the subschema. That's usually in the keyword's value, but it can be in a
+   * the subschema. It's built from the schema's location rather than by
+   * replacing the end of the keyword's, because slicing a string that was
+   * built by concatenation copies it. That's usually in the keyword's value, but it can be in a
    * sibling's, like `then` for `if`. A subschema that isn't in the schema,
    * like the target of a reference, keeps the keyword's location. Steps
    * taken from canonical URIs are percent-encoded, but keyword locations are
@@ -189,23 +273,17 @@ export const specialize = (jsonSchema, compiled, options) => {
       return evaluator;
     }
 
-    const keywordStep = decodeURIComponent(keywordAbsoluteLocation.slice(schemaHandle.length));
     return (instance, segment) => {
-      const outerKeywordLocation = keywordLocation;
-      keywordLocation = keywordLocation.slice(0, keywordLocation.length - keywordStep.length) + step;
+      const outerKeywordStep = keywordStep;
+      keywordStep = step;
       const valid = evaluator(instance, segment);
-      keywordLocation = outerKeywordLocation;
+      keywordStep = outerKeywordStep;
       return valid;
     };
   };
 
   /** @type (instance: I) => EvaluationLocation */
-  const location = (instance) => ({
-    instanceLocation: instanceLocation,
-    keywordLocation: keywordLocation,
-    node: isAst ? /** @type EvaluationLocation["node"] */ (instance) : undefined,
-    value: () => ops.typeOf(instance) === undefined ? undefined : ops.value(instance)
-  });
+  const location = (instance) => new Location(instanceLocation, schemaLocation, keywordStep, isAst ? /** @type EvaluationLocation["node"] */ (instance) : undefined, instance, ops);
 
   /** @type (handle: string, keywordUri: string, location: string, compiledValue: Json, steps: Record<string, string> | undefined) => SpecializedKeyword<I> | undefined */
   const buildKeyword = (handle, keywordUri, location, compiledValue, steps) => {
@@ -323,7 +401,10 @@ export const specialize = (jsonSchema, compiled, options) => {
 
       const outerInstanceLocation = instanceLocation;
       if (instrumented && segment !== undefined) {
-        instanceLocation = JsonPointer.append(`${segment}`, instanceLocation);
+        // Indexes don't need to be escaped
+        instanceLocation = typeof segment === "number"
+          ? `${instanceLocation}/${segment}`
+          : JsonPointer.append(segment, instanceLocation);
       }
 
       const outerResource = currentResource;
@@ -341,18 +422,21 @@ export const specialize = (jsonSchema, compiled, options) => {
       const outerSchemaAnnotations = schemaAnnotations;
       schemaAnnotations = undefined;
 
-      const parentStates = keywordStates;
-      const schemaKeywordLocation = keywordLocation;
+      const parentState = keywordState;
+      const outerSchemaLocation = schemaLocation;
+      const outerKeywordStep = keywordStep;
+      if (instrumented && keywordStep !== "") {
+        schemaLocation += keywordStep;
+        keywordStep = "";
+      }
 
       /** @type EvaluationLocation | undefined */
       let schemaAt;
-      /** @type unknown[] */
-      const schemaStates = [];
+      /** @type unknown */
+      let schemaState;
       if (instrumented) {
         schemaAt = location(instance);
-        for (let index = 0; index < plugins.length; index++) {
-          schemaStates[index] = plugins[index].beforeSchema?.(info, schemaAt, parentStates?.[index]);
-        }
+        schemaState = plugin.beforeSchema?.(info, schemaAt, parentState);
       }
 
       let valid = typeof schema === "boolean" ? schema : true;
@@ -362,25 +446,21 @@ export const specialize = (jsonSchema, compiled, options) => {
 
         /** @type EvaluationLocation | undefined */
         let keywordAt;
-        /** @type unknown[] */
-        const states = [];
+        /** @type unknown */
+        let state;
         if (instrumented) {
-          keywordLocation = schemaKeywordLocation + keyword.step;
+          keywordStep = keyword.step;
           keywordAt = location(instance);
-          for (let index = 0; index < plugins.length; index++) {
-            states[index] = plugins[index].beforeKeyword?.(keyword.info, keywordAt, schemaStates[index]);
-          }
-          keywordStates = states;
+          state = plugin.beforeKeyword?.(keyword.info, keywordAt, schemaState);
+          keywordState = state;
         }
 
         const isKeywordValid = keyword.evaluate(instance);
 
         if (instrumented) {
-          for (let index = 0; index < plugins.length; index++) {
-            plugins[index].afterKeyword?.(keyword.info, /** @type EvaluationLocation */ (keywordAt), isKeywordValid, states[index], schemaStates[index]);
-          }
-          keywordStates = parentStates;
-          keywordLocation = schemaKeywordLocation;
+          plugin.afterKeyword?.(keyword.info, /** @type EvaluationLocation */ (keywordAt), isKeywordValid, state, schemaState);
+          keywordState = parentState;
+          keywordStep = "";
         }
 
         // A keyword's marks and annotations are only kept if it passes
@@ -419,13 +499,13 @@ export const specialize = (jsonSchema, compiled, options) => {
       }
 
       if (instrumented) {
-        for (let index = 0; index < plugins.length; index++) {
-          plugins[index].afterSchema?.(info, /** @type EvaluationLocation */ (schemaAt), valid, schemaStates[index], parentStates?.[index]);
-        }
+        plugin.afterSchema?.(info, /** @type EvaluationLocation */ (schemaAt), valid, schemaState, parentState);
       }
 
       currentInstance = outerInstance;
       instanceLocation = outerInstanceLocation;
+      schemaLocation = outerSchemaLocation;
+      keywordStep = outerKeywordStep;
       currentResource = outerResource;
       dynamicAnchors = outerDynamicAnchors;
 
@@ -491,7 +571,7 @@ export const specialize = (jsonSchema, compiled, options) => {
     // A plugin or keyword can start another evaluation with this
     // specialization while one is in progress, so the outer evaluation's
     // state is restored when this one is done.
-    const outerPlugins = plugins;
+    const outerPlugin = plugin;
     const outerInstance = currentInstance;
     const outerKeywordMarks = keywordMarks;
     const outerSchemaMarks = schemaMarks;
@@ -500,10 +580,11 @@ export const specialize = (jsonSchema, compiled, options) => {
     const outerResource = currentResource;
     const outerDynamicAnchors = dynamicAnchors;
     const outerInstanceLocation = instanceLocation;
-    const outerKeywordLocation = keywordLocation;
-    const outerKeywordStates = keywordStates;
+    const outerSchemaLocation = schemaLocation;
+    const outerKeywordStep = keywordStep;
+    const outerKeywordState = keywordState;
 
-    plugins = callPlugins;
+    plugin = callPlugins.length === 1 ? callPlugins[0] : combinePlugins(callPlugins);
     currentInstance = undefined;
     keywordMarks = undefined;
     schemaMarks = undefined;
@@ -512,8 +593,9 @@ export const specialize = (jsonSchema, compiled, options) => {
     currentResource = undefined;
     dynamicAnchors = undefined;
     instanceLocation = "";
-    keywordLocation = "";
-    keywordStates = undefined;
+    schemaLocation = "";
+    keywordStep = "";
+    keywordState = undefined;
 
     try {
       const valid = root(instance);
@@ -523,7 +605,7 @@ export const specialize = (jsonSchema, compiled, options) => {
 
       return valid;
     } finally {
-      plugins = outerPlugins;
+      plugin = outerPlugin;
       currentInstance = outerInstance;
       keywordMarks = outerKeywordMarks;
       schemaMarks = outerSchemaMarks;
@@ -532,8 +614,9 @@ export const specialize = (jsonSchema, compiled, options) => {
       currentResource = outerResource;
       dynamicAnchors = outerDynamicAnchors;
       instanceLocation = outerInstanceLocation;
-      keywordLocation = outerKeywordLocation;
-      keywordStates = outerKeywordStates;
+      schemaLocation = outerSchemaLocation;
+      keywordStep = outerKeywordStep;
+      keywordState = outerKeywordState;
     }
   };
 };

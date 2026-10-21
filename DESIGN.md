@@ -823,10 +823,27 @@ objects the caller reads results from afterwards.
   keyword that applies. That makes plugins slower, which is the trade-off.
 - Validators are specialized on whether there are plugins, not on which
   ones. Plugins are often created fresh for each call, so a cache keyed by
-  plugin set would miss every time. The instrumented specialization loops
-  over the call's plugins and calls the hooks they have. Grouping them by
-  hook, like v1's `pluginHooks`, is a possible optimization. That makes at most four specializations per representation: fast,
-  instrumented, annotate, and annotate with plugins (annotate is AST only).
+  plugin set would miss every time. That makes at most four specializations
+  per representation: fast, instrumented, annotate, and annotate with
+  plugins (annotate is AST only).
+- Plugins are an important path (the language server evaluates with them),
+  so what the core does for them is kept small:
+  - Several plugins are combined into one plugin whose states are arrays.
+    The specialization calls one plugin's hooks with plain states, so the
+    usual case of one plugin doesn't loop or allocate arrays.
+  - An `EvaluationLocation` is an instance of one class shared by every
+    specialization, with `value()` as a method, so it's one allocation and
+    hooks always see the same shape.
+  - The keyword location is kept as the schema's location and the step to
+    the keyword, and joined when a plugin reads it or a subschema needs it.
+    Most keywords pass, and most plugins only read the location of the
+    ones that don't. The subschema of a keyword gets the schema's location
+    plus its step rather than replacing the end of the keyword's location,
+    because slicing a string that was built by concatenation copies it.
+  - An array index is appended to the instance location without escaping.
+  - Locations are new objects for every hook call, so a plugin can keep
+    one. Reusing one location for a schema's keywords saved about 3%, which
+    wasn't worth breaking that.
 
 ### Output formats
 

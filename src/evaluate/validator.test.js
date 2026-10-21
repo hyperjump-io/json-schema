@@ -14,7 +14,7 @@ import dynamicAnchorKeyword from "../keywords/dynamicAnchor.js";
 /**
  * @import { Json } from "@hyperjump/browser/json"
  * @import { CompileContext, Keyword } from "../keyword.d.ts"
- * @import { EvaluationPlugin } from "./evaluation-plugin.d.ts"
+ * @import { EvaluationLocation, EvaluationPlugin } from "./evaluation-plugin.d.ts"
  * @import { DetailedValidationError, ValidationError } from "../output/validation-error.d.ts"
  */
 
@@ -806,6 +806,65 @@ describe("Validator", () => {
         "afterKeyword keyword /properties true",
         "afterSchema schema  true"
       ]);
+    });
+
+    test("each plugin gets its own state", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({ properties: { foo: { type: "number" } } }));
+
+      /** @type (name: string, calls: string[]) => EvaluationPlugin<string, string> */
+      const namedPlugin = (name, calls) => ({
+        beforeSchema: (_schema, at, parent) => `${name} schema ${at.instanceLocation} in ${parent}`,
+        afterSchema: (_schema, _at, _valid, state) => calls.push(state),
+        beforeKeyword: (_keyword, at, schema) => `${name} keyword ${at.keywordLocation} in ${schema}`,
+        afterKeyword: (_keyword, _at, _valid, state) => calls.push(state)
+      });
+
+      /** @type string[] */
+      const aCalls = [];
+      /** @type string[] */
+      const bCalls = [];
+      const result = validator.validate({ foo: "bar" }, { output: "BASIC", plugins: [namedPlugin("a", aCalls), namedPlugin("b", bCalls)] });
+
+      expect(result.errors.map((error) => error.ruleId)).to.eql([typeKeyword.uri]);
+      expect(aCalls).to.eql([
+        "a keyword /properties/foo/type in a schema /foo in a keyword /properties in a schema  in undefined",
+        "a schema /foo in a keyword /properties in a schema  in undefined",
+        "a keyword /properties in a schema  in undefined",
+        "a schema  in undefined"
+      ]);
+      expect(bCalls).to.eql(aCalls.map((call) => call.replaceAll(/\ba /g, "b ")));
+    });
+
+    test("a location can be kept after the hook", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({
+        properties: { foo: { $ref: "#/$defs/number" } },
+        $defs: { number: { type: "number" } }
+      }));
+
+      /** @type EvaluationLocation[] */
+      const locations = [];
+      /** @type EvaluationPlugin */
+      const plugin = { afterKeyword: (_keyword, at) => locations.push(at) };
+
+      validator.validate({ foo: 1 }, { plugins: [plugin] });
+      expect(locations.map((at) => [at.instanceLocation, at.keywordLocation])).to.eql([
+        ["/foo", "/properties/foo/$ref/type"],
+        ["/foo", "/properties/foo/$ref"],
+        ["", "/properties"]
+      ]);
+    });
+
+    test("a location's value is the instance, for a JS value or an AST", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({ properties: { foo: { type: "number" } } }));
+
+      /** @type unknown[] */
+      const values = [];
+      /** @type EvaluationPlugin */
+      const plugin = { afterSchema: (_schema, at) => values.push(at.value()) };
+
+      validator.validate({ foo: 1 }, { plugins: [plugin] });
+      validator.validateNode(fromJson(`{ "foo": 1 }`).node, { plugins: [plugin] });
+      expect(values).to.eql([1, { foo: 1 }, 1, { foo: 1 }]);
     });
 
     test("plugins see keywords that always pass", async () => {

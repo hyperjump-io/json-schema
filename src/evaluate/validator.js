@@ -34,13 +34,15 @@ export class Validator {
   #fastCompiled;
 
   /**
-   * Specializations are built the first time they're needed
+   * Specializations are built the first time they're needed. They're
+   * indexed by mode (see {@link modeIndex}) because they're looked up on
+   * every evaluation.
    *
-   * @type Record<string, Specialization<Json>>
+   * @type (Specialization<Json> | undefined)[]
    */
   #jsSpecializations;
 
-  /** @type Record<string, Specialization<InstanceNode>> */
+  /** @type (Specialization<InstanceNode> | undefined)[] */
   #astSpecializations;
 
   /**
@@ -58,8 +60,8 @@ export class Validator {
   constructor(jsonSchema, compiled) {
     this.#jsonSchema = jsonSchema;
     this.#compiled = compiled;
-    this.#jsSpecializations = {};
-    this.#astSpecializations = {};
+    this.#jsSpecializations = [];
+    this.#astSpecializations = [];
   }
 
   get uri() {
@@ -73,25 +75,28 @@ export class Validator {
       return /** @type ValidationResult<any> */ (this.#jsFlag(instance));
     }
 
-    return this.#evaluate((annotating, instrumented) => {
-      if (annotating) {
-        throw Error("Annotating needs an AST");
-      }
-
-      return this.#jsSpecialization(instrumented);
-    }, instance, false, options, noSyntaxErrors);
+    return this.#evaluate(this.#jsSpecializationFor, instance, false, options, noSyntaxErrors);
   }
+
+  /** @type (annotating: boolean, instrumented: boolean) => Specialization<Json> */
+  #jsSpecializationFor = (annotating, instrumented) => {
+    if (annotating) {
+      throw Error("Annotating needs an AST");
+    }
+
+    return this.#jsSpecialization(instrumented);
+  };
 
   /** @type (instrumented: boolean) => Specialization<Json> */
   #jsSpecialization(instrumented) {
-    const key = `${instrumented}`;
-    this.#jsSpecializations[key] ??= specialize(this.#jsonSchema, this.#compiledFor(false, instrumented), {
+    const index = modeIndex(false, instrumented);
+    this.#jsSpecializations[index] ??= specialize(this.#jsonSchema, this.#compiledFor(false, instrumented), {
       instance: jsInstance,
       isAst: false,
       annotating: false,
       instrumented: instrumented
     });
-    return this.#jsSpecializations[key];
+    return this.#jsSpecializations[index];
   }
 
   /** @type API.Validator["validateJson"] */
@@ -138,20 +143,20 @@ export class Validator {
    * @returns {ValidationResult<F>}
    */
   #evaluateAst(node, annotating, options, syntaxErrors) {
-    return this.#evaluate((annotating, instrumented) => this.#astSpecialization(annotating, instrumented), node, annotating, options, syntaxErrors);
+    return this.#evaluate(this.#astSpecialization, node, annotating, options, syntaxErrors);
   }
 
   /** @type (annotating: boolean, instrumented: boolean) => Specialization<InstanceNode> */
-  #astSpecialization(annotating, instrumented) {
-    const key = `${annotating}-${instrumented}`;
-    this.#astSpecializations[key] ??= specialize(this.#jsonSchema, this.#compiledFor(annotating, instrumented), {
+  #astSpecialization = (annotating, instrumented) => {
+    const index = modeIndex(annotating, instrumented);
+    this.#astSpecializations[index] ??= specialize(this.#jsonSchema, this.#compiledFor(annotating, instrumented), {
       instance: astInstance,
       isAst: true,
       annotating: annotating,
       instrumented: instrumented
     });
-    return this.#astSpecializations[key];
-  }
+    return this.#astSpecializations[index];
+  };
 
   /** @type (annotating: boolean, instrumented: boolean) => CompiledSchemas */
   #compiledFor(annotating, instrumented) {
@@ -207,3 +212,6 @@ export class Validator {
     return output(valid && isParsed, syntaxErrors);
   }
 }
+
+/** @type (annotating: boolean, instrumented: boolean) => number */
+const modeIndex = (annotating, instrumented) => (annotating ? 2 : 0) + (instrumented ? 1 : 0);

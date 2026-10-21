@@ -88,7 +88,8 @@ the suite):
   same as ata-validator (1.14 ms), and behind corvus (0.90 ms) and
   schemasafe (0.35 ms). On the suite's invalid instances alone, BASIC went
   from 1.30 ms to 0.78 ms and DETAILED from 1.66 ms to 0.76 ms.
-- What's left of the gap is mostly evaluating with plugins. BASIC and
+- What's left of the gap is mostly evaluating with plugins (see "Plugins"
+  for what's been done since). BASIC and
   DETAILED are plugins, so every schema and keyword gets a location object,
   an array for each plugin's state, and four hook calls, whether or not
   anything fails. With a plugin that does nothing, evaluating the invalid
@@ -191,6 +192,44 @@ Results (mean time per run of the suite):
 - 2020-12 gives results within a few percent of v1. The suite's test cases
   mostly don't have `$schema`, so both run nearly the same test cases with
   mostly the same keywords.
+
+## Plugins
+
+`scratch/bench/claude/plugin-cost.ts` times evaluating with plugins on the
+2020-12 test cases json-schema-next gets right (1290 instances), as a JS
+value and as a JSON AST (`validateNode`). The plugins are an empty one,
+one with hooks that do nothing, two of those, one that keeps a little state
+for every schema and keyword, one that reads every location, and BASIC's.
+
+Results (mean time per run of the suite, before and after the changes in
+"Plugins" in DESIGN.md, measured in one session):
+
+| | Value, before | Value, after | AST, before | AST, after |
+| --- | --- | --- | --- | --- |
+| FLAG | 0.179 ms | 0.187 ms | 0.353 ms | 0.283 ms |
+| Empty plugin | 0.848 ms | 0.532 ms | 1.003 ms | 0.574 ms |
+| Hooks that do nothing | 0.945 ms | 0.594 ms | 1.067 ms | 0.618 ms |
+| Two of those | 1.053 ms | 0.832 ms | 1.330 ms | 0.863 ms |
+| State for each schema and keyword | 0.948 ms | 0.634 ms | 1.086 ms | 0.682 ms |
+| Reads every location | 0.941 ms | 0.601 ms | 1.009 ms | 0.633 ms |
+| BASIC's plugin | 1.137 ms | 0.831 ms | 1.325 ms | 0.911 ms |
+| BASIC output | 1.068 ms | 0.873 ms | 1.264 ms | 0.958 ms |
+
+- Combining plugins into one was the biggest change, about 25%. It
+  removed an array of states for every schema and keyword evaluation.
+- `Validator` built a string key to look up the specialization on every
+  call. Indexing them by mode made FLAG on an AST about 15% faster.
+- Building the keyword location lazily, building a subschema's location
+  without slicing, the location class, and not escaping array indexes
+  saved about 3–6% each.
+- With hooks that do nothing, what's left is about 3.2 times FLAG for a
+  value and 2.2 times for an AST. Evaluating every keyword without plugins
+  took 0.32 ms (value) and 0.41 ms (AST). Tracking locations without
+  creating them or calling hooks added about 0.1 ms, creating locations
+  about 0.11 ms, and calling hooks about 0.06 ms.
+- BASIC's plugin costs about 0.24 ms more than hooks that do nothing. It
+  allocates an array for every schema and keyword evaluation and looks up
+  each keyword's conditions.
 
 ## Bytecode and closures
 
