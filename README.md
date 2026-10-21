@@ -199,6 +199,23 @@ again by the URL it came from, so a redirect can't lead somewhere you didn't
 allow. The redirected request is still sent, though. Its response just isn't
 used. Use `() => false` to allow nothing but registries.
 
+To send headers with `http(s):` requests, such as credentials, replace the
+`http(s):` plugin with one that has a `headers` option. It's called with
+each URL that's requested, so only send credentials to the origins they're
+for. A schema can name any URL. It can be async, so you can refresh a token.
+Replacing the plugin replaces its cache too, so give it one.
+
+```javascript
+import { HttpUriSchemePlugin, MemoryHttpCacheStore } from "@hyperjump/browser";
+
+jsonSchema.addUriSchemePlugin(new HttpUriSchemePlugin(jsonSchema, {
+  cache: new MemoryHttpCacheStore(),
+  headers: (url) => url.origin === "https://schemas.example.com"
+    ? { Authorization: `Bearer ${process.env.SCHEMAS_TOKEN}` }
+    : undefined
+}));
+```
+
 ### Dialects
 
 A `JsonSchema` starts without any dialects. Add the ones you need from their
