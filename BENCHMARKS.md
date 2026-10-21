@@ -1,10 +1,14 @@
 # Benchmarks
 
 Measurements behind the performance decisions in [DESIGN.md](DESIGN.md).
-The benchmark code is in `scratch/bench`, which isn't committed.
+The benchmark code is in `scratch/bench`, which isn't committed. The
+benchmarks in `benchmarks/` are kept up to date. The ones in `claude/` were
+written for one-off investigations.
 
-The benchmark is ported from `@hyperjump/json-schema`'s and isn't committed.
-It compares implementations over the v1 test cases of the
+## Test suite
+
+The benchmark (`benchmarks/test-suite.bench.ts`) is ported from
+`@hyperjump/json-schema`'s. It compares implementations over the v1 test cases of the
 JSON-Schema-Test-Suite, and over the draft-04, draft-06, draft-07, 2019-09,
 and 2020-12 test cases, which json-schema-next evaluates with those presets.
 ata-validator doesn't support draft-04, so it isn't in that comparison. Test
@@ -12,12 +16,11 @@ cases tagged for `format` are left out. A test case that any implementation
 gets wrong is left out for every implementation. In those drafts,
 json-schema-next only gets the two `file:` identifier test cases wrong, which
 it rejects on purpose. In draft-04 through draft-07, `@hyperjump/json-schema`
-also gets two legacy identifier test cases wrong. json-schema-next and
-`@hyperjump/json-schema` both validate draft-04 through draft-07 formats by
-default. That doesn't matter, because the untagged test cases that are run
-only use `format` on values that aren't strings, which `format` skips. The
-unknown format test case is the exception, and it's left out because
-`@exodus/schemasafe` can't compile it.
+also gets two legacy identifier test cases wrong. Every implementation runs
+with `format` validation off. The results in the first table were measured
+when json-schema-next and `@hyperjump/json-schema` still validated draft-04
+through draft-07 formats, which didn't matter, because the untagged test cases
+only use `format` on values that aren't strings, which `format` skips.
 
 Results (mean time per run of the suite, FLAG unless it says errors):
 
@@ -61,9 +64,92 @@ Results (mean time per run of the suite, FLAG unless it says errors):
 - With the `format` test cases, format validators take most of the time,
   and FLAG is only about 1.4 times faster.
 
+Every implementation in 2020-12, from one later session (mean time per run of
+the suite):
+
+| | FLAG | All errors |
+| --- | --- | --- |
+| json-schema-next | 0.28 ms | 1.83 ms |
+| `@hyperjump/json-schema` | 0.98 ms | 1.68 ms |
+| `@corvus-dotnet/json-schema` | 0.064 ms | 0.98 ms |
+| ata-validator | 0.067 ms | 1.36 ms |
+| `@exodus/schemasafe` | 0.114 ms | 0.44 ms |
+
+- corvus and ata-validator, which both generate code, are 4.1–4.3 times
+  faster than json-schema-next at FLAG, and schemasafe is about 2.4 times
+  faster.
+- json-schema-next is the slowest at collecting errors. 41% of the suite's
+  instances are invalid, and its errors cost about 6.6 times its FLAG,
+  where `@hyperjump/json-schema`'s cost about 1.7 times its FLAG. Errors
+  have a `reason` string built for each one, which other implementations
+  were set up to leave out where they could.
+
+## Real-world schemas
+
+`benchmarks/real-world.bench.ts` compares implementations the same way on
+real schemas: SchemaStore's `package.json` schema (draft-07) with 3000
+`package.json` files, its `tsconfig.json` schema (draft-07) with 194
+`tsconfig.json` files (both from `~/Projects`), and the OpenAPI 3.0 schema
+(draft-04) with its examples and two more OpenAPI documents, one of them the
+335 KB openEO API. `data/build-corpus.mjs` builds the corpora. Instances are
+grouped by the size of their JSON text: small (under 1 KB), medium (1–10 KB),
+and large (10 KB or more). Instances don't have an expected result, so an
+instance is left out if the implementations don't all agree on it. With
+`format` validation off, they agree on every one. ata-validator doesn't
+support draft-04, and schemasafe can't compile the `package.json` or
+OpenAPI schemas when it collects errors.
+
+Results from one session (mean time per run of the group, in ms):
+
+| FLAG | Instances | json-schema-next | `@hyperjump/json-schema` | corvus | ata-validator | schemasafe |
+| --- | --- | --- | --- | --- | --- | --- |
+| `package.json`, small | 1472 | 1.91 | 6.81 | 0.45 | 10.8 | 4.35 |
+| `package.json`, medium | 1514 | 7.94 | 24.7 | 2.06 | 22.5 | 13.0 |
+| `package.json`, large | 14 | 1.06 | 2.31 | 0.146 | 0.233 | 0.430 |
+| `tsconfig.json`, small | 191 | 0.324 | 1.23 | 0.041 | 2.47 | 0.886 |
+| `tsconfig.json`, medium | 3 | 0.0115 | 0.0481 | 0.0015 | 0.0041 | 0.0180 |
+| OpenAPI 3.0, medium | 6 | 0.125 | 0.391 | 0.0211 | | 0.117 |
+| OpenAPI 3.0, large | 1 | 0.429 | 1.67 | 0.0878 | | 0.640 |
+
+| All errors | Instances | json-schema-next | `@hyperjump/json-schema` | corvus | ata-validator | schemasafe |
+| --- | --- | --- | --- | --- | --- | --- |
+| `package.json`, small | 1472 | 2.93 | 9.93 | 12.8 | 11.5 | |
+| `package.json`, medium | 1514 | 10.9 | 47.4 | 52.3 | 25.6 | |
+| `package.json`, large | 14 | 1.13 | 4.48 | 3.85 | 0.239 | |
+| `tsconfig.json`, small | 191 | 0.345 | 2.64 | 2.94 | 2.53 | 0.961 |
+| `tsconfig.json`, medium | 3 | 0.0117 | 0.110 | 0.124 | 0.0040 | 0.0206 |
+| OpenAPI 3.0, medium | 6 | 0.125 | 0.705 | 0.574 | | |
+| OpenAPI 3.0, large | 1 | 0.427 | 2.91 | 2.06 | | |
+
+- json-schema-next is faster than `@hyperjump/json-schema` on every group:
+  2.2–4.2 times at FLAG and 3.4–9.4 times at errors.
+- corvus is the fastest at FLAG on every group, 4–8 times faster than
+  json-schema-next. The gap is about 4 times on small and medium
+  `package.json` files and about 7 times on large ones, so json-schema-next
+  falls further behind as instances get bigger.
+- The test suite makes json-schema-next look worse at FLAG than these
+  schemas do. ata-validator and schemasafe are 2.4–4.1 times faster on the
+  suite, but json-schema-next is faster than both on small and medium
+  instances here. They're 2.5–4.5 times faster on large `package.json`
+  files.
+  ata-validator takes about 7–16 µs for each `package.json` file whatever its
+  size, so it's slow on many small instances and fast on big ones.
+- Almost every instance is valid (35 of the 3000 `package.json` files fail,
+  and none of the others do), so the errors results are mostly the cost of
+  being ready to collect errors. json-schema-next only collects errors on a
+  second evaluation of an invalid instance, so its errors cost at most
+  about 1.5 times its FLAG here. corvus's results collector costs 25–70
+  times its FLAG even when there's nothing to report, which is why json-schema-next is
+  the fastest at errors on most groups. ata-validator's errors cost the same
+  as its FLAG, so it's fastest on large valid instances.
+- The `tsconfig.json` medium and OpenAPI groups have only a few instances,
+  so they mostly show how those documents do. The one small OpenAPI
+  document is left out of the tables. It's invalid at the root, so it only
+  times how fast each implementation fails.
+
 ## Modes
 
-The same benchmark (`json-schema.bench.ts`) times every mode of a
+`benchmarks/modes.bench.ts` times every mode of a
 `Validator` against the others, without other implementations. It runs on
 the v1 test cases json-schema-next gets right. Each instance is a JS value,
 its JSON text, or a JSON AST built from it with browser's `fromJs` before
@@ -96,7 +182,7 @@ Results (mean time per run of the suite):
 
 ## Bytecode and closures
 
-A prototype in `scratch/bench` (`bytecode.ts`) lowers the IR once and then
+A prototype in `scratch/bench` (`claude/bytecode.ts`) lowers the IR once and then
 turns it into either bytecode (one `Int32Array` run by an interpreter loop)
 or closures with the same logic. Both only evaluate plain values in FLAG.
 The lowered keywords are `type`, `const`, `enum`, `required`, the numeric,
@@ -108,12 +194,13 @@ keyword that reads evaluation state (`unevaluated*`, `$dynamicRef`) aren't
 supported. It's compared with `Validator.validate` and with the
 specialization for plain values called directly.
 
-`bytecode.bench.ts` and `bytecode-polymorphic.bench.ts` use the test suite.
-`corpus.bench.ts` uses real schemas: SchemaStore's `package.json` schema
+`bytecode.bench.ts` and `bytecode-polymorphic.bench.ts` (in `claude/`) use the
+test suite. `corpus.bench.ts` uses real schemas: SchemaStore's `package.json` schema
 with 3000 `package.json` files and its `tsconfig.json` schema with 196
 `tsconfig.json` files (from `~/Projects`), the OpenAPI 3.0 schema with its
 examples, and the draft-07 and draft-04 meta-schemas with every schema in
-the test suite. `build-corpus.mjs` builds the corpora. Every variant agrees
+the test suite. `data/build-corpus.mjs` builds the corpora, which have
+changed a little since. Every variant agrees
 with json-schema-next on every instance.
 
 Real schemas (mean time per run of the corpus, FLAG):
