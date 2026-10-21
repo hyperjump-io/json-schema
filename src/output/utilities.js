@@ -27,16 +27,6 @@ export const keywordErrors = (keyword) => {
 };
 
 /**
- * The last segment of a keyword's location is its name
- *
- * @type (location: string) => string
- */
-export const keywordName = (location) => {
-  const segment = location.slice(location.lastIndexOf("/") + 1);
-  return segment.replaceAll("~1", "/").replaceAll("~0", "~");
-};
-
-/**
  * Errors with positions are sorted by where they start. Errors without
  * positions (from a JS value) keep the order they were found in.
  *

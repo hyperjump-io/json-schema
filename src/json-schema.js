@@ -11,7 +11,7 @@ import { Validator } from "./evaluate/validator.js";
 import { basicOutputFormat } from "./output/basic.js";
 import { detailedOutputFormat } from "./output/detailed.js";
 
-export { ValidationError, DetailedValidationError, InvalidSchemaError } from "./output/validation-error.js";
+export { InvalidSchemaError, outputErrorMessage, toVFileMessage } from "./output/validation-error.js";
 export { RetrievalNotAllowedError } from "./retrieval/retrieval-not-allowed-error.js";
 
 /**

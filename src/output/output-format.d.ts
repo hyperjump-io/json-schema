@@ -1,9 +1,8 @@
-import type { VFileMessage } from "vfile-message";
-import type { JsonSyntaxErrorCode } from "@hyperjump/browser/json";
+import type { JsonSyntaxError } from "@hyperjump/browser/json";
 import type { EvaluationPlugin } from "../evaluate/evaluation-plugin.d.ts";
 import type { JsonSchema } from "../json-schema.d.ts";
 import type { Keyword } from "../keyword.d.ts";
-import type { DetailedValidationError, ValidationError } from "./validation-error.d.ts";
+import type { DetailedValidationError, toVFileMessage, ValidationError } from "./validation-error.d.ts";
 
 /**
  * How an output format is produced. It's called for each evaluation that
@@ -39,9 +38,10 @@ export type OutputFormatDefinition<F extends OutputFormat> = () => {
  * }
  * ```
  *
- * The built-in formats give errors a generic `reason` that names the keyword.
- * Messages that explain the error are left to other output formats, such as
- * `@hyperjump/json-schema-errors`.
+ * The built-in formats' errors are plain data without messages. Messages
+ * that explain errors are left to other output formats, such as
+ * `@hyperjump/json-schema-errors`. {@link toVFileMessage} gives an error a
+ * generic message to report it with unified tooling.
  */
 // TODO: Support the output format being developed for the next spec release
 export interface OutputFormats {
@@ -78,7 +78,4 @@ export type OutputError<V extends ValidationError = ValidationError> = V | JsonS
  * A syntax error from parsing JSON text. These come from the parser in
  * `@hyperjump/browser`.
  */
-export type JsonSyntaxError = VFileMessage & {
-  source: "json";
-  ruleId: JsonSyntaxErrorCode;
-};
+export type { JsonSyntaxError };

@@ -81,7 +81,7 @@ const outputOf = (validator, instance) => {
   // Only JSON text has syntax errors
   /** @type (error: DetailedValidationError) => Json */
   const errorOf = (error) => ({
-    reason: error.reason,
+    ruleId: error.ruleId,
     keywordLocation: error.keywordLocation,
     absoluteKeywordLocation: error.absoluteKeywordLocation,
     instanceLocation: error.instanceLocation,

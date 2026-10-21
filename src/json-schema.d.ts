@@ -14,9 +14,9 @@ import type { SchemaRegistry } from "./registry/schema-registry.d.ts";
 import type { BundleOptions, JsonSchemaSession, SessionOptions } from "./session.d.ts";
 import type { OutputFormat, OutputFormatDefinition, ValidationResult } from "./output/output-format.d.ts";
 
-export { ValidationError, DetailedValidationError, InvalidSchemaError } from "./output/validation-error.js";
+export { InvalidSchemaError, outputErrorMessage, toVFileMessage } from "./output/validation-error.js";
 export { RetrievalNotAllowedError } from "./retrieval/retrieval-not-allowed-error.js";
-export type { ValidationErrorOptions } from "./output/validation-error.js";
+export type { ValidationError, DetailedValidationError } from "./output/validation-error.js";
 export type { OutputError, OutputFormat, OutputFormatDefinition, OutputFormats, JsonSyntaxError, ValidationResult } from "./output/output-format.d.ts";
 
 /**

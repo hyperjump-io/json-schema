@@ -3,11 +3,11 @@ import type { VFileMessage } from "vfile-message";
 import type { OutputError } from "./output-format.d.ts";
 
 /**
- * An instance location failed a keyword. This is a VFileMessage so it can be
- * used with unified tooling. `place` is set when the instance came from JSON
- * text.
+ * An instance location failed a keyword. It's plain data, without a message.
+ * Use {@link toVFileMessage} to report it with unified tooling, or
+ * {@link outputErrorMessage} to describe it.
  */
-export class ValidationError extends VFileMessage {
+export type ValidationError = {
   source: "json-schema";
 
   /** The URI of the keyword that failed */
@@ -22,23 +22,32 @@ export class ValidationError extends VFileMessage {
   /** A JSON Pointer to the value in the instance that failed */
   instanceLocation: string;
 
-  constructor(reason: string, options: ValidationErrorOptions);
-}
-
-export type ValidationErrorOptions = {
-  ruleId: string;
-  keywordLocation: string;
-  absoluteKeywordLocation: string;
-  instanceLocation: string;
-
-  /** Where the instance is in the JSON text it came from */
+  /** Where the instance is in the JSON text it came from, if it came from text */
   place?: Position;
 };
 
-export class DetailedValidationError extends ValidationError {
+export type DetailedValidationError = ValidationError & {
   /** The subschema failures that caused this keyword to fail */
   errors?: DetailedValidationError[];
-}
+};
+
+/**
+ * A description of an output error for people. A validation error says which
+ * keyword failed, by its absolute keyword location. It also says where in the
+ * instance, unless the error has a position to report that.
+ *
+ * ```
+ * '/age' fails the constraint at 'https://example.com/person#/properties/age/minimum'
+ * ```
+ */
+export const outputErrorMessage: (error: OutputError) => string;
+
+/**
+ * An output error as a `VFileMessage`, described by
+ * {@link outputErrorMessage}. To add it to a `VFile`, use `file.message` with
+ * the message and the error's `place`, `ruleId`, and `source` instead.
+ */
+export const toVFileMessage: (error: OutputError) => VFileMessage;
 
 /**
  * Not thrown yet. An invalid schema can't be retrieved, so compiling one

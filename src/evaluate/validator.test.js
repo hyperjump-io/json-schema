@@ -6,7 +6,7 @@ import { describe, test, beforeEach, beforeAll, afterAll, expect } from "vitest"
 import { VFileMessage } from "vfile-message";
 import { resolveIri, toAbsoluteIri } from "@hyperjump/uri";
 import { fromJson, pointerGet } from "@hyperjump/browser/json";
-import { JsonSchema, ValidationError } from "../json-schema.js";
+import { JsonSchema, outputErrorMessage, toVFileMessage } from "../json-schema.js";
 import idKeyword from "../keywords/id.js";
 import anchorKeyword from "../keywords/anchor.js";
 import dynamicAnchorKeyword from "../keywords/dynamicAnchor.js";
@@ -15,7 +15,7 @@ import dynamicAnchorKeyword from "../keywords/dynamicAnchor.js";
  * @import { Json } from "@hyperjump/browser/json"
  * @import { CompileContext, Keyword } from "../keyword.d.ts"
  * @import { EvaluationPlugin } from "./evaluation-plugin.d.ts"
- * @import { DetailedValidationError } from "../output/validation-error.d.ts"
+ * @import { DetailedValidationError, ValidationError } from "../output/validation-error.d.ts"
  */
 
 const dialectUri = "https://example.com/dialect";
@@ -388,8 +388,14 @@ describe("Validator", () => {
           instanceLocation: "/foo"
         }
       ]);
-      expect(result.errors[0]).to.be.instanceOf(ValidationError);
-      expect(result.errors[0].reason).to.equal("Expected the instance to pass 'type'");
+      expect(result.errors[0]).to.eql({
+        source: "json-schema",
+        ruleId: typeKeyword.uri,
+        keywordLocation: "/properties/foo/$ref/type",
+        absoluteKeywordLocation: "https://example.com/basic#/$defs/number/type",
+        instanceLocation: "/foo",
+        place: undefined
+      });
     });
 
     test("the keyword location of a subschema with its own identifier", async () => {
@@ -444,12 +450,33 @@ describe("Validator", () => {
       ]);
     });
 
-    test("errors are VFileMessages and leave stackTraceLimit as it was", async () => {
-      const validator = await jsonSchema.compile(await schemaFile({ type: "number" }));
+    test("an error is described by its instance location and absolute keyword location", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({
+        $id: "https://example.com/message",
+        properties: { foo: { type: "number" } }
+      }));
+
+      const [error] = validator.validate({ foo: "bar" }, { output: "BASIC" }).errors;
+      expect(outputErrorMessage(error)).to.equal("'/foo' fails the constraint at 'https://example.com/message#/properties/foo/type'");
+    });
+
+    test("an error for the whole instance is described as the instance", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({ $id: "https://example.com/root-message", type: "number" }));
+
+      const [error] = validator.validate("foo", { output: "BASIC" }).errors;
+      expect(outputErrorMessage(error)).to.equal("The instance fails the constraint at 'https://example.com/root-message#/type'");
+    });
+
+    test("an error converts to a VFileMessage and leaves stackTraceLimit as it was", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({ $id: "https://example.com/vfile", type: "number" }));
       const stackTraceLimit = Error.stackTraceLimit;
 
       const [error] = validator.validate("foo", { output: "BASIC" }).errors;
-      expect(error).to.be.instanceOf(VFileMessage);
+      const message = toVFileMessage(error);
+      expect(message).to.be.instanceOf(VFileMessage);
+      expect(message.reason).to.equal("The instance fails the constraint at 'https://example.com/vfile#/type'");
+      expect(message.ruleId).to.equal(typeKeyword.uri);
+      expect(message.source).to.equal("json-schema");
       expect(Error.stackTraceLimit).to.equal(stackTraceLimit);
     });
 
@@ -557,6 +584,27 @@ describe("Validator", () => {
         start: { line: 2, column: 10, offset: 11 },
         end: { line: 2, column: 15, offset: 16 }
       });
+    });
+
+    test("an error with a position is described without its instance location", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({
+        $id: "https://example.com/positioned",
+        properties: { foo: { type: "number" } }
+      }));
+
+      const [error] = validator.validateJson(`{ "foo": "bar" }`, { output: "BASIC" }).errors;
+      expect(String(toVFileMessage(error))).to.equal("1:10-1:15: Fails the constraint at 'https://example.com/positioned#/properties/foo/type'");
+    });
+
+    test("a syntax error converts to a VFileMessage", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({}));
+
+      const [error] = validator.validateJson(`[True]`, { output: "BASIC" }).errors;
+      const message = toVFileMessage(error);
+      expect(String(message)).to.equal("1:2-1:6: 'True' is not a valid value");
+      expect(message.ruleId).to.equal("invalid-literal");
+      expect(message.source).to.equal("json");
+      expect(message.actual).to.equal("True");
     });
 
     test("syntax errors are included and make the instance invalid", async () => {

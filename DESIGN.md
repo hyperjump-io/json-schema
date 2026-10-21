@@ -582,16 +582,26 @@ Implemented in `src/evaluate/validator.js`.
   `{ valid, errors }`. Output formats are typed with an augmentable
   `OutputFormats` interface. A new output format spec is in progress and
   should be supported eventually.
-- Errors are `VFileMessage`s. Validation errors add keyword location,
-  absolute keyword location, and instance location. Text input adds
-  positions. Any syntax error makes the instance invalid, but it's still
-  validated as far as it could be parsed.
-- Validation errors are created with `Error.stackTraceLimit` set to 0.
-  `VFileMessage` replaces the stack with an empty string anyway, but the
-  `Error` constructor still captures one, which made collecting errors
-  about 5 times slower. Plain objects would be a little faster still, but
-  then errors wouldn't be `VFileMessage`s like syntax errors are, and they'd
-  have to be converted to be reported through a `VFile`.
+- Problems that are returned are plain data, and problems that are thrown
+  are `Error`s. Validation errors and syntax errors are returned, so
+  they're plain objects with `source`, `ruleId`, and `place` (validation
+  errors also have keyword location, absolute keyword location, and
+  instance location), and no message. Text input adds positions. Any syntax
+  error makes the instance invalid, but it's still validated as far as it
+  could be parsed. Schema problems are thrown, so they're `VFileMessage`s.
+- Errors are converted to `VFileMessage`s where they're reported, with
+  `toVFileMessage`, which gives them a generic message. A validation error
+  says it fails the constraint at its absolute keyword location, which
+  identifies the keyword wherever evaluation started. It names the
+  instance location only when there's no position, because a position
+  says where the instance is better. Reporting errors with unified needs
+  this conversion anyway: `file.message` makes a message that belongs to
+  the file, so a `VFileMessage` made elsewhere would have to be made again.
+- Validation errors were `VFileMessage`s with generic messages at first.
+  Creating an `Error` costs about 0.25µs even without capturing a stack
+  trace, and the messages took time to build. Plain objects without
+  messages made BASIC about 40% faster and DETAILED about 55% faster on the
+  test suite's invalid instances.
 - `annotate` returns `{ output, status, node }`. Annotations are
   `node.data.annotations`, a `Map` of annotation keyword URI to values.
 - Annotations are read with `annotation(node, keyword, dialectUri)` on
@@ -840,9 +850,9 @@ objects the caller reads results from afterwards.
   don't report its errors. They recognize these two keywords by URI. It's a
   special case on purpose, rather than something a keyword can declare, so
   keywords aren't encouraged to depend on another subschema's result.
-- The built-in formats give errors a generic `reason` that names the
-  keyword. Explaining errors is left to other output formats, such as
-  `json-schema-errors`, so messages aren't part of the keyword interface.
+- The built-in formats' errors don't have messages. Explaining errors is
+  left to other output formats, such as `json-schema-errors`, so messages
+  aren't part of the keyword interface.
 
 ## Bundling (`src/bundle/`)
 
@@ -1253,6 +1263,9 @@ What this relies on from browser's `v2` branch:
   type plugin's `parse` gets the session.
 - `jsonValue` supports arrays and objects. `Session.value` doesn't, because
   it would need to follow references.
+- `fromJson` returns syntax errors as plain objects in `errors`, and
+  `jsonSyntaxErrorMessage` describes one. They become `VFileMessage`s
+  where they're reported or thrown.
 - Node locations are valid IRIs. Each pointer segment is percent-encoded
   with `appendToLocation` (`@hyperjump/uri`'s `encodeIriFragment`), which
   produces normalized IRIs, and `get` decodes a fragment before following

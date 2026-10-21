@@ -11,8 +11,9 @@ A JSON Schema validator built on
 - With JSON text, every error has a position, and syntax errors are reported
   with validation errors
 - Annotations come back as an AST with annotations on its nodes
-- Errors are [`VFileMessage`](https://github.com/vfile/vfile-message)s, so
-  they work with unified tooling
+- Errors are plain data, and convert to
+  [`VFileMessage`](https://github.com/vfile/vfile-message)s to report them with
+  unified tooling
 - Schemas from `http(s):`, `file:`, or in-memory registries
 - Custom keywords, formats, dialects, vocabularies, output formats, and
   evaluation plugins
@@ -87,13 +88,13 @@ const result = validator.validate({ age: -1 }, { output: "BASIC" });
 // {
 //   valid: false,
 //   errors: [
-//     ValidationError {
-//       reason: "Expected the instance to pass 'minimum'",
+//     {
+//       source: "json-schema",
 //       ruleId: "https://json-schema.org/keyword/minimum",
-//       instanceLocation: "/age",
 //       keywordLocation: "/properties/age/minimum",
 //       absoluteKeywordLocation: "https://example.com/person#/properties/age/minimum",
-//       ...
+//       instanceLocation: "/age",
+//       place: undefined
 //     },
 //     ...
 //   ]
@@ -103,9 +104,22 @@ const result = validator.validate({ age: -1 }, { output: "BASIC" });
 - BASIC is a flat list of errors.
 - DETAILED nests errors by schema structure.
 
-The built-in output formats give errors a generic `reason` that names the
-keyword. Writing messages that explain the error is left to other output
-formats. Add your own with `addOutputFormat`.
+Errors from the built-in output formats are plain data, without messages.
+Writing messages that explain errors is left to other output formats. Add your
+own with `addOutputFormat`.
+
+To report errors with unified tooling, `toVFileMessage` converts an error to a
+`VFileMessage` with a generic message, and `outputErrorMessage` gives just the
+message.
+
+```javascript
+import { outputErrorMessage, toVFileMessage } from "@hyperjump/json-schema-next";
+
+outputErrorMessage(result.errors[0]);
+// "'/age' fails the constraint at 'https://example.com/person#/properties/age/minimum'"
+
+toVFileMessage(result.errors[0]); // A VFileMessage with that message
+```
 
 ### JSON text
 
@@ -116,9 +130,9 @@ a position.
 ```javascript
 const result = validator.validateJson(`{ "name": "Jason", "age": -1, }`, { output: "BASIC" });
 
-result.errors.map(String);
+result.errors.map((error) => String(toVFileMessage(error)));
 // [
-//   "1:27-1:29: Expected the instance to pass 'minimum'",
+//   "1:27-1:29: Fails the constraint at 'https://example.com/person#/properties/age/minimum'",
 //   "1:29-1:30: Trailing commas are not allowed"
 // ]
 ```

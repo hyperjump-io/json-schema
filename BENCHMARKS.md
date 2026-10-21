@@ -78,11 +78,23 @@ the suite):
 - corvus and ata-validator, which both generate code, are 4.1–4.3 times
   faster than json-schema-next at FLAG, and schemasafe is about 2.4 times
   faster.
-- json-schema-next is the slowest at collecting errors. 41% of the suite's
+- json-schema-next was the slowest at collecting errors. 41% of the suite's
   instances are invalid, and its errors cost about 6.6 times its FLAG,
   where `@hyperjump/json-schema`'s cost about 1.7 times its FLAG. Errors
-  have a `reason` string built for each one, which other implementations
-  were set up to leave out where they could.
+  were `VFileMessage`s with a message built for each one.
+- Errors are plain objects without messages now (see "Validation API" in
+  DESIGN.md), and json-schema-next's errors took 1.16 ms in a later
+  session. That's faster than `@hyperjump/json-schema` (1.68 ms), about the
+  same as ata-validator (1.14 ms), and behind corvus (0.90 ms) and
+  schemasafe (0.35 ms). On the suite's invalid instances alone, BASIC went
+  from 1.30 ms to 0.78 ms and DETAILED from 1.66 ms to 0.76 ms.
+- What's left of the gap is mostly evaluating with plugins. BASIC and
+  DETAILED are plugins, so every schema and keyword gets a location object,
+  an array for each plugin's state, and four hook calls, whether or not
+  anything fails. With a plugin that does nothing, evaluating the invalid
+  instances took 0.43 ms, where evaluating every keyword without plugins
+  took 0.19 ms. `scratch/bench/claude/errors-breakdown.ts` measures each
+  part.
 
 ## Real-world schemas
 

@@ -97,7 +97,7 @@ export class Validator {
   /** @type API.Validator["validateJson"] */
   validateJson(json, options) {
     const result = fromJson(json);
-    return this.#evaluateAst(result.node, false, options, /** @type JsonSyntaxError[] */ (result.messages));
+    return this.#evaluateAst(result.node, false, options, result.errors);
   }
 
   /** @type API.Validator["validateNode"] */
@@ -115,7 +115,7 @@ export class Validator {
   /** @type API.Validator["annotateJson"] */
   annotateJson(json, options) {
     const result = fromJson(json);
-    const output = this.#evaluateAst(result.node, true, options, /** @type JsonSyntaxError[] */ (result.messages));
+    const output = this.#evaluateAst(result.node, true, options, result.errors);
     return { output, status: result.status, node: result.node };
   }
 
