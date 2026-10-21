@@ -1,4 +1,6 @@
 import type { DocumentNode, GetOptions, Session } from "@hyperjump/browser";
+import type { Json } from "@hyperjump/browser/json";
+import type { Data } from "unist";
 import type { JsonSchemaNode } from "./schema/schema-ast.d.ts";
 import type { Dialect } from "./dialect.d.ts";
 import type { SchemaRegistry } from "./registry/schema-registry.d.ts";
@@ -71,6 +73,28 @@ export class JsonSchemaSession extends Session<JsonSchemaNode> {
    * problem, as a `VFileMessage`.
    */
   compile(uri: string): Promise<Validator>;
+
+  /**
+   * The values a keyword annotated a node with, one for every schema
+   * location where it applied, from `annotate`, `annotateJson`, or
+   * `annotateNode`. The node can be a property name, which `propertyNames`
+   * annotates. A node the keyword didn't annotate has none.
+   *
+   * The keyword is a keyword URI, if a keyword with that URI has been added,
+   * or a name in the dialect, which is v1 by default. A name that isn't a
+   * keyword in the dialect is an unknown keyword. An unknown keyword's URI
+   * is `https://json-schema.org/keyword/unknown#` followed by its name.
+   *
+   * The AST is a unist tree, so unist utilities such as `unist-util-visit`
+   * can find the nodes that have an annotation.
+   *
+   * The node doesn't have to be from a schema compiled in this session, but
+   * a dialect built from a meta-schema has to have been built in this one.
+   *
+   * @throws Error if a name is given and the dialect isn't defined in this
+   * session.
+   */
+  annotation<A extends Json = Json>(node: { data?: Data }, keyword: string, dialectUri?: string): A[];
 }
 
 export type GetDialectOptions = {

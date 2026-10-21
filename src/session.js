@@ -1,10 +1,11 @@
 import { RetrievalError, Session } from "@hyperjump/browser";
-import { toAbsoluteIri } from "@hyperjump/uri";
+import { encodeIriFragment, toAbsoluteIri } from "@hyperjump/uri";
 import { SessionRegistries } from "./registry/session-registries.js";
 import { compile } from "./evaluate/compile.js";
 import { optimize } from "./evaluate/optimize.js";
 import { Validator } from "./evaluate/validator.js";
 import { RetrievalNotAllowedError } from "./retrieval/retrieval-not-allowed-error.js";
+import unknownKeyword, { keywordDefinitionUri } from "./keywords/unknown.js";
 
 /**
  * @import { DocumentNode, GetOptions } from "@hyperjump/browser"
@@ -13,6 +14,9 @@ import { RetrievalNotAllowedError } from "./retrieval/retrieval-not-allowed-erro
  * @import { JsonSchemaDocumentNode, JsonSchemaNode } from "./schema/schema-ast.d.ts"
  * @import * as API from "./session.d.ts"
  */
+
+// Not imported from the v1 dialect, which would load all of its keywords
+const v1DialectUri = "https://json-schema.org/v1";
 
 /**
  * @implements API.JsonSchemaSession
@@ -229,5 +233,34 @@ export class JsonSchemaSession extends Session {
   /** @type API.JsonSchemaSession["compile"] */
   async compile(uri) {
     return new Validator(this.#jsonSchema, optimize(await compile(this, uri), false));
+  }
+
+  /** @type API.JsonSchemaSession["annotation"] */
+  annotation(node, keyword, dialectUri = v1DialectUri) {
+    const values = node.data?.annotations?.get(this.#keywordUri(keyword, dialectUri)) ?? [];
+    return /** @type any[] */ (values);
+  }
+
+  /**
+   * A keyword URI is used as it is, so it doesn't need the dialect. An
+   * unknown keyword's URI has its name as the fragment, and its definition is
+   * registered without it. A name that isn't a keyword in the dialect is an
+   * unknown keyword.
+   *
+   * @type (keyword: string, dialectUri: string) => string
+   */
+  #keywordUri(keyword, dialectUri) {
+    if (this.#jsonSchema.hasKeyword(keywordDefinitionUri(keyword))) {
+      return keyword;
+    }
+
+    const dialect = this.#dialect(toAbsoluteIri(dialectUri));
+    if (!dialect) {
+      throw Error(`The '${dialectUri}' dialect isn't defined in this session`);
+    }
+
+    return Object.hasOwn(dialect.keywords, keyword)
+      ? dialect.keywords[keyword]
+      : `${unknownKeyword.uri}#${encodeIriFragment(keyword)}`;
   }
 }

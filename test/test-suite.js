@@ -291,6 +291,8 @@ export const describeAnnotationTestSuite = ({ description, version, dialect, jso
     }
   }
 
+  const session = jsonSchema.session();
+
   /**
    * The annotations a keyword added to the node at an instance location. A
    * location that isn't in the instance has none.
@@ -298,10 +300,6 @@ export const describeAnnotationTestSuite = ({ description, version, dialect, jso
    * @type (node: JsonNode, location: string, keyword: string) => unknown[]
    */
   const annotationsAt = (node, location, keyword) => {
-    const keywordUri = Object.hasOwn(dialect.keywords, keyword)
-      ? dialect.keywords[keyword]
-      : `https://json-schema.org/keyword/unknown#${keyword}`;
-
     /** @type JsonNode | undefined */
     let subject;
     try {
@@ -313,7 +311,7 @@ export const describeAnnotationTestSuite = ({ description, version, dialect, jso
       throw error;
     }
 
-    return subject?.data?.annotations?.get(keywordUri) ?? [];
+    return subject === undefined ? [] : session.annotation(subject, keyword, dialect.uri);
   };
 
   describe(description, () => {

@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { describe, test, beforeEach, expect } from "vitest";
 import { Session } from "@hyperjump/browser";
+import { pointerGet } from "@hyperjump/browser/json";
 import { JsonSchema } from "./json-schema.js";
 import { addV1, v1DialectUri } from "./dialects/v1/index.js";
 import { SchemaRegistry } from "./registry/schema-registry.js";
@@ -186,6 +187,77 @@ describe("JsonSchema", () => {
       } finally {
         await rm(directory, { recursive: true });
       }
+    });
+  });
+
+  describe("annotations", () => {
+    beforeEach(() => {
+      jsonSchema.addRegistry(new SchemaRegistry().with({
+        $schema: v1DialectUri,
+        $id: "https://example.com/annotated",
+        title: "root",
+        allOf: [{ "x-foo": "bar" }],
+        properties: {
+          foo: { title: "foo", allOf: [{ title: "also foo" }] },
+          bar: { description: "bar" }
+        },
+        propertyNames: { title: "name" }
+      }));
+    });
+
+    test("annotation by name in the v1 dialect", async () => {
+      const { node } = await jsonSchema.annotate("https://example.com/annotated", { foo: 1, bar: 2 });
+      const session = jsonSchema.session();
+
+      expect(session.annotation(node, "title")).to.eql(["root"]);
+      expect(session.annotation(pointerGet("/foo", /** @type any */ (node)), "title")).to.eql(["foo", "also foo"]);
+      expect(session.annotation(pointerGet("/bar", /** @type any */ (node)), "title")).to.eql([]);
+    });
+
+    test("annotation by keyword URI", async () => {
+      const { node } = await jsonSchema.annotate("https://example.com/annotated", {});
+
+      expect(jsonSchema.session().annotation(node, "https://json-schema.org/keyword/title")).to.eql(["root"]);
+    });
+
+    test("annotation by unknown keyword name", async () => {
+      const { node } = await jsonSchema.annotate("https://example.com/annotated", {});
+
+      expect(jsonSchema.session().annotation(node, "x-foo")).to.eql(["bar"]);
+    });
+
+    test("annotation by unknown keyword URI", async () => {
+      const { node } = await jsonSchema.annotate("https://example.com/annotated", {});
+
+      expect(jsonSchema.session().annotation(node, "https://json-schema.org/keyword/unknown#x-foo")).to.eql(["bar"]);
+    });
+
+    test("annotation by keyword URI doesn't need the dialect", async () => {
+      const { node } = await jsonSchema.annotate("https://example.com/annotated", {});
+
+      expect(jsonSchema.session().annotation(node, "https://json-schema.org/keyword/title", "https://example.com/dialect")).to.eql(["root"]);
+    });
+
+    test("annotation by name with property names", async () => {
+      const { node } = await jsonSchema.annotate("https://example.com/annotated", { foo: 1 });
+      const nameNode = /** @type any */ (node).children[0].children[0];
+
+      expect(jsonSchema.session().annotation(nameNode, "title")).to.eql(["name"]);
+    });
+
+    test("annotation by name in another dialect", async () => {
+      jsonSchema.addDialect({ uri: "https://example.com/dialect", keywords: { label: "https://json-schema.org/keyword/title" }, unknownKeywords: "error" });
+      const { node } = await jsonSchema.annotate("https://example.com/annotated", {});
+      const session = jsonSchema.session();
+
+      expect(session.annotation(node, "label", "https://example.com/dialect")).to.eql(["root"]);
+      expect(session.annotation(node, "title", "https://example.com/dialect")).to.eql([]);
+    });
+
+    test("annotation by name in a dialect that isn't defined", async () => {
+      const { node } = await jsonSchema.annotate("https://example.com/annotated", {});
+
+      expect(() => jsonSchema.session().annotation(node, "title", "https://example.com/dialect")).to.throw("isn't defined");
     });
   });
 
