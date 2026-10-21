@@ -1228,7 +1228,7 @@ What this relies on from browser's `v2` branch:
    identical subschemas.
 2. Decide whether keywords can provide a separate evaluator for plain
    values (see "Compile and evaluate").
-3. Later: annotations, bundling, OpenAPI, a unified plugin for validating
+3. Later: bundling, OpenAPI, a unified plugin for validating
    JSON files (and validating instances from the CLI), and migrating
    dependent projects.
 
