@@ -11,5 +11,6 @@ import { isIPv4 } from "@hyperjump/json-schema-formats";
  */
 export default {
   uri: "https://json-schema.org/format/ipv4",
-  validate: (value) => typeof value !== "string" || isIPv4(value)
+  types: ["string"],
+  validate: (value) => isIPv4(/** @type string */ (value))
 };

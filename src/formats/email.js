@@ -11,5 +11,6 @@ import { isEmail } from "@hyperjump/json-schema-formats";
  */
 export default {
   uri: "https://json-schema.org/format/email",
-  validate: (value) => typeof value !== "string" || isEmail(value)
+  types: ["string"],
+  validate: (value) => isEmail(/** @type string */ (value))
 };

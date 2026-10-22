@@ -11,5 +11,6 @@ import { isAsciiIdn } from "@hyperjump/json-schema-formats";
  */
 export default {
   uri: "https://json-schema.org/format/hostname",
-  validate: (value) => typeof value !== "string" || isAsciiIdn(value)
+  types: ["string"],
+  validate: (value) => isAsciiIdn(/** @type string */ (value))
 };

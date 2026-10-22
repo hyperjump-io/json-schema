@@ -11,5 +11,6 @@ import { isRelativeJsonPointer } from "@hyperjump/json-schema-formats";
  */
 export default {
   uri: "https://json-schema.org/format/relative-json-pointer",
-  validate: (value) => typeof value !== "string" || isRelativeJsonPointer(value)
+  types: ["string"],
+  validate: (value) => isRelativeJsonPointer(/** @type string */ (value))
 };

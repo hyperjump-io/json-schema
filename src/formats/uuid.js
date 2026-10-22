@@ -11,5 +11,6 @@ import { isUuid } from "@hyperjump/json-schema-formats";
  */
 export default {
   uri: "https://json-schema.org/format/uuid",
-  validate: (value) => typeof value !== "string" || isUuid(value)
+  types: ["string"],
+  validate: (value) => isUuid(/** @type string */ (value))
 };

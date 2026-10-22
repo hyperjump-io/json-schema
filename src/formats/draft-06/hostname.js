@@ -12,5 +12,6 @@ import { isHostname } from "@hyperjump/json-schema-formats";
  */
 export default {
   uri: "https://json-schema.org/format/draft-06/hostname",
-  validate: (value) => typeof value !== "string" || isHostname(value)
+  types: ["string"],
+  validate: (value) => isHostname(/** @type string */ (value))
 };

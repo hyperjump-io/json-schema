@@ -11,5 +11,6 @@ import { isIdnEmail } from "@hyperjump/json-schema-formats";
  */
 export default {
   uri: "https://json-schema.org/format/idn-email",
-  validate: (value) => typeof value !== "string" || isIdnEmail(value)
+  types: ["string"],
+  validate: (value) => isIdnEmail(/** @type string */ (value))
 };

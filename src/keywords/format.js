@@ -43,9 +43,11 @@ export default {
       };
     }
 
-    const { validate } = jsonSchema.getFormat(uri);
+    const { types, validate } = jsonSchema.getFormat(uri);
     return (node) => {
-      if (!validate(instance.value(node))) {
+      // A value of a type the format doesn't apply to is valid
+      const type = instance.typeOf(node);
+      if (type !== undefined && (types === undefined || types.includes(type)) && !validate(instance.value(node))) {
         return false;
       }
 

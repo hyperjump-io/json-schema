@@ -11,5 +11,6 @@ import { isDateTime } from "@hyperjump/json-schema-formats";
  */
 export default {
   uri: "https://json-schema.org/format/date-time",
-  validate: (value) => typeof value !== "string" || isDateTime(value)
+  types: ["string"],
+  validate: (value) => isDateTime(/** @type string */ (value))
 };

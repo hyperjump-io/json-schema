@@ -11,5 +11,6 @@ import { isIri } from "@hyperjump/json-schema-formats";
  */
 export default {
   uri: "https://json-schema.org/format/iri",
-  validate: (value) => typeof value !== "string" || isIri(value)
+  types: ["string"],
+  validate: (value) => isIri(/** @type string */ (value))
 };

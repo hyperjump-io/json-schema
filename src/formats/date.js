@@ -11,5 +11,6 @@ import { isDate } from "@hyperjump/json-schema-formats";
  */
 export default {
   uri: "https://json-schema.org/format/date",
-  validate: (value) => typeof value !== "string" || isDate(value)
+  types: ["string"],
+  validate: (value) => isDate(/** @type string */ (value))
 };

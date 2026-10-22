@@ -11,5 +11,6 @@ import { isUri } from "@hyperjump/json-schema-formats";
  */
 export default {
   uri: "https://json-schema.org/format/uri",
-  validate: (value) => typeof value !== "string" || isUri(value)
+  types: ["string"],
+  validate: (value) => isUri(/** @type string */ (value))
 };

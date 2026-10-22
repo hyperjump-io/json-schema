@@ -11,5 +11,6 @@ import { isRegex } from "@hyperjump/json-schema-formats";
  */
 export default {
   uri: "https://json-schema.org/format/regex",
-  validate: (value) => typeof value !== "string" || isRegex(value)
+  types: ["string"],
+  validate: (value) => isRegex(/** @type string */ (value))
 };

@@ -11,5 +11,6 @@ import { isJsonPointer } from "@hyperjump/json-schema-formats";
  */
 export default {
   uri: "https://json-schema.org/format/json-pointer",
-  validate: (value) => typeof value !== "string" || isJsonPointer(value)
+  types: ["string"],
+  validate: (value) => isJsonPointer(/** @type string */ (value))
 };

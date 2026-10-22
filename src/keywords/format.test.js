@@ -87,11 +87,50 @@ describe("format", () => {
 
   test("a format added to a dialect", async () => {
     const jsonSchema = v1();
-    jsonSchema.addFormat({ uri: "https://example.com/format/even", validate: (value) => typeof value !== "number" || value % 2 === 0 });
+    jsonSchema.addFormat({ uri: "https://example.com/format/even", types: ["number"], validate: (value) => /** @type number */ (value) % 2 === 0 });
     jsonSchema.extendDialect(v1DialectUri, { formats: { even: "https://example.com/format/even" } });
     const validator = await jsonSchema.compile(await schemaFile({ format: "even" }));
 
     expect(validator.validate(2)).to.equal(true);
     expect(validator.validate(3)).to.equal(false);
+  });
+
+  test("a value of a type the format doesn't apply to is valid without calling validate", async () => {
+    const jsonSchema = v1();
+    /** @type Json[] */
+    const validated = [];
+    jsonSchema.addFormat({
+      uri: "https://example.com/format/never",
+      types: ["string", "array"],
+      validate: (value) => {
+        validated.push(value);
+        return false;
+      }
+    });
+    jsonSchema.extendDialect(v1DialectUri, { formats: { never: "https://example.com/format/never" } });
+    const validator = await jsonSchema.compile(await schemaFile({ format: "never" }));
+
+    expect(validator.validate("foo")).to.equal(false);
+    expect(validator.validate([1])).to.equal(false);
+    expect(validator.validate(42)).to.equal(true);
+    expect(validator.validate({ a: 1 })).to.equal(true);
+    expect(validator.validate(null)).to.equal(true);
+    expect(validated).to.eql(["foo", [1]]);
+  });
+
+  test("a format without types applies to every type", async () => {
+    const jsonSchema = v1();
+    jsonSchema.addFormat({ uri: "https://example.com/format/never", validate: () => false });
+    jsonSchema.extendDialect(v1DialectUri, { formats: { never: "https://example.com/format/never" } });
+    const validator = await jsonSchema.compile(await schemaFile({ format: "never" }));
+
+    for (const value of ["foo", 42, true, null, [], {}]) {
+      expect(validator.validate(value)).to.equal(false);
+    }
+  });
+
+  test("a value of a type the format doesn't apply to is annotated", async () => {
+    const { node } = (await v1().compile(await schemaFile({ format: "date" }))).annotate(42);
+    expect(node.data?.annotations?.get("https://json-schema.org/keyword/format")).to.eql(["date"]);
   });
 });

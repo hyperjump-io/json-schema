@@ -11,5 +11,6 @@ import { isIPv6 } from "@hyperjump/json-schema-formats";
  */
 export default {
   uri: "https://json-schema.org/format/ipv6",
-  validate: (value) => typeof value !== "string" || isIPv6(value)
+  types: ["string"],
+  validate: (value) => isIPv6(/** @type string */ (value))
 };

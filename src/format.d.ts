@@ -1,4 +1,4 @@
-import type { Json } from "@hyperjump/browser/json";
+import type { Json, JsonType } from "@hyperjump/browser/json";
 
 /**
  * The definition of a format for the `format` keyword. A dialect maps format
@@ -13,9 +13,17 @@ export type Format = {
   uri: string;
 
   /**
-   * Whether a value is valid. It's called for every type of value. The
-   * formats JSON Schema defines only apply to strings, so other values are
-   * valid.
+   * The types of value the format applies to. A value of any other type is
+   * valid without calling `validate`, as the spec says. Leave it out for a
+   * format that applies to every type. There's no `integer`, because a
+   * format applies to types in JSON's data model. A format for integers
+   * applies to numbers. The formats JSON Schema defines apply to strings.
+   */
+  types?: JsonType[];
+
+  /**
+   * Whether a value is valid. It's only called for a value whose type is in
+   * `types`.
    */
   validate: (value: Json) => boolean;
 };
