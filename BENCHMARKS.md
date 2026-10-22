@@ -323,6 +323,19 @@ instead of a new error, back to back, twice each, for JS values:
   `tsconfig.json` and 0–2% on OpenAPI, which wasn't worth repeating it in
   four places.
 
+Plugins get every annotation through the `annotation` hook, so with
+plugins, `annotate` is defined and keywords like `title` call it. That's a
+call for 6% of keyword evaluations on OpenAPI, 15% on `tsconfig.json`, and
+23% on `package.json` (117,664 for the 3000 files). It made no measurable
+difference (back to back, twice each, JS values):
+
+| | Before | After |
+| --- | --- | --- |
+| `package.json`, hooks that do nothing | 35.3–36.2 ms | 35.4–38.7 ms |
+| `package.json`, BASIC's plugin | 42.9–46.0 ms | 42.2–44.4 ms |
+| OpenAPI, hooks that do nothing | 1.51–1.57 ms | 1.48–1.49 ms |
+| OpenAPI, BASIC's plugin | 1.69–1.77 ms | 1.73 ms |
+
 ## Bytecode and closures
 
 A prototype in `scratch/bench` (`claude/bytecode.ts`) lowers the IR once and then

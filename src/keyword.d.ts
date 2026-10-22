@@ -168,9 +168,9 @@ export type EvaluateContext<I> = {
 
   /**
    * Add an annotation for the instance. It's kept only if the keyword and
-   * every schema it was evaluated through pass. It's undefined unless
-   * annotations are being collected, so a keyword can skip work it only does
-   * to annotate.
+   * every schema it was evaluated through pass. Plugins see it either way.
+   * It's undefined unless annotations are being collected or there are
+   * plugins, so a keyword can skip work it only does to annotate.
    */
   annotate?: (value: Json) => void;
 

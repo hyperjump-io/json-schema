@@ -112,6 +112,11 @@ const combinePlugins = (plugins) => ({
     for (let index = 0; index < plugins.length; index++) {
       plugins[index].afterKeyword?.(keyword, at, valid, state[index], schema[index]);
     }
+  },
+  annotation: (keyword, at, value, state) => {
+    for (let index = 0; index < plugins.length; index++) {
+      plugins[index].annotation?.(keyword, at, value, state[index]);
+    }
   }
 });
 
@@ -237,6 +242,9 @@ export const specialize = (jsonSchema, compiled, options) => {
     /** @type Map<string, SchemaEvaluator<I>> */
     const dynamicEvaluators = new Map();
 
+    /** @type KeywordInfo */
+    const info = { keywordUri, absoluteKeywordLocation: location, keyword, compiled: compiledValue };
+
     /** @type EvaluateContext<I> */
     const context = {
       jsonSchema: jsonSchema,
@@ -253,10 +261,22 @@ export const specialize = (jsonSchema, compiled, options) => {
       exhaustive: exhaustive
     };
 
-    if (annotating) {
+    // Plugins see every annotation, even ones that aren't kept because
+    // something failed
+    if (annotating && instrumented) {
       context.annotate = (value) => {
         keywordAnnotations ??= [];
         keywordAnnotations.push({ node: /** @type Node */ (currentInstance), keywordUri, value });
+        plugin.annotation?.(info, /** @type EvaluationLocation */ (currentAt), value, keywordState);
+      };
+    } else if (annotating) {
+      context.annotate = (value) => {
+        keywordAnnotations ??= [];
+        keywordAnnotations.push({ node: /** @type Node */ (currentInstance), keywordUri, value });
+      };
+    } else if (instrumented) {
+      context.annotate = (value) => {
+        plugin.annotation?.(info, /** @type EvaluationLocation */ (currentAt), value, keywordState);
       };
     }
 
@@ -297,7 +317,7 @@ export const specialize = (jsonSchema, compiled, options) => {
     }
 
     return {
-      info: { keywordUri, absoluteKeywordLocation: location, keyword, compiled: compiledValue },
+      info: info,
       evaluate: evaluate ?? alwaysPasses
     };
   };

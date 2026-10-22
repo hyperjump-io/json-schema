@@ -530,8 +530,24 @@ A package named `jsonschema-<name>` can be used in `.jsonschemarc` as
 ### Evaluation plugins
 
 Plugins observe an evaluation. They have `beforeSchema`, `afterSchema`,
-`beforeKeyword`, and `afterKeyword` hooks. With any plugin, the instance is
-evaluated once and nothing stops early, so it's slower.
+`beforeKeyword`, `afterKeyword`, and `annotation` hooks. With any plugin, the
+instance is evaluated once and nothing stops early, so it's slower.
+
+`annotation` gets every annotation, even from schemas that fail, so a tool
+like a language server can show a `description` in an invalid document.
+
+```javascript
+const descriptions = new Map();
+validator.validateJson(json, {
+  plugins: [{
+    annotation(keyword, at, value) {
+      if (keyword.keywordUri === "https://json-schema.org/keyword/description") {
+        descriptions.set(at.instanceLocation, value);
+      }
+    }
+  }]
+});
+```
 
 ```javascript
 const keywords = new Set();

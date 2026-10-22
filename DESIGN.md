@@ -619,7 +619,8 @@ Implemented in `src/evaluate/validator.js`.
   `json-invalid` nodes, and `required` counts a property with a missing value
   as present, so the syntax error is the only error for it.
 - Extra information for the language server (schema locations, evaluated
-  branches) will come from evaluation plugins.
+  branches, annotations from failing schemas) comes from evaluation
+  plugins.
 
 ## Compile and evaluate (`src/keyword.d.ts`)
 
@@ -695,8 +696,9 @@ Keywords:
   evaluation started from inside another one, such as by a plugin, saves the
   outer one's state and restores it. The fastest specialization doesn't use
   any state, so it doesn't save anything.
-- `context.annotate` is only defined when annotations are being collected.
-  Annotations are buffered in frames (see "Evaluation state").
+- `context.annotate` is only defined when annotations are being collected
+  or there are plugins. Annotations are buffered in frames (see "Evaluation
+  state"). Plugins get each one when it's made.
 - Unknown keywords: the core looks up the definition by `keywordUri` without
   its fragment and passes the property name as `context.keywordName`. The
   unknown keyword's `compile` uses `context.dialect.unknownKeywords` to decide
@@ -719,8 +721,8 @@ undecided until after the optimization passes.
 Annotations follow the spec: they're kept only if the keyword and every
 schema they were evaluated through pass. An invalid instance gets no
 annotations from the failing parts of the schema. The language server has its
-own annotation implementation for that reason. Alternative annotation
-behavior should be explored later.
+own annotation implementation for that reason. Plugins see every
+annotation, including the ones that aren't kept (see "Plugins").
 
 ### Optimizations (`src/evaluate/optimizations/`)
 
@@ -808,13 +810,21 @@ Plugins only observe evaluation. Nothing built in needs to change it. They're
 passed per call (`ValidationOptions.plugins`) and are usually stateful
 objects the caller reads results from afterwards.
 
-- Hooks are `beforeSchema`, `afterSchema`, `beforeKeyword`, and
-  `afterKeyword`. State is passed explicitly instead of through v1's shared
+- Hooks are `beforeSchema`, `afterSchema`, `beforeKeyword`,
+  `afterKeyword`, and `annotation`. State is passed explicitly instead of through v1's shared
   context object: each `before` hook returns the plugin's state for that
   evaluation, which the core gives to the matching `after` hook and to what's
   evaluated inside it (a schema's state to its keywords, a keyword's state to
   the subschemas it applies). The core keeps the stack. That's enough to
   build nested results like DETAILED without touching shared objects.
+- `annotation` is called when a keyword annotates, with the keyword's
+  state, before `afterKeyword`. It's called for every annotation, even ones
+  that aren't kept because the keyword or a schema it was evaluated through
+  fails, because the language server needs annotations for invalid
+  documents. A plugin that wants the spec's rule can apply it, because
+  `afterKeyword` and `afterSchema` say what passed. Only keywords that
+  annotate with a value they already have (`title`, `format`, …) annotate,
+  so it costs a call for each one.
 - Hooks get a `SchemaInfo` or `KeywordInfo`, created once per specialization
   so passing it doesn't allocate, with its absolute keyword location. They
   also get an `EvaluationLocation` with the instance location, the AST node
@@ -1325,8 +1335,10 @@ What this relies on from browser's `v2` branch:
 - **`multipleOf` precision.** It uses v1's fixed tolerance for the
   remainder, which is wrong for very small divisors.
 - **Annotations for invalid instances.** The spec drops annotations from
-  failing schemas, which leaves the language server without them. Explore
-  alternative annotation behavior.
+  failing schemas, which leaves the language server without them. Plugins
+  see every annotation (the `annotation` hook), so the language server can
+  have them. Whether `annotate` itself should offer another behavior is
+  still open.
 
 - **Documenting lint rules.** Users need to know what each rule reports,
   why it matters, its options, and which presets turn it on, so they can

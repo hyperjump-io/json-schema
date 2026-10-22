@@ -36,6 +36,16 @@ export type EvaluationPlugin<S = unknown, K = unknown> = {
   beforeKeyword?(keyword: KeywordInfo, at: EvaluationLocation, schema: S): K;
 
   afterKeyword?(keyword: KeywordInfo, at: EvaluationLocation, valid: boolean, state: K, schema: S): void;
+
+  /**
+   * A keyword annotated the instance. It's called while the keyword is
+   * evaluated, before `afterKeyword`, for every annotation, even ones that
+   * aren't kept because the keyword or a schema it was evaluated through
+   * fails. `afterKeyword` and `afterSchema` say what passed.
+   *
+   * @param state - The state of the keyword that annotated
+   */
+  annotation?(keyword: KeywordInfo, at: EvaluationLocation, value: Json, state: K): void;
 };
 
 /**

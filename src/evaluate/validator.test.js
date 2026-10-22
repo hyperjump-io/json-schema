@@ -871,6 +871,63 @@ describe("Validator", () => {
       expect(values).to.eql([1, { foo: 1 }, 1, { foo: 1 }]);
     });
 
+    test("plugins see annotations with their location and keyword state", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({
+        $id: "https://example.com/annotation",
+        properties: { foo: { title: "Foo" } }
+      }));
+
+      /** @type unknown[] */
+      const annotations = [];
+      /** @type EvaluationPlugin<undefined, string> */
+      const plugin = {
+        beforeKeyword: (keyword) => keyword.absoluteKeywordLocation,
+        annotation: (keyword, at, value, state) => annotations.push([keyword.keywordUri, at.instanceLocation, value, state])
+      };
+
+      expect(validator.validate({ foo: 1 }, { plugins: [plugin] })).to.equal(true);
+      expect(annotations).to.eql([
+        [titleKeyword.uri, "/foo", "Foo", "https://example.com/annotation#/properties/foo/title"]
+      ]);
+    });
+
+    test("plugins see annotations that aren't kept because something failed", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({
+        anyOf: [{ title: "String", type: "string" }, { title: "Number", type: "number" }],
+        properties: { foo: { title: "Foo", type: "string" } }
+      }));
+
+      /** @type unknown[] */
+      const annotations = [];
+      /** @type EvaluationPlugin */
+      const plugin = { annotation: (_keyword, at, value) => annotations.push([at.instanceLocation, value]) };
+
+      const json = `{ "foo": 1 }`;
+      validator.validateJson(json, { plugins: [plugin] });
+      const { node } = validator.annotateJson(json, { plugins: [plugin] });
+
+      const expected = [["", "String"], ["", "Number"], ["/foo", "Foo"]];
+      expect(annotations).to.eql([...expected, ...expected]);
+      // The spec's rule still decides which annotations are attached to the instance
+      expect(/** @type any */ (node).data?.annotations).to.equal(undefined);
+      expect(/** @type any */ (node).children[0].children[1].data?.annotations).to.equal(undefined);
+    });
+
+    test("each plugin gets its own keyword state with an annotation", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({ title: "Root" }));
+
+      /** @type (name: string, calls: string[]) => EvaluationPlugin<undefined, string> */
+      const namedPlugin = (name, calls) => ({
+        beforeKeyword: () => name,
+        annotation: (_keyword, _at, value, state) => calls.push(`${state} ${JSON.stringify(value)}`)
+      });
+
+      /** @type string[] */
+      const calls = [];
+      validator.validate({}, { plugins: [namedPlugin("a", calls), namedPlugin("b", calls)] });
+      expect(calls).to.eql([`a "Root"`, `b "Root"`]);
+    });
+
     test("plugins see keywords that always pass", async () => {
       const validator = await jsonSchema.compile(await schemaFile({ title: "foo", type: "number" }));
 
