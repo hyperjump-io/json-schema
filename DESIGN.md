@@ -1337,7 +1337,8 @@ It's a list of candidates, not a spec.
 Rules of our own are added too, when porting turns up a mistake the
 catalogue doesn't cover. Done so far: `empty-type`,
 `const-or-enum-value-for-disallowed-type`, `required-property-not-allowed`,
-and `required` against `maxProperties` in `contradictory-limits`.
+`keyword-without-type`, and `required` against `maxProperties` in
+`contradictory-limits`.
 Candidates:
 
 - A dependent property in `dependentRequired` or `dependencies` that's

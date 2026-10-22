@@ -3,12 +3,15 @@ import { VFile } from "vfile";
 import { hyperjump } from "../cli/hyperjump.js";
 import recommended from "./recommended.js";
 import thenElseWithoutIf from "./rules/then-else-without-if.js";
+import keywordWithoutType from "./rules/keyword-without-type.js";
 
 /** @type (json: string) => Promise<VFile> */
 const lint = async (json) => {
   const file = new VFile({ path: "/schemas/a.schema.json", value: json });
+  // The schemas leave out `type` to stay short
   await hyperjump()
     .use(recommended)
+    .use(keywordWithoutType, ["off"])
     .process(file);
   return file;
 };

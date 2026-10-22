@@ -16,6 +16,7 @@ import typeImpliedByConstOrEnum from "./rules/type-implied-by-const-or-enum.js";
 import constOrEnumValueForDisallowedType from "./rules/const-or-enum-value-for-disallowed-type.js";
 import requiredPropertyNotAllowed from "./rules/required-property-not-allowed.js";
 import requiredPropertyNotDefined from "./rules/required-property-not-defined.js";
+import keywordWithoutType from "./rules/keyword-without-type.js";
 import readOnlyAndWriteOnly from "./rules/read-only-and-write-only.js";
 import minMaxContainsWithoutContains from "./rules/min-max-contains-without-contains.js";
 import referenceWithoutTarget from "./rules/reference-without-target.js";
@@ -45,6 +46,7 @@ const recommended = {
     [constOrEnumValueForDisallowedType, ["warn"]],
     [requiredPropertyNotAllowed, ["warn"]],
     [requiredPropertyNotDefined, ["warn"]],
+    [keywordWithoutType, ["warn"]],
     [readOnlyAndWriteOnly, ["warn"]],
     [minMaxContainsWithoutContains, ["warn"]],
     [referenceWithoutTarget, ["error"]]
