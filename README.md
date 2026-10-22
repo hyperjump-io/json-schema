@@ -320,17 +320,17 @@ package has.
 npx jsonschema schemas/
 ```
 
-Only `.schema.json` files are linted. To lint a plain JSON file, include it with
-an ignore pattern, such as `--ignore-pattern '!schema.json'`. Schema problems
-are errors, so an invalid schema fails the command. Use `-q` to only see files
-with problems.
+A JSON file is linted if it's a `.schema.json` file or its `$schema` is a
+dialect: one of the dialects this package has, or one defined by a meta-schema
+it can find. Other JSON files are validated against their schemas (see
+"Validating JSON files"). Schema problems are errors, so an
+invalid schema fails the command. Use `-q` to only see files with problems.
 
-It reads a schema from stdin if no files are given, as if it were a file in the
-working directory. It doesn't write schemas back out unless you ask with
+It reads from stdin if no files are given, as if it were a file in the working
+directory. Use `--file-path` to give it a name. It doesn't write schemas back out unless you ask with
 `--stdout` or `--output`.
 
-Every `.schema.json` file in the working directory can be found by its `$id`
-or its path, including custom meta-schemas, whether or not it's linted. Only
+Every schema in the working directory can be found by its `$id` or its path, including custom meta-schemas, whether or not it's linted. Only
 the files you give it are linted. So a vendored meta-schema can be ignored
 with `.jsonschemaignore` and still be found. `node_modules`, `.git`, and
 symlinks aren't searched. URLs are only retrieved if the `allowRetrieval` setting
@@ -397,6 +397,54 @@ turned off.
 
 A directive that names a rule that isn't configured is a warning
 (`unknown-rule`), and so is a misspelled directive (`unknown-directive`).
+
+### Validating JSON files
+
+The `jsonschema` CLI also validates JSON files that aren't schemas. A file's
+schema is the last pattern in the `schemas` setting that matches its path, or
+else its own top-level `$schema`, relative to the file. Patterns and schema
+paths are relative to the working directory, and a schema can also be a URI.
+A JSON file without a schema only has its syntax checked.
+
+```json
+{
+  "settings": {
+    "schemas": {
+      "config/*.json": "schemas/config.schema.json",
+      "data/**/*.json": "https://example.com/person"
+    }
+  }
+}
+```
+
+```bash
+npx jsonschema config/ data/
+npx jsonschema --setting 'schemas:{"*.json":"person.schema.json"}' alice.json
+cat alice.json | npx jsonschema --file-path alice.json
+```
+
+Schemas are found the same way they are for linting: every schema in the
+working directory, by its `$id` or its path, and the URLs
+`allowRetrieval` allows. Validation errors and a schema that can't be used are
+errors. Syntax errors are reported too, and the rest of the file is still
+validated.
+
+The CLI's processor isn't exported, but the plugin that validates is. It
+takes a compiled schema, so you decide where schemas come from.
+
+```js
+import { unified } from "unified";
+import { rejsonParse, rejsonStringify } from "@hyperjump/browser/json";
+import { jsonSchemaValidate } from "@hyperjump/json-schema-next";
+
+const validator = await jsonSchema.compile("https://example.com/person");
+const file = await unified()
+  .use(rejsonParse, { accept: "recovered" })
+  .use(jsonSchemaValidate, { validator })
+  .use(rejsonStringify)
+  .process(json);
+file.messages; // Syntax errors and validation errors, with positions
+```
 
 ### Serializing compiled schemas
 

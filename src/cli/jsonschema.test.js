@@ -45,6 +45,16 @@ describe("jsonschema", () => {
     expect(file.messages.map((message) => message.ruleId)).to.eql(["https://json-schema.org/keyword/minLength"]);
   });
 
+  test("a .json file is a schema if its $schema is a dialect", async () => {
+    const file = await lint("/schemas/a.json", `{ "$schema": "https://json-schema.org/v1", "minLength": -1 }`);
+    expect(file.messages.map((message) => message.ruleId)).to.eql(["https://json-schema.org/keyword/minLength"]);
+  });
+
+  test("a .json file without a schema only has its syntax checked", async () => {
+    const file = await lint("/schemas/a.json", `{ "minLength": -1, }`);
+    expect(file.messages.map((message) => message.ruleId)).to.eql(["trailing-comma"]);
+  });
+
   test("a resolver problem is reported", async () => {
     const file = await lint("/schemas/a.schema.json", `{ "type": "string" }`);
     expect(file.messages.map((message) => message.ruleId)).to.eql(["missing-dialect"]);
@@ -132,6 +142,74 @@ describe("jsonschema CLI", () => {
     await writeFile(join(dir, "refs", "found.schema.json"), `{ "$schema": "https://json-schema.org/v1", "$ref": "https://example.com/target#/$defs/foo" }`);
     await writeFile(join(dir, "refs", "not-found.schema.json"), `{ "$schema": "https://json-schema.org/v1", "$ref": "https://example.com/target#/$defs/bar" }`);
 
+    await mkdir(join(dir, "instances", "data"), { recursive: true });
+    await mkdir(join(dir, "instances", "strict"));
+    await writeFile(join(dir, "instances", ".jsonschemarc"), JSON.stringify({ settings: { schemas: { "instances/**/*.json": "https://example.com/person" } } }));
+    await writeFile(join(dir, "instances", "person.schema.json"), JSON.stringify({
+      $schema: "https://json-schema.org/v1",
+      $id: "https://example.com/person",
+      type: "object",
+      properties: { age: { type: "integer", minimum: 0 } },
+      required: ["name"]
+    }));
+    await writeFile(join(dir, "instances", "data", "valid.json"), `{ "name": "a", "age": 1 }`);
+    await writeFile(join(dir, "instances", "data", "invalid.json"), `{ "name": "a", "age": -1 }`);
+    await writeFile(join(dir, "instances", "data", "syntax-error.json"), `{ "name": "a", "age": -1, }`);
+    await writeFile(join(dir, "instances", "strict", ".jsonschemarc"), JSON.stringify({ settings: { schemas: { "instances/strict/*.json": "instances/strict/strict.schema.json" } } }));
+    await writeFile(join(dir, "instances", "strict", "strict.schema.json"), `{ "$schema": "https://json-schema.org/v1", "required": ["id"] }`);
+    await writeFile(join(dir, "instances", "strict", "no-id.json"), `{ "name": "a" }`);
+
+    await mkdir(join(dir, "self-described"));
+    await writeFile(join(dir, "self-described", "valid.json"), `{ "$schema": "../instances/person.schema.json", "name": "a" }`);
+    await writeFile(join(dir, "self-described", "invalid.json"), `{ "$schema": "https://example.com/person", "age": -1 }`);
+    await writeFile(join(dir, "self-described", "not-found.json"), `{ "$schema": "https://example.com/not-found" }`);
+    await writeFile(join(dir, "self-described", "invalid-schema.json"), `{ "$schema": "../a.schema.json" }`);
+    await writeFile(join(dir, "self-described", "no-schema.json"), `{ "name": "a" }`);
+
+    await mkdir(join(dir, "json-schemas", "nested"), { recursive: true });
+    await mkdir(join(dir, "json-schemas", "refs"));
+    await writeFile(join(dir, "json-schemas", "invalid.json"), `{ "$schema": "https://json-schema.org/v1", "minLength": -1 }`);
+    await writeFile(join(dir, "json-schemas", "target.json"), `{ "$schema": "https://json-schema.org/v1", "$id": "https://example.com/json-target", "$defs": { "foo": true }, "required": ["bar"] }`);
+    await writeFile(join(dir, "json-schemas", "nested", "meta.json"), JSON.stringify({ ...JSON.parse(metaSchema), $id: "https://example.com/json-meta" }));
+    await writeFile(join(dir, "json-schemas", "uses-json-meta.json"), `{ "$schema": "https://example.com/json-meta", "minLength": -1 }`);
+    await writeFile(join(dir, "json-schemas", "uses-schema-meta.json"), `{ "$schema": "https://example.com/meta", "minLength": -1 }`);
+    await writeFile(join(dir, "json-schemas", "refs", ".jsonschemarc"), JSON.stringify({ plugins: [recommended] }));
+    await writeFile(join(dir, "json-schemas", "refs", "refs.schema.json"), JSON.stringify({
+      $schema: "https://json-schema.org/v1",
+      $ref: "https://example.com/json-target#/$defs/foo",
+      properties: { foo: { $ref: "../target.json#/$defs/foo" } }
+    }));
+    await writeFile(join(dir, "json-schemas", "refs", "missing.schema.json"), JSON.stringify({
+      $schema: "https://json-schema.org/v1",
+      $ref: "../target.json#/$defs/bar"
+    }));
+    await writeFile(join(dir, "json-schemas", "instance.json"), `{ "$schema": "./target.json", "foo": 1 }`);
+
+    await mkdir(join(dir, "plain"));
+    await writeFile(join(dir, "plain", "trailing-comma.json"), `{ "a": 1, }`);
+    await writeFile(join(dir, "plain", "broken.json"), `{ "a": `);
+
+    // A plugin that makes one file fatal while it's still being transformed,
+    // and finishes the other first
+    await mkdir(join(dir, "race"));
+    await writeFile(join(dir, "race", "slow-error.mjs"), `export default function () {
+  return async (_tree, file) => {
+    if (file.stem === "first") {
+      file.message("Slow error").fatal = true;
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    } else {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+  };
+}`);
+    await writeFile(join(dir, "race", ".jsonschemarc"), JSON.stringify({ plugins: ["./slow-error.mjs"] }));
+    await writeFile(join(dir, "race", "first.json"), `{}`);
+    await writeFile(join(dir, "race", "second.json"), `{}`);
+
+    await mkdir(join(dir, "bad-schemas-setting"));
+    await writeFile(join(dir, "bad-schemas-setting", ".jsonschemarc"), JSON.stringify({ settings: { schemas: ["https://example.com/person"] } }));
+    await writeFile(join(dir, "bad-schemas-setting", "a.json"), `{}`);
+
     // Serves the meta-schema at every path
     server = createServer((_request, response) => {
       response.writeHead(200, { "Content-Type": "application/schema+json" });
@@ -209,7 +287,7 @@ describe("jsonschema CLI", () => {
     expect(exitCode).to.equal(0);
   });
 
-  test("only .schema.json files are linted in a folder", async () => {
+  test("JSON files without a schema in a folder aren't reported", async () => {
     const { output } = await report([".", "-q"]);
     expect(output).to.contain("a.schema.json");
     expect(output).to.contain("https://json-schema.org/keyword/minLength");
@@ -343,14 +421,150 @@ describe("jsonschema CLI", () => {
     });
   });
 
+  test("a file that's fatal while another file finishes is still reported", async () => {
+    const { output, exitCode } = await report(["race"]);
+    expect(output).to.match(/race\/first\.json\n\s+error\s+Slow error/);
+    expect(output).to.contain("race/second.json: no issues found");
+    expect(exitCode).to.equal(1);
+  });
+
   test("files in a folder it was given are found", async () => {
     const { exitCode } = await report(["meta", "-q"]);
     expect(exitCode).to.equal(0);
   });
 
-  test("a plain JSON file can be included with an ignore pattern", async () => {
-    const { output } = await report([".", "-q", "--ignore-pattern", "!package.json"]);
-    expect(output).to.contain("package.json");
-    expect(output).to.contain("missing-dialect");
+  test("a plain JSON file is validated, not linted", async () => {
+    const { output, exitCode } = await report(["self-described/no-schema.json"]);
+    expect(output).not.to.contain("missing-dialect");
+    expect(exitCode).to.equal(0);
+  });
+
+  describe("schemas without .schema.json", () => {
+    test("a .json file whose $schema is a dialect is linted", async () => {
+      const { output, exitCode } = await report(["json-schemas/invalid.json", "-q"]);
+      expect(output).to.match(/error\s+Expected a non-negative integer/);
+      expect(exitCode).to.equal(1);
+    });
+
+    test("a .json file in a dialect a meta-schema in the working directory defines is linted", async () => {
+      const { output, exitCode } = await report(["json-schemas/uses-schema-meta.json", "-q"]);
+      expect(output).to.contain("https://json-schema.org/keyword/minLength");
+      expect(exitCode).to.equal(1);
+    });
+
+    test("a .json meta-schema in the working directory defines a dialect", async () => {
+      const { output, exitCode } = await report(["json-schemas/uses-json-meta.json", "-q"]);
+      expect(output).to.contain("https://json-schema.org/keyword/minLength");
+      expect(exitCode).to.equal(1);
+    });
+
+    test("a .json schema in the working directory is found by its identifier and its path", async () => {
+      const found = await report(["json-schemas/refs/refs.schema.json"]);
+      expect(found.output).not.to.contain("reference-without-target");
+      expect(found.exitCode).to.equal(0);
+
+      const missing = await report(["json-schemas/refs/missing.schema.json", "-q"]);
+      expect(missing.output).to.contain("reference-without-target");
+    });
+
+    test("an instance can name a .json schema in $schema", async () => {
+      const { output, exitCode } = await report(["json-schemas/instance.json", "-q"]);
+      expect(output).to.contain("https://example.com/json-target#/required");
+      expect(exitCode).to.equal(1);
+    });
+
+    test("a JSON file without a schema has its syntax checked", async () => {
+      const warning = await report(["plain/trailing-comma.json"]);
+      expect(warning.output).to.match(/warning\s+Trailing commas are not allowed/);
+      expect(warning.exitCode).to.equal(0);
+
+      const error = await report(["plain/broken.json", "-q"]);
+      expect(error.output).to.contain("error");
+      expect(error.exitCode).to.equal(1);
+    });
+  });
+
+  describe("validating instances", () => {
+    test("an instance that matches a pattern in the 'schemas' setting is validated against its schema", async () => {
+      const { output, exitCode } = await report(["instances/data/invalid.json", "-q"]);
+      expect(output).to.match(/1:23-1:25\s+error\s+Fails the constraint at 'https:\/\/example\.com\/person#\/properties\/age\/minimum'\s+https:\/\/json-schema\.org\/keyword\/minimum\s+json-schema/);
+      expect(exitCode).to.equal(1);
+    });
+
+    test("a valid instance passes", async () => {
+      const { output, exitCode } = await report(["instances/data/valid.json", "-q"]);
+      expect(output).to.equal("");
+      expect(exitCode).to.equal(0);
+    });
+
+    test("an instance with a syntax error is validated as far as it could be parsed", async () => {
+      const { output } = await report(["instances/data/syntax-error.json"]);
+      expect(output).to.contain("trailing-comma");
+      expect(output).to.contain("https://json-schema.org/keyword/minimum");
+    });
+
+    test("the last pattern that matches wins, so a folder's settings change the schema for its files", async () => {
+      const { output } = await report(["instances/strict/no-id.json", "-q"]);
+      expect(output).to.contain("strict.schema.json#/required");
+      expect(output).not.to.contain("https://example.com/person");
+    });
+
+    test("schemas are linted, not validated, even if they match a pattern", async () => {
+      const { exitCode } = await report(["instances/person.schema.json", "-q"]);
+      expect(exitCode).to.equal(0);
+    });
+
+    test("every instance in a folder is validated", async () => {
+      const { output, exitCode } = await report(["instances", "-q"]);
+      expect(output).to.contain("instances/data/invalid.json");
+      expect(output).to.contain("instances/data/syntax-error.json");
+      expect(output).to.contain("instances/strict/no-id.json");
+      expect(output).not.to.match(/^instances\/data\/valid\.json$/m);
+      expect(exitCode).to.equal(1);
+    });
+
+    test("an instance without a pattern is validated against its $schema, relative to the instance", async () => {
+      const valid = await report(["self-described/valid.json", "-q"]);
+      expect(valid.exitCode).to.equal(0);
+
+      const invalid = await report(["self-described/invalid.json", "-q"]);
+      expect(invalid.output).to.contain("https://json-schema.org/keyword/required");
+      expect(invalid.output).to.contain("https://json-schema.org/keyword/minimum");
+      expect(invalid.exitCode).to.equal(1);
+    });
+
+    test("a schema that can't be found is reported at $schema", async () => {
+      const { output, exitCode } = await report(["self-described/not-found.json", "-q"]);
+      expect(output).to.match(/1:14-1:45\s+error\s+Unable to use the schema 'https:\/\/example\.com\/not-found'.*invalid-schema\s+jsonschema/);
+      expect(output).not.to.contain("[cause]");
+      expect(exitCode).to.equal(1);
+    });
+
+    test("an invalid schema is reported with its problem", async () => {
+      const { output, exitCode } = await report(["self-described/invalid-schema.json", "-q"]);
+      expect(output).to.contain("Expected a non-negative integer");
+      expect(output).to.contain("invalid-schema");
+      expect(exitCode).to.equal(1);
+    });
+
+    test("a schema can be given with --setting", async () => {
+      const { output, exitCode } = await report(["self-described/no-schema.json", "-q", "--setting", "schemas:{\"self-described/*.json\":\"instances/strict/strict.schema.json\"}"]);
+      expect(output).to.contain("strict.schema.json#/required");
+      expect(exitCode).to.equal(1);
+    });
+
+    test("an instance from stdin is validated if it's given a path", async () => {
+      const { output, stdout, exitCode } = await report(["--file-path", "instances/data/stdin.json"], `{ "age": -1 }`);
+      expect(output).to.contain("https://json-schema.org/keyword/required");
+      expect(stdout).to.equal("");
+      expect(exitCode).to.equal(1);
+    });
+
+    test("an invalid 'schemas' setting is an error", async () => {
+      const { output, exitCode } = await report(["bad-schemas-setting/a.json", "-q"]);
+      expect(output).to.contain("The 'schemas' setting must be an object");
+      expect(output).to.contain("invalid-setting");
+      expect(exitCode).to.equal(1);
+    });
   });
 });

@@ -53,7 +53,8 @@ text ─ rejsonParse ─▶ JSON AST ─ jsonSchemaResolve ─▶ Schema AST ─
 | `src/formats/` | Format definitions and the lite and full presets |
 | `src/bundle/` | Bundling, which embeds referenced schemas in one document, and its tests, ported from v1 |
 | `src/lint/` | Lint rules (`rules/`, one per file), the recommended preset, `lintRule`, which applies configuration comments, and the utilities rules share |
-| `src/cli/` | The `jsonschema` CLI, which lints schemas |
+| `src/validate/` | `jsonSchemaValidate`, the unified plugin that validates JSON files |
+| `src/cli/` | The `jsonschema` CLI, which lints schemas and validates JSON files |
 | `test/test-suite.js` | Runs the JSON Schema Test Suite and the annotation test suite |
 
 - A `.d.ts` next to a `.js` file declares that module's API. One without a
@@ -1045,20 +1046,74 @@ can be added to one `JsonSchema`.
 
 ## CLI (`src/cli/`)
 
-`jsonschema` lints schemas. It's a `unified-args` CLI like browser's
-`rejson` and `jref`, with `.jsonschemarc`, `.jsonschemaignore`, and a
-`jsonSchemaConfig` field in `package.json`.
+`jsonschema` lints schemas and validates JSON files against them. It's a
+`unified-args` CLI like browser's `rejson` and `jref`, with `.jsonschemarc`,
+`.jsonschemaignore`, and a `jsonSchemaConfig` field in `package.json`.
 
-- It runs `rejsonParse` and `jsonSchemaResolve`, which finds every problem
-  with a schema, and reports their messages. Nothing is compiled. Syntax errors don't stop the file from being resolved, so every
+- A file is a schema if it's a `.schema.json` file or its top-level
+  `$schema` is a dialect: one that's been added (every preset's) or one a
+  meta-schema defines, which its session can find in the registry or
+  retrieve. Anything else is an instance. Input from stdin is decided the
+  same way, by its content and the name `--file-path` gives it.
+- A `$schema` that isn't a dialect names the schema an instance is
+  validated against, as editors use it, so the two are told apart by
+  whether it's a dialect. A schema whose `$schema` is a dialect that
+  can't be found, like a typo, is an instance whose schema can't be used,
+  so it's still an error, just a different one. A `.schema.json` file
+  still says it's a schema without that, so a missing or unknown dialect
+  is reported as one.
+- Whether a URI is a dialect is decided once per run for each
+  `allowRetrieval`. A URI that isn't one, an instance's schema, is
+  resolved to find out, and then compiled again to validate.
+- This is only the CLI's rule. Retrieval still never treats a plain
+  `.json` file as a schema, so a reference to a `.json` schema only finds
+  it through the registry.
+- For a schema, it runs `rejsonParse` and `jsonSchemaResolve`, which finds
+  every problem with a schema, and reports their messages. Nothing is
+  compiled. Syntax errors don't stop the file from being resolved, so every
   problem is reported at once.
 - Its `JsonSchema` has every preset and no default dialect.
 - The engine makes a processor for each file, and each one resolves in a new
   session, with the run's registry.
-- The engine finds files in folders by `path.extname`, which is `.json` for a
-  `.schema.json` file. The CLI adds the ignore patterns `*.json` and
-  `!*.schema.json` before the user's own, so plain JSON files aren't linted
-  unless a user's pattern includes them.
+- An instance is validated with `jsonSchemaValidate` (see "Validating JSON
+  files"). Its schema is the last pattern in the `schemas` setting that
+  matches its path, or else its own top-level `$schema`, resolved against
+  the instance, as editors do. `--setting` gives one from the command line.
+- `schemas` is an object of glob patterns to schemas. Patterns match the
+  instance's path relative to the working directory (`path.matchesGlob`),
+  and a schema is a URI or a path relative to the working directory, for
+  the same reason as `allowRetrieval`: the engine doesn't say which
+  configuration file a setting came from. It's an object because the
+  engine merges settings deeply, and lists from different configuration
+  files are merged by index. The last match wins, so a folder's
+  `.jsonschemarc`, which is merged after its parents', can change the schema
+  for its files. Validating against every match, as VS Code does, was
+  considered, but then a folder couldn't replace its parent's schema.
+- A JSON file without a schema only has its syntax checked, by the parser.
+  Nothing says it has no schema. A folder has plenty of them
+  (`package.json`), and even quiet output lists files with info messages.
+  The CLI used to ignore `*.json` except `*.schema.json`, but an ignored
+  file that's given explicitly is an error in the engine, and schemas
+  don't need the extension anymore.
+- A schema that can't be compiled is an `invalid-schema` error on the
+  instance, at its `$schema` if that's where it came from. It's compiled in
+  a new session with the same registry and `allowRetrieval` a schema in the
+  instance's folder would be resolved with. Instances that use the same
+  schema with the same `allowRetrieval` share one compilation per run.
+- The engine waits for every file before writing or reporting any of them,
+  and it skips files with a fatal message while it checks, assuming they've
+  stopped. A file that gets one while it's still being transformed, which
+  async transforms make likely, can be left behind, and the run ends
+  without output (unified-engine 11.2.2). So from the CLI's transform on,
+  a file's messages hold back `fatal` until a step in the file set's
+  pipeline, which runs once every file is waiting, before anything is
+  reported. Errors are made by setting `fatal` after a message is created
+  (`file.fail`, `unified-lint-rule`), so the CLI replaces the file's
+  `message` with one whose messages have a `fatal` accessor that reads as
+  a warning until it's released. That covers lint rules set to `error` too.
+  Making messages non-fatal after each transform wasn't enough, because a
+  transform makes them between `await`s. It goes away when the engine is
+  fixed (see "Known limitations").
 - Input from stdin has no path, so it's resolved as if it were in the
   working directory: its base URI is the directory's `file:` URL.
 - It doesn't write files to stdout by default (`--no-stdout` comes before
@@ -1067,14 +1122,16 @@ can be added to one `JsonSchema`.
 - Schema problems are errors, so an invalid schema fails the command. In
   unified, warnings are for findings that don't stop a file from being used,
   like style, and none of these are.
-- Its processor isn't exported. Validating instances from the CLI waits for
-  the unified plugin for validating JSON files (see "Plan").
+- Its processor isn't exported.
 - It can see the working directory, and it lints the files it's given.
-  Every `.schema.json` file in the working directory is in a registry, as a
-  language server has its workspace, so it's found by its `$id` and by its
-  path, whether or not it's linted. The files it was given are in the
-  registry too, even outside the working directory or with another
-  extension. Self-identifying meta-schemas, whose `$id` can't be retrieved,
+  Every schema in the working directory is in a registry, as a language
+  server has its workspace, so it's found by its `$id` and by its path,
+  whether or not it's linted. The schemas it was given are in the registry
+  too, even outside the working directory. Instances aren't. Nothing is
+  retrieved to decide which files are schemas, so a dialect has to have
+  been added or be defined by a meta-schema in the registry. A meta-schema
+  can be in a dialect another one defines, so files are tried again until
+  no more are schemas. Self-identifying meta-schemas, whose `$id` can't be retrieved,
   are found this way without any configuration.
 - `.jsonschemaignore` and ignore patterns only decide what's linted. An
   ignored file is still found, which is what a vendored meta-schema needs.
@@ -1082,13 +1139,15 @@ can be added to one `JsonSchema`.
   symlinks. A symlink can point outside the working directory, and what's
   in the registry isn't checked by `allowRetrieval`. A directory that can't
   be read is skipped.
-- The working directory is searched and every file is read for each run,
-  even to lint one file. Folders are searched and files are read
+- The working directory is searched and every JSON file is read for each
+  run, even to lint one file. Only text that mentions `$schema` is parsed
+  to find its dialect. Folders are searched and files are read
   concurrently, up to 64 at a time, so it doesn't run out of file
   descriptors. Entries are only identified when a session looks for a
-  schema, and only resolved when they're needed. For 3000 files, linting
-  one takes about 0.1–0.15 s more than in an empty folder (see "CLI
-  workspace registry" in BENCHMARKS.md). A very large repository pays more. Listing registry files in `.jsonschemarc` was considered
+  schema, and only resolved when they're needed. For 3000 schemas, linting
+  one takes about 0.1–0.15 s more than in an empty folder, and 3000
+  instances add about 0.08 s (see "CLI workspace registry" in
+  BENCHMARKS.md). A very large repository pays more. Listing registry files in `.jsonschemarc` was considered
   instead, but their paths would have nothing to be relative to (see the
   `allowRetrieval` setting).
 - What it can retrieve is files in the working directory, as by default,
@@ -1121,6 +1180,22 @@ can be added to one `JsonSchema`.
   Input from stdin can't be found by other files.
 - Without the engine, such as when the processor is used directly in tests,
   there's no run, so the registry is empty and nothing is searched.
+
+## Validating JSON files (`src/validate/`)
+
+`jsonSchemaValidate({ validator })` is a unified plugin that validates a
+JSON AST from `rejsonParse` against a compiled schema. It's how the CLI
+validates instances, and how other unified tools can.
+
+- It takes a `Validator`, not a schema URI. Compiling is the caller's
+  business: which session, registries, and `allowRetrieval`, and whether a
+  validator is shared between files.
+- It uses `validateNode` with BASIC output and adds each error with
+  `file.message`, described by `outputErrorMessage`, as an error
+  (`fatal: true`). The rule ID is the keyword URI and the source is
+  `json-schema`, as in the output. The tree isn't changed.
+- Syntax errors are the parser's to report. Values that couldn't be parsed
+  aren't evaluated, so they don't add errors of their own.
 
 ## Linting
 
@@ -1361,14 +1436,17 @@ What this relies on from browser's `v2` branch:
    identical subschemas.
 2. Decide whether keywords can provide a separate evaluator for plain
    values (see "Compile and evaluate").
-3. Later: OpenAPI, a unified plugin for validating
-   JSON files (and validating instances from the CLI), and migrating
-   dependent projects.
+3. Later: OpenAPI and migrating dependent projects.
 
 JSONC support in the CLI, with configuration comments from JSONC comments,
 was planned and is deferred, because it may not be worth it.
 
 ## Known limitations
+
+- unified-engine can lose a file that gets a fatal message while it's
+  being transformed, and the run ends without output. The CLI works around
+  it by holding back `fatal` (see "CLI"). The fix belongs in
+  unified-engine.
 
 - `allowRetrieval` can't stop a request that a redirect leads to. It's
   checked on the URL that was asked for and the URL the response came from,

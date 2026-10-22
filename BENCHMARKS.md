@@ -472,3 +472,19 @@ about 0.19 s in an empty folder.
   its time waiting. Reading 64 at a time, and searching folders at the same
   time, took the rest down to about 0.1–0.15 s more than an empty folder.
 - About 50 ms of what's left is `unified-args` loading `yaml` and `chokidar`.
+
+When a `.json` file whose `$schema` is a dialect became a schema, the
+registry started reading every JSON file in the working directory, not just
+`.schema.json` files. A file that doesn't mention `$schema` isn't parsed.
+This times linting one v1 schema, the "Plain" case above, in workspaces made
+by a similar generator (not committed): the 3000 schemas named `.schema.json`,
+the same schemas named `.json`, and the `.schema.json` workspace with 3000
+instances (12 MB, no `$schema`) added. An empty folder takes 0.19–0.22 s.
+
+| | `.schema.json` | `.json` | With instances |
+| --- | --- | --- | --- |
+| Only `.schema.json` files | 0.29–0.32 s | 0.20–0.22 s (none found) | 0.29–0.32 s |
+| Every JSON file | 0.31–0.34 s | 0.31–0.35 s | 0.38–0.41 s |
+
+- Schemas named `.json` cost the same as `.schema.json` ones. Reading the
+  instances costs about 0.08 s.
