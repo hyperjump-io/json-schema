@@ -394,6 +394,7 @@ Warnings don't fail the command unless you use `--frail`.
 | `keyword-for-disallowed-type` | A keyword or known format for one type of value, like `minimum`, `properties`, or the `date` format, in a schema whose `type` doesn't allow that type |
 | `min-properties-covered-by-required` | `minProperties` that's no more than the number of properties in `required`, so it has no effect |
 | `type-implied-by-const-or-enum` | `type` that allows the `const` value or every value in `enum`, so it has no effect. Turn it off if your tools need `type` |
+| `const-or-enum-value-for-disallowed-type` | A `const` value or a value in `enum` that `type` doesn't allow, so it's never valid |
 | `read-only-and-write-only` | `readOnly` and `writeOnly` both `true` in the same schema |
 | `min-max-contains-without-contains` | `minContains` or `maxContains` without `contains` |
 | `reference-without-target` | A `$ref` that doesn't find a schema, such as a file that doesn't exist or a JSON Pointer that doesn't point to anything |
