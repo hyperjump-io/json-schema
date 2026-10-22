@@ -1,4 +1,4 @@
-import type { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode } from "../schema/schema-ast.d.ts";
+import type { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode, JsonSchemaTolerantNode } from "../schema/schema-ast.d.ts";
 
 /**
  * Calls `visitor` with every schema in the document, including embedded
@@ -57,3 +57,18 @@ export const siblingKeyword: (schemaNode: JsonSchemaNode, keywordUri: string) =>
  * if the schema doesn't have `required` or its value isn't an array.
  */
 export const requiredNames: (schemaNode: JsonSchemaNode) => { keywordNode: JsonSchemaKeywordNode; names: Set<string> } | undefined;
+
+/**
+ * A schema's `type` keyword, in any dialect, and the types it allows. It's
+ * undefined if the schema doesn't have `type`, or its value isn't a string
+ * or a non-empty array of strings.
+ */
+export const typeNames: (schemaNode: JsonSchemaNode) => { keywordNode: JsonSchemaKeywordNode; names: Set<string> } | undefined;
+
+/**
+ * Whether `type` allows a value, as the `type` keyword decides it, given the
+ * types from {@link typeNames}. A number with no fractional part, including
+ * one written like `1.0`, is an `integer`. It's undefined for a value that
+ * couldn't be parsed.
+ */
+export const typeAllows: (names: Set<string>, valueNode: JsonSchemaTolerantNode) => boolean | undefined;

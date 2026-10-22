@@ -1,5 +1,5 @@
 import { lintRule } from "../lint-rule.js";
-import { visitSchemas } from "../utilities.js";
+import { typeNames, visitSchemas } from "../utilities.js";
 
 /**
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode } from "../../schema/schema-ast.d.ts"
@@ -34,8 +34,6 @@ const keywordTypes = new Map([
     "draft-04/required", "draft-04/dependencies", "draft-07/dependencies"
   ].map((name) => /** @type const */ ([keyword + name, "object"]))
 ]);
-
-const typeUris = new Set([keyword + "type", keyword + "draft-2020-12/type"]);
 
 const formatUris = new Set([keyword + "format", keyword + "draft-07/format"]);
 
@@ -79,35 +77,19 @@ const keywordForDisallowedType = lintRule({ origin: "jsonschema-lint:keyword-for
       return;
     }
 
-    const keywords = /** @type JsonSchemaKeywordNode[] */ (schemaNode.children);
-    const typeNode = keywords.find((property) => typeUris.has(property.keywordUri));
-    if (typeNode === undefined) {
+    const type = typeNames(schemaNode);
+    if (type === undefined) {
       return;
     }
 
-    // Only a type that's a string or a non-empty array of strings. An empty
-    // array is reported by empty-type.
-    const typeValue = typeNode.children[1];
-    const typeItems = typeValue.jsonType === "array" ? typeValue.children : [typeValue];
-    if (typeItems.length === 0) {
-      return;
-    }
-
-    /** @type Set<string> */
-    const allowed = new Set();
-    for (const itemNode of typeItems) {
-      if (itemNode.jsonType !== "string") {
-        return;
-      }
-      allowed.add(itemNode.value);
-    }
+    const allowed = new Set(type.names);
     if (allowed.has("integer")) {
       allowed.add("number");
     }
 
-    const typeName = typeNode.children[0].value;
+    const typeName = type.keywordNode.children[0].value;
     const formats = schemaNode.type === "json-schema" ? dialectFormats.get(schemaNode.dialectUri) : undefined;
-    for (const property of keywords) {
+    for (const property of /** @type JsonSchemaKeywordNode[] */ (schemaNode.children)) {
       const name = property.children[0].value;
       const valueNode = property.children[1];
       if (formatUris.has(property.keywordUri)) {

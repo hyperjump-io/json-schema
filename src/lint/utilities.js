@@ -1,7 +1,7 @@
 import { resolveIri, toAbsoluteIri } from "@hyperjump/uri";
 
 /**
- * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode } from "../schema/schema-ast.d.ts"
+ * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode, JsonSchemaTolerantNode } from "../schema/schema-ast.d.ts"
  */
 
 /**
@@ -143,6 +143,62 @@ export const requiredNames = (schemaNode) => {
 
     return { keywordNode, names };
   }
+};
+
+const typeUris = [
+  "https://json-schema.org/keyword/type",
+  "https://json-schema.org/keyword/draft-2020-12/type"
+];
+
+/**
+ * A schema's `type` keyword, in any dialect, and the types it allows. It's
+ * undefined if the schema doesn't have `type`, or its value isn't a string
+ * or a non-empty array of strings. An empty array allows nothing, which the
+ * empty-type rule reports.
+ *
+ * @type (schemaNode: JsonSchemaNode) => { keywordNode: JsonSchemaKeywordNode; names: Set<string> } | undefined
+ */
+export const typeNames = (schemaNode) => {
+  for (const typeUri of typeUris) {
+    const keywordNode = findKeyword(schemaNode, typeUri);
+    if (keywordNode === undefined) {
+      continue;
+    }
+
+    const valueNode = keywordNode.children[1];
+    const itemNodes = valueNode.jsonType === "array" ? valueNode.children : [valueNode];
+    if (itemNodes.length === 0) {
+      return;
+    }
+
+    /** @type Set<string> */
+    const names = new Set();
+    for (const itemNode of itemNodes) {
+      if (itemNode.jsonType !== "string") {
+        return;
+      }
+      names.add(itemNode.value);
+    }
+
+    return { keywordNode, names };
+  }
+};
+
+/**
+ * Whether `type` allows a value, as the `type` keyword decides it, given the
+ * types from {@link typeNames}. A number with no fractional part, including
+ * one written like `1.0`, is an `integer`. It's undefined for a value that
+ * couldn't be parsed.
+ *
+ * @type (names: Set<string>, valueNode: JsonSchemaTolerantNode) => boolean | undefined
+ */
+export const typeAllows = (names, valueNode) => {
+  if (!("jsonType" in valueNode)) {
+    return;
+  }
+
+  const type = valueNode.jsonType;
+  return names.has(type) || (type === "number" && names.has("integer") && Number.isInteger(valueNode.value));
 };
 
 export { siblingKeyword } from "../keywords/utilities.js";
