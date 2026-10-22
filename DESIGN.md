@@ -1311,10 +1311,18 @@ It's a list of candidates, not a spec.
   `duplicate_required_values` isn't, because `required`'s check
   (`uniqueStrings`) reports duplicates in every dialect, as their
   meta-schemas do.
-- Opinionated rules (`explicit_additional_properties`,
+- A rule that some users' tools disagree with is still ported and still in
+  `recommended`, if it's usually right. That's what configuration is for.
+  `type-implied-by-const-or-enum` reports a `type` that code generators
+  may want, and those users turn it off. Opinionated rules that are
+  matters of taste (`explicit_additional_properties`,
   `require_description_title`, `unknown_keywords_prefix`) and style rules
   that only remove a default value aren't in `recommended`, if they're
   ported at all.
+- A catalogue rule whose premise the spec contradicts isn't ported.
+  `content_media_type_without_encoding` says `contentMediaType` means
+  nothing without `contentEncoding`, but no encoding means the string
+  isn't encoded, and the specs' own examples do that.
 - Messages are rewritten, not copied. The catalogue's say what to do
   ("Add `then`, `else`, or remove `if`."). Ours say what's wrong, in the
   keyword's own name, and are accurate for every dialect the rule works in.
@@ -1325,6 +1333,21 @@ It's a list of candidates, not a spec.
   dialect without the keyword and a property with the keyword's name), a
   row in the README's table, and a place in `recommended` if it's likely a
   mistake.
+
+Rules of our own are added too, when porting turns up a mistake the
+catalogue doesn't cover. Done so far: `empty-type`,
+`const-or-enum-value-for-disallowed-type`, and `required` against
+`maxProperties` in `contradictory-limits`. Candidates:
+
+- A dependent property in `dependentRequired` or `dependencies` that's
+  already in `required`, so it has no effect.
+- A `const` or `enum` value that the sibling assertions reject, like
+  `"a"` with `minLength: 2`. It's never valid. It generalizes
+  `const-or-enum-value-for-disallowed-type`.
+- A property in `required` that `properties` makes `false`, or that
+  `additionalProperties: false` doesn't allow, so no object is valid.
+- A limit next to `const` or `enum` that every value passes, so it has no
+  effect.
 
 ### Configuration comments
 
