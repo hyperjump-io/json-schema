@@ -83,8 +83,25 @@ describe("keyword-without-type", () => {
     expect(await reasons(`{ "$schema": "${draft2020}", "type": "object", "properties": { "a": { "not": { "minimum": 3 } } } }`)).to.eql([]);
   });
 
+  test("a known format", async () => {
+    expect(await reasons(`{ "$schema": "${draft2020}", "type": "object", "properties": { "a": { "format": "date" } } }`)).to.eql([
+      "The 'date' format applies only to strings, but there's no 'type', so values of other types are valid"
+    ]);
+    expect(await reasons(`{ "$schema": "${draft2020}", "type": "object", "properties": { "a": { "type": "string", "format": "date" } } }`)).to.eql([]);
+  });
+
+  test("a format that could apply to any type", async () => {
+    expect(await reasons(`{ "$schema": "${draft2020}", "type": "object", "properties": { "a": { "format": "int32" } } }`)).to.eql([]);
+  });
+
+  test("a format in draft-07", async () => {
+    expect(await reasons(`{ "$schema": "http://json-schema.org/draft-07/schema#", "format": "hostname" }`)).to.eql([
+      "The 'hostname' format applies only to strings, but there's no 'type', so values of other types are valid"
+    ]);
+  });
+
   test("keywords for every type aren't reported", async () => {
-    expect(await reasons(`{ "$schema": "${draft2020}", "properties": { "a": { "enum": [1] }, "b": { "allOf": [{}] }, "c": { "format": "date" } }, "type": "object" }`)).to.eql([]);
+    expect(await reasons(`{ "$schema": "${draft2020}", "properties": { "a": { "enum": [1] }, "b": { "allOf": [{}] } }, "type": "object" }`)).to.eql([]);
   });
 
   test("properties named like keywords", async () => {

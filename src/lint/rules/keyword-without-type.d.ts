@@ -3,8 +3,8 @@ import type { JsonSchemaDocumentNode } from "../../schema/schema-ast.d.ts";
 
 /**
  * A keyword that applies only to one type of value, like `properties` to
- * objects or `minimum` to numbers, where nothing says what type the value
- * is. Values of other types are valid, because the keyword ignores them, so
+ * objects or `minimum` to numbers, or a format that does, like `date` to
+ * strings, where nothing says what type the value is. Values of other types are valid, because the keyword ignores them, so
  * `{ "properties": { … } }` accepts `"hello"` and `42`. That's rarely what's
  * meant.
  *
@@ -17,6 +17,8 @@ import type { JsonSchemaDocumentNode } from "../../schema/schema-ast.d.ts";
  * reported, and neither is one with a reference that can't be followed, or
  * a keyword in a `not`, where other types are already rejected.
  *
+ * A format's types come from its definition (`types`), so a custom format
+ * that doesn't say, or one the dialect doesn't support, isn't reported.
  * A `type` that doesn't allow the keyword's type is reported by
  * `keyword-for-disallowed-type`. It has no options.
  */
