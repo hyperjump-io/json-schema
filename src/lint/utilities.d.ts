@@ -72,3 +72,13 @@ export const typeNames: (schemaNode: JsonSchemaNode) => { keywordNode: JsonSchem
  * couldn't be parsed.
  */
 export const typeAllows: (names: Set<string>, valueNode: JsonSchemaTolerantNode) => boolean | undefined;
+
+/**
+ * The schemas in a schema's `properties`, `patternProperties`, and
+ * `additionalProperties` that apply to a property with the given name, each
+ * with the keyword it's in. Patterns are compiled as `patternProperties`
+ * compiles them. `additionalProperties` applies only if the others don't.
+ * It's undefined if a pattern isn't valid, because then what applies is
+ * unknown.
+ */
+export const propertySchemas: (schemaNode: JsonSchemaNode, name: string) => { keywordNode: JsonSchemaKeywordNode; valueNode: JsonSchemaNode }[] | undefined;
