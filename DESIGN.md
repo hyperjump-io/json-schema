@@ -1,6 +1,6 @@
 # Design
 
-A from-scratch rewrite of [`@hyperjump/json-schema`](../json-schema) built on
+A from-scratch rewrite of `@hyperjump/json-schema` v1 (the `main` branch) built on
 [`@hyperjump/browser`](../browser) v2 and [unified](https://unifiedjs.com/).
 Most of the same concepts are included, but often reimagined.
 

@@ -1,7 +1,9 @@
 # Benchmarks
 
 Measurements behind the performance decisions in [DESIGN.md](DESIGN.md).
-The benchmark code is in `scratch/bench`, which isn't committed. The
+The benchmark code is in `benchmark/`, which isn't committed. It compares the
+version checked out here with the other one, which it checks out in a
+worktree next to this repo (see `benchmark/link.js`). The
 benchmarks in `benchmarks/` are kept up to date. The ones in `claude/` were
 written for one-off investigations.
 
@@ -105,7 +107,7 @@ suite; 2020-12 is the range over two runs that day):
   errors in 2020-12 (1.83 ms), when errors were `VFileMessage`s with a
   message built for each one. Plain objects without messages (see
   "Validation API" in DESIGN.md) took it to 1.16 ms, and the changes in
-  "Plugins" to 0.76–0.79 ms. `scratch/bench/claude/errors-breakdown.ts`
+  "Plugins" to 0.76–0.79 ms. `benchmark/claude/errors-breakdown.ts`
   measures each part of collecting errors.
 
 ## Real-world schemas
@@ -222,7 +224,7 @@ five runs):
 
 ## Plugins
 
-`scratch/bench/claude/plugin-cost.ts` times evaluating with plugins on the
+`benchmark/claude/plugin-cost.ts` times evaluating with plugins on the
 2020-12 test cases v2 gets right (1290 instances), as a JS
 value and as a JSON AST (`validateNode`). The plugins are an empty one,
 one with hooks that do nothing, two of those, one that keeps a little state
@@ -274,7 +276,7 @@ DESIGN.md). Measured back to back with the code before, twice each:
   passing schema and keyword, cost as much as the arrays had. Only setting
   it when the list is longer made the difference.
 - BASIC's plugin now costs about the same as hooks that do nothing.
-- `scratch/bench/claude/output-equivalence.ts` checks that the output is
+- `benchmark/claude/output-equivalence.ts` checks that the output is
   the same as before for every test case in every dialect, as values, as
   JSON text, and with another plugin. The only difference was that
   DETAILED's `errors` for `if` and `conditional` had a `conditions`
@@ -365,7 +367,7 @@ difference (back to back, twice each, JS values):
 
 ## Bytecode and closures
 
-A prototype in `scratch/bench` (`claude/bytecode.ts`) lowers the IR once and then
+A prototype in `benchmark/` (`claude/bytecode.ts`) lowers the IR once and then
 turns it into either bytecode (one `Int32Array` run by an interpreter loop)
 or closures with the same logic. Both only evaluate plain values in FLAG.
 The lowered keywords are `type`, `const`, `enum`, `required`, the numeric,
