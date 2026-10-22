@@ -16,6 +16,7 @@ import { siblingKeyword } from "./utilities.js";
  */
 export default {
   uri: "https://json-schema.org/keyword/contentSchema",
+  siblings: ["https://json-schema.org/keyword/contentMediaType"],
   shape: "schema",
   compile(valueNode, context) {
     const contentMediaTypeNode = siblingKeyword(context.schemaNode, "https://json-schema.org/keyword/contentMediaType");

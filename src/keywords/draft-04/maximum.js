@@ -14,6 +14,7 @@ import { number } from "../checks.js";
  */
 export default {
   uri: "https://json-schema.org/keyword/draft-04/maximum",
+  siblings: ["https://json-schema.org/keyword/draft-04/exclusiveMaximum"],
   shape: "data",
   check: number,
   compile(valueNode, context) {

@@ -12,6 +12,7 @@ import { siblingKeyword } from "./utilities.js";
  */
 export default {
   uri: "https://json-schema.org/keyword/additionalProperties",
+  siblings: ["https://json-schema.org/keyword/patternProperties", "https://json-schema.org/keyword/properties"],
   shape: "schema",
   async compile(valueNode, context) {
     /** @type string[] */

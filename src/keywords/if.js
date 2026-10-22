@@ -13,6 +13,7 @@ import { siblingKeyword } from "./utilities.js";
  */
 export default {
   uri: "https://json-schema.org/keyword/if",
+  siblings: ["https://json-schema.org/keyword/else", "https://json-schema.org/keyword/then"],
   shape: "schema",
   async compile(valueNode, context) {
     const thenNode = siblingKeyword(context.schemaNode, "https://json-schema.org/keyword/then");

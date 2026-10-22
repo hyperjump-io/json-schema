@@ -25,6 +25,14 @@ export type Keyword<C extends Json = Json> = {
 
   /** Where the keyword's value contains schemas */
   shape: Shape;
+  /**
+   * The URIs of keywords in the same schema whose values this keyword reads,
+   * like `properties` for `additionalProperties`. Moving the keyword away
+   * from them, or next to them, changes what it means, so tools that move
+   * keywords between schemas, like lint rules, need to know. Declare every
+   * sibling `compile` finds with `siblingKeyword`.
+   */
+  siblings?: string[];
 
   /**
    * Report problems with the keyword's value that its {@link shape} doesn't

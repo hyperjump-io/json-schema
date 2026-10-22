@@ -170,6 +170,13 @@ were considered. See "Open questions".)
   Otherwise, `format` is only an annotation, so any name is fine. draft-04
   through draft-07 have their own `format` keyword that ignores formats the
   dialect doesn't have, rather than a dialect option for it.
+- A keyword that reads its siblings' values, like `additionalProperties`
+  reading `properties`, declares their URIs in `siblings`, the same way a
+  format declares its `types`. It's metadata for tools, like
+  `mergeable-all-of-schema`, rather than something evaluation uses. A test
+  checks each built-in keyword's `siblings` against its `siblingKeyword`
+  calls, so they can't drift. Keywords that read evaluation state instead
+  say so with `reads`.
 - The lite formats (`src/formats/lite.js`) are every format JSON Schema
   defines except `hostname`, `idn-hostname`, and `idn-email`, which need large
   tables of Unicode data. Presets don't use the list. Each lists the

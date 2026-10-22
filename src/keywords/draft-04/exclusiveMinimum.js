@@ -13,6 +13,7 @@ import { boolean } from "../checks.js";
  */
 export default {
   uri: "https://json-schema.org/keyword/draft-04/exclusiveMinimum",
+  siblings: ["https://json-schema.org/keyword/draft-04/minimum"],
   shape: "data",
   check(valueNode, context) {
     boolean(valueNode, context);

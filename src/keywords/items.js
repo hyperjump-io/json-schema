@@ -12,6 +12,7 @@ import { siblingKeyword } from "./utilities.js";
  */
 export default {
   uri: "https://json-schema.org/keyword/items",
+  siblings: ["https://json-schema.org/keyword/prefixItems"],
   shape: "schema",
   async compile(valueNode, context) {
     const prefixItemsNode = siblingKeyword(context.schemaNode, "https://json-schema.org/keyword/prefixItems");

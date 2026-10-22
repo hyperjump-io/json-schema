@@ -527,6 +527,11 @@ look at instances through `context.instance`, so the same code works for plain
 values and ASTs. Keywords with subschemas use `compile` to compile them. See
 `src/keyword.d.ts` and the built-in keywords in `src/keywords/`.
 
+A keyword that reads another keyword in the same schema, like
+`additionalProperties` reads `properties`, finds it with `siblingKeyword` in
+`compile` and lists its URI in `siblings`. Lint rules that move keywords
+between schemas use it to know what can't be separated.
+
 ### Custom formats
 
 ```javascript

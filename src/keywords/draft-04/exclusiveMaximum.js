@@ -13,6 +13,7 @@ import { boolean } from "../checks.js";
  */
 export default {
   uri: "https://json-schema.org/keyword/draft-04/exclusiveMaximum",
+  siblings: ["https://json-schema.org/keyword/draft-04/maximum"],
   shape: "data",
   check(valueNode, context) {
     boolean(valueNode, context);

@@ -14,6 +14,7 @@ import { uniqueStrings } from "./checks.js";
  */
 export default {
   uri: "https://json-schema.org/keyword/requireAllExcept",
+  siblings: ["https://json-schema.org/keyword/properties"],
   shape: "data",
   check: uniqueStrings,
   compile(valueNode, { schemaNode }) {
