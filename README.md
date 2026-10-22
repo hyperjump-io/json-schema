@@ -390,6 +390,7 @@ Warnings don't fail the command unless you use `--frail`.
 | `duplicate-all-of-any-of-schemas` | A schema in `allOf` or `anyOf` that's equal to one before it, so it has no effect |
 | `contradictory-limits` | A lower limit above its upper limit, like `minimum` above `maximum` or `minLength` above `maxLength`, or more properties in `required` than `maxProperties` allows |
 | `redundant-numeric-limit` | `maximum` and `exclusiveMaximum`, or `minimum` and `exclusiveMinimum`, where the looser one has no effect |
+| `fractional-limit-for-integer` | A numeric limit that isn't an integer, where `type` only allows integers, so it's the same as an integer limit |
 | `invalid-default-or-example` | A `default` value or a value in `examples` that isn't valid against the schema it's in |
 | `additional-items-without-items-array` | `additionalItems` without an `items` that's an array of schemas (draft-04 through 2019-09) |
 | `ignored-ref-siblings` | A property next to `$ref` in draft-04 through draft-07, where `$ref` replaces the whole schema |
