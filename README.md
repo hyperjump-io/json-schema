@@ -603,6 +603,19 @@ for (const [uri, node] of references) {
 }
 ```
 
+`schemaGroup` finds every schema that can apply to the same value as a
+schema: the ones connected to it by keywords like `allOf`, `anyOf`, and
+`if`, and by references, in either direction. A rule uses it to look past
+the schema a keyword is in, such as to find `properties` next to the
+`anyOf` a `required` is in. Its `links` say how they're connected, because
+schemas in an `anyOf` can apply without all having to pass. `open` means
+a schema in it could be referenced from another document, and `unknown`
+means a reference couldn't be followed.
+
+```javascript
+const group = await schemaGroup(file.data.jsonSchemaSession, tree, schemaNode);
+```
+
 A package named `hyperjump-<name>` can be used in `.hyperjumprc` as
 `<name>`. See `src/lint/` for the built-in rules.
 

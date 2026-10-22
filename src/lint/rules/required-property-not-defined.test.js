@@ -133,6 +133,7 @@ describe("required-property-not-defined", () => {
 
   test("required in not", async () => {
     expect(await reasons(`{ "$schema": "${draft2020}", "properties": { "a": {} }, "not": { "required": ["b"] } }`)).to.eql([]);
+    expect(await reasons(`{ "$schema": "${draft2020}", "properties": { "a": {} }, "not": { "not": { "required": ["b"] } } }`)).to.eql([message("b")]);
   });
 
   test("properties named like the keywords", async () => {
