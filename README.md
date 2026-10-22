@@ -310,15 +310,20 @@ try {
 
 ### Linting schemas
 
-The `jsonschema` CLI reports every problem in a schema without compiling it:
+The `hyperjump` CLI reports every problem in a schema without compiling it:
 syntax errors, a missing dialect, unknown keywords, invalid keyword values.
 It's built on [`unified-args`](https://github.com/unifiedjs/unified-args), so
 it has the same options as other unified CLIs. It knows every dialect this
 package has.
 
 ```bash
-npx jsonschema schemas/
+npx hyperjump schemas/
 ```
+
+It's also installed as `hjlint`. `npx hyperjump` and `npx hjlint` use the CLI
+installed in your project. Without it, npx would download an unrelated package
+named `hyperjump`, so use `npx -p @hyperjump/json-schema-next hyperjump` to run
+it without installing.
 
 A JSON file is linted if it's a `.schema.json` file or its `$schema` is a
 dialect: one of the dialects this package has, or one defined by a meta-schema
@@ -332,7 +337,7 @@ directory. Use `--file-path` to give it a name. It doesn't write schemas back ou
 
 Every schema in the working directory can be found by its `$id` or its path, including custom meta-schemas, whether or not it's linted. Only
 the files you give it are linted. So a vendored meta-schema can be ignored
-with `.jsonschemaignore` and still be found. `node_modules`, `.git`, and
+with `.hyperjumpignore` and still be found. `node_modules`, `.git`, and
 symlinks aren't searched. URLs are only retrieved if the `allowRetrieval` setting
 allows them. It's a list of `http:` or `https:` URLs. One that ends with `/`
 allows everything under it, and any other allows only itself.
@@ -352,7 +357,7 @@ path.
 
 Lint rules find things that are likely mistakes in a schema that still works,
 such as `then` without `if`. They're off unless you turn them on in a
-`.jsonschemarc` file (or a `jsonSchemaConfig` field in `package.json`). The
+`.hyperjumprc` file (or a `hyperjumpConfig` field in `package.json`). The
 recommended preset turns on every rule that's likely a mistake. They're
 warnings, except for ones that find a schema that can't be compiled, like a
 `$ref` that doesn't find a schema, which are errors. Rules after it change
@@ -400,7 +405,7 @@ A directive that names a rule that isn't configured is a warning
 
 ### Validating JSON files
 
-The `jsonschema` CLI also validates JSON files that aren't schemas. A file's
+The `hyperjump` CLI also validates JSON files that aren't schemas. A file's
 schema is the last pattern in the `schemas` setting that matches its path, or
 else its own top-level `$schema`, relative to the file. Patterns and schema
 paths are relative to the working directory, and a schema can also be a URI.
@@ -418,9 +423,9 @@ A JSON file without a schema only has its syntax checked.
 ```
 
 ```bash
-npx jsonschema config/ data/
-npx jsonschema --setting 'schemas:{"*.json":"person.schema.json"}' alice.json
-cat alice.json | npx jsonschema --file-path alice.json
+npx hyperjump config/ data/
+npx hyperjump --setting 'schemas:{"*.json":"person.schema.json"}' alice.json
+cat alice.json | npx hyperjump --file-path alice.json
 ```
 
 Schemas are found the same way they are for linting: every schema in the
@@ -572,7 +577,7 @@ for (const [uri, node] of references) {
 }
 ```
 
-A package named `jsonschema-<name>` can be used in `.jsonschemarc` as
+A package named `hyperjump-<name>` can be used in `.hyperjumprc` as
 `<name>`. See `src/lint/` for the built-in rules.
 
 ### Evaluation plugins

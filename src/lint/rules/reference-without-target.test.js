@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { cwd } from "node:process";
 import { describe, test, beforeAll, afterAll, expect } from "vitest";
 import { VFile } from "vfile";
-import { jsonschema } from "../../cli/jsonschema.js";
+import { hyperjump } from "../../cli/hyperjump.js";
 import referenceWithoutTarget from "./reference-without-target.js";
 
 const v1 = "https://json-schema.org/v1";
@@ -27,7 +27,7 @@ describe("reference-without-target", () => {
   /** @type (json: string) => Promise<VFile> */
   const lint = async (json) => {
     const file = new VFile({ path: join(directory, "a.schema.json"), value: json });
-    await jsonschema()
+    await hyperjump()
       .use(referenceWithoutTarget)
       .process(file);
     return file;

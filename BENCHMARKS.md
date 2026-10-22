@@ -444,7 +444,7 @@ one keyword. The specialization compared with the closures:
 ## CLI workspace registry
 
 The CLI's registry has every schema file in the working directory (see "CLI"
-in DESIGN.md). This times `jsonschema` linting one file in a generated
+in DESIGN.md). This times `hyperjump` linting one file in a generated
 workspace of 3000 schema files (12 MB, 2020-12, each with an `$id`, 20
 properties, and `$defs`) in 50 folders. "Plain" is a v1 schema, which never
 looks anything up. "Custom" has a custom meta-schema found by its `$id`, so

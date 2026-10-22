@@ -7,7 +7,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { promisify } from "node:util";
 import { describe, test, beforeAll, afterAll, expect } from "vitest";
 import { VFile } from "vfile";
-import { jsonschema } from "./jsonschema.js";
+import { hyperjump } from "./hyperjump.js";
 
 /**
  * @import { Server } from "node:http"
@@ -17,11 +17,11 @@ import { jsonschema } from "./jsonschema.js";
 /** @type (path: string, json: string) => Promise<VFile> */
 const lint = async (path, json) => {
   const file = new VFile({ path, value: json });
-  await jsonschema.process(file);
+  await hyperjump.process(file);
   return file;
 };
 
-describe("jsonschema", () => {
+describe("hyperjump", () => {
   test("a valid schema has no messages", async () => {
     const file = await lint("/schemas/a.schema.json", `{ "$schema": "https://json-schema.org/v1", "type": "string" }`);
     expect(file.messages).to.eql([]);
@@ -69,8 +69,8 @@ describe("jsonschema", () => {
   });
 });
 
-describe("jsonschema CLI", () => {
-  const cli = fileURLToPath(new URL("./jsonschema-cli.js", import.meta.url));
+describe("hyperjump CLI", () => {
+  const cli = fileURLToPath(new URL("./hyperjump-cli.js", import.meta.url));
   const run = promisify(execFile);
 
   /** @type string */
@@ -91,7 +91,7 @@ describe("jsonschema CLI", () => {
   });
 
   beforeAll(async () => {
-    dir = await mkdtemp(join(tmpdir(), "jsonschema-cli-"));
+    dir = await mkdtemp(join(tmpdir(), "hyperjump-cli-"));
     await writeFile(join(dir, "a.schema.json"), `{ "$schema": "https://json-schema.org/v1", "minLength": -1 }`);
     await mkdir(join(dir, "valid"));
     await writeFile(join(dir, "valid", "b.schema.json"), `{ "$schema": "https://json-schema.org/v1", "minLength": 1 }`);
@@ -100,11 +100,11 @@ describe("jsonschema CLI", () => {
     const recommended = fileURLToPath(new URL("../lint/recommended.js", import.meta.url));
     const rule = fileURLToPath(new URL("../lint/rules/then-else-without-if.js", import.meta.url));
     await mkdir(join(dir, "linted"));
-    await writeFile(join(dir, "linted", ".jsonschemarc"), JSON.stringify({ plugins: [recommended] }));
+    await writeFile(join(dir, "linted", ".hyperjumprc"), JSON.stringify({ plugins: [recommended] }));
     await writeFile(join(dir, "linted", "c.schema.json"), `{ "$schema": "https://json-schema.org/v1", "then": true }`);
     await writeFile(join(dir, "linted", "disabled.schema.json"), `{ "$schema": "https://json-schema.org/v1", "$comment": "jsonschema-lint-disable then-else-without-if", "then": true }`);
     await mkdir(join(dir, "strict"));
-    await writeFile(join(dir, "strict", ".jsonschemarc"), JSON.stringify({ plugins: [recommended, [rule, ["error"]]] }));
+    await writeFile(join(dir, "strict", ".hyperjumprc"), JSON.stringify({ plugins: [recommended, [rule, ["error"]]] }));
     await writeFile(join(dir, "strict", "d.schema.json"), `{ "$schema": "https://json-schema.org/v1", "then": true }`);
 
     await mkdir(join(dir, "meta"));
@@ -115,7 +115,7 @@ describe("jsonschema CLI", () => {
       type: "string"
     }));
 
-    outside = await mkdtemp(join(tmpdir(), "jsonschema-cli-outside-"));
+    outside = await mkdtemp(join(tmpdir(), "hyperjump-cli-outside-"));
     await writeFile(join(outside, "meta.schema.json"), JSON.stringify({ ...JSON.parse(metaSchema), $id: "https://example.com/outside-meta" }));
     await writeFile(join(outside, "meta-with-id.schema.json"), JSON.stringify({ ...JSON.parse(metaSchema), $id: "https://example.com/outside-meta-with-id" }));
     await mkdir(join(dir, "outside-ref"));
@@ -137,14 +137,14 @@ describe("jsonschema CLI", () => {
     await writeFile(join(dir, "skipped", "uses-link.schema.json"), `{ "$schema": "https://example.com/outside-meta-with-id", "type": "string" }`);
 
     await mkdir(join(dir, "refs"));
-    await writeFile(join(dir, "refs", ".jsonschemarc"), JSON.stringify({ plugins: [recommended] }));
+    await writeFile(join(dir, "refs", ".hyperjumprc"), JSON.stringify({ plugins: [recommended] }));
     await writeFile(join(dir, "refs", "target.schema.json"), `{ "$schema": "https://json-schema.org/v1", "$id": "https://example.com/target", "$defs": { "foo": true } }`);
     await writeFile(join(dir, "refs", "found.schema.json"), `{ "$schema": "https://json-schema.org/v1", "$ref": "https://example.com/target#/$defs/foo" }`);
     await writeFile(join(dir, "refs", "not-found.schema.json"), `{ "$schema": "https://json-schema.org/v1", "$ref": "https://example.com/target#/$defs/bar" }`);
 
     await mkdir(join(dir, "instances", "data"), { recursive: true });
     await mkdir(join(dir, "instances", "strict"));
-    await writeFile(join(dir, "instances", ".jsonschemarc"), JSON.stringify({ settings: { schemas: { "instances/**/*.json": "https://example.com/person" } } }));
+    await writeFile(join(dir, "instances", ".hyperjumprc"), JSON.stringify({ settings: { schemas: { "instances/**/*.json": "https://example.com/person" } } }));
     await writeFile(join(dir, "instances", "person.schema.json"), JSON.stringify({
       $schema: "https://json-schema.org/v1",
       $id: "https://example.com/person",
@@ -155,7 +155,7 @@ describe("jsonschema CLI", () => {
     await writeFile(join(dir, "instances", "data", "valid.json"), `{ "name": "a", "age": 1 }`);
     await writeFile(join(dir, "instances", "data", "invalid.json"), `{ "name": "a", "age": -1 }`);
     await writeFile(join(dir, "instances", "data", "syntax-error.json"), `{ "name": "a", "age": -1, }`);
-    await writeFile(join(dir, "instances", "strict", ".jsonschemarc"), JSON.stringify({ settings: { schemas: { "instances/strict/*.json": "instances/strict/strict.schema.json" } } }));
+    await writeFile(join(dir, "instances", "strict", ".hyperjumprc"), JSON.stringify({ settings: { schemas: { "instances/strict/*.json": "instances/strict/strict.schema.json" } } }));
     await writeFile(join(dir, "instances", "strict", "strict.schema.json"), `{ "$schema": "https://json-schema.org/v1", "required": ["id"] }`);
     await writeFile(join(dir, "instances", "strict", "no-id.json"), `{ "name": "a" }`);
 
@@ -173,7 +173,7 @@ describe("jsonschema CLI", () => {
     await writeFile(join(dir, "json-schemas", "nested", "meta.json"), JSON.stringify({ ...JSON.parse(metaSchema), $id: "https://example.com/json-meta" }));
     await writeFile(join(dir, "json-schemas", "uses-json-meta.json"), `{ "$schema": "https://example.com/json-meta", "minLength": -1 }`);
     await writeFile(join(dir, "json-schemas", "uses-schema-meta.json"), `{ "$schema": "https://example.com/meta", "minLength": -1 }`);
-    await writeFile(join(dir, "json-schemas", "refs", ".jsonschemarc"), JSON.stringify({ plugins: [recommended] }));
+    await writeFile(join(dir, "json-schemas", "refs", ".hyperjumprc"), JSON.stringify({ plugins: [recommended] }));
     await writeFile(join(dir, "json-schemas", "refs", "refs.schema.json"), JSON.stringify({
       $schema: "https://json-schema.org/v1",
       $ref: "https://example.com/json-target#/$defs/foo",
@@ -202,12 +202,12 @@ describe("jsonschema CLI", () => {
     }
   };
 }`);
-    await writeFile(join(dir, "race", ".jsonschemarc"), JSON.stringify({ plugins: ["./slow-error.mjs"] }));
+    await writeFile(join(dir, "race", ".hyperjumprc"), JSON.stringify({ plugins: ["./slow-error.mjs"] }));
     await writeFile(join(dir, "race", "first.json"), `{}`);
     await writeFile(join(dir, "race", "second.json"), `{}`);
 
     await mkdir(join(dir, "bad-schemas-setting"));
-    await writeFile(join(dir, "bad-schemas-setting", ".jsonschemarc"), JSON.stringify({ settings: { schemas: ["https://example.com/person"] } }));
+    await writeFile(join(dir, "bad-schemas-setting", ".hyperjumprc"), JSON.stringify({ settings: { schemas: ["https://example.com/person"] } }));
     await writeFile(join(dir, "bad-schemas-setting", "a.json"), `{}`);
 
     // Serves the meta-schema at every path
@@ -219,21 +219,21 @@ describe("jsonschema CLI", () => {
     const origin = `http://127.0.0.1:${/** @type AddressInfo */ (server.address()).port}`;
 
     await mkdir(join(dir, "remote"));
-    await writeFile(join(dir, "remote", ".jsonschemarc"), JSON.stringify({ settings: { allowRetrieval: [`${origin}/schemas/`] } }));
+    await writeFile(join(dir, "remote", ".hyperjumprc"), JSON.stringify({ settings: { allowRetrieval: [`${origin}/schemas/`] } }));
     await writeFile(join(dir, "remote", "allowed.schema.json"), `{ "$schema": "${origin}/schemas/meta", "type": "string" }`);
     await writeFile(join(dir, "remote", "refused.schema.json"), `{ "$schema": "${origin}/other/meta", "type": "string" }`);
 
     await mkdir(join(dir, "exact"));
-    await writeFile(join(dir, "exact", ".jsonschemarc"), JSON.stringify({ settings: { allowRetrieval: [`${origin}/meta`] } }));
+    await writeFile(join(dir, "exact", ".hyperjumprc"), JSON.stringify({ settings: { allowRetrieval: [`${origin}/meta`] } }));
     await writeFile(join(dir, "exact", "allowed.schema.json"), `{ "$schema": "${origin}/meta", "type": "string" }`);
     await writeFile(join(dir, "exact", "refused.schema.json"), `{ "$schema": "${origin}/meta/other", "type": "string" }`);
 
     await mkdir(join(dir, "file-setting"));
-    await writeFile(join(dir, "file-setting", ".jsonschemarc"), JSON.stringify({ settings: { allowRetrieval: [pathToFileURL(outside).href + "/"] } }));
+    await writeFile(join(dir, "file-setting", ".hyperjumprc"), JSON.stringify({ settings: { allowRetrieval: [pathToFileURL(outside).href + "/"] } }));
     await writeFile(join(dir, "file-setting", "a.schema.json"), `{ "$schema": "https://json-schema.org/v1" }`);
 
     await mkdir(join(dir, "relative-setting"));
-    await writeFile(join(dir, "relative-setting", ".jsonschemarc"), JSON.stringify({ settings: { allowRetrieval: ["./vendor/"] } }));
+    await writeFile(join(dir, "relative-setting", ".hyperjumprc"), JSON.stringify({ settings: { allowRetrieval: ["./vendor/"] } }));
     await writeFile(join(dir, "relative-setting", "a.schema.json"), `{ "$schema": "https://json-schema.org/v1" }`);
   });
 
@@ -299,13 +299,13 @@ describe("jsonschema CLI", () => {
     expect(output).not.to.contain("then-else-without-if");
   });
 
-  test("a preset in .jsonschemarc turns on lint rules as warnings", async () => {
+  test("a preset in .hyperjumprc turns on lint rules as warnings", async () => {
     const { output, exitCode } = await report(["linted/c.schema.json"]);
     expect(output).to.match(/warning\s+'then' has no effect without 'if'\s+then-else-without-if\s+jsonschema-lint/);
     expect(exitCode).to.equal(0);
   });
 
-  test("a $comment turns off rules from .jsonschemarc", async () => {
+  test("a $comment turns off rules from .hyperjumprc", async () => {
     const { output } = await report(["linted/disabled.schema.json"]);
     expect(output).not.to.contain("then-else-without-if");
   });
@@ -321,7 +321,7 @@ describe("jsonschema CLI", () => {
     expect(exitCode).to.equal(1);
   });
 
-  test("a rule in .jsonschemarc can be made an error", async () => {
+  test("a rule in .hyperjumprc can be made an error", async () => {
     const { output, exitCode } = await report(["strict"]);
     expect(output).to.match(/error\s+'then' has no effect without 'if'/);
     expect(exitCode).to.equal(1);
@@ -535,7 +535,7 @@ describe("jsonschema CLI", () => {
 
     test("a schema that can't be found is reported at $schema", async () => {
       const { output, exitCode } = await report(["self-described/not-found.json", "-q"]);
-      expect(output).to.match(/1:14-1:45\s+error\s+Unable to use the schema 'https:\/\/example\.com\/not-found'.*invalid-schema\s+jsonschema/);
+      expect(output).to.match(/1:14-1:45\s+error\s+Unable to use the schema 'https:\/\/example\.com\/not-found'.*invalid-schema\s+hyperjump/);
       expect(output).not.to.contain("[cause]");
       expect(exitCode).to.equal(1);
     });

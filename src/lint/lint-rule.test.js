@@ -1,13 +1,13 @@
 import { describe, test, expect } from "vitest";
 import { VFile } from "vfile";
-import { jsonschema } from "../cli/jsonschema.js";
+import { hyperjump } from "../cli/hyperjump.js";
 import recommended from "./recommended.js";
 import thenElseWithoutIf from "./rules/then-else-without-if.js";
 
 /** @type (json: string) => Promise<VFile> */
 const lint = async (json) => {
   const file = new VFile({ path: "/schemas/a.schema.json", value: json });
-  await jsonschema()
+  await hyperjump()
     .use(recommended)
     .process(file);
   return file;
@@ -180,7 +180,7 @@ describe("configuration comments", () => {
       path: "/schemas/a.schema.json",
       value: `{ "$schema": "https://json-schema.org/v1", "$comment": "jsonschema-lint-disable then-else-without-if" }`
     });
-    await jsonschema()
+    await hyperjump()
       .use(recommended)
       .use(thenElseWithoutIf, ["off"])
       .process(file);

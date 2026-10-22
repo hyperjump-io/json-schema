@@ -1,12 +1,12 @@
 import { describe, test, expect } from "vitest";
 import { VFile } from "vfile";
-import { jsonschema } from "../../cli/jsonschema.js";
+import { hyperjump } from "../../cli/hyperjump.js";
 import minMaxContainsWithoutContains from "./min-max-contains-without-contains.js";
 
 /** @type (json: string) => Promise<VFile> */
 const lint = async (json) => {
   const file = new VFile({ path: "/schemas/a.schema.json", value: json });
-  await jsonschema()
+  await hyperjump()
     .use(minMaxContainsWithoutContains)
     .process(file);
   return file;

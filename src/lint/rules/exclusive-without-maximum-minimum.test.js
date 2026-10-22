@@ -1,6 +1,6 @@
 import { describe, test, expect } from "vitest";
 import { VFile } from "vfile";
-import { jsonschema } from "../../cli/jsonschema.js";
+import { hyperjump } from "../../cli/hyperjump.js";
 import exclusiveWithoutMaximumMinimum from "./exclusive-without-maximum-minimum.js";
 
 const draft04 = "http://json-schema.org/draft-04/schema#";
@@ -8,7 +8,7 @@ const draft04 = "http://json-schema.org/draft-04/schema#";
 /** @type (json: string) => Promise<VFile> */
 const lint = async (json) => {
   const file = new VFile({ path: "/schemas/a.schema.json", value: json });
-  await jsonschema()
+  await hyperjump()
     .use(exclusiveWithoutMaximumMinimum)
     .process(file);
   return file;

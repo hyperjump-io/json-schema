@@ -1,8 +1,8 @@
-import { recordFileSet } from "./jsonschema.js";
+import { recordFileSet } from "./hyperjump.js";
 
 /**
  * @import { Processor } from "unified"
- * @import { FileSet } from "./jsonschema.js"
+ * @import { FileSet } from "./hyperjump.js"
  */
 
 /**

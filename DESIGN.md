@@ -54,7 +54,7 @@ text ─ rejsonParse ─▶ JSON AST ─ jsonSchemaResolve ─▶ Schema AST ─
 | `src/bundle/` | Bundling, which embeds referenced schemas in one document, and its tests, ported from v1 |
 | `src/lint/` | Lint rules (`rules/`, one per file), the recommended preset, `lintRule`, which applies configuration comments, and the utilities rules share |
 | `src/validate/` | `jsonSchemaValidate`, the unified plugin that validates JSON files |
-| `src/cli/` | The `jsonschema` CLI, which lints schemas and validates JSON files |
+| `src/cli/` | The `hyperjump` CLI, which lints schemas and validates JSON files |
 | `test/test-suite.js` | Runs the JSON Schema Test Suite and the annotation test suite |
 
 - A `.d.ts` next to a `.js` file declares that module's API. One without a
@@ -1046,9 +1046,22 @@ can be added to one `JsonSchema`.
 
 ## CLI (`src/cli/`)
 
-`jsonschema` lints schemas and validates JSON files against them. It's a
-`unified-args` CLI like browser's `rejson` and `jref`, with `.jsonschemarc`,
-`.jsonschemaignore`, and a `jsonSchemaConfig` field in `package.json`.
+`hyperjump` lints schemas and validates JSON files against them. It's a
+`unified-args` CLI like browser's `rejson` and `jref`, with `.hyperjumprc`,
+`.hyperjumpignore`, and a `hyperjumpConfig` field in `package.json`.
+
+- It was `jsonschema`, which Python's `jsonschema` package and
+  `@sourcemeta/jsonschema` both install as a command, and `npx jsonschema`
+  downloads an unrelated npm package. `hj` was considered, but it doesn't say
+  what it is. `hjlint` is a shorter alias for the same command. `npx` only
+  finds an unscoped package, and `hyperjump` on npm is an unrelated package,
+  so running it without installing needs `npx -p` until an unscoped `hjlint`
+  package that depends on this one is published.
+- The configuration, ignore file, plugin prefix, and the source of its own
+  messages follow the command's name. Lint keeps `jsonschema-lint`: the
+  `$comment` directives (`jsonschema-lint-disable`), the rules' source, and
+  their origins. They're about JSON Schema linting and are written in
+  schemas, so they don't depend on the command.
 
 - A file is a schema if it's a `.schema.json` file or its top-level
   `$schema` is a dialect: one that's been added (every preset's) or one a
@@ -1086,7 +1099,7 @@ can be added to one `JsonSchema`.
   configuration file a setting came from. It's an object because the
   engine merges settings deeply, and lists from different configuration
   files are merged by index. The last match wins, so a folder's
-  `.jsonschemarc`, which is merged after its parents', can change the schema
+  `.hyperjumprc`, which is merged after its parents', can change the schema
   for its files. Validating against every match, as VS Code does, was
   considered, but then a folder couldn't replace its parent's schema.
 - A JSON file without a schema only has its syntax checked, by the parser.
@@ -1133,7 +1146,7 @@ can be added to one `JsonSchema`.
   can be in a dialect another one defines, so files are tried again until
   no more are schemas. Self-identifying meta-schemas, whose `$id` can't be retrieved,
   are found this way without any configuration.
-- `.jsonschemaignore` and ignore patterns only decide what's linted. An
+- `.hyperjumpignore` and ignore patterns only decide what's linted. An
   ignored file is still found, which is what a vendored meta-schema needs.
 - The search skips `node_modules` and `.git`, and it doesn't follow
   symlinks. A symlink can point outside the working directory, and what's
@@ -1147,11 +1160,11 @@ can be added to one `JsonSchema`.
   schema, and only resolved when they're needed. For 3000 schemas, linting
   one takes about 0.1–0.15 s more than in an empty folder, and 3000
   instances add about 0.08 s (see "CLI workspace registry" in
-  BENCHMARKS.md). A very large repository pays more. Listing registry files in `.jsonschemarc` was considered
+  BENCHMARKS.md). A very large repository pays more. Listing registry files in `.hyperjumprc` was considered
   instead, but their paths would have nothing to be relative to (see the
   `allowRetrieval` setting).
 - What it can retrieve is files in the working directory, as by default,
-  and the URLs in the `allowRetrieval` setting from `.jsonschemarc`.
+  and the URLs in the `allowRetrieval` setting from `.hyperjumprc`.
 - The setting is a list of `http:` or `https:` URLs. One that ends with `/`
   allows everything under it, compared after the URL is parsed, so dot
   segments and the host can't get around it. Any other allows only itself.
@@ -1163,7 +1176,7 @@ can be added to one `JsonSchema`.
   `configTransform` option has the file's path, but `unified-args` doesn't
   pass it on. A file outside the working directory has to be given to the
   CLI.
-- Files in different folders can have different `.jsonschemarc` files, so
+- Files in different folders can have different `.hyperjumprc` files, so
   each file's session gets its own `allowRetrieval`, and every file shares
   one `JsonSchema`. A `JsonSchema` for each setting was considered, but each
   would index the registry again.
@@ -1234,8 +1247,8 @@ plugins, configured per project, with presets, like remark-lint.
   `lint/recommended`, and the utilities as `lint`, for rules in other
   packages.
 - Presets bundle rules with their settings, like remark's
-  `remark-preset-lint-recommended`. A project's `.jsonschemarc` uses a
-  preset and adjusts rules. The CLI loads plugins with the `jsonschema`
+  `remark-preset-lint-recommended`. A project's `.hyperjumprc` uses a
+  preset and adjusts rules. The CLI loads plugins with the `hyperjump`
   prefix.
 - Rules find keywords by keyword URI, never by name, so a rule works in
   every dialect with the keyword and does nothing if the keyword isn't
@@ -1271,14 +1284,14 @@ plugins, configured per project, with presets, like remark-lint.
   schema problems can't be turned off.
 - `unified-message-control` isn't used:
   - It filters the messages already on the file, so it has to run after
-    every rule. The rules in `.jsonschemarc` are added after the CLI's
+    every rule. The rules in `.hyperjumprc` are added after the CLI's
     processor's plugins, so it would run first and see nothing.
   - Its marks are points where rules turn off or on, in document order, not
     ranges that nest. A directive in a subschema would change the state for
     the rest of its parent, too.
   - What it has that this doesn't: `ignore` (the next node only), its
     `reset`, `enable`, and `disable` options for the initial state, which
-    `.jsonschemarc` severities cover, and dropping messages in gaps in the
+    `.hyperjumprc` severities cover, and dropping messages in gaps in the
     tree, which a schema AST doesn't have. It controls any rule's messages
     by source, and this only controls rules made with `lintRule`.
 - A rule made with `unified-lint-rule` directly ignores configuration

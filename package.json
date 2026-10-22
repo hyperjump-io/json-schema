@@ -70,7 +70,8 @@
     }
   },
   "bin": {
-    "jsonschema": "./src/cli/jsonschema-cli.js"
+    "hyperjump": "./src/cli/hyperjump-cli.js",
+    "hjlint": "./src/cli/hyperjump-cli.js"
   },
   "scripts": {
     "lint": "oxlint",

@@ -481,7 +481,7 @@ const isDialectFor = (fileSet, uri, allowed) => {
  * whose keys are glob patterns, matched against an instance's path relative
  * to the working directory, and whose values are the URI of a schema, or a
  * path relative to the working directory. When several patterns match, the
- * last one wins, so a `.jsonschemarc` in a folder, whose settings are
+ * last one wins, so a `.hyperjumprc` in a folder, whose settings are
  * merged after its parents', can change the schema for its files. It's an
  * object rather than a list, because the engine merges lists from different
  * configuration files by index.
@@ -576,7 +576,7 @@ async function validateInstance(tree, file, allowed, settings) {
   try {
     associations = schemaAssociations(settings.schemas);
   } catch (error) {
-    return file.fail(/** @type Error */ (error).message, { ruleId: "invalid-setting", source: "jsonschema" });
+    return file.fail(/** @type Error */ (error).message, { ruleId: "invalid-setting", source: "hyperjump" });
   }
 
   const schema = instanceSchemaUri(tree, file, associations);
@@ -594,7 +594,7 @@ async function validateInstance(tree, file, allowed, settings) {
     return file.fail(`Unable to use the schema '${schema.uri}'. ${reason}`, {
       place: schema.place,
       ruleId: "invalid-schema",
-      source: "jsonschema"
+      source: "hyperjump"
     });
   }
 
@@ -627,7 +627,7 @@ function jsonSchemaCli() {
     try {
       allowed = allowedUrls(settings.allowRetrieval);
     } catch (error) {
-      return file.fail(/** @type Error */ (error).message, { ruleId: "invalid-setting", source: "jsonschema" });
+      return file.fail(/** @type Error */ (error).message, { ruleId: "invalid-setting", source: "hyperjump" });
     }
 
     const fileSet = fileSets.get(processor);
@@ -655,7 +655,7 @@ function jsonSchemaCli() {
  * Lints schemas and validates instances. Syntax errors are reported without
  * failing the file, so the rest of it is still checked.
  */
-export const jsonschema = unified()
+export const hyperjump = unified()
   .use(rejsonParse, { accept: "recovered" })
   .use(jsonSchemaCli)
   .use(rejsonStringify)
