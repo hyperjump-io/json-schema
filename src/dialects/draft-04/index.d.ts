@@ -20,8 +20,11 @@ export const draft04Dialect: Dialect;
 /**
  * Add JSON Schema draft-04: its keywords, formats, and dialect. Its own are
  * draft-04's `id`, `$ref`, `items`, `additionalItems`, `dependencies`,
- * `format`, `maximum`, `minimum`, `exclusiveMaximum`, and `exclusiveMinimum`,
- * and its `hostname` format.
+ * `enum`, `required`, `format`, `maximum`, `minimum`, `exclusiveMaximum`,
+ * and `exclusiveMinimum`, and its `hostname` format. Its `enum`,
+ * `required`, and `dependencies` can't be empty or have duplicates, as
+ * draft-04 says, and its `exclusiveMaximum` and `exclusiveMinimum` require
+ * `maximum` and `minimum`.
  *
  * Every other keyword and format it uses is shared with the other presets.
  * Each preset adds the ones it uses that haven't been added, so presets don't

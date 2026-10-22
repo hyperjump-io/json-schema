@@ -19,8 +19,8 @@ export const draft07Dialect: Dialect;
 
 /**
  * Add JSON Schema draft-07: its keywords, formats, and dialect. Its own are
- * draft-04's `$id` (`id`), `$ref`, `items`, `additionalItems`,
- * `dependencies`, and `format`.
+ * draft-04's `$id` (`id`), `$ref`, `items`, `additionalItems`, and
+ * `format`, and draft-06's `dependencies`.
  *
  * Every other keyword and format it uses is shared with the other presets.
  * Each preset adds the ones it uses that haven't been added, so presets don't

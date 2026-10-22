@@ -6,7 +6,7 @@ import defaultKeyword from "../../keywords/default.js";
 import definitionsKeyword from "../../keywords/definitions.js";
 import dependenciesKeyword from "../../keywords/draft-04/dependencies.js";
 import descriptionKeyword from "../../keywords/description.js";
-import enumKeyword from "../../keywords/enum.js";
+import enumKeyword from "../../keywords/draft-04/enum.js";
 import exclusiveMaximumKeyword from "../../keywords/draft-04/exclusiveMaximum.js";
 import exclusiveMinimumKeyword from "../../keywords/draft-04/exclusiveMinimum.js";
 import formatKeyword from "../../keywords/draft-04/format.js";
@@ -27,7 +27,7 @@ import patternKeyword from "../../keywords/pattern.js";
 import patternPropertiesKeyword from "../../keywords/patternProperties.js";
 import propertiesKeyword from "../../keywords/properties.js";
 import refKeyword from "../../keywords/draft-04/ref.js";
-import requiredKeyword from "../../keywords/required.js";
+import requiredKeyword from "../../keywords/draft-04/required.js";
 import titleKeyword from "../../keywords/title.js";
 import typeKeyword from "../../keywords/type.js";
 import uniqueItemsKeyword from "../../keywords/uniqueItems.js";
@@ -60,7 +60,7 @@ export const draft04Dialect = {
     definitions: "https://json-schema.org/keyword/definitions",
     dependencies: dependenciesKeyword.uri,
     description: "https://json-schema.org/keyword/description",
-    enum: "https://json-schema.org/keyword/enum",
+    enum: enumKeyword.uri,
     exclusiveMaximum: exclusiveMaximumKeyword.uri,
     exclusiveMinimum: exclusiveMinimumKeyword.uri,
     format: formatKeyword.uri,
@@ -81,7 +81,7 @@ export const draft04Dialect = {
     patternProperties: "https://json-schema.org/keyword/patternProperties",
     properties: "https://json-schema.org/keyword/properties",
     $ref: refKeyword.uri,
-    required: "https://json-schema.org/keyword/required",
+    required: requiredKeyword.uri,
     title: "https://json-schema.org/keyword/title",
     type: "https://json-schema.org/keyword/type",
     uniqueItems: "https://json-schema.org/keyword/uniqueItems"

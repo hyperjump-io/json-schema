@@ -1,21 +1,19 @@
-import { jsonValue } from "@hyperjump/browser/json";
-import { isErrorNode, string } from "../checks.js";
+import dependenciesKeyword from "../draft-06/dependencies.js";
+import { isErrorNode, nonEmpty, uniqueStrings } from "../checks.js";
 
 /**
  * @import { Keyword, SchemaHandle } from "../../keyword.d.ts"
  */
 
 /**
- * `dependencies` in draft-04 through draft-07. If the instance has the
- * property, an array is property names it has to have too, like
- * `dependentRequired`, and a schema applies to the whole instance, like
- * `dependentSchemas`.
+ * `dependencies` in draft-04. It's the same as draft-06's, except that an
+ * array can't be empty, as draft-04 says.
  *
  * @type Keyword<[string, SchemaHandle | string[]][]>
  */
 export default {
+  ...dependenciesKeyword,
   uri: "https://json-schema.org/keyword/draft-04/dependencies",
-  shape: { map: ["schema", { array: "data" }] },
   check(valueNode, context) {
     if (valueNode.jsonType !== "object") {
       return;
@@ -24,59 +22,9 @@ export default {
     for (const property of valueNode.children) {
       const dependencyNode = property.children[1];
       if (!isErrorNode(dependencyNode) && dependencyNode.jsonType === "array") {
-        for (const itemNode of dependencyNode.children) {
-          string(itemNode, context);
-        }
+        nonEmpty(dependencyNode, context);
+        uniqueStrings(dependencyNode, context);
       }
     }
-  },
-  async compile(valueNode, context) {
-    /** @type [string, SchemaHandle | string[]][] */
-    const dependencies = [];
-    if (valueNode.jsonType === "object") {
-      for (const propertyNode of valueNode.children) {
-        const [nameNode, dependencyNode] = propertyNode.children;
-        dependencies.push([
-          nameNode.value,
-          dependencyNode.jsonType === "array"
-            ? /** @type string[] */ (jsonValue(dependencyNode))
-            : await context.compileSchema(dependencyNode)
-        ]);
-      }
-    }
-
-    return dependencies;
-  },
-  evaluate(compiled, { instance, schema, exhaustive }) {
-    /** @type [string, string[] | ReturnType<typeof schema>][] */
-    const dependencies = [];
-    for (const [name, dependency] of compiled) {
-      dependencies.push([name, Array.isArray(dependency) ? dependency : schema(dependency)]);
-    }
-
-    return (node) => {
-      if (instance.typeOf(node) !== "object") {
-        return true;
-      }
-
-      let valid = true;
-      for (const [name, dependency] of dependencies) {
-        if (!instance.has(node, name)) {
-          continue;
-        }
-
-        const isValid = Array.isArray(dependency)
-          ? dependency.every((requiredName) => instance.has(node, requiredName))
-          : dependency(node);
-        if (!isValid) {
-          valid = false;
-          if (!exhaustive) {
-            return false;
-          }
-        }
-      }
-
-      return valid;
-    };
   }
 };

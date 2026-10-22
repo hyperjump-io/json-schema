@@ -1,7 +1,10 @@
+import { astInstance } from "../evaluate/instance.js";
+
 /**
  * @import { CompileContext, InstanceOps, Keyword, SchemaHandle } from "../keyword.d.ts"
- * @import { JsonSchemaKeywordNode, JsonSchemaNode } from "../schema/schema-ast.d.ts"
+ * @import { JsonSchemaKeywordNode, JsonSchemaNode, JsonSchemaTolerantNode } from "../schema/schema-ast.d.ts"
  * @import { Json } from "@hyperjump/browser/json"
+ * @import { InstanceNode } from "../evaluate/instance.js"
  */
 
 /**
@@ -165,4 +168,43 @@ export const codePointLength = (value) => {
   }
 
   return length;
+};
+
+/**
+ * The items of an array node that are equal to an item before them, compared
+ * as `instanceEqual` does. Items that couldn't be parsed aren't equal to
+ * anything, so they're never duplicates.
+ *
+ * @type (arrayNode: JsonSchemaTolerantNode & { jsonType: "array" }) => JsonSchemaTolerantNode[]
+ */
+export const duplicateItems = (arrayNode) => {
+  // Primitives are compared with a lookup. Only arrays and objects need
+  // instanceEqual.
+  const primitives = new Set();
+  /** @type InstanceNode[] */
+  const structured = [];
+  /** @type JsonSchemaTolerantNode[] */
+  const duplicates = [];
+  for (const itemNode of arrayNode.children) {
+    const item = /** @type InstanceNode */ (itemNode);
+    const type = astInstance.typeOf(item);
+    let isDuplicate;
+    if (type === undefined) {
+      // Already reported as a syntax error
+      continue;
+    } else if (type === "array" || type === "object") {
+      isDuplicate = structured.some((seen) => instanceEqual(astInstance, item, astInstance, seen, false));
+      structured.push(item);
+    } else {
+      const value = astInstance.value(item);
+      isDuplicate = primitives.has(value);
+      primitives.add(value);
+    }
+
+    if (isDuplicate) {
+      duplicates.push(/** @type JsonSchemaTolerantNode */ (itemNode));
+    }
+  }
+
+  return duplicates;
 };

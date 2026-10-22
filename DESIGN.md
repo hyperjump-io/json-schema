@@ -1034,11 +1034,16 @@ can be added to one `JsonSchema`.
   `$schema` usually has, because `$schema` is resolved to an absolute URI.
   Unknown keywords are ignored. `$ref` is draft-04's, which makes the schema
   a reference, and `id`/`$id` is draft-04's, which can also be an anchor.
-  All three add draft-04's `items`, `additionalItems`, and `dependencies`,
-  which is `dependentRequired` and `dependentSchemas` in one keyword.
-  draft-04 adds `maximum` and `minimum`, which read the sibling boolean
-  `exclusiveMaximum` and `exclusiveMinimum`, which require them. `format` validates by default,
-  as most implementations of these drafts did. Their `format` is
+  All three add draft-04's `items` and `additionalItems`, and a
+  `dependencies`, which is `dependentRequired` and `dependentSchemas` in
+  one keyword. draft-06 and draft-07 share draft-06's. draft-04 has its own
+  `dependencies`, `enum`, and `required`, because it says they can't be
+  empty and `enum` can't have duplicates. Later drafts allow them to be
+  empty and only say `enum` shouldn't be or have duplicates, which is lint
+  (see "Validity and lint"). draft-04 adds `maximum` and `minimum`, which
+  read the sibling boolean `exclusiveMaximum` and `exclusiveMinimum`,
+  which require them. `format` validates by default, as most
+  implementations of these drafts did. Their `format` is
   draft-04's, which makes a format the dialect doesn't have only an
   annotation, as the drafts say. Each dialect only has the formats its
   draft defines, so the draft-04 and draft-06 meta-schemas' `regex` is
@@ -1268,6 +1273,8 @@ plugins, configured per project, with presets, like remark-lint.
 - Rules find keywords by keyword URI, never by name, so a rule works in
   every dialect with the keyword and does nothing if the keyword isn't
   loaded. A rule about a draft-specific keyword uses that keyword's URI.
+  A rule about something a draft's own keyword already reports, like
+  draft-04's empty `enum`, leaves that keyword's URI out.
 - Utilities in `src/lint/` keep rules short: visit every schema, visit every
   keyword by URI, get a sibling keyword, and find what a reference points
   to. They know nothing about particular keywords.

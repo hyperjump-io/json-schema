@@ -58,8 +58,8 @@ describe("duplicate-enum-values", () => {
     expect(file.messages).to.eql([]);
   });
 
-  test("draft-04", async () => {
+  test("duplicates are a schema problem in draft-04, not lint", async () => {
     const file = await lint(`{ "$schema": "http://json-schema.org/draft-04/schema#", "enum": ["a", "a"] }`);
-    expect(file.messages).to.have.length(1);
+    expect(file.messages.map((message) => message.ruleId)).to.eql(["https://json-schema.org/keyword/draft-04/enum"]);
   });
 });

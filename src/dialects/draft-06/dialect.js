@@ -6,7 +6,7 @@ import constKeyword from "../../keywords/const.js";
 import containsKeyword from "../../keywords/contains.js";
 import defaultKeyword from "../../keywords/default.js";
 import definitionsKeyword from "../../keywords/definitions.js";
-import dependenciesKeyword from "../../keywords/draft-04/dependencies.js";
+import dependenciesKeyword from "../../keywords/draft-06/dependencies.js";
 import descriptionKeyword from "../../keywords/description.js";
 import enumKeyword from "../../keywords/enum.js";
 import examplesKeyword from "../../keywords/examples.js";

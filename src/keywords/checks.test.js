@@ -119,8 +119,10 @@ describe("keyword checks", () => {
     addDraft201909(jsonSchema);
     addDraft202012(jsonSchema);
 
-    expect(await check(jsonSchema, `{ "$schema": "${draft07DialectUri}", "dependencies": { "a": ["b", 1], "c": {} } }`))
-      .to.eql([{ reason: "Expected a string", ruleId: "https://json-schema.org/keyword/draft-04/dependencies", at: "1" }]);
+    expect(await check(jsonSchema, `{ "$schema": "${draft07DialectUri}", "dependencies": { "a": ["b", 1, "b"], "c": {}, "d": [] } }`)).to.eql([
+      { reason: "Expected a string", ruleId: "https://json-schema.org/keyword/draft-06/dependencies", at: "1" },
+      { reason: "'b' is a duplicate", ruleId: "https://json-schema.org/keyword/draft-06/dependencies", at: `"b"` }
+    ]);
     expect((await check(jsonSchema, `{ "$schema": "${draft201909DialectUri}", "$anchor": "_a" }`)).map(({ ruleId, at }) => [ruleId, at]))
       .to.eql([["https://json-schema.org/keyword/draft-2019-09/anchor", `"_a"`]]);
     expect(await check(jsonSchema, `{ "$schema": "${draft202012DialectUri}", "$vocabulary": { "https://json-schema.org/draft/2020-12/vocab/core": "yes" } }`))
@@ -136,6 +138,37 @@ describe("keyword checks", () => {
     expect(await check(jsonSchema, `{ "$schema": "${draft04DialectUri}#", "exclusiveMinimum": true, "maximum": 1, "exclusiveMaximum": true }`)).to.eql([
       { reason: "'exclusiveMinimum' requires 'minimum'", ruleId: "https://json-schema.org/keyword/draft-04/exclusiveMinimum", at: "true" }
     ]);
+  });
+
+  test("draft-04's enum, required, and dependencies can't be empty or have duplicates", async () => {
+    addDraft04(jsonSchema);
+
+    const messages = await check(jsonSchema, `{
+      "$schema": "${draft04DialectUri}#",
+      "properties": {
+        "a": { "enum": [] },
+        "b": { "enum": [1, { "x": [1], "y": 2 }, 1.0, { "y": 2, "x": [1] }, "1", [1]] },
+        "c": { "required": [] },
+        "d": { "required": ["x", "x"] },
+        "e": { "dependencies": { "x": [], "y": ["z", "z"], "z": {} } }
+      }
+    }`);
+
+    expect(messages.map(({ reason, ruleId, at }) => [reason, ruleId, at])).to.eql([
+      ["Expected at least one item", "https://json-schema.org/keyword/draft-04/enum", "[]"],
+      ["This value is a duplicate", "https://json-schema.org/keyword/draft-04/enum", "1.0"],
+      ["This value is a duplicate", "https://json-schema.org/keyword/draft-04/enum", `{ "y": 2, "x": [1] }`],
+      ["Expected at least one item", "https://json-schema.org/keyword/draft-04/required", "[]"],
+      ["'x' is a duplicate", "https://json-schema.org/keyword/draft-04/required", `"x"`],
+      ["Expected at least one item", "https://json-schema.org/keyword/draft-04/dependencies", "[]"],
+      ["'z' is a duplicate", "https://json-schema.org/keyword/draft-04/dependencies", `"z"`]
+    ]);
+  });
+
+  test("enum and required can be empty or have duplicates after draft-04", async () => {
+    const messages = await check(jsonSchema, `{ "$schema": "${v1DialectUri}", "enum": [], "properties": { "a": { "enum": [1, 1] }, "b": { "required": [] } } }`);
+
+    expect(messages).to.eql([]);
   });
 
   test("a check can find a sibling that comes after it", async () => {

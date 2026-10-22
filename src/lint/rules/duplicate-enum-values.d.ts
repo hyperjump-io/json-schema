@@ -7,8 +7,9 @@ import type { JsonSchemaDocumentNode } from "../../schema/schema-ast.d.ts";
  * Schema does: objects without regard to property order, and `1` and `1.0`
  * are equal. Each duplicate is reported.
  *
- * Draft-04's meta-schema doesn't allow duplicates, but the schema still
- * works, so it's reported in every dialect. It has no options.
+ * The specs say values should be unique. Draft-04 says they must be, so
+ * there it's a problem with the schema, which this rule doesn't report.
+ * It has no options.
  */
 declare const duplicateEnumValues: Plugin<JsonSchemaDocumentNode, void>;
 export default duplicateEnumValues;

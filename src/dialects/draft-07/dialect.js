@@ -9,7 +9,7 @@ import contentEncodingKeyword from "../../keywords/contentEncoding.js";
 import contentMediaTypeKeyword from "../../keywords/contentMediaType.js";
 import defaultKeyword from "../../keywords/default.js";
 import definitionsKeyword from "../../keywords/definitions.js";
-import dependenciesKeyword from "../../keywords/draft-04/dependencies.js";
+import dependenciesKeyword from "../../keywords/draft-06/dependencies.js";
 import descriptionKeyword from "../../keywords/description.js";
 import elseKeyword from "../../keywords/else.js";
 import enumKeyword from "../../keywords/enum.js";
