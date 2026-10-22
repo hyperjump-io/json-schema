@@ -92,4 +92,24 @@ export const visitKeywords = (tree, keywordUri, visitor) => {
   });
 };
 
+/**
+ * A keyword in a schema, by keyword URI. It's undefined if the schema
+ * doesn't have the keyword or isn't an object. Use it instead of
+ * `siblingKeyword` when you need the keyword's name or position, not just
+ * its value.
+ *
+ * @type (schemaNode: JsonSchemaNode, keywordUri: string) => JsonSchemaKeywordNode | undefined
+ */
+export const findKeyword = (schemaNode, keywordUri) => {
+  if (schemaNode.jsonType !== "object") {
+    return;
+  }
+
+  for (const property of /** @type JsonSchemaKeywordNode[] */ (schemaNode.children)) {
+    if (property.keywordUri === keywordUri) {
+      return property;
+    }
+  }
+};
+
 export { siblingKeyword } from "../keywords/utilities.js";

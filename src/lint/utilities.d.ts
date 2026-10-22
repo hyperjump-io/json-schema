@@ -38,6 +38,14 @@ export const visitReferences: (
 ) => void;
 
 /**
+ * A keyword in a schema, by keyword URI. It's undefined if the schema
+ * doesn't have the keyword or isn't an object. Use it instead of
+ * {@link siblingKeyword} when you need the keyword's name or position, not
+ * just its value.
+ */
+export const findKeyword: (schemaNode: JsonSchemaNode, keywordUri: string) => JsonSchemaKeywordNode | undefined;
+
+/**
  * The value of a sibling keyword, by keyword URI, such as `if` for `then`.
  * It's undefined if the schema doesn't have the keyword or isn't an object.
  */
