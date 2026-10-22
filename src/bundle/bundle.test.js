@@ -82,7 +82,6 @@ const outputOf = (validator, instance) => {
   /** @type (error: DetailedValidationError) => Json */
   const errorOf = (error) => ({
     ruleId: error.ruleId,
-    keywordLocation: error.keywordLocation,
     absoluteKeywordLocation: error.absoluteKeywordLocation,
     instanceLocation: error.instanceLocation,
     errors: error.errors?.map(errorOf) ?? []

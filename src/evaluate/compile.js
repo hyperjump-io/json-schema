@@ -1,22 +1,18 @@
-import * as JsonPointer from "@hyperjump/json-pointer";
 import { toAbsoluteIri } from "@hyperjump/uri";
 import { appendToLocation, jsonValue, pointerGet } from "@hyperjump/browser/json";
 import { keywordDefinitionUri } from "../keywords/unknown.js";
 
 /**
- * @import { Json, JsonErrorNode } from "@hyperjump/browser/json"
+ * @import { Json } from "@hyperjump/browser/json"
  * @import { JsonSchemaSession } from "../session.d.ts"
  * @import { CompileContext } from "../keyword.d.ts"
  * @import { JsonSchemaDocumentNode, JsonSchemaNode } from "../schema/schema-ast.d.ts"
  */
 
 /**
- * A keyword in a compiled schema. `steps` has the path from the schema to a
- * subschema the keyword compiled, by the subschema's canonical URI, for the
- * subschemas whose canonical URI isn't under the keyword's. That's one with
- * an `$id`, or one in a sibling keyword's value, like `then` for `if`.
+ * A keyword in a compiled schema
  *
- * @typedef {[keywordUri: string, absoluteKeywordLocation: string, compiled: Json] | [keywordUri: string, absoluteKeywordLocation: string, compiled: Json, steps: Record<string, string>]} CompiledKeyword
+ * @typedef {[keywordUri: string, absoluteKeywordLocation: string, compiled: Json]} CompiledKeyword
  */
 
 /**
@@ -114,17 +110,11 @@ class Compiler {
     /** @type CompiledKeyword[] */
     const readsEvaluated = [];
 
-    /** @type Map<unknown, string> | undefined */
-    let paths;
-
     for (const property of node.children) {
       const [nameNode, valueNode] = property.children;
       const keywordUri = /** @type string */ (property.keywordUri);
       const keyword = this.#session.jsonSchema.getKeyword(keywordDefinitionUri(keywordUri));
-      const keywordLocation = appendToLocation(nameNode.value, handle);
-
-      /** @type Record<string, string> | undefined */
-      let steps;
+      const absoluteKeywordLocation = appendToLocation(nameNode.value, handle);
 
       /** @type CompileContext */
       const context = {
@@ -137,17 +127,7 @@ class Compiler {
             return this.#compileUri(schema, resourceUri);
           }
 
-          const subschemaHandle = await this.#compileNode(schema);
-          if (!subschemaHandle.startsWith(`${keywordLocation}/`)) {
-            paths ??= subschemaPaths(node);
-            const step = paths.get(schema);
-            if (step !== undefined) {
-              steps ??= {};
-              steps[subschemaHandle] = step;
-            }
-          }
-
-          return subschemaHandle;
+          return this.#compileNode(schema);
         }
       };
 
@@ -156,9 +136,7 @@ class Compiler {
         : jsonValue(valueNode);
 
       /** @type CompiledKeyword */
-      const compiledKeyword = steps === undefined
-        ? [keywordUri, keywordLocation, compiled]
-        : [keywordUri, keywordLocation, compiled, steps];
+      const compiledKeyword = [keywordUri, absoluteKeywordLocation, compiled];
 
       // Keywords that read which properties or items were evaluated have to
       // be evaluated after the keywords that evaluate them
@@ -196,34 +174,3 @@ class Compiler {
     }
   }
 }
-
-/**
- * The path from a schema to each schema in its keywords' values. Schemas are
- * where the search stops, so it only covers the keywords' own structure.
- *
- * @type (schemaNode: JsonSchemaNode & { jsonType: "object" }) => Map<unknown, string>
- */
-const subschemaPaths = (schemaNode) => {
-  /** @type Map<unknown, string> */
-  const paths = new Map();
-
-  /** @type (node: JsonSchemaNode | JsonErrorNode, path: string) => void */
-  const walk = (node, path) => {
-    if (node.type !== "json") {
-      paths.set(node, path);
-    } else if (node.jsonType === "array") {
-      node.children.forEach((itemNode, index) => {
-        walk(itemNode, JsonPointer.append(`${index}`, path));
-      });
-    } else if (node.jsonType === "object") {
-      for (const property of node.children) {
-        walk(property.children[1], JsonPointer.append(property.children[0].value, path));
-      }
-    }
-  };
-  for (const property of schemaNode.children) {
-    walk(property.children[1], JsonPointer.append(property.children[0].value, ""));
-  }
-
-  return paths;
-};

@@ -12,18 +12,26 @@ import { addV1, v1DialectUri } from "../dialects/v1/index.js";
  * @import { DetailedValidationError } from "../output/validation-error.d.ts"
  */
 
+/**
+ * The JSON Pointer in a location's fragment. The schemas these tests use are
+ * single documents, so it identifies the keyword.
+ *
+ * @type (uri: string) => string
+ */
+const pointer = (uri) => decodeURIComponent(uri.replace(/.*#/, ""));
+
 /** @type (error: OutputError) => unknown */
 const locations = (error) => {
-  const { keywordLocation, absoluteKeywordLocation, instanceLocation } = /** @type DetailedValidationError */ (error);
-  return { keywordLocation, absoluteKeywordLocation: absoluteKeywordLocation.replace(/.*#/, "#"), instanceLocation };
+  const { absoluteKeywordLocation, instanceLocation } = /** @type DetailedValidationError */ (error);
+  return { absoluteKeywordLocation: absoluteKeywordLocation.replace(/.*#/, "#"), instanceLocation };
 };
 
 /** @type (error: OutputError) => unknown */
-const keywordLocations = (error) => {
-  const errors = /** @type DetailedValidationError */ (error).errors;
+const keywordPointers = (error) => {
+  const { absoluteKeywordLocation, errors } = /** @type DetailedValidationError */ (error);
   return errors === undefined
-    ? /** @type DetailedValidationError */ (error).keywordLocation
-    : { [/** @type DetailedValidationError */ (error).keywordLocation]: errors.map(keywordLocations) };
+    ? pointer(absoluteKeywordLocation)
+    : { [pointer(absoluteKeywordLocation)]: errors.map(keywordPointers) };
 };
 
 /**
@@ -62,8 +70,8 @@ describe("applicator errors", () => {
     test("then has its own keyword location", async () => {
       const validator = await jsonSchema.compile(await schemaFile(schema));
 
-      expect(validator.validate("abc", { output: "BASIC" }).errors.map(keywordLocations)).to.eql(["/then/maxLength"]);
-      expect(validator.validate("abc", { output: "DETAILED" }).errors.map(keywordLocations)).to.eql([
+      expect(validator.validate("abc", { output: "BASIC" }).errors.map(keywordPointers)).to.eql(["/then/maxLength"]);
+      expect(validator.validate("abc", { output: "DETAILED" }).errors.map(keywordPointers)).to.eql([
         { "/if": ["/then/maxLength"] }
       ]);
     });
@@ -71,8 +79,8 @@ describe("applicator errors", () => {
     test("a failing condition isn't an error", async () => {
       const validator = await jsonSchema.compile(await schemaFile(schema));
 
-      expect(validator.validate(5, { output: "BASIC" }).errors.map(keywordLocations)).to.eql(["/else/minimum"]);
-      expect(validator.validate(5, { output: "DETAILED" }).errors.map(keywordLocations)).to.eql([
+      expect(validator.validate(5, { output: "BASIC" }).errors.map(keywordPointers)).to.eql(["/else/minimum"]);
+      expect(validator.validate(5, { output: "DETAILED" }).errors.map(keywordPointers)).to.eql([
         { "/if": ["/else/minimum"] }
       ]);
     });
@@ -93,7 +101,7 @@ describe("applicator errors", () => {
       }));
 
       expect(validator.validate({ foo: "x" }, { output: "BASIC" }).errors.map(locations)).to.eql([
-        { keywordLocation: "/properties/foo/$ref/type", absoluteKeywordLocation: "#/$defs/number/type", instanceLocation: "/foo" }
+        { absoluteKeywordLocation: "#/$defs/number/type", instanceLocation: "/foo" }
       ]);
     });
   });
@@ -106,7 +114,7 @@ describe("applicator errors", () => {
       }));
 
       expect(validator.validate([1], { output: "BASIC" }).errors.map(locations)).to.eql([
-        { keywordLocation: "/items/$dynamicRef/type", absoluteKeywordLocation: "#/$defs/item/type", instanceLocation: "/0" }
+        { absoluteKeywordLocation: "#/$defs/item/type", instanceLocation: "/0" }
       ]);
     });
 
@@ -125,7 +133,7 @@ describe("applicator errors", () => {
       }));
 
       expect(validator.validate({ foo: 1, bar: 2 }, { output: "BASIC" }).errors.map(locations)).to.eql([
-        { keywordLocation: "/unevaluatedProperties", absoluteKeywordLocation: "#/unevaluatedProperties", instanceLocation: "/bar" }
+        { absoluteKeywordLocation: "#/unevaluatedProperties", instanceLocation: "/bar" }
       ]);
     });
   });
@@ -138,7 +146,7 @@ describe("applicator errors", () => {
       }));
 
       expect(validator.validate([1, 2], { output: "BASIC" }).errors.map(locations)).to.eql([
-        { keywordLocation: "/unevaluatedItems/type", absoluteKeywordLocation: "#/unevaluatedItems/type", instanceLocation: "/1" }
+        { absoluteKeywordLocation: "#/unevaluatedItems/type", instanceLocation: "/1" }
       ]);
     });
   });
@@ -156,7 +164,7 @@ describe("applicator errors", () => {
     test("failing conditions aren't errors", async () => {
       const validator = await jsonSchema.compile(await schemaFile(schema));
 
-      expect(validator.validate(5, { output: "BASIC" }).errors.map(keywordLocations)).to.eql([
+      expect(validator.validate(5, { output: "BASIC" }).errors.map(keywordPointers)).to.eql([
         "/conditional",
         "/conditional/2/1/minimum"
       ]);
@@ -165,7 +173,7 @@ describe("applicator errors", () => {
     test("the fallback's errors are errors", async () => {
       const validator = await jsonSchema.compile(await schemaFile(schema));
 
-      expect(validator.validate(true, { output: "BASIC" }).errors.map(keywordLocations)).to.eql([
+      expect(validator.validate(true, { output: "BASIC" }).errors.map(keywordPointers)).to.eql([
         "/conditional",
         "/conditional/3/const"
       ]);
@@ -217,8 +225,8 @@ describe("applicator errors", () => {
       const locations = [];
       validator.validate({ "foo": 1, "x-a": 1 }, {
         plugins: [{
-          afterSchema: (_schema, at) => locations.push(at.keywordLocation),
-          afterKeyword: (_keyword, at) => locations.push(at.keywordLocation)
+          afterSchema: (schema) => locations.push(pointer(schema.absoluteKeywordLocation)),
+          afterKeyword: (keyword) => locations.push(pointer(keyword.absoluteKeywordLocation))
         }]
       });
       expect(locations).to.include.members(["/properties/foo", "/allOf/0", "/patternProperties/^x-/description", "/allOf/1/title"]);

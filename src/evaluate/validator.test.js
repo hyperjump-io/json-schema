@@ -278,7 +278,6 @@ const addTestDialect = (jsonSchema) => {
 /** @type (error: ValidationError) => Record<string, string> */
 const locations = (error) => ({
   ruleId: error.ruleId,
-  keywordLocation: error.keywordLocation,
   absoluteKeywordLocation: error.absoluteKeywordLocation,
   instanceLocation: error.instanceLocation
 });
@@ -383,7 +382,6 @@ describe("Validator", () => {
       expect(result.errors.map((error) => locations(/** @type ValidationError */ (error)))).to.eql([
         {
           ruleId: typeKeyword.uri,
-          keywordLocation: "/properties/foo/$ref/type",
           absoluteKeywordLocation: "https://example.com/basic#/$defs/number/type",
           instanceLocation: "/foo"
         }
@@ -391,14 +389,13 @@ describe("Validator", () => {
       expect(result.errors[0]).to.eql({
         source: "json-schema",
         ruleId: typeKeyword.uri,
-        keywordLocation: "/properties/foo/$ref/type",
         absoluteKeywordLocation: "https://example.com/basic#/$defs/number/type",
         instanceLocation: "/foo",
         place: undefined
       });
     });
 
-    test("the keyword location of a subschema with its own identifier", async () => {
+    test("the absolute keyword location of a subschema with its own identifier", async () => {
       const validator = await jsonSchema.compile(await schemaFile({
         properties: { foo: { $id: "https://example.com/embedded", type: "number" } }
       }));
@@ -407,14 +404,13 @@ describe("Validator", () => {
       expect(result.errors.map((error) => locations(/** @type ValidationError */ (error)))).to.eql([
         {
           ruleId: typeKeyword.uri,
-          keywordLocation: "/properties/foo/type",
           absoluteKeywordLocation: "https://example.com/embedded#/type",
           instanceLocation: "/foo"
         }
       ]);
     });
 
-    test("the keyword location of a subschema in a sibling keyword", async () => {
+    test("the absolute keyword location of a subschema in a sibling keyword", async () => {
       const validator = await jsonSchema.compile(await schemaFile({
         $id: "https://example.com/sibling",
         if: { type: "string" },
@@ -425,7 +421,6 @@ describe("Validator", () => {
       expect(result.errors.map((error) => locations(/** @type ValidationError */ (error)))).to.eql([
         {
           ruleId: typeKeyword.uri,
-          keywordLocation: "/then/allOf/0/type",
           absoluteKeywordLocation: "https://example.com/sibling-embedded#/type",
           instanceLocation: ""
         }
@@ -443,7 +438,6 @@ describe("Validator", () => {
       expect(result.errors.map((error) => locations(/** @type ValidationError */ (error)))).to.eql([
         {
           ruleId: typeKeyword.uri,
-          keywordLocation: "/properties/a^b/$ref/type",
           absoluteKeywordLocation: "https://example.com/encoded#/$defs/c%20d/type",
           instanceLocation: "/a^b"
         }
@@ -499,25 +493,21 @@ describe("Validator", () => {
       expect(result.errors.map((error) => locations(/** @type ValidationError */ (error)))).to.eql([
         {
           ruleId: anyOfKeyword.uri,
-          keywordLocation: "/anyOf",
           absoluteKeywordLocation: "https://example.com/any-of#/anyOf",
           instanceLocation: ""
         },
         {
           ruleId: typeKeyword.uri,
-          keywordLocation: "/anyOf/0/type",
           absoluteKeywordLocation: "https://example.com/any-of#/anyOf/0/type",
           instanceLocation: ""
         },
         {
           ruleId: typeKeyword.uri,
-          keywordLocation: "/anyOf/1/type",
           absoluteKeywordLocation: "https://example.com/any-of#/anyOf/1/type",
           instanceLocation: ""
         },
         {
           ruleId: "https://json-schema.org/validation",
-          keywordLocation: "/properties/foo",
           absoluteKeywordLocation: "https://example.com/any-of#/properties/foo",
           instanceLocation: "/foo"
         }
@@ -534,13 +524,11 @@ describe("Validator", () => {
       expect(result.errors.map((error) => detailedLocations(/** @type DetailedValidationError */ (error)))).to.eql([
         {
           ruleId: propertiesKeyword.uri,
-          keywordLocation: "/properties",
           absoluteKeywordLocation: "https://example.com/detailed#/properties",
           instanceLocation: "",
           errors: [
             {
               ruleId: typeKeyword.uri,
-              keywordLocation: "/properties/foo/type",
               absoluteKeywordLocation: "https://example.com/detailed#/properties/foo/type",
               instanceLocation: "/foo"
             }
@@ -785,12 +773,12 @@ describe("Validator", () => {
       const plugin = {
         beforeSchema: (schema, at, parent) => {
           calls.push(`beforeSchema ${schema.absoluteKeywordLocation} ${at.instanceLocation} ${parent}`);
-          return `schema ${at.keywordLocation}`;
+          return `schema ${at.instanceLocation}`;
         },
         afterSchema: (_schema, _at, valid, state) => calls.push(`afterSchema ${state} ${valid}`),
-        beforeKeyword: (keyword, at, schema) => {
+        beforeKeyword: (keyword, _at, schema) => {
           calls.push(`beforeKeyword ${keyword.keywordUri} in ${schema}`);
-          return `keyword ${at.keywordLocation}`;
+          return `keyword ${keyword.absoluteKeywordLocation.replace(/.*#/, "")}`;
         },
         afterKeyword: (_keyword, _at, valid, state) => calls.push(`afterKeyword ${state} ${valid}`)
       };
@@ -800,9 +788,9 @@ describe("Validator", () => {
         "beforeSchema https://example.com/plugin#  undefined",
         `beforeKeyword ${propertiesKeyword.uri} in schema `,
         "beforeSchema https://example.com/plugin#/properties/foo /foo keyword /properties",
-        `beforeKeyword ${typeKeyword.uri} in schema /properties/foo`,
+        `beforeKeyword ${typeKeyword.uri} in schema /foo`,
         "afterKeyword keyword /properties/foo/type true",
-        "afterSchema schema /properties/foo true",
+        "afterSchema schema /foo true",
         "afterKeyword keyword /properties true",
         "afterSchema schema  true"
       ]);
@@ -815,7 +803,7 @@ describe("Validator", () => {
       const namedPlugin = (name, calls) => ({
         beforeSchema: (_schema, at, parent) => `${name} schema ${at.instanceLocation} in ${parent}`,
         afterSchema: (_schema, _at, _valid, state) => calls.push(state),
-        beforeKeyword: (_keyword, at, schema) => `${name} keyword ${at.keywordLocation} in ${schema}`,
+        beforeKeyword: (keyword, _at, schema) => `${name} keyword ${keyword.absoluteKeywordLocation.replace(/.*#/, "")} in ${schema}`,
         afterKeyword: (_keyword, _at, _valid, state) => calls.push(state)
       });
 
@@ -835,7 +823,7 @@ describe("Validator", () => {
       expect(bCalls).to.eql(aCalls.map((call) => call.replaceAll(/\ba /g, "b ")));
     });
 
-    test("a location can be kept after the hook", async () => {
+    test("schemas and keywords evaluated on the same instance share a location that can be kept", async () => {
       const validator = await jsonSchema.compile(await schemaFile({
         properties: { foo: { $ref: "#/$defs/number" } },
         $defs: { number: { type: "number" } }
@@ -847,11 +835,9 @@ describe("Validator", () => {
       const plugin = { afterKeyword: (_keyword, at) => locations.push(at) };
 
       validator.validate({ foo: 1 }, { plugins: [plugin] });
-      expect(locations.map((at) => [at.instanceLocation, at.keywordLocation])).to.eql([
-        ["/foo", "/properties/foo/$ref/type"],
-        ["/foo", "/properties/foo/$ref"],
-        ["", "/properties"]
-      ]);
+      expect(locations.map((at) => at.instanceLocation)).to.eql(["/foo", "/foo", ""]);
+      expect(locations[0]).to.equal(locations[1]);
+      expect(locations[1]).not.to.equal(locations[2]);
     });
 
     test("a location's value is the instance, for a JS value or an AST", async () => {
@@ -917,7 +903,6 @@ describe("Validator", () => {
       expect(result.output.errors.map((error) => locations(/** @type ValidationError */ (error)))).to.eql([
         {
           ruleId: typeKeyword.uri,
-          keywordLocation: "/properties/foo/type",
           absoluteKeywordLocation: "https://example.com/nested#/properties/foo/type",
           instanceLocation: "/foo"
         }

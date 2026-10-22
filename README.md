@@ -91,7 +91,6 @@ const result = validator.validate({ age: -1 }, { output: "BASIC" });
 //     {
 //       source: "json-schema",
 //       ruleId: "https://json-schema.org/keyword/minimum",
-//       keywordLocation: "/properties/age/minimum",
 //       absoluteKeywordLocation: "https://example.com/person#/properties/age/minimum",
 //       instanceLocation: "/age",
 //       place: undefined

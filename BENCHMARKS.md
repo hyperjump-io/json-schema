@@ -253,6 +253,40 @@ DESIGN.md). Measured back to back with the code before, twice each:
   DETAILED's `errors` for `if` and `conditional` had a `conditions`
   property, which they don't anymore.
 
+Then the keyword location that follows references was dropped, and every
+schema and keyword evaluated on the same instance shares one location (see
+"Plugins" in DESIGN.md). Measured back to back with the code before, twice
+each, for JS values. FLAG didn't change (0.18–0.19 ms on the suite, three
+times each).
+
+| | Suite, before | Suite, after | tsconfig, before | tsconfig, after | OpenAPI, before | OpenAPI, after |
+| --- | --- | --- | --- | --- | --- | --- |
+| Hooks that do nothing | 0.48–0.66 ms | 0.46–0.49 ms | 1.60–1.65 ms | 1.33 ms | 1.65–1.86 ms | 1.47–1.57 ms |
+| State for each schema and keyword | 0.52–0.58 ms | 0.50–0.52 ms | 1.81–1.99 ms | 1.51–1.60 ms | 1.84–2.09 ms | 1.67–1.74 ms |
+| Reads every location | 0.49–0.54 ms | 0.47–0.50 ms | 1.74–1.87 ms | 1.44–1.46 ms | 1.74–1.93 ms | 1.56–1.60 ms |
+| BASIC's plugin | 0.60–0.66 ms | 0.55–0.56 ms | 1.91–2.07 ms | 1.58–1.59 ms | 1.90–2.06 ms | 1.72–1.74 ms |
+
+- On the suite's invalid instances, BASIC went from 0.58–0.61 ms to
+  0.53–0.54 ms and DETAILED from 0.62–0.65 ms to 0.55 ms.
+- One of the runs before drifted by more than 30% on the suite, so the
+  real documents are the better comparison. They're 9–23% faster with
+  plugins.
+- Two other ways were tried first, as prototypes:
+  - One location object for the whole evaluation, only valid during a
+    hook, with pointers built from stacks when they're read. Hooks that do
+    nothing were 12–21% faster, but BASIC's plugin wasn't. BASIC builds an
+    error, reading both locations, for every failing keyword, and real
+    schemas fail a lot in branches that pass (`anyOf` and `oneOf`
+    alternatives, `if` conditions), so the pointers were built anyway.
+    BASIC created 44,349 errors for the 3000 `package.json` files and kept
+    76, 4,470 for `tsconfig.json` and kept none, and 1,582 for OpenAPI and
+    kept one. Plugins would also have had to copy what they needed during
+    the hook.
+  - Recording integers in an `Int32Array` instead of calling hooks, for
+    consumers to read afterwards. Just recording took 0.48 ms on the suite,
+    slower than the first prototype with hooks that do nothing, before
+    anything read the trace.
+
 ## Bytecode and closures
 
 A prototype in `scratch/bench` (`claude/bytecode.ts`) lowers the IR once and then

@@ -13,9 +13,6 @@ export type ValidationError = {
   /** The URI of the keyword that failed */
   ruleId: string;
 
-  /** A JSON Pointer to the keyword relative to the schema evaluation started from, following references. */
-  keywordLocation: string;
-
   /** The URI of the keyword in the schema it's defined in */
   absoluteKeywordLocation: string;
 

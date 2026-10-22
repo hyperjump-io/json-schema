@@ -131,9 +131,7 @@ export type CompileContext = {
    * each other are fine.
    *
    * A subschema node can be in the keyword's value or in a sibling's, like
-   * `then` for `if`. Either way, its keyword location is where it is in the
-   * schema. A schema compiled from a URI is a reference, so its keyword
-   * location is under the keyword's.
+   * `then` for `if`.
    */
   compileSchema: (schema: JsonSchemaNode | string) => Promise<SchemaHandle>;
 };

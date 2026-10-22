@@ -585,8 +585,8 @@ Implemented in `src/evaluate/validator.js`.
 - Problems that are returned are plain data, and problems that are thrown
   are `Error`s. Validation errors and syntax errors are returned, so
   they're plain objects with `source`, `ruleId`, and `place` (validation
-  errors also have keyword location, absolute keyword location, and
-  instance location), and no message. Text input adds positions. Any syntax
+  errors also have absolute keyword location and instance location), and
+  no message. Text input adds positions. Any syntax
   error makes the instance invalid, but it's still validated as far as it
   could be parsed. Schema problems are thrown, so they're `VFileMessage`s.
 - Errors are converted to `VFileMessage`s where they're reported, with
@@ -679,16 +679,17 @@ Keywords:
   a property whose value is missing. That's how keywords get the
   error-tolerance rules without extra code.
 - Applicators evaluate subschemas through `context.schema(handle)(instance,
-  segment)`. The core tracks instance location, keyword location (following
-  references), and which AST node to annotate, so keywords never build
-  pointers. In flag mode, the segment is ignored.
-  The step from a keyword to a subschema comes from their canonical URIs. A
-  subschema whose URI isn't under the keyword's has its step from the schema
-  recorded in the IR at compile time instead. That's one with an `$id`, or
-  one in a sibling keyword's value. That lets `if` evaluate `then` and
-  `else` itself, so the `if` subschema is only evaluated once, while their
-  errors keep their own keyword locations. A schema compiled from a URI is a
-  reference and doesn't get a step.
+  segment)`. The core tracks instance location and which AST node to
+  annotate, so keywords never build pointers. In flag mode, the segment is
+  ignored. `if` can evaluate `then` and `else` itself, so the `if`
+  subschema is only evaluated once, and their errors still have their own
+  absolute keyword locations.
+- There's no keyword location that follows references (the output spec's
+  `keywordLocation`), only the absolute keyword location. It cost every
+  evaluation with plugins a string for every keyword, and a step from each
+  keyword to its subschemas recorded in the IR, for something that's rarely
+  useful. A plugin that wants it can build it from `beforeSchema` and
+  `afterSchema`.
 - Evaluation state (frames, locations, dynamic scope, plugins) lives in the
   specialization's closure instead of being passed through every call. An
   evaluation started from inside another one, such as by a plugin, saves the
@@ -815,9 +816,9 @@ objects the caller reads results from afterwards.
   the subschemas it applies). The core keeps the stack. That's enough to
   build nested results like DETAILED without touching shared objects.
 - Hooks get a `SchemaInfo` or `KeywordInfo`, created once per specialization
-  so passing it doesn't allocate, and an `EvaluationLocation` with the
-  instance location, the keyword location (following references), the AST
-  node when there is one, and a lazy `value()`.
+  so passing it doesn't allocate, with its absolute keyword location. They
+  also get an `EvaluationLocation` with the instance location, the AST node
+  when there is one, and a lazy `value()`.
 - With any plugin, the instance is evaluated once with `exhaustive` on. A
   plugin never sees an instance twice (coverage counts) and always sees every
   keyword that applies. That makes plugins slower, which is the trade-off.
@@ -831,19 +832,22 @@ objects the caller reads results from afterwards.
   - Several plugins are combined into one plugin whose states are arrays.
     The specialization calls one plugin's hooks with plain states, so the
     usual case of one plugin doesn't loop or allocate arrays.
-  - An `EvaluationLocation` is an instance of one class shared by every
-    specialization, with `value()` as a method, so it's one allocation and
-    hooks always see the same shape.
-  - The keyword location is kept as the schema's location and the step to
-    the keyword, and joined when a plugin reads it or a subschema needs it.
-    Most keywords pass, and most plugins only read the location of the
-    ones that don't. The subschema of a keyword gets the schema's location
-    plus its step rather than replacing the end of the keyword's location,
-    because slicing a string that was built by concatenation copies it.
+  - An `EvaluationLocation` is only about where in the instance, so every
+    schema and keyword evaluated on the same instance (through `allOf`,
+    `$ref`, …) shares one. It's created when evaluation moves to a property
+    or item, not for every hook call, and it doesn't change, so a plugin
+    can keep it.
+  - It's an instance of one class shared by every specialization, with
+    `value()` as a method, so it's one allocation and hooks always see the
+    same shape.
   - An array index is appended to the instance location without escaping.
-  - Locations are new objects for every hook call, so a plugin can keep
-    one. Reusing one location for a schema's keywords saved about 3%, which
-    wasn't worth breaking that.
+  - Plugins need to be easy to write, so expensive parts aren't made lazy
+    in ways plugins have to know about. A shared location that's only valid
+    during the hook, with pointers built when they're read, was about as
+    fast for most plugins but made them harder to write, and didn't help
+    BASIC, which reads locations for every failing keyword. Recording a
+    trace of integers instead of calling hooks was slower than calling
+    them.
 
 ### Output formats
 
@@ -1300,8 +1304,8 @@ What this relies on from browser's `v2` branch:
   with `appendToLocation` (`@hyperjump/uri`'s `encodeIriFragment`), which
   produces normalized IRIs, and `get` decodes a fragment before following
   it as a JSON Pointer. The resolver and compiler build locations the same
-  way. Keyword and instance locations in output are JSON Pointers, so they
-  aren't encoded.
+  way. Instance locations in output are JSON Pointers, so they aren't
+  encoded.
 
 ## Open questions
 

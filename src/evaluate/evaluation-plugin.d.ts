@@ -66,16 +66,15 @@ export type KeywordInfo = {
   compiled: Json;
 };
 
-/** Where in the instance and the evaluation a hook is called */
+/**
+ * Where in the instance a hook is called. Every schema and keyword evaluated
+ * on the same instance gets the same location, and it doesn't change, so it
+ * can be kept. Where in the schema is the `absoluteKeywordLocation` of the
+ * {@link SchemaInfo} or {@link KeywordInfo}.
+ */
 export type EvaluationLocation = {
   /** A JSON Pointer to the instance being evaluated */
   instanceLocation: string;
-
-  /**
-   * A JSON Pointer to the schema or keyword relative to the schema
-   * evaluation started from, following references
-   */
-  keywordLocation: string;
 
   /**
    * The instance as an AST node. Only defined when evaluating JSON text or

@@ -39,7 +39,6 @@ export const isCondition = (schemaHandle, parent) => typeof parent === "object" 
 export const validationError = (ruleId, absoluteKeywordLocation, at) => ({
   source: "json-schema",
   ruleId: ruleId,
-  keywordLocation: at.keywordLocation,
   absoluteKeywordLocation: absoluteKeywordLocation,
   instanceLocation: at.instanceLocation,
   place: at.node?.position
