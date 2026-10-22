@@ -4,6 +4,7 @@ import duplicateEnumValues from "./rules/duplicate-enum-values.js";
 import emptyEnum from "./rules/empty-enum.js";
 import emptyType from "./rules/empty-type.js";
 import duplicateOneOfSchemas from "./rules/duplicate-one-of-schemas.js";
+import duplicateAllOfAnyOfSchemas from "./rules/duplicate-all-of-any-of-schemas.js";
 import contradictoryLimits from "./rules/contradictory-limits.js";
 import additionalItemsWithoutItemsArray from "./rules/additional-items-without-items-array.js";
 import ignoredRefSiblings from "./rules/ignored-ref-siblings.js";
@@ -38,6 +39,7 @@ const recommended = {
     [emptyEnum, ["warn"]],
     [emptyType, ["warn"]],
     [duplicateOneOfSchemas, ["warn"]],
+    [duplicateAllOfAnyOfSchemas, ["warn"]],
     [contradictoryLimits, ["warn"]],
     [additionalItemsWithoutItemsArray, ["warn"]],
     [ignoredRefSiblings, ["warn"]],

@@ -387,6 +387,7 @@ Warnings don't fail the command unless you use `--frail`.
 | `empty-enum` | An `enum` with no values, which nothing is valid against |
 | `empty-type` | A `type` that's an empty array, which nothing is valid against |
 | `duplicate-one-of-schemas` | A schema in `oneOf` that's equal to one before it, so a value it matches always fails |
+| `duplicate-all-of-any-of-schemas` | A schema in `allOf` or `anyOf` that's equal to one before it, so it has no effect |
 | `contradictory-limits` | A lower limit above its upper limit, like `minimum` above `maximum` or `minLength` above `maxLength`, or more properties in `required` than `maxProperties` allows |
 | `redundant-numeric-limit` | `maximum` and `exclusiveMaximum`, or `minimum` and `exclusiveMinimum`, where the looser one has no effect |
 | `invalid-default-or-example` | A `default` value or a value in `examples` that isn't valid against the schema it's in |
