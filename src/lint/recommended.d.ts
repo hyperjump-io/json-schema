@@ -10,8 +10,8 @@ import type { Preset } from "unified";
  * ```json
  * {
  *   "plugins": [
- *     "@hyperjump/json-schema-next/lint/recommended",
- *     ["@hyperjump/json-schema-next/lint/rules/then-else-without-if", ["error"]]
+ *     "@hyperjump/json-schema/lint/recommended",
+ *     ["@hyperjump/json-schema/lint/rules/then-else-without-if", ["error"]]
  *   ]
  * }
  * ```

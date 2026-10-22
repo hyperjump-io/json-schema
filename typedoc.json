@@ -1,7 +1,7 @@
 {
   "$schema": "https://typedoc.org/schema.json",
   "excludeExternals": true,
-  "sourceLinkTemplate": "https://github.com/hyperjump-io/json-schema-next/blob/{gitRevision}/{path}#L{line}",
+  "sourceLinkTemplate": "https://github.com/hyperjump-io/json-schema/blob/{gitRevision}/{path}#L{line}",
   "externalSymbolLinkMappings": {
     "@hyperjump/browser": {
       "Hyperjump.addMediaTypePlugin": "https://hyperjump-io.github.io/browser/classes/hyperjump.Hyperjump.html#addmediatypeplugin",

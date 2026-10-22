@@ -303,7 +303,7 @@ describe("Validator", () => {
   };
 
   beforeAll(async () => {
-    directory = await mkdtemp(join(tmpdir(), "json-schema-next-"));
+    directory = await mkdtemp(join(tmpdir(), "json-schema-"));
   });
 
   afterAll(async () => {

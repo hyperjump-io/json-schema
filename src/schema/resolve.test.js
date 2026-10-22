@@ -585,7 +585,7 @@ describe("jsonSchemaResolve", () => {
       const causes = (error) => error instanceof Error ? `${error.message} ${causes(error.cause)}` : "";
 
       beforeAll(async () => {
-        directory = await mkdtemp(join(tmpdir(), "json-schema-next-"));
+        directory = await mkdtemp(join(tmpdir(), "json-schema-"));
       });
 
       afterAll(async () => {
@@ -839,7 +839,7 @@ describe("jsonSchemaResolve", () => {
     };
 
     beforeAll(async () => {
-      directory = await mkdtemp(join(tmpdir(), "json-schema-next-"));
+      directory = await mkdtemp(join(tmpdir(), "json-schema-"));
     });
 
     afterAll(async () => {

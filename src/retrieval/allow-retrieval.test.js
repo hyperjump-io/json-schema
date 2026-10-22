@@ -33,7 +33,7 @@ describe("allowRetrieval", () => {
 
   beforeAll(async () => {
     inside = await mkdtemp(join(cwd(), ".allow-retrieval-test-"));
-    outside = await mkdtemp(join(tmpdir(), "json-schema-next-"));
+    outside = await mkdtemp(join(tmpdir(), "json-schema-"));
     await writeFile(join(inside, "inside.schema.json"), schema);
     await writeFile(join(outside, "outside.schema.json"), schema);
     await symlink(join(outside, "outside.schema.json"), join(inside, "link.schema.json"));

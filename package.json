@@ -1,5 +1,5 @@
 {
-  "name": "@hyperjump/json-schema-next",
+  "name": "@hyperjump/json-schema",
   "version": "0.0.0",
   "description": "",
   "keywords": [
@@ -7,7 +7,7 @@
   ],
   "author": "Jason Desrosiers <jdesrosi@gmail.com>",
   "license": "MIT",
-  "repository": "github:hyperjump-io/json-schema-next",
+  "repository": "github:hyperjump-io/json-schema",
   "funding": {
     "type": "github",
     "url": "https://github.com/sponsors/hyperjump-io"

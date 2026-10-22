@@ -160,7 +160,7 @@ describe("JsonSchema", () => {
     });
 
     test("each compile has its own session, so it sees changes", async () => {
-      const directory = await mkdtemp(join(tmpdir(), "json-schema-next-"));
+      const directory = await mkdtemp(join(tmpdir(), "json-schema-"));
       try {
         const path = join(directory, "schema.schema.json");
         const uri = pathToFileURL(path).toString();
@@ -176,7 +176,7 @@ describe("JsonSchema", () => {
     });
 
     test("a schema can't be retrieved without a JsonSchemaSession", async () => {
-      const directory = await mkdtemp(join(tmpdir(), "json-schema-next-"));
+      const directory = await mkdtemp(join(tmpdir(), "json-schema-"));
       try {
         const path = join(directory, "schema.schema.json");
         await writeFile(path, JSON.stringify({ $schema: v1DialectUri }));

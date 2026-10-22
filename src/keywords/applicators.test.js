@@ -54,7 +54,7 @@ describe("applicator errors", () => {
   };
 
   beforeAll(async () => {
-    directory = await mkdtemp(join(tmpdir(), "json-schema-next-"));
+    directory = await mkdtemp(join(tmpdir(), "json-schema-"));
     jsonSchema = new JsonSchema({ allowRetrieval: () => true });
     addV1(jsonSchema);
   });

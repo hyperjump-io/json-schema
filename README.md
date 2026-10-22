@@ -26,14 +26,14 @@ A JSON Schema validator built on
 ## Install
 
 ```bash
-npm install @hyperjump/json-schema-next
+npm install @hyperjump/json-schema
 ```
 
 ## Usage
 
 ```javascript
-import { JsonSchema, SchemaRegistry } from "@hyperjump/json-schema-next";
-import { addV1 } from "@hyperjump/json-schema-next/v1";
+import { JsonSchema, SchemaRegistry } from "@hyperjump/json-schema";
+import { addV1 } from "@hyperjump/json-schema/v1";
 
 const jsonSchema = new JsonSchema();
 addV1(jsonSchema);
@@ -112,7 +112,7 @@ To report errors with unified tooling, `toVFileMessage` converts an error to a
 message.
 
 ```javascript
-import { outputErrorMessage, toVFileMessage } from "@hyperjump/json-schema-next";
+import { outputErrorMessage, toVFileMessage } from "@hyperjump/json-schema";
 
 outputErrorMessage(result.errors[0]);
 // "'/age' fails the constraint at 'https://example.com/person#/properties/age/minimum'"
@@ -235,8 +235,8 @@ A `JsonSchema` starts without any dialects. Add the ones you need from their
 modules. Presets don't depend on each other, so add only what you use.
 
 ```javascript
-import { addDraft202012 } from "@hyperjump/json-schema-next/draft-2020-12";
-import { addDraft07 } from "@hyperjump/json-schema-next/draft-07";
+import { addDraft202012 } from "@hyperjump/json-schema/draft-2020-12";
+import { addDraft07 } from "@hyperjump/json-schema/draft-07";
 
 addDraft202012(jsonSchema);
 addDraft07(jsonSchema);
@@ -244,12 +244,12 @@ addDraft07(jsonSchema);
 
 | Module | Add with | Dialect URI |
 | --- | --- | --- |
-| `@hyperjump/json-schema-next/v1` | `addV1` | `https://json-schema.org/v1` |
-| `@hyperjump/json-schema-next/draft-2020-12` | `addDraft202012` | `https://json-schema.org/draft/2020-12/schema` |
-| `@hyperjump/json-schema-next/draft-2019-09` | `addDraft201909` | `https://json-schema.org/draft/2019-09/schema` |
-| `@hyperjump/json-schema-next/draft-07` | `addDraft07` | `http://json-schema.org/draft-07/schema` |
-| `@hyperjump/json-schema-next/draft-06` | `addDraft06` | `http://json-schema.org/draft-06/schema` |
-| `@hyperjump/json-schema-next/draft-04` | `addDraft04` | `http://json-schema.org/draft-04/schema` |
+| `@hyperjump/json-schema/v1` | `addV1` | `https://json-schema.org/v1` |
+| `@hyperjump/json-schema/draft-2020-12` | `addDraft202012` | `https://json-schema.org/draft/2020-12/schema` |
+| `@hyperjump/json-schema/draft-2019-09` | `addDraft201909` | `https://json-schema.org/draft/2019-09/schema` |
+| `@hyperjump/json-schema/draft-07` | `addDraft07` | `http://json-schema.org/draft-07/schema` |
+| `@hyperjump/json-schema/draft-06` | `addDraft06` | `http://json-schema.org/draft-06/schema` |
+| `@hyperjump/json-schema/draft-04` | `addDraft04` | `http://json-schema.org/draft-04/schema` |
 
 A schema's dialect comes from `$schema`. There's no default. A schema without
 one is an error unless it's embedded in a schema that has one, or you set one.
@@ -282,7 +282,7 @@ they're only loaded if you ask for them. (draft-04 and draft-06 have their own
 `hostname`, which doesn't.)
 
 ```javascript
-import { addFullFormats } from "@hyperjump/json-schema-next/formats/full";
+import { addFullFormats } from "@hyperjump/json-schema/formats/full";
 
 addFullFormats(jsonSchema);
 ```
@@ -322,7 +322,7 @@ npx hyperjump schemas/
 
 It's also installed as `hjlint`. `npx hyperjump` and `npx hjlint` use the CLI
 installed in your project. Without it, npx would download an unrelated package
-named `hyperjump`, so use `npx -p @hyperjump/json-schema-next hyperjump` to run
+named `hyperjump`, so use `npx -p @hyperjump/json-schema hyperjump` to run
 it without installing.
 
 A JSON file is linted if it's a `.schema.json` file or its `$schema` is a
@@ -367,8 +367,8 @@ severity (`"off"`, `"warn"`, or `"error"`) first.
 ```json
 {
   "plugins": [
-    "@hyperjump/json-schema-next/lint/recommended",
-    ["@hyperjump/json-schema-next/lint/rules/then-else-without-if", ["error"]]
+    "@hyperjump/json-schema/lint/recommended",
+    ["@hyperjump/json-schema/lint/rules/then-else-without-if", ["error"]]
   ]
 }
 ```
@@ -440,7 +440,7 @@ takes a compiled schema, so you decide where schemas come from.
 ```js
 import { unified } from "unified";
 import { rejsonParse, rejsonStringify } from "@hyperjump/browser/json";
-import { jsonSchemaValidate } from "@hyperjump/json-schema-next";
+import { jsonSchemaValidate } from "@hyperjump/json-schema";
 
 const validator = await jsonSchema.compile("https://example.com/person");
 const file = await unified()
@@ -472,7 +472,7 @@ A keyword is a plain object identified by a URI. Add it with `addKeyword`, then
 give it a name in a dialect. In v1, that's `extendDialect`.
 
 ```javascript
-import { v1DialectUri } from "@hyperjump/json-schema-next/v1";
+import { v1DialectUri } from "@hyperjump/json-schema/v1";
 
 jsonSchema.addKeyword({
   uri: "https://example.com/keyword/even",
@@ -534,7 +534,7 @@ jsonSchema.addDialect({
 ### Lint rules
 
 A lint rule is a unified plugin made with `lintRule` from
-`@hyperjump/json-schema-next/lint`. It's
+`@hyperjump/json-schema/lint`. It's
 [`unified-lint-rule`](https://github.com/remarkjs/remark-lint/tree/main/packages/unified-lint-rule)'s
 `lintRule`, and it also applies `$comment` directives to the rule's messages.
 A rule runs on a schema AST, after every schema and keyword has been
@@ -543,7 +543,7 @@ every dialect with the keyword. The same module has utilities to find schemas
 and keywords.
 
 ```javascript
-import { lintRule, siblingKeyword, visitKeywords } from "@hyperjump/json-schema-next/lint";
+import { lintRule, siblingKeyword, visitKeywords } from "@hyperjump/json-schema/lint";
 
 export default lintRule({ origin: "jsonschema-lint-example:min-without-max" }, (tree, file) => {
   visitKeywords(tree, "https://json-schema.org/keyword/minimum", (keywordNode, schemaNode) => {
@@ -565,7 +565,7 @@ refuses. `visitReferences` finds every `$ref` in every dialect, with the URI
 it refers to.
 
 ```javascript
-import { findSchema, visitReferences } from "@hyperjump/json-schema-next/lint";
+import { findSchema, visitReferences } from "@hyperjump/json-schema/lint";
 
 const references = [];
 visitReferences(tree, (uri, node) => references.push([uri, node]));

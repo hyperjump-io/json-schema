@@ -195,7 +195,7 @@ describe("a schema with an invalid keyword value", () => {
   let directory;
 
   beforeAll(async () => {
-    directory = await mkdtemp(join(tmpdir(), "json-schema-next-"));
+    directory = await mkdtemp(join(tmpdir(), "json-schema-"));
   });
 
   afterAll(async () => {
