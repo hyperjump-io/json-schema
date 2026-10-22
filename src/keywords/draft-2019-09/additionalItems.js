@@ -13,10 +13,10 @@ import itemsKeyword from "../items.js";
  * @type Keyword<{ handle: SchemaHandle; start: number } | null>
  */
 export default {
-  uri: "https://json-schema.org/keyword/draft-04/additionalItems",
+  uri: "https://json-schema.org/keyword/draft-2019-09/additionalItems",
   shape: "schema",
   async compile(valueNode, context) {
-    const itemsNode = siblingKeyword(context.schemaNode, "https://json-schema.org/keyword/draft-04/items");
+    const itemsNode = siblingKeyword(context.schemaNode, "https://json-schema.org/keyword/draft-2019-09/items");
     if (itemsNode?.jsonType !== "array") {
       return null;
     }

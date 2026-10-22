@@ -14,7 +14,7 @@ import { string } from "../checks.js";
  */
 export default {
   ...formatKeyword,
-  uri: "https://json-schema.org/keyword/draft-04/format",
+  uri: "https://json-schema.org/keyword/draft-07/format",
   check: string,
   compile(valueNode, context) {
     const { formats } = context.dialect;

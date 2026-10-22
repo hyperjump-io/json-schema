@@ -11,8 +11,8 @@ import { jsonSchemaResolve } from "./resolve.js";
 import idKeyword from "../keywords/id.js";
 import anchorKeyword from "../keywords/anchor.js";
 import dynamicAnchorKeyword from "../keywords/dynamicAnchor.js";
-import legacyIdKeyword from "../keywords/draft-04/id.js";
-import legacyRefKeyword from "../keywords/draft-04/ref.js";
+import legacyIdKeyword from "../keywords/draft-07/id.js";
+import legacyRefKeyword from "../keywords/draft-07/ref.js";
 import recursiveAnchorKeyword from "../keywords/draft-2019-09/recursiveAnchor.js";
 import vocabularyKeyword, { addVocabulary } from "../keywords/vocabulary.js";
 

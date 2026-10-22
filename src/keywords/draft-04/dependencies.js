@@ -1,4 +1,4 @@
-import dependenciesKeyword from "../draft-06/dependencies.js";
+import dependenciesKeyword from "../draft-07/dependencies.js";
 import { isErrorNode, nonEmpty, uniqueStrings } from "../checks.js";
 
 /**
@@ -6,7 +6,7 @@ import { isErrorNode, nonEmpty, uniqueStrings } from "../checks.js";
  */
 
 /**
- * `dependencies` in draft-04. It's the same as draft-06's, except that an
+ * `dependencies` in draft-04. It's the same as draft-07's, except that an
  * array can't be empty, as draft-04 says.
  *
  * @type Keyword<[string, SchemaHandle | string[]][]>

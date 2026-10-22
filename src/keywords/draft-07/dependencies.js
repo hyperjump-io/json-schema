@@ -14,7 +14,7 @@ import { isErrorNode, uniqueStrings } from "../checks.js";
  * @type Keyword<[string, SchemaHandle | string[]][]>
  */
 export default {
-  uri: "https://json-schema.org/keyword/draft-06/dependencies",
+  uri: "https://json-schema.org/keyword/draft-07/dependencies",
   shape: { map: ["schema", { array: "data" }] },
   check(valueNode, context) {
     if (valueNode.jsonType !== "object") {

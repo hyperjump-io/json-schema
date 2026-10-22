@@ -11,7 +11,7 @@ import { visitKeywords, visitReferences } from "../lint/utilities.js";
 
 const definitionsUri = "https://json-schema.org/keyword/definitions";
 const idUri = "https://json-schema.org/keyword/id";
-const legacyIdUri = "https://json-schema.org/keyword/draft-04/id";
+const legacyIdUri = "https://json-schema.org/keyword/draft-07/id";
 const notUri = "https://json-schema.org/keyword/not";
 const dynamicRefUri = "https://json-schema.org/keyword/draft-2020-12/dynamicRef";
 

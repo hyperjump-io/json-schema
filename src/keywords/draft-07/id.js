@@ -13,7 +13,7 @@ import { string } from "../checks.js";
  * @type Keyword
  */
 export default {
-  uri: "https://json-schema.org/keyword/draft-04/id",
+  uri: "https://json-schema.org/keyword/draft-07/id",
   shape: "data",
   check: string,
   resolve(valueNode, context) {

@@ -120,8 +120,8 @@ describe("keyword checks", () => {
     addDraft202012(jsonSchema);
 
     expect(await check(jsonSchema, `{ "$schema": "${draft07DialectUri}", "dependencies": { "a": ["b", 1, "b"], "c": {}, "d": [] } }`)).to.eql([
-      { reason: "Expected a string", ruleId: "https://json-schema.org/keyword/draft-06/dependencies", at: "1" },
-      { reason: "'b' is a duplicate", ruleId: "https://json-schema.org/keyword/draft-06/dependencies", at: `"b"` }
+      { reason: "Expected a string", ruleId: "https://json-schema.org/keyword/draft-07/dependencies", at: "1" },
+      { reason: "'b' is a duplicate", ruleId: "https://json-schema.org/keyword/draft-07/dependencies", at: `"b"` }
     ]);
     expect((await check(jsonSchema, `{ "$schema": "${draft201909DialectUri}", "$anchor": "_a" }`)).map(({ ruleId, at }) => [ruleId, at]))
       .to.eql([["https://json-schema.org/keyword/draft-2019-09/anchor", `"_a"`]]);

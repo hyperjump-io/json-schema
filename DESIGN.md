@@ -61,9 +61,9 @@ text ─ rejsonParse ─▶ JSON AST ─ jsonSchemaResolve ─▶ Schema AST ─
 - A `.d.ts` next to a `.js` file declares that module's API. One without a
   `.js` file declares a concept (`keyword.d.ts`, `output-format.d.ts`).
 - A keyword's or format's path mirrors its URI.
-  `https://json-schema.org/keyword/draft-04/items` is
-  `src/keywords/draft-04/items.js`. A variant is named after the draft that
-  introduced it, so draft-07 uses `draft-04/items`.
+  `https://json-schema.org/keyword/draft-2019-09/items` is
+  `src/keywords/draft-2019-09/items.js`. A variant is named after the last
+  draft that uses it, so draft-04 uses `draft-2019-09/items`.
 - Tests are next to the code they test.
 
 ## Schema AST (`src/schema/schema-ast.d.ts`)
@@ -1020,8 +1020,9 @@ can be added to one `JsonSchema`.
 - **2019-09** (`src/dialects/draft-2019-09`, `addDraft201909`) is built the
   same way. It adds `$recursiveAnchor`, `$recursiveRef`, and its own
   `$anchor`, whose names can contain `:` but can't start with `_`. It also
-  adds draft-04's `items`, which is a schema or an array of schemas, and
+  adds its `items`, which is a schema or an array of schemas, and
   `additionalItems`, which only has an effect after an array of schemas.
+  draft-04 through draft-07 use them too.
   They reuse the `items` and `prefixItems` evaluators. `$recursiveRef`
   resolves like `$ref`, and if the schema it resolves to has
   `$recursiveAnchor: true` (the dynamic anchor `""`), the outermost schema
@@ -1032,11 +1033,11 @@ can be added to one `JsonSchema`.
   `$vocabulary`, so each adds a dialect. Their dialect URIs don't have the
   empty fragment their
   `$schema` usually has, because `$schema` is resolved to an absolute URI.
-  Unknown keywords are ignored. `$ref` is draft-04's, which makes the schema
-  a reference, and `id`/`$id` is draft-04's, which can also be an anchor.
-  All three add draft-04's `items` and `additionalItems`, and a
+  Unknown keywords are ignored. `$ref` is draft-07's, which makes the schema
+  a reference, and `id`/`$id` is draft-07's, which can also be an anchor.
+  All three add 2019-09's `items` and `additionalItems`, and a
   `dependencies`, which is `dependentRequired` and `dependentSchemas` in
-  one keyword. draft-06 and draft-07 share draft-06's. draft-04 has its own
+  one keyword. draft-06 shares draft-07's. draft-04 has its own
   `dependencies`, `enum`, and `required`, because it says they can't be
   empty and `enum` can't have duplicates. Later drafts allow them to be
   empty and only say `enum` shouldn't be or have duplicates, which is lint
@@ -1044,10 +1045,10 @@ can be added to one `JsonSchema`.
   read the sibling boolean `exclusiveMaximum` and `exclusiveMinimum`,
   which require them. `format` validates by default, as most
   implementations of these drafts did. Their `format` is
-  draft-04's, which makes a format the dialect doesn't have only an
+  draft-07's, which makes a format the dialect doesn't have only an
   annotation, as the drafts say. Each dialect only has the formats its
   draft defines, so the draft-04 and draft-06 meta-schemas' `regex` is
-  ignored. draft-04 and draft-06 use draft-04's `hostname` (RFC 1123),
+  ignored. draft-04 and draft-06 use draft-06's `hostname` (RFC 1123),
   which doesn't need Unicode data.
 
 ## CLI (`src/cli/`)
