@@ -13,6 +13,7 @@ import type { JsonSchemaDocumentNode } from "../../schema/schema-ast.d.ts";
  *   exclusive.
  * - Strings, arrays, and objects: `minLength` and `maxLength`, `minItems`
  *   and `maxItems`, and `minProperties` and `maxProperties`.
+ * - `required` with more distinct properties than `maxProperties` allows.
  * - `minContains` and `maxContains`, if there's a `contains`. Without one,
  *   they have no effect, which `min-max-contains-without-contains`
  *   reports.

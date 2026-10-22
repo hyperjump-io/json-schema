@@ -90,6 +90,25 @@ describe("contradictory-limits", () => {
     expect(await reasons(`{ "$schema": "${v1}", "minLength": 2, "maxLength": 2 }`)).to.eql([]);
   });
 
+  test("more required properties than maxProperties allows", async () => {
+    const json = `{ "$schema": "${v1}", "maxProperties": 1, "required": ["a", "b"] }`;
+    const file = await lint(json);
+    expect(file.messages.map((message) => message.reason)).to.eql([
+      "'required' requires 2 properties, more than 'maxProperties' allows, so no object is valid"
+    ]);
+    expect(file.messages[0].column).to.equal(json.indexOf(`"required"`) + 1);
+  });
+
+  test("as many required properties as maxProperties allows", async () => {
+    expect(await reasons(`{ "$schema": "${v1}", "required": ["a", "b"], "maxProperties": 2 }`)).to.eql([]);
+  });
+
+  test("required and maxProperties in draft-04", async () => {
+    expect(await reasons(`{ "$schema": "${draft04}", "required": ["a", "b"], "maxProperties": 1 }`)).to.eql([
+      "'required' requires 2 properties, more than 'maxProperties' allows, so no object is valid"
+    ]);
+  });
+
   test("minContains and maxContains without contains", async () => {
     expect(await reasons(`{ "$schema": "${v1}", "minContains": 3, "maxContains": 2 }`)).to.eql([]);
   });

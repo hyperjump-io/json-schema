@@ -1,5 +1,5 @@
 import { lintRule } from "../lint-rule.js";
-import { findKeyword, siblingKeyword, visitSchemas } from "../utilities.js";
+import { findKeyword, requiredNames, siblingKeyword, visitSchemas } from "../utilities.js";
 
 /**
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode } from "../../schema/schema-ast.d.ts"
@@ -114,6 +114,14 @@ const contradictoryLimits = lintRule({ origin: "jsonschema-lint:contradictory-li
         const place = second(min.keywordNode, max.keywordNode).position;
         file.message(`${min.label} is greater than ${max.label}, so no ${type} is valid`, { place });
       }
+    }
+
+    // Every required property counts toward maxProperties
+    const required = requiredNames(schemaNode);
+    const maxProperties = bound(findKeyword(schemaNode, `${keyword}/maxProperties`), false);
+    if (required && maxProperties && required.names.size > maxProperties.value) {
+      const place = second(required.keywordNode, maxProperties.keywordNode).position;
+      file.message(`${nameOf(required.keywordNode)} requires ${required.names.size} properties, more than ${maxProperties.label} allows, so no object is valid`, { place });
     }
   });
 });

@@ -50,3 +50,10 @@ export const findKeyword: (schemaNode: JsonSchemaNode, keywordUri: string) => Js
  * It's undefined if the schema doesn't have the keyword or isn't an object.
  */
 export const siblingKeyword: (schemaNode: JsonSchemaNode, keywordUri: string) => JsonSchemaNode | undefined;
+
+/**
+ * A schema's `required` keyword, in any dialect, and the distinct property
+ * names it requires. Items that aren't strings are left out. It's undefined
+ * if the schema doesn't have `required` or its value isn't an array.
+ */
+export const requiredNames: (schemaNode: JsonSchemaNode) => { keywordNode: JsonSchemaKeywordNode; names: Set<string> } | undefined;

@@ -112,4 +112,37 @@ export const findKeyword = (schemaNode, keywordUri) => {
   }
 };
 
+const requiredUris = [
+  "https://json-schema.org/keyword/required",
+  "https://json-schema.org/keyword/draft-04/required"
+];
+
+/**
+ * A schema's `required` keyword and the distinct property names it
+ * requires. Items that aren't strings are a schema problem, so they're
+ * left out. It's undefined if the schema doesn't have `required` or its
+ * value isn't an array.
+ *
+ * @type (schemaNode: JsonSchemaNode) => { keywordNode: JsonSchemaKeywordNode; names: Set<string> } | undefined
+ */
+export const requiredNames = (schemaNode) => {
+  for (const requiredUri of requiredUris) {
+    const keywordNode = findKeyword(schemaNode, requiredUri);
+    const valueNode = keywordNode?.children[1];
+    if (keywordNode === undefined || valueNode?.jsonType !== "array") {
+      continue;
+    }
+
+    /** @type Set<string> */
+    const names = new Set();
+    for (const itemNode of valueNode.children) {
+      if (itemNode.jsonType === "string") {
+        names.add(itemNode.value);
+      }
+    }
+
+    return { keywordNode, names };
+  }
+};
+
 export { siblingKeyword } from "../keywords/utilities.js";
