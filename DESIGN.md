@@ -1283,6 +1283,9 @@ It's a list of candidates, not a spec.
   not what to do.
 - Something that's validity (a meta-schema or `check` error, such as an
   empty `enum` in draft-04) isn't ported as a rule.
+  `duplicate_required_values` isn't, because `required`'s check
+  (`uniqueStrings`) reports duplicates in every dialect, as their
+  meta-schemas do.
 - Opinionated rules (`explicit_additional_properties`,
   `require_description_title`, `unknown_keywords_prefix`) and style rules
   that only remove a default value aren't in `recommended`, if they're
