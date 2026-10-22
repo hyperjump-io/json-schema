@@ -6,6 +6,7 @@ import emptyType from "./rules/empty-type.js";
 import duplicateOneOfSchemas from "./rules/duplicate-one-of-schemas.js";
 import contradictoryLimits from "./rules/contradictory-limits.js";
 import additionalItemsWithoutItemsArray from "./rules/additional-items-without-items-array.js";
+import ignoredRefSiblings from "./rules/ignored-ref-siblings.js";
 import readOnlyAndWriteOnly from "./rules/read-only-and-write-only.js";
 import minMaxContainsWithoutContains from "./rules/min-max-contains-without-contains.js";
 import referenceWithoutTarget from "./rules/reference-without-target.js";
@@ -25,6 +26,7 @@ const recommended = {
     [duplicateOneOfSchemas, ["warn"]],
     [contradictoryLimits, ["warn"]],
     [additionalItemsWithoutItemsArray, ["warn"]],
+    [ignoredRefSiblings, ["warn"]],
     [readOnlyAndWriteOnly, ["warn"]],
     [minMaxContainsWithoutContains, ["warn"]],
     [referenceWithoutTarget, ["error"]]
