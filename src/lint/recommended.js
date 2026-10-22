@@ -1,6 +1,7 @@
 import thenElseWithoutIf from "./rules/then-else-without-if.js";
 import ifWithoutThenElse from "./rules/if-without-then-else.js";
 import duplicateEnumValues from "./rules/duplicate-enum-values.js";
+import emptyEnum from "./rules/empty-enum.js";
 import minMaxContainsWithoutContains from "./rules/min-max-contains-without-contains.js";
 import referenceWithoutTarget from "./rules/reference-without-target.js";
 
@@ -14,6 +15,7 @@ const recommended = {
     [thenElseWithoutIf, ["warn"]],
     [ifWithoutThenElse, ["warn"]],
     [duplicateEnumValues, ["warn"]],
+    [emptyEnum, ["warn"]],
     [minMaxContainsWithoutContains, ["warn"]],
     [referenceWithoutTarget, ["error"]]
   ]

@@ -1294,8 +1294,10 @@ It's a list of candidates, not a spec.
   `_modern` pairs, is one rule here if keyword URIs make it work everywhere.
 - Rule IDs are kebab-case and say what's found (`if-without-then-else`),
   not what to do.
-- Something that's validity (a meta-schema or `check` error, such as an
-  empty `enum` in draft-04) isn't ported as a rule.
+- Something a spec says a keyword's value MUST be is validity, so it isn't
+  ported as a rule (see "Validity and lint"). Check what each draft says,
+  because some changed: draft-04's `enum` MUST have values, and later
+  drafts' SHOULD, so `empty-enum` is lint everywhere but draft-04.
   `duplicate_required_values` isn't, because `required`'s check
   (`uniqueStrings`) reports duplicates in every dialect, as their
   meta-schemas do.
