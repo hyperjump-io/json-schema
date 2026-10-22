@@ -23,7 +23,7 @@ through draft-07 formats, which didn't matter, because the untagged test cases
 only use `format` on values that aren't strings, which `format` skips.
 
 The first table and its notes are from early on, before errors and plugins
-got faster. Only 2020-12 is enabled in the benchmark now.
+got faster. Only draft-07 and 2020-12 are enabled in the benchmark now.
 
 Results (mean time per run of the suite, FLAG unless it says errors):
 
@@ -67,31 +67,46 @@ Results (mean time per run of the suite, FLAG unless it says errors):
 - With the `format` test cases, format validators take most of the time,
   and FLAG is only about 1.4 times faster.
 
-Every implementation in 2020-12, measured on 2026-10-21 (mean time per run
-of the suite):
+Every implementation, measured on 2026-10-21 (mean time per run of the
+suite; 2020-12 is the range over two runs that day):
 
-| | FLAG | All errors |
+| draft-07 | FLAG | All errors |
 | --- | --- | --- |
-| json-schema-next | 0.243 ms | 0.785 ms |
-| `@hyperjump/json-schema` | 0.912 ms | 1.668 ms |
-| `@corvus-dotnet/json-schema` | 0.058 ms | 0.863 ms |
-| ata-validator | 0.061 ms | 1.124 ms |
-| `@exodus/schemasafe` | 0.081 ms | 0.353 ms |
+| json-schema-next | 0.051 ms | 0.255 ms |
+| `@hyperjump/json-schema` | 0.272 ms | 0.615 ms |
+| `@corvus-dotnet/json-schema` | 0.022 ms | 0.384 ms |
+| ata-validator | 0.018 ms | 0.339 ms |
+| ajv | 0.052 ms | 0.071 ms |
+| `@exodus/schemasafe` | 0.025 ms | 0.077 ms |
 
-- corvus and ata-validator, which both generate code, are about 4 times
-  faster than json-schema-next at FLAG, and schemasafe is about 3 times
-  faster. json-schema-next is about 3.75 times faster than
-  `@hyperjump/json-schema`.
-- At collecting errors, only schemasafe is faster, about 2.2 times.
-  json-schema-next is faster than corvus, ata-validator, and
-  `@hyperjump/json-schema` (2.1 times). 41% of the suite's instances are
-  invalid.
-- How it got there: json-schema-next was the slowest at collecting errors
-  (1.83 ms), when errors were `VFileMessage`s with a message built for each
-  one. Plain objects without messages (see "Validation API" in DESIGN.md)
-  took it to 1.16 ms, and the changes in "Plugins" to 0.78 ms.
-  `scratch/bench/claude/errors-breakdown.ts` measures each part of
-  collecting errors.
+| 2020-12 | FLAG | All errors |
+| --- | --- | --- |
+| json-schema-next | 0.237–0.243 ms | 0.761–0.785 ms |
+| `@hyperjump/json-schema` | 0.907–0.912 ms | 1.661–1.668 ms |
+| `@corvus-dotnet/json-schema` | 0.058–0.061 ms | 0.863–0.893 ms |
+| ata-validator | 0.061–0.068 ms | 1.094–1.124 ms |
+| `@exodus/schemasafe` | 0.081–0.113 ms | 0.353–0.404 ms |
+
+- In draft-07, ajv gets four test cases wrong and `@hyperjump/json-schema`
+  gets one wrong and can't compile three, so those are left out for every
+  implementation. ajv isn't in the 2020-12 comparison.
+- ata-validator, corvus, and schemasafe, which generate code, are 2–4 times
+  faster than json-schema-next at FLAG. ajv, which generates code too, is
+  about the same as json-schema-next in draft-07. json-schema-next is
+  3.7–5.3 times faster than `@hyperjump/json-schema`.
+- At collecting errors, ajv and schemasafe are the fastest, 3.3–3.6 times
+  faster than json-schema-next in draft-07. In 2020-12 only schemasafe is
+  faster, about 2 times. json-schema-next is faster than corvus,
+  ata-validator, and `@hyperjump/json-schema` (2.1–2.4 times) in both. 41%
+  of the 2020-12 suite's instances are invalid.
+- json-schema-next's draft-07 times are less than half of the first table's
+  (FLAG 0.12 ms and errors 0.77 ms then).
+- How errors got there: json-schema-next was the slowest at collecting
+  errors in 2020-12 (1.83 ms), when errors were `VFileMessage`s with a
+  message built for each one. Plain objects without messages (see
+  "Validation API" in DESIGN.md) took it to 1.16 ms, and the changes in
+  "Plugins" to 0.76–0.79 ms. `scratch/bench/claude/errors-breakdown.ts`
+  measures each part of collecting errors.
 
 ## Real-world schemas
 
@@ -100,7 +115,7 @@ real schemas: SchemaStore's `package.json` schema (draft-07) with 3000
 `package.json` files, its `tsconfig.json` schema (draft-07) with 194
 `tsconfig.json` files (both from `~/Projects`), and the OpenAPI 3.0 schema
 (draft-04) with its examples and two more OpenAPI documents, one of them the
-335 KB openEO API. `data/build-corpus.mjs` builds the corpora. Instances are
+335 KB openEO API. ajv is only in the draft-07 comparisons. `data/build-corpus.mjs` builds the corpora. Instances are
 grouped by the size of their JSON text: small (under 1 KB), medium (1–10 KB),
 and large (10 KB or more). Instances don't have an expected result, so an
 instance is left out if the implementations don't all agree on it. With
@@ -110,46 +125,51 @@ OpenAPI schemas when it collects errors.
 
 Results from 2026-10-21 (mean time per run of the group, in ms):
 
-| FLAG | Instances | json-schema-next | `@hyperjump/json-schema` | corvus | ata-validator | schemasafe |
-| --- | --- | --- | --- | --- | --- | --- |
-| `package.json`, small | 1472 | 1.97 | 6.80 | 0.403 | 10.4 | 4.27 |
-| `package.json`, medium | 1514 | 8.42 | 24.9 | 2.03 | 22.9 | 12.7 |
-| `package.json`, large | 14 | 1.06 | 2.47 | 0.146 | 0.236 | 0.433 |
-| `tsconfig.json`, small | 191 | 0.313 | 1.24 | 0.039 | 2.46 | 0.879 |
-| `tsconfig.json`, medium | 3 | 0.0112 | 0.0482 | 0.0015 | 0.0041 | 0.0183 |
-| OpenAPI 3.0, medium | 6 | 0.108 | 0.337 | 0.0195 | | 0.111 |
-| OpenAPI 3.0, large | 1 | 0.379 | 1.61 | 0.0828 | | 0.589 |
+| FLAG | Instances | json-schema-next | `@hyperjump/json-schema` | corvus | ata-validator | ajv | schemasafe |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `package.json`, small | 1472 | 1.94 | 7.28 | 0.411 | 10.4 | 11.0 | 4.26 |
+| `package.json`, medium | 1514 | 8.22 | 25.7 | 2.01 | 22.1 | 26.9 | 12.5 |
+| `package.json`, large | 14 | 1.01 | 2.09 | 0.145 | 0.234 | 0.729 | 0.415 |
+| `tsconfig.json`, small | 191 | 0.304 | 1.22 | 0.041 | 2.41 | 2.98 | 0.858 |
+| `tsconfig.json`, medium | 3 | 0.0113 | 0.0487 | 0.0016 | 0.0040 | 0.0191 | 0.0179 |
+| OpenAPI 3.0, medium | 6 | 0.116 | 0.366 | 0.0198 | | | 0.113 |
+| OpenAPI 3.0, large | 1 | 0.411 | 1.80 | 0.0840 | | | 0.612 |
 
-| All errors | Instances | json-schema-next | `@hyperjump/json-schema` | corvus | ata-validator | schemasafe |
-| --- | --- | --- | --- | --- | --- | --- |
-| `package.json`, small | 1472 | 2.37 | 10.1 | 12.2 | 11.3 | |
-| `package.json`, medium | 1514 | 9.66 | 45.2 | 50.4 | 24.9 | |
-| `package.json`, large | 14 | 1.07 | 4.36 | 3.65 | 0.237 | |
-| `tsconfig.json`, small | 191 | 0.341 | 2.60 | 2.90 | 2.51 | 0.963 |
-| `tsconfig.json`, medium | 3 | 0.0114 | 0.105 | 0.119 | 0.0040 | 0.0202 |
-| OpenAPI 3.0, medium | 6 | 0.109 | 0.627 | 0.507 | | |
-| OpenAPI 3.0, large | 1 | 0.380 | 2.89 | 1.84 | | |
+| All errors | Instances | json-schema-next | `@hyperjump/json-schema` | corvus | ata-validator | ajv | schemasafe |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `package.json`, small | 1472 | 2.29 | 10.1 | 12.8 | 11.0 | 11.2 | |
+| `package.json`, medium | 1514 | 9.13 | 43.2 | 56.3 | 23.1 | 27.1 | |
+| `package.json`, large | 14 | 1.02 | 4.07 | 3.49 | 0.236 | 0.834 | |
+| `tsconfig.json`, small | 191 | 0.325 | 2.47 | 3.10 | 2.44 | 3.01 | 0.973 |
+| `tsconfig.json`, medium | 3 | 0.0117 | 0.110 | 0.124 | 0.0040 | 0.0173 | 0.0217 |
+| OpenAPI 3.0, medium | 6 | 0.119 | 0.681 | 0.549 | | | |
+| OpenAPI 3.0, large | 1 | 0.416 | 2.97 | 2.03 | | | |
 
 - json-schema-next is faster than `@hyperjump/json-schema` on every group:
-  2.3–4.3 times at FLAG and 4.1–9.2 times at errors.
-- corvus is the fastest at FLAG on every group, 4.2–8 times faster than
+  2.1–4.4 times at FLAG and 4.0–9.4 times at errors.
+- corvus is the fastest at FLAG on every group, 4.1–7.3 times faster than
   json-schema-next. The gap is 4–5 times on small and medium `package.json`
   files and about 7 times on large ones, so json-schema-next falls further
   behind as instances get bigger.
 - The test suite makes json-schema-next look worse at FLAG than these
-  schemas do. ata-validator and schemasafe are 3–4 times faster on the
+  schemas do. ata-validator and schemasafe are 2–4 times faster on the
   suite, but json-schema-next is faster than both on small and medium
   `package.json` files and small `tsconfig.json` files, and about the same
-  as schemasafe on the medium OpenAPI documents. They're 2.5–4.5 times
+  as schemasafe on the medium OpenAPI documents. They're 2.4–4.3 times
   faster on large `package.json` files, and ata-validator is faster on the
   three medium `tsconfig.json` files. ata-validator takes about 7–17 µs for
   each `package.json` file whatever its size, so it's slow on many small
   instances and fast on big ones.
+- ajv, which is about as fast as json-schema-next at FLAG on the draft-07
+  suite, is 3.3–9.8 times slower on the small and medium `package.json`
+  files and the small `tsconfig.json` files, 1.7 times slower on the medium
+  `tsconfig.json` files, and 1.4 times faster on the large `package.json`
+  files. Why hasn't been looked into.
 - Almost every instance is valid (35 of the 3000 `package.json` files fail,
   and none of the others do), so the errors results are mostly the cost of
   being ready to collect errors. json-schema-next only collects errors on a
   second evaluation of an invalid instance, so its errors cost at most
-  about 1.2 times its FLAG here. corvus's results collector costs 25–75
+  about 1.2 times its FLAG here. corvus's results collector costs 24–78
   times its FLAG even when there's nothing to report, which is why
   json-schema-next is the fastest at errors on most groups.
   ata-validator's errors cost the same as its FLAG, so it's fastest on
@@ -170,13 +190,13 @@ the timed part. Annotating a node adds to the annotations already on it, so
 go through every error.
 
 Results from 2026-10-21 (mean time per run of the suite, the range over
-four runs):
+five runs):
 
 | Mode | JS value | JSON text | JSON AST |
 | --- | --- | --- | --- |
 | FLAG | 0.21–0.22 ms | 2.27–2.72 ms | 0.33–0.35 ms |
-| BASIC | 0.72–0.74 ms | 3.00–3.43 ms | 0.88–1.02 ms |
-| DETAILED | 0.73–0.82 ms | 3.15–3.66 ms | 0.88–1.01 ms |
+| BASIC | 0.72–0.74 ms | 3.00–3.43 ms | 0.86–1.02 ms |
+| DETAILED | 0.72–0.82 ms | 3.15–3.66 ms | 0.88–1.01 ms |
 | Annotations | 0.84–1.21 ms | 2.62–2.89 ms | 0.70–0.78 ms |
 
 - Parsing JSON text costs more than evaluating in every mode. FLAG on text
