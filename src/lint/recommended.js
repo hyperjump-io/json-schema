@@ -22,6 +22,7 @@ import redundantNumericLimit from "./rules/redundant-numeric-limit.js";
 import invalidDefaultOrExample from "./rules/invalid-default-or-example.js";
 import emptyThenElse from "./rules/empty-then-else.js";
 import falseThenElse from "./rules/false-then-else.js";
+import minContainsZeroWithoutMaxContains from "./rules/min-contains-zero-without-max-contains.js";
 import readOnlyAndWriteOnly from "./rules/read-only-and-write-only.js";
 import minMaxContainsWithoutContains from "./rules/min-max-contains-without-contains.js";
 import referenceWithoutTarget from "./rules/reference-without-target.js";
@@ -57,6 +58,7 @@ const recommended = {
     [invalidDefaultOrExample, ["warn"]],
     [emptyThenElse, ["warn"]],
     [falseThenElse, ["warn"]],
+    [minContainsZeroWithoutMaxContains, ["warn"]],
     [readOnlyAndWriteOnly, ["warn"]],
     [minMaxContainsWithoutContains, ["warn"]],
     [referenceWithoutTarget, ["error"]]

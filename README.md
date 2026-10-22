@@ -405,6 +405,7 @@ Warnings don't fail the command unless you use `--frail`.
 | `keyword-without-type` | A keyword or known format for one type of value, like `properties`, `minimum`, or the `date` format, where no `type`, `const`, or `enum` says what type the value is, so values of other types are valid |
 | `read-only-and-write-only` | `readOnly` and `writeOnly` both `true` in the same schema |
 | `min-max-contains-without-contains` | `minContains` or `maxContains` without `contains` |
+| `min-contains-zero-without-max-contains` | `minContains: 0` next to `contains` without `maxContains`, so `contains` never fails |
 | `reference-without-target` | A `$ref` that doesn't find a schema, such as a file that doesn't exist or a JSON Pointer that doesn't point to anything |
 
 These rules are matters of style, so they aren't in the recommended preset.
