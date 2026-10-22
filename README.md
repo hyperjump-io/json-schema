@@ -407,6 +407,13 @@ Warnings don't fail the command unless you use `--frail`.
 | `min-max-contains-without-contains` | `minContains` or `maxContains` without `contains` |
 | `reference-without-target` | A `$ref` that doesn't find a schema, such as a file that doesn't exist or a JSON Pointer that doesn't point to anything |
 
+These rules are matters of style, so they aren't in the recommended preset.
+Turn them on with a severity, like `["@hyperjump/json-schema/lint/rules/mergeable-all-of-schema", ["warn"]]`.
+
+| Rule | Reports |
+| --- | --- |
+| `mergeable-all-of-schema` | A schema in `allOf` whose keywords can be moved into the schema `allOf` is in without changing what's valid |
+
 A `$comment` that starts with `jsonschema-lint-disable` turns rules off for the
 schema it's in and its subschemas, and `jsonschema-lint-enable` turns them back
 on. Name the rules after it, or name none for every rule. The innermost schema
