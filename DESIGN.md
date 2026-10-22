@@ -1266,6 +1266,38 @@ plugins, configured per project, with presets, like remark-lint.
   keyword by URI, get a sibling keyword, and find what a reference points
   to. They know nothing about particular keywords.
 
+### The rule catalogue
+
+Rules are being ported, one at a time, from the linter-agnostic catalogue
+at https://github.com/Karan-Palan/json-schema-lint-rules (`rules/*.json`).
+It's a list of candidates, not a spec.
+
+- Catalogue rules that differ only by keyword are one rule here:
+  `then_without_if` and `else_without_if` are `then-else-without-if`, and
+  `min_contains_without_contains` and `max_contains_without_contains` are
+  `min-max-contains-without-contains`. `unresolved_ref_pointer` is
+  `reference-without-target`.
+- One that's dialect-specific in the catalogue, like the `_draft` and
+  `_modern` pairs, is one rule here if keyword URIs make it work everywhere.
+- Rule IDs are kebab-case and say what's found (`if-without-then-else`),
+  not what to do.
+- Something that's validity (a meta-schema or `check` error, such as an
+  empty `enum` in draft-04) isn't ported as a rule.
+- Opinionated rules (`explicit_additional_properties`,
+  `require_description_title`, `unknown_keywords_prefix`) and style rules
+  that only remove a default value aren't in `recommended`, if they're
+  ported at all.
+- Messages are rewritten, not copied. The catalogue's say what to do
+  ("Add `then`, `else`, or remove `if`."). Ours say what's wrong, in the
+  keyword's own name, and are accurate for every dialect the rule works in.
+  `if` alone isn't "no effect" in 2019-09 and later, because its
+  annotations count for `unevaluated*`, so its message is "'if' without
+  'then' or 'else' only collects annotations".
+- Each rule gets a `.d.ts` that explains why it matters, tests (including a
+  dialect without the keyword and a property with the keyword's name), a
+  row in the README's table, and a place in `recommended` if it's likely a
+  mistake.
+
 ### Configuration comments
 
 - A `$comment` that starts with `jsonschema-lint-disable` turns rules off
@@ -1458,7 +1490,9 @@ What this relies on from browser's `v2` branch:
    identical subschemas.
 2. Decide whether keywords can provide a separate evaluator for plain
    values (see "Compile and evaluate").
-3. Later: OpenAPI and migrating dependent projects.
+3. Port lint rules from the catalogue (see "The rule catalogue"). Done so
+   far: everything in `src/lint/rules/`.
+4. Later: OpenAPI and migrating dependent projects.
 
 JSONC support in the CLI, with configuration comments from JSONC comments,
 was planned and is deferred, because it may not be worth it.
