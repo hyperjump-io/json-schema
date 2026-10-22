@@ -1037,7 +1037,7 @@ can be added to one `JsonSchema`.
   All three add draft-04's `items`, `additionalItems`, and `dependencies`,
   which is `dependentRequired` and `dependentSchemas` in one keyword.
   draft-04 adds `maximum` and `minimum`, which read the sibling boolean
-  `exclusiveMaximum` and `exclusiveMinimum`. `format` validates by default,
+  `exclusiveMaximum` and `exclusiveMinimum`, which require them. `format` validates by default,
   as most implementations of these drafts did. Their `format` is
   draft-04's, which makes a format the dialect doesn't have only an
   annotation, as the drafts say. Each dialect only has the formats its
@@ -1233,15 +1233,21 @@ plugins, configured per project, with presets, like remark-lint.
 | Configurable | No. The dialect and keywords define it | On or off, `warn` or `error`, and options |
 | Default | Always on, always errors | Off, unless a preset turns it on |
 
+- What a spec says a keyword's value MUST be is validity, and what it says
+  it SHOULD be is lint. Draft-04's `exclusiveMaximum` MUST have a
+  `maximum`, so it's an error, and an empty `enum` is an error in draft-04
+  (MUST) and lint after it (SHOULD).
 - A keyword with no effect (`then` without `if`, `minContains` without
-  `contains`, draft-04's `exclusiveMaximum` without `maximum`), a reference
-  to something missing, and an unknown `format` that's only an annotation
-  are lint. The schema still works.
+  `contains`), a reference to something missing, and an unknown `format`
+  that's only an annotation are lint. The schema still works.
 - An unsupported `format` when formats are validated is validity, because
   the schema can't be compiled. It's a compile error today and moves to the
   `format` keyword's `check`.
-- `check` stays for validity only. Its context doesn't get access to
-  siblings, other schemas, or warnings. Rules read the resolved AST instead.
+- `check` stays for validity only. Its context has the schema the keyword
+  is in, for requirements on siblings, like draft-04's `exclusiveMaximum`
+  needing `maximum`, but not other schemas or warnings. Rules read the
+  resolved AST instead. Every keyword in a schema is identified before any
+  is checked, so a check finds siblings that come after it.
 
 ### Rules
 

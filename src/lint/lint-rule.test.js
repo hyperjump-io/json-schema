@@ -114,7 +114,7 @@ describe("configuration comments", () => {
     const file = await lint(`{
       "$schema": "http://json-schema.org/draft-04/schema#",
       "$comment": "jsonschema-lint-disable",
-      "exclusiveMaximum": true
+      "properties": { "foo": { "$ref": "#/definitions/missing" } }
     }`);
     expect(file.messages).to.eql([]);
   });

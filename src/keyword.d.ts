@@ -287,6 +287,13 @@ export type Shape = "schema" | "data" | { array: Shape } | { map: Shape } | Shap
 
 export type CheckContext = {
   /**
+   * The schema the keyword is in. Use it to find sibling keywords, such as
+   * `maximum` for draft-04's `exclusiveMaximum`. Every sibling's keyword URI
+   * is known, but a sibling's value may not be annotated yet.
+   */
+  schemaNode: JsonSchemaNode;
+
+  /**
    * Report a problem with the keyword's value. It's added to the file's
    * messages with the keyword's URI as the `ruleId`. The node defaults to the
    * keyword's value.

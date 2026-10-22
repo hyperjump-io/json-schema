@@ -89,10 +89,9 @@ describe("draft-04", () => {
       expect(validator.validate(3)).to.equal(true);
     });
 
-    test("exclusiveMinimum and exclusiveMaximum have no effect on their own", async () => {
-      const validator = await compile(jsonSchema, { $schema, exclusiveMinimum: true, exclusiveMaximum: true });
-
-      expect(validator.validate(1)).to.equal(true);
+    test("exclusiveMinimum and exclusiveMaximum require minimum and maximum", async () => {
+      await expect(compile(jsonSchema, { $schema, exclusiveMinimum: true })).rejects.toMatchObject({ cause: { reason: "'exclusiveMinimum' requires 'minimum'" } });
+      await expect(compile(jsonSchema, { $schema, exclusiveMaximum: false })).rejects.toMatchObject({ cause: { reason: "'exclusiveMaximum' requires 'maximum'" } });
     });
   });
 

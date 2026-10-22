@@ -8,7 +8,9 @@ import { VFile } from "vfile";
 import { rejsonParse } from "@hyperjump/browser/json";
 import { JsonSchema } from "../json-schema.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
+import { siblingKeyword } from "./utilities.js";
 import { addV1, v1DialectUri } from "../dialects/v1/index.js";
+import { addDraft04, draft04DialectUri } from "../dialects/draft-04/index.js";
 import { addDraft07, draft07DialectUri } from "../dialects/draft-07/index.js";
 import { addDraft201909, draft201909DialectUri } from "../dialects/draft-2019-09/index.js";
 import { addDraft202012, draft202012DialectUri } from "../dialects/draft-2020-12/index.js";
@@ -123,6 +125,34 @@ describe("keyword checks", () => {
       .to.eql([["https://json-schema.org/keyword/draft-2019-09/anchor", `"_a"`]]);
     expect(await check(jsonSchema, `{ "$schema": "${draft202012DialectUri}", "$vocabulary": { "https://json-schema.org/draft/2020-12/vocab/core": "yes" } }`))
       .to.eql([{ reason: "Expected a boolean", ruleId: "https://json-schema.org/keyword/vocabulary", at: `"yes"` }]);
+  });
+
+  test("draft-04's exclusiveMaximum and exclusiveMinimum require maximum and minimum", async () => {
+    addDraft04(jsonSchema);
+
+    expect(await check(jsonSchema, `{ "$schema": "${draft04DialectUri}#", "exclusiveMaximum": true, "minimum": 1, "exclusiveMinimum": false }`)).to.eql([
+      { reason: "'exclusiveMaximum' requires 'maximum'", ruleId: "https://json-schema.org/keyword/draft-04/exclusiveMaximum", at: "true" }
+    ]);
+    expect(await check(jsonSchema, `{ "$schema": "${draft04DialectUri}#", "exclusiveMinimum": true, "maximum": 1, "exclusiveMaximum": true }`)).to.eql([
+      { reason: "'exclusiveMinimum' requires 'minimum'", ruleId: "https://json-schema.org/keyword/draft-04/exclusiveMinimum", at: "true" }
+    ]);
+  });
+
+  test("a check can find a sibling that comes after it", async () => {
+    /** @type (string | undefined)[] */
+    const siblings = [];
+    jsonSchema.addKeyword({
+      uri: "https://example.com/keyword/a",
+      shape: "data",
+      check(_valueNode, context) {
+        siblings.push(siblingKeyword(context.schemaNode, "https://json-schema.org/keyword/minLength")?.type);
+      }
+    });
+    jsonSchema.extendDialect(v1DialectUri, { keywords: { a: "https://example.com/keyword/a" } });
+
+    await check(jsonSchema, `{ "$schema": "${v1DialectUri}", "a": true, "minLength": 1 }`);
+
+    expect(siblings).to.eql(["json"]);
   });
 
   test("a custom keyword's check sees which parts of the value are schemas", async () => {

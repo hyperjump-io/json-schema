@@ -381,7 +381,6 @@ Warnings don't fail the command unless you use `--frail`.
 | `if-without-then-else` | `if` without `then` or `else` |
 | `duplicate-enum-values` | A value in `enum` that's equal to one before it |
 | `min-max-contains-without-contains` | `minContains` or `maxContains` without `contains` |
-| `exclusive-without-maximum-minimum` | draft-04's `exclusiveMaximum` or `exclusiveMinimum` without `maximum` or `minimum` |
 | `reference-without-target` | A `$ref` that doesn't find a schema, such as a file that doesn't exist or a JSON Pointer that doesn't point to anything |
 
 A `$comment` that starts with `jsonschema-lint-disable` turns rules off for the

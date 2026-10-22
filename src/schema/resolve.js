@@ -9,7 +9,7 @@ import unknownKeyword from "../keywords/unknown.js";
  * @import { VFileMessage } from "vfile-message"
  * @import { JsonDocumentNode, JsonErrorNode } from "@hyperjump/browser/json"
  * @import { JsonSchemaSession } from "../session.d.ts"
- * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaTolerantNode } from "./schema-ast.d.ts"
+ * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode, JsonSchemaTolerantNode } from "./schema-ast.d.ts"
  * @import { Keyword, ResolveContext, Shape } from "../keyword.d.ts"
  * @import { Dialect, DialectDefinition } from "../dialect.d.ts"
  * @import * as API from "./resolve.d.ts"
@@ -228,8 +228,14 @@ class Resolver {
       location: location(resource, pointer)
     });
 
-    for (const [property, keywordUri, keyword] of keywords) {
+    // Every keyword is identified before any is checked, so a check can find
+    // its siblings
+    for (const [property, keywordUri] of keywords) {
       property.keywordUri = keywordUri;
+    }
+
+    const schemaNode = /** @type JsonSchemaNode */ (node);
+    for (const [property, keywordUri, keyword] of keywords) {
       const [nameNode, valueNode] = property.children;
       await this.#shape(valueNode, keyword.shape, keywordUri, resource, JsonPointer.append(nameNode.value, pointer), dialect);
 
@@ -237,6 +243,7 @@ class Resolver {
       // parts are schemas
       if (keyword.check && !isErrorNode(valueNode)) {
         keyword.check(valueNode, {
+          schemaNode,
           message: (reason, node = valueNode) => this.#message(reason, node, keyword.uri)
         });
       }
