@@ -889,6 +889,11 @@ objects the caller reads results from afterwards.
   only cut when it's longer, because setting an array's length is slow even
   when it doesn't change. That made BASIC's plugin cost about the same as
   hooks that do nothing.
+- Errors are created when a keyword fails, even though most are dropped
+  when the branch they're in passes (failed `anyOf` alternatives, `if`
+  conditions). Creating only the ones that are kept was considered, but
+  an error is a small object now that locations are cheap to read, and not
+  creating error objects at all was only 0–3% faster.
 - Output formats can share utility functions, but not a base class. Each
   format's plugin has all of its own hooks, so it reads on its own and can
   change without affecting the others.

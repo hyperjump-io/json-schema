@@ -304,6 +304,25 @@ twice each, ASTs):
 Building the pointer by adding a segment at a time was already cheap, so
 it wasn't kept.
 
+Most of the errors BASIC creates are dropped, so creating only the ones
+that are kept was considered. With locations cheap to read, the most it
+could save is creating the error objects. Pushing one shared placeholder
+instead of a new error, back to back, twice each, for JS values:
+
+| | Errors | Placeholder |
+| --- | --- | --- |
+| 2020-12 suite | 0.505–0.509 ms | 0.491–0.516 ms |
+| `tsconfig.json` | 1.485–1.492 ms | 1.447–1.449 ms |
+| OpenAPI 3.0 | 1.591–1.637 ms | 1.605–1.629 ms |
+
+- That's 0–3%, so it wasn't done.
+- BASIC's plugin is still 10–19% slower than hooks that do nothing on
+  the real documents. Its hooks are inlined into the evaluator, except
+  cutting the list back, which was about 3% of the time. Writing that
+  check out instead of calling a method made it 3–5% faster on
+  `tsconfig.json` and 0–2% on OpenAPI, which wasn't worth repeating it in
+  four places.
+
 ## Bytecode and closures
 
 A prototype in `scratch/bench` (`claude/bytecode.ts`) lowers the IR once and then
