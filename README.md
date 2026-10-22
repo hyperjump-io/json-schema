@@ -408,6 +408,7 @@ Warnings don't fail the command unless you use `--frail`.
 | `read-only-and-write-only` | `readOnly` and `writeOnly` both `true` in the same schema |
 | `min-max-contains-without-contains` | `minContains` or `maxContains` without `contains` |
 | `min-contains-zero-without-max-contains` | `minContains: 0` next to `contains` without `maxContains`, so `contains` never fails |
+| `non-canonical-dialect-uri` | A `$schema` for draft-04 through 2020-12 with or without an empty fragment, unlike the URI its meta-schema uses, which implementations that compare strings won't recognize |
 | `reference-without-target` | A `$ref` that doesn't find a schema, such as a file that doesn't exist or a JSON Pointer that doesn't point to anything |
 
 These rules are matters of style, so they aren't in the recommended preset.

@@ -28,6 +28,7 @@ import unsafeIntegerLimit from "./rules/unsafe-integer-limit.js";
 import readOnlyAndWriteOnly from "./rules/read-only-and-write-only.js";
 import minMaxContainsWithoutContains from "./rules/min-max-contains-without-contains.js";
 import referenceWithoutTarget from "./rules/reference-without-target.js";
+import nonCanonicalDialectUri from "./rules/non-canonical-dialect-uri.js";
 
 /**
  * @import { Preset } from "unified"
@@ -65,6 +66,7 @@ const recommended = {
     [unsafeIntegerLimit, ["warn"]],
     [readOnlyAndWriteOnly, ["warn"]],
     [minMaxContainsWithoutContains, ["warn"]],
+    [nonCanonicalDialectUri, ["warn"]],
     [referenceWithoutTarget, ["error"]]
   ]
 };
