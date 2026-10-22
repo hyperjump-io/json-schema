@@ -1,39 +1,11 @@
 import { lintRule } from "../lint-rule.js";
-import { typeNames, visitSchemas } from "../utilities.js";
+import { keywordType, typeNames, visitSchemas } from "../utilities.js";
 
 /**
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode } from "../../schema/schema-ast.d.ts"
  */
 
 const keyword = "https://json-schema.org/keyword/";
-
-/**
- * The instance type each keyword applies to, in every dialect. Keywords that
- * apply to any type, like `enum`, aren't here. `format` depends on the
- * format, which says which types it applies to.
- *
- * @type Map<string, "number" | "string" | "array" | "object">
- */
-const keywordTypes = new Map([
-  ...[
-    "multipleOf", "maximum", "minimum", "exclusiveMaximum", "exclusiveMinimum",
-    "draft-04/maximum", "draft-04/minimum", "draft-04/exclusiveMaximum", "draft-04/exclusiveMinimum"
-  ].map((name) => /** @type const */ ([keyword + name, "number"])),
-  ...[
-    "maxLength", "minLength", "pattern", "contentEncoding", "contentMediaType", "contentSchema"
-  ].map((name) => /** @type const */ ([keyword + name, "string"])),
-  ...[
-    "items", "prefixItems", "unevaluatedItems", "contains", "maxContains", "minContains",
-    "maxItems", "minItems", "uniqueItems", "itemPattern",
-    "draft-2019-09/items", "draft-2019-09/additionalItems"
-  ].map((name) => /** @type const */ ([keyword + name, "array"])),
-  ...[
-    "properties", "patternProperties", "additionalProperties", "unevaluatedProperties", "propertyNames",
-    "maxProperties", "minProperties", "required", "dependentRequired", "dependentSchemas",
-    "propertyDependencies", "requireAllExcept",
-    "draft-04/required", "draft-04/dependencies", "draft-07/dependencies"
-  ].map((name) => /** @type const */ ([keyword + name, "object"]))
-]);
 
 const formatUris = new Set([keyword + "format", keyword + "draft-07/format"]);
 
@@ -106,9 +78,9 @@ const keywordForDisallowedType = lintRule({ origin: "jsonschema-lint:keyword-for
           file.message(`The '${valueNode.value}' format applies only to ${typeList}, which '${typeName}' doesn't allow`, { place: property.position });
         }
       } else {
-        const keywordType = keywordTypes.get(property.keywordUri);
-        if (keywordType !== undefined && !allowed.has(keywordType)) {
-          file.message(`'${name}' applies only to ${plurals[keywordType]}, which '${typeName}' doesn't allow`, { place: property.position });
+        const appliesTo = keywordType(property.keywordUri);
+        if (appliesTo !== undefined && !allowed.has(appliesTo)) {
+          file.message(`'${name}' applies only to ${plurals[appliesTo]}, which '${typeName}' doesn't allow`, { place: property.position });
         }
       }
     }
