@@ -61,6 +61,10 @@
     "./lint/rules/*": {
       "types": "./src/lint/rules/*.d.ts",
       "default": "./src/lint/rules/*.js"
+    },
+    "./cli": {
+      "types": "./src/cli/hyperjump-cli.d.ts",
+      "default": "./src/cli/hyperjump-cli.js"
     }
   },
   "imports": {

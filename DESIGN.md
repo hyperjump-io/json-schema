@@ -55,6 +55,7 @@ text ─ rejsonParse ─▶ JSON AST ─ jsonSchemaResolve ─▶ Schema AST ─
 | `src/lint/` | Lint rules (`rules/`, one per file), the recommended preset, `lintRule`, which applies configuration comments, and the utilities rules share |
 | `src/validate/` | `jsonSchemaValidate`, the unified plugin that validates JSON files |
 | `src/cli/` | The `hyperjump` CLI, which lints schemas and validates JSON files |
+| `hjlint/` | The unscoped `hjlint` package, so `npx hjlint` works |
 | `test/test-suite.js` | Runs the JSON Schema Test Suite and the annotation test suite |
 
 - A `.d.ts` next to a `.js` file declares that module's API. One without a
@@ -1056,7 +1057,15 @@ can be added to one `JsonSchema`.
   what it is. `hjlint` is a shorter alias for the same command. `npx` only
   finds an unscoped package, and `hyperjump` on npm is an unrelated package,
   so running it without installing needs `npx -p` until an unscoped `hjlint`
-  package that depends on this one is published.
+  package that depends on this one is published. That package is in
+  `hjlint/`. Its `bin` imports the CLI through the `./cli` export. It
+  depends on `@hyperjump/json-schema` `^2.0.0`, so a release of this
+  package reaches `npx hjlint` without releasing it again. It has its own
+  version and is only released when it changes or for a new major
+  version. It isn't published until this package is.
+- Both packages install `hjlint`. npm links one of them without an error,
+  and both run the same CLI. The wrapper still needs its own `bin`, because
+  that's what `npx` runs.
 - The configuration, ignore file, plugin prefix, and the source of its own
   messages follow the command's name. Lint keeps `jsonschema-lint`: the
   `$comment` directives (`jsonschema-lint-disable`), the rules' source, and
