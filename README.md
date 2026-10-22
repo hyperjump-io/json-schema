@@ -388,6 +388,7 @@ Warnings don't fail the command unless you use `--frail`.
 | `ignored-ref-siblings` | A property next to `$ref` in draft-04 through draft-07, where `$ref` replaces the whole schema |
 | `const-and-enum` | `const` and `enum` in the same schema, where `enum` either has no effect or nothing is valid |
 | `content-schema-without-media-type` | `contentSchema` without `contentMediaType` |
+| `dependency-on-required-property` | A dependency in `dependentRequired`, `dependentSchemas`, or `dependencies` on a property that's in `required`, so it always applies |
 | `read-only-and-write-only` | `readOnly` and `writeOnly` both `true` in the same schema |
 | `min-max-contains-without-contains` | `minContains` or `maxContains` without `contains` |
 | `reference-without-target` | A `$ref` that doesn't find a schema, such as a file that doesn't exist or a JSON Pointer that doesn't point to anything |
