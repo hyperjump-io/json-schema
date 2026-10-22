@@ -1013,10 +1013,12 @@ can be added to one `JsonSchema`.
   added.
 
 - **2020-12** (`src/dialects/draft-2020-12`, `addDraft202012`) adds 2020-12's
-  `$dynamicRef`, its vocabularies with `addVocabulary`, and its dialect.
-  `$dynamicRef` resolves like `$ref`, and if the schema it resolves to has a
-  dynamic anchor named by the fragment, the outermost schema in the dynamic
-  scope with that anchor applies instead.
+  `$dynamicRef` and `type`, its vocabularies with `addVocabulary`, and its
+  dialect. Its `type` can be an empty array, which the drafts allow and v1
+  doesn't. draft-04 through 2019-09 use it too. `$dynamicRef` resolves
+  like `$ref`, and if the schema it resolves to has a dynamic anchor named
+  by the fragment, the outermost schema in the dynamic scope with that
+  anchor applies instead.
 - **2019-09** (`src/dialects/draft-2019-09`, `addDraft201909`) is built the
   same way. It adds `$recursiveAnchor`, `$recursiveRef`, and its own
   `$anchor`, whose names can contain `:` but can't start with `_`. It also
@@ -1240,9 +1242,12 @@ plugins, configured per project, with presets, like remark-lint.
 | Default | Always on, always errors | Off, unless a preset turns it on |
 
 - What a spec says a keyword's value MUST be is validity, and what it says
-  it SHOULD be is lint. Draft-04's `exclusiveMaximum` MUST have a
-  `maximum`, so it's an error, and an empty `enum` is an error in draft-04
-  (MUST) and lint after it (SHOULD).
+  it SHOULD be is lint. The spec's text decides, not its meta-schema, as
+  v1 says. The draft meta-schemas don't allow an empty `type` array, or an
+  empty `enum` in draft-06 and draft-07, but the drafts' text does, so
+  they're lint. Draft-04's `exclusiveMaximum` MUST have a `maximum`, so
+  it's an error, and an empty `enum` is an error in draft-04 (MUST) and
+  lint after it (SHOULD).
 - A keyword with no effect (`then` without `if`, `minContains` without
   `contains`), a reference to something missing, and an unknown `format`
   that's only an annotation are lint. The schema still works.

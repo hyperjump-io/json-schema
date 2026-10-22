@@ -40,7 +40,7 @@ import refKeyword from "../../keywords/draft-07/ref.js";
 import requiredKeyword from "../../keywords/required.js";
 import thenKeyword from "../../keywords/then.js";
 import titleKeyword from "../../keywords/title.js";
-import typeKeyword from "../../keywords/type.js";
+import typeKeyword from "../../keywords/draft-2020-12/type.js";
 import uniqueItemsKeyword from "../../keywords/uniqueItems.js";
 import writeOnlyKeyword from "../../keywords/writeOnly.js";
 import dateTimeFormat from "../../formats/date-time.js";
@@ -114,7 +114,7 @@ export const draft07Dialect = {
     required: "https://json-schema.org/keyword/required",
     then: "https://json-schema.org/keyword/then",
     title: "https://json-schema.org/keyword/title",
-    type: "https://json-schema.org/keyword/type",
+    type: typeKeyword.uri,
     uniqueItems: "https://json-schema.org/keyword/uniqueItems",
     writeOnly: "https://json-schema.org/keyword/writeOnly"
   },

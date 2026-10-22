@@ -29,7 +29,7 @@ import propertiesKeyword from "../../keywords/properties.js";
 import refKeyword from "../../keywords/draft-07/ref.js";
 import requiredKeyword from "../../keywords/draft-04/required.js";
 import titleKeyword from "../../keywords/title.js";
-import typeKeyword from "../../keywords/type.js";
+import typeKeyword from "../../keywords/draft-2020-12/type.js";
 import uniqueItemsKeyword from "../../keywords/uniqueItems.js";
 import dateTimeFormat from "../../formats/date-time.js";
 import emailFormat from "../../formats/email.js";
@@ -83,7 +83,7 @@ export const draft04Dialect = {
     $ref: refKeyword.uri,
     required: requiredKeyword.uri,
     title: "https://json-schema.org/keyword/title",
-    type: "https://json-schema.org/keyword/type",
+    type: typeKeyword.uri,
     uniqueItems: "https://json-schema.org/keyword/uniqueItems"
   },
   unknownKeywords: "ignore",

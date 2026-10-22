@@ -40,7 +40,7 @@ import minimumKeyword from "../../keywords/minimum.js";
 import multipleOfKeyword from "../../keywords/multipleOf.js";
 import patternKeyword from "../../keywords/pattern.js";
 import requiredKeyword from "../../keywords/required.js";
-import typeKeyword from "../../keywords/type.js";
+import typeKeyword from "../../keywords/draft-2020-12/type.js";
 import uniqueItemsKeyword from "../../keywords/uniqueItems.js";
 import defaultKeyword from "../../keywords/default.js";
 import deprecatedKeyword from "../../keywords/deprecated.js";
@@ -164,7 +164,7 @@ const vocabularies = {
       multipleOf: "https://json-schema.org/keyword/multipleOf",
       pattern: "https://json-schema.org/keyword/pattern",
       required: "https://json-schema.org/keyword/required",
-      type: "https://json-schema.org/keyword/type",
+      type: typeKeyword.uri,
       uniqueItems: "https://json-schema.org/keyword/uniqueItems"
     }
   },

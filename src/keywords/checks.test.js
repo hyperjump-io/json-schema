@@ -165,6 +165,21 @@ describe("keyword checks", () => {
     ]);
   });
 
+  test("type can only be empty before v1", async () => {
+    addDraft04(jsonSchema);
+    addDraft202012(jsonSchema);
+
+    expect(await check(jsonSchema, `{ "$schema": "${draft04DialectUri}#", "type": [] }`)).to.eql([]);
+    expect(await check(jsonSchema, `{ "$schema": "${draft202012DialectUri}", "type": [] }`)).to.eql([]);
+    expect(await check(jsonSchema, `{ "$schema": "${draft202012DialectUri}", "type": ["nope", "null", "null"] }`)).to.eql([
+      { reason: "Expected one of 'null', 'boolean', 'object', 'array', 'number', 'string', 'integer'", ruleId: "https://json-schema.org/keyword/draft-2020-12/type", at: `"nope"` },
+      { reason: "'null' is a duplicate", ruleId: "https://json-schema.org/keyword/draft-2020-12/type", at: `"null"` }
+    ]);
+    expect(await check(jsonSchema, `{ "$schema": "${v1DialectUri}", "type": [] }`)).to.eql([
+      { reason: "Expected at least one type", ruleId: "https://json-schema.org/keyword/type", at: "[]" }
+    ]);
+  });
+
   test("enum and required can be empty or have duplicates after draft-04", async () => {
     const messages = await check(jsonSchema, `{ "$schema": "${v1DialectUri}", "enum": [], "properties": { "a": { "enum": [1, 1] }, "b": { "required": [] } } }`);
 

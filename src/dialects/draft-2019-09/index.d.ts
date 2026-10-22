@@ -19,7 +19,8 @@ export const draft201909Dialect: Dialect;
 
 /**
  * Add JSON Schema 2019-09: its `$anchor`, `$recursiveAnchor`,
- * `$recursiveRef`, `items`, and `additionalItems`, its vocabularies (with
+ * `$recursiveRef`, `items`, and `additionalItems`, 2020-12's `type`, its
+ * vocabularies (with
  * {@link addVocabulary}), and its dialect. Meta-schemas that extend 2019-09
  * with `$vocabulary` define their own dialects. Use {@link addVocabulary} to
  * add vocabularies they can use.

@@ -18,8 +18,8 @@ export const draft202012DialectUri: "https://json-schema.org/draft/2020-12/schem
 export const draft202012Dialect: Dialect;
 
 /**
- * Add JSON Schema 2020-12: its `$dynamicRef`, its vocabularies (with
- * {@link addVocabulary}), and its dialect. Meta-schemas that extend 2020-12
+ * Add JSON Schema 2020-12: its `$dynamicRef` and `type`, its vocabularies
+ * (with {@link addVocabulary}), and its dialect. Meta-schemas that extend 2020-12
  * with `$vocabulary` define their own dialects. Use {@link addVocabulary} to
  * add vocabularies they can use.
  *
