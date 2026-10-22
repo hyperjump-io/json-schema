@@ -20,6 +20,7 @@ import keywordWithoutType from "./rules/keyword-without-type.js";
 import redundantNumericLimit from "./rules/redundant-numeric-limit.js";
 import invalidDefaultOrExample from "./rules/invalid-default-or-example.js";
 import emptyThenElse from "./rules/empty-then-else.js";
+import falseThenElse from "./rules/false-then-else.js";
 import readOnlyAndWriteOnly from "./rules/read-only-and-write-only.js";
 import minMaxContainsWithoutContains from "./rules/min-max-contains-without-contains.js";
 import referenceWithoutTarget from "./rules/reference-without-target.js";
@@ -53,6 +54,7 @@ const recommended = {
     [redundantNumericLimit, ["warn"]],
     [invalidDefaultOrExample, ["warn"]],
     [emptyThenElse, ["warn"]],
+    [falseThenElse, ["warn"]],
     [readOnlyAndWriteOnly, ["warn"]],
     [minMaxContainsWithoutContains, ["warn"]],
     [referenceWithoutTarget, ["error"]]
