@@ -287,6 +287,8 @@ import { addFullFormats } from "@hyperjump/json-schema/formats/full";
 addFullFormats(jsonSchema);
 ```
 
+The CLI has every format.
+
 ### Invalid schemas
 
 Schemas are always validated before they're used. A schema that isn't valid
@@ -389,6 +391,7 @@ Warnings don't fail the command unless you use `--frail`.
 | `const-and-enum` | `const` and `enum` in the same schema, where `enum` either has no effect or nothing is valid |
 | `content-schema-without-media-type` | `contentSchema` without `contentMediaType` |
 | `dependency-on-required-property` | A dependency in `dependentRequired`, `dependentSchemas`, or `dependencies` on a property that's in `required`, so it always applies |
+| `keyword-for-disallowed-type` | A keyword or known format for one type of value, like `minimum`, `properties`, or the `date` format, in a schema whose `type` doesn't allow that type |
 | `read-only-and-write-only` | `readOnly` and `writeOnly` both `true` in the same schema |
 | `min-max-contains-without-contains` | `minContains` or `maxContains` without `contains` |
 | `reference-without-target` | A `$ref` that doesn't find a schema, such as a file that doesn't exist or a JSON Pointer that doesn't point to anything |

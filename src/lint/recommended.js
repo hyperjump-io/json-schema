@@ -10,6 +10,7 @@ import ignoredRefSiblings from "./rules/ignored-ref-siblings.js";
 import constAndEnum from "./rules/const-and-enum.js";
 import contentSchemaWithoutMediaType from "./rules/content-schema-without-media-type.js";
 import dependencyOnRequiredProperty from "./rules/dependency-on-required-property.js";
+import keywordForDisallowedType from "./rules/keyword-for-disallowed-type.js";
 import readOnlyAndWriteOnly from "./rules/read-only-and-write-only.js";
 import minMaxContainsWithoutContains from "./rules/min-max-contains-without-contains.js";
 import referenceWithoutTarget from "./rules/reference-without-target.js";
@@ -33,6 +34,7 @@ const recommended = {
     [constAndEnum, ["warn"]],
     [contentSchemaWithoutMediaType, ["warn"]],
     [dependencyOnRequiredProperty, ["warn"]],
+    [keywordForDisallowedType, ["warn"]],
     [readOnlyAndWriteOnly, ["warn"]],
     [minMaxContainsWithoutContains, ["warn"]],
     [referenceWithoutTarget, ["error"]]

@@ -15,6 +15,7 @@ import { addDraft06 } from "../dialects/draft-06/index.js";
 import { addDraft07 } from "../dialects/draft-07/index.js";
 import { addDraft201909 } from "../dialects/draft-2019-09/index.js";
 import { addDraft202012 } from "../dialects/draft-2020-12/index.js";
+import { addFullFormats } from "../formats/full.js";
 
 /**
  * @import { Position } from "unist"
@@ -39,6 +40,8 @@ import { addDraft202012 } from "../dialects/draft-2020-12/index.js";
 /**
  * Every file shares a `JsonSchema`. Each one's session says what it can
  * retrieve, because files in different folders can have different settings.
+ * It has every format JSON Schema defines, so they can be validated and
+ * lint rules know what they apply to.
  */
 const jsonSchema = new JsonSchema();
 addV1(jsonSchema);
@@ -47,6 +50,7 @@ addDraft06(jsonSchema);
 addDraft07(jsonSchema);
 addDraft201909(jsonSchema);
 addDraft202012(jsonSchema);
+addFullFormats(jsonSchema);
 
 /** @type WeakMap<Processor, FileSet> */
 const fileSets = new WeakMap();
