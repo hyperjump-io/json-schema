@@ -381,6 +381,7 @@ Warnings don't fail the command unless you use `--frail`.
 | --- | --- |
 | `then-else-without-if` | `then` or `else` without `if` |
 | `if-without-then-else` | `if` without `then` or `else` |
+| `empty-then-else` | `then` or `else` that every value is valid against, like `{}`, so it has no effect |
 | `duplicate-enum-values` | A value in `enum` that's equal to one before it |
 | `empty-enum` | An `enum` with no values, which nothing is valid against |
 | `empty-type` | A `type` that's an empty array, which nothing is valid against |
