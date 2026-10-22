@@ -3,6 +3,7 @@ import ifWithoutThenElse from "./rules/if-without-then-else.js";
 import duplicateEnumValues from "./rules/duplicate-enum-values.js";
 import emptyEnum from "./rules/empty-enum.js";
 import emptyType from "./rules/empty-type.js";
+import duplicateOneOfSchemas from "./rules/duplicate-one-of-schemas.js";
 import readOnlyAndWriteOnly from "./rules/read-only-and-write-only.js";
 import minMaxContainsWithoutContains from "./rules/min-max-contains-without-contains.js";
 import referenceWithoutTarget from "./rules/reference-without-target.js";
@@ -19,6 +20,7 @@ const recommended = {
     [duplicateEnumValues, ["warn"]],
     [emptyEnum, ["warn"]],
     [emptyType, ["warn"]],
+    [duplicateOneOfSchemas, ["warn"]],
     [readOnlyAndWriteOnly, ["warn"]],
     [minMaxContainsWithoutContains, ["warn"]],
     [referenceWithoutTarget, ["error"]]
