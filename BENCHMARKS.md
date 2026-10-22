@@ -22,6 +22,9 @@ when json-schema-next and `@hyperjump/json-schema` still validated draft-04
 through draft-07 formats, which didn't matter, because the untagged test cases
 only use `format` on values that aren't strings, which `format` skips.
 
+The first table and its notes are from early on, before errors and plugins
+got faster. Only 2020-12 is enabled in the benchmark now.
+
 Results (mean time per run of the suite, FLAG unless it says errors):
 
 | | json-schema-next | `@hyperjump/json-schema` |
@@ -64,38 +67,31 @@ Results (mean time per run of the suite, FLAG unless it says errors):
 - With the `format` test cases, format validators take most of the time,
   and FLAG is only about 1.4 times faster.
 
-Every implementation in 2020-12, from one later session (mean time per run of
-the suite):
+Every implementation in 2020-12, measured on 2026-10-21 (mean time per run
+of the suite):
 
 | | FLAG | All errors |
 | --- | --- | --- |
-| json-schema-next | 0.28 ms | 1.83 ms |
-| `@hyperjump/json-schema` | 0.98 ms | 1.68 ms |
-| `@corvus-dotnet/json-schema` | 0.064 ms | 0.98 ms |
-| ata-validator | 0.067 ms | 1.36 ms |
-| `@exodus/schemasafe` | 0.114 ms | 0.44 ms |
+| json-schema-next | 0.243 ms | 0.785 ms |
+| `@hyperjump/json-schema` | 0.912 ms | 1.668 ms |
+| `@corvus-dotnet/json-schema` | 0.058 ms | 0.863 ms |
+| ata-validator | 0.061 ms | 1.124 ms |
+| `@exodus/schemasafe` | 0.081 ms | 0.353 ms |
 
-- corvus and ata-validator, which both generate code, are 4.1–4.3 times
-  faster than json-schema-next at FLAG, and schemasafe is about 2.4 times
-  faster.
-- json-schema-next was the slowest at collecting errors. 41% of the suite's
-  instances are invalid, and its errors cost about 6.6 times its FLAG,
-  where `@hyperjump/json-schema`'s cost about 1.7 times its FLAG. Errors
-  were `VFileMessage`s with a message built for each one.
-- Errors are plain objects without messages now (see "Validation API" in
-  DESIGN.md), and json-schema-next's errors took 1.16 ms in a later
-  session. That's faster than `@hyperjump/json-schema` (1.68 ms), about the
-  same as ata-validator (1.14 ms), and behind corvus (0.90 ms) and
-  schemasafe (0.35 ms). On the suite's invalid instances alone, BASIC went
-  from 1.30 ms to 0.78 ms and DETAILED from 1.66 ms to 0.76 ms.
-- What's left of the gap is mostly evaluating with plugins (see "Plugins"
-  for what's been done since). BASIC and
-  DETAILED are plugins, so every schema and keyword gets a location object,
-  an array for each plugin's state, and four hook calls, whether or not
-  anything fails. With a plugin that does nothing, evaluating the invalid
-  instances took 0.43 ms, where evaluating every keyword without plugins
-  took 0.19 ms. `scratch/bench/claude/errors-breakdown.ts` measures each
-  part.
+- corvus and ata-validator, which both generate code, are about 4 times
+  faster than json-schema-next at FLAG, and schemasafe is about 3 times
+  faster. json-schema-next is about 3.75 times faster than
+  `@hyperjump/json-schema`.
+- At collecting errors, only schemasafe is faster, about 2.2 times.
+  json-schema-next is faster than corvus, ata-validator, and
+  `@hyperjump/json-schema` (2.1 times). 41% of the suite's instances are
+  invalid.
+- How it got there: json-schema-next was the slowest at collecting errors
+  (1.83 ms), when errors were `VFileMessage`s with a message built for each
+  one. Plain objects without messages (see "Validation API" in DESIGN.md)
+  took it to 1.16 ms, and the changes in "Plugins" to 0.78 ms.
+  `scratch/bench/claude/errors-breakdown.ts` measures each part of
+  collecting errors.
 
 ## Real-world schemas
 
@@ -112,49 +108,52 @@ instance is left out if the implementations don't all agree on it. With
 support draft-04, and schemasafe can't compile the `package.json` or
 OpenAPI schemas when it collects errors.
 
-Results from one session (mean time per run of the group, in ms):
+Results from 2026-10-21 (mean time per run of the group, in ms):
 
 | FLAG | Instances | json-schema-next | `@hyperjump/json-schema` | corvus | ata-validator | schemasafe |
 | --- | --- | --- | --- | --- | --- | --- |
-| `package.json`, small | 1472 | 1.91 | 6.81 | 0.45 | 10.8 | 4.35 |
-| `package.json`, medium | 1514 | 7.94 | 24.7 | 2.06 | 22.5 | 13.0 |
-| `package.json`, large | 14 | 1.06 | 2.31 | 0.146 | 0.233 | 0.430 |
-| `tsconfig.json`, small | 191 | 0.324 | 1.23 | 0.041 | 2.47 | 0.886 |
-| `tsconfig.json`, medium | 3 | 0.0115 | 0.0481 | 0.0015 | 0.0041 | 0.0180 |
-| OpenAPI 3.0, medium | 6 | 0.125 | 0.391 | 0.0211 | | 0.117 |
-| OpenAPI 3.0, large | 1 | 0.429 | 1.67 | 0.0878 | | 0.640 |
+| `package.json`, small | 1472 | 1.97 | 6.80 | 0.403 | 10.4 | 4.27 |
+| `package.json`, medium | 1514 | 8.42 | 24.9 | 2.03 | 22.9 | 12.7 |
+| `package.json`, large | 14 | 1.06 | 2.47 | 0.146 | 0.236 | 0.433 |
+| `tsconfig.json`, small | 191 | 0.313 | 1.24 | 0.039 | 2.46 | 0.879 |
+| `tsconfig.json`, medium | 3 | 0.0112 | 0.0482 | 0.0015 | 0.0041 | 0.0183 |
+| OpenAPI 3.0, medium | 6 | 0.108 | 0.337 | 0.0195 | | 0.111 |
+| OpenAPI 3.0, large | 1 | 0.379 | 1.61 | 0.0828 | | 0.589 |
 
 | All errors | Instances | json-schema-next | `@hyperjump/json-schema` | corvus | ata-validator | schemasafe |
 | --- | --- | --- | --- | --- | --- | --- |
-| `package.json`, small | 1472 | 2.93 | 9.93 | 12.8 | 11.5 | |
-| `package.json`, medium | 1514 | 10.9 | 47.4 | 52.3 | 25.6 | |
-| `package.json`, large | 14 | 1.13 | 4.48 | 3.85 | 0.239 | |
-| `tsconfig.json`, small | 191 | 0.345 | 2.64 | 2.94 | 2.53 | 0.961 |
-| `tsconfig.json`, medium | 3 | 0.0117 | 0.110 | 0.124 | 0.0040 | 0.0206 |
-| OpenAPI 3.0, medium | 6 | 0.125 | 0.705 | 0.574 | | |
-| OpenAPI 3.0, large | 1 | 0.427 | 2.91 | 2.06 | | |
+| `package.json`, small | 1472 | 2.37 | 10.1 | 12.2 | 11.3 | |
+| `package.json`, medium | 1514 | 9.66 | 45.2 | 50.4 | 24.9 | |
+| `package.json`, large | 14 | 1.07 | 4.36 | 3.65 | 0.237 | |
+| `tsconfig.json`, small | 191 | 0.341 | 2.60 | 2.90 | 2.51 | 0.963 |
+| `tsconfig.json`, medium | 3 | 0.0114 | 0.105 | 0.119 | 0.0040 | 0.0202 |
+| OpenAPI 3.0, medium | 6 | 0.109 | 0.627 | 0.507 | | |
+| OpenAPI 3.0, large | 1 | 0.380 | 2.89 | 1.84 | | |
 
 - json-schema-next is faster than `@hyperjump/json-schema` on every group:
-  2.2–4.2 times at FLAG and 3.4–9.4 times at errors.
-- corvus is the fastest at FLAG on every group, 4–8 times faster than
-  json-schema-next. The gap is about 4 times on small and medium
-  `package.json` files and about 7 times on large ones, so json-schema-next
-  falls further behind as instances get bigger.
+  2.3–4.3 times at FLAG and 4.1–9.2 times at errors.
+- corvus is the fastest at FLAG on every group, 4.2–8 times faster than
+  json-schema-next. The gap is 4–5 times on small and medium `package.json`
+  files and about 7 times on large ones, so json-schema-next falls further
+  behind as instances get bigger.
 - The test suite makes json-schema-next look worse at FLAG than these
-  schemas do. ata-validator and schemasafe are 2.4–4.1 times faster on the
+  schemas do. ata-validator and schemasafe are 3–4 times faster on the
   suite, but json-schema-next is faster than both on small and medium
-  instances here. They're 2.5–4.5 times faster on large `package.json`
-  files.
-  ata-validator takes about 7–16 µs for each `package.json` file whatever its
-  size, so it's slow on many small instances and fast on big ones.
+  `package.json` files and small `tsconfig.json` files, and about the same
+  as schemasafe on the medium OpenAPI documents. They're 2.5–4.5 times
+  faster on large `package.json` files, and ata-validator is faster on the
+  three medium `tsconfig.json` files. ata-validator takes about 7–17 µs for
+  each `package.json` file whatever its size, so it's slow on many small
+  instances and fast on big ones.
 - Almost every instance is valid (35 of the 3000 `package.json` files fail,
   and none of the others do), so the errors results are mostly the cost of
   being ready to collect errors. json-schema-next only collects errors on a
   second evaluation of an invalid instance, so its errors cost at most
-  about 1.5 times its FLAG here. corvus's results collector costs 25–70
-  times its FLAG even when there's nothing to report, which is why json-schema-next is
-  the fastest at errors on most groups. ata-validator's errors cost the same
-  as its FLAG, so it's fastest on large valid instances.
+  about 1.2 times its FLAG here. corvus's results collector costs 25–75
+  times its FLAG even when there's nothing to report, which is why
+  json-schema-next is the fastest at errors on most groups.
+  ata-validator's errors cost the same as its FLAG, so it's fastest on
+  large valid instances.
 - The `tsconfig.json` medium and OpenAPI groups have only a few instances,
   so they mostly show how those documents do. The one small OpenAPI
   document is left out of the tables. It's invalid at the root, so it only
@@ -170,25 +169,33 @@ the timed part. Annotating a node adds to the annotations already on it, so
 `annotateNode` gets new nodes before each run, which isn't timed. Error modes
 go through every error.
 
-Results (mean time per run of the suite):
+Results from 2026-10-21 (mean time per run of the suite, the range over
+four runs):
 
 | Mode | JS value | JSON text | JSON AST |
 | --- | --- | --- | --- |
-| FLAG | 0.23 ms | 2.26 ms | 0.46 ms |
-| BASIC | 1.70 ms | 4.07 ms | 2.08 ms |
-| DETAILED | 1.98 ms | 4.38 ms | 2.39 ms |
-| Annotations | 0.99 ms | 2.45 ms | 0.84 ms |
+| FLAG | 0.21–0.22 ms | 2.27–2.72 ms | 0.33–0.35 ms |
+| BASIC | 0.72–0.74 ms | 3.00–3.43 ms | 0.88–1.02 ms |
+| DETAILED | 0.73–0.82 ms | 3.15–3.66 ms | 0.88–1.01 ms |
+| Annotations | 0.84–1.21 ms | 2.62–2.89 ms | 0.70–0.78 ms |
 
 - Parsing JSON text costs more than evaluating in every mode. FLAG on text
-  is about 10 times slower than on a value, and about 2 ms of every text
-  row is parsing.
-- FLAG on an AST is about 2 times slower than on a value. An AST is
+  is about 10–13 times slower than on a value, and about 2–2.5 ms of every
+  text row is parsing. The text rows and `annotate` vary the most between
+  runs, by up to 20% and 44%.
+- FLAG on an AST is about 1.6 times slower than on a value. An AST is
   evaluated by its own specialization, which reads values through the nodes
-  (see "Compile and evaluate" in DESIGN.md).
-- DETAILED is about 1.08–1.16 times slower than BASIC.
-- Annotations are faster than BASIC, which creates an error object for each
-  failure. `annotateNode` is faster than `annotate`, which builds the AST
-  from the value itself.
+  (see "Compile and evaluate" in DESIGN.md). It was about 2 times slower
+  until `Validator` stopped building a string key to find the
+  specialization on every call.
+- DETAILED costs about the same as BASIC now that both collect errors in
+  one list (see "Output formats" in DESIGN.md). It was 1.08–1.16 times
+  slower.
+- BASIC and DETAILED are less than half what they were (1.70 ms and
+  1.98 ms for a value before errors became plain objects and the changes
+  in "Plugins"). BASIC is now faster than annotating a value, but
+  `annotateNode` is still faster than BASIC on an AST. `annotate` is slower
+  than `annotateNode` because it builds the AST from the value itself.
 - 2020-12 gives results within a few percent of v1. The suite's test cases
   mostly don't have `$schema`, so both run nearly the same test cases with
   mostly the same keywords.
