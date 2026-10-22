@@ -841,6 +841,11 @@ objects the caller reads results from afterwards.
     `value()` as a method, so it's one allocation and hooks always see the
     same shape.
   - An array index is appended to the instance location without escaping.
+  - An AST's instance locations are built the same way as a JS value's,
+    even though each node has its location from parsing. Taking it from
+    the node (the part after the root node's location, percent-decoded)
+    wasn't faster with plugins that don't read it, and was up to 10%
+    slower with ones that do.
   - Plugins need to be easy to write, so expensive parts aren't made lazy
     in ways plugins have to know about. A shared location that's only valid
     during the hook, with pointers built when they're read, was about as

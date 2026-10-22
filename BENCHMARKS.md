@@ -287,6 +287,23 @@ times each).
     slower than the first prototype with hooks that do nothing, before
     anything read the trace.
 
+Taking an AST's instance locations from the nodes, which have them from
+parsing, was tried next. Decoding a node's location every time a plugin
+read it made a plugin that reads every location 25–80% slower on the
+real documents, and BASIC's plugin slower too. Decoding only
+locations that have a `%` brought it back to about even (back to back,
+twice each, ASTs):
+
+| | Before | After |
+| --- | --- | --- |
+| tsconfig, reads every location | 1.73–2.01 ms | 1.93–1.94 ms |
+| tsconfig, BASIC's plugin | 1.92–2.09 ms | 2.00–2.09 ms |
+| OpenAPI, reads every location | 2.27–2.28 ms | 2.45–2.50 ms |
+| OpenAPI, BASIC's plugin | 2.32–2.38 ms | 2.34–2.37 ms |
+
+Building the pointer by adding a segment at a time was already cheap, so
+it wasn't kept.
+
 ## Bytecode and closures
 
 A prototype in `scratch/bench` (`claude/bytecode.ts`) lowers the IR once and then

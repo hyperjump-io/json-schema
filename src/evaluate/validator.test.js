@@ -563,6 +563,24 @@ describe("Validator", () => {
   });
 
   describe("validateJson", () => {
+    test("instance locations of names that are encoded in node locations", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({
+        properties: { "a/b": { properties: { "c~d": { properties: { "%41 é": { type: "number" } } } } } }
+      }));
+
+      const result = validator.validateJson(`{ "a/b": { "c~d": { "%41 é": "x" } } }`, { output: "BASIC" });
+      expect(result.errors.map((error) => /** @type ValidationError */ (error).instanceLocation)).to.eql(["/a~1b/c~0d/%41 é"]);
+    });
+
+    test("instance locations are relative to the node evaluation starts from", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({ properties: { bar: { type: "number" } } }));
+      const document = fromJson(`{ "foo": { "bar": "x" } }`, "https://example.com/document");
+      const node = /** @type any */ (document.node).children[0].children[1];
+
+      const result = validator.validateNode(node, { output: "BASIC" });
+      expect(result.errors.map((error) => /** @type ValidationError */ (error).instanceLocation)).to.eql(["/bar"]);
+    });
+
     test("errors have positions", async () => {
       const validator = await jsonSchema.compile(await schemaFile({ properties: { foo: { type: "number" } } }));
 

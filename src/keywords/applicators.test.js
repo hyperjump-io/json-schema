@@ -180,6 +180,19 @@ describe("applicator errors", () => {
     });
   });
 
+  describe("propertyNames", () => {
+    test("a property name has the object's instance location", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({ properties: { foo: { propertyNames: { maxLength: 2 } } } }));
+
+      const json = `{ "foo": { "bar": 1 } }`;
+      for (const result of [validator.validate(JSON.parse(json), { output: "BASIC" }), validator.validateJson(json, { output: "BASIC" })]) {
+        expect(result.errors.map(locations)).to.eql([
+          { absoluteKeywordLocation: "#/properties/foo/propertyNames/maxLength", instanceLocation: "/foo" }
+        ]);
+      }
+    });
+  });
+
   describe("subschemas that always pass", () => {
     /** @type Record<string, Json> */
     const schema = {
