@@ -1348,6 +1348,9 @@ Candidates:
   `const-or-enum-value-for-disallowed-type`.
 - A limit next to `const` or `enum` that every value passes, so it has no
   effect.
+- A `default` or example that's valid against the schema it's in, but not
+  against a schema that must also pass, like a parent with `allOf`.
+  `invalid-default-or-example` only checks the schema it's in.
 
 ### Configuration comments
 
