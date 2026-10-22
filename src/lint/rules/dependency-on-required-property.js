@@ -1,5 +1,5 @@
 import { lintRule } from "../lint-rule.js";
-import { siblingKeyword, visitKeywords } from "../utilities.js";
+import { requiredNames, visitKeywords } from "../utilities.js";
 
 /**
  * @import { JsonSchemaDocumentNode } from "../../schema/schema-ast.d.ts"
@@ -12,11 +12,6 @@ const dependencyUris = [
   "https://json-schema.org/keyword/draft-04/dependencies"
 ];
 
-const requiredUris = [
-  "https://json-schema.org/keyword/required",
-  "https://json-schema.org/keyword/draft-04/required"
-];
-
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
 const dependencyOnRequiredProperty = lintRule({ origin: "jsonschema-lint:dependency-on-required-property" }, (tree, file) => {
   for (const dependencyUri of dependencyUris) {
@@ -26,18 +21,7 @@ const dependencyOnRequiredProperty = lintRule({ origin: "jsonschema-lint:depende
         return;
       }
 
-      /** @type Set<string> */
-      const required = new Set();
-      for (const requiredUri of requiredUris) {
-        const requiredNode = siblingKeyword(schemaNode, requiredUri);
-        if (requiredNode?.jsonType === "array") {
-          for (const itemNode of requiredNode.children) {
-            if (itemNode.jsonType === "string") {
-              required.add(itemNode.value);
-            }
-          }
-        }
-      }
+      const required = requiredNames(schemaNode)?.names ?? new Set();
 
       for (const property of valueNode.children) {
         const name = property.children[0].value;
