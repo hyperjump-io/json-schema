@@ -14,6 +14,7 @@ import keywordForDisallowedType from "./rules/keyword-for-disallowed-type.js";
 import minPropertiesCoveredByRequired from "./rules/min-properties-covered-by-required.js";
 import typeImpliedByConstOrEnum from "./rules/type-implied-by-const-or-enum.js";
 import constOrEnumValueForDisallowedType from "./rules/const-or-enum-value-for-disallowed-type.js";
+import requiredPropertyNotAllowed from "./rules/required-property-not-allowed.js";
 import requiredPropertyNotDefined from "./rules/required-property-not-defined.js";
 import readOnlyAndWriteOnly from "./rules/read-only-and-write-only.js";
 import minMaxContainsWithoutContains from "./rules/min-max-contains-without-contains.js";
@@ -42,6 +43,7 @@ const recommended = {
     [minPropertiesCoveredByRequired, ["warn"]],
     [typeImpliedByConstOrEnum, ["warn"]],
     [constOrEnumValueForDisallowedType, ["warn"]],
+    [requiredPropertyNotAllowed, ["warn"]],
     [requiredPropertyNotDefined, ["warn"]],
     [readOnlyAndWriteOnly, ["warn"]],
     [minMaxContainsWithoutContains, ["warn"]],

@@ -395,6 +395,7 @@ Warnings don't fail the command unless you use `--frail`.
 | `min-properties-covered-by-required` | `minProperties` that's no more than the number of properties in `required`, so it has no effect |
 | `type-implied-by-const-or-enum` | `type` that allows the `const` value or every value in `enum`, so it has no effect. Turn it off if your tools need `type` |
 | `const-or-enum-value-for-disallowed-type` | A `const` value or a value in `enum` that `type` doesn't allow, so it's never valid |
+| `required-property-not-allowed` | A property in `required` that `properties`, `patternProperties`, or `additionalProperties` doesn't allow, so no object is valid |
 | `required-property-not-defined` | A property in `required` that no schema applying to the same object defines in `properties` or `patternProperties`, including schemas it's combined with by `allOf`, `anyOf`, `$ref`, and so on |
 | `read-only-and-write-only` | `readOnly` and `writeOnly` both `true` in the same schema |
 | `min-max-contains-without-contains` | `minContains` or `maxContains` without `contains` |

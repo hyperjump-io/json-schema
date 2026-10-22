@@ -1336,16 +1336,15 @@ It's a list of candidates, not a spec.
 
 Rules of our own are added too, when porting turns up a mistake the
 catalogue doesn't cover. Done so far: `empty-type`,
-`const-or-enum-value-for-disallowed-type`, and `required` against
-`maxProperties` in `contradictory-limits`. Candidates:
+`const-or-enum-value-for-disallowed-type`, `required-property-not-allowed`,
+and `required` against `maxProperties` in `contradictory-limits`.
+Candidates:
 
 - A dependent property in `dependentRequired` or `dependencies` that's
   already in `required`, so it has no effect.
 - A `const` or `enum` value that the sibling assertions reject, like
   `"a"` with `minLength: 2`. It's never valid. It generalizes
   `const-or-enum-value-for-disallowed-type`.
-- A property in `required` that `properties` makes `false`, or that
-  `additionalProperties: false` doesn't allow, so no object is valid.
 - A limit next to `const` or `enum` that every value passes, so it has no
   effect.
 
