@@ -24,6 +24,7 @@ import emptyThenElse from "./rules/empty-then-else.js";
 import falseThenElse from "./rules/false-then-else.js";
 import minContainsZeroWithoutMaxContains from "./rules/min-contains-zero-without-max-contains.js";
 import fractionalLimitForInteger from "./rules/fractional-limit-for-integer.js";
+import unsafeIntegerLimit from "./rules/unsafe-integer-limit.js";
 import readOnlyAndWriteOnly from "./rules/read-only-and-write-only.js";
 import minMaxContainsWithoutContains from "./rules/min-max-contains-without-contains.js";
 import referenceWithoutTarget from "./rules/reference-without-target.js";
@@ -61,6 +62,7 @@ const recommended = {
     [falseThenElse, ["warn"]],
     [minContainsZeroWithoutMaxContains, ["warn"]],
     [fractionalLimitForInteger, ["warn"]],
+    [unsafeIntegerLimit, ["warn"]],
     [readOnlyAndWriteOnly, ["warn"]],
     [minMaxContainsWithoutContains, ["warn"]],
     [referenceWithoutTarget, ["error"]]
