@@ -70,6 +70,33 @@ export const visitReferences = (tree, visitor) => {
   });
 };
 
+const schemaUri = "https://json-schema.org/keyword/schema";
+
+/**
+ * Call `visitor` with the value of every `$schema` in the document that's a
+ * string. In draft-04 through draft-07, a schema with `$ref` is a reference,
+ * whose properties aren't keywords, but its `$schema` still decides its
+ * dialect, so it's visited too.
+ *
+ * @type (tree: JsonSchemaDocumentNode, visitor: (valueNode: JsonSchemaNode & { jsonType: "string" }) => void) => void
+ */
+export const visitDialectUris = (tree, visitor) => {
+  visitNodes(tree, (node) => {
+    const schemaNode = /** @type JsonSchemaNode */ (node);
+    if ((schemaNode.type !== "json-schema" && schemaNode.type !== "reference") || schemaNode.jsonType !== "object") {
+      return;
+    }
+
+    for (const property of /** @type JsonSchemaKeywordNode[] */ (schemaNode.children)) {
+      const isSchema = schemaNode.type === "reference" ? property.children[0].value === "$schema" : property.keywordUri === schemaUri;
+      const valueNode = property.children[1];
+      if (isSchema && valueNode.jsonType === "string") {
+        visitor(valueNode);
+      }
+    }
+  });
+};
+
 /**
  * Call `visitor` with every keyword in the document with the given keyword
  * URI and the schema it's in. Keywords are found by URI, never by name, so

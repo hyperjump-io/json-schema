@@ -38,6 +38,16 @@ export const visitReferences: (
 ) => void;
 
 /**
+ * Calls `visitor` with the value of every `$schema` in the document that's
+ * a string, including in schemas that are references (draft-04 through
+ * draft-07), where `$schema` still decides the dialect.
+ */
+export const visitDialectUris: (
+  tree: JsonSchemaDocumentNode,
+  visitor: (valueNode: JsonSchemaNode & { jsonType: "string" }) => void
+) => void;
+
+/**
  * A keyword in a schema, by keyword URI. It's undefined if the schema
  * doesn't have the keyword or isn't an object. Use it instead of
  * {@link siblingKeyword} when you need the keyword's name or position, not

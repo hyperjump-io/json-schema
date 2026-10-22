@@ -362,7 +362,8 @@ such as `then` without `if`. They're off unless you turn them on in a
 `.hyperjumprc` file (or a `hyperjumpConfig` field in `package.json`). The
 recommended preset turns on every rule that's likely a mistake. They're
 warnings, except for ones that find a schema that can't be compiled, like a
-`$ref` that doesn't find a schema, which are errors. Rules after it change
+`$ref` that doesn't find a schema, or one the spec doesn't allow, like a v1
+`$schema` with a fragment, which are errors. Rules after it change
 their settings. A rule's setting is an array, with its
 severity (`"off"`, `"warn"`, or `"error"`) first.
 
@@ -408,7 +409,8 @@ Warnings don't fail the command unless you use `--frail`.
 | `read-only-and-write-only` | `readOnly` and `writeOnly` both `true` in the same schema |
 | `min-max-contains-without-contains` | `minContains` or `maxContains` without `contains` |
 | `min-contains-zero-without-max-contains` | `minContains: 0` next to `contains` without `maxContains`, so `contains` never fails |
-| `non-canonical-dialect-uri` | A `$schema` for draft-04 through 2020-12 with or without an empty fragment, unlike the URI its meta-schema uses, which implementations that compare strings won't recognize |
+| `non-canonical-dialect-uri` | A `$schema` with a fragment that isn't empty, that isn't normalized, or that doesn't match its official dialect's URI, like draft-07 without `#`, which other implementations may not recognize |
+| `invalid-dialect-uri` | A v1 `$schema` with a fragment or that isn't normalized, which v1 doesn't allow (an error) |
 | `reference-without-target` | A `$ref` that doesn't find a schema, such as a file that doesn't exist or a JSON Pointer that doesn't point to anything |
 
 These rules are matters of style, so they aren't in the recommended preset.

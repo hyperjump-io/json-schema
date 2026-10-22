@@ -1,12 +1,12 @@
+import { normalizeIri, parseIri, toAbsoluteIri } from "@hyperjump/uri";
 import { lintRule } from "../lint-rule.js";
-import { visitKeywords, visitReferences } from "../utilities.js";
+import { visitDialectUris } from "../utilities.js";
 
 /**
- * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode } from "../../schema/schema-ast.d.ts"
- * @import { VFile } from "vfile"
+ * @import { JsonSchemaDocumentNode } from "../../schema/schema-ast.d.ts"
  */
 
-const schemaUri = "https://json-schema.org/keyword/schema";
+const v1Uri = "https://json-schema.org/v1";
 
 /** Each official dialect's URI as its meta-schema identifies itself, by the URI without a fragment */
 const canonicalUris = new Map([
@@ -17,35 +17,31 @@ const canonicalUris = new Map([
   "https://json-schema.org/draft/2020-12/schema"
 ].map((uri) => [uri.replace(/#$/, ""), uri]));
 
-/** @type (valueNode: JsonSchemaNode, file: VFile) => void */
-const check = (valueNode, file) => {
-  if (valueNode.jsonType !== "string") {
-    return;
-  }
-
-  const canonicalUri = canonicalUris.get(valueNode.value.replace(/#$/, ""));
-  if (canonicalUri !== undefined && valueNode.value !== canonicalUri) {
-    file.message(`'${valueNode.value}' should be '${canonicalUri}', the URI its meta-schema identifies itself with. Implementations that compare dialect URIs as strings won't recognize it.`, { place: valueNode.position });
-  }
-};
-
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
 const nonCanonicalDialectUri = lintRule({ origin: "jsonschema-lint:non-canonical-dialect-uri" }, (tree, file) => {
-  visitKeywords(tree, schemaUri, (keywordNode) => {
-    check(keywordNode.children[1], file);
-  });
-
-  // In draft-04 through draft-07, a schema with `$ref` is a reference, whose
-  // properties aren't keywords, but `$schema` still decides its dialect
-  visitReferences(tree, (_uri, node) => {
-    if (node.type !== "reference" || node.jsonType !== "object") {
+  visitDialectUris(tree, (valueNode) => {
+    let normalized;
+    try {
+      normalized = normalizeIri(valueNode.value);
+    } catch (_error) {
+      // It isn't a dialect, which is a problem with the schema
       return;
     }
 
-    for (const property of /** @type JsonSchemaKeywordNode[] */ (node.children)) {
-      if (property.children[0].value === "$schema") {
-        check(property.children[1], file);
-      }
+    const absolute = toAbsoluteIri(normalized);
+    if (absolute === v1Uri) {
+      // `invalid-dialect-uri` reports v1
+      return;
+    }
+
+    const fragment = parseIri(normalized).fragment;
+    const expected = canonicalUris.get(absolute) ?? (fragment ? absolute : normalized);
+    if (fragment) {
+      file.message(`The fragment '#${fragment}' isn't part of the dialect. Use '${expected}'.`, { place: valueNode.position });
+    } else if (normalized !== valueNode.value) {
+      file.message(`'${valueNode.value}' isn't normalized, so implementations that compare dialect URIs as strings won't recognize it. Use '${expected}'.`, { place: valueNode.position });
+    } else if (expected !== valueNode.value) {
+      file.message(`'${valueNode.value}' should be '${expected}', the URI its meta-schema identifies itself with. Implementations that compare dialect URIs as strings won't recognize it.`, { place: valueNode.position });
     }
   });
 });

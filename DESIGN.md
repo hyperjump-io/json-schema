@@ -152,6 +152,20 @@ were considered. See "Open questions".)
   `schema`/`profile` media type parameter, then the config.
 - `$schema` is only allowed where a schema resource starts. Anywhere else,
   it's ignored with a message and the parent's dialect is used.
+- A `$schema` is read the same way in every dialect, and it's tolerant: the
+  URI is normalized and its fragment is dropped before the dialect is
+  looked up, so `HTTP://json-schema.org/draft-07/schema` finds draft-07.
+  It's lint that reports what's wrong with it (`non-canonical-dialect-uri`,
+  `invalid-dialect-uri`), not the resolver. In draft-04 through 2020-12,
+  `$schema` identifies both the dialect and the meta-schema. A fragment
+  that isn't empty, like `#/$defs/strict`, is fine for the meta-schema,
+  which resolves to that subschema, but not for the dialect, which is
+  identified without it. The empty fragment is how draft-04 through
+  draft-07 meta-schemas identify themselves, and 2019-09 and 2020-12's
+  don't use one. Implementations that compare dialect URIs as strings only
+  recognize those exact forms. v1 drops the meta-schema role
+  (json-schema-org/json-schema-spec#1712): `$schema` only identifies the
+  dialect, and it MUST be normalized and have no fragment.
 - Defined dialects can't be replaced. `removeDialect` must be called first.
 - `extendDialect(uri, { keywords, formats })` adds keywords and formats to
   a defined dialect. That's how users add custom keywords and formats to v1.
@@ -1265,6 +1279,11 @@ plugins, configured per project, with presets, like remark-lint.
 - An unsupported `format` when formats are validated is validity, because
   the schema can't be compiled. It's a compile error today and moves to the
   `format` keyword's `check`.
+- A MUST the implementation recovers from is lint, at `error` in
+  `recommended`, rather than validity. Being tolerant of bad input is
+  better than refusing a schema that can be understood. A v1 `$schema`
+  with a fragment, or that isn't normalized, still finds v1, so it's
+  `invalid-dialect-uri`.
 - `check` stays for validity only. Its context has the schema the keyword
   is in, for requirements on siblings, like draft-04's `exclusiveMaximum`
   needing `maximum`, but not other schemas or warnings. Rules read the

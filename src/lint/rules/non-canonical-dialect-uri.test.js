@@ -81,6 +81,32 @@ describe("non-canonical-dialect-uri", () => {
     expect(file.messages).to.eql([]);
   });
 
+  test("not normalized", async () => {
+    const file = await lint(`{ "$schema": "HTTP://json-schema.org/draft-07/schema", "type": "string" }`);
+    expect(file.messages.map((message) => message.reason)).to.eql([
+      `'HTTP://json-schema.org/draft-07/schema' isn't normalized, so implementations that compare dialect URIs as strings won't recognize it. Use '${draft07}#'.`
+    ]);
+  });
+
+  test("a fragment that isn't empty", async () => {
+    const file = await lint(`{ "$schema": "${draft202012}#/$defs/foo", "type": "string" }`);
+    expect(file.messages.map((message) => message.reason)).to.eql([
+      `The fragment '#/$defs/foo' isn't part of the dialect. Use '${draft202012}'.`
+    ]);
+  });
+
+  test("a fragment that isn't empty in draft-07", async () => {
+    const file = await lint(`{ "$schema": "${draft07}#foo", "type": "string" }`);
+    expect(file.messages.map((message) => message.reason)).to.eql([
+      `The fragment '#foo' isn't part of the dialect. Use '${draft07}#'.`
+    ]);
+  });
+
+  test("v1 isn't reported", async () => {
+    const file = await lint(`{ "$schema": "https://json-schema.org/v1#", "type": "string" }`);
+    expect(file.messages).to.eql([]);
+  });
+
   test("a $schema that isn't a string", async () => {
     const file = await lint(`{ "$schema": "${draft202012}", "$defs": { "foo": { "$schema": 42 } } }`);
     expect(file.messages.filter((message) => message.ruleId === "non-canonical-dialect-uri")).to.eql([]);
