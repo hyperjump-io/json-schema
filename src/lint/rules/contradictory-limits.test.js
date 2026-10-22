@@ -1,0 +1,108 @@
+import { describe, test, expect } from "vitest";
+import { VFile } from "vfile";
+import { hyperjump } from "../../cli/hyperjump.js";
+import contradictoryLimits from "./contradictory-limits.js";
+
+const v1 = "https://json-schema.org/v1";
+const draft04 = "http://json-schema.org/draft-04/schema#";
+
+/** @type (json: string) => Promise<VFile> */
+const lint = async (json) => {
+  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
+  await hyperjump()
+    .use(contradictoryLimits)
+    .process(file);
+  return file;
+};
+
+/** @type (json: string) => Promise<string[]> */
+const reasons = async (json) => (await lint(json)).messages.map((message) => message.reason);
+
+describe("contradictory-limits", () => {
+  test("minimum greater than maximum", async () => {
+    const json = `{ "$schema": "${v1}", "minimum": 10, "maximum": 5 }`;
+    const file = await lint(json);
+    expect(file.messages.map((message) => message.reason)).to.eql(["'minimum' is greater than 'maximum', so no number is valid"]);
+    expect(file.messages[0].ruleId).to.equal("contradictory-limits");
+    expect(file.messages[0].source).to.equal("jsonschema-lint");
+    expect(file.messages[0].fatal).to.equal(false);
+    const offset = json.indexOf(`"maximum"`);
+    expect(file.messages[0].place).to.eql({
+      start: { line: 1, column: offset + 1, offset },
+      end: { line: 1, column: offset + 13, offset: offset + 12 }
+    });
+  });
+
+  test("the message is on whichever comes second", async () => {
+    const json = `{ "$schema": "${v1}", "maximum": 5, "minimum": 10 }`;
+    const file = await lint(json);
+    expect(/** @type any */ (file.messages[0].place).start.offset).to.equal(json.indexOf(`"minimum"`));
+  });
+
+  test("equal inclusive limits allow one number", async () => {
+    expect(await reasons(`{ "$schema": "${v1}", "minimum": 5, "maximum": 5 }`)).to.eql([]);
+  });
+
+  test("equal limits where one is exclusive", async () => {
+    expect(await reasons(`{ "$schema": "${v1}", "exclusiveMinimum": 5, "maximum": 5 }`))
+      .to.eql(["'exclusiveMinimum' is equal to 'maximum', so no number is valid"]);
+    expect(await reasons(`{ "$schema": "${v1}", "exclusiveMinimum": 5, "exclusiveMaximum": 5 }`))
+      .to.eql(["'exclusiveMinimum' is equal to 'exclusiveMaximum', so no number is valid"]);
+  });
+
+  test("exclusive limits", async () => {
+    expect(await reasons(`{ "$schema": "${v1}", "exclusiveMinimum": 100, "exclusiveMaximum": 50 }`))
+      .to.eql(["'exclusiveMinimum' is greater than 'exclusiveMaximum', so no number is valid"]);
+  });
+
+  test("the tightest limits are compared", async () => {
+    expect(await reasons(`{ "$schema": "${v1}", "minimum": 1, "exclusiveMinimum": 8, "maximum": 6, "exclusiveMaximum": 10 }`))
+      .to.eql(["'exclusiveMinimum' is greater than 'maximum', so no number is valid"]);
+    expect(await reasons(`{ "$schema": "${v1}", "minimum": 5, "exclusiveMinimum": 5, "maximum": 5 }`))
+      .to.eql(["'exclusiveMinimum' is equal to 'maximum', so no number is valid"]);
+    expect(await reasons(`{ "$schema": "${v1}", "minimum": 1, "exclusiveMinimum": 0, "maximum": 6 }`)).to.eql([]);
+  });
+
+  test("draft-04", async () => {
+    expect(await reasons(`{ "$schema": "${draft04}", "minimum": 10, "maximum": 5 }`))
+      .to.eql(["'minimum' is greater than 'maximum', so no number is valid"]);
+    expect(await reasons(`{ "$schema": "${draft04}", "minimum": 5, "exclusiveMinimum": true, "maximum": 5 }`))
+      .to.eql(["'minimum' with 'exclusiveMinimum' is equal to 'maximum', so no number is valid"]);
+    expect(await reasons(`{ "$schema": "${draft04}", "minimum": 5, "exclusiveMinimum": false, "maximum": 5 }`)).to.eql([]);
+  });
+
+  test("counts", async () => {
+    expect(await reasons(`{
+      "$schema": "${v1}",
+      "minLength": 3, "maxLength": 2,
+      "minItems": 3, "maxItems": 2,
+      "minProperties": 3, "maxProperties": 2,
+      "contains": {}, "minContains": 3, "maxContains": 2
+    }`)).to.eql([
+      "'minLength' is greater than 'maxLength', so no string is valid",
+      "'minItems' is greater than 'maxItems', so no array is valid",
+      "'minProperties' is greater than 'maxProperties', so no object is valid",
+      "'minContains' is greater than 'maxContains', so no array is valid"
+    ]);
+  });
+
+  test("equal counts", async () => {
+    expect(await reasons(`{ "$schema": "${v1}", "minLength": 2, "maxLength": 2 }`)).to.eql([]);
+  });
+
+  test("minContains and maxContains without contains", async () => {
+    expect(await reasons(`{ "$schema": "${v1}", "minContains": 3, "maxContains": 2 }`)).to.eql([]);
+  });
+
+  test("limits in different schemas", async () => {
+    expect(await reasons(`{ "$schema": "${v1}", "minimum": 10, "properties": { "foo": { "maximum": 5 } } }`)).to.eql([]);
+  });
+
+  test("in a subschema", async () => {
+    expect(await reasons(`{ "$schema": "${v1}", "properties": { "foo": { "minimum": 10, "maximum": 5 } } }`)).to.have.length(1);
+  });
+
+  test("properties named like limits aren't keywords", async () => {
+    expect(await reasons(`{ "$schema": "${v1}", "properties": { "minimum": { "const": 10 }, "maximum": { "const": 5 } } }`)).to.eql([]);
+  });
+});

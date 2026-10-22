@@ -383,6 +383,7 @@ Warnings don't fail the command unless you use `--frail`.
 | `empty-enum` | An `enum` with no values, which nothing is valid against |
 | `empty-type` | A `type` that's an empty array, which nothing is valid against |
 | `duplicate-one-of-schemas` | A schema in `oneOf` that's equal to one before it, so a value it matches always fails |
+| `contradictory-limits` | A lower limit above its upper limit, like `minimum` above `maximum` or `minLength` above `maxLength` |
 | `read-only-and-write-only` | `readOnly` and `writeOnly` both `true` in the same schema |
 | `min-max-contains-without-contains` | `minContains` or `maxContains` without `contains` |
 | `reference-without-target` | A `$ref` that doesn't find a schema, such as a file that doesn't exist or a JSON Pointer that doesn't point to anything |
