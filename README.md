@@ -411,6 +411,7 @@ Warnings don't fail the command unless you use `--frail`.
 | `min-contains-zero-without-max-contains` | `minContains: 0` next to `contains` without `maxContains`, so `contains` never fails |
 | `non-canonical-dialect-uri` | A `$schema` with a fragment that isn't empty, that isn't normalized, or that doesn't match its official dialect's URI, like draft-07 without `#`, which other implementations may not recognize |
 | `invalid-dialect-uri` | A v1 `$schema` with a fragment or that isn't normalized, which v1 doesn't allow (an error) |
+| `relative-root-id` | A relative `$id` on the root schema, like `/user`, so the schema's identifier depends on where it was retrieved from |
 | `reference-without-target` | A `$ref` that doesn't find a schema, such as a file that doesn't exist or a JSON Pointer that doesn't point to anything |
 
 These rules are matters of style, so they aren't in the recommended preset.
