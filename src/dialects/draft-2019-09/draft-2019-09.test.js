@@ -12,7 +12,7 @@ import { addDraft201909, draft201909DialectUri } from "./index.js";
 describe("draft-2019-09", () => {
   /** @type (config?: JsonSchemaConfig) => JsonSchema */
   const draft201909 = (config) => {
-    const jsonSchema = new JsonSchema({ allowRetrieval: () => false, ...config });
+    const jsonSchema = new JsonSchema({ allowRetrieval: [], ...config });
     addDraft201909(jsonSchema);
     return jsonSchema;
   };

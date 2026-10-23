@@ -4,7 +4,7 @@ import type { Data } from "unist";
 import type { JsonSchemaNode } from "./schema/schema-ast.d.ts";
 import type { Dialect } from "./dialect.d.ts";
 import type { SchemaRegistry } from "./registry/schema-registry.d.ts";
-import type { AllowRetrieval, JsonSchema, Validator } from "./json-schema.d.ts";
+import type { JsonSchema, Validator } from "./json-schema.d.ts";
 
 export type SessionOptions = {
   /**
@@ -17,10 +17,11 @@ export type SessionOptions = {
    * What this session can retrieve, instead of the {@link JsonSchema}'s
    * `allowRetrieval` config. It's for an application that allows different
    * things for different sessions, such as the files in different folders
-   * of a project. It replaces the config rather than adding to it, so
-   * include the config's predicate in it to allow what it allows too.
+   * of a project. It replaces the config rather than adding to it, so a
+   * session can allow less. To allow what the config allows too, include
+   * its entries.
    */
-  allowRetrieval?: AllowRetrieval;
+  allowRetrieval?: string[];
 };
 
 export type BundleOptions = {

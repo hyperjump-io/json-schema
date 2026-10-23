@@ -6,11 +6,12 @@
 export const realUrl = async (url) => url;
 
 /**
- * In a browser, only `http(s):` URLs with the page's origin are allowed
+ * What a relative `allowRetrieval` entry resolves against: the page, like
+ * browser's context URI. A worker has no page.
  *
- * @type (url: URL) => boolean
+ * @type () => string | undefined
  */
-export const defaultAllowRetrieval = (url) => {
-  const { location } = /** @type {{ location?: { origin: string } }} */ (globalThis);
-  return (url.protocol === "http:" || url.protocol === "https:") && url.origin === location?.origin;
+export const contextUri = () => {
+  const { document } = /** @type {{ document?: { location?: { href: string } } }} */ (globalThis);
+  return document?.location?.href;
 };

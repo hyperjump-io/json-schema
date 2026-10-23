@@ -8,7 +8,6 @@ import { JsonSchema } from "../json-schema.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
 import { jsonSchemaValidate } from "../validate/validate.js";
-import { defaultAllowRetrieval } from "../retrieval/allow-retrieval.js";
 import { addV1 } from "../dialects/v1/index.js";
 import { addDraft04 } from "../dialects/draft-04/index.js";
 import { addDraft06 } from "../dialects/draft-06/index.js";
@@ -22,7 +21,7 @@ import { addFullFormats } from "../formats/full.js";
  * @import { Processor, Transformer } from "unified"
  * @import { VFile } from "vfile"
  * @import { JsonDocumentNode } from "@hyperjump/browser/json"
- * @import { AllowRetrieval, Validator } from "../json-schema.d.ts"
+ * @import { Validator } from "../json-schema.d.ts"
  * @import { JsonSchemaSession } from "../session.d.ts"
  * @import { JsonSchemaDocumentNode } from "../schema/schema-ast.d.ts"
  */
@@ -324,7 +323,7 @@ const createRegistry = async (fileSet) => {
 
   let registry = new SchemaRegistry(entries);
   while (undecided.length > 0) {
-    const session = jsonSchema.session({ registries: [registry], allowRetrieval: () => false });
+    const session = jsonSchema.session({ registries: [registry], allowRetrieval: [] });
     const results = await Promise.all(undecided.map(({ dialectUri }) => isDialect(session, dialectUri)));
     if (!results.includes(true)) {
       break;
@@ -388,24 +387,6 @@ const allowedUrls = (setting) => {
   });
 };
 
-/** @type (allowed: string, url: URL) => boolean */
-const isAllowedBy = (allowed, url) => allowed.endsWith("/") ? url.href.startsWith(allowed) : url.href === allowed;
-
-/**
- * What a file's session can retrieve: files in the working directory, as
- * by default, and the URLs its `allowRetrieval` setting allows. Without
- * any, it's the default.
- *
- * @type (allowed: string[]) => AllowRetrieval | undefined
- */
-const allowRetrievalFor = (allowed) => {
-  if (allowed.length === 0) {
-    return;
-  }
-
-  return (url) => allowed.some((entry) => isAllowedBy(entry, url)) || defaultAllowRetrieval(url);
-};
-
 /**
  * What each run has worked out, by what a session could retrieve and a URI,
  * so files that ask the same thing share the answer
@@ -442,13 +423,14 @@ const runCached = (fileSet, key, create) => {
 
 /**
  * A new session like each file is resolved or validated in, with the run's
- * registry and what the file's settings allow
+ * registry. It can retrieve files in the working directory, as by default,
+ * and the URLs the file's `allowRetrieval` setting allows.
  *
  * @type (fileSet: FileSet | undefined, allowed: string[]) => Promise<JsonSchemaSession>
  */
 const sessionFor = async (fileSet, allowed) => jsonSchema.session({
   registries: [await registryFor(fileSet)],
-  allowRetrieval: allowRetrievalFor(allowed)
+  allowRetrieval: ["./", ...allowed]
 });
 
 /**

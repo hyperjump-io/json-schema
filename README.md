@@ -187,30 +187,33 @@ A schema is looked up in registries first, then retrieved by its URI.
 
 Schemas aren't trusted, so a schema can't make your application retrieve
 whatever it names, like an internal address or a file outside your project.
-Only what the `allowRetrieval` config allows is retrieved. By default, that's
-what's local to your application. In Node.js, that's files in the working
-directory, and not `http(s):`. In a browser, it's `http(s):` URLs with the
-page's origin. Anything else is a `RetrievalNotAllowedError`. Registries are
-never checked.
+Only what the `allowRetrieval` config allows is retrieved. It's a list of
+URLs. One that ends with `/` allows everything under it, and any other allows
+only itself. A relative one is resolved against the working directory in
+Node.js and the page in a browser. The default is `["./"]`, which is what's
+local to your application: files in the working directory in Node.js, and
+what's in the page's directory in a browser. Anything else is a
+`RetrievalNotAllowedError`. Registries are never checked.
 
 ```javascript
 const jsonSchema = new JsonSchema({
-  allowRetrieval: (url) => url.origin === "https://schemas.example.com"
+  allowRetrieval: ["./", "https://schemas.example.com/"]
 });
 ```
 
-A session can have its own predicate, which it uses instead, for when
-different parts of your application can retrieve different things.
+A session can have its own list, which it uses instead, for when different
+parts of your application can retrieve different things.
 
 ```javascript
-const session = jsonSchema.session({ allowRetrieval: (url) => url.protocol === "file:" });
+const session = jsonSchema.session({ allowRetrieval: ["./schemas/"] });
 ```
 
-The predicate gets a `URL`. In Node.js, a `file:` URL is the file's real path,
-so a symlink can't lead outside a directory you allow. A response is checked
-again by the URL it came from, so a redirect can't lead somewhere you didn't
-allow. The redirected request is still sent, though. Its response just isn't
-used. Use `() => false` to allow nothing but registries.
+In Node.js, `file:` URLs are compared by their real paths, so a symlink can't
+lead outside a directory you allow. A response is checked again by the URL it
+came from, so a redirect can't lead somewhere you didn't allow. The
+redirected request is still sent, though. Its response just isn't used. Use
+`[]` to allow nothing but registries. In a worker, there's no page to
+resolve relative URLs against, so use absolute ones.
 
 To send headers with `http(s):` requests, such as credentials, replace the
 `http(s):` plugin with one that has a `headers` option. It's called with

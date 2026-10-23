@@ -46,7 +46,7 @@ text ─ rejsonParse ─▶ JSON AST ─ jsonSchemaResolve ─▶ Schema AST ─
 | `src/evaluate/` | Schema AST to results: `compile` (the IR), `optimize`, `specialize`, `Validator`, instance operations, and evaluation plugin types |
 | `src/evaluate/optimizations/` | Optimization passes on the IR, one per file. `index.js` lists them in the order they run |
 | `src/output/` | Output formats and validation errors |
-| `src/retrieval/` | `allowRetrieval`'s defaults for Node.js and browsers, and `RetrievalNotAllowedError` |
+| `src/retrieval/` | `allowRetrieval`: resolving and matching entries (`allowed-urls.js`), the real paths and context URIs for Node.js and browsers, and `RetrievalNotAllowedError` |
 | `src/registry/` | `SchemaRegistry`, indexing registries, and how a session finds schemas in them |
 | `src/dialects/` | The presets: `v1`, `draft-04` … `draft-2020-12`. Each has the dialect and its tests, including the test suite runners. `add-preset.js` adds a preset's dialect and the definitions it uses |
 | `src/keywords/` | Keyword definitions, and `checks.js`, the checks they share for their values |
@@ -519,7 +519,12 @@ to it.
   a browser. Entries are resolved when the config or the session's options
   are given, and one that isn't a URL throws there. A relative entry where
   there's no context URI, such as in a worker, throws and says to use an
-  absolute URL, instead of quietly allowing nothing.
+  absolute URL, instead of quietly allowing nothing. The default is resolved
+  when a session first checks a URL, so an application without a context
+  URI that only uses registries doesn't need the config.
+- The context URI is the package's own (`contextUri` in `#retrieval`),
+  which is browser's, except that it's `undefined` without a page.
+  browser's isn't exported.
 - The default is `["./"]` everywhere: the working directory in Node.js, and
   the page's directory in a browser. Browsers can't read `file:` URLs
   anyway.
@@ -1617,11 +1622,7 @@ What this relies on from browser's `v2` branch:
    values (see "Compile and evaluate").
 3. Port lint rules from the catalogue (see "The rule catalogue"). Done so
    far: everything in `src/lint/rules/`.
-4. Make `allowRetrieval` a list of URLs (see "What can be retrieved").
-   The code still takes a predicate. `src/retrieval/` keeps `realUrl` and
-   loses the defaults, the CLI's `isAllowedBy` moves into the library, and
-   the README's examples change.
-5. Later: OpenAPI and migrating dependent projects.
+4. Later: OpenAPI and migrating dependent projects.
 
 JSONC support in the CLI, with configuration comments from JSONC comments,
 was planned and is deferred, because it may not be worth it.

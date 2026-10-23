@@ -1,5 +1,4 @@
 import { realpath } from "node:fs/promises";
-import { isAbsolute, relative, sep } from "node:path";
 import { cwd } from "node:process";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -27,17 +26,16 @@ export const realUrl = async (url) => {
 };
 
 /**
- * In Node.js, only files in the working directory are allowed. It's the
- * working directory's real path, because the URL being checked is a real
- * path too.
+ * What a relative `allowRetrieval` entry resolves against: the working
+ * directory, like browser's context URI
  *
- * @type (url: URL) => Promise<boolean>
+ * @type () => string | undefined
  */
-export const defaultAllowRetrieval = async (url) => {
-  if (url.protocol !== "file:") {
-    return false;
+export const contextUri = () => {
+  const url = pathToFileURL(cwd());
+  if (!url.pathname.endsWith("/")) {
+    url.pathname += "/";
   }
 
-  const path = relative(await realpath(cwd()), fileURLToPath(url));
-  return path !== ".." && !path.startsWith(`..${sep}`) && !isAbsolute(path);
+  return url.href;
 };

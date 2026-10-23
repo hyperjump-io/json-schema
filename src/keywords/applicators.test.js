@@ -55,7 +55,7 @@ describe("applicator errors", () => {
 
   beforeAll(async () => {
     directory = await mkdtemp(join(tmpdir(), "json-schema-"));
-    jsonSchema = new JsonSchema({ allowRetrieval: () => true });
+    jsonSchema = new JsonSchema({ allowRetrieval: [pathToFileURL(join(tmpdir(), "/")).href] });
     addV1(jsonSchema);
   });
 

@@ -6,6 +6,7 @@ import { optimize } from "./evaluate/optimize.js";
 import { Validator } from "./evaluate/validator.js";
 import { bundle } from "./bundle/bundle.js";
 import { RetrievalNotAllowedError } from "./retrieval/retrieval-not-allowed-error.js";
+import { AllowedUrls, configuredAllowRetrieval, resolveAllowRetrieval } from "./retrieval/allowed-urls.js";
 import unknownKeyword, { keywordDefinitionUri } from "./keywords/unknown.js";
 
 /**
@@ -45,8 +46,8 @@ export class JsonSchemaSession extends Session {
   /** @type SessionRegistries */
   #registries;
 
-  /** @type API.SessionOptions["allowRetrieval"] */
-  #allowRetrieval;
+  /** @type AllowedUrls */
+  #allowedUrls;
 
   /**
    * Dialects whose meta-schemas are being retrieved
@@ -76,7 +77,9 @@ export class JsonSchemaSession extends Session {
     this.#pendingDialects = {};
     this.#loading = new Map();
     this.#registries = new SessionRegistries(this, options.registries ?? []);
-    this.#allowRetrieval = options.allowRetrieval;
+    this.#allowedUrls = new AllowedUrls(options.allowRetrieval === undefined
+      ? configuredAllowRetrieval(jsonSchema)
+      : resolveAllowRetrieval(options.allowRetrieval));
   }
 
   get jsonSchema() {
@@ -106,8 +109,7 @@ export class JsonSchemaSession extends Session {
     } else {
       try {
         // browser passes the options on to `JsonSchema.retrieve`
-        const retrieveOptions = this.#allowRetrieval === undefined ? options : { ...options, allowRetrieval: this.#allowRetrieval };
-        document = await super.getDocument(uri, retrieveOptions);
+        document = await super.getDocument(uri, /** @type GetOptions */ ({ ...options, allowedUrls: this.#allowedUrls }));
       } catch (error) {
         // browser wraps whatever retrieval throws. A refused URL isn't one
         // that couldn't be retrieved, so it isn't hidden in a RetrievalError.

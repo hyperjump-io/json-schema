@@ -21,7 +21,7 @@ describe("JsonSchema", () => {
   let jsonSchema;
 
   beforeEach(() => {
-    jsonSchema = new JsonSchema({ allowRetrieval: () => true });
+    jsonSchema = new JsonSchema({ allowRetrieval: [pathToFileURL(join(tmpdir(), "/")).href] });
     addV1(jsonSchema);
   });
 

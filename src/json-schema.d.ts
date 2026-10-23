@@ -19,11 +19,6 @@ export { RetrievalNotAllowedError } from "./retrieval/retrieval-not-allowed-erro
 export type { ValidationError, DetailedValidationError } from "./output/validation-error.js";
 export type { OutputError, OutputFormat, OutputFormatDefinition, OutputFormats, JsonSyntaxError, ValidationResult } from "./output/output-format.d.ts";
 
-/**
- * Whether a URL can be retrieved. See `allowRetrieval` in {@link JsonSchemaConfig}.
- */
-export type AllowRetrieval = (url: URL) => boolean | Promise<boolean>;
-
 export type JsonSchemaConfig = HyperjumpConfig & {
   /**
    * The dialect of a schema that doesn't have `$schema` and doesn't get a
@@ -40,31 +35,36 @@ export type JsonSchemaConfig = HyperjumpConfig & {
   validateFormats?: boolean;
 
   /**
-   * Whether a URL can be retrieved. Schemas aren't trusted, so a schema
-   * shouldn't be able to make the application retrieve whatever it names,
-   * such as an internal address or a file outside the project. A URL it
-   * refuses is a {@link RetrievalNotAllowedError}.
+   * What can be retrieved. Schemas aren't trusted, so a schema shouldn't be
+   * able to make the application retrieve whatever it names, such as an
+   * internal address or a file outside the project. A URL it refuses is a
+   * {@link RetrievalNotAllowedError}.
+   *
+   * It's a list of URLs. One that ends with `/` allows everything under it.
+   * Any other allows only itself. A relative one is resolved against the
+   * working directory in Node.js and the page in a browser. Where there's
+   * nothing to resolve it against, such as in a worker, it throws.
    *
    * It's checked for everything that's retrieved: `get`, references,
    * `compile`, and meta-schemas. Embedded resources and registries aren't
    * retrieved, so they're never checked. It's checked before the HTTP cache,
    * so a cached response isn't a way around it.
    *
-   * In Node.js, a `file:` URL is the file's real path, so a symlink can't
-   * lead outside an allowed directory. A file that doesn't exist is checked
-   * by its path as it is. A response is checked again by the URL it came
-   * from, so a redirect can't lead to a refused URL. The redirected request
-   * is still sent, but its response isn't used.
+   * In Node.js, `file:` URLs are compared by their real paths, so a symlink
+   * can't lead outside an allowed directory. A file that doesn't exist is
+   * compared by its path as it is. A response is checked again by the URL
+   * it came from, so a redirect can't lead to a refused URL. The redirected
+   * request is still sent, but its response isn't used.
    *
-   * The default allows only what's local to the application. In Node.js,
-   * that's files in the working directory, and not `http(s):`. In a browser,
-   * it's `http(s):` URLs with the page's origin. `() => false` allows
-   * nothing, so only embedded resources and registries are used.
+   * The default is `["./"]`: files in the working directory in Node.js, and
+   * what's in the page's directory in a browser. To allow more, include it,
+   * such as `["./", "https://schemas.example.com/"]`. `[]` allows nothing,
+   * so only embedded resources and registries are used.
    *
    * A session can have its own (see `SessionOptions`), which it uses
    * instead.
    */
-  allowRetrieval?: AllowRetrieval;
+  allowRetrieval?: string[];
 };
 
 export class JsonSchema extends Hyperjump<JsonSchemaNode> {

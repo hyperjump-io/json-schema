@@ -1,6 +1,7 @@
 import { Hyperjump } from "@hyperjump/browser";
 import { toAbsoluteIri } from "@hyperjump/uri";
-import { defaultAllowRetrieval, realUrl } from "#retrieval";
+import { realUrl } from "#retrieval";
+import { AllowedUrls, configureAllowRetrieval, configuredAllowRetrieval } from "./retrieval/allowed-urls.js";
 import { RetrievalNotAllowedError } from "./retrieval/retrieval-not-allowed-error.js";
 import { JsonSchemaMediaTypePlugin } from "./schema/media-type-plugin.js";
 import { JsonSchemaSession } from "./session.js";
@@ -25,9 +26,9 @@ export { RetrievalNotAllowedError } from "./retrieval/retrieval-not-allowed-erro
  * @import { OutputFormat, OutputFormatDefinition } from "./output/output-format.d.ts"
  */
 
-/** @type (allowRetrieval: API.AllowRetrieval, uri: string, requestedUri?: string) => Promise<void> */
-const checkRetrieval = async (allowRetrieval, uri, requestedUri) => {
-  if (!await allowRetrieval(await realUrl(new URL(uri)))) {
+/** @type (allowedUrls: AllowedUrls, uri: string, requestedUri?: string) => Promise<void> */
+const checkRetrieval = async (allowedUrls, uri, requestedUri) => {
+  if (!await allowedUrls.allows(await realUrl(new URL(uri)))) {
     throw requestedUri === undefined
       ? new RetrievalNotAllowedError(uri)
       : new RetrievalNotAllowedError(uri, `Retrieving '${requestedUri}' led to '${uri}', which isn't allowed. Use the 'allowRetrieval' config to allow it.`);
@@ -66,6 +67,10 @@ export class JsonSchema extends Hyperjump {
     this.#dialects = {};
     this.#outputFormats = {};
 
+    if (config.allowRetrieval !== undefined) {
+      configureAllowRetrieval(this, config.allowRetrieval);
+    }
+
     // Every dialect has these
     this.addKeyword(schemaKeyword);
     this.addKeyword(unknownKeyword);
@@ -86,14 +91,14 @@ export class JsonSchema extends Hyperjump {
    * response is checked too, because a redirect can lead somewhere else.
    *
    * browser's `Session` passes on the options `getDocument` got, so a
-   * `JsonSchemaSession` adds its own `allowRetrieval` to them.
+   * `JsonSchemaSession` adds what it allows to them.
    *
    * @param {string} uri
-   * @param {GetOptions & { allowRetrieval?: API.AllowRetrieval }} options
+   * @param {GetOptions & { allowedUrls?: AllowedUrls }} options
    * @returns {Promise<Response>}
    */
   async retrieve(uri, options) {
-    const allowRetrieval = options.allowRetrieval ?? this.#config.allowRetrieval ?? defaultAllowRetrieval;
+    const allowRetrieval = options.allowedUrls ?? new AllowedUrls(configuredAllowRetrieval(this));
     await checkRetrieval(allowRetrieval, toAbsoluteIri(uri));
     const response = await super.retrieve(uri, options);
 

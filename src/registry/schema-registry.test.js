@@ -17,7 +17,7 @@ import vocabularyKeyword, { addVocabulary } from "../keywords/vocabulary.js";
  * @type (config?: JsonSchemaConfig) => JsonSchema
  */
 const offline = (config) => {
-  const jsonSchema = new JsonSchema({ allowRetrieval: () => false, ...config });
+  const jsonSchema = new JsonSchema({ allowRetrieval: [], ...config });
   addV1(jsonSchema);
   return jsonSchema;
 };

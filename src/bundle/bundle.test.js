@@ -103,7 +103,7 @@ const configs = [
 ];
 
 describe("bundle", () => {
-  const jsonSchema = allDialects({ allowRetrieval: () => false });
+  const jsonSchema = allDialects({ allowRetrieval: [] });
 
   // A bundle is compiled on its own, so it has to give the same output as the
   // schemas it was made from

@@ -311,7 +311,7 @@ describe("Validator", () => {
   });
 
   beforeEach(() => {
-    jsonSchema = new JsonSchema({ allowRetrieval: () => true });
+    jsonSchema = new JsonSchema({ allowRetrieval: [pathToFileURL(join(tmpdir(), "/")).href] });
     addTestDialect(jsonSchema);
   });
 

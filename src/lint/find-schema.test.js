@@ -13,14 +13,14 @@ import { findSchema } from "./find-schema.js";
  */
 
 /**
- * `test:` URIs stand in for a server. The path is the response: a status
+ * `test:/` URIs stand in for a server. The path is the response: a status
  * code, `json` for a plain JSON document, or `invalid` for a schema with a
  * problem.
  *
  * @type (uri: string) => Promise<Response>
  */
 const respond = async (uri) => {
-  const path = uri.slice("test:".length);
+  const path = uri.slice("test:/".length);
   if (/^\d+$/.test(path)) {
     throw new HttpError(new Response(null, { status: Number(path) }));
   }
@@ -38,7 +38,7 @@ describe("findSchema", () => {
   let session;
 
   beforeEach(() => {
-    const jsonSchema = new JsonSchema({ allowRetrieval: (url) => url.protocol === "test:" || url.protocol === "file:" });
+    const jsonSchema = new JsonSchema({ allowRetrieval: ["test:/", "file:///nothing-here/"] });
     addV1(jsonSchema);
     jsonSchema.addUriSchemePlugin({ schemes: ["test"], retrieve: respond });
 
@@ -86,8 +86,8 @@ describe("findSchema", () => {
     });
 
     test("an HTTP resource that doesn't exist", async () => {
-      expect(await findSchema(session, "test:404")).toMatchObject({ status: "missing", reason: { message: "There's nothing at 'test:404' (404)" } });
-      expect((await findSchema(session, "test:410")).status).to.equal("missing");
+      expect(await findSchema(session, "test:/404")).toMatchObject({ status: "missing", reason: { message: "There's nothing at 'test:/404' (404)" } });
+      expect((await findSchema(session, "test:/410")).status).to.equal("missing");
     });
 
     test("a JSON Pointer that doesn't point to anything", async () => {
@@ -106,8 +106,8 @@ describe("findSchema", () => {
     });
 
     test("a document that isn't a schema", async () => {
-      const result = await findSchema(session, "test:json");
-      expect(result).toMatchObject({ status: "missing", reason: { message: "'test:json' isn't a schema. It's application/json." } });
+      const result = await findSchema(session, "test:/json");
+      expect(result).toMatchObject({ status: "missing", reason: { message: "'test:/json' isn't a schema. It's application/json." } });
     });
   });
 
@@ -123,8 +123,8 @@ describe("findSchema", () => {
     });
 
     test("an HTTP error that isn't about whether it exists", async () => {
-      expect((await findSchema(session, "test:500")).status).to.equal("unknown");
-      expect((await findSchema(session, "test:403")).status).to.equal("unknown");
+      expect((await findSchema(session, "test:/500")).status).to.equal("unknown");
+      expect((await findSchema(session, "test:/403")).status).to.equal("unknown");
     });
 
     test("an unsupported URI scheme", async () => {
@@ -133,7 +133,7 @@ describe("findSchema", () => {
     });
 
     test("a schema with problems", async () => {
-      const result = await findSchema(session, "test:invalid");
+      const result = await findSchema(session, "test:/invalid");
       expect(result.status).to.equal("unknown");
     });
   });

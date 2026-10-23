@@ -129,7 +129,7 @@ export const isSkipped = (skip, path) => {
  * @type (config?: JsonSchemaConfig) => JsonSchema
  */
 export const testSuiteJsonSchema = (config) => {
-  const jsonSchema = new JsonSchema({ allowRetrieval: () => false, ...config });
+  const jsonSchema = new JsonSchema({ allowRetrieval: [], ...config });
   addFullFormats(jsonSchema);
 
   return jsonSchema;
