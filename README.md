@@ -423,6 +423,7 @@ Turn them on with a severity, like `["@hyperjump/json-schema/lint/rules/mergeabl
 | Rule | Reports |
 | --- | --- |
 | `mergeable-all-of-schema` | A schema in `allOf` whose keywords can be moved into the schema `allOf` is in without changing what's valid |
+| `single-type-array` | `type` that's an array of one type, like `["string"]`, instead of the type on its own |
 
 A `$comment` that starts with `jsonschema-lint-disable` turns rules off for the
 schema it's in and its subschemas, and `jsonschema-lint-enable` turns them back
