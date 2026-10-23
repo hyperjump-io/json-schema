@@ -12,6 +12,7 @@ import { nonNegativeInteger } from "./checks.js";
 export default {
   uri: "https://json-schema.org/keyword/minProperties",
   shape: "data",
+  default: 0,
   check: nonNegativeInteger,
   evaluate: (minProperties, { instance }) => (node) => {
     return instance.typeOf(node) !== "object" || instance.length(node) >= minProperties;

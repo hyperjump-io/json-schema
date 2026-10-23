@@ -16,6 +16,7 @@ export default {
   uri: "https://json-schema.org/keyword/draft-2019-09/additionalItems",
   siblings: ["https://json-schema.org/keyword/draft-2019-09/items"],
   shape: "schema",
+  default: true,
   async compile(valueNode, context) {
     const itemsNode = siblingKeyword(context.schemaNode, "https://json-schema.org/keyword/draft-2019-09/items");
     if (itemsNode?.jsonType !== "array") {

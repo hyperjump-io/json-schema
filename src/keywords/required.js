@@ -13,6 +13,7 @@ import { uniqueStrings } from "./checks.js";
 export default {
   uri: "https://json-schema.org/keyword/required",
   shape: "data",
+  default: [],
   check: uniqueStrings,
   evaluate: (required, { instance }) => (node) => {
     if (instance.typeOf(node) !== "object") {

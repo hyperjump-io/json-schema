@@ -58,7 +58,7 @@ describe("configuration comments", () => {
       "$schema": "https://json-schema.org/v1",
       "$comment": "jsonschema-lint-disable min-max-contains-without-contains",
       "then": true,
-      "minContains": 1
+      "minContains": 2
     }`);
     expect(ruleIds(file)).to.eql(["then-else-without-if"]);
   });
@@ -68,7 +68,7 @@ describe("configuration comments", () => {
       "$schema": "https://json-schema.org/v1",
       "$comment": "jsonschema-lint-disable then-else-without-if min-max-contains-without-contains",
       "then": true,
-      "minContains": 1
+      "minContains": 2
     }`);
     expect(file.messages).to.eql([]);
   });
@@ -78,7 +78,7 @@ describe("configuration comments", () => {
       "$schema": "https://json-schema.org/v1",
       "$comment": "jsonschema-lint-disable",
       "then": true,
-      "minContains": 1
+      "minContains": 2
     }`);
     expect(file.messages).to.eql([]);
   });
@@ -140,7 +140,7 @@ describe("configuration comments", () => {
       "$schema": "https://json-schema.org/v1",
       "$comment": "jsonschema-lint-disable",
       "properties": {
-        "foo": { "$comment": "jsonschema-lint-enable", "then": true, "minContains": 1 }
+        "foo": { "$comment": "jsonschema-lint-enable", "then": true, "minContains": 2 }
       }
     }`);
     expect(ruleIds(file)).to.eql(["then-else-without-if", "min-max-contains-without-contains"]);

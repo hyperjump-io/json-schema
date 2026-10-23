@@ -12,6 +12,7 @@ import { compileSchemaMap } from "./utilities.js";
 export default {
   uri: "https://json-schema.org/keyword/properties",
   shape: { map: "schema" },
+  default: {},
   compile: compileSchemaMap,
   evaluate(properties, { instance, schema, alwaysPasses, exhaustive, markEvaluated }) {
     const evaluators = new Map();

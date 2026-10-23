@@ -26,6 +26,19 @@ export type Keyword<C extends Json = Json> = {
   /** Where the keyword's value contains schemas */
   shape: Shape;
   /**
+   * A value that's the same as leaving the keyword out, like `0` for
+   * `minLength` or `{}` for `properties`, as the specs say ("Omitting this
+   * keyword has the same behavior as …"). For a keyword whose value is a
+   * schema, it's `true`, and `{}` is the same. It's only declared where the
+   * value is allowed. Tools use it, like the `keyword-with-default-value`
+   * lint rule. A keyword that marks properties or items as evaluated still
+   * does with its default, which `unevaluatedProperties` and
+   * `unevaluatedItems` can see, so the specs say it has the same
+   * *assertion* behavior.
+   */
+  default?: Json;
+
+  /**
    * The URIs of keywords in the same schema whose values this keyword reads,
    * like `properties` for `additionalProperties`. Moving the keyword away
    * from them, or next to them, changes what it means, so tools that move

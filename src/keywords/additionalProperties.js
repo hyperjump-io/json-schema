@@ -14,6 +14,7 @@ export default {
   uri: "https://json-schema.org/keyword/additionalProperties",
   siblings: ["https://json-schema.org/keyword/patternProperties", "https://json-schema.org/keyword/properties"],
   shape: "schema",
+  default: true,
   async compile(valueNode, context) {
     /** @type string[] */
     const properties = [];

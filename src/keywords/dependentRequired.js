@@ -12,6 +12,7 @@ import { mapOf, uniqueStrings } from "./checks.js";
 export default {
   uri: "https://json-schema.org/keyword/dependentRequired",
   shape: "data",
+  default: {},
   check: mapOf(uniqueStrings),
   evaluate(dependentRequired, { instance }) {
     const dependencies = Object.entries(dependentRequired);

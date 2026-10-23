@@ -13,6 +13,7 @@ import { compileSchemaMap } from "./utilities.js";
 export default {
   uri: "https://json-schema.org/keyword/dependentSchemas",
   shape: { map: "schema" },
+  default: {},
   compile: compileSchemaMap,
   evaluate(dependentSchemas, { instance, schema, exhaustive }) {
     /** @type [string, ReturnType<typeof schema>][] */

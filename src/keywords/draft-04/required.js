@@ -14,6 +14,8 @@ import { nonEmpty, uniqueStrings } from "../checks.js";
 export default {
   ...requiredKeyword,
   uri: "https://json-schema.org/keyword/draft-04/required",
+  // An empty array, which is the same as leaving it out, isn't allowed
+  default: undefined,
   check(valueNode, context) {
     uniqueStrings(valueNode, context);
     nonEmpty(valueNode, context);

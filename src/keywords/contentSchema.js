@@ -18,6 +18,7 @@ export default {
   uri: "https://json-schema.org/keyword/contentSchema",
   siblings: ["https://json-schema.org/keyword/contentMediaType"],
   shape: "schema",
+  default: true,
   compile(valueNode, context) {
     const contentMediaTypeNode = siblingKeyword(context.schemaNode, "https://json-schema.org/keyword/contentMediaType");
     return contentMediaTypeNode === undefined ? null : jsonValue(valueNode);

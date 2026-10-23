@@ -15,6 +15,7 @@ export default {
   uri: "https://json-schema.org/keyword/draft-04/exclusiveMaximum",
   siblings: ["https://json-schema.org/keyword/draft-04/maximum"],
   shape: "data",
+  default: false,
   check(valueNode, context) {
     boolean(valueNode, context);
     if (siblingKeyword(context.schemaNode, "https://json-schema.org/keyword/draft-04/maximum") === undefined) {

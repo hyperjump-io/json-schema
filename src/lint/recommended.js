@@ -32,6 +32,7 @@ import nonCanonicalDialectUri from "./rules/non-canonical-dialect-uri.js";
 import invalidDialectUri from "./rules/invalid-dialect-uri.js";
 import relativeRootId from "./rules/relative-root-id.js";
 import implicitDialect from "./rules/implicit-dialect.js";
+import keywordWithDefaultValue from "./rules/keyword-with-default-value.js";
 
 /**
  * @import { Preset } from "unified"
@@ -72,6 +73,7 @@ const recommended = {
     [nonCanonicalDialectUri, ["warn"]],
     [relativeRootId, ["warn"]],
     [implicitDialect, ["warn"]],
+    [keywordWithDefaultValue, ["warn"]],
     [invalidDialectUri, ["error"]],
     [referenceWithoutTarget, ["error"]]
   ]

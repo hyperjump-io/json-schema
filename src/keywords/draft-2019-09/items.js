@@ -17,6 +17,7 @@ import { nonEmpty } from "../checks.js";
 export default {
   uri: "https://json-schema.org/keyword/draft-2019-09/items",
   shape: ["schema", { array: "schema" }],
+  default: true,
   check: nonEmpty,
   compile: (valueNode, context) => valueNode.jsonType === "array"
     ? compileSchemaArray(valueNode, context)

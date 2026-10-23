@@ -14,6 +14,7 @@ export default {
   uri: "https://json-schema.org/keyword/items",
   siblings: ["https://json-schema.org/keyword/prefixItems"],
   shape: "schema",
+  default: true,
   async compile(valueNode, context) {
     const prefixItemsNode = siblingKeyword(context.schemaNode, "https://json-schema.org/keyword/prefixItems");
     const start = prefixItemsNode?.jsonType === "array" ? prefixItemsNode.children.length : 0;

@@ -14,6 +14,7 @@ import { isRegex } from "@hyperjump/json-schema-formats";
 export default {
   uri: "https://json-schema.org/keyword/patternProperties",
   shape: { map: "schema" },
+  default: {},
   check(valueNode, context) {
     if (valueNode.jsonType !== "object") {
       return;

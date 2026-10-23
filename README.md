@@ -409,6 +409,7 @@ Warnings don't fail the command unless you use `--frail`.
 | `read-only-and-write-only` | `readOnly` and `writeOnly` both `true` in the same schema |
 | `min-max-contains-without-contains` | `minContains` or `maxContains` without `contains` |
 | `min-contains-zero-without-max-contains` | `minContains: 0` next to `contains` without `maxContains`, so `contains` never fails |
+| `keyword-with-default-value` | A keyword that's the same as leaving it out, like `additionalProperties: true`, `properties: {}`, `minLength: 0`, or `uniqueItems: false` |
 | `non-canonical-dialect-uri` | A `$schema` with a fragment that isn't empty, that isn't normalized, or that doesn't match its official dialect's URI, like draft-07 without `#`, which other implementations may not recognize |
 | `invalid-dialect-uri` | A v1 `$schema` with a fragment or that isn't normalized, which v1 doesn't allow (an error) |
 | `relative-root-id` | A relative `$id` on the root schema, like `/user`, so the schema's identifier depends on where it was retrieved from |

@@ -12,6 +12,7 @@
 export default {
   uri: "https://json-schema.org/keyword/unevaluatedItems",
   shape: "schema",
+  default: true,
   compile: (valueNode, context) => context.compileSchema(valueNode),
   evaluate(handle, { instance, schema, exhaustive, markEvaluated, evaluated }) {
     const evaluate = schema(handle);
