@@ -37,6 +37,7 @@ import multipleOfOne from "./rules/multiple-of-one.js";
 import singleTypeArray from "./rules/single-type-array.js";
 import misnamedDefinitions from "./rules/misnamed-definitions.js";
 import singleValueEnum from "./rules/single-value-enum.js";
+import singleValueRange from "./rules/single-value-range.js";
 
 /**
  * @import { Preset } from "unified"
@@ -82,6 +83,7 @@ const recommended = {
     [singleTypeArray, ["warn"]],
     [misnamedDefinitions, ["warn"]],
     [singleValueEnum, ["warn"]],
+    [singleValueRange, ["warn"]],
     [invalidDialectUri, ["error"]],
     [referenceWithoutTarget, ["error"]]
   ]

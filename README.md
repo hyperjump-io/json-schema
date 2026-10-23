@@ -391,6 +391,7 @@ Warnings don't fail the command unless you use `--frail`.
 | `duplicate-all-of-any-of-schemas` | A schema in `allOf` or `anyOf` that's equal to one before it, so it has no effect |
 | `contradictory-limits` | A lower limit above its upper limit, like `minimum` above `maximum` or `minLength` above `maxLength`, or more properties in `required` than `maxProperties` allows |
 | `redundant-numeric-limit` | `maximum` and `exclusiveMaximum`, or `minimum` and `exclusiveMinimum`, where the looser one has no effect |
+| `single-value-range` | `minimum` and `maximum` with the same value where `type` only allows numbers, which `const` says more directly |
 | `fractional-limit-for-integer` | A numeric limit that isn't an integer, where `type` only allows integers, so it's the same as an integer limit |
 | `unsafe-integer-limit` | A limit beyond ±2⁵³ - 1 where `type` only allows integers, which implementations that use doubles may compare inexactly |
 | `multiple-of-one` | `multipleOf: 1` where `type` allows numbers, which `type: "integer"` says more clearly, or where `type` only allows integers, so it has no effect |
