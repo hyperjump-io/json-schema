@@ -1382,6 +1382,52 @@ document finds something. They can see what's in registries and what
   unrestricted `JsonSchema`. Nothing can stop code that sets out to do that.
   The restriction keeps a schema from making rules retrieve what it names.
 
+### Linting while resolving (planned)
+
+Linting needs a unified pipeline today, outside of hjlint. Users who
+compile schemas should get lint results from the schemas they already
+use, without building one.
+
+- Lint is configured on the session: `SessionOptions.lint`, a list of
+  plugins in the same shape as `.hyperjumprc`'s (`[recommended, [rule,
+  ["warn"]]]`), or `true` for `lint/recommended`. It applies to
+  every document the session resolves, for `compile`, `bundle`,
+  `getDocument`, and browsing. `compile(uri, { lint })` works because
+  `compile` already takes `SessionOptions`. Different parts of an
+  application can have different rules, as with `allowRetrieval`, and
+  there's no lint state on `JsonSchema`.
+- Rules don't run in the media type plugin's `parse`. A resolved document
+  from a registry is cached once per `JsonSchema` and shared by sessions
+  (see "Making sessions cheap"), so it would keep the results of the
+  first session's rules. Lint is a separate pass over a resolved document
+  the first time a session uses it, and its results belong to the session.
+- Results are plain objects until they're reported, like validation
+  errors (see "Validation API"), and convert with `toVFileMessage`. A lint
+  result has `source`, `ruleId`, `severity`, `place`, the document's URI,
+  and its message, because a rule's message is specific and only the rule
+  can write it. Rules still report with `file.message`, so results are
+  converted from `VFileMessage`s when the pass finishes.
+- A session collects results by document URI. A `Validator` has the
+  results for every document its compile resolved. They aren't part of
+  `serialize`, so a restored validator has none.
+- A lint result at `error` makes `compile` fail, as an `error` fails a
+  file in unified. `warn` results stay on the validator.
+- Compiling doesn't stop at a schema's first problem. What's thrown is a
+  `SchemaError` with every schema problem and every lint error, as plain
+  objects. Today the media type plugin throws the first problem as a
+  `VFileMessage`.
+- `lint(uri)` on `JsonSchema` and `JsonSchemaSession` lints a schema and
+  everything it references, the graph `bundle` walks, without compiling.
+  It returns results by document URI and doesn't throw for schema
+  problems, which are results too. It's for CI, editors, and schemas that
+  can't be compiled yet. hjlint can use it for a schema and what it
+  references.
+- No callback for results (`onLint`). Collected results cover it.
+- No rule sets for each dialect. A document can embed resources in other
+  dialects, so a document's rules can't come from one dialect. Rules
+  already do nothing where their keywords aren't loaded (see "Rules"), so
+  `lint/recommended` works in every dialect.
+
 ## Testing
 
 - The JSON-Schema-Test-Suite's `unify` branch (which will replace `main`)
@@ -1489,7 +1535,10 @@ What this relies on from browser's `v2` branch:
    values (see "Compile and evaluate").
 3. Port lint rules from the catalogue (see "The rule catalogue"). Done so
    far: everything in `src/lint/rules/`.
-4. Later: OpenAPI and migrating dependent projects.
+4. Lint while resolving (see "Linting while resolving"): plain lint
+   results, every schema problem in one `SchemaError`, lint on the
+   session, then `lint(uri)`.
+5. Later: OpenAPI and migrating dependent projects.
 
 ## Known limitations
 
