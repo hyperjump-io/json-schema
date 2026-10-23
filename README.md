@@ -398,6 +398,7 @@ Warnings don't fail the command unless you use `--frail`.
 | `invalid-default-or-example` | A `default` value or a value in `examples` that isn't valid against the schema it's in |
 | `additional-items-without-items-array` | `additionalItems` without an `items` that's an array of schemas (draft-04 through 2019-09) |
 | `ignored-ref-siblings` | A property next to `$ref` in draft-04 through draft-07, where `$ref` replaces the whole schema |
+| `misnamed-definitions` | `definitions` in 2019-09 and later, or `$defs` in draft-04 through draft-07, where it isn't a keyword, so what's in it isn't a schema |
 | `const-and-enum` | `const` and `enum` in the same schema, where `enum` either has no effect or nothing is valid |
 | `content-schema-without-media-type` | `contentSchema` without `contentMediaType` |
 | `dependency-on-required-property` | A dependency in `dependentRequired`, `dependentSchemas`, or `dependencies` on a property that's in `required`, so it always applies |

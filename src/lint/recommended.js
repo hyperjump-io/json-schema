@@ -35,6 +35,7 @@ import implicitDialect from "./rules/implicit-dialect.js";
 import keywordWithDefaultValue from "./rules/keyword-with-default-value.js";
 import multipleOfOne from "./rules/multiple-of-one.js";
 import singleTypeArray from "./rules/single-type-array.js";
+import misnamedDefinitions from "./rules/misnamed-definitions.js";
 
 /**
  * @import { Preset } from "unified"
@@ -78,6 +79,7 @@ const recommended = {
     [keywordWithDefaultValue, ["warn"]],
     [multipleOfOne, ["warn"]],
     [singleTypeArray, ["warn"]],
+    [misnamedDefinitions, ["warn"]],
     [invalidDialectUri, ["error"]],
     [referenceWithoutTarget, ["error"]]
   ]
