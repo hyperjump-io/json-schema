@@ -1,7 +1,6 @@
-import { HttpError, RetrievalError } from "@hyperjump/browser";
+import { HttpError, RetrievalError, RetrievalNotAllowedError } from "@hyperjump/browser";
 import { JsonPointerError, pointerGet } from "@hyperjump/browser/json";
 import { parseIri, toAbsoluteIri } from "@hyperjump/uri";
-import { RetrievalNotAllowedError } from "../retrieval/retrieval-not-allowed-error.js";
 import { AnchorNotFoundError } from "../schema/media-type-plugin.js";
 
 /**

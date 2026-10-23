@@ -46,7 +46,6 @@ text ─ rejsonParse ─▶ JSON AST ─ jsonSchemaResolve ─▶ Schema AST ─
 | `src/evaluate/` | Schema AST to results: `compile` (the IR), `optimize`, `specialize`, `Validator`, instance operations, and evaluation plugin types |
 | `src/evaluate/optimizations/` | Optimization passes on the IR, one per file. `index.js` lists them in the order they run |
 | `src/output/` | Output formats and validation errors |
-| `src/retrieval/` | `allowRetrieval`: resolving and matching entries (`allowed-urls.js`), the real paths and context URIs for Node.js and browsers, and `RetrievalNotAllowedError` |
 | `src/registry/` | `SchemaRegistry`, indexing registries, and how a session finds schemas in them |
 | `src/dialects/` | The presets: `v1`, `draft-04` … `draft-2020-12`. Each has the dialect and its tests, including the test suite runners. `add-preset.js` adds a preset's dialect and the definitions it uses |
 | `src/keywords/` | Keyword definitions, and `checks.js`, the checks they share for their values |
@@ -510,6 +509,15 @@ outside the project through a `file:` reference. So only what the
 application allows is retrieved, and the default allows only what's local
 to it.
 
+It's browser's (`HyperjumpConfig.allowRetrieval`), because it's about
+retrieval and browser does the retrieving, and JRef documents aren't
+trusted either. `JsonSchemaConfig` gets it from `HyperjumpConfig`, and
+`RetrievalNotAllowedError` is browser's, re-exported. It was in this package
+first, where it had to copy browser's context URI, run its own `realpath`
+next to the file plugin's, pass what a session allows to `retrieve`
+disguised as a `GetOptions` field, and unwrap the error from browser's
+`RetrievalError`.
+
 - The `allowRetrieval` config is a list of URLs, `string[]`. One that ends
   with `/` allows everything under it. Any other allows only itself. They're
   compared after the URL is parsed, so dot segments and the host can't get
@@ -522,9 +530,13 @@ to it.
   absolute URL, instead of quietly allowing nothing. The default is resolved
   when a session first checks a URL, so an application without a context
   URI that only uses registries doesn't need the config.
-- The context URI is the package's own (`contextUri` in `#retrieval`),
-  which is browser's, except that it's `undefined` without a page.
-  browser's isn't exported.
+- The context URI is browser's `#context-uri`. Without a page, it's `""`,
+  which counts as none.
+- browser's default is `["./"]` too. It's a hypermedia client, and
+  following links across origins is what it's for, so an application that
+  browses a remote API lists its origins. Allowing everything in browser,
+  with `JsonSchema` passing its own default, was considered, but the threat
+  is the same, and browser's users would only be safe if they opted in.
 - The default is `["./"]` everywhere: the working directory in Node.js, and
   the page's directory in a browser. Browsers can't read `file:` URLs
   anyway.
@@ -564,19 +576,18 @@ to it.
 - A predicate as well as the list, for anything a list can't say, was
   considered and left out until someone needs it. Whoever used it would
   have the problem the list solves.
-- It's checked in `JsonSchema.retrieve`, which overrides browser's
-  `Hyperjump.retrieve`. browser's `Session` calls it for every document that
-  isn't in its cache, which is after embedded resources and registries,
-  because `JsonSchemaSession.getDocument` finds those first. So it covers
-  `get`, following references, `compile`, and meta-schemas found by
-  `getDialect`. It's before the URI scheme plugins, so it's before the HTTP
-  cache too, and a cached response isn't a way around it. It isn't checked
-  in `getDocument`, because a redirect is checked on the response's URL,
-  and a schema document's `uri` is its `$id` by then.
-- browser's `Session` wraps what `retrieve` throws in a `RetrievalError`.
-  `JsonSchemaSession.getDocument` unwraps a `RetrievalNotAllowedError`, so
-  it's what `get` and `compile` throw. A refusal while getting a dialect's
-  meta-schema is the `cause` of `getDialect`'s error.
+- browser's `Session` checks it when it retrieves a document that isn't in
+  its cache, before it calls `Hyperjump.retrieve`. That's after embedded
+  resources and registries, because `JsonSchemaSession.getDocument` finds
+  those first. So it covers `get`, following references, `compile`, and
+  meta-schemas found by `getDialect`. It's before the URI scheme plugins, so
+  it's before the HTTP cache too, and a cached response isn't a way around
+  it. `Hyperjump.retrieve` itself isn't checked. It's for URI scheme plugins
+  that map to another URI, like `urn:`, and the response they give is
+  checked by its URL.
+- browser throws a `RetrievalNotAllowedError` as it is, not wrapped in a
+  `RetrievalError`, so it's what `get` and `compile` throw. A refusal while
+  getting a dialect's meta-schema is the `cause` of `getDialect`'s error.
 - A URL `allowRetrieval` refuses is a `RetrievalNotAllowedError`, distinct from
   a `RetrievalError` for a URL that was allowed and couldn't be retrieved.
   Tools use the difference: a refused URL is unknown, a failed one is
@@ -589,9 +600,8 @@ to it.
   different settings. A session can allow less than the config, so it
   can't only add to it. One that allows more lists the config's entries
   too. The application creates its sessions, so it's still the
-  application's decision. The session passes its list in the
-  options it gives browser's `getDocument`, which browser passes on to
-  `retrieve`, because `retrieve` isn't told which session called it.
+  application's decision. `JsonSchemaSession` passes its option to
+  browser's `Session` constructor.
 - Symlinks are handled by the library. A symlink inside an allowed
   directory can point outside it. In Node.js, a `file:` URL is replaced
   with its real path (`realpath`) before it's checked, and so are `file:`
@@ -601,7 +611,7 @@ to it.
   checked is what's read, even if the path changes between the first check
   and the read. There's no cheaper way to tell whether a path goes through
   a symlink than `realpath`, so every `file:` retrieval costs two
-  filesystem calls, ours and the plugin's.
+  filesystem calls, the check's and the plugin's.
 - A document read through a symlink is identified by its real path, so its
   relative references resolve from where the file really is, next to the
   files its author wrote it with. That's browser's choice, and it's how
@@ -1562,6 +1572,8 @@ What this relies on from browser's `v2` branch:
   subclass can override them.
 - Sessions, and an HTTP cache in the `http(s):` URI scheme plugin. A media
   type plugin's `parse` gets the session.
+- `allowRetrieval`, in the config and in a session's options, and
+  `RetrievalNotAllowedError` (see "What can be retrieved").
 - `jsonValue` supports arrays and objects. `Session.value` doesn't, because
   it would need to follow references.
 - `fromJson` returns syntax errors as plain objects in `errors`, and

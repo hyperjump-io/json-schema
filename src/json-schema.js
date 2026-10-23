@@ -1,8 +1,5 @@
 import { Hyperjump } from "@hyperjump/browser";
 import { toAbsoluteIri } from "@hyperjump/uri";
-import { realUrl } from "#retrieval";
-import { AllowedUrls, configureAllowRetrieval, configuredAllowRetrieval } from "./retrieval/allowed-urls.js";
-import { RetrievalNotAllowedError } from "./retrieval/retrieval-not-allowed-error.js";
 import { JsonSchemaMediaTypePlugin } from "./schema/media-type-plugin.js";
 import { JsonSchemaSession } from "./session.js";
 import { addedRegistriesOf } from "./registry/session-registries.js";
@@ -13,10 +10,9 @@ import { basicOutputFormat } from "./output/basic.js";
 import { detailedOutputFormat } from "./output/detailed.js";
 
 export { InvalidSchemaError, outputErrorMessage, toVFileMessage } from "./output/validation-error.js";
-export { RetrievalNotAllowedError } from "./retrieval/retrieval-not-allowed-error.js";
+export { RetrievalNotAllowedError } from "@hyperjump/browser";
 
 /**
- * @import { GetOptions } from "@hyperjump/browser"
  * @import { Keyword } from "./keyword.d.ts"
  * @import { Format } from "./format.d.ts"
  * @import { Dialect } from "./dialect.d.ts"
@@ -25,15 +21,6 @@ export { RetrievalNotAllowedError } from "./retrieval/retrieval-not-allowed-erro
  * @import * as API from "./json-schema.d.ts"
  * @import { OutputFormat, OutputFormatDefinition } from "./output/output-format.d.ts"
  */
-
-/** @type (allowedUrls: AllowedUrls, uri: string, requestedUri?: string) => Promise<void> */
-const checkRetrieval = async (allowedUrls, uri, requestedUri) => {
-  if (!await allowedUrls.allows(await realUrl(new URL(uri)))) {
-    throw requestedUri === undefined
-      ? new RetrievalNotAllowedError(uri)
-      : new RetrievalNotAllowedError(uri, `Retrieving '${requestedUri}' led to '${uri}', which isn't allowed. Use the 'allowRetrieval' config to allow it.`);
-  }
-};
 
 /**
  * @implements API.JsonSchema
@@ -67,10 +54,6 @@ export class JsonSchema extends Hyperjump {
     this.#dialects = {};
     this.#outputFormats = {};
 
-    if (config.allowRetrieval !== undefined) {
-      configureAllowRetrieval(this, config.allowRetrieval);
-    }
-
     // Every dialect has these
     this.addKeyword(schemaKeyword);
     this.addKeyword(unknownKeyword);
@@ -83,35 +66,6 @@ export class JsonSchema extends Hyperjump {
 
   get config() {
     return this.#config;
-  }
-
-  /**
-   * Every retrieval comes through here, after embedded resources and
-   * registries and before the URI scheme plugins and their HTTP cache. The
-   * response is checked too, because a redirect can lead somewhere else.
-   *
-   * browser's `Session` passes on the options `getDocument` got, so a
-   * `JsonSchemaSession` adds what it allows to them.
-   *
-   * @param {string} uri
-   * @param {GetOptions & { allowedUrls?: AllowedUrls }} options
-   * @returns {Promise<Response>}
-   */
-  async retrieve(uri, options) {
-    const allowRetrieval = options.allowedUrls ?? new AllowedUrls(configuredAllowRetrieval(this));
-    await checkRetrieval(allowRetrieval, toAbsoluteIri(uri));
-    const response = await super.retrieve(uri, options);
-
-    if (response.url && response.url !== toAbsoluteIri(uri)) {
-      try {
-        await checkRetrieval(allowRetrieval, response.url, uri);
-      } catch (error) {
-        await response.body?.cancel();
-        throw error;
-      }
-    }
-
-    return response;
   }
 
   /** @type API.JsonSchema["session"] */

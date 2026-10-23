@@ -15,7 +15,7 @@ import type { BundleOptions, JsonSchemaSession, SessionOptions } from "./session
 import type { OutputFormat, OutputFormatDefinition, ValidationResult } from "./output/output-format.d.ts";
 
 export { InvalidSchemaError, outputErrorMessage, toVFileMessage } from "./output/validation-error.js";
-export { RetrievalNotAllowedError } from "./retrieval/retrieval-not-allowed-error.js";
+export { RetrievalNotAllowedError } from "@hyperjump/browser";
 export type { ValidationError, DetailedValidationError } from "./output/validation-error.js";
 export type { OutputError, OutputFormat, OutputFormatDefinition, OutputFormats, JsonSyntaxError, ValidationResult } from "./output/output-format.d.ts";
 
@@ -33,38 +33,6 @@ export type JsonSchemaConfig = HyperjumpConfig & {
    * annotation in most dialects.
    */
   validateFormats?: boolean;
-
-  /**
-   * What can be retrieved. Schemas aren't trusted, so a schema shouldn't be
-   * able to make the application retrieve whatever it names, such as an
-   * internal address or a file outside the project. A URL it refuses is a
-   * {@link RetrievalNotAllowedError}.
-   *
-   * It's a list of URLs. One that ends with `/` allows everything under it.
-   * Any other allows only itself. A relative one is resolved against the
-   * working directory in Node.js and the page in a browser. Where there's
-   * nothing to resolve it against, such as in a worker, it throws.
-   *
-   * It's checked for everything that's retrieved: `get`, references,
-   * `compile`, and meta-schemas. Embedded resources and registries aren't
-   * retrieved, so they're never checked. It's checked before the HTTP cache,
-   * so a cached response isn't a way around it.
-   *
-   * In Node.js, `file:` URLs are compared by their real paths, so a symlink
-   * can't lead outside an allowed directory. A file that doesn't exist is
-   * compared by its path as it is. A response is checked again by the URL
-   * it came from, so a redirect can't lead to a refused URL. The redirected
-   * request is still sent, but its response isn't used.
-   *
-   * The default is `["./"]`: files in the working directory in Node.js, and
-   * what's in the page's directory in a browser. To allow more, include it,
-   * such as `["./", "https://schemas.example.com/"]`. `[]` allows nothing,
-   * so only embedded resources and registries are used.
-   *
-   * A session can have its own (see `SessionOptions`), which it uses
-   * instead.
-   */
-  allowRetrieval?: string[];
 };
 
 export class JsonSchema extends Hyperjump<JsonSchemaNode> {

@@ -1,12 +1,10 @@
-import { RetrievalError, Session } from "@hyperjump/browser";
+import { Session } from "@hyperjump/browser";
 import { encodeIriFragment, toAbsoluteIri } from "@hyperjump/uri";
 import { SessionRegistries } from "./registry/session-registries.js";
 import { compile } from "./evaluate/compile.js";
 import { optimize } from "./evaluate/optimize.js";
 import { Validator } from "./evaluate/validator.js";
 import { bundle } from "./bundle/bundle.js";
-import { RetrievalNotAllowedError } from "./retrieval/retrieval-not-allowed-error.js";
-import { AllowedUrls, configuredAllowRetrieval, resolveAllowRetrieval } from "./retrieval/allowed-urls.js";
 import unknownKeyword, { keywordDefinitionUri } from "./keywords/unknown.js";
 
 /**
@@ -46,9 +44,6 @@ export class JsonSchemaSession extends Session {
   /** @type SessionRegistries */
   #registries;
 
-  /** @type AllowedUrls */
-  #allowedUrls;
-
   /**
    * Dialects whose meta-schemas are being retrieved
    *
@@ -69,7 +64,7 @@ export class JsonSchemaSession extends Session {
    * @param {API.SessionOptions} [options]
    */
   constructor(jsonSchema, options = {}) {
-    super(jsonSchema);
+    super(jsonSchema, { allowRetrieval: options.allowRetrieval });
 
     this.#jsonSchema = jsonSchema;
     this.#embedded = {};
@@ -77,9 +72,6 @@ export class JsonSchemaSession extends Session {
     this.#pendingDialects = {};
     this.#loading = new Map();
     this.#registries = new SessionRegistries(this, options.registries ?? []);
-    this.#allowedUrls = new AllowedUrls(options.allowRetrieval === undefined
-      ? configuredAllowRetrieval(jsonSchema)
-      : resolveAllowRetrieval(options.allowRetrieval));
   }
 
   get jsonSchema() {
@@ -108,13 +100,9 @@ export class JsonSchemaSession extends Session {
       document = /** @type DocumentNode<JsonSchemaNode> */ (/** @type unknown */ (await registryDocument));
     } else {
       try {
-        // browser passes the options on to `JsonSchema.retrieve`
-        document = await super.getDocument(uri, /** @type GetOptions */ ({ ...options, allowedUrls: this.#allowedUrls }));
+        document = await super.getDocument(uri, options);
       } catch (error) {
-        // browser wraps whatever retrieval throws. A refused URL isn't one
-        // that couldn't be retrieved, so it isn't hidden in a RetrievalError.
-        const refused = error instanceof RetrievalError && error.cause instanceof RetrievalNotAllowedError;
-        throw this.#registries.retrievalError(uri, refused ? error.cause : error);
+        throw this.#registries.retrievalError(uri, error);
       }
     }
 

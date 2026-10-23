@@ -67,12 +67,6 @@
       "default": "./src/cli/hyperjump-cli.js"
     }
   },
-  "imports": {
-    "#retrieval": {
-      "node": "./src/retrieval/allow-retrieval.js",
-      "default": "./src/retrieval/allow-retrieval.browser.js"
-    }
-  },
   "bin": {
     "hyperjump": "./src/cli/hyperjump-cli.js",
     "hjlint": "./src/cli/hyperjump-cli.js"
