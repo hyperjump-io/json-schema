@@ -411,6 +411,7 @@ Warnings don't fail the command unless you use `--frail`.
 | `required-property-not-allowed` | A property in `required` that `properties`, `patternProperties`, or `additionalProperties` doesn't allow, so no object is valid |
 | `required-property-not-defined` | A property in `required` that no schema applying to the same object defines in `properties` or `patternProperties`, including schemas it's combined with by `allOf`, `anyOf`, `$ref`, and so on |
 | `keyword-without-type` | A keyword or known format for one type of value, like `properties`, `minimum`, or the `date` format, where no `type`, `const`, or `enum` says what type the value is, so values of other types are valid |
+| `property-names-type` | `type` in a `propertyNames` schema, which has no effect if it allows strings, because property names are always strings, and otherwise rejects every property name |
 | `read-only-and-write-only` | `readOnly` and `writeOnly` both `true` in the same schema |
 | `min-max-contains-without-contains` | `minContains` or `maxContains` without `contains` |
 | `min-contains-zero-without-max-contains` | `minContains: 0` next to `contains` without `maxContains`, so `contains` never fails |
