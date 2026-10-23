@@ -320,10 +320,11 @@ such as `then` without `if`. They're unified plugins that run after
 `jsonSchemaResolve`, so they work in the
 [`hjlint`](https://github.com/hyperjump-io/hjlint) CLI, whose README says how
 to configure them, and in any unified pipeline that resolves schemas. The
-recommended preset, `@hyperjump/json-schema/lint/recommended`, turns on every
-rule that's likely a mistake. They're warnings, except for ones that find a
-schema that can't be compiled, like a `$ref` that doesn't find a schema, or one
-the spec doesn't allow, like a v1 `$schema` with a fragment, which are errors.
+recommended preset, `@hyperjump/json-schema/lint/recommended`
+(`hjlint/recommended` in `hjlint`), turns on every rule that's likely a
+mistake. They're warnings, except for ones that find a schema that can't be
+compiled, like a `$ref` that doesn't find a schema, or one the spec doesn't
+allow, like a v1 `$schema` with a fragment, which are errors.
 
 | Rule | Reports |
 | --- | --- |
@@ -371,7 +372,7 @@ the spec doesn't allow, like a v1 `$schema` with a fragment, which are errors.
 
 These rules aren't in the recommended preset, because they're matters of style
 or they're expensive to run.
-Turn them on with a severity, like `["@hyperjump/json-schema/lint/rules/mergeable-all-of-schema", ["warn"]]`.
+Turn them on with a severity, like `["hjlint/rules/mergeable-all-of-schema", ["warn"]]`.
 
 | Rule | Reports |
 | --- | --- |
