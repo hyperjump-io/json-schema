@@ -33,6 +33,7 @@ import invalidDialectUri from "./rules/invalid-dialect-uri.js";
 import relativeRootId from "./rules/relative-root-id.js";
 import implicitDialect from "./rules/implicit-dialect.js";
 import keywordWithDefaultValue from "./rules/keyword-with-default-value.js";
+import multipleOfOne from "./rules/multiple-of-one.js";
 
 /**
  * @import { Preset } from "unified"
@@ -74,6 +75,7 @@ const recommended = {
     [relativeRootId, ["warn"]],
     [implicitDialect, ["warn"]],
     [keywordWithDefaultValue, ["warn"]],
+    [multipleOfOne, ["warn"]],
     [invalidDialectUri, ["error"]],
     [referenceWithoutTarget, ["error"]]
   ]
