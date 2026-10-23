@@ -10,9 +10,13 @@ import type { JsonSchemaDocumentNode } from "../../schema/schema-ast.d.ts";
  *
  * The schema is compiled with the session it was resolved in, the way it's
  * used, including what it references, and formats are validated as the
- * configuration says. A schema that can't be compiled isn't checked. Values
- * are checked against the schema they're in, not the schemas around it,
- * like one with an `allOf` that includes it.
+ * configuration says. A schema that can't be compiled isn't checked.
+ *
+ * A value that's valid against the schema it's in is also checked against
+ * the outermost schemas that apply that one in place, through `allOf`,
+ * `anyOf`, `$ref`, and so on, where it's used. A schema in `not` or `if`
+ * doesn't have to pass for the one around it to, so those aren't followed.
+ * Where something in another document references the schema isn't known.
  *
  * It compiles each schema with a `default` or `examples`, so it can be
  * expensive on large schemas, and it isn't in `recommended`. It has no

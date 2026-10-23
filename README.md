@@ -431,7 +431,7 @@ Turn them on with a severity, like `["@hyperjump/json-schema/lint/rules/mergeabl
 | `mergeable-all-of-schema` | A schema in `allOf` whose keywords can be moved into the schema `allOf` is in without changing what's valid |
 | `assertion-implied-by-const-or-enum` | An assertion next to `const` or `enum`, like `minLength` or `maximum`, that allows every value, so it has no effect (expensive) |
 | `const-or-enum-value-rejected` | A `const` value or a value in `enum` that an assertion next to it, like `minLength` or `multipleOf`, rejects, so it's never valid (expensive) |
-| `invalid-default-or-example` | A `default` value or a value in `examples` that isn't valid against the schema it's in (expensive) |
+| `invalid-default-or-example` | A `default` value or a value in `examples` that isn't valid against the schema it's in, or against a schema that applies it, like one with `allOf` (expensive) |
 
 A `$comment` that starts with `jsonschema-lint-disable` turns rules off for the
 schema it's in and its subschemas, and `jsonschema-lint-enable` turns them back

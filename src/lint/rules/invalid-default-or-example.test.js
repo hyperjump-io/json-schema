@@ -76,6 +76,60 @@ describe("invalid-default-or-example", () => {
     expect(await reasons(`{ "$schema": "${draft2020}", "$defs": { "a": { "minimum": 10 } }, "$ref": "#/$defs/a", "default": 5 }`)).to.eql([invalidDefault]);
   });
 
+  test("a default that a schema applying it with allOf rejects", async () => {
+    expect(await reasons(`{
+      "$schema": "${draft2020}",
+      "type": "integer",
+      "maximum": 10,
+      "allOf": [{ "minimum": 0, "default": 20 }]
+    }`)).to.eql([
+      "The 'default' value is valid against the schema it's in, but not against the schema that applies it with 'allOf'"
+    ]);
+  });
+
+  test("a default that a schema referencing it rejects", async () => {
+    expect(await reasons(`{
+      "$schema": "${draft2020}",
+      "properties": {
+        "count": { "$ref": "#/$defs/count", "maximum": 10 }
+      },
+      "$defs": {
+        "count": { "type": "integer", "default": 20 }
+      }
+    }`)).to.eql([
+      "The 'default' value is valid against the schema it's in, but not against the schema that applies it with '$ref'"
+    ]);
+  });
+
+  test("an example that the outermost schema rejects", async () => {
+    expect(await reasons(`{
+      "$schema": "${draft2020}",
+      "type": "object",
+      "required": ["a"],
+      "anyOf": [{ "allOf": [{ "examples": [{ "a": 1 }, { "b": 1 }] }] }]
+    }`)).to.eql([
+      "This example is valid against the schema it's in, but not against the schema that applies it with 'anyOf'"
+    ]);
+  });
+
+  test("a default the schemas applying it allow", async () => {
+    expect(await reasons(`{ "$schema": "${draft2020}", "type": "integer", "allOf": [{ "minimum": 0, "default": 5 }] }`)).to.eql([]);
+  });
+
+  test("a default in not or if isn't checked against the schema around it", async () => {
+    expect(await reasons(`{
+      "$schema": "${draft2020}",
+      "type": "integer",
+      "not": { "type": "integer", "default": 5 },
+      "if": { "minimum": 0, "default": "a" },
+      "then": { "maximum": 10 }
+    }`)).to.eql([]);
+  });
+
+  test("an invalid default is only reported against its own schema", async () => {
+    expect(await reasons(`{ "$schema": "${draft2020}", "type": "integer", "allOf": [{ "minimum": 0, "default": -1 }] }`)).to.eql([invalidDefault]);
+  });
+
   test("a schema that can't be compiled isn't checked", async () => {
     expect(await reasons(`{ "$schema": "${draft2020}", "$ref": "https://example.com/nope", "default": 5 }`)).to.eql([]);
   });
