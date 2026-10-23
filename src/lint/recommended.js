@@ -19,7 +19,6 @@ import requiredPropertyNotAllowed from "./rules/required-property-not-allowed.js
 import requiredPropertyNotDefined from "./rules/required-property-not-defined.js";
 import keywordWithoutType from "./rules/keyword-without-type.js";
 import redundantNumericLimit from "./rules/redundant-numeric-limit.js";
-import invalidDefaultOrExample from "./rules/invalid-default-or-example.js";
 import emptyThenElse from "./rules/empty-then-else.js";
 import falseThenElse from "./rules/false-then-else.js";
 import minContainsZeroWithoutMaxContains from "./rules/min-contains-zero-without-max-contains.js";
@@ -68,7 +67,6 @@ const recommended = {
     [requiredPropertyNotDefined, ["warn"]],
     [keywordWithoutType, ["warn"]],
     [redundantNumericLimit, ["warn"]],
-    [invalidDefaultOrExample, ["warn"]],
     [emptyThenElse, ["warn"]],
     [falseThenElse, ["warn"]],
     [minContainsZeroWithoutMaxContains, ["warn"]],

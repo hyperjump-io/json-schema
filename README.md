@@ -396,7 +396,6 @@ Warnings don't fail the command unless you use `--frail`.
 | `unsafe-integer-limit` | A limit beyond ±2⁵³ - 1 where `type` only allows integers, which implementations that use doubles may compare inexactly |
 | `multiple-of-one` | `multipleOf: 1` where `type` allows numbers, which `type: "integer"` says more clearly, or where `type` only allows integers, so it has no effect |
 | `single-type-array` | `type` that's an array of one type, like `["string"]`, instead of the type on its own |
-| `invalid-default-or-example` | A `default` value or a value in `examples` that isn't valid against the schema it's in |
 | `additional-items-without-items-array` | `additionalItems` without an `items` that's an array of schemas (draft-04 through 2019-09) |
 | `ignored-ref-siblings` | A property next to `$ref` in draft-04 through draft-07, where `$ref` replaces the whole schema |
 | `misnamed-definitions` | `definitions` in 2019-09 and later, or `$defs` in draft-04 through draft-07, where it isn't a keyword, so what's in it isn't a schema |
@@ -431,6 +430,7 @@ Turn them on with a severity, like `["@hyperjump/json-schema/lint/rules/mergeabl
 | `mergeable-all-of-schema` | A schema in `allOf` whose keywords can be moved into the schema `allOf` is in without changing what's valid |
 | `assertion-implied-by-const-or-enum` | An assertion next to `const` or `enum`, like `minLength` or `maximum`, that allows every value, so it has no effect (expensive) |
 | `const-or-enum-value-rejected` | A `const` value or a value in `enum` that an assertion next to it, like `minLength` or `multipleOf`, rejects, so it's never valid (expensive) |
+| `invalid-default-or-example` | A `default` value or a value in `examples` that isn't valid against the schema it's in (expensive) |
 
 A `$comment` that starts with `jsonschema-lint-disable` turns rules off for the
 schema it's in and its subschemas, and `jsonschema-lint-enable` turns them back

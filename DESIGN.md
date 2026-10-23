@@ -1342,9 +1342,12 @@ It's a list of candidates, not a spec.
   `type-implied-by-const-or-enum` reports a `type` that code generators
   may want, and those users turn it off. Opinionated rules that are
   matters of taste (`explicit_additional_properties`,
-  `require_description_title`, `unknown_keywords_prefix`) and style rules
-  that only remove a default value aren't in `recommended`, if they're
-  ported at all.
+  `require_description_title`, `unknown_keywords_prefix`) aren't in
+  `recommended`, if they're ported at all.
+- A rule that compiles and runs a schema isn't in `recommended`, however
+  likely its finding is a mistake, because of what it can cost on a large
+  schema: `invalid-default-or-example`, `assertion-implied-by-const-or-enum`,
+  and `const-or-enum-value-rejected`. Its `.d.ts` says so.
 - A catalogue rule whose premise the spec contradicts isn't ported.
   `content_media_type_without_encoding` says `contentMediaType` means
   nothing without `contentEncoding`, but no encoding means the string
@@ -1358,7 +1361,7 @@ It's a list of candidates, not a spec.
 - Each rule gets a `.d.ts` that explains why it matters, tests (including a
   dialect without the keyword and a property with the keyword's name), a
   row in the README's table, and a place in `recommended` if it's likely a
-  mistake.
+  mistake and cheap to run.
 
 Rules of our own are added too, when porting turns up a mistake the
 catalogue doesn't cover. Done so far: `empty-type`,

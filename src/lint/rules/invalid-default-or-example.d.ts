@@ -12,7 +12,11 @@ import type { JsonSchemaDocumentNode } from "../../schema/schema-ast.d.ts";
  * used, including what it references, and formats are validated as the
  * configuration says. A schema that can't be compiled isn't checked. Values
  * are checked against the schema they're in, not the schemas around it,
- * like one with an `allOf` that includes it. It has no options.
+ * like one with an `allOf` that includes it.
+ *
+ * It compiles each schema with a `default` or `examples`, so it can be
+ * expensive on large schemas, and it isn't in `recommended`. It has no
+ * options.
  */
 declare const invalidDefaultOrExample: Plugin<JsonSchemaDocumentNode, void>;
 export default invalidDefaultOrExample;
