@@ -510,18 +510,55 @@ outside the project through a `file:` reference. So only what the
 application allows is retrieved, and the default allows only what's local
 to it.
 
-- The `allowRetrieval` config is a predicate on a URL,
-  `(url: URL) => boolean | Promise<boolean>`.
-- The default depends on where it runs, chosen with the package's
-  `#retrieval` import, whose conditions work like browser's `#context-uri`
-  (`src/retrieval/`):
-  - In Node.js, a `file:` URL is allowed if its real path is in the working
-    directory's real path. Nothing else is, so `http(s):` isn't.
-  - In a browser, an `http(s):` URL with the page's origin is allowed.
-    Nothing else is. Browsers can't read `file:` URLs anyway.
+- The `allowRetrieval` config is a list of URLs, `string[]`. One that ends
+  with `/` allows everything under it. Any other allows only itself. They're
+  compared after the URL is parsed, so dot segments and the host can't get
+  around it. An entry's fragment is ignored.
+- A relative entry is resolved against browser's context URI, like a
+  relative path is. That's the working directory in Node.js and the page in
+  a browser. Entries are resolved when the config or the session's options
+  are given, and one that isn't a URL throws there. A relative entry where
+  there's no context URI, such as in a worker, throws and says to use an
+  absolute URL, instead of quietly allowing nothing.
+- The default is `["./"]` everywhere: the working directory in Node.js, and
+  the page's directory in a browser. Browsers can't read `file:` URLs
+  anyway.
+  - It's data, so an application extends it by writing it out, such as
+    `["./", "https://schemas.example.com/"]`, and `[]` allows nothing.
+    It's the same in Node.js and in browsers.
+  - It used to be a predicate, `(url: URL) => boolean | Promise<boolean>`,
+    with a default for each runtime: files in the working directory's real
+    path in Node.js, and the page's origin in a browser. Allowing a URL as
+    well as the default meant calling the default, so it would have had to
+    be exported, and a predicate written without it had to know to compare
+    against `realpath(cwd())`, not `cwd()`, or a working directory reached
+    through a symlink refused every file. The CLI had its own prefix
+    matching for its setting too. A list has none of these problems.
+  - In a browser, the default used to be the page's whole origin. It's the
+    page's directory now, which is narrower. An application whose schemas
+    are elsewhere on its origin adds `"/"`. A default of `["/"]` in
+    browsers would have kept the origin, but then the default would be
+    different in Node.js, where `/` is the whole filesystem.
+- A `file:` entry is compared by its real path, like the URL being checked
+  (see the symlink item below). It's found the first time a session checks
+  against it and kept for the session, which is a consistent snapshot
+  anyway. An entry that doesn't exist is compared as it is.
 - A file that doesn't exist has no real path, so its path is checked as
   it is. If it's allowed, retrieving it fails as missing instead of being
   refused.
+- Only prefixes and exact URLs, no globs. Prefixes cover origins,
+  directories, and single URLs. Glob syntax would collide with URLs, where
+  `?`, `*`, `[`, and `:` already mean something, so every entry would be a
+  pattern and a literal one would need escaping, and a glob matched against
+  the whole URL text lets `https://*.example.com/` match
+  `https://evil.com/x.example.com/`. If wildcards are needed, such as any
+  subdomain, entries could also be `URLPattern`s (`(string | URLPattern)[]`).
+  It's the web standard, matches each part of a URL separately, and takes a
+  base URL for relative patterns. Strings would stay literal. Check which
+  Node.js versions have it unflagged first.
+- A predicate as well as the list, for anything a list can't say, was
+  considered and left out until someone needs it. Whoever used it would
+  have the problem the list solves.
 - It's checked in `JsonSchema.retrieve`, which overrides browser's
   `Hyperjump.retrieve`. browser's `Session` calls it for every document that
   isn't in its cache, which is after embedded resources and registries,
@@ -535,7 +572,7 @@ to it.
   `JsonSchemaSession.getDocument` unwraps a `RetrievalNotAllowedError`, so
   it's what `get` and `compile` throw. A refusal while getting a dialect's
   meta-schema is the `cause` of `getDialect`'s error.
-- A URL the predicate refuses is a `RetrievalNotAllowedError`, distinct from
+- A URL `allowRetrieval` refuses is a `RetrievalNotAllowedError`, distinct from
   a `RetrievalError` for a URL that was allowed and couldn't be retrieved.
   Tools use the difference: a refused URL is unknown, a failed one is
   missing.
@@ -544,45 +581,46 @@ to it.
   can have its own (`SessionOptions.allowRetrieval`), which replaces the
   config's rather than adding to it, for an application that allows
   different things for different sessions, like the CLI does for files with
-  different settings. The application creates its sessions, so it's still
-  the application's decision. The session passes its predicate in the
+  different settings. A session can allow less than the config, so it
+  can't only add to it. One that allows more lists the config's entries
+  too. The application creates its sessions, so it's still the
+  application's decision. The session passes its list in the
   options it gives browser's `getDocument`, which browser passes on to
   `retrieve`, because `retrieve` isn't told which session called it.
-- Symlinks are handled by the library, so no predicate has to. A symlink
-  inside an allowed directory can point outside it. In Node.js, a `file:`
-  URL is replaced with its real path (`realpath`) before `allowRetrieval`
-  sees it. browser's file plugin reads the file from its real path, with
+- Symlinks are handled by the library. A symlink inside an allowed
+  directory can point outside it. In Node.js, a `file:` URL is replaced
+  with its real path (`realpath`) before it's checked, and so are `file:`
+  entries. browser's file plugin reads the file from its real path, with
   every symlink in the path resolved, and gives that real path as the
   response's URL, which is checked again (see the next item). So what's
   checked is what's read, even if the path changes between the first check
   and the read. There's no cheaper way to tell whether a path goes through
   a symlink than `realpath`, so every `file:` retrieval costs two
-  filesystem calls, ours and the plugin's. It can be async for that reason
-  too.
+  filesystem calls, ours and the plugin's.
 - A document read through a symlink is identified by its real path, so its
   relative references resolve from where the file really is, next to the
   files its author wrote it with. That's browser's choice, and it's how
   Node.js resolves modules. Keeping the URL it was asked for was
   considered, but the author of a symlinked file didn't write it relative
   to the link.
-- Redirects are checked after the fact. `allowRetrieval` is also called on
-  the URL a response came from, after any redirects, and a response from a
+- Redirects are checked after the fact. The URL a response came from is
+  also checked, after any redirects, and a response from a
   refused URL is a `RetrievalNotAllowedError` whose `uri` is that URL. Its
   body is cancelled. browser's file plugin also gives a symlinked file's
   real path as its response URL, which is checked the same way. browser doesn't follow
   redirects manually, so the redirected request is still sent. Only its
   response can't be used, which is what CORS does in browsers (see "Known
   limitations").
-- `() => false` allows nothing, so only registries and embedded resources
-  are used. The test suite runners and the tests that only use registries
-  use it instead of removing the `http(s):` URI scheme plugins. Tests that
-  read files from a temporary directory, outside the working directory,
-  use `() => true`.
+- `[]` allows nothing, so only registries and embedded resources are used.
+  The test suite runners and the tests that only use registries use it
+  instead of removing the `http(s):` URI scheme plugins. Tests that read
+  files from a temporary directory, outside the working directory, allow
+  that directory.
 
 ### The language server
 
-- Its `allowRetrieval` allows the workspace folder. The library compares
-  real paths, so a symlink can't lead outside it.
+- Its `allowRetrieval` is the workspace folder. The library compares real
+  paths, so a symlink can't lead outside it.
 - Workspace schemas with an `$id` go in a registry with their `file:` URI
   as the `retrievalUri`. An edit makes a new registry (`without` then
   `with`), which the next session is created with.
@@ -1206,11 +1244,11 @@ can be added to one `JsonSchema`.
   instead, but their paths would have nothing to be relative to (see the
   `allowRetrieval` setting).
 - What it can retrieve is files in the working directory, as by default,
-  and the URLs in the `allowRetrieval` setting from `.hyperjumprc`.
-- The setting is a list of `http:` or `https:` URLs. One that ends with `/`
-  allows everything under it, compared after the URL is parsed, so dot
-  segments and the host can't get around it. Any other allows only itself.
-  Anything else is an `invalid-setting` error.
+  and the URLs in the `allowRetrieval` setting from `.hyperjumprc`. Its
+  sessions' `allowRetrieval` is `["./", ...setting]`, and the library
+  matches it.
+- The setting is a list of `http:` or `https:` URLs, matched like the
+  library's `allowRetrieval`. Anything else is an `invalid-setting` error.
 - Files can't be in the setting. A committed configuration file can't name
   an absolute path, which differs for everyone and could point anywhere,
   and a relative one has nothing to be relative to. The engine merges
@@ -1579,7 +1617,11 @@ What this relies on from browser's `v2` branch:
    values (see "Compile and evaluate").
 3. Port lint rules from the catalogue (see "The rule catalogue"). Done so
    far: everything in `src/lint/rules/`.
-4. Later: OpenAPI and migrating dependent projects.
+4. Make `allowRetrieval` a list of URLs (see "What can be retrieved").
+   The code still takes a predicate. `src/retrieval/` keeps `realUrl` and
+   loses the defaults, the CLI's `isAllowedBy` moves into the library, and
+   the README's examples change.
+5. Later: OpenAPI and migrating dependent projects.
 
 JSONC support in the CLI, with configuration comments from JSONC comments,
 was planned and is deferred, because it may not be worth it.
