@@ -1134,8 +1134,11 @@ can be added to one `JsonSchema`.
 ## CLI (`src/cli/`)
 
 `hyperjump` lints schemas and validates JSON files against them. It's a
-`unified-args` CLI like browser's `rejson` and `jref`, with `.hyperjumprc`,
-`.hyperjumpignore`, and a `hyperjumpConfig` field in `package.json`.
+`unified-args` CLI, with `.hyperjumprc`, `.hyperjumpignore`, and a
+`hyperjumpConfig` field in `package.json`. browser had its own CLIs,
+`rejson` and `jref`, which only parsed and stringified. They were removed,
+so browser doesn't depend on `unified-args` and what they did belongs to
+this one (see "Plan").
 
 - It was `jsonschema`, which Python's `jsonschema` package and
   `@sourcemeta/jsonschema` both install as a command, and `npx jsonschema`
@@ -1634,10 +1637,11 @@ What this relies on from browser's `v2` branch:
    values (see "Compile and evaluate").
 3. Port lint rules from the catalogue (see "The rule catalogue"). Done so
    far: everything in `src/lint/rules/`.
-4. Later: OpenAPI and migrating dependent projects.
-
-JSONC support in the CLI, with configuration comments from JSONC comments,
-was planned and is deferred, because it may not be worth it.
+4. Add JRef, JSONC, and YAML files to the CLI. JRef is what browser's
+   `jref` CLI handled. JSONC would bring configuration comments from JSONC
+   comments (see "Configuration comments"), which browser's parser can read
+   (`allowComments`).
+5. Later: OpenAPI and migrating dependent projects.
 
 ## Known limitations
 
