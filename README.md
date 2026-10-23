@@ -1,6 +1,6 @@
 # Hyperjump - JSON Schema
 
-A JSON Schema validator built on
+A JSON Schema validator and linter built on
 [`@hyperjump/browser`](https://github.com/hyperjump-io/browser) and
 [unified](https://unifiedjs.com/).
 
@@ -10,13 +10,10 @@ A JSON Schema validator built on
 - With JSON text, every error has a position, and syntax errors are reported
   with validation errors
 - Annotations come back as an AST with annotations on its nodes
-- Errors are plain data, and convert to
-  [`VFileMessage`](https://github.com/vfile/vfile-message)s to report them with
-  unified tooling
 - Schemas from `http(s):`, `file:`, or in-memory registries
-- Custom keywords, formats, dialects, vocabularies, output formats, and
-  evaluation plugins
-- No global state. Everything belongs to a `JsonSchema` instance.
+- Lint schemas to find likely mistakes in schemas, with a recommended preset.
+- Custom keywords, formats, dialects, vocabularies, output formats, linter rules,
+  and evaluation plugins
 
 **Status:** Experimental and unpublished. It depends on unreleased versions of
 `@hyperjump/browser` (v2) and `@hyperjump/uri`. The API will change. See
@@ -104,19 +101,14 @@ const result = validator.validate({ age: -1 }, { output: "BASIC" });
 
 Errors from the built-in output formats are plain data, without messages.
 Writing messages that explain errors is left to other output formats. Add your
-own with `addOutputFormat`.
-
-To report errors with unified tooling, `toVFileMessage` converts an error to a
-`VFileMessage` with a generic message, and `outputErrorMessage` gives just the
+own with `addOutputFormat`. `outputErrorMessage` gives an error a generic
 message.
 
 ```javascript
-import { outputErrorMessage, toVFileMessage } from "@hyperjump/json-schema";
+import { outputErrorMessage } from "@hyperjump/json-schema";
 
 outputErrorMessage(result.errors[0]);
 // "'/age' fails the constraint at 'https://example.com/person#/properties/age/minimum'"
-
-toVFileMessage(result.errors[0]); // A VFileMessage with that message
 ```
 
 ### JSON text
@@ -127,12 +119,23 @@ a position.
 
 ```javascript
 const result = validator.validateJson(`{ "name": "Jason", "age": -1, }`, { output: "BASIC" });
-
-result.errors.map((error) => String(toVFileMessage(error)));
-// [
-//   "1:27-1:29: Fails the constraint at 'https://example.com/person#/properties/age/minimum'",
-//   "1:29-1:30: Trailing commas are not allowed"
-// ]
+// {
+//   valid: false,
+//   errors: [
+//     {
+//       source: "json-schema",
+//       ruleId: "https://json-schema.org/keyword/minimum",
+//       absoluteKeywordLocation: "https://example.com/person#/properties/age/minimum",
+//       instanceLocation: "/age",
+//       place: { start: { line: 1, column: 27, offset: 26 }, end: { line: 1, column: 29, offset: 28 } }
+//     },
+//     {
+//       source: "json",
+//       ruleId: "trailing-comma",
+//       place: { start: { line: 1, column: 29, offset: 28 }, end: { line: 1, column: 30, offset: 29 } }
+//     }
+//   ]
+// }
 ```
 
 `validateNode` validates a JSON AST node, such as a value in a schema AST.
@@ -295,8 +298,8 @@ The [`hjlint`](https://github.com/hyperjump-io/hjlint) CLI has every format.
 
 Schemas are always validated before they're used. A schema that isn't valid
 can't be retrieved, so `compile` throws a `RetrievalError` from
-`@hyperjump/browser`. Its `cause` is the problem, as a `VFileMessage` with a
-position if the schema was JSON text.
+`@hyperjump/browser`. Its `cause` is the problem, with a position if the
+schema was JSON text.
 
 ```javascript
 jsonSchema.addRegistry(new SchemaRegistry().with(`{
@@ -315,11 +318,10 @@ try {
 ### Linting schemas
 
 Lint rules find things that are likely mistakes in a schema that still works,
-such as `then` without `if`. They're unified plugins that run after
-`jsonSchemaResolve`, so they work in the
+such as `then` without `if`. Run them with the
 [`hjlint`](https://github.com/hyperjump-io/hjlint) CLI, whose README says how
-to configure them, and in any unified pipeline that resolves schemas. The
-recommended preset, `@hyperjump/json-schema/lint/recommended`
+to configure them, or from code (see [Linting in a pipeline](#linting-in-a-pipeline)).
+The recommended preset, `@hyperjump/json-schema/lint/recommended`
 (`hjlint/recommended` in `hjlint`), turns on every rule that's likely a
 mistake. They're warnings, except for ones that find a schema that can't be
 compiled, like a `$ref` that doesn't find a schema, or one the spec doesn't
@@ -401,11 +403,59 @@ turned off.
 A directive that names a rule that isn't configured is a warning
 (`unknown-rule`), and so is a misspelled directive (`unknown-directive`).
 
+### Serializing compiled schemas
+
+A compiled schema is JSON, so it can be cached and restored without retrieving
+or compiling anything. The same keywords must have been added.
+
+```javascript
+const compiled = validator.serialize();
+const restored = jsonSchema.restoreValidator(compiled);
+```
+
+## Using unified
+
+Schemas and JSON files can be processed in [unified](https://unifiedjs.com/)
+pipelines, with the JSON parser from `@hyperjump/browser/json`. It's how the
+[`hjlint`](https://github.com/hyperjump-io/hjlint) CLI works.
+
+### Reporting errors
+
+`toVFileMessage` converts an error to a
+[`VFileMessage`](https://github.com/vfile/vfile-message) with the message from
+`outputErrorMessage`, to report it with unified tooling.
+
+```javascript
+import { toVFileMessage } from "@hyperjump/json-schema";
+
+String(toVFileMessage(result.errors[0]));
+// "1:27-1:29: Fails the constraint at 'https://example.com/person#/properties/age/minimum'"
+```
+
+### Linting in a pipeline
+
+`jsonSchemaResolve` turns a JSON AST into a schema AST, and reports schema
+problems. Lint rules are unified plugins that run after it.
+
+```js
+import { unified } from "unified";
+import { rejsonParse, rejsonStringify } from "@hyperjump/browser/json";
+import { jsonSchemaResolve } from "@hyperjump/json-schema";
+import recommended from "@hyperjump/json-schema/lint/recommended";
+
+const file = await unified()
+  .use(rejsonParse, { accept: "recovered" })
+  .use(jsonSchemaResolve, { session: jsonSchema.session() })
+  .use(recommended)
+  .use(rejsonStringify)
+  .process(schemaText);
+file.messages; // Lint messages and schema problems, with positions
+```
+
 ### Validating JSON files
 
 `jsonSchemaValidate` is a unified plugin that validates a JSON AST against a
-compiled schema, so you decide where schemas come from. It's how the
-[`hjlint`](https://github.com/hyperjump-io/hjlint) CLI validates JSON files.
+compiled schema, so you decide where schemas come from.
 
 ```js
 import { unified } from "unified";
@@ -419,16 +469,6 @@ const file = await unified()
   .use(rejsonStringify)
   .process(json);
 file.messages; // Syntax errors and validation errors, with positions
-```
-
-### Serializing compiled schemas
-
-A compiled schema is JSON, so it can be cached and restored without retrieving
-or compiling anything. The same keywords must have been added.
-
-```javascript
-const compiled = validator.serialize();
-const restored = jsonSchema.restoreValidator(compiled);
 ```
 
 ## Extending
