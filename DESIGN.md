@@ -1562,25 +1562,25 @@ What this relies on from browser's `v2` branch:
 
 ## Plan
 
-1. More optimization passes on the IR (see "Optimizations"). Static
-   `unevaluated*` is done and inlining `$ref` and `allOf` wasn't worth it.
-   Candidates: fold constants (`not: true`, an `enum` with one value),
-   evaluate cheap keywords first (only helps invalid instances), and share
-   identical subschemas (needs to know where keywords keep handles). On
-   real schemas, iterating properties is 35% of FLAG, which a pass can't
-   change (see item 2).
-2. Decide whether keywords can provide a separate evaluator for plain
-   values (see "Compile and evaluate").
-3. Port lint rules from the catalogue (see "The rule catalogue"). Done so
+1. The kernel ([KERNEL.md](KERNEL.md)): keywords lower to a language of
+   small operations the optimizer, lint, and the output formats understand,
+   instead of compiling to opaque values and closures. It replaces the
+   optimization candidates that needed keyword URIs (folding constants,
+   sharing identical subschemas, ordering cheap keywords first) and the
+   question of separate evaluators for plain values, which only the
+   kernel's operations would need. Next: settle the spec's open questions,
+   then rebuild the prototype on its operations, with lowering on the
+   schema AST for lint, dynamic scope, and AST instances.
+2. Port lint rules from the catalogue (see "The rule catalogue"). Done so
    far: everything in `src/lint/rules/`.
-4. Lint while resolving (see "Linting while resolving"): plain lint
+3. Lint while resolving (see "Linting while resolving"): plain lint
    results, every schema problem in one `SchemaError`, lint on the
    session, then `lint(uri)`.
-5. A style lint preset. It's opinionated about how a schema is organized,
+4. A style lint preset. It's opinionated about how a schema is organized,
    with rules for things like whether `$defs` comes first or last.
-6. A bundle command in the CLI.
-7. A documentation website.
-8. Later: OpenAPI and migrating dependent projects.
+5. A bundle command in the CLI.
+6. A documentation website.
+7. Later: OpenAPI and migrating dependent projects.
 
 ## Known limitations
 
