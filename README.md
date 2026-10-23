@@ -1,9 +1,8 @@
-# Hyperjump - JSON Schema Next
+# Hyperjump - JSON Schema
 
 A JSON Schema validator built on
 [`@hyperjump/browser`](https://github.com/hyperjump-io/browser) and
-[unified](https://unifiedjs.com/). It's a rewrite of
-[`@hyperjump/json-schema`](https://github.com/hyperjump-io/json-schema).
+[unified](https://unifiedjs.com/).
 
 - Dialects: v1, draft-2020-12, draft-2019-09, draft-07, draft-06, draft-04
 - Get a boolean, errors, or annotations, for a plain JS value, JSON text, or
