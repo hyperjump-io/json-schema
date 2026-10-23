@@ -412,6 +412,7 @@ Warnings don't fail the command unless you use `--frail`.
 | `non-canonical-dialect-uri` | A `$schema` with a fragment that isn't empty, that isn't normalized, or that doesn't match its official dialect's URI, like draft-07 without `#`, which other implementations may not recognize |
 | `invalid-dialect-uri` | A v1 `$schema` with a fragment or that isn't normalized, which v1 doesn't allow (an error) |
 | `relative-root-id` | A relative `$id` on the root schema, like `/user`, so the schema's identifier depends on where it was retrieved from |
+| `implicit-dialect` | A root schema without `$schema` whose dialect came from a media type parameter or the default dialect, so other tools may not know it |
 | `reference-without-target` | A `$ref` that doesn't find a schema, such as a file that doesn't exist or a JSON Pointer that doesn't point to anything |
 
 These rules are matters of style, so they aren't in the recommended preset.

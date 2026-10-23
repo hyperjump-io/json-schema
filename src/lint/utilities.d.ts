@@ -38,6 +38,13 @@ export const visitReferences: (
 ) => void;
 
 /**
+ * An official dialect's URI as its meta-schema identifies itself, like
+ * `http://json-schema.org/draft-07/schema#` with its empty fragment, given
+ * its URI without a fragment. It's undefined for any other dialect.
+ */
+export const canonicalDialectUri: (dialectUri: string) => string | undefined;
+
+/**
  * Calls `visitor` with the value of every `$schema` in the document that's
  * a string, including in schemas that are references (draft-04 through
  * draft-07), where `$schema` still decides the dialect.

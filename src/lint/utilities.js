@@ -70,6 +70,25 @@ export const visitReferences = (tree, visitor) => {
   });
 };
 
+/** Each official dialect's URI as its meta-schema identifies itself, by the URI without a fragment */
+const canonicalDialectUris = new Map([
+  "http://json-schema.org/draft-04/schema#",
+  "http://json-schema.org/draft-06/schema#",
+  "http://json-schema.org/draft-07/schema#",
+  "https://json-schema.org/draft/2019-09/schema",
+  "https://json-schema.org/draft/2020-12/schema",
+  "https://json-schema.org/v1"
+].map((uri) => [uri.replace(/#$/, ""), uri]));
+
+/**
+ * An official dialect's URI as its meta-schema identifies itself, like
+ * draft-07's with an empty fragment, by its URI without a fragment. It's
+ * undefined for any other dialect.
+ *
+ * @type (dialectUri: string) => string | undefined
+ */
+export const canonicalDialectUri = (dialectUri) => canonicalDialectUris.get(dialectUri);
+
 const schemaUri = "https://json-schema.org/keyword/schema";
 
 /**

@@ -31,6 +31,7 @@ import referenceWithoutTarget from "./rules/reference-without-target.js";
 import nonCanonicalDialectUri from "./rules/non-canonical-dialect-uri.js";
 import invalidDialectUri from "./rules/invalid-dialect-uri.js";
 import relativeRootId from "./rules/relative-root-id.js";
+import implicitDialect from "./rules/implicit-dialect.js";
 
 /**
  * @import { Preset } from "unified"
@@ -70,6 +71,7 @@ const recommended = {
     [minMaxContainsWithoutContains, ["warn"]],
     [nonCanonicalDialectUri, ["warn"]],
     [relativeRootId, ["warn"]],
+    [implicitDialect, ["warn"]],
     [invalidDialectUri, ["error"]],
     [referenceWithoutTarget, ["error"]]
   ]
