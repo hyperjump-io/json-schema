@@ -394,6 +394,7 @@ Warnings don't fail the command unless you use `--frail`.
 | `fractional-limit-for-integer` | A numeric limit that isn't an integer, where `type` only allows integers, so it's the same as an integer limit |
 | `unsafe-integer-limit` | A limit beyond ±2⁵³ - 1 where `type` only allows integers, which implementations that use doubles may compare inexactly |
 | `multiple-of-one` | `multipleOf: 1` where `type` allows numbers, which `type: "integer"` says more clearly, or where `type` only allows integers, so it has no effect |
+| `single-type-array` | `type` that's an array of one type, like `["string"]`, instead of the type on its own |
 | `invalid-default-or-example` | A `default` value or a value in `examples` that isn't valid against the schema it's in |
 | `additional-items-without-items-array` | `additionalItems` without an `items` that's an array of schemas (draft-04 through 2019-09) |
 | `ignored-ref-siblings` | A property next to `$ref` in draft-04 through draft-07, where `$ref` replaces the whole schema |
@@ -423,7 +424,6 @@ Turn them on with a severity, like `["@hyperjump/json-schema/lint/rules/mergeabl
 | Rule | Reports |
 | --- | --- |
 | `mergeable-all-of-schema` | A schema in `allOf` whose keywords can be moved into the schema `allOf` is in without changing what's valid |
-| `single-type-array` | `type` that's an array of one type, like `["string"]`, instead of the type on its own |
 
 A `$comment` that starts with `jsonschema-lint-disable` turns rules off for the
 schema it's in and its subschemas, and `jsonschema-lint-enable` turns them back

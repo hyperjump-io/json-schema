@@ -3,9 +3,8 @@ import type { JsonSchemaDocumentNode } from "../../schema/schema-ast.d.ts";
 
 /**
  * `type` that's an array of one type, like `["string"]`, which is the same
- * as the type on its own, `"string"`. It's a matter of style, because some
- * authors write arrays everywhere so adding a type is a smaller change, so
- * it isn't in `recommended`. It has no options.
+ * as the type on its own, `"string"`. Turn it off if you write arrays
+ * everywhere so adding a type is a smaller change. It has no options.
  */
 declare const singleTypeArray: Plugin<JsonSchemaDocumentNode, void>;
 export default singleTypeArray;
