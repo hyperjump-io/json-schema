@@ -63,9 +63,6 @@
       "default": "./src/lint/rules/*.js"
     }
   },
-  "workspaces": [
-    "hjlint"
-  ],
   "scripts": {
     "lint": "oxlint",
     "test": "vitest run",

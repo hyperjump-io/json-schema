@@ -53,7 +53,6 @@ text ─ rejsonParse ─▶ JSON AST ─ jsonSchemaResolve ─▶ Schema AST ─
 | `src/bundle/` | Bundling, which embeds referenced schemas in one document, and its tests, ported from v1 |
 | `src/lint/` | Lint rules (`rules/`, one per file), the recommended preset, `lintRule`, which applies configuration comments, and the utilities rules share |
 | `src/validate/` | `jsonSchemaValidate`, the unified plugin that validates JSON files |
-| `hjlint/` | The `hjlint` package: the `hyperjump` CLI, which lints schemas and validates JSON files. An npm workspace |
 | `src/lint/test-linter.js` | The processor lint rule tests use, which resolves like the CLI |
 | `test/test-suite.js` | Runs the JSON Schema Test Suite and the annotation test suite |
 
@@ -438,7 +437,8 @@ entries. Each `JsonSchema` indexes each registry it's used with.
   keywords whose resolve hooks run are made into nodes (with `fromJs`). A
   tree with positions is much slower to build and is only needed for a
   problem, so an entry that has one is parsed again into a tree, and the
-  problem has a position (see "CLI workspace registry" in BENCHMARKS.md).
+  problem has a position (see "Workspace registry" in hjlint's
+  BENCHMARKS.md).
 - An entry that can't be identified, such as one that isn't valid JSON or
   has an invalid `$id`, is found by its `retrievalUri`, and finding it
   throws the problem, like a retrieved file that can't be parsed. One
@@ -1131,173 +1131,17 @@ can be added to one `JsonSchema`.
   ignored. draft-04 and draft-06 use draft-06's `hostname` (RFC 1123),
   which doesn't need Unicode data.
 
-## CLI (`hjlint/`)
+## CLI
 
-`hyperjump` lints schemas and validates JSON files against them. It's a
-`unified-args` CLI, with `.hyperjumprc`, `.hyperjumpignore`, and a
-`hyperjumpConfig` field in `package.json`. browser had its own CLIs,
-`rejson` and `jref`, which only parsed and stringified. They were removed,
-so browser doesn't depend on `unified-args` and what they did belongs to
-this one (see "Plan").
+The `hyperjump` CLI is its own package and repository,
+[`hjlint`](https://github.com/hyperjump-io/hjlint) (`../hjlint`), with its
+own DESIGN.md. It was here first, as `src/cli/` and then as an npm
+workspace. It's separate so the libraries don't depend on `unified-args`
+and the engine, and it uses only this package's public API.
 
-- It's its own package, `hjlint`, not a `bin` of this one, so the libraries
-  don't depend on `unified-args` and the engine (unified-engine, chokidar,
-  and the rest) that only the CLI uses. Everything it uses is this
-  package's public API, so it's a test that a unified tool can be built on
-  it. It has its own version, and a CLI change is a release of `hjlint`. It
-  isn't published until this package is.
-- It's an npm workspace in this repository, so it's type-checked, linted,
-  and tested with this package. npm doesn't resolve the root package for a
-  workspace by its version, so it depends on `file:..` until it's
-  published, like this package's `file:` dependency on browser, and then
-  `^2.0.0`.
 - The lint rule tests used the CLI's processor. They use
-  `src/lint/test-linter.js` now, which parses and resolves the way the CLI
+  `src/lint/test-linter.js`, which parses and resolves the way the CLI
   does, without the engine.
-
-- It was `jsonschema`, which Python's `jsonschema` package and
-  `@sourcemeta/jsonschema` both install as a command, and `npx jsonschema`
-  downloads an unrelated npm package. `hj` was considered, but it doesn't say
-  what it is. `hjlint` is a shorter alias for the same command, and the
-  package's name. `npx` only finds an unscoped package, and `hyperjump` on
-  npm is an unrelated package, so `npx hjlint` is how it's run without
-  installing.
-- The configuration, ignore file, plugin prefix, and the source of its own
-  messages follow the command's name. Lint keeps `jsonschema-lint`: the
-  `$comment` directives (`jsonschema-lint-disable`), the rules' source, and
-  their origins. They're about JSON Schema linting and are written in
-  schemas, so they don't depend on the command.
-
-- A file is a schema if it's a `.schema.json` file or its top-level
-  `$schema` is a dialect: one that's been added (every preset's) or one a
-  meta-schema defines, which its session can find in the registry or
-  retrieve. Anything else is an instance. Input from stdin is decided the
-  same way, by its content and the name `--file-path` gives it.
-- A `$schema` that isn't a dialect names the schema an instance is
-  validated against, as editors use it, so the two are told apart by
-  whether it's a dialect. A schema whose `$schema` is a dialect that
-  can't be found, like a typo, is an instance whose schema can't be used,
-  so it's still an error, just a different one. A `.schema.json` file
-  still says it's a schema without that, so a missing or unknown dialect
-  is reported as one.
-- Whether a URI is a dialect is decided once per run for each
-  `allowRetrieval`. A URI that isn't one, an instance's schema, is
-  resolved to find out, and then compiled again to validate.
-- This is only the CLI's rule. Retrieval still never treats a plain
-  `.json` file as a schema, so a reference to a `.json` schema only finds
-  it through the registry.
-- For a schema, it runs `rejsonParse` and `jsonSchemaResolve`, which finds
-  every problem with a schema, and reports their messages. Nothing is
-  compiled. Syntax errors don't stop the file from being resolved, so every
-  problem is reported at once.
-- Its `JsonSchema` has every preset and no default dialect.
-- The engine makes a processor for each file, and each one resolves in a new
-  session, with the run's registry.
-- An instance is validated with `jsonSchemaValidate` (see "Validating JSON
-  files"). Its schema is the last pattern in the `schemas` setting that
-  matches its path, or else its own top-level `$schema`, resolved against
-  the instance, as editors do. `--setting` gives one from the command line.
-- `schemas` is an object of glob patterns to schemas. Patterns match the
-  instance's path relative to the working directory (`path.matchesGlob`),
-  and a schema is a URI or a path relative to the working directory, for
-  the same reason as `allowRetrieval`: the engine doesn't say which
-  configuration file a setting came from. It's an object because the
-  engine merges settings deeply, and lists from different configuration
-  files are merged by index. The last match wins, so a folder's
-  `.hyperjumprc`, which is merged after its parents', can change the schema
-  for its files. Validating against every match, as VS Code does, was
-  considered, but then a folder couldn't replace its parent's schema.
-- A JSON file without a schema only has its syntax checked, by the parser.
-  Nothing says it has no schema. A folder has plenty of them
-  (`package.json`), and even quiet output lists files with info messages.
-  The CLI used to ignore `*.json` except `*.schema.json`, but an ignored
-  file that's given explicitly is an error in the engine, and schemas
-  don't need the extension anymore.
-- A schema that can't be compiled is an `invalid-schema` error on the
-  instance, at its `$schema` if that's where it came from. It's compiled in
-  a new session with the same registry and `allowRetrieval` a schema in the
-  instance's folder would be resolved with. Instances that use the same
-  schema with the same `allowRetrieval` share one compilation per run.
-- The engine waits for every file before writing or reporting any of them,
-  and it skips files with a fatal message while it checks, assuming they've
-  stopped. A file that gets one while it's still being transformed, which
-  async transforms make likely, can be left behind, and the run ends
-  without output (unified-engine 11.2.2). So from the CLI's transform on,
-  a file's messages hold back `fatal` until a step in the file set's
-  pipeline, which runs once every file is waiting, before anything is
-  reported. Errors are made by setting `fatal` after a message is created
-  (`file.fail`, `unified-lint-rule`), so the CLI replaces the file's
-  `message` with one whose messages have a `fatal` accessor that reads as
-  a warning until it's released. That covers lint rules set to `error` too.
-  Making messages non-fatal after each transform wasn't enough, because a
-  transform makes them between `await`s. It goes away when the engine is
-  fixed (see "Known limitations").
-- Input from stdin has no path, so it's resolved as if it were in the
-  working directory: its base URI is the directory's `file:` URL.
-- It doesn't write files to stdout by default (`--no-stdout` comes before
-  the user's arguments), because it's a linter. `--stdout` and `--output`
-  still work.
-- Schema problems are errors, so an invalid schema fails the command. In
-  unified, warnings are for findings that don't stop a file from being used,
-  like style, and none of these are.
-- Its processor isn't exported.
-- It can see the working directory, and it lints the files it's given.
-  Every schema in the working directory is in a registry, as a language
-  server has its workspace, so it's found by its `$id` and by its path,
-  whether or not it's linted. The schemas it was given are in the registry
-  too, even outside the working directory. Instances aren't. Nothing is
-  retrieved to decide which files are schemas, so a dialect has to have
-  been added or be defined by a meta-schema in the registry. A meta-schema
-  can be in a dialect another one defines, so files are tried again until
-  no more are schemas. Self-identifying meta-schemas, whose `$id` can't be retrieved,
-  are found this way without any configuration.
-- `.hyperjumpignore` and ignore patterns only decide what's linted. An
-  ignored file is still found, which is what a vendored meta-schema needs.
-- The search skips `node_modules` and `.git`, and it doesn't follow
-  symlinks. A symlink can point outside the working directory, and what's
-  in the registry isn't checked by `allowRetrieval`. A directory that can't
-  be read is skipped.
-- The working directory is searched and every JSON file is read for each
-  run, even to lint one file. Only text that mentions `$schema` is parsed
-  to find its dialect. Folders are searched and files are read
-  concurrently, up to 64 at a time, so it doesn't run out of file
-  descriptors. Entries are only identified when a session looks for a
-  schema, and only resolved when they're needed. For 3000 schemas, linting
-  one takes about 0.1–0.15 s more than in an empty folder, and 3000
-  instances add about 0.08 s (see "CLI workspace registry" in
-  BENCHMARKS.md). A very large repository pays more. Listing registry files in `.hyperjumprc` was considered
-  instead, but their paths would have nothing to be relative to (see the
-  `allowRetrieval` setting).
-- What it can retrieve is files in the working directory, as by default,
-  and the URLs in the `allowRetrieval` setting from `.hyperjumprc`. Its
-  sessions' `allowRetrieval` is `["./", ...setting]`, and the library
-  matches it.
-- The setting is a list of `http:` or `https:` URLs, matched like the
-  library's `allowRetrieval`. Anything else is an `invalid-setting` error.
-- Files can't be in the setting. A committed configuration file can't name
-  an absolute path, which differs for everyone and could point anywhere,
-  and a relative one has nothing to be relative to. The engine merges
-  settings without saying which configuration file they came from. Its
-  `configTransform` option has the file's path, but `unified-args` doesn't
-  pass it on. A file outside the working directory has to be given to the
-  CLI.
-- Files in different folders can have different `.hyperjumprc` files, so
-  each file's session gets its own `allowRetrieval`, and every file shares
-  one `JsonSchema`. A `JsonSchema` for each setting was considered, but each
-  would index the registry again.
-- The engine only gives the set of files it's processing to plugins from
-  configuration, as their third argument. So the CLI adds its own plugin
-  (`hjlint/src/file-set.js`) with `--use`, before the user's arguments, and it
-  records the file set for the processor. Every plugin is attached before
-  any file is transformed, so the resolve step finds it.
-- Each run has its own registry, so watch mode sees new and edited files.
-  A run in watch mode only has the file that changed, so the files given in
-  earlier runs are kept.
-- A file the engine couldn't find, or was told to ignore, isn't one it was
-  given, though an ignored one in the working directory is still found.
-  Input from stdin can't be found by other files.
-- Without the engine, such as when the processor is used directly in tests,
-  there's no run, so the registry is empty and nothing is searched.
 
 ## Validating JSON files (`src/validate/`)
 
@@ -1475,7 +1319,8 @@ values against the schemas that apply theirs.
     by source, and this only controls rules made with `lintRule`.
 - A rule made with `unified-lint-rule` directly ignores configuration
   comments, and naming it in a directive is an `unknown-rule` warning.
-- Configuration comments from JSONC comments are deferred (see "Plan"). They
+- Configuration comments from JSONC comments are deferred (see hjlint's
+  "Plan"). They
   would cover from the comment on, as in remark, and need JSONC support,
   which browser's parser has (`allowComments`) and the CLI doesn't, because
   it also decides which files are schemas.
@@ -1644,18 +1489,9 @@ What this relies on from browser's `v2` branch:
    values (see "Compile and evaluate").
 3. Port lint rules from the catalogue (see "The rule catalogue"). Done so
    far: everything in `src/lint/rules/`.
-4. Add JRef, JSONC, and YAML files to the CLI. JRef is what browser's
-   `jref` CLI handled. JSONC would bring configuration comments from JSONC
-   comments (see "Configuration comments"), which browser's parser can read
-   (`allowComments`).
-5. Later: OpenAPI and migrating dependent projects.
+4. Later: OpenAPI and migrating dependent projects.
 
 ## Known limitations
-
-- unified-engine can lose a file that gets a fatal message while it's
-  being transformed, and the run ends without output. The CLI works around
-  it by holding back `fatal` (see "CLI"). The fix belongs in
-  unified-engine.
 
 - `allowRetrieval` can't stop a request that a redirect leads to. It's
   checked on the URL that was asked for and the URL the response came from,

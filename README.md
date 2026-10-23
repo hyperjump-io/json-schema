@@ -290,7 +290,7 @@ import { addFullFormats } from "@hyperjump/json-schema/formats/full";
 addFullFormats(jsonSchema);
 ```
 
-The CLI has every format.
+The [`hjlint`](https://github.com/hyperjump-io/hjlint) CLI has every format.
 
 ### Invalid schemas
 
@@ -315,71 +315,15 @@ try {
 
 ### Linting schemas
 
-The `hyperjump` CLI reports every problem in a schema without compiling it:
-syntax errors, a missing dialect, unknown keywords, invalid keyword values.
-It's built on [`unified-args`](https://github.com/unifiedjs/unified-args), so
-it has the same options as other unified CLIs. It knows every dialect this
-package has.
-
-It's in the [`hjlint`](./hjlint) package, which installs it as `hyperjump`
-and `hjlint`. `npx hjlint` runs it without installing anything. Don't use
-`npx hyperjump` without installing `hjlint`, because npx would download an
-unrelated package named `hyperjump`.
-
-```bash
-npx hjlint schemas/
-```
-
-A JSON file is linted if it's a `.schema.json` file or its `$schema` is a
-dialect: one of the dialects this package has, or one defined by a meta-schema
-it can find. Other JSON files are validated against their schemas (see
-"Validating JSON files"). Schema problems are errors, so an
-invalid schema fails the command. Use `-q` to only see files with problems.
-
-It reads from stdin if no files are given, as if it were a file in the working
-directory. Use `--file-path` to give it a name. It doesn't write schemas back out unless you ask with
-`--stdout` or `--output`.
-
-Every schema in the working directory can be found by its `$id` or its path, including custom meta-schemas, whether or not it's linted. Only
-the files you give it are linted. So a vendored meta-schema can be ignored
-with `.hyperjumpignore` and still be found. `node_modules`, `.git`, and
-symlinks aren't searched. URLs are only retrieved if the `allowRetrieval` setting
-allows them. It's a list of `http:` or `https:` URLs. One that ends with `/`
-allows everything under it, and any other allows only itself.
-
-```json
-{
-  "settings": {
-    "allowRetrieval": ["https://schemas.example.com/"]
-  }
-}
-```
-
-Files outside the working directory can't be allowed this way. A
-configuration file can't name a path outside your project that works for
-everyone. To use one, give it to the CLI, and it's found by its `$id` or its
-path.
-
 Lint rules find things that are likely mistakes in a schema that still works,
-such as `then` without `if`. They're off unless you turn them on in a
-`.hyperjumprc` file (or a `hyperjumpConfig` field in `package.json`). The
-recommended preset turns on every rule that's likely a mistake. They're
-warnings, except for ones that find a schema that can't be compiled, like a
-`$ref` that doesn't find a schema, or one the spec doesn't allow, like a v1
-`$schema` with a fragment, which are errors. Rules after it change
-their settings. A rule's setting is an array, with its
-severity (`"off"`, `"warn"`, or `"error"`) first.
-
-```json
-{
-  "plugins": [
-    "@hyperjump/json-schema/lint/recommended",
-    ["@hyperjump/json-schema/lint/rules/then-else-without-if", ["error"]]
-  ]
-}
-```
-
-Warnings don't fail the command unless you use `--frail`.
+such as `then` without `if`. They're unified plugins that run after
+`jsonSchemaResolve`, so they work in the
+[`hjlint`](https://github.com/hyperjump-io/hjlint) CLI, whose README says how
+to configure them, and in any unified pipeline that resolves schemas. The
+recommended preset, `@hyperjump/json-schema/lint/recommended`, turns on every
+rule that's likely a mistake. They're warnings, except for ones that find a
+schema that can't be compiled, like a `$ref` that doesn't find a schema, or one
+the spec doesn't allow, like a v1 `$schema` with a fragment, which are errors.
 
 | Rule | Reports |
 | --- | --- |
@@ -459,37 +403,9 @@ A directive that names a rule that isn't configured is a warning
 
 ### Validating JSON files
 
-The `hyperjump` CLI also validates JSON files that aren't schemas. A file's
-schema is the last pattern in the `schemas` setting that matches its path, or
-else its own top-level `$schema`, relative to the file. Patterns and schema
-paths are relative to the working directory, and a schema can also be a URI.
-A JSON file without a schema only has its syntax checked.
-
-```json
-{
-  "settings": {
-    "schemas": {
-      "config/*.json": "schemas/config.schema.json",
-      "data/**/*.json": "https://example.com/person"
-    }
-  }
-}
-```
-
-```bash
-npx hjlint config/ data/
-npx hjlint --setting 'schemas:{"*.json":"person.schema.json"}' alice.json
-cat alice.json | npx hjlint --file-path alice.json
-```
-
-Schemas are found the same way they are for linting: every schema in the
-working directory, by its `$id` or its path, and the URLs
-`allowRetrieval` allows. Validation errors and a schema that can't be used are
-errors. Syntax errors are reported too, and the rest of the file is still
-validated.
-
-The CLI's processor isn't exported, but the plugin that validates is. It
-takes a compiled schema, so you decide where schemas come from.
+`jsonSchemaValidate` is a unified plugin that validates a JSON AST against a
+compiled schema, so you decide where schemas come from. It's how the
+[`hjlint`](https://github.com/hyperjump-io/hjlint) CLI validates JSON files.
 
 ```js
 import { unified } from "unified";
@@ -659,8 +575,8 @@ const group = await schemaGroup(file.data.jsonSchemaSession, tree, schemaNode);
 `formatTypes` says which types of value a `format` keyword's format applies
 to, from the format's definition, or undefined if it could apply to any.
 
-A package named `hyperjump-<name>` can be used in `.hyperjumprc` as
-`<name>`. See `src/lint/` for the built-in rules.
+A package named `hyperjump-<name>` can be used in `hjlint`'s `.hyperjumprc`
+as `<name>`. See `src/lint/` for the built-in rules.
 
 ### Evaluation plugins
 
