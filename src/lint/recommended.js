@@ -36,6 +36,7 @@ import keywordWithDefaultValue from "./rules/keyword-with-default-value.js";
 import multipleOfOne from "./rules/multiple-of-one.js";
 import singleTypeArray from "./rules/single-type-array.js";
 import misnamedDefinitions from "./rules/misnamed-definitions.js";
+import singleValueEnum from "./rules/single-value-enum.js";
 
 /**
  * @import { Preset } from "unified"
@@ -80,6 +81,7 @@ const recommended = {
     [multipleOfOne, ["warn"]],
     [singleTypeArray, ["warn"]],
     [misnamedDefinitions, ["warn"]],
+    [singleValueEnum, ["warn"]],
     [invalidDialectUri, ["error"]],
     [referenceWithoutTarget, ["error"]]
   ]

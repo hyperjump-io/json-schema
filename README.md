@@ -400,6 +400,7 @@ Warnings don't fail the command unless you use `--frail`.
 | `ignored-ref-siblings` | A property next to `$ref` in draft-04 through draft-07, where `$ref` replaces the whole schema |
 | `misnamed-definitions` | `definitions` in 2019-09 and later, or `$defs` in draft-04 through draft-07, where it isn't a keyword, so what's in it isn't a schema |
 | `const-and-enum` | `const` and `enum` in the same schema, where `enum` either has no effect or nothing is valid |
+| `single-value-enum` | `enum` with only one value, which `const` says more directly (draft-06 and later) |
 | `content-schema-without-media-type` | `contentSchema` without `contentMediaType` |
 | `dependency-on-required-property` | A dependency in `dependentRequired`, `dependentSchemas`, or `dependencies` on a property that's in `required`, so it always applies |
 | `keyword-for-disallowed-type` | A keyword or known format for one type of value, like `minimum`, `properties`, or the `date` format, in a schema whose `type` doesn't allow that type |
