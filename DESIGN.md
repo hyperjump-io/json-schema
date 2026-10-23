@@ -1369,11 +1369,9 @@ catalogue doesn't cover. Done so far: `empty-type`,
 `keyword-without-type`, `required` against `maxProperties` in
 `contradictory-limits`, `const-or-enum-value-rejected`, and
 `assertion-implied-by-const-or-enum`, which also covers the catalogue's
-`enum_validation_keywords_default`.
+`enum_validation_keywords_default`, and `required-dependent-property`.
 Candidates:
 
-- A dependent property in `dependentRequired` or `dependencies` that's
-  already in `required`, so it has no effect.
 - A `default` or example that's valid against the schema it's in, but not
   against a schema that must also pass, like a parent with `allOf`.
   `invalid-default-or-example` only checks the schema it's in.

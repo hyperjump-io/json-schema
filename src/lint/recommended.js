@@ -38,6 +38,7 @@ import misnamedDefinitions from "./rules/misnamed-definitions.js";
 import singleValueEnum from "./rules/single-value-enum.js";
 import singleValueRange from "./rules/single-value-range.js";
 import propertyNamesType from "./rules/property-names-type.js";
+import requiredDependentProperty from "./rules/required-dependent-property.js";
 
 /**
  * @import { Preset } from "unified"
@@ -84,6 +85,7 @@ const recommended = {
     [singleValueEnum, ["warn"]],
     [singleValueRange, ["warn"]],
     [propertyNamesType, ["warn"]],
+    [requiredDependentProperty, ["warn"]],
     [invalidDialectUri, ["error"]],
     [referenceWithoutTarget, ["error"]]
   ]

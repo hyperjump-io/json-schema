@@ -403,6 +403,7 @@ Warnings don't fail the command unless you use `--frail`.
 | `single-value-enum` | `enum` with only one value, which `const` says more directly (draft-06 and later) |
 | `content-schema-without-media-type` | `contentSchema` without `contentMediaType` |
 | `dependency-on-required-property` | A dependency in `dependentRequired`, `dependentSchemas`, or `dependencies` on a property that's in `required`, so it always applies |
+| `required-dependent-property` | A property a dependency in `dependentRequired` or `dependencies` requires that `required` already requires, so requiring it there has no effect |
 | `keyword-for-disallowed-type` | A keyword or known format for one type of value, like `minimum`, `properties`, or the `date` format, in a schema whose `type` doesn't allow that type |
 | `min-properties-covered-by-required` | `minProperties` that's no more than the number of properties in `required`, so it has no effect |
 | `type-implied-by-const-or-enum` | `type` that allows the `const` value or every value in `enum`, so it has no effect. Turn it off if your tools need `type` |
