@@ -1555,6 +1555,18 @@ What this relies on from browser's `v2` branch:
   examples. A rule's `url` in its `lintRule` meta could link to its docs
   from every message. The README's table of rules won't scale.
 
+- **Where the resolver could be more tolerant.** Recoverable input should
+  be accepted and reported by the linter (see "Validity and lint"). Review
+  the resolver for places it's stricter than it needs to be. For
+  references: anything a reference targets could be accepted as a schema,
+  even inside an unknown keyword, like `definitions` in 2020-12 or `$defs`
+  in draft-07, and a lint rule would report a reference to a location that
+  isn't a known schema. `reference-without-target` and
+  `misnamed-definitions` report these as missing schemas today. Another
+  case: in draft-04–07, `{ "$ref": "#/definitions/root", "definitions":
+  {…} }` fails, because everything next to `$ref` is ignored, though tools
+  like typescript-json-schema generate it and other validators accept it.
+
 - **Portable bundles.** A bundle that's a folder of schemas (a tar?) rather
   than one compound document, so schemas can be moved between machines and
   implementations (a JS frontend and a C# backend) and restored in one step,
