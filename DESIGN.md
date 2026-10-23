@@ -1363,17 +1363,14 @@ It's a list of candidates, not a spec.
 Rules of our own are added too, when porting turns up a mistake the
 catalogue doesn't cover. Done so far: `empty-type`,
 `const-or-enum-value-for-disallowed-type`, `required-property-not-allowed`,
-`keyword-without-type`, and `required` against `maxProperties` in
-`contradictory-limits`.
+`keyword-without-type`, `required` against `maxProperties` in
+`contradictory-limits`, `const-or-enum-value-rejected`, and
+`assertion-implied-by-const-or-enum`, which also covers the catalogue's
+`enum_validation_keywords_default`.
 Candidates:
 
 - A dependent property in `dependentRequired` or `dependencies` that's
   already in `required`, so it has no effect.
-- A `const` or `enum` value that the sibling assertions reject, like
-  `"a"` with `minLength: 2`. It's never valid. It generalizes
-  `const-or-enum-value-for-disallowed-type`.
-- A limit next to `const` or `enum` that every value passes, so it has no
-  effect.
 - A `default` or example that's valid against the schema it's in, but not
   against a schema that must also pass, like a parent with `allOf`.
   `invalid-default-or-example` only checks the schema it's in.

@@ -422,12 +422,15 @@ Warnings don't fail the command unless you use `--frail`.
 | `implicit-dialect` | A root schema without `$schema` whose dialect came from a media type parameter or the default dialect, so other tools may not know it |
 | `reference-without-target` | A `$ref` that doesn't find a schema, such as a file that doesn't exist or a JSON Pointer that doesn't point to anything |
 
-These rules are matters of style, so they aren't in the recommended preset.
+These rules aren't in the recommended preset, because they're matters of style
+or they're expensive to run.
 Turn them on with a severity, like `["@hyperjump/json-schema/lint/rules/mergeable-all-of-schema", ["warn"]]`.
 
 | Rule | Reports |
 | --- | --- |
 | `mergeable-all-of-schema` | A schema in `allOf` whose keywords can be moved into the schema `allOf` is in without changing what's valid |
+| `assertion-implied-by-const-or-enum` | An assertion next to `const` or `enum`, like `minLength` or `maximum`, that allows every value, so it has no effect (expensive) |
+| `const-or-enum-value-rejected` | A `const` value or a value in `enum` that an assertion next to it, like `minLength` or `multipleOf`, rejects, so it's never valid (expensive) |
 
 A `$comment` that starts with `jsonschema-lint-disable` turns rules off for the
 schema it's in and its subschemas, and `jsonschema-lint-enable` turns them back
