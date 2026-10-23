@@ -223,7 +223,7 @@ export class JsonSchemaSession extends Session {
 
   /** @type API.JsonSchemaSession["compile"] */
   async compile(uri) {
-    return new Validator(this.#jsonSchema, optimize(await compile(this, uri), false));
+    return new Validator(this.#jsonSchema, optimize(await compile(this, uri), this.#jsonSchema, false));
   }
 
   /** @type API.JsonSchemaSession["bundle"] */

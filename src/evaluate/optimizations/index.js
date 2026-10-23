@@ -1,3 +1,5 @@
+import staticUnevaluated from "./static-unevaluated.js";
+
 /**
  * @import { Optimization } from "../optimize.js"
  */
@@ -9,4 +11,6 @@
  *
  * @type Optimization[]
  */
-export const optimizations = [];
+export const optimizations = [
+  staticUnevaluated
+];

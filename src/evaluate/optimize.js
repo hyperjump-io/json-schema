@@ -1,6 +1,7 @@
 import { optimizations } from "./optimizations/index.js";
 
 /**
+ * @import { JsonSchema } from "../json-schema.d.ts"
  * @import { CompiledSchemas } from "./compile.js"
  */
 
@@ -14,21 +15,24 @@ import { optimizations } from "./optimizations/index.js";
  * whether an instance is valid. Other passes run once, before the IR is
  * serialized.
  *
+ * Passes get the `JsonSchema` the IR was compiled with, to look up what
+ * keywords read (`Keyword.reads`).
+ *
  * @typedef {{
  *   fastOnly: boolean;
- *   optimize: (compiled: CompiledSchemas) => CompiledSchemas;
+ *   optimize: (compiled: CompiledSchemas, jsonSchema: JsonSchema) => CompiledSchemas;
  * }} Optimization
  */
 
 /**
  * Run the optimizations, in order, that are `fastOnly` or not.
  *
- * @type (compiled: CompiledSchemas, fastOnly: boolean) => CompiledSchemas
+ * @type (compiled: CompiledSchemas, jsonSchema: JsonSchema, fastOnly: boolean) => CompiledSchemas
  */
-export const optimize = (compiled, fastOnly) => {
+export const optimize = (compiled, jsonSchema, fastOnly) => {
   for (const optimization of optimizations) {
     if (optimization.fastOnly === fastOnly) {
-      compiled = optimization.optimize(compiled);
+      compiled = optimization.optimize(compiled, jsonSchema);
     }
   }
 

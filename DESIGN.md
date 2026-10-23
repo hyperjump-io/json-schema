@@ -809,13 +809,13 @@ annotation, including the ones that aren't kept (see "Plugins").
 Each optimization pass is a file in `src/evaluate/optimizations/`, so what
 the optimizer can do and where each pass is implemented can be seen from the
 file structure, like keywords and dialects. `optimizations/index.js` lists
-them, and `src/evaluate/optimize.js` runs them. There aren't any yet (see
-"Plan").
+them, and `src/evaluate/optimize.js` runs them.
 
 - A pass is an `Optimization`: `{ fastOnly, optimize }`. `optimize` takes
-  the IR and returns a new one. It doesn't change the one it's given,
-  because the `Validator` keeps it for its other specializations and for
-  `serialize`.
+  the IR and the `JsonSchema`, to look up keyword definitions, and returns
+  a new IR. It doesn't change the one it's given, because the `Validator`
+  keeps it for its other specializations and for `serialize`. A pass that
+  doesn't change anything returns the one it's given.
 - Passes run in the order `index.js` lists them, because one can leave work
   for another, like folding a constant leaving a subschema nothing
   references. Unlike keywords, they aren't independent.
@@ -829,6 +829,41 @@ them, and `src/evaluate/optimize.js` runs them. There aren't any yet (see
   keyword it doesn't know about is left alone. If user keywords ever need
   to take part, keywords could provide the rules instead.
 - Passes aren't part of the API. There's no `addOptimization`.
+- A pass over a large IR isn't free. Copying or iterating the 4,304
+  schemas of SchemaStore's `package.json` schema takes 0.5–1.6 ms, so a
+  pass returns the IR it's given when there's nothing to do, and a pass has
+  to save more than it costs (see "Optimizations" in
+  [BENCHMARKS.md](BENCHMARKS.md)).
+
+The passes:
+
+- `static-unevaluated.js` (`fastOnly`): `unevaluatedProperties` becomes
+  `additionalProperties` with the properties and patterns its siblings
+  evaluate, and `unevaluatedItems` becomes `items` (2019-09's
+  `additionalItems`) starting after its siblings' prefix, when what they
+  evaluate is known without the instance. One whose siblings evaluate
+  everything is left out. When no keyword reads `evaluated` anymore, the
+  specialization doesn't track it. What's evaluated is known when the
+  schemas applied to the same instance only use keywords the pass has
+  rules for, conditional applicators (`anyOf`, `if`, …) don't mark
+  anything in any subschema, and there's no `contains` or dynamic
+  reference. Keywords that aren't applicators don't need rules: only
+  applicators mark (`markEvaluated`), and a keyword can only apply the
+  schemas whose handles are in its compiled value, or, if it reads
+  `dynamicScope`, the ones dynamic anchors identify. Applicators need rules
+  because nothing in a keyword definition says what it marks. It only needs the marks of a passing schema, because a
+  schema whose sibling fails fails anyway, which isn't true with plugins
+  or annotations.
+
+Passes that were tried and aren't used:
+
+- Inlining the schemas `$ref` and `allOf` apply (their keywords in place of
+  the keyword) saved about 3% on `package.json` as 2020-12, where `$ref`
+  is a keyword, and nothing on the test suite. Before 2019-09, `$ref` is
+  already followed when compiling. It made the first `validate` about
+  twice as slow (7 to 13–15 ms), half in the pass and half in building
+  the 34% more keywords it copies, so it would take about 65,000
+  validations to make that back.
 
 Some optimizations aren't passes, because they're about how specialization
 works rather than what the IR says, so they stay in `specialize.js`:
@@ -1527,10 +1562,13 @@ What this relies on from browser's `v2` branch:
 
 ## Plan
 
-1. Optimization passes on the IR (see "Optimizations"). Candidates: fold
-   constants (`not: true`, an `enum` with one value), inline `$ref` targets
-   that are only used once, evaluate cheap keywords first, and share
-   identical subschemas.
+1. More optimization passes on the IR (see "Optimizations"). Static
+   `unevaluated*` is done and inlining `$ref` and `allOf` wasn't worth it.
+   Candidates: fold constants (`not: true`, an `enum` with one value),
+   evaluate cheap keywords first (only helps invalid instances), and share
+   identical subschemas (needs to know where keywords keep handles). On
+   real schemas, iterating properties is 35% of FLAG, which a pass can't
+   change (see item 2).
 2. Decide whether keywords can provide a separate evaluator for plain
    values (see "Compile and evaluate").
 3. Port lint rules from the catalogue (see "The rule catalogue"). Done so

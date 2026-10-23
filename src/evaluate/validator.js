@@ -164,7 +164,7 @@ export class Validator {
       return this.#compiled;
     }
 
-    this.#fastCompiled ??= optimize(this.#compiled, true);
+    this.#fastCompiled ??= optimize(this.#compiled, this.#jsonSchema, true);
     return this.#fastCompiled;
   }
 

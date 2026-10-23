@@ -205,8 +205,10 @@ export type EvaluateContext<I> = {
   /**
    * Record that the keyword evaluated a property (by name) or an item (by
    * index) of the instance. Applicators that evaluate properties or items
-   * call it after evaluating the subschema. Like annotations, marks are kept
-   * only if the keyword and every schema it was evaluated through pass.
+   * call it after evaluating the subschema. Only applicators call it, so a
+   * keyword that doesn't apply a subschema doesn't mark anything, which
+   * optimizations rely on. Like annotations, marks are kept only if the
+   * keyword and every schema it was evaluated through pass.
    *
    * It's undefined unless a keyword in the compiled schema reads
    * `evaluated`. While it's defined, a keyword must not stop at a passing
