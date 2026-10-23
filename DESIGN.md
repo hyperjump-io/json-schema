@@ -1538,7 +1538,11 @@ What this relies on from browser's `v2` branch:
 4. Lint while resolving (see "Linting while resolving"): plain lint
    results, every schema problem in one `SchemaError`, lint on the
    session, then `lint(uri)`.
-5. Later: OpenAPI and migrating dependent projects.
+5. A style lint preset. It's opinionated about how a schema is organized,
+   with rules for things like whether `$defs` comes first or last.
+6. A bundle command in the CLI.
+7. A documentation website.
+8. Later: OpenAPI and migrating dependent projects.
 
 ## Known limitations
 
