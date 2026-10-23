@@ -6,7 +6,7 @@ import { JsonSchema } from "../../json-schema.js";
 import { jsonSchemaResolve } from "../../schema/resolve.js";
 import { addDraft07 } from "../../dialects/draft-07/index.js";
 import { addDraft202012 } from "../../dialects/draft-2020-12/index.js";
-import { hyperjump } from "../../cli/hyperjump.js";
+import { linter } from "../test-linter.js";
 import implicitDialect from "./implicit-dialect.js";
 
 const draft07 = "http://json-schema.org/draft-07/schema";
@@ -82,7 +82,7 @@ describe("implicit-dialect", () => {
 
   test("the CLI has no default dialect", async () => {
     const file = new VFile({ path: "/schemas/a.schema.json", value: `{ "type": "string" }` });
-    await hyperjump()
+    await linter()
       .use(implicitDialect)
       .process(file);
     expect(file.messages.map((message) => message.ruleId)).to.eql(["missing-dialect"]);

@@ -2,7 +2,7 @@ import { describe, test, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
 import { rejsonParse } from "@hyperjump/browser/json";
-import { hyperjump } from "../../cli/hyperjump.js";
+import { linter } from "../test-linter.js";
 import { JsonSchema } from "../../json-schema.js";
 import { SchemaRegistry } from "../../registry/schema-registry.js";
 import { jsonSchemaResolve } from "../../schema/resolve.js";
@@ -14,7 +14,7 @@ const draft2020 = "https://json-schema.org/draft/2020-12/schema";
 /** @type (json: string) => Promise<VFile> */
 const lint = async (json) => {
   const file = new VFile({ path: "/schemas/a.schema.json", value: json });
-  await hyperjump()
+  await linter()
     .use(requiredPropertyNotDefined)
     .process(file);
   return file;

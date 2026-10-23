@@ -12,3 +12,4 @@ CLAUDE.md
 test/
 src/dialects/v1/extension-tests/
 hjlint/
+src/lint/test-linter.js

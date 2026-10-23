@@ -1,6 +1,6 @@
 import { describe, test, expect } from "vitest";
 import { VFile } from "vfile";
-import { hyperjump } from "../../cli/hyperjump.js";
+import { linter } from "../test-linter.js";
 import redundantNumericLimit from "./redundant-numeric-limit.js";
 
 const draft2020 = "https://json-schema.org/draft/2020-12/schema";
@@ -8,7 +8,7 @@ const draft2020 = "https://json-schema.org/draft/2020-12/schema";
 /** @type (json: string) => Promise<VFile> */
 const lint = async (json) => {
   const file = new VFile({ path: "/schemas/a.schema.json", value: json });
-  await hyperjump()
+  await linter()
     .use(redundantNumericLimit)
     .process(file);
   return file;

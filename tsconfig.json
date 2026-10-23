@@ -1,5 +1,5 @@
 {
-  "exclude": ["./docs", "./coverage", "./scratch", "./benchmark", "./hjlint"],
+  "exclude": ["./docs", "./coverage", "./scratch", "./benchmark"],
   "compilerOptions": {
     "module": "nodenext",
     "target": "esnext",

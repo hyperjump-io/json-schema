@@ -61,16 +61,11 @@
     "./lint/rules/*": {
       "types": "./src/lint/rules/*.d.ts",
       "default": "./src/lint/rules/*.js"
-    },
-    "./cli": {
-      "types": "./src/cli/hyperjump-cli.d.ts",
-      "default": "./src/cli/hyperjump-cli.js"
     }
   },
-  "bin": {
-    "hyperjump": "./src/cli/hyperjump-cli.js",
-    "hjlint": "./src/cli/hyperjump-cli.js"
-  },
+  "workspaces": [
+    "hjlint"
+  ],
   "scripts": {
     "lint": "oxlint",
     "test": "vitest run",
@@ -96,7 +91,6 @@
     "@types/unist": "^3.0.3",
     "content-type": "^3.1.1",
     "unified": "^11.0.5",
-    "unified-args": "^11.0.1",
     "unified-lint-rule": "^3.0.1",
     "vfile": "^6.0.3",
     "vfile-message": "^4.0.3"

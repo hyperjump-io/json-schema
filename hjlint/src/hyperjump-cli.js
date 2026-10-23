@@ -11,7 +11,7 @@ import { hyperjump } from "./hyperjump.js";
  * }} Package
  */
 
-const packageJsonUrl = new URL("../../package.json", import.meta.url);
+const packageJsonUrl = new URL("../package.json", import.meta.url);
 
 /** @type Package */
 const packageJson = JSON.parse(await readFile(packageJsonUrl, "utf8"));

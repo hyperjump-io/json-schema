@@ -1,6 +1,6 @@
 import { describe, test, expect } from "vitest";
 import { VFile } from "vfile";
-import { hyperjump } from "../cli/hyperjump.js";
+import { linter } from "./test-linter.js";
 import recommended from "./recommended.js";
 import thenElseWithoutIf from "./rules/then-else-without-if.js";
 import keywordWithoutType from "./rules/keyword-without-type.js";
@@ -9,7 +9,7 @@ import keywordWithoutType from "./rules/keyword-without-type.js";
 const lint = async (json) => {
   const file = new VFile({ path: "/schemas/a.schema.json", value: json });
   // The schemas leave out `type` to stay short
-  await hyperjump()
+  await linter()
     .use(recommended)
     .use(keywordWithoutType, ["off"])
     .process(file);
@@ -183,7 +183,7 @@ describe("configuration comments", () => {
       path: "/schemas/a.schema.json",
       value: `{ "$schema": "https://json-schema.org/v1", "$comment": "jsonschema-lint-disable then-else-without-if" }`
     });
-    await hyperjump()
+    await linter()
       .use(recommended)
       .use(thenElseWithoutIf, ["off"])
       .process(file);

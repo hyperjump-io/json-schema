@@ -1,6 +1,6 @@
 import { describe, test, expect } from "vitest";
 import { VFile } from "vfile";
-import { hyperjump } from "../../cli/hyperjump.js";
+import { linter } from "../test-linter.js";
 import invalidDialectUri from "./invalid-dialect-uri.js";
 
 const v1 = "https://json-schema.org/v1";
@@ -8,7 +8,7 @@ const v1 = "https://json-schema.org/v1";
 /** @type (json: string) => Promise<VFile> */
 const lint = async (json) => {
   const file = new VFile({ path: "/schemas/a.schema.json", value: json });
-  await hyperjump()
+  await linter()
     .use(invalidDialectUri)
     .process(file);
   return file;

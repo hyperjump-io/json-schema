@@ -321,14 +321,14 @@ It's built on [`unified-args`](https://github.com/unifiedjs/unified-args), so
 it has the same options as other unified CLIs. It knows every dialect this
 package has.
 
-```bash
-npx hyperjump schemas/
-```
+It's in the [`hjlint`](./hjlint) package, which installs it as `hyperjump`
+and `hjlint`. `npx hjlint` runs it without installing anything. Don't use
+`npx hyperjump` without installing `hjlint`, because npx would download an
+unrelated package named `hyperjump`.
 
-It's also installed as `hjlint`. `npx hyperjump` and `npx hjlint` use the CLI
-installed in your project. Without it, npx would download an unrelated package
-named `hyperjump`, so use `npx -p @hyperjump/json-schema hyperjump` to run
-it without installing.
+```bash
+npx hjlint schemas/
+```
 
 A JSON file is linted if it's a `.schema.json` file or its `$schema` is a
 dialect: one of the dialects this package has, or one defined by a meta-schema
@@ -477,9 +477,9 @@ A JSON file without a schema only has its syntax checked.
 ```
 
 ```bash
-npx hyperjump config/ data/
-npx hyperjump --setting 'schemas:{"*.json":"person.schema.json"}' alice.json
-cat alice.json | npx hyperjump --file-path alice.json
+npx hjlint config/ data/
+npx hjlint --setting 'schemas:{"*.json":"person.schema.json"}' alice.json
+cat alice.json | npx hjlint --file-path alice.json
 ```
 
 Schemas are found the same way they are for linting: every schema in the

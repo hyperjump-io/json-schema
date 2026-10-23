@@ -97,8 +97,8 @@ describe("hyperjump CLI", () => {
     await writeFile(join(dir, "valid", "b.schema.json"), `{ "$schema": "https://json-schema.org/v1", "minLength": 1 }`);
     await writeFile(join(dir, "package.json"), `{ "name": "example" }`);
 
-    const recommended = fileURLToPath(new URL("../lint/recommended.js", import.meta.url));
-    const rule = fileURLToPath(new URL("../lint/rules/then-else-without-if.js", import.meta.url));
+    const recommended = fileURLToPath(import.meta.resolve("@hyperjump/json-schema/lint/recommended"));
+    const rule = fileURLToPath(import.meta.resolve("@hyperjump/json-schema/lint/rules/then-else-without-if"));
     await mkdir(join(dir, "linted"));
     await writeFile(join(dir, "linted", ".hyperjumprc"), JSON.stringify({ plugins: [recommended] }));
     await writeFile(join(dir, "linted", "c.schema.json"), `{ "$schema": "https://json-schema.org/v1", "then": true }`);

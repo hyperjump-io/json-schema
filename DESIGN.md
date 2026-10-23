@@ -53,8 +53,8 @@ text ─ rejsonParse ─▶ JSON AST ─ jsonSchemaResolve ─▶ Schema AST ─
 | `src/bundle/` | Bundling, which embeds referenced schemas in one document, and its tests, ported from v1 |
 | `src/lint/` | Lint rules (`rules/`, one per file), the recommended preset, `lintRule`, which applies configuration comments, and the utilities rules share |
 | `src/validate/` | `jsonSchemaValidate`, the unified plugin that validates JSON files |
-| `src/cli/` | The `hyperjump` CLI, which lints schemas and validates JSON files |
-| `hjlint/` | The unscoped `hjlint` package, so `npx hjlint` works |
+| `hjlint/` | The `hjlint` package: the `hyperjump` CLI, which lints schemas and validates JSON files. An npm workspace |
+| `src/lint/test-linter.js` | The processor lint rule tests use, which resolves like the CLI |
 | `test/test-suite.js` | Runs the JSON Schema Test Suite and the annotation test suite |
 
 - A `.d.ts` next to a `.js` file declares that module's API. One without a
@@ -1131,7 +1131,7 @@ can be added to one `JsonSchema`.
   ignored. draft-04 and draft-06 use draft-06's `hostname` (RFC 1123),
   which doesn't need Unicode data.
 
-## CLI (`src/cli/`)
+## CLI (`hjlint/`)
 
 `hyperjump` lints schemas and validates JSON files against them. It's a
 `unified-args` CLI, with `.hyperjumprc`, `.hyperjumpignore`, and a
@@ -1140,21 +1140,28 @@ can be added to one `JsonSchema`.
 so browser doesn't depend on `unified-args` and what they did belongs to
 this one (see "Plan").
 
+- It's its own package, `hjlint`, not a `bin` of this one, so the libraries
+  don't depend on `unified-args` and the engine (unified-engine, chokidar,
+  and the rest) that only the CLI uses. Everything it uses is this
+  package's public API, so it's a test that a unified tool can be built on
+  it. It has its own version, and a CLI change is a release of `hjlint`. It
+  isn't published until this package is.
+- It's an npm workspace in this repository, so it's type-checked, linted,
+  and tested with this package. npm doesn't resolve the root package for a
+  workspace by its version, so it depends on `file:..` until it's
+  published, like this package's `file:` dependency on browser, and then
+  `^2.0.0`.
+- The lint rule tests used the CLI's processor. They use
+  `src/lint/test-linter.js` now, which parses and resolves the way the CLI
+  does, without the engine.
+
 - It was `jsonschema`, which Python's `jsonschema` package and
   `@sourcemeta/jsonschema` both install as a command, and `npx jsonschema`
   downloads an unrelated npm package. `hj` was considered, but it doesn't say
-  what it is. `hjlint` is a shorter alias for the same command. `npx` only
-  finds an unscoped package, and `hyperjump` on npm is an unrelated package,
-  so running it without installing needs `npx -p` until an unscoped `hjlint`
-  package that depends on this one is published. That package is in
-  `hjlint/`. Its `bin` imports the CLI through the `./cli` export. It
-  depends on `@hyperjump/json-schema` `^2.0.0`, so a release of this
-  package reaches `npx hjlint` without releasing it again. It has its own
-  version and is only released when it changes or for a new major
-  version. It isn't published until this package is.
-- Both packages install `hjlint`. npm links one of them without an error,
-  and both run the same CLI. The wrapper still needs its own `bin`, because
-  that's what `npx` runs.
+  what it is. `hjlint` is a shorter alias for the same command, and the
+  package's name. `npx` only finds an unscoped package, and `hyperjump` on
+  npm is an unrelated package, so `npx hjlint` is how it's run without
+  installing.
 - The configuration, ignore file, plugin prefix, and the source of its own
   messages follow the command's name. Lint keeps `jsonschema-lint`: the
   `$comment` directives (`jsonschema-lint-disable`), the rules' source, and
@@ -1280,7 +1287,7 @@ this one (see "Plan").
   would index the registry again.
 - The engine only gives the set of files it's processing to plugins from
   configuration, as their third argument. So the CLI adds its own plugin
-  (`src/cli/file-set.js`) with `--use`, before the user's arguments, and it
+  (`hjlint/src/file-set.js`) with `--use`, before the user's arguments, and it
   records the file set for the processor. Every plugin is attached before
   any file is transformed, so the resolve step finds it.
 - Each run has its own registry, so watch mode sees new and edited files.

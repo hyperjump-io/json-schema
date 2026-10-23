@@ -1,7 +1,7 @@
 import { describe, test, beforeEach, expect } from "vitest";
 import { VFile } from "vfile";
 import { HttpError } from "@hyperjump/browser";
-import { hyperjump } from "../cli/hyperjump.js";
+import { linter } from "./test-linter.js";
 import { JsonSchema } from "../json-schema.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
 import { addV1, v1DialectUri } from "../dialects/v1/index.js";
@@ -150,7 +150,7 @@ describe("findSchema", () => {
       /** @type string[] */
       const statuses = [];
       const file = new VFile({ path: "/nothing-here/a.schema.json", value: json });
-      await hyperjump()
+      await linter()
         .use(() => async (/** @type JsonSchemaDocumentNode */ tree, file) => {
           for (const uri of uris) {
             const session = /** @type JsonSchemaSession */ (file.data.jsonSchemaSession);
@@ -174,7 +174,7 @@ describe("findSchema", () => {
       /** @type string[] */
       const statuses = [];
       const file = new VFile({ path: "/nothing-here/a.schema.json", value: `{ "$schema": "${v1DialectUri}", "$defs": { "foo": true } }` });
-      await hyperjump()
+      await linter()
         .use(() => async (/** @type JsonSchemaDocumentNode */ _tree, file) => {
           const session = /** @type JsonSchemaSession */ (file.data.jsonSchemaSession);
           const result = await findSchema(session, "file:///nothing-here/a.schema.json#/$defs/foo");

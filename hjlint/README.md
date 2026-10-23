@@ -1,18 +1,19 @@
 # hjlint
 
 The command-line interface for
-[Hyperjump JSON Schema](https://github.com/hyperjump-io/json-schema), so you
-can run it with `npx` without installing anything first.
+[Hyperjump JSON Schema](https://github.com/hyperjump-io/json-schema). It lints
+JSON Schemas and validates JSON files against them.
 
 ```bash
 npx hjlint schemas/ data/
 ```
 
-It lints JSON Schemas and validates JSON files against them. It's the same
-command as `hyperjump` (and `hjlint`) in projects that install
-`@hyperjump/json-schema`. See its README for the options, the `.hyperjumprc`
-configuration, and lint rules.
+Installing it gives you the same command as `hyperjump` and `hjlint`.
 
-This package only runs the command. It depends on the latest
-`@hyperjump/json-schema` 2.x, so it's only released again when it changes or
-when there's a new major version.
+```bash
+npm install --save-dev hjlint
+npx hyperjump schemas/ data/
+```
+
+See `@hyperjump/json-schema`'s README for the options, the `.hyperjumprc`
+configuration, and lint rules.

@@ -1,6 +1,6 @@
 import { describe, test, expect } from "vitest";
 import { VFile } from "vfile";
-import { hyperjump } from "../../cli/hyperjump.js";
+import { linter } from "../test-linter.js";
 import requiredDependentProperty from "./required-dependent-property.js";
 
 const draft04 = "http://json-schema.org/draft-04/schema#";
@@ -10,7 +10,7 @@ const draft202012 = "https://json-schema.org/draft/2020-12/schema";
 /** @type (json: string) => Promise<VFile> */
 const lint = async (json) => {
   const file = new VFile({ path: "/schemas/a.schema.json", value: json });
-  await hyperjump()
+  await linter()
     .use(requiredDependentProperty)
     .process(file);
   return file;

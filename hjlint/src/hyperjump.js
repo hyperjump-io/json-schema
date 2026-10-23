@@ -4,26 +4,21 @@ import { cwd } from "node:process";
 import { pathToFileURL } from "node:url";
 import { unified } from "unified";
 import { rejsonParse, rejsonStringify } from "@hyperjump/browser/json";
-import { JsonSchema } from "../json-schema.js";
-import { SchemaRegistry } from "../registry/schema-registry.js";
-import { jsonSchemaResolve } from "../schema/resolve.js";
-import { jsonSchemaValidate } from "../validate/validate.js";
-import { addV1 } from "../dialects/v1/index.js";
-import { addDraft04 } from "../dialects/draft-04/index.js";
-import { addDraft06 } from "../dialects/draft-06/index.js";
-import { addDraft07 } from "../dialects/draft-07/index.js";
-import { addDraft201909 } from "../dialects/draft-2019-09/index.js";
-import { addDraft202012 } from "../dialects/draft-2020-12/index.js";
-import { addFullFormats } from "../formats/full.js";
+import { JsonSchema, SchemaRegistry, jsonSchemaResolve, jsonSchemaValidate } from "@hyperjump/json-schema";
+import { addV1 } from "@hyperjump/json-schema/v1";
+import { addDraft04 } from "@hyperjump/json-schema/draft-04";
+import { addDraft06 } from "@hyperjump/json-schema/draft-06";
+import { addDraft07 } from "@hyperjump/json-schema/draft-07";
+import { addDraft201909 } from "@hyperjump/json-schema/draft-2019-09";
+import { addDraft202012 } from "@hyperjump/json-schema/draft-2020-12";
+import { addFullFormats } from "@hyperjump/json-schema/formats/full";
 
 /**
  * @import { Position } from "unist"
  * @import { Processor, Transformer } from "unified"
  * @import { VFile } from "vfile"
  * @import { JsonDocumentNode } from "@hyperjump/browser/json"
- * @import { Validator } from "../json-schema.d.ts"
- * @import { JsonSchemaSession } from "../session.d.ts"
- * @import { JsonSchemaDocumentNode } from "../schema/schema-ast.d.ts"
+ * @import { JsonSchemaDocumentNode, JsonSchemaSession, Validator } from "@hyperjump/json-schema"
  */
 
 /**

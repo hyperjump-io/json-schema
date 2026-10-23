@@ -18,9 +18,17 @@
   },
   "type": "module",
   "bin": {
-    "hjlint": "./bin/hjlint.js"
+    "hyperjump": "./src/hyperjump-cli.js",
+    "hjlint": "./src/hyperjump-cli.js"
   },
   "dependencies": {
-    "@hyperjump/json-schema": "^2.0.0"
+    "@hyperjump/browser": "file:../../browser",
+    "@hyperjump/json-schema": "file:..",
+    "unified": "^11.0.5",
+    "unified-args": "^11.0.1"
+  },
+  "devDependencies": {
+    "@types/unist": "^3.0.3",
+    "vfile": "^6.0.3"
   }
 }

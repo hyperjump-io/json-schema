@@ -1,6 +1,6 @@
 import { describe, test, expect } from "vitest";
 import { VFile } from "vfile";
-import { hyperjump } from "../../cli/hyperjump.js";
+import { linter } from "../test-linter.js";
 import contradictoryLimits from "./contradictory-limits.js";
 
 const v1 = "https://json-schema.org/v1";
@@ -9,7 +9,7 @@ const draft04 = "http://json-schema.org/draft-04/schema#";
 /** @type (json: string) => Promise<VFile> */
 const lint = async (json) => {
   const file = new VFile({ path: "/schemas/a.schema.json", value: json });
-  await hyperjump()
+  await linter()
     .use(contradictoryLimits)
     .process(file);
   return file;
