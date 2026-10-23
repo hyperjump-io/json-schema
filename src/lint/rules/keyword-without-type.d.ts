@@ -14,8 +14,9 @@ import type { JsonSchemaDocumentNode } from "../../schema/schema-ast.d.ts";
  * has a `type`. It's reported once for each group of schemas, on the first
  * keyword for one type. A group that nothing in the document applies, like
  * a schema in `$defs` that's only used from other documents, isn't
- * reported, and neither is one with a reference that can't be followed, or
- * a keyword in a `not`, where other types are already rejected.
+ * reported, and neither is one with a reference that can't be followed, a
+ * keyword in a `not`, where other types are already rejected, or a group
+ * with a `propertyNames` schema, which only applies to strings.
  *
  * A format's types come from its definition (`types`), so a custom format
  * that doesn't say, or one the dialect doesn't support, isn't reported.

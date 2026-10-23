@@ -1,7 +1,7 @@
 import { formatTypes } from "../format-types.js";
 import { lintRule } from "../lint-rule.js";
 import { isNegated, schemaGroup } from "../schema-group.js";
-import { findKeyword, keywordType, visitSchemas } from "../utilities.js";
+import { findKeyword, keywordType, visitKeywords, visitSchemas } from "../utilities.js";
 
 /**
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode } from "../../schema/schema-ast.d.ts"
@@ -37,6 +37,13 @@ const keywordWithoutType = lintRule({ origin: "jsonschema-lint:keyword-without-t
     schemas.push(schemaNode);
   });
 
+  // Property names are always strings, so there are no other types to allow
+  /** @type Set<JsonSchemaNode> */
+  const propertyNamesSchemas = new Set();
+  visitKeywords(tree, `${keyword}/propertyNames`, (keywordNode) => {
+    propertyNamesSchemas.add(/** @type JsonSchemaNode */ (keywordNode.children[1]));
+  });
+
   // The first keyword for some types in each group, which is reported once
   /** @type Map<SchemaGroup, TypedKeyword> */
   const firsts = new Map();
@@ -70,8 +77,9 @@ const keywordWithoutType = lintRule({ origin: "jsonschema-lint:keyword-without-t
 
     // A group that nothing here applies is used from other documents, which
     // may say what type it is. A keyword in a `not` rejects the type it's for,
-    // so other types are already valid.
-    if (group.unknown || !group.applied || isNegated(group, schemaNode)) {
+    // so other types are already valid. A schema for property names only
+    // sees strings.
+    if (group.unknown || !group.applied || isNegated(group, schemaNode) || group.schemas.some((member) => propertyNamesSchemas.has(member))) {
       continue;
     }
 

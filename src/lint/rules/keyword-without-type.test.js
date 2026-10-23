@@ -83,6 +83,19 @@ describe("keyword-without-type", () => {
     expect(await reasons(`{ "$schema": "${draft2020}", "type": "object", "properties": { "a": { "not": { "minimum": 3 } } } }`)).to.eql([]);
   });
 
+  test("a schema for property names", async () => {
+    expect(await reasons(`{ "$schema": "${draft2020}", "type": "object", "propertyNames": { "pattern": "^a", "maxLength": 3 } }`)).to.eql([]);
+  });
+
+  test("a schema property names reference", async () => {
+    expect(await reasons(`{
+      "$schema": "${draft2020}",
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/name" },
+      "$defs": { "name": { "pattern": "^a" } }
+    }`)).to.eql([]);
+  });
+
   test("a known format", async () => {
     expect(await reasons(`{ "$schema": "${draft2020}", "type": "object", "properties": { "a": { "format": "date" } } }`)).to.eql([
       "The 'date' format applies only to strings, but there's no 'type', so values of other types are valid"
