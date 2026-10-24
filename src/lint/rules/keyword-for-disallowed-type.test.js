@@ -171,9 +171,15 @@ describe("keyword-for-disallowed-type", () => {
   });
 
   test("draft-07", async () => {
-    expect(await reasons(`{ "$schema": "http://json-schema.org/draft-07/schema#", "type": "number", "dependencies": { "a": ["b"] }, "additionalItems": false }`)).to.eql([
+    expect(await reasons(`{ "$schema": "http://json-schema.org/draft-07/schema#", "type": "number", "dependencies": { "a": ["b"] }, "items": [{ "type": "string" }], "additionalItems": false }`)).to.eql([
       "'dependencies' applies only to objects, which 'type' doesn't allow",
+      "'items' applies only to arrays, which 'type' doesn't allow",
       "'additionalItems' applies only to arrays, which 'type' doesn't allow"
     ]);
+  });
+
+  test("a keyword with no effect isn't reported", async () => {
+    // `additional-items-without-items-array` reports it
+    expect(await reasons(`{ "$schema": "http://json-schema.org/draft-07/schema#", "type": "number", "additionalItems": false }`)).to.eql([]);
   });
 });

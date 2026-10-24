@@ -13,12 +13,18 @@ import type { JsonSchemaDocumentNode } from "../../schema/schema-ast.d.ts";
  *   exclusive.
  * - Strings, arrays, and objects: `minLength` and `maxLength`, `minItems`
  *   and `maxItems`, and `minProperties` and `maxProperties`.
- * - `required` with more distinct properties than `maxProperties` allows.
+ * - More required properties than `maxProperties` allows. They're the
+ *   distinct properties that `required`, or any keyword that requires
+ *   properties (v1's `requireAllExcept`), requires, with what
+ *   `dependentRequired` and `dependencies` add for those properties, and
+ *   what schemas that have to pass (`allOf`, `$ref`, and dependent schemas)
+ *   require. There's a message on `maxProperties` and on each keyword in
+ *   the schema that requires some of them, which names the others.
  * - `minContains` and `maxContains`, if there's a `contains`. Without one,
  *   they have no effect, which `min-max-contains-without-contains`
  *   reports.
  *
- * It only compares limits in the same schema. It has no options.
+ * Otherwise, it only compares limits in the same schema. It has no options.
  */
 declare const contradictoryLimits: Plugin<JsonSchemaDocumentNode, void>;
 export default contradictoryLimits;

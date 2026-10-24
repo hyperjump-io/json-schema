@@ -101,11 +101,3 @@ export const typeAllows: (names: Set<string>, valueNode: JsonSchemaTolerantNode)
  * unknown.
  */
 export const propertySchemas: (schemaNode: JsonSchemaNode, name: string) => { keywordNode: JsonSchemaKeywordNode; valueNode: JsonSchemaNode }[] | undefined;
-
-/**
- * The type of value a keyword applies to, by keyword URI, in every dialect,
- * like `object` for `properties`. It's undefined for a keyword that applies
- * to every type, like `enum`. `format` depends on the format, which says
- * which types it applies to.
- */
-export const keywordType: (keywordUri: string) => "number" | "string" | "array" | "object" | undefined;

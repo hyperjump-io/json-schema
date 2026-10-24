@@ -312,39 +312,3 @@ export const propertySchemas = (schemaNode, name) => {
 
   return result;
 };
-
-/**
- * The instance type each keyword applies to, in every dialect
- *
- * @type Map<string, "number" | "string" | "array" | "object">
- */
-const keywordTypes = new Map([
-  ...[
-    "multipleOf", "maximum", "minimum", "exclusiveMaximum", "exclusiveMinimum",
-    "draft-04/maximum", "draft-04/minimum", "draft-04/exclusiveMaximum", "draft-04/exclusiveMinimum"
-  ].map((name) => /** @type const */ ([`${keyword}/${name}`, "number"])),
-  ...[
-    "maxLength", "minLength", "pattern", "contentEncoding", "contentMediaType", "contentSchema"
-  ].map((name) => /** @type const */ ([`${keyword}/${name}`, "string"])),
-  ...[
-    "items", "prefixItems", "unevaluatedItems", "contains", "maxContains", "minContains",
-    "maxItems", "minItems", "uniqueItems", "itemPattern",
-    "draft-2019-09/items", "draft-2019-09/additionalItems"
-  ].map((name) => /** @type const */ ([`${keyword}/${name}`, "array"])),
-  ...[
-    "properties", "patternProperties", "additionalProperties", "unevaluatedProperties", "propertyNames",
-    "maxProperties", "minProperties", "required", "dependentRequired", "dependentSchemas",
-    "propertyDependencies", "requireAllExcept",
-    "draft-04/required", "draft-04/dependencies", "draft-07/dependencies"
-  ].map((name) => /** @type const */ ([`${keyword}/${name}`, "object"]))
-]);
-
-/**
- * The type of value a keyword applies to, by keyword URI, in every dialect,
- * like `object` for `properties`. It's undefined for a keyword that applies
- * to every type, like `enum`. `format` depends on the format, which says
- * which types it applies to.
- *
- * @type (keywordUri: string) => "number" | "string" | "array" | "object" | undefined
- */
-export const keywordType = (keywordUri) => keywordTypes.get(keywordUri);

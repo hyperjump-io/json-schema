@@ -1,7 +1,9 @@
+import { keywordAppliesTo } from "../analysis.js";
 import { formatTypes } from "../format-types.js";
 import { lintRule } from "../lint-rule.js";
+import { lowerForLint } from "../lower.js";
 import { isNegated, schemaGroup } from "../schema-group.js";
-import { findKeyword, keywordType, visitKeywords, visitSchemas } from "../utilities.js";
+import { findKeyword, visitKeywords, visitSchemas } from "../utilities.js";
 
 /**
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode } from "../../schema/schema-ast.d.ts"
@@ -31,6 +33,13 @@ const plurals = {
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
 const keywordWithoutType = lintRule({ origin: "jsonschema-lint:keyword-without-type" }, async (tree, file) => {
+  const session = file.data.jsonSchemaSession;
+  if (session === undefined) {
+    return;
+  }
+
+  const lowered = await lowerForLint(session, tree);
+
   /** @type JsonSchemaNode[] */
   const schemas = [];
   visitSchemas(tree, (schemaNode) => {
@@ -54,26 +63,28 @@ const keywordWithoutType = lintRule({ origin: "jsonschema-lint:keyword-without-t
 
     /** @type TypedKeyword | undefined */
     let typed;
-    for (const property of /** @type JsonSchemaKeywordNode[] */ (schemaNode.children)) {
-      const appliesTo = keywordType(property.keywordUri);
-      const formatNode = property.children[1];
-      if (appliesTo !== undefined) {
-        typed = { keywordNode: property, label: `'${property.children[0].value}'`, types: [appliesTo] };
+    const keywords = lowered.get(schemaNode) ?? [];
+    for (const keywordNode of /** @type JsonSchemaKeywordNode[] */ (schemaNode.children)) {
+      // A format that could apply to any type isn't reported
+      const formatNode = keywordNode.children[1];
+      const types = await formatTypes(session, schemaNode, keywordNode);
+      if (types !== undefined && formatNode.jsonType === "string") {
+        typed = { keywordNode, label: `The '${formatNode.value}' format`, types };
         break;
-      } else if (formatNode.jsonType === "string") {
-        // A format that could apply to any type isn't reported
-        const types = await formatTypes(file.data.jsonSchemaSession, schemaNode, property);
-        if (types !== undefined) {
-          typed = { keywordNode: property, label: `The '${formatNode.value}' format`, types };
-          break;
-        }
+      }
+
+      // Neither is a keyword with no effect, which applies to nothing
+      const applies = keywordAppliesTo(session.jsonSchema, keywords, keywordNode);
+      if (applies.length > 0 && applies.length < Object.keys(plurals).length) {
+        typed = { keywordNode, label: `'${keywordNode.children[0].value}'`, types: applies };
+        break;
       }
     }
     if (typed === undefined) {
       continue;
     }
 
-    const group = await schemaGroup(file.data.jsonSchemaSession, tree, schemaNode);
+    const group = await schemaGroup(session, tree, schemaNode);
 
     // A group that nothing here applies is used from other documents, which
     // may say what type it is. A keyword in a `not` rejects the type it's for,

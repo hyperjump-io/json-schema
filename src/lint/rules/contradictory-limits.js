@@ -1,8 +1,11 @@
 import { lintRule } from "../lint-rule.js";
-import { findKeyword, requiredNames, siblingKeyword, visitSchemas } from "../utilities.js";
+import { lowerForLint } from "../lower.js";
+import { fewestProperties, propertyAlternatives } from "../required-properties.js";
 
 /**
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode } from "../../schema/schema-ast.d.ts"
+ * @import { Expression } from "../../kernel/kernel.d.ts"
+ * @import { LoweredKeyword } from "../lower.d.ts"
  */
 
 /**
@@ -14,55 +17,37 @@ import { findKeyword, requiredNames, siblingKeyword, visitSchemas } from "../uti
  * }} Bound
  */
 
-const keyword = "https://json-schema.org/keyword";
-
-/** Limits that are counts: the lower limit, the upper limit, what they limit, and what they need */
-const countLimits = [
-  [`${keyword}/minLength`, `${keyword}/maxLength`, "string"],
-  [`${keyword}/minItems`, `${keyword}/maxItems`, "array"],
-  [`${keyword}/minProperties`, `${keyword}/maxProperties`, "object"],
-  [`${keyword}/minContains`, `${keyword}/maxContains`, "array", `${keyword}/contains`]
-];
+/** The operations that limit a count, and what they count */
+const counts = /** @type const */ ({ stringLength: "string", itemCount: "array", propertyCount: "object" });
 
 /** @type (keywordNode: JsonSchemaKeywordNode) => string */
 const nameOf = (keywordNode) => `'${keywordNode.children[0].value}'`;
 
-/** @type (keywordNode: JsonSchemaKeywordNode | undefined, exclusive: boolean, label?: string) => Bound | undefined */
-const bound = (keywordNode, exclusive, label) => {
-  const valueNode = keywordNode?.children[1];
-  if (keywordNode === undefined || valueNode?.jsonType !== "number") {
-    return;
-  }
-
-  return { value: valueNode.value, exclusive, label: label ?? nameOf(keywordNode), keywordNode };
-};
+/**
+ * A group's operations, from its top-level `all`
+ *
+ * @type (expression: Expression) => Expression[]
+ */
+const operations = (expression) => expression.op === "all" ? expression.of : [expression];
 
 /**
- * Draft-04's `minimum` or `maximum`, which its sibling boolean makes
- * exclusive
+ * Names, like "'a', 'b', and 'c'"
  *
- * @type (schemaNode: JsonSchemaNode, limitUri: string, exclusiveUri: string) => Bound | undefined
+ * @type (names: string[]) => string
  */
-const draft04Bound = (schemaNode, limitUri, exclusiveUri) => {
-  const keywordNode = findKeyword(schemaNode, limitUri);
-  const exclusiveNode = findKeyword(schemaNode, exclusiveUri);
-  const exclusiveValueNode = exclusiveNode?.children[1];
-  const exclusive = exclusiveValueNode?.jsonType === "boolean" && exclusiveValueNode.value;
-  const label = keywordNode && exclusiveNode && exclusive ? `${nameOf(keywordNode)} with ${nameOf(exclusiveNode)}` : undefined;
-  return bound(keywordNode, exclusive, label);
-};
+const list = (names) => names.length < 3
+  ? names.join(" and ")
+  : `${names.slice(0, -1).join(", ")}, and ${names.at(-1)}`;
 
 /**
  * The bound that allows the least. On a tie, an exclusive bound allows less.
  *
- * @type (bounds: (Bound | undefined)[], isTighter: (a: number, b: number) => boolean) => Bound | undefined
+ * @type (bounds: Bound[], isTighter: (a: number, b: number) => boolean) => Bound | undefined
  */
 const tightest = (bounds, isTighter) => {
   let result;
   for (const candidate of bounds) {
-    if (candidate === undefined) {
-      continue;
-    } else if (result === undefined || isTighter(candidate.value, result.value) || (candidate.value === result.value && candidate.exclusive)) {
+    if (result === undefined || isTighter(candidate.value, result.value) || (candidate.value === result.value && candidate.exclusive)) {
       result = candidate;
     }
   }
@@ -80,50 +65,113 @@ const second = (a, b) => {
   return /** @type number */ (a.position?.start.offset) < /** @type number */ (b.position?.start.offset) ? b : a;
 };
 
-/** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
-const contradictoryLimits = lintRule({ origin: "jsonschema-lint:contradictory-limits" }, (tree, file) => {
-  visitSchemas(tree, (schemaNode) => {
-    const lower = tightest([
-      bound(findKeyword(schemaNode, `${keyword}/minimum`), false),
-      bound(findKeyword(schemaNode, `${keyword}/exclusiveMinimum`), true),
-      draft04Bound(schemaNode, `${keyword}/draft-04/minimum`, `${keyword}/draft-04/exclusiveMinimum`)
-    ], (a, b) => a > b);
-    const upper = tightest([
-      bound(findKeyword(schemaNode, `${keyword}/maximum`), false),
-      bound(findKeyword(schemaNode, `${keyword}/exclusiveMaximum`), true),
-      draft04Bound(schemaNode, `${keyword}/draft-04/maximum`, `${keyword}/draft-04/exclusiveMaximum`)
-    ], (a, b) => a < b);
+/**
+ * Limits are what `range`, `stringLength`, `itemCount`, `propertyCount`, and
+ * `contains` say, from whichever keywords lowered to them, and required
+ * properties are `hasProperty`, so no keyword is named. A limit's label is
+ * its keyword's name, with the siblings it read when they made it exclusive
+ * (draft-04's `exclusiveMinimum`).
+ *
+ * @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void>
+ */
+const contradictoryLimits = lintRule({ origin: "jsonschema-lint:contradictory-limits" }, async (tree, file) => {
+  const session = file.data.jsonSchemaSession;
+  if (session === undefined) {
+    return;
+  }
 
-    if (lower && upper) {
-      const place = second(lower.keywordNode, upper.keywordNode).position;
-      if (lower.value > upper.value) {
-        file.message(`${lower.label} is greater than ${upper.label}, so no number is valid`, { place });
-      } else if (lower.value === upper.value && (lower.exclusive || upper.exclusive)) {
-        file.message(`${lower.label} is equal to ${upper.label}, so no number is valid`, { place });
+  const lowered = await lowerForLint(session, tree);
+  const schemas = new Map([...lowered].map(([schemaNode, keywords]) => [schemaNode.location, keywords]));
+  for (const [schemaNode, keywords] of lowered) {
+    /** @type Bound[] */
+    const lower = [];
+    /** @type Bound[] */
+    const upper = [];
+    /** @type Record<string, Bound[]> */
+    const mins = { string: [], array: [], object: [] };
+    /** @type Record<string, Bound[]> */
+    const maxes = { string: [], array: [], object: [] };
+    /** @type [string, JsonSchemaKeywordNode][] */
+    const containsMessages = [];
+
+    for (const lowered of keywords) {
+      const { keywordNode, sourceNodes } = lowered;
+      for (const operation of operations(lowered.group.expression)) {
+        if (operation.op === "range") {
+          /** @type (exclusive: boolean) => string */
+          const label = (exclusive) => exclusive && sourceNodes.length > 0
+            ? `${nameOf(keywordNode)} with ${sourceNodes.map(nameOf).join(" and ")}`
+            : nameOf(keywordNode);
+          if (operation.min !== undefined) {
+            const exclusive = operation.exclusiveMin ?? false;
+            lower.push({ value: operation.min, exclusive, label: label(exclusive), keywordNode });
+          }
+          if (operation.max !== undefined) {
+            const exclusive = operation.exclusiveMax ?? false;
+            upper.push({ value: operation.max, exclusive, label: label(exclusive), keywordNode });
+          }
+        } else if (operation.op === "stringLength" || operation.op === "itemCount" || operation.op === "propertyCount") {
+          const type = counts[operation.op];
+          if (operation.min !== undefined) {
+            mins[type].push({ value: operation.min, exclusive: false, label: nameOf(keywordNode), keywordNode });
+          }
+          if (operation.max !== undefined) {
+            maxes[type].push({ value: operation.max, exclusive: false, label: nameOf(keywordNode), keywordNode });
+          }
+        } else if (operation.op === "contains" && operation.max !== null && operation.min > operation.max && sourceNodes.length === 2) {
+          // The limits are from its siblings, in the order it declares them
+          const [minNode, maxNode] = sourceNodes;
+          containsMessages.push([`${nameOf(minNode)} is greater than ${nameOf(maxNode)}, so no array is valid`, second(minNode, maxNode)]);
+        }
       }
     }
 
-    for (const [minUri, maxUri, type, requiredUri] of countLimits) {
-      if (requiredUri !== undefined && siblingKeyword(schemaNode, requiredUri) === undefined) {
-        continue;
-      }
-
-      const min = bound(findKeyword(schemaNode, minUri), false);
-      const max = bound(findKeyword(schemaNode, maxUri), false);
-      if (min && max && min.value > max.value) {
-        const place = second(min.keywordNode, max.keywordNode).position;
-        file.message(`${min.label} is greater than ${max.label}, so no ${type} is valid`, { place });
+    const min = tightest(lower, (a, b) => a > b);
+    const max = tightest(upper, (a, b) => a < b);
+    if (min && max) {
+      const place = second(min.keywordNode, max.keywordNode).position;
+      if (min.value > max.value) {
+        file.message(`${min.label} is greater than ${max.label}, so no number is valid`, { place });
+      } else if (min.value === max.value && (min.exclusive || max.exclusive)) {
+        file.message(`${min.label} is equal to ${max.label}, so no number is valid`, { place });
       }
     }
 
-    // Every required property counts toward maxProperties
-    const required = requiredNames(schemaNode);
-    const maxProperties = bound(findKeyword(schemaNode, `${keyword}/maxProperties`), false);
-    if (required && maxProperties && required.names.size > maxProperties.value) {
-      const place = second(required.keywordNode, maxProperties.keywordNode).position;
-      file.message(`${nameOf(required.keywordNode)} requires ${required.names.size} properties, more than ${maxProperties.label} allows, so no object is valid`, { place });
+    for (const type of ["string", "array", "object"]) {
+      const countMin = tightest(mins[type], (a, b) => a > b);
+      const countMax = tightest(maxes[type], (a, b) => a < b);
+      if (countMin && countMax && countMin.value > countMax.value) {
+        const place = second(countMin.keywordNode, countMax.keywordNode).position;
+        file.message(`${countMin.label} is greater than ${countMax.label}, so no ${type} is valid`, { place });
+      }
     }
-  });
+
+    for (const [reason, node] of containsMessages) {
+      file.message(reason, { place: node.position });
+    }
+
+    // Every way to pass the schema requires more properties than are
+    // allowed. The message on the limit doesn't name the keywords that
+    // require them, and each of those names the others, so it's clear any of
+    // them could change.
+    const maxProperties = tightest(maxes.object, (a, b) => a < b);
+    const alternatives = maxProperties ? propertyAlternatives(schemaNode, keywords, schemas) : [];
+    const fewest = alternatives.length > 0 ? fewestProperties(alternatives) : undefined;
+    if (maxProperties && fewest && fewest.count > maxProperties.value) {
+      const count = fewest.exact ? `${fewest.count}` : `at least ${fewest.count}`;
+      const allowed = `but ${maxProperties.label} allows at most ${maxProperties.value}, so no object is valid`;
+      file.message(`${count} properties are required, ${allowed}`, { place: maxProperties.keywordNode.position });
+
+      const requiring = new Set(alternatives.flatMap(({ keywordNodes }) => [...keywordNodes]));
+      const children = /** @type JsonSchemaKeywordNode[] */ (schemaNode.jsonType === "object" ? schemaNode.children : []);
+      const keywordNodes = children.filter((keywordNode) => requiring.has(keywordNode));
+      for (const keywordNode of keywordNodes) {
+        const others = keywordNodes.filter((other) => other !== keywordNode);
+        const requires = others.length === 0 ? "requires" : "require";
+        file.message(`${list([keywordNode, ...others].map(nameOf))} ${requires} ${count} properties, ${allowed}`, { place: keywordNode.position });
+      }
+    }
+  }
 });
 
 export default contradictoryLimits;

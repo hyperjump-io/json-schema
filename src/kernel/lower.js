@@ -1,14 +1,19 @@
 import { toAbsoluteIri } from "@hyperjump/uri";
+import { VFileMessage } from "vfile-message";
 import { appendToLocation, jsonValue, pointerGet } from "@hyperjump/browser/json";
+import { isErrorNode } from "../keywords/checks.js";
 import { keywordDefinitionUri } from "../keywords/unknown.js";
+import { siblingValues } from "../keywords/utilities.js";
 import { readsMarks } from "./kernel.js";
 import { normalForm } from "./normalize.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
+ * @import { Dialect } from "../dialect.d.ts"
+ * @import { JsonSchema } from "../json-schema.d.ts"
  * @import { JsonSchemaSession } from "../session.d.ts"
- * @import { LowerInput, Reference, Shape } from "../keyword.d.ts"
- * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode } from "../schema/schema-ast.d.ts"
+ * @import { Keyword, LowerInput, Reference, Shape } from "../keyword.d.ts"
+ * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode, JsonSchemaTolerantNode } from "../schema/schema-ast.d.ts"
  * @import { Handle, Kernel, KeywordGroup } from "./kernel.d.ts"
  */
 
@@ -40,6 +45,9 @@ class Lowerer {
   /** @type Kernel["resources"] */
   #resources;
 
+  /** @type Inputs */
+  #inputs;
+
   /**
    * @param {JsonSchemaSession} session
    */
@@ -47,6 +55,15 @@ class Lowerer {
     this.#session = session;
     this.#schemas = {};
     this.#resources = {};
+    this.#inputs = {
+      schema: (node) => this.#compileNode(node),
+      reference: async (node) => {
+        const uri = /** @type {{ href: string }} */ (node).href;
+        const handle = await this.#compileUri(uri, toAbsoluteIri(node.location));
+        const { dynamicAnchors } = this.#resources[toAbsoluteIri(handle)];
+        return { uri, schema: { op: "apply", schema: handle }, handle, dynamicAnchors };
+      }
+    };
   }
 
   /** @type (uri: string) => Promise<Kernel> */
@@ -88,102 +105,10 @@ class Lowerer {
       throw Error(`No schema found at '${handle}'`);
     }
 
-    this.#schemas[handle] = { resource, keywords: await this.#lowerKeywords(/** @type ObjectSchemaNode */ (node)) };
-    return handle;
-  }
-
-  /**
-   * A schema's keyword groups, in the order they're evaluated: a group that
-   * reads marks comes after the groups that don't, so it sees what they
-   * marked, in document order otherwise. A keyword without `lower` has no
-   * group, and its value isn't compiled, like `$defs`.
-   *
-   * @type (node: ObjectSchemaNode) => Promise<KeywordGroup[]>
-   */
-  async #lowerKeywords(node) {
-    const { jsonSchema } = this.#session;
     const dialect = await this.#session.getDialect(node.dialectUri);
-    const properties = node.children;
-
-    /** @type KeywordGroup[] */
-    const groups = [];
-    /** @type KeywordGroup[] */
-    const readingMarks = [];
-    for (const property of properties) {
-      const [nameNode, valueNode] = property.children;
-      const keywordUri = property.keywordUri;
-      const keyword = jsonSchema.getKeyword(keywordDefinitionUri(keywordUri));
-      if (keyword.lower === undefined) {
-        continue;
-      }
-
-      const value = await this.#parse(valueNode, keyword.shape);
-
-      /** @type Record<string, LowerInput | undefined> */
-      const siblings = {};
-      /** @type string[] */
-      const sources = [];
-      for (const [name, siblingUri] of Object.entries(keyword.siblings ?? {})) {
-        siblings[name] = undefined;
-        const sibling = properties.find((property) => property.keywordUri === siblingUri);
-        if (sibling !== undefined) {
-          const siblingKeyword = jsonSchema.getKeyword(keywordDefinitionUri(siblingUri));
-          siblings[name] = await this.#parse(sibling.children[1], siblingKeyword.shape);
-          sources.push(appendToLocation(sibling.children[0].value, node.location));
-        }
-      }
-
-      const expression = normalForm(keyword.lower(value, siblings, { jsonSchema, dialect, keywordName: nameNode.value }));
-      const group = { keywordUri, location: appendToLocation(nameNode.value, node.location), sources, expression };
-      (readsMarks(expression) ? readingMarks : groups).push(group);
-    }
-
-    return [...groups, ...readingMarks];
-  }
-
-  /**
-   * A value as `lower` gets it, by its shape. The resolver already reported
-   * values that don't fit, and a schema with a problem isn't compiled, so
-   * every value fits here.
-   *
-   * @type (node: JsonSchemaNode, shape: Shape) => Promise<LowerInput>
-   */
-  async #parse(node, shape) {
-    if (shape === "schema") {
-      return { op: "apply", schema: await this.#compileNode(node) };
-    } else if (shape === "reference") {
-      return this.#reference(node);
-    } else if (shape === "data" || shape === "unappliedSchema") {
-      return /** @type Json */ (jsonValue(node));
-    } else if (Array.isArray(shape)) {
-      const alternative = /** @type Shape */ (shape.find((alternative) => fits(node, alternative)));
-      return this.#parse(node, alternative);
-    } else if ("array" in shape) {
-      /** @type LowerInput[] */
-      const items = [];
-      for (const itemNode of /** @type JsonSchemaNode[] */ (/** @type ContainerNode */ (node).children)) {
-        items.push(await this.#parse(itemNode, shape.array));
-      }
-      return items;
-    } else {
-      // Pairs, because a name like `__proto__` can't be a property of a
-      // plain object
-      /** @type [string, LowerInput][] */
-      const pairs = [];
-      for (const propertyNode of /** @type JsonSchemaKeywordNode[] */ (/** @type ContainerNode */ (node).children)) {
-        const [nameNode, valueNode] = propertyNode.children;
-        pairs.push([nameNode.value, await this.#parse(valueNode, shape.map)]);
-      }
-      return pairs;
-    }
-  }
-
-  /** @type (node: JsonSchemaNode) => Promise<Reference> */
-  async #reference(node) {
-    const uri = /** @type {{ href: string }} */ (node).href;
-    const handle = await this.#compileUri(uri, toAbsoluteIri(node.location));
-    const { dynamicAnchors } = this.#resources[toAbsoluteIri(handle)];
-    return { uri, schema: { op: "apply", schema: handle }, handle, dynamicAnchors };
+    const lowered = await lowerKeywords(this.#session.jsonSchema, /** @type ObjectSchemaNode */ (node), dialect, this.#inputs, false);
+    this.#schemas[handle] = { resource, keywords: lowered.map(({ group }) => group) };
+    return handle;
   }
 
   /**
@@ -220,6 +145,182 @@ class Lowerer {
     }
   }
 }
+
+/**
+ * How the schemas and references in a keyword's value become its inputs.
+ * Compiling compiles them and retrieves what references refer to. Lint
+ * doesn't.
+ *
+ * @typedef {{
+ *   schema: (node: JsonSchemaNode) => Promise<Handle>;
+ *   reference: (node: JsonSchemaNode) => Promise<Reference>;
+ * }} Inputs
+ */
+
+/**
+ * A keyword group and the nodes it came from, for lint messages
+ *
+ * @typedef {{ group: KeywordGroup; keywordNode: JsonSchemaKeywordNode; sourceNodes: JsonSchemaKeywordNode[] }} LoweredKeyword
+ */
+
+/** A value that doesn't fit its keyword's shape */
+class Misfit extends Error {}
+
+/**
+ * An object schema's keyword groups, in the order they're evaluated: a group
+ * that reads marks comes after the groups that don't, so it sees what they
+ * marked, in document order otherwise. A keyword without `lower` has no
+ * group, and its value isn't parsed, like `$defs`. The expressions are in
+ * the normal form.
+ *
+ * The resolver reports values that don't fit their shape or that their
+ * keyword's `check` rejects, and a schema with a problem isn't compiled, so
+ * when compiling, every value fits. Lint lowers broken documents, so if
+ * `tolerant`, a keyword whose value doesn't fit or is rejected, or whose
+ * `lower` throws, has no group, and a sibling whose value doesn't fit or is
+ * rejected is left out.
+ *
+ * @type (jsonSchema: JsonSchema, node: ObjectSchemaNode, dialect: Dialect, inputs: Inputs, tolerant: boolean) => Promise<LoweredKeyword[]>
+ */
+export const lowerKeywords = async (jsonSchema, node, dialect, inputs, tolerant) => {
+  const properties = node.children;
+
+  /** @type LoweredKeyword[] */
+  const lowered = [];
+  /** @type LoweredKeyword[] */
+  const readingMarks = [];
+  for (const keywordNode of properties) {
+    const [nameNode, valueNode] = keywordNode.children;
+    const keywordUri = keywordNode.keywordUri;
+    const keyword = jsonSchema.getKeyword(keywordDefinitionUri(keywordUri));
+    if (keyword.lower === undefined || (tolerant && !accepts(keyword, valueNode, node))) {
+      continue;
+    }
+
+    try {
+      const value = await parse(valueNode, keyword.shape, inputs);
+
+      /** @type Record<string, LowerInput | undefined> */
+      const siblings = {};
+      /** @type JsonSchemaKeywordNode[] */
+      const sourceNodes = [];
+      for (const [name, siblingUri] of Object.entries(keyword.siblings ?? {})) {
+        siblings[name] = undefined;
+        const sibling = properties.find((property) => property.keywordUri === siblingUri);
+        if (sibling === undefined) {
+          continue;
+        }
+
+        const siblingKeyword = jsonSchema.getKeyword(keywordDefinitionUri(siblingUri));
+        if (tolerant && !accepts(siblingKeyword, sibling.children[1], node)) {
+          continue;
+        }
+
+        try {
+          siblings[name] = await parse(sibling.children[1], siblingKeyword.shape, inputs);
+          sourceNodes.push(sibling);
+        } catch (error) {
+          if (!tolerant || !(error instanceof Misfit)) {
+            throw error;
+          }
+        }
+      }
+
+      const expression = normalForm(keyword.lower(value, siblings, { jsonSchema, dialect, keywordName: nameNode.value }));
+      const group = {
+        keywordUri,
+        location: appendToLocation(nameNode.value, node.location),
+        sources: sourceNodes.map((sourceNode) => appendToLocation(sourceNode.children[0].value, node.location)),
+        expression
+      };
+      (readsMarks(expression) ? readingMarks : lowered).push({ group, keywordNode, sourceNodes });
+    } catch (error) {
+      if (!tolerant) {
+        throw error;
+      }
+    }
+  }
+
+  return [...lowered, ...readingMarks];
+};
+
+/**
+ * Whether a keyword's `check` accepts its value, as the resolver checks it
+ *
+ * @type (keyword: Keyword, valueNode: JsonSchemaNode, schemaNode: ObjectSchemaNode) => boolean
+ */
+const accepts = (keyword, valueNode, schemaNode) => {
+  const tolerantNode = /** @type JsonSchemaTolerantNode */ (valueNode);
+  if (isErrorNode(tolerantNode)) {
+    return false;
+  }
+
+  let accepted = true;
+  keyword.check?.(tolerantNode, {
+    siblings: siblingValues(/** @type JsonSchemaTolerantNode */ (schemaNode), keyword.siblings),
+    message: (reason) => {
+      accepted = false;
+      return new VFileMessage(reason);
+    }
+  });
+  return accepted;
+};
+
+/**
+ * A value as `lower` gets it, by its shape
+ *
+ * @type (node: JsonSchemaNode, shape: Shape, inputs: Inputs) => Promise<LowerInput>
+ */
+const parse = async (node, shape, inputs) => {
+  if (shape === "schema") {
+    if (node.type !== "json-schema" && node.type !== "reference") {
+      throw new Misfit();
+    }
+    return { op: "apply", schema: await inputs.schema(node) };
+  } else if (shape === "reference") {
+    if (node.jsonType !== "string" || /** @type {{ href?: string }} */ (node).href === undefined) {
+      throw new Misfit();
+    }
+    return inputs.reference(node);
+  } else if (shape === "data" || shape === "unappliedSchema") {
+    const value = /** @type Json | undefined */ (jsonValue(node));
+    if (value === undefined) {
+      throw new Misfit();
+    }
+    return value;
+  } else if (Array.isArray(shape)) {
+    const alternative = shape.find((alternative) => fits(node, alternative));
+    if (alternative === undefined) {
+      throw new Misfit();
+    }
+    return parse(node, alternative, inputs);
+  } else if ("array" in shape) {
+    if (node.jsonType !== "array") {
+      throw new Misfit();
+    }
+
+    /** @type LowerInput[] */
+    const items = [];
+    for (const itemNode of /** @type JsonSchemaNode[] */ (/** @type ContainerNode */ (node).children)) {
+      items.push(await parse(itemNode, shape.array, inputs));
+    }
+    return items;
+  } else {
+    if (node.jsonType !== "object") {
+      throw new Misfit();
+    }
+
+    // Pairs, because a name like `__proto__` can't be a property of a plain
+    // object
+    /** @type [string, LowerInput][] */
+    const pairs = [];
+    for (const propertyNode of /** @type JsonSchemaKeywordNode[] */ (/** @type ContainerNode */ (node).children)) {
+      const [nameNode, valueNode] = propertyNode.children;
+      pairs.push([nameNode.value, await parse(valueNode, shape.map, inputs)]);
+    }
+    return pairs;
+  }
+};
 
 /**
  * Whether a value has the JSON type an alternative of a shape is for

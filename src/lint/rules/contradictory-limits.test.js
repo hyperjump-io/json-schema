@@ -5,6 +5,8 @@ import contradictoryLimits from "./contradictory-limits.js";
 
 const v1 = "https://json-schema.org/v1";
 const draft04 = "http://json-schema.org/draft-04/schema#";
+const draft07 = "http://json-schema.org/draft-07/schema#";
+const draft2020 = "https://json-schema.org/draft/2020-12/schema";
 
 /** @type (json: string) => Promise<VFile> */
 const lint = async (json) => {
@@ -94,9 +96,11 @@ describe("contradictory-limits", () => {
     const json = `{ "$schema": "${v1}", "maxProperties": 1, "required": ["a", "b"] }`;
     const file = await lint(json);
     expect(file.messages.map((message) => message.reason)).to.eql([
-      "'required' requires 2 properties, more than 'maxProperties' allows, so no object is valid"
+      "2 properties are required, but 'maxProperties' allows at most 1, so no object is valid",
+      "'required' requires 2 properties, but 'maxProperties' allows at most 1, so no object is valid"
     ]);
-    expect(file.messages[0].column).to.equal(json.indexOf(`"required"`) + 1);
+    expect(file.messages[0].column).to.equal(json.indexOf(`"maxProperties"`) + 1);
+    expect(file.messages[1].column).to.equal(json.indexOf(`"required"`) + 1);
   });
 
   test("as many required properties as maxProperties allows", async () => {
@@ -105,8 +109,92 @@ describe("contradictory-limits", () => {
 
   test("required and maxProperties in draft-04", async () => {
     expect(await reasons(`{ "$schema": "${draft04}", "required": ["a", "b"], "maxProperties": 1 }`)).to.eql([
-      "'required' requires 2 properties, more than 'maxProperties' allows, so no object is valid"
+      "2 properties are required, but 'maxProperties' allows at most 1, so no object is valid",
+      "'required' requires 2 properties, but 'maxProperties' allows at most 1, so no object is valid"
     ]);
+  });
+
+  test("any keyword that requires properties", async () => {
+    const json = `{ "$schema": "${v1}", "properties": { "a": {}, "b": {} }, "requireAllExcept": [], "maxProperties": 1 }`;
+    expect(await reasons(json)).to.eql([
+      "2 properties are required, but 'maxProperties' allows at most 1, so no object is valid",
+      "'requireAllExcept' requires 2 properties, but 'maxProperties' allows at most 1, so no object is valid"
+    ]);
+  });
+
+  test("every keyword that requires some of the properties names the others", async () => {
+    const json = `{ "$schema": "${v1}", "properties": { "a": {}, "b": {} }, "required": ["a", "c"], "requireAllExcept": [], "maxProperties": 2 }`;
+    expect(await reasons(json)).to.eql([
+      "3 properties are required, but 'maxProperties' allows at most 2, so no object is valid",
+      "'required' and 'requireAllExcept' require 3 properties, but 'maxProperties' allows at most 2, so no object is valid",
+      "'requireAllExcept' and 'required' require 3 properties, but 'maxProperties' allows at most 2, so no object is valid"
+    ]);
+  });
+
+  test("dependencies on required properties", async () => {
+    const json = `{ "$schema": "${v1}", "required": ["a"], "dependentRequired": { "a": ["b"], "b": ["c"], "x": ["y", "z"] }, "maxProperties": 2 }`;
+    expect(await reasons(json)).to.eql([
+      "3 properties are required, but 'maxProperties' allows at most 2, so no object is valid",
+      "'required' and 'dependentRequired' require 3 properties, but 'maxProperties' allows at most 2, so no object is valid",
+      "'dependentRequired' and 'required' require 3 properties, but 'maxProperties' allows at most 2, so no object is valid"
+    ]);
+  });
+
+  test("a dependency on a property that isn't required", async () => {
+    expect(await reasons(`{ "$schema": "${v1}", "dependentRequired": { "a": ["b", "c"] }, "maxProperties": 2 }`)).to.eql([]);
+  });
+
+  test("schemas applied to the same object", async () => {
+    const json = `{
+      "$schema": "${draft2020}",
+      "required": ["a"],
+      "allOf": [{ "$ref": "#/$defs/b" }],
+      "dependentSchemas": { "a": { "required": ["d"] } },
+      "$defs": { "b": { "required": ["b", "c"], "$ref": "#" } },
+      "maxProperties": 3
+    }`;
+    expect(await reasons(json)).to.eql([
+      "4 properties are required, but 'maxProperties' allows at most 3, so no object is valid",
+      "'required', 'allOf', and 'dependentSchemas' require 4 properties, but 'maxProperties' allows at most 3, so no object is valid",
+      "'allOf', 'required', and 'dependentSchemas' require 4 properties, but 'maxProperties' allows at most 3, so no object is valid",
+      "'dependentSchemas', 'required', and 'allOf' require 4 properties, but 'maxProperties' allows at most 3, so no object is valid"
+    ]);
+  });
+
+  test("a dependency that's a schema", async () => {
+    const json = `{ "$schema": "${draft07}", "required": ["a"], "dependencies": { "a": ["b"], "b": { "required": ["c"] } }, "maxProperties": 2 }`;
+    expect(await reasons(json)).to.have.length(3);
+  });
+
+  test("schemas that don't all have to pass", async () => {
+    // Whichever passes adds a property
+    expect(await reasons(`{ "$schema": "${draft2020}", "required": ["a"], "anyOf": [{ "required": ["b"] }, { "required": ["c"] }], "maxProperties": 1 }`)).to.eql([
+      "at least 2 properties are required, but 'maxProperties' allows at most 1, so no object is valid",
+      "'required' and 'anyOf' require at least 2 properties, but 'maxProperties' allows at most 1, so no object is valid",
+      "'anyOf' and 'required' require at least 2 properties, but 'maxProperties' allows at most 1, so no object is valid"
+    ]);
+    expect(await reasons(`{ "$schema": "${draft2020}", "required": ["a"], "anyOf": [{ "required": ["b"] }, true], "maxProperties": 1 }`)).to.eql([]);
+  });
+
+  test("if, then, and else", async () => {
+    const json = `{ "$schema": "${draft2020}", "if": { "required": ["a"] }, "then": { "required": ["b"] }, "else": { "required": ["c", "d"] }, "maxProperties": 1 }`;
+    expect(await reasons(json)).to.eql([
+      "at least 2 properties are required, but 'maxProperties' allows at most 1, so no object is valid",
+      "'if', 'then', and 'else' require at least 2 properties, but 'maxProperties' allows at most 1, so no object is valid",
+      "'then', 'if', and 'else' require at least 2 properties, but 'maxProperties' allows at most 1, so no object is valid",
+      "'else', 'if', and 'then' require at least 2 properties, but 'maxProperties' allows at most 1, so no object is valid"
+    ]);
+  });
+
+  test("a value that doesn't fit its keyword isn't a limit", async () => {
+    // The resolver reports the values
+    /** @type (json: string) => Promise<string[]> */
+    const ruleReasons = async (json) => (await lint(json)).messages
+      .filter((message) => message.ruleId === "contradictory-limits")
+      .map((message) => message.reason);
+    expect(await ruleReasons(`{ "$schema": "${v1}", "minimum": "x", "maximum": 1 }`)).to.eql([]);
+    expect(await ruleReasons(`{ "$schema": "${v1}", "minimum": 5, "maximum": 1, "properties": [1, 2], "required": "a" }`))
+      .to.eql(["'minimum' is greater than 'maximum', so no number is valid"]);
   });
 
   test("minContains and maxContains without contains", async () => {

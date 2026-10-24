@@ -205,9 +205,11 @@ export type Reference = {
   /**
    * The dynamic anchors of the schema resource it resolved to, for rules
    * like 2020-12's bookending, which decide whether a reference uses the
-   * dynamic scope
+   * dynamic scope. It's undefined when lint lowers a document and the
+   * resource isn't in it. Then a reference that might use the dynamic scope
+   * should lower to `dynamicApply`, which can only overstate what applies.
    */
-  dynamicAnchors: Record<string, Handle>;
+  dynamicAnchors: Record<string, Handle> | undefined;
 };
 
 export type LowerContext = {

@@ -13,7 +13,7 @@
 export default {
   uri: "https://json-schema.org/keyword/draft-2019-09/recursiveRef",
   shape: "reference",
-  lower: ({ schema, handle, dynamicAnchors }) => dynamicAnchors[""] === handle
+  lower: ({ schema, handle, dynamicAnchors }) => dynamicAnchors === undefined || dynamicAnchors[""] === handle
     ? { op: "dynamicApply", anchor: "", fallback: handle }
     : schema
 };

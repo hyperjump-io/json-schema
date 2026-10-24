@@ -18,9 +18,10 @@ export default {
   shape: "reference",
   lower({ uri, schema, handle, dynamicAnchors }) {
     // A plain-name fragment identifies the schema it resolved to, so the
-    // schema has the dynamic anchor if its resource does
+    // schema has the dynamic anchor if its resource does. If the resource's
+    // anchors aren't known (lint), it might.
     const { fragment } = parseIri(uri);
-    return fragment && !fragment.startsWith("/") && Object.hasOwn(dynamicAnchors, fragment)
+    return fragment && !fragment.startsWith("/") && (dynamicAnchors === undefined || Object.hasOwn(dynamicAnchors, fragment))
       ? { op: "dynamicApply", anchor: fragment, fallback: handle }
       : schema;
   }

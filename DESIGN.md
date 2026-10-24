@@ -1657,6 +1657,32 @@ never timed.
    ported. A rule about a particular keyword (`then-else-without-if`) still
    names it, because that's about syntax. Lowering is written so linting
    while resolving (plan item 3) can use it.
+   Done: compiling and lint share `lowerKeywords` (`src/kernel/lower.js`).
+   `src/lint/lower.js` is `lowerForLint`, and `Analysis` became the
+   functions in `src/lint/analysis.js` (`appliesTo`, `keywordAppliesTo`,
+   `canPass`, `assertsOnItsOwn`), which are public, like the rest of lint's
+   utilities. Lint also leaves out a value its keyword's `check` rejects,
+   like `"maximum": "x"`, because shape `"data"` fits anything. A sibling
+   applies to what the keywords that read it apply to (draft-04's
+   `exclusiveMaximum`). `Reference.dynamicAnchors` is undefined when lint
+   doesn't know the resource's anchors. `schema-group.js` finds dynamic
+   references by `dynamicApply`, so a `$dynamicRef` that doesn't use the
+   dynamic scope is followed like `$ref`, and `mergeable-all-of-schema`
+   reads `readsMarks`. `contradictory-limits` compares `maxProperties` with
+   the fewest properties a valid object can have
+   (`src/lint/required-properties.js`: required properties, dependencies,
+   `allOf`/`$ref`, the smallest `anyOf` branch, `if`/`then`/`else`), with a
+   message on the limit and one on each keyword that requires some, and a
+   new rule, `impossible-property`, finds a property no valid object can
+   have. On the corpora, the only differences from the reference are
+   `keyword-without-type` no longer reporting keywords with no effect.
+   Later steps, after stage 5: `schema-group.js` finds which keywords apply
+   schemas in place or to children, and `not`, from the expressions instead
+   of URI lists. Lint evaluates the document's lowered expressions with
+   pass, fail, or unknown (other documents, undecidable `dynamicApply`), so
+   `const-or-enum-value-rejected`, `assertion-implied-by-const-or-enum`, and
+   `invalid-default-or-example` handle applicators without compiling. For
+   `assertion-implied-by-const-or-enum`, an annotation is an effect.
 6. **Documentation and measurements.** "Compile and evaluate" and the
    sections after it, and the code map, describe the kernel. KERNEL.md
    isn't a draft anymore. BENCHMARKS.md has `src/`'s numbers.

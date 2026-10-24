@@ -1,4 +1,6 @@
+import { readsMarks } from "../../kernel/kernel.js";
 import { lintRule } from "../lint-rule.js";
+import { lowerForLint } from "../lower.js";
 import { visitKeywords } from "../utilities.js";
 
 /**
@@ -13,13 +15,10 @@ const keyword = "https://json-schema.org/keyword";
  * Keywords that can't be moved because of where they are: `$schema`, which
  * only belongs at a resource's root, and definitions, which are found by
  * their location. Identifiers, which have a `resolve` hook, and keywords
- * that read what their siblings evaluated can't be moved either.
- *
- * The keywords that read what their siblings evaluated are listed until
- * lint reads what keywords lower to, which says so for any keyword
- * (DESIGN.md, "Moving the kernel into `src/`", stage 5).
+ * that read what their siblings evaluated (their expressions read marks)
+ * can't be moved either.
  */
-const unmovable = new Set(["schema", "definitions", "unevaluatedProperties", "unevaluatedItems"].map((name) => `${keyword}/${name}`));
+const unmovable = new Set(["schema", "definitions"].map((name) => `${keyword}/${name}`));
 
 /**
  * Keywords that can be in both schemas, because their values combine:
@@ -45,8 +44,19 @@ const namesOf = (keywordNode) => {
 const definitionOf = (jsonSchema, uri) => jsonSchema?.hasKeyword(uri) ? jsonSchema.getKeyword(uri) : undefined;
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
-const mergeableAllOfSchema = lintRule({ origin: "jsonschema-lint:mergeable-all-of-schema" }, (tree, file) => {
-  const jsonSchema = file.data.jsonSchemaSession?.jsonSchema;
+const mergeableAllOfSchema = lintRule({ origin: "jsonschema-lint:mergeable-all-of-schema" }, async (tree, file) => {
+  const session = file.data.jsonSchemaSession;
+  const jsonSchema = session?.jsonSchema;
+
+  /** @type Set<JsonSchemaKeywordNode> */
+  const readingMarks = new Set();
+  for (const keywords of session === undefined ? [] : (await lowerForLint(session, tree)).values()) {
+    for (const { group, keywordNode } of keywords) {
+      if (readsMarks(group.expression)) {
+        readingMarks.add(keywordNode);
+      }
+    }
+  }
 
   /**
    * Whether two keywords can't be in the same schema without changing what
@@ -57,10 +67,11 @@ const mergeableAllOfSchema = lintRule({ origin: "jsonschema-lint:mergeable-all-o
   const interact = (a, b) => Object.values(definitionOf(jsonSchema, a)?.siblings ?? {}).includes(b)
     || Object.values(definitionOf(jsonSchema, b)?.siblings ?? {}).includes(a);
 
-  /** @type (uri: string) => boolean */
-  const isUnmovable = (uri) => {
+  /** @type (keywordNode: JsonSchemaKeywordNode) => boolean */
+  const isUnmovable = (keywordNode) => {
+    const uri = keywordNode.keywordUri;
     const definition = definitionOf(jsonSchema, uri);
-    return unmovable.has(uri) || definition?.resolve !== undefined;
+    return unmovable.has(uri) || definition?.resolve !== undefined || readingMarks.has(keywordNode);
   };
 
   visitKeywords(tree, `${keyword}/allOf`, (allOfNode, schemaNode) => {
@@ -90,7 +101,7 @@ const mergeableAllOfSchema = lintRule({ origin: "jsonschema-lint:mergeable-all-o
     /** @type (keywordNode: JsonSchemaKeywordNode) => boolean */
     const canMove = (keywordNode) => {
       const uri = keywordNode.keywordUri;
-      if (isUnmovable(uri) || [...merged.keys()].some((other) => interact(uri, other))) {
+      if (isUnmovable(keywordNode) || [...merged.keys()].some((other) => interact(uri, other))) {
         return false;
       }
 

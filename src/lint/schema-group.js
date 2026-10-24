@@ -1,4 +1,6 @@
+import { hasOp } from "../kernel/kernel.js";
 import { findSchema } from "./find-schema.js";
+import { lowerForLint } from "./lower.js";
 
 /**
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode } from "../schema/schema-ast.d.ts"
@@ -29,11 +31,6 @@ const childUris = new Set([
 /** A schema that's a reference, in draft-04 through draft-07 */
 const draft07RefUri = `${keyword}/draft-07/ref`;
 
-/** References whose target depends on evaluation */
-const dynamicRefUris = new Set([
-  "dynamicRef", "draft-2020-12/dynamicRef", "draft-2019-09/recursiveRef"
-].map((name) => `${keyword}/${name}`));
-
 /**
  * @typedef {{ type: string; children?: TreeNode[] }} TreeNode
  *
@@ -42,6 +39,7 @@ const dynamicRefUris = new Set([
  * @typedef {{
  *   positions: Map<JsonSchemaNode, Position>;
  *   referrers: Map<JsonSchemaNode, API.SchemaLink[]>;
+ *   dynamic: Set<JsonSchemaKeywordNode>;
  *   find: (uri: string) => Promise<JsonSchemaNode | undefined>;
  *   groups: Map<JsonSchemaNode, Promise<API.SchemaGroup>>;
  * }} Context
@@ -79,15 +77,16 @@ const referencesIn = (node) => {
 /**
  * The schemas a schema applies in place, with the keyword each is in, and
  * the URI each of its static references refers to. `dynamic` is true if it
- * has a reference whose target isn't known.
+ * has a reference whose target isn't known: one of `dynamicKeywords`, which
+ * lower to `dynamicApply`.
  *
- * @type (schemaNode: JsonSchemaNode) => {
+ * @type (schemaNode: JsonSchemaNode, dynamicKeywords: Set<JsonSchemaKeywordNode>) => {
  *   subschemas: [string, JsonSchemaNode][];
  *   references: [string, string][];
  *   dynamic: boolean;
  * }
  */
-const inPlace = (schemaNode) => {
+const inPlace = (schemaNode, dynamicKeywords) => {
   /** @type [string, JsonSchemaNode][] */
   const subschemas = [];
   /** @type [string, string][] */
@@ -103,7 +102,7 @@ const inPlace = (schemaNode) => {
         for (const subschema of schemasIn(/** @type TreeNode */ (valueNode))) {
           subschemas.push([property.keywordUri, subschema]);
         }
-      } else if (dynamicRefUris.has(property.keywordUri)) {
+      } else if (dynamicKeywords.has(property)) {
         dynamic = true;
       } else {
         for (const uri of referencesIn(/** @type TreeNode */ (valueNode))) {
@@ -163,10 +162,22 @@ const buildContext = async (session, tree) => {
     return target;
   };
 
+  // Without a session, references aren't followed, so whether they're
+  // dynamic doesn't matter
+  /** @type Set<JsonSchemaKeywordNode> */
+  const dynamic = new Set();
+  for (const keywords of session === undefined ? [] : (await lowerForLint(session, tree)).values()) {
+    for (const { group, keywordNode } of keywords) {
+      if (hasOp(group.expression, "dynamicApply")) {
+        dynamic.add(keywordNode);
+      }
+    }
+  }
+
   /** @type Map<JsonSchemaNode, API.SchemaLink[]> */
   const referrers = new Map();
   for (const schemaNode of positions.keys()) {
-    for (const [keywordUri, uri] of inPlace(schemaNode).references) {
+    for (const [keywordUri, uri] of inPlace(schemaNode, dynamic).references) {
       const target = await find(uri);
       if (target !== undefined && positions.has(target)) {
         referrers.set(target, [...referrers.get(target) ?? [], { from: schemaNode, to: target, keywordUri }]);
@@ -174,11 +185,11 @@ const buildContext = async (session, tree) => {
     }
   }
 
-  return { positions, referrers, find, groups: new Map() };
+  return { positions, referrers, dynamic, find, groups: new Map() };
 };
 
 /** @type (start: JsonSchemaNode, context: Context) => Promise<API.SchemaGroup> */
-const buildGroup = async (start, { positions, referrers, find }) => {
+const buildGroup = async (start, { positions, referrers, dynamic: dynamicKeywords, find }) => {
   /** @type API.SchemaGroup */
   const group = { schemas: [], links: [], open: false, applied: false, unknown: false };
   const seen = new Set([start]);
@@ -221,7 +232,7 @@ const buildGroup = async (start, { positions, referrers, find }) => {
 
     // Links to schemas this one applies, except ones in this document that
     // are found from the other end
-    const { subschemas, references, dynamic } = inPlace(schemaNode);
+    const { subschemas, references, dynamic } = inPlace(schemaNode, dynamicKeywords);
     group.unknown ||= dynamic;
     for (const [, subschema] of subschemas) {
       add(subschema);

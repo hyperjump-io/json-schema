@@ -338,7 +338,8 @@ allow, like a v1 `$schema` with a fragment, which are errors.
 | `empty-type` | A `type` that's an empty array, which nothing is valid against |
 | `duplicate-one-of-schemas` | A schema in `oneOf` that's equal to one before it, so a value it matches always fails |
 | `duplicate-all-of-any-of-schemas` | A schema in `allOf` or `anyOf` that's equal to one before it, so it has no effect |
-| `contradictory-limits` | A lower limit above its upper limit, like `minimum` above `maximum` or `minLength` above `maxLength`, or more properties in `required` than `maxProperties` allows |
+| `contradictory-limits` | A lower limit above its upper limit, like `minimum` above `maximum` or `minLength` above `maxLength`, or more required properties than `maxProperties` allows |
+| `impossible-property` | A property no valid object can have, because an object with it needs more properties than `maxProperties` allows, like a `dependentRequired` that depends on it |
 | `redundant-numeric-limit` | `maximum` and `exclusiveMaximum`, or `minimum` and `exclusiveMinimum`, where the looser one has no effect |
 | `single-value-range` | `minimum` and `maximum` with the same value where `type` only allows numbers, which `const` says more directly |
 | `fractional-limit-for-integer` | A numeric limit that isn't an integer, where `type` only allows integers, so it's the same as an integer limit |

@@ -1,6 +1,8 @@
+import { keywordAppliesTo } from "../analysis.js";
 import { formatTypes } from "../format-types.js";
 import { lintRule } from "../lint-rule.js";
-import { keywordType, typeNames, visitSchemas } from "../utilities.js";
+import { lowerForLint } from "../lower.js";
+import { typeNames, visitSchemas } from "../utilities.js";
 
 /**
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode } from "../../schema/schema-ast.d.ts"
@@ -17,6 +19,13 @@ const plurals = {
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
 const keywordForDisallowedType = lintRule({ origin: "jsonschema-lint:keyword-for-disallowed-type" }, async (tree, file) => {
+  const session = file.data.jsonSchemaSession;
+  if (session === undefined) {
+    return;
+  }
+
+  const lowered = await lowerForLint(session, tree);
+
   /** @type JsonSchemaNode[] */
   const schemas = [];
   visitSchemas(tree, (schemaNode) => {
@@ -35,21 +44,26 @@ const keywordForDisallowedType = lintRule({ origin: "jsonschema-lint:keyword-for
     }
 
     const typeName = type.keywordNode.children[0].value;
-    for (const property of /** @type JsonSchemaKeywordNode[] */ (schemaNode.children)) {
-      const name = property.children[0].value;
-      const appliesTo = keywordType(property.keywordUri);
-      if (appliesTo !== undefined && !allowed.has(appliesTo)) {
-        file.message(`'${name}' applies only to ${plurals[appliesTo]}, which '${typeName}' doesn't allow`, { place: property.position });
+    const keywords = lowered.get(schemaNode) ?? [];
+    for (const keywordNode of /** @type JsonSchemaKeywordNode[] */ (schemaNode.children)) {
+      // A format that could apply to any type isn't reported
+      const types = await formatTypes(session, schemaNode, keywordNode);
+      const formatNode = keywordNode.children[1];
+      if (types !== undefined && formatNode.jsonType === "string") {
+        if (!types.some((type) => allowed.has(type))) {
+          const format = formatNode.value;
+          const typeList = types.map((type) => plurals[type]).join(" or ");
+          file.message(`The '${format}' format applies only to ${typeList}, which '${typeName}' doesn't allow`, { place: keywordNode.position });
+        }
         continue;
       }
 
-      // A format that could apply to any type isn't reported
-      const types = await formatTypes(file.data.jsonSchemaSession, schemaNode, property);
-      const formatNode = property.children[1];
-      if (types !== undefined && formatNode.jsonType === "string" && !types.some((type) => allowed.has(type))) {
-        const format = formatNode.value;
-        const typeList = types.map((type) => plurals[type]).join(" or ");
-        file.message(`The '${format}' format applies only to ${typeList}, which '${typeName}' doesn't allow`, { place: property.position });
+      // A keyword with no effect applies to nothing, which other rules report
+      const applies = keywordAppliesTo(session.jsonSchema, keywords, keywordNode);
+      if (applies.length > 0 && !applies.some((type) => allowed.has(type))) {
+        const name = keywordNode.children[0].value;
+        const typeList = applies.map((type) => plurals[type]).join(" or ");
+        file.message(`'${name}' applies only to ${typeList}, which '${typeName}' doesn't allow`, { place: keywordNode.position });
       }
     }
   }

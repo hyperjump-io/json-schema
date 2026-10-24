@@ -1,8 +1,11 @@
 import { jsonValue } from "@hyperjump/browser/json";
 import { astInstance, jsInstance } from "../kernel/instance.js";
 import { isErrorNode } from "../keywords/checks.js";
+import { keywordDefinitionUri } from "../keywords/unknown.js";
 import { instanceEqual } from "../keywords/utilities.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
+import { assertsOnItsOwn } from "./analysis.js";
+import { lowerForLint } from "./lower.js";
 import { findKeyword, visitSchemas } from "./utilities.js";
 
 /**
@@ -29,18 +32,6 @@ const constUri = `${keyword}/const`;
 const enumUris = [`${keyword}/enum`, `${keyword}/draft-04/enum`];
 
 /**
- * Keywords that assert something about a value on their own, apart from the
- * siblings they declare. `type` is left to the rules for it, and `format`
- * only asserts if formats are validated.
- */
-const assertionUris = new Set([
-  "maximum", "minimum", "exclusiveMaximum", "exclusiveMinimum", "draft-04/maximum", "draft-04/minimum", "multipleOf",
-  "maxLength", "minLength", "pattern",
-  "maxItems", "minItems", "uniqueItems",
-  "maxProperties", "minProperties", "required", "draft-04/required", "dependentRequired"
-].map((name) => `${keyword}/${name}`));
-
-/**
  * Results are found once for each tree, so rules share them
  *
  * @type WeakMap<JsonSchemaDocumentNode, Promise<AssertionResult[]>>
@@ -49,7 +40,10 @@ const cache = new WeakMap();
 
 /**
  * Each value of every `const` and `enum` in the document, evaluated against
- * each assertion next to it, one at a time. Each assertion is compiled in a
+ * each assertion next to it, one at a time. An assertion is a keyword that
+ * asserts something on its own, from what it lowers to (`assertsOnItsOwn`).
+ * `type` is left to the rules for it, and `format` only asserts if formats
+ * are validated. Each assertion is compiled in a
  * schema of its own, with its siblings, so what it says about the values
  * doesn't depend on the rest of the schema. An assertion with its default
  * value isn't included, because `keyword-with-default-value` reports it,
@@ -70,6 +64,7 @@ export const constOrEnumAssertions = (session, tree) => {
 /** @type (session: JsonSchemaSession, tree: JsonSchemaDocumentNode) => Promise<AssertionResult[]> */
 const evaluate = async (session, tree) => {
   const { jsonSchema } = session;
+  const lowered = await lowerForLint(session, tree);
 
   /** @type {{ schemaNode: JsonSchemaNode; dialectUri: string; valuesNode: JsonSchemaKeywordNode; isConst: boolean }[]} */
   const found = [];
@@ -96,14 +91,12 @@ const evaluate = async (session, tree) => {
     const allValueNodes = isConst ? [valuesValue] : valuesValue.jsonType === "array" ? valuesValue.children : [];
     const valueNodes = allValueNodes.filter((valueNode) => !isErrorNode(valueNode));
 
-    const keywordNodes = /** @type JsonSchemaKeywordNode[] */ (schemaNode.jsonType === "object" ? schemaNode.children : []);
-    for (const assertionNode of keywordNodes) {
-      const uri = assertionNode.keywordUri;
-      if (!assertionUris.has(uri) || !jsonSchema.hasKeyword(uri)) {
+    for (const { group, keywordNode: assertionNode } of lowered.get(schemaNode) ?? []) {
+      if (!assertsOnItsOwn(group.expression)) {
         continue;
       }
 
-      const definition = jsonSchema.getKeyword(uri);
+      const definition = jsonSchema.getKeyword(keywordDefinitionUri(assertionNode.keywordUri));
       const assertionValue = /** @type InstanceNode */ (assertionNode.children[1]);
       if (definition.default !== undefined && instanceEqual(astInstance, assertionValue, jsInstance, definition.default, false)) {
         continue;

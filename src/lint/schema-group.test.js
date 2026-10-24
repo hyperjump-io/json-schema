@@ -123,6 +123,14 @@ describe("schemaGroup", () => {
     expect((await schemaGroup(session, tree, at(""))).unknown).to.equal(true);
   });
 
+  test("a dynamic reference that doesn't use the dynamic scope", async () => {
+    // Without a dynamic anchor named by its fragment, it's like `$ref`
+    const { session, tree, at } = await resolve({ $schema: draft2020, $defs: { a: {} }, $dynamicRef: "#/$defs/a" });
+    const group = await schemaGroup(session, tree, at(""));
+    expect(group.unknown).to.equal(false);
+    expect(locations(group)).to.eql(["#", "#/$defs/a"]);
+  });
+
   test("without a session, references aren't followed", async () => {
     const { tree, at } = await resolve({ $schema: draft2020, $defs: { a: {} }, $ref: "#/$defs/a" });
     expect((await schemaGroup(undefined, /** @type any */ ({ ...tree }), at(""))).unknown).to.equal(true);
