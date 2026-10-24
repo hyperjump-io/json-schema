@@ -625,6 +625,26 @@ const group = await schemaGroup(file.data.jsonSchemaSession, tree, schemaNode);
 `formatTypes` says which types of value a `format` keyword's format applies
 to, from the format's definition, or undefined if it could apply to any.
 
+A rule that needs to know what a keyword means, rather than where it is,
+reads what it lowers to. `lowerForLint` lowers every schema in the document
+without compiling or retrieving anything, and gives each keyword's group
+with its node and the nodes of the siblings it read. `keywordAppliesTo` says
+which types of value a keyword applies to, and `assertsOnItsOwn` whether it
+can fail without applying a schema, so a rule supports any keyword that
+lowers, including custom ones.
+
+```javascript
+const session = file.data.jsonSchemaSession;
+const schemas = await lowerForLint(session, tree);
+for (const keywords of schemas.values()) {
+  for (const { keywordNode } of keywords) {
+    if (keywordAppliesTo(session.jsonSchema, keywords, keywordNode).length === 0) {
+      file.message("This keyword has no effect", { place: keywordNode.position });
+    }
+  }
+}
+```
+
 A package named `hyperjump-<name>` can be used in `hjlint`'s `.hyperjumprc`
 as `<name>`. See `src/lint/` for the built-in rules.
 
