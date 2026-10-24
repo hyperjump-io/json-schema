@@ -1568,9 +1568,10 @@ What this relies on from browser's `v2` branch:
    optimization candidates that needed keyword URIs (folding constants,
    sharing identical subschemas, ordering cheap keywords first) and the
    question of separate evaluators for plain values, which only the
-   kernel's operations would need. Next: rebuild the prototype on its
-   operations, with lowering on the schema AST for lint, dynamic scope, and
-   AST instances, and measure a source map for optimizing with plugins.
+   kernel's operations would need. The second prototype covers lowering
+   from the schema AST, plugins and AST instances, optimizing with
+   plugins, and lowering for lint (BENCHMARKS.md, "Kernel prototype from
+   the schema AST"). Next: plan moving it into `src/`.
 2. Port lint rules from the catalogue (see "The rule catalogue"). Done so
    far: everything in `src/lint/rules/`.
 3. Lint while resolving (see "Linting while resolving"): plain lint

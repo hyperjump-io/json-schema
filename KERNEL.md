@@ -122,7 +122,10 @@ type KeywordGroup = {
   its `cases` apply as conditions.
 - **Sources** are the siblings a keyword read (`minContains` and
   `maxContains` for `contains`), so lint messages and tools can point at
-  every keyword an expression came from.
+  every keyword an expression came from. They're in the order the keyword
+  declares its siblings, which is how a lint rule tells which one set a
+  limit. They don't say which field of an operation each one set; nothing
+  has needed more yet.
 - **Order.** A group whose expression has an `unevaluated` selector is
   evaluated after the groups that don't, in document order otherwise. This
   replaces `reads: ["evaluated"]` and the ordering in `compile.js`.
@@ -502,10 +505,44 @@ don't have `lower`.
 Every keyword lowers to kernel operations. None needs `predicate` or
 `opaque`.
 
+## Lowering for lint
+
+Lint runs without compiling, so it lowers each document itself, in the
+normal form, without compiling or retrieving anything:
+
+- A subschema is `apply` of its location, and a reference is `apply` of
+  the URI it resolves to. The dynamic anchors of a resource in the
+  document are known. A dynamic reference into a document that isn't
+  retrieved can't be decided, so lint lowers it to `dynamicApply`, which
+  can only overstate which schemas might apply.
+- A keyword whose value can't be lowered, like one that doesn't fit its
+  shape in a broken document, has no group. Lint reports the value.
+- Every keyword's value is parsed by its shape, including keywords without
+  `lower`, so the references in `definitions` are found too.
+- Each group keeps its keyword's node and its sources' nodes, for where
+  messages go.
+
+What lint knows from the expressions:
+
+- **The types a keyword applies to** are the types on which it can fail,
+  mark, or annotate. A `cases` only applies where its condition can pass,
+  which is why conditions say their type. A keyword with no effect in its
+  schema (`uniqueItems: false`, `properties: {}`, an unknown keyword that
+  isn't an annotation) applies to nothing. This replaces `keywordType`.
+- **Whether a keyword asserts on its own**: it has an operation that can
+  fail without a schema, and applies none. This replaces
+  `const-or-enum-assertions`' list.
+- **References** are the inputs of the `"reference"` shape and the schemas
+  that are references. This replaces `visitReferences`' keyword URI.
+
+In the prototype, these agreed with today's tables on every keyword in the
+corpora and the test suites, except where the kernel knows more
+(BENCHMARKS.md, "Lowering for lint"). `contradictory-limits` was ported to
+read `range`, `stringLength`, `itemCount`, `propertyCount`, `contains`, and
+`hasProperty`, without naming a keyword, and it passed the rule's tests. It
+also finds v1's `requireAllExcept` with too small a `maxProperties`, which
+the rule misses.
+
 ## Open questions
 
-- **Lowering on the schema AST for lint.** Lint runs without compiling, so
-  it would lower each schema itself, with schemas lowered but not compiled
-  and references not retrieved. That isn't prototyped. A dynamic reference
-  into a document that isn't retrieved can't be decided, so lint lowers it
-  to `dynamicApply`, which can only overstate which schemas might apply.
+None yet. Moving the prototype into `src/` needs a plan.
