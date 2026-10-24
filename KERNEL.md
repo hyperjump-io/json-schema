@@ -105,9 +105,13 @@ type KeywordGroup = {
   annotations, evaluation stops at the first failure.
 - **Keyword groups are what plugins and errors see.** An error is reported
   for a keyword, never for an operation inside it. The optimizer can merge
-  operations within a keyword group when evaluating with plugins, but not
-  across groups, because that would mix their error locations. Without
-  plugins, anything can be merged.
+  across groups when evaluating with plugins only if it keeps a source map
+  (see "Optimizer").
+- **Plugins** see a tree of hook calls: each schema and keyword group with
+  its result and its parent's state. The order of siblings isn't
+  guaranteed, so a merged loop can call the hooks of `properties`' and
+  `patternProperties`' schemas for one property before the next property's.
+  Output formats don't sort their errors.
 - **Sources** are the siblings a keyword read (`minContains` and
   `maxContains` for `contains`), so lint messages and tools can point at
   every keyword an expression came from.
@@ -116,6 +120,9 @@ type KeywordGroup = {
   replaces `reads: ["evaluated"]` and the ordering in `compile.js`.
 - A schema is referred to by its handle (its canonical URI), so schemas can
   refer to each other and to themselves.
+- **Versioning.** A serialized compiled schema has `kernel: 1`, the version
+  of the kernel its expressions are in. `restoreValidator` rejects any other
+  version. The version goes up when an operation's meaning changes.
 
 ## Operations
 
@@ -163,6 +170,9 @@ doesn't explain its failure.
     which uses the dynamic scope only if the schema it resolved to has
     `$recursiveAnchor: true`
 
+  It's one operation rather than one for each dialect, because passes treat
+  them the same: they're the only operations that read the dynamic scope.
+
 ### Values of any type
 
 | Operation | Applies to | Passes when |
@@ -184,11 +194,14 @@ doesn't explain its failure.
 | --- | --- | --- |
 | `{ op: "stringLength", min?: number, max?: number }` | string | its length in code points is within the limits |
 | `{ op: "matches", pattern: string }` | string | the ECMA-262 pattern with the `u` flag matches |
-| `{ op: "format", name: string, uri: string \| null }` | the format's `types` | see below |
+| `{ op: "format", name: string, uri: string \| null, assert: boolean }` | the format's `types` | see below |
 
-- **`format`** annotates `name`. It also asserts if formats are validated
-  and `uri` is a format the `JsonSchema` has. It applies to the types the
-  format declares (`Format.types`), so lint gets them from the operation.
+- **`format`** annotates `name`. If `assert` is true, it also asserts the
+  format `uri`. Lowering decides `assert` from the `JsonSchema`'s
+  configuration, so a serialized expression means the same wherever it's
+  restored, and restoring fails if an asserting format isn't registered. It
+  applies to the types the format declares (`Format.types`), so lint gets
+  them from the operation.
 
 ### Arrays
 
@@ -200,7 +213,7 @@ doesn't explain its failure.
 | `{ op: "eachItem", from: number, of: Expression }` | array | every item from `from` on passes | each index it passes |
 | `{ op: "eachItem", unevaluated: true, of: Expression }` | array | every item not marked yet passes | each index it passes |
 | `{ op: "contains", of: Expression, min: number, max: number \| null }` | array | the number of items that pass is within the limits | each index that passes |
-| `{ op: "itemSequence", pattern: ItemPattern }` | array | the items, in order, match the pattern | – |
+| `{ op: "itemSequence", pattern: ItemPattern }` | array | the items, in order, match the pattern | every index, if it passes |
 
 - `item` and `eachItem` explain their failures. They evaluate items, which
   are children.
@@ -252,14 +265,14 @@ hand-written list of keywords that always pass.
 
 | Operation | Applies to | Passes when |
 | --- | --- | --- |
-| `{ op: "predicate", keyword: string, value: Json, types: TypeName[] }` | `types` | the keyword's `evaluate(value)` returns true for the instance |
+| `{ op: "predicate", keyword: string, value: Json, types: TypeName[] }` | `types` | the keyword's `evaluate(value, instance, ops)` returns true |
 | `{ op: "opaque", keyword: string, value: Json, explainsFailure?: boolean, reads?: EvaluationState[] }` | everything | the keyword's `evaluate(value, context)` returns true |
 
 - **`predicate`** is a check that isn't one of the kernel's operations. Its
-  `evaluate` gets a plain value, only of `types`, never an AST node or
-  `InstanceOps`. The kernel does the type check, and converts an AST
-  node's value. It applies no schemas and marks nothing, so passes can see
-  past it, and lint knows the types it applies to, but not what it checks.
+  `evaluate` gets the instance, only of `types`, and the `InstanceOps` to
+  read it with, so an AST node is never converted. The kernel does the type
+  check. It applies no schemas and marks nothing, so passes can see past
+  it, and lint knows the types it applies to, but not what it checks.
 - **`opaque`** is an applicator that isn't. `evaluate` gets today's
   `EvaluateContext` (`schema`, `markEvaluated`, `annotate`, `dynamicAnchor`,
   …). The kernel finds the schema placeholders in `value` and replaces them
@@ -269,20 +282,53 @@ hand-written list of keywords that always pass.
 ## Normal form
 
 A pass rewrites expressions to their normal form before anything else, so
-other passes and lint only see one form of each meaning. A start:
+lint, the other passes, and evaluation with or without plugins only see one
+form of each meaning. A normal-form rule can't be observed by anything,
+plugins and output formats included, so it always applies. A rule that's
+only right when nothing observes it is an optimization. The rules so far:
 
-- `all` and `any` in themselves are flattened, and `all` of one is the one
+- `all` and `any` in themselves are flattened, and `all` of one is the one.
+  Plugins see keyword groups, not the operations in them, so this can't be
+  observed.
 - `oneOfValues` of one value is `equals`
 - `typeIs` with no types is `fail`
+- `pass` in `all` is dropped, and `fail` in `any` is dropped
 - A rule has to keep what the expression applies to. `range` with equal,
   inclusive limits isn't `equals`, because `range` passes every string and
   `equals` doesn't, so it stays a `range`.
-- `pass` in `all` is dropped, and `fail` in `any` is dropped
-- `not` of `not` is the expression, but only without plugins, because the
-  inner schema's errors are reported
 
-Which rules are only for evaluation without plugins, like `fastOnly` passes
-today, has to be decided for each.
+## Optimizer
+
+The optimizer rewrites expressions for evaluation: merging a schema's
+property operations into one loop, inlining `apply`, `not` of `not`,
+leaving out `annotate`, folding groups that always pass. Without plugins,
+anything that keeps the result and the marks is allowed.
+
+With plugins, an optimization is allowed if it keeps a **source map**: each
+node of the optimized expression says which schema or keyword group it came
+from, so the evaluator can still make every group's hook calls, with the
+right result and the right parent. Optimizations are of two kinds:
+
+- **Restructuring.** Every group is still evaluated, organized differently:
+  a merged property loop, an inlined `apply`, a statically resolved
+  `unevaluatedProperties`. The map says which group each part belongs to.
+  The evaluator calls the groups' `before` hooks, evaluates the merged
+  operation, giving each subschema's hooks its own group's state, and calls
+  the `after` hooks.
+- **Elimination.** A group isn't evaluated, and the map says how to get its
+  result: a constant (`pass`, or a group proven to always pass), another
+  node's result or its negation (`not` of `not` evaluates `S` once and the
+  two `not` groups are `!S` and `S`), or an annotation's value (`annotate`
+  left out, its hooks made from the value).
+
+Stopping early can't be mapped, because what wasn't evaluated has no result.
+So `any` stopping at the first that passes, `one` at the second, and a
+schema at its first failure are only without plugins, as today.
+
+None of this is prototyped. The earlier prototype was as fast as
+`specialize` with plugins while merging only within groups. With plugins,
+the hook calls may be most of the cost, so the first thing to measure is a
+merged property loop with a source map against BASIC today.
 
 ## The keyword interface
 
@@ -298,7 +344,7 @@ type Keyword = {
   evaluate?: …;                         // for `predicate` and `opaque` only
 };
 
-type Shape = "schema" | "reference" | "data" | { array: Shape } | { map: Shape } | Shape[];
+type Shape = "schema" | "unappliedSchema" | "reference" | "data" | { array: Shape } | { map: Shape } | Shape[];
 ```
 
 - **`shape`** is the input type of `lower`. The kernel parses the value by
@@ -312,6 +358,9 @@ type Shape = "schema" | "reference" | "data" | { array: Shape } | { map: Shape }
   references with, instead of keyword URIs. A reference's input is
   `{ uri: string; schema: Expression }`, so `$dynamicRef` can read its
   fragment.
+- **`"unappliedSchema"`** is new: a schema that the keyword doesn't apply
+  (`contentSchema`). Resolving finds identifiers in it, and lint and the LS
+  know it's a schema, but it isn't compiled, and `lower` gets its JSON.
 - **`siblings`** are inputs too, by the names the record gives them, each
   parsed by its own keyword's shape. A sibling that's missing, or whose
   value didn't fit its shape or failed its check, is `undefined`. A keyword
@@ -322,7 +371,9 @@ type Shape = "schema" | "reference" | "data" | { array: Shape } | { map: Shape }
   retrieves what references refer to and replaces placeholders with
   handles. It isn't called if the value or a sibling it needs didn't fit
   its shape. A keyword without `lower` has no keyword group, like `$id`
-  today.
+  today. A keyword that has a group but no effect (`uniqueItems: false`, an
+  unknown keyword that isn't an annotation) lowers to `pass`, so plugins see
+  it pass, and the optimizer leaves it out without plugins.
 - **Removed:** `compile`, `simpleApplicator` (the operations say),
   `reads` (except on `opaque`), and the `siblingKeyword`,
   `compileSchemaArray`, and `compileSchemaMap` utilities.
@@ -394,7 +445,7 @@ don't have `lower`.
 | `multipleOf` | | `multipleOf(divisor)` |
 | `minLength`, `maxLength` | | `stringLength({ min })`, `stringLength({ max })` |
 | `pattern` | | `matches(pattern)` |
-| `format`, `draft-07/format` | | `format(name, uri)`, `uri` being `null` for a format the dialect doesn't have (draft-07's) |
+| `format`, `draft-07/format` | | `format(name, uri, assert)`, `uri` being `null` and `assert` false for a format the dialect doesn't have (draft-07's) |
 | `minItems`, `maxItems` | | `itemCount({ min })`, `itemCount({ max })` |
 | `uniqueItems` | | `uniqueItems` if `true`, `pass` if `false` |
 | `minProperties`, `maxProperties` | | `propertyCount({ min })`, `propertyCount({ max })` |
@@ -408,7 +459,7 @@ don't have `lower`.
 | --- | --- | --- |
 | `title`, `description`, `default`, `examples`, `deprecated`, `readOnly`, `writeOnly` | | `annotate(value)` |
 | `contentEncoding`, `contentMediaType` | | `annotate(value, ["string"])` |
-| `contentSchema` | `contentMediaType` | `annotate(value, ["string"])` if `contentMediaType` is there, otherwise `pass` |
+| `contentSchema` (shape `"unappliedSchema"`) | `contentMediaType` | `annotate(value, ["string"])` if `contentMediaType` is there, otherwise `pass` |
 | `unknown` | | `annotate(value)` if the dialect's unknown keywords are annotations, otherwise `pass` |
 
 Every keyword lowers to kernel operations. None needs `predicate` or
@@ -416,33 +467,8 @@ Every keyword lowers to kernel operations. None needs `predicate` or
 
 ## Open questions
 
-- **`contentSchema`** annotates its schema as JSON, not as a schema. Its
-  shape is `"schema"`, so resolving finds identifiers in it, but then
-  `lower` gets an expression, not the JSON. Either schema inputs carry
-  their JSON too, or `contentSchema` gets a shape kind for "a schema that
-  isn't applied".
-- **A keyword with no effect** (`uniqueItems: false`, an unknown keyword
-  that isn't an annotation) lowers to `pass` rather than having no keyword
-  group, because plugins see those keywords pass today. Whether they
-  should is a separate decision.
-- **`itemSequence` doesn't mark the items it evaluates**, because
-  `itemPattern` doesn't today. If v1 means for `unevaluatedItems` to see
-  them, it should mark every item when it passes.
-- **`dynamicApply`'s `when`** puts three dialects' rules in one operation.
-  The alternative is an operation for each, which says the same thing.
-  Either way, they're the only operations that read the dynamic scope.
-- **`format`** asserts or not depending on the `JsonSchema`'s
-  configuration, which the expression doesn't say. That's what it does
-  today, but it makes the meaning of a serialized expression depend on
-  where it's restored.
-- **Normal form.** The rules above are a start. Each rule needs to say
-  whether it's only for evaluation without plugins.
-- **Versioning.** Serialized compiled schemas have kernel expressions in
-  them, so the kernel needs a version, and `restoreValidator` needs to
-  check it.
-- **`predicate` on ASTs** converts the node's value for every call, which
-  is a copy for arrays and objects. None of today's keywords need
-  `predicate`, so it only matters for user-defined keywords.
 - **Lowering on the schema AST for lint.** Lint runs without compiling, so
-  it would lower each schema itself, with placeholders it doesn't compile
-  and references it doesn't retrieve. That isn't prototyped.
+  it would lower each schema itself, with schemas lowered but not compiled
+  and references not retrieved. That isn't prototyped.
+- **The source map** (see "Optimizer") isn't prototyped, and whether
+  merging across groups pays for itself with plugins isn't measured.
