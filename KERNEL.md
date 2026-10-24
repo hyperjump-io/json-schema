@@ -110,10 +110,16 @@ type KeywordGroup = {
   optimizer can merge across groups only if it keeps a source map (see
   "Optimizer").
 - **Plugins** see a tree of hook calls: each schema and keyword group with
-  its result and its parent's state. The order of siblings isn't
-  guaranteed, so a merged loop can call the hooks of `properties`' and
-  `patternProperties`' schemas for one property before the next property's.
-  Output formats don't sort their errors.
+  its result and its parent's state. The calls nest: everything between a
+  group's `beforeKeyword` and `afterKeyword` is that group's. Output
+  formats depend on it. BASIC's state for a keyword is where its errors
+  start in one list, and it cuts the list back there when the keyword
+  passes, so two groups' subschemas can't be evaluated interleaved. Within
+  a group, the order of its subschemas isn't guaranteed, and output formats
+  don't sort their errors.
+- **`KeywordInfo`** has the group's `expression`, and what plugins need
+  from it, computed once: `explainsFailure`, and `conditions`, the schemas
+  its `cases` apply as conditions.
 - **Sources** are the siblings a keyword read (`minContains` and
   `maxContains` for `contains`), so lint messages and tools can point at
   every keyword an expression came from.
@@ -343,11 +349,22 @@ evaluator can make that group's hook calls with its result. It doesn't
 have to reproduce today's tree of hook calls. Without optimizations,
 evaluation with plugins makes the same hook calls as `specialize` today,
 which is how the prototype is checked. With optimizations, it's checked by
-validity, annotations, and every error being at a keyword that failed.
+validity, annotations, and the optimized hook calls being a subsequence of
+the unoptimized ones.
 
-The source map isn't prototyped. With plugins, the hook calls may be most
-of the cost, so the first thing to measure is a merged property loop with a
-source map against BASIC today.
+Hook calls nest (see "Schemas and keyword groups"), so across groups, only
+the *matching* of a merged property loop can be merged with plugins. One
+pass over the properties finds which groups' operations each one is for,
+testing each pattern once and taking `additionalProperties` as "nothing
+else matched". Each group then evaluates its matches between its own
+hooks. The list of matches, by group, is the source map. Without plugins,
+the evaluation is merged too.
+
+Optimizations can depend on which hooks the plugins have. Without an
+`annotation` hook (BASIC, DETAILED), `annotate` has no effect, so a group
+that only annotates is left out, and a schema that's left with nothing is
+`pass` where it's applied. That was worth more with BASIC than merging
+(BENCHMARKS.md, "Kernel prototype from the schema AST").
 
 ## The keyword interface
 
@@ -492,5 +509,3 @@ Every keyword lowers to kernel operations. None needs `predicate` or
   and references not retrieved. That isn't prototyped. A dynamic reference
   into a document that isn't retrieved can't be decided, so lint lowers it
   to `dynamicApply`, which can only overstate which schemas might apply.
-- **The source map** (see "Optimizer") isn't prototyped, and whether
-  merging across groups pays for itself with plugins isn't measured.
