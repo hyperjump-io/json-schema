@@ -16,6 +16,9 @@ import { isInert } from "../optimize.js";
  * anything, so it always is.
  *
  * It's `alwaysPasses` from before the kernel, as an expression rewrite.
+ * What doesn't change is kept, down to the kernel itself, because
+ * rebuilding every schema of a large kernel cost as much as building its
+ * evaluator.
  *
  * @type Optimization
  */
@@ -27,6 +30,7 @@ export default {
 
     /** @type Record<Handle, CompiledSchema> */
     const optimized = {};
+    let changed = false;
 
     /** @type Set<Handle> */
     const inProgress = new Set();
@@ -44,10 +48,19 @@ export default {
       }
 
       inProgress.add(handle);
-      const keywords = compiled.keywords.map((group) => ({ ...group, expression: normalForm(fold(group.expression)) }));
+      const keywords = compiled.keywords.map((group) => {
+        const expression = fold(group.expression);
+        return expression === group.expression ? group : { ...group, expression: normalForm(expression) };
+      });
       inProgress.delete(handle);
 
+      if (keywords.every((group, index) => group === compiled.keywords[index])) {
+        optimized[handle] = compiled;
+        return compiled;
+      }
+
       optimized[handle] = { ...compiled, keywords };
+      changed = true;
       return optimized[handle];
     };
 
@@ -63,6 +76,9 @@ export default {
       return compiled === true || (typeof compiled !== "boolean" && compiled.keywords.every(({ expression }) => isInert(expression, mode)));
     };
 
+    /** @type (expression: Expression | null) => Expression | null */
+    const foldNullable = (expression) => expression && fold(expression);
+
     /** @type (expression: Expression) => Expression */
     const fold = (expression) => {
       switch (expression.op) {
@@ -70,28 +86,38 @@ export default {
           return alwaysPasses(expression.schema) ? { op: "pass" } : expression;
         case "all":
         case "any":
-        case "one":
-          return { ...expression, of: expression.of.map(fold) };
+        case "one": {
+          const of = expression.of.map(fold);
+          return of.every((subexpression, index) => subexpression === expression.of[index]) ? expression : { ...expression, of };
+        }
         case "not": {
           const of = fold(expression.of);
-          return of.op === "pass" ? { op: "fail" } : { ...expression, of };
+          return of.op === "pass" ? { op: "fail" } : of === expression.of ? expression : { ...expression, of };
         }
-        case "cases":
-          return {
-            ...expression,
-            cases: expression.cases.map(([condition, then]) => [fold(condition), then && fold(then)]),
-            otherwise: expression.otherwise && fold(expression.otherwise)
-          };
+        case "cases": {
+          /** @type [Expression, Expression | null][] */
+          const cases = expression.cases.map(([condition, then]) => [fold(condition), foldNullable(then)]);
+          const otherwise = foldNullable(expression.otherwise);
+          const same = otherwise === expression.otherwise && cases.every(([condition, then], index) => {
+            return condition === expression.cases[index][0] && then === expression.cases[index][1];
+          });
+          return same ? expression : { ...expression, cases, otherwise };
+        }
         case "item":
         case "eachItem":
         case "property":
         case "eachProperty":
         case "eachPropertyName": {
           const of = fold(expression.of);
-          return of.op === "pass" && (!marksAreRead || expression.op === "eachPropertyName") ? of : { ...expression, of };
+          if (of.op === "pass" && (!marksAreRead || expression.op === "eachPropertyName")) {
+            return of;
+          }
+          return of === expression.of ? expression : { ...expression, of };
         }
-        case "contains":
-          return { ...expression, of: fold(expression.of) };
+        case "contains": {
+          const of = fold(expression.of);
+          return of === expression.of ? expression : { ...expression, of };
+        }
         default:
           return expression;
       }
@@ -101,6 +127,6 @@ export default {
       schema(handle);
     }
 
-    return { ...kernel, schemas: optimized };
+    return changed ? { ...kernel, schemas: optimized } : kernel;
   }
 };
