@@ -1571,7 +1571,8 @@ What this relies on from browser's `v2` branch:
    kernel's operations would need. The second prototype covers lowering
    from the schema AST, plugins and AST instances, optimizing with
    plugins, and lowering for lint (BENCHMARKS.md, "Kernel prototype from
-   the schema AST"). Next: plan moving it into `src/`.
+   the schema AST"). Next: moving it into `src/` (see "Moving the kernel
+   into `src/`").
 2. Port lint rules from the catalogue (see "The rule catalogue"). Done so
    far: everything in `src/lint/rules/`.
 3. Lint while resolving (see "Linting while resolving"): plain lint
@@ -1582,6 +1583,65 @@ What this relies on from browser's `v2` branch:
 5. A bundle command in the CLI.
 6. A documentation website.
 7. Later: OpenAPI and migrating dependent projects.
+
+### Moving the kernel into `src/`
+
+In stages. Each one passes `npm test`, lint, and type-check, and is
+reviewed before the next.
+
+Some of it isn't in the prototype and has to be built, not moved:
+collecting annotations (`annotate`, and the annotation test suites), the
+`predicate` and `opaque` escape hatches, serializing (`kernel: 1`,
+`restoreValidator`), and `static-unevaluated`, which the kernel still
+needs, but as a pass without rules for keywords, because the operations
+say what they mark. How long lowering and building closures take was
+never timed.
+
+0. **A reference.** A worktree of the last commit before the move, outside
+   the repo, is v2 for the prototype's checks (`run.ts`, `compare.ts`,
+   `lint-check.ts`), which then check `src/` against it. They stay
+   uncommitted for now, like the rest of `benchmark/`.
+1. **Syntax, with no change in behavior.** `Shape` gets `"reference"` and
+   `"unappliedSchema"`, and `siblings` is a record. Resolving, bundling,
+   `schema-group.js`, and lint's `refUri` and `visitReferences` find
+   references by shape instead of keyword URIs. `compile` reads siblings
+   from the record.
+2. **The kernel replaces compile and evaluate.** `src/kernel/` replaces
+   `src/evaluate/`: the expressions (`kernel.d.ts`, and `kernel.js` for
+   `subexpressions`, `readsMarks`, `explainsFailure`, and `conditionsOf`),
+   `lower.js`, `normalize.js`, `optimizations/` (one pass per file, as
+   today: folding, leaving out groups, merging property loops,
+   `static-unevaluated`), `fast.js`, `instrumented.js` (plugins and
+   collecting annotations), `validator.js`, and `instance.js`. Each
+   keyword gets `lower`, from the prototype's table. `compile.js`,
+   `specialize.js`, `optimize.js`, `compile`, `simpleApplicator`, `reads`,
+   the `siblingKeyword`, `compileSchemaArray`, and `compileSchemaMap`
+   utilities, and `siblings.test.js` are removed. The old and new
+   evaluators don't live side by side, because the reference is the old
+   one. Without optimizations, hook calls are the same as v2's. Until
+   stage 3, the output formats still use `simpleApplicator`'s answers,
+   computed from the expression, so the output is the same as v2's too.
+3. **Plugins and output formats.** `KeywordInfo` gets `expression`,
+   `explainsFailure`, and `conditions`, and BASIC and DETAILED stop
+   recognizing `if` and `conditional` by URI. The known changes in BASIC
+   (`conditional`, `dependencies` with only schemas, `anyOf` and `oneOf` of
+   one schema) are the only differences from the reference, and tests that
+   pin them change on purpose.
+4. **Escape hatches and serializing.** `predicate` and `opaque`, tested
+   with user-defined keywords, and `kernel: 1` with `restoreValidator`.
+5. **Lint reads expressions.** `lowerForLint` and `Analysis` move to
+   `src/lint/` and replace `keywordType`, `const-or-enum-assertions`' list,
+   and what's left of finding references by URI. `contradictory-limits` is
+   ported. A rule about a particular keyword (`then-else-without-if`) still
+   names it, because that's about syntax. Lowering is written so linting
+   while resolving (plan item 3) can use it.
+6. **Documentation and measurements.** "Compile and evaluate" and the
+   sections after it, and the code map, describe the kernel. KERNEL.md
+   isn't a draft anymore. BENCHMARKS.md has `src/`'s numbers.
+
+Before the old code is gone for good (the end of stage 2), FLAG and BASIC
+can't be slower than v2 on the real-world schemas, and the first
+`validate` of a schema can't take more than about 1.5 times as long.
 
 ## Known limitations
 

@@ -545,4 +545,5 @@ the rule misses.
 
 ## Open questions
 
-None yet. Moving the prototype into `src/` needs a plan.
+None yet. The plan for moving it into `src/` is "Moving the kernel into
+`src/`" in [DESIGN.md](DESIGN.md).
