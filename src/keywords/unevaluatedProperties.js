@@ -1,5 +1,6 @@
 /**
- * @import { Keyword, SchemaHandle } from "../keyword.d.ts"
+ * @import { Keyword } from "../keyword.d.ts"
+ * @import { Expression } from "../kernel/kernel.d.ts"
  */
 
 /**
@@ -7,42 +8,11 @@
  * keyword evaluated, including ones evaluated by subschemas that apply to
  * the same instance (`allOf`, `$ref`, …) and passed.
  *
- * @type Keyword<SchemaHandle>
+ * @type Keyword<Expression>
  */
 export default {
   uri: "https://json-schema.org/keyword/unevaluatedProperties",
   shape: "schema",
   default: true,
-  compile: (valueNode, context) => context.compileSchema(valueNode),
-  evaluate(handle, { instance, schema, exhaustive, markEvaluated, evaluated }) {
-    const evaluate = schema(handle);
-    const evaluatedSoFar = /** @type NonNullable<typeof evaluated> */ (evaluated);
-
-    return (node) => {
-      if (instance.typeOf(node) !== "object") {
-        return true;
-      }
-
-      const alreadyEvaluated = evaluatedSoFar();
-      let valid = true;
-      for (const [name, property] of instance.entries(node)) {
-        if (alreadyEvaluated.has(name)) {
-          continue;
-        }
-
-        if (evaluate(property, name)) {
-          markEvaluated?.(name);
-        } else {
-          valid = false;
-          if (!exhaustive) {
-            return false;
-          }
-        }
-      }
-
-      return valid;
-    };
-  },
-  reads: ["evaluated"],
-  simpleApplicator: true
+  lower: (schema) => ({ op: "eachProperty", select: { unevaluated: true }, of: schema })
 };

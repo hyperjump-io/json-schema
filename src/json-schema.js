@@ -5,7 +5,8 @@ import { JsonSchemaSession } from "./session.js";
 import { addedRegistriesOf } from "./registry/session-registries.js";
 import schemaKeyword from "./keywords/schema.js";
 import unknownKeyword, { keywordDefinitionUri } from "./keywords/unknown.js";
-import { Validator } from "./evaluate/validator.js";
+import { Validator } from "./kernel/validator.js";
+import { subexpressions } from "./kernel/kernel.js";
 import { basicOutputFormat } from "./output/basic.js";
 import { detailedOutputFormat } from "./output/detailed.js";
 
@@ -16,7 +17,7 @@ export { RetrievalNotAllowedError } from "@hyperjump/browser";
  * @import { Keyword } from "./keyword.d.ts"
  * @import { Format } from "./format.d.ts"
  * @import { Dialect } from "./dialect.d.ts"
- * @import { CompiledSchemas } from "./evaluate/compile.js"
+ * @import { Expression, Kernel } from "./kernel/kernel.d.ts"
  * @import { JsonSchemaNode } from "./schema/schema-ast.d.ts"
  * @import * as API from "./json-schema.d.ts"
  * @import { OutputFormat, OutputFormatDefinition } from "./output/output-format.d.ts"
@@ -223,17 +224,28 @@ export class JsonSchema extends Hyperjump {
 
   /** @type API.JsonSchema["restoreValidator"] */
   restoreValidator(compiled) {
-    const compiledSchemas = /** @type CompiledSchemas */ (compiled);
-    for (const handle in compiledSchemas.schemas) {
-      const schema = compiledSchemas.schemas[handle];
+    // Plugins see each keyword's definition, and asserting formats are
+    // validated with theirs
+    /** @type (expression: Expression) => void */
+    const checkFormats = (expression) => {
+      if (expression.op === "format" && expression.assert) {
+        this.getFormat(/** @type string */ (expression.uri));
+      }
+      subexpressions(expression).forEach(checkFormats);
+    };
+
+    const kernel = /** @type Kernel */ (compiled);
+    for (const handle in kernel.schemas) {
+      const schema = kernel.schemas[handle];
       if (typeof schema !== "boolean") {
-        for (const [keywordUri] of schema.keywords) {
+        for (const { keywordUri, expression } of schema.keywords) {
           this.getKeyword(keywordDefinitionUri(keywordUri));
+          checkFormats(expression);
         }
       }
     }
 
-    return new Validator(this, compiledSchemas);
+    return new Validator(this, kernel);
   }
 
   /** @type API.JsonSchema["validate"] */

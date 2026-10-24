@@ -1,10 +1,9 @@
-import { compileSchemaArray } from "../utilities.js";
-import itemsKeyword from "../items.js";
-import prefixItemsKeyword from "../prefixItems.js";
+import { all } from "../utilities.js";
 import { nonEmpty } from "../checks.js";
 
 /**
- * @import { Keyword, SchemaHandle } from "../../keyword.d.ts"
+ * @import { Keyword } from "../../keyword.d.ts"
+ * @import { Expression } from "../../kernel/kernel.d.ts"
  */
 
 /**
@@ -12,18 +11,14 @@ import { nonEmpty } from "../checks.js";
  * items at the same index, like `prefixItems`. A schema applies to every
  * item, like `items` without `prefixItems`.
  *
- * @type Keyword<SchemaHandle | SchemaHandle[]>
+ * @type Keyword<Expression | Expression[]>
  */
 export default {
   uri: "https://json-schema.org/keyword/draft-2019-09/items",
   shape: ["schema", { array: "schema" }],
   default: true,
   check: nonEmpty,
-  compile: (valueNode, context) => valueNode.jsonType === "array"
-    ? compileSchemaArray(valueNode, context)
-    : context.compileSchema(valueNode),
-  evaluate: (compiled, context) => Array.isArray(compiled)
-    ? /** @type NonNullable<typeof prefixItemsKeyword.evaluate> */ (prefixItemsKeyword.evaluate)(compiled, context)
-    : /** @type NonNullable<typeof itemsKeyword.evaluate> */ (itemsKeyword.evaluate)({ handle: compiled, start: 0 }, context),
-  simpleApplicator: true
+  lower: (items) => Array.isArray(items)
+    ? all(items.map((schema, index) => ({ op: "item", index, of: schema })))
+    : { op: "eachItem", from: 0, of: items }
 };

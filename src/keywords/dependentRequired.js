@@ -1,3 +1,4 @@
+import { all, hasProperty, whenProperty } from "./utilities.js";
 import { mapOf, uniqueStrings } from "./checks.js";
 
 /**
@@ -14,27 +15,7 @@ export default {
   shape: "data",
   default: {},
   check: mapOf(uniqueStrings),
-  evaluate(dependentRequired, { instance }) {
-    const dependencies = Object.entries(dependentRequired);
-
-    return (node) => {
-      if (instance.typeOf(node) !== "object") {
-        return true;
-      }
-
-      for (const [name, required] of dependencies) {
-        if (!instance.has(node, name)) {
-          continue;
-        }
-
-        for (const requiredName of required) {
-          if (!instance.has(node, requiredName)) {
-            return false;
-          }
-        }
-      }
-
-      return true;
-    };
-  }
+  lower: (dependentRequired) => all(Object.entries(dependentRequired).map(([name, required]) => {
+    return whenProperty(hasProperty(name), all(required.map(hasProperty)));
+  }))
 };

@@ -1,7 +1,7 @@
 import { falseSchemaRuleId, inDocumentOrder, isCondition, keywordStart, startOf, validationError } from "./utilities.js";
 
 /**
- * @import { EvaluationPlugin } from "../evaluate/evaluation-plugin.d.ts"
+ * @import { EvaluationPlugin } from "../kernel/evaluation-plugin.d.ts"
  * @import { OutputFormatDefinition } from "./output-format.d.ts"
  * @import { DetailedValidationError } from "./validation-error.d.ts"
  * @import { KeywordStart } from "./utilities.js"

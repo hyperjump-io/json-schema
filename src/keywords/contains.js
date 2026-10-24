@@ -1,7 +1,6 @@
-import { jsonValue } from "@hyperjump/browser/json";
-
 /**
- * @import { Keyword, SchemaHandle } from "../keyword.d.ts"
+ * @import { Keyword } from "../keyword.d.ts"
+ * @import { Expression } from "../kernel/kernel.d.ts"
  */
 
 /**
@@ -9,51 +8,16 @@ import { jsonValue } from "@hyperjump/browser/json";
  * `minContains` (default 1) and `maxContains` (default unlimited), which
  * have no effect on their own. The items that pass are evaluated.
  *
- * @type Keyword<{ handle: SchemaHandle; minContains: number; maxContains: number | null }>
+ * @type Keyword<Expression>
  */
 export default {
   uri: "https://json-schema.org/keyword/contains",
   siblings: { minContains: "https://json-schema.org/keyword/minContains", maxContains: "https://json-schema.org/keyword/maxContains" },
   shape: "schema",
-  async compile(valueNode, context) {
-    const minContainsNode = context.siblings.minContains;
-    const maxContainsNode = context.siblings.maxContains;
-
-    return {
-      handle: await context.compileSchema(valueNode),
-      minContains: minContainsNode?.jsonType === "number" ? /** @type number */ (jsonValue(minContainsNode)) : 1,
-      maxContains: maxContainsNode?.jsonType === "number" ? /** @type number */ (jsonValue(maxContainsNode)) : null
-    };
-  },
-  evaluate({ handle, minContains, maxContains }, { instance, schema, exhaustive, markEvaluated }) {
-    const evaluate = schema(handle);
-    const max = maxContains ?? Infinity;
-
-    // Every item has to be evaluated to mark the ones that pass
-    const canStopAtPass = !exhaustive && markEvaluated === undefined && max === Infinity;
-
-    return (node) => {
-      if (instance.typeOf(node) !== "array") {
-        return true;
-      }
-
-      let matches = 0;
-      let index = 0;
-      for (const item of instance.items(node)) {
-        if (evaluate(item, index)) {
-          matches++;
-          markEvaluated?.(index);
-
-          if (canStopAtPass && matches >= minContains) {
-            return true;
-          } else if (!exhaustive && matches > max) {
-            return false;
-          }
-        }
-        index++;
-      }
-
-      return matches >= minContains && matches <= max;
-    };
-  }
+  lower: (schema, { minContains, maxContains }) => ({
+    op: "contains",
+    of: schema,
+    min: typeof minContains === "number" ? minContains : 1,
+    max: typeof maxContains === "number" ? maxContains : null
+  })
 };

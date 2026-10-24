@@ -1,3 +1,4 @@
+import { all, hasProperty } from "./utilities.js";
 import { uniqueStrings } from "./checks.js";
 
 /**
@@ -15,17 +16,5 @@ export default {
   shape: "data",
   default: [],
   check: uniqueStrings,
-  evaluate: (required, { instance }) => (node) => {
-    if (instance.typeOf(node) !== "object") {
-      return true;
-    }
-
-    for (const name of required) {
-      if (!instance.has(node, name)) {
-        return false;
-      }
-    }
-
-    return true;
-  }
+  lower: (required) => all(required.map(hasProperty))
 };

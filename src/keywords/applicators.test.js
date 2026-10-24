@@ -231,18 +231,18 @@ describe("applicator errors", () => {
       expect(property.data.annotations.get("https://json-schema.org/keyword/description")).to.eql(["An extension"]);
     });
 
-    test("are still seen by plugins", async () => {
+    test("still annotate for plugins that see annotations", async () => {
       const validator = await jsonSchema.compile(await schemaFile(schema));
 
-      /** @type string[] */
-      const locations = [];
-      validator.validate({ "foo": 1, "x-a": 1 }, {
+      /** @type [string, Json][] */
+      const annotations = [];
+      const valid = validator.validate({ "foo": 1, "x-a": 1 }, {
         plugins: [{
-          afterSchema: (schema) => locations.push(pointer(schema.absoluteKeywordLocation)),
-          afterKeyword: (keyword) => locations.push(pointer(keyword.absoluteKeywordLocation))
+          annotation: (keyword, _at, value) => annotations.push([pointer(keyword.absoluteKeywordLocation), value])
         }]
       });
-      expect(locations).to.include.members(["/properties/foo", "/allOf/0", "/patternProperties/^x-/description", "/allOf/1/title"]);
+      expect(valid).to.equal(true);
+      expect(annotations).to.include.deep.members([["/patternProperties/^x-/description", "An extension"], ["/allOf/1/title", "Always"]]);
     });
   });
 });

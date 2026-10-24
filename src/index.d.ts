@@ -7,5 +7,6 @@ export type * from "./schema/schema-ast.d.ts";
 export type * from "./keyword.d.ts";
 export type * from "./dialect.d.ts";
 export type * from "./format.d.ts";
-export type * from "./evaluate/evaluation-plugin.d.ts";
+export type * from "./kernel/kernel.d.ts";
+export type * from "./kernel/evaluation-plugin.d.ts";
 export * from "./registry/schema-registry.js";

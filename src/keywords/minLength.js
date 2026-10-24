@@ -1,4 +1,3 @@
-import { codePointLength } from "./utilities.js";
 import { nonNegativeInteger } from "./checks.js";
 
 /**
@@ -15,7 +14,5 @@ export default {
   shape: "data",
   default: 0,
   check: nonNegativeInteger,
-  evaluate: (minLength, { instance }) => (node) => {
-    return instance.typeOf(node) !== "string" || codePointLength(/** @type string */ (instance.value(node))) >= minLength;
-  }
+  lower: (min) => ({ op: "stringLength", min })
 };

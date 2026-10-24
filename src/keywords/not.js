@@ -1,18 +1,15 @@
 /**
- * @import { Keyword, SchemaHandle } from "../keyword.d.ts"
+ * @import { Keyword } from "../keyword.d.ts"
+ * @import { Expression } from "../kernel/kernel.d.ts"
  */
 
 /**
  * `not`
  *
- * @type Keyword<SchemaHandle>
+ * @type Keyword<Expression>
  */
 export default {
   uri: "https://json-schema.org/keyword/not",
   shape: "schema",
-  compile: (valueNode, context) => context.compileSchema(valueNode),
-  evaluate(handle, { schema }) {
-    const evaluate = schema(handle);
-    return (node) => !evaluate(node);
-  }
+  lower: (schema) => ({ op: "not", of: schema })
 };

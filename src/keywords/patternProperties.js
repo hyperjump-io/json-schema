@@ -1,15 +1,16 @@
-import { compileSchemaMap } from "./utilities.js";
 import { isRegex } from "@hyperjump/json-schema-formats";
+import { all } from "./utilities.js";
 
 /**
- * @import { Keyword, SchemaHandle } from "../keyword.d.ts"
+ * @import { Keyword } from "../keyword.d.ts"
+ * @import { Expression } from "../kernel/kernel.d.ts"
  */
 
 /**
  * `patternProperties`. Patterns are ECMA-262 regular expressions with the
  * `u` flag. A property is evaluated against every pattern it matches.
  *
- * @type Keyword<[string, SchemaHandle][]>
+ * @type Keyword<[string, Expression][]>
  */
 export default {
   uri: "https://json-schema.org/keyword/patternProperties",
@@ -27,45 +28,5 @@ export default {
       }
     }
   },
-  compile: compileSchemaMap,
-  evaluate(patternProperties, { instance, schema, alwaysPasses, exhaustive, markEvaluated }) {
-    /** @type [RegExp, ReturnType<typeof schema>][] */
-    const patterns = [];
-    for (const [pattern, handle] of patternProperties) {
-      if (!alwaysPasses(handle)) {
-        patterns.push([new RegExp(pattern, "u"), schema(handle)]);
-      }
-    }
-
-    if (patterns.length === 0) {
-      return;
-    }
-
-    return (node) => {
-      if (instance.typeOf(node) !== "object") {
-        return true;
-      }
-
-      let valid = true;
-      for (const [name, property] of instance.entries(node)) {
-        for (const [pattern, evaluate] of patterns) {
-          if (!pattern.test(name)) {
-            continue;
-          }
-
-          if (evaluate(property, name)) {
-            markEvaluated?.(name);
-          } else {
-            valid = false;
-            if (!exhaustive) {
-              return false;
-            }
-          }
-        }
-      }
-
-      return valid;
-    };
-  },
-  simpleApplicator: true
+  lower: (pairs) => all(pairs.map(([pattern, schema]) => ({ op: "eachProperty", select: { pattern }, of: schema })))
 };

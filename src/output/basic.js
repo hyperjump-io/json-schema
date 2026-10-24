@@ -1,7 +1,7 @@
-import { falseSchemaRuleId, inDocumentOrder, isCondition, keywordStart, startOf, validationError } from "./utilities.js";
+import { explainsFailure, falseSchemaRuleId, inDocumentOrder, isCondition, keywordStart, startOf, validationError } from "./utilities.js";
 
 /**
- * @import { EvaluationPlugin } from "../evaluate/evaluation-plugin.d.ts"
+ * @import { EvaluationPlugin } from "../kernel/evaluation-plugin.d.ts"
  * @import { OutputFormatDefinition } from "./output-format.d.ts"
  * @import { ValidationError } from "./validation-error.d.ts"
  * @import { KeywordStart } from "./utilities.js"
@@ -41,7 +41,7 @@ export class BasicOutputPlugin {
     const start = startOf(state);
     if (valid) {
       this.#dropFrom(start);
-    } else if (!keyword.keyword.simpleApplicator) {
+    } else if (!explainsFailure(keyword)) {
       // A failing keyword's error comes before its subschemas' errors
       const error = validationError(keyword.keywordUri, keyword.absoluteKeywordLocation, at);
       if (start === this.errors.length) {

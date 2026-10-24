@@ -1,5 +1,5 @@
 import { jsonValue } from "@hyperjump/browser/json";
-import { astInstance, jsInstance } from "../evaluate/instance.js";
+import { astInstance, jsInstance } from "../kernel/instance.js";
 import { isErrorNode } from "../keywords/checks.js";
 import { instanceEqual } from "../keywords/utilities.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
@@ -7,7 +7,7 @@ import { findKeyword, visitSchemas } from "./utilities.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
- * @import { InstanceNode } from "../evaluate/instance.js"
+ * @import { InstanceNode } from "../kernel/instance.js"
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode, JsonSchemaTolerantNode } from "../schema/schema-ast.d.ts"
  * @import { JsonSchemaSession } from "../session.d.ts"
  */

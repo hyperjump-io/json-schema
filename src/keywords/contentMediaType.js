@@ -13,16 +13,5 @@ export default {
   uri: "https://json-schema.org/keyword/contentMediaType",
   shape: "data",
   check: string,
-  evaluate(contentMediaType, { instance, annotate }) {
-    if (annotate === undefined) {
-      return;
-    }
-
-    return (node) => {
-      if (instance.typeOf(node) === "string") {
-        annotate(contentMediaType);
-      }
-      return true;
-    };
-  }
+  lower: (value) => ({ op: "annotate", value, types: ["string"] })
 };

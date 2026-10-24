@@ -5,10 +5,9 @@
 /**
  * `$defs`. Its schemas are only compiled when something references them.
  *
- * @type Keyword<null>
+ * @type Keyword
  */
 export default {
   uri: "https://json-schema.org/keyword/definitions",
-  shape: { map: "schema" },
-  compile: () => null
+  shape: { map: "schema" }
 };

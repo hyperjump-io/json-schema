@@ -1,0 +1,1084 @@
+import * as JsonPointer from "@hyperjump/json-pointer";
+import { keywordDefinitionUri } from "../keywords/unknown.js";
+import { codePointLength, instanceEqual } from "../keywords/utilities.js";
+import { jsInstance } from "./instance.js";
+import { conditionsOf, explainsFailure, hasOp, readsMarks } from "./kernel.js";
+import { addDynamicAnchors, addReachable, isClose, itemSequenceStates, selector } from "./fast.js";
+
+/**
+ * @import { Data, Node } from "unist"
+ * @import { Json } from "@hyperjump/browser/json"
+ * @import { JsonSchema } from "../json-schema.d.ts"
+ * @import { InstanceOps } from "../keyword.d.ts"
+ * @import { EvaluationLocation, EvaluationPlugin, KeywordInfo, SchemaInfo } from "./evaluation-plugin.d.ts"
+ * @import { Expression, Handle, ItemPattern, Kernel, KeywordGroup, TypeName } from "./kernel.d.ts"
+ */
+
+/**
+ * The marks an evaluator makes, or undefined if nothing reads them
+ *
+ * @typedef {Set<string | number> | undefined} Marks
+ */
+
+/**
+ * @template I
+ * @typedef {(instance: I, marks: Marks) => boolean} Evaluator
+ */
+
+/**
+ * Evaluates a schema on an instance. `segment` is the property name or item
+ * index when it's a child of the instance the caller evaluates.
+ *
+ * @template I
+ * @typedef {(instance: I, marks: Marks, segment?: string | number) => boolean} SchemaEvaluator
+ */
+
+/**
+ * Each property match of a merged loop, flat so it's one allocation: the
+ * group's slot, the name, the value, and the evaluator
+ *
+ * @template I
+ * @typedef {(number | string | I | SchemaEvaluator<I>)[]} Matches
+ */
+
+/**
+ * Annotations are collected in nested lists so a passing schema can add its
+ * subschemas' annotations to its own without copying them. They're flattened
+ * when they're attached to the instance.
+ *
+ * @typedef {{ node: Node; keywordUri: string; value: Json }} Annotation
+ * @typedef {(Annotation | AnnotationList)[]} AnnotationList
+ */
+
+/**
+ * @template I
+ * @typedef {{
+ *   instance: InstanceOps<I>;
+ *   isAst: boolean;
+ *   annotating: boolean;
+ *   instrumented: boolean;
+ * }} InstrumentedOptions
+ */
+
+/**
+ * @template I
+ * @typedef {(instance: I, plugins?: EvaluationPlugin[]) => boolean} Instrumented
+ */
+
+/** @type EvaluationPlugin */
+const noPlugin = {};
+
+/**
+ * Where in the instance a hook is called. Every schema and keyword evaluated
+ * on the same instance gets the same location, so one is created for each
+ * value evaluated rather than for each hook call. `value` is a method rather
+ * than a closure, so a location is one allocation. It's one class for every
+ * evaluator, so hooks always see the same shape.
+ *
+ * @implements EvaluationLocation
+ */
+class Location {
+  /** @type unknown */
+  #instance;
+
+  /** @type InstanceOps<any> */
+  #ops;
+
+  /**
+   * @param {string} instanceLocation
+   * @param {EvaluationLocation["node"]} node
+   * @param {unknown} instance
+   * @param {InstanceOps<any>} ops
+   */
+  constructor(instanceLocation, node, instance, ops) {
+    this.instanceLocation = instanceLocation;
+    this.node = node;
+    this.#instance = instance;
+    this.#ops = ops;
+  }
+
+  value() {
+    return this.#ops.typeOf(this.#instance) === undefined ? undefined : this.#ops.value(this.#instance);
+  }
+}
+
+/**
+ * Plugins that act as one. Each hook's state is an array of the plugins'
+ * states.
+ *
+ * @type (plugins: EvaluationPlugin[]) => EvaluationPlugin<unknown[], unknown[]>
+ */
+const combinePlugins = (plugins) => ({
+  beforeSchema: (schema, at, parent) => plugins.map((plugin, index) => plugin.beforeSchema?.(schema, at, parent?.[index])),
+  afterSchema: (schema, at, valid, state, parent) => {
+    for (let index = 0; index < plugins.length; index++) {
+      plugins[index].afterSchema?.(schema, at, valid, state[index], parent?.[index]);
+    }
+  },
+  beforeKeyword: (keyword, at, schema) => plugins.map((plugin, index) => plugin.beforeKeyword?.(keyword, at, schema[index])),
+  afterKeyword: (keyword, at, valid, state, schema) => {
+    for (let index = 0; index < plugins.length; index++) {
+      plugins[index].afterKeyword?.(keyword, at, valid, state[index], schema[index]);
+    }
+  },
+  annotation: (keyword, at, value, state) => {
+    for (let index = 0; index < plugins.length; index++) {
+      plugins[index].annotation?.(keyword, at, value, state[index]);
+    }
+  }
+});
+
+/** @type (marks: Marks, more: Marks) => void */
+const addAll = (marks, more) => {
+  if (marks !== undefined && more !== undefined) {
+    for (const key of more) {
+      marks.add(key);
+    }
+  }
+};
+
+/** @type (types: ReadonlySet<string>, type: string | undefined, isInteger: () => boolean) => boolean */
+const hasType = (types, type, isInteger) => {
+  return type !== undefined && (types.has(type) || (type === "number" && types.has("integer") && isInteger()));
+};
+
+/**
+ * Evaluation with plugins, of plain values or JSON AST nodes, and of ASTs
+ * without plugins, which includes annotating. Every subexpression is
+ * evaluated, so nothing stops early, and a plugin sees every keyword that
+ * applies.
+ *
+ * - `isAst`: The instance is a JSON AST. Values that couldn't be parsed pass
+ *   every schema.
+ * - `annotating`: Collect annotations and attach them to the instance's
+ *   nodes. They're kept only if the keyword and every schema they were
+ *   evaluated through pass. Only for ASTs.
+ * - `instrumented`: Run plugins. Instance locations are only tracked for
+ *   plugins.
+ *
+ * Plugins see keyword groups, never operations. A group's property
+ * operations are one loop over the instance's properties, which is the
+ * order `properties` and `patternProperties` evaluated in before the
+ * kernel. Across a schema's groups, only finding which operations each
+ * property is for is merged. Each group evaluates its matches between its
+ * own hooks, so hook calls nest.
+ *
+ * Evaluation state lives in this closure. An evaluation that starts while
+ * another one is in progress, like one a plugin starts, saves the outer
+ * one's state and restores it when it's done.
+ *
+ * @type <I>(jsonSchema: JsonSchema, kernel: Kernel, options: InstrumentedOptions<I>) => Instrumented<I>
+ */
+export const instrumented = (jsonSchema, kernel, options) => {
+  const { instance: ops, isAst, annotating, instrumented: tracking } = options;
+
+  const tracksDynamicScope = Object.values(kernel.schemas).some((schema) => {
+    return typeof schema !== "boolean" && schema.keywords.some(({ expression }) => hasOp(expression, "dynamicApply"));
+  });
+
+  /** @typedef {Parameters<typeof ops.typeOf>[0]} I */
+
+  /** @type EvaluationPlugin */
+  let plugin = noPlugin;
+  /** @type unknown */
+  let keywordState;
+  /** @type I | undefined */
+  let currentInstance;
+  let instanceLocation = "";
+  /** @type EvaluationLocation | undefined */
+  let currentAt;
+  /** @type string | undefined */
+  let currentResource;
+  /** @type Record<string, Handle> | undefined */
+  let dynamicAnchors;
+
+  // The annotations of the keyword group being evaluated
+  /** @type AnnotationList | undefined */
+  let keywordAnnotations;
+
+  /** @type (instance: I, value: Json) => boolean */
+  const equal = (instance, value) => instanceEqual(ops, instance, jsInstance, value, true);
+
+  /**
+   * Move evaluation to a child of the instance, like a schema evaluator
+   * does, and return what to restore, for an expression that isn't a schema
+   *
+   * @type (instance: I, segment: string | number | undefined) => [I | undefined, string, EvaluationLocation | undefined]
+   */
+  const enter = (instance, segment) => {
+    const outer = /** @type [I | undefined, string, EvaluationLocation | undefined] */ ([currentInstance, instanceLocation, currentAt]);
+    const outerInstance = currentInstance;
+    currentInstance = instance;
+    if (tracking) {
+      if (segment !== undefined) {
+        // Indexes don't need to be escaped
+        instanceLocation = typeof segment === "number"
+          ? `${instanceLocation}/${segment}`
+          : JsonPointer.append(segment, instanceLocation);
+      }
+
+      // A schema evaluated on the same instance, like through `allOf` or
+      // `$ref`, shares its location
+      if (segment !== undefined || outerInstance !== instance || currentAt === undefined) {
+        currentAt = new Location(instanceLocation, isAst ? /** @type EvaluationLocation["node"] */ (instance) : undefined, instance, ops);
+      }
+    }
+    return outer;
+  };
+
+  /** @type (outer: [I | undefined, string, EvaluationLocation | undefined]) => void */
+  const leave = ([outerInstance, outerInstanceLocation, outerAt]) => {
+    currentInstance = outerInstance;
+    instanceLocation = outerInstanceLocation;
+    currentAt = outerAt;
+  };
+
+  /** @type (info: KeywordInfo, value: Json) => void */
+  const annotate = (info, value) => {
+    if (annotating) {
+      keywordAnnotations ??= [];
+      keywordAnnotations.push({ node: /** @type Node */ (currentInstance), keywordUri: info.keywordUri, value });
+    }
+    plugin.annotation?.(info, /** @type EvaluationLocation */ (currentAt), value, keywordState);
+  };
+
+  /** @type Map<Handle, SchemaEvaluator<I>> */
+  const evaluators = new Map();
+
+  /** @type (handle: Handle) => SchemaEvaluator<I> */
+  const schema = (handle) => {
+    let evaluator = evaluators.get(handle);
+    if (evaluator === undefined) {
+      if (!(handle in kernel.schemas)) {
+        throw Error(`The '${handle}' schema wasn't compiled`);
+      }
+
+      // Schemas can refer to themselves, so it's built after it's cached
+      /** @type SchemaEvaluator<I> | undefined */
+      let built;
+      evaluator = (instance, marks, segment) => /** @type SchemaEvaluator<I> */ (built)(instance, marks, segment);
+      evaluators.set(handle, evaluator);
+      built = buildSchema(handle);
+      evaluators.set(handle, built);
+    }
+
+    return evaluator;
+  };
+
+  /** @type (group: KeywordGroup) => KeywordInfo */
+  const keywordInfo = ({ keywordUri, location, sources, expression }) => ({
+    keywordUri,
+    absoluteKeywordLocation: location,
+    keyword: jsonSchema.getKeyword(keywordDefinitionUri(keywordUri)),
+    expression,
+    sources,
+    explainsFailure: explainsFailure(expression),
+    conditions: conditionsOf(expression)
+  });
+
+  /** @type (handle: Handle) => SchemaEvaluator<I> */
+  const buildSchema = (handle) => {
+    const compiled = kernel.schemas[handle];
+
+    /** @type SchemaInfo */
+    const info = { absoluteKeywordLocation: handle };
+    if (typeof compiled === "boolean") {
+      info.booleanSchema = compiled;
+    }
+    const resource = typeof compiled === "boolean" ? handle.replace(/#.*$/, "") : compiled.resource;
+    const resourceAnchors = kernel.resources[resource]?.dynamicAnchors ?? {};
+
+    const keywordGroups = typeof compiled === "boolean" ? [] : compiled.keywords;
+    const infos = new Map(keywordGroups.map((group) => [group, keywordInfo(group)]));
+    const merged = mergeable(keywordGroups);
+    const matcher = merged.length > 1
+      ? buildMatcher(merged.map((group) => /** @type const */ ([group.expression, /** @type KeywordInfo */ (infos.get(group))])))
+      : undefined;
+    const groups = keywordGroups.map((group) => {
+      const groupInfo = /** @type KeywordInfo */ (infos.get(group));
+      const slot = matcher === undefined ? -1 : merged.indexOf(group);
+      return {
+        info: groupInfo,
+        evaluate: slot === -1 ? build(group.expression, groupInfo) : undefined,
+        slot
+      };
+    });
+    const ownMarks = keywordGroups.some(({ expression }) => readsMarks(expression));
+
+    return (instance, marks, segment) => {
+      if (isAst && ops.typeOf(instance) === undefined) {
+        return true;
+      }
+
+      const outerInstance = currentInstance;
+      const outerInstanceLocation = instanceLocation;
+      const outerAt = currentAt;
+      currentInstance = instance;
+      if (tracking) {
+        if (segment !== undefined) {
+          // Indexes don't need to be escaped
+          instanceLocation = typeof segment === "number"
+            ? `${instanceLocation}/${segment}`
+            : JsonPointer.append(segment, instanceLocation);
+        }
+
+        // A schema evaluated on the same instance, like through `allOf` or
+        // `$ref`, shares its location
+        if (segment !== undefined || outerInstance !== instance || currentAt === undefined) {
+          currentAt = new Location(instanceLocation, isAst ? /** @type EvaluationLocation["node"] */ (instance) : undefined, instance, ops);
+        }
+      }
+
+      const outerResource = currentResource;
+      const outerAnchors = dynamicAnchors;
+      if (tracksDynamicScope && resource !== currentResource) {
+        currentResource = resource;
+        dynamicAnchors = addDynamicAnchors(resourceAnchors, dynamicAnchors);
+      }
+
+      const outerKeywordAnnotations = keywordAnnotations;
+      /** @type AnnotationList | undefined */
+      let schemaAnnotations;
+
+      const parentState = keywordState;
+      const schemaAt = /** @type EvaluationLocation */ (currentAt);
+      const schemaState = plugin.beforeSchema?.(info, schemaAt, parentState);
+
+      // Marks are kept only for groups that pass, and only if something
+      // reads them. A group starts with what's marked so far, so an
+      // `unevaluated` selector sees what the groups before it marked.
+      const schemaMarks = ownMarks || marks !== undefined ? new Set() : undefined;
+      let valid = typeof compiled === "boolean" ? compiled : true;
+      /** @type Matches<I> | undefined */
+      let matches;
+      for (const group of groups) {
+        keywordAnnotations = undefined;
+
+        const keywordAt = /** @type EvaluationLocation */ (currentAt);
+        const state = plugin.beforeKeyword?.(group.info, keywordAt, schemaState);
+        keywordState = state;
+
+        const groupMarks = schemaMarks && new Set(schemaMarks);
+        let isGroupValid;
+        if (group.evaluate !== undefined) {
+          isGroupValid = group.evaluate(instance, groupMarks);
+        } else {
+          matches ??= /** @type NonNullable<typeof matcher> */ (matcher)(instance);
+          isGroupValid = evaluateMatches(matches, group.slot, groupMarks);
+        }
+
+        plugin.afterKeyword?.(group.info, keywordAt, isGroupValid, state, schemaState);
+        keywordState = parentState;
+
+        // A group's marks and annotations are only kept if it passes
+        if (isGroupValid) {
+          addAll(schemaMarks, groupMarks);
+          if (keywordAnnotations !== undefined) {
+            schemaAnnotations ??= [];
+            schemaAnnotations.push(keywordAnnotations);
+          }
+        } else {
+          valid = false;
+        }
+      }
+
+      // A schema's marks and annotations are only kept if it passes
+      keywordAnnotations = outerKeywordAnnotations;
+      if (valid) {
+        addAll(marks, schemaMarks);
+        if (schemaAnnotations !== undefined) {
+          keywordAnnotations ??= [];
+          keywordAnnotations.push(schemaAnnotations);
+        }
+      }
+
+      plugin.afterSchema?.(info, schemaAt, valid, schemaState, parentState);
+
+      currentInstance = outerInstance;
+      instanceLocation = outerInstanceLocation;
+      currentAt = outerAt;
+      currentResource = outerResource;
+      dynamicAnchors = outerAnchors;
+
+      return valid;
+    };
+  };
+
+  /**
+   * Evaluate an expression on a child of the instance, which has its own
+   * marks. It's usually a schema (`apply`), which moves evaluation to the
+   * child itself. Any other expression moves there too, so its annotations
+   * are on the child.
+   *
+   * @type (of: Expression, info: KeywordInfo) => SchemaEvaluator<I>
+   */
+  const applyTo = (of, info) => {
+    if (of.op === "apply") {
+      return schema(of.schema);
+    }
+
+    const evaluate = build(of, info);
+    const ownMarks = readsMarks(of);
+    return (instance, _marks, segment) => {
+      if (isAst && ops.typeOf(instance) === undefined) {
+        return true;
+      }
+
+      const outer = enter(instance, segment);
+      const valid = evaluate(instance, ownMarks ? new Set() : undefined);
+      leave(outer);
+      return valid;
+    };
+  };
+
+  /** @type (expression: Expression, info: KeywordInfo) => Evaluator<I> */
+  const build = (expression, info) => {
+    switch (expression.op) {
+      case "pass":
+        return () => true;
+      case "fail":
+        return () => false;
+      case "all":
+        return buildAll(expression.of, info);
+      case "any": {
+        const of = expression.of.map((subexpression) => build(subexpression, info));
+        return (instance, marks) => {
+          let valid = false;
+          for (const evaluate of of) {
+            const own = marks && new Set(marks);
+            if (evaluate(instance, own)) {
+              valid = true;
+              addAll(marks, own);
+            }
+          }
+          return valid;
+        };
+      }
+      case "one": {
+        const of = expression.of.map((subexpression) => build(subexpression, info));
+        return (instance, marks) => {
+          /** @type Marks */
+          let passed;
+          let count = 0;
+          for (const evaluate of of) {
+            const own = marks && new Set(marks);
+            if (evaluate(instance, own)) {
+              count++;
+              passed = own;
+            }
+          }
+          if (count === 1) {
+            addAll(marks, passed);
+          }
+          return count === 1;
+        };
+      }
+      case "not": {
+        const of = build(expression.of, info);
+        return (instance) => !of(instance, undefined);
+      }
+      case "cases": {
+        const cases = expression.cases.map(([condition, then]) => /** @type const */ ([build(condition, info), then && build(then, info)]));
+        const otherwise = expression.otherwise && build(expression.otherwise, info);
+        return (instance, marks) => {
+          for (const [condition, then] of cases) {
+            const own = marks && new Set(marks);
+            if (condition(instance, own)) {
+              addAll(marks, own);
+              return then === null || then(instance, marks);
+            }
+          }
+          return otherwise === null || otherwise(instance, marks);
+        };
+      }
+      case "apply": {
+        const evaluate = schema(expression.schema);
+        return (instance, marks) => evaluate(instance, marks);
+      }
+      case "dynamicApply": {
+        const { anchor, fallback } = expression;
+        return (instance, marks) => {
+          const handle = dynamicAnchors?.[anchor] ?? fallback;
+          if (handle === null) {
+            throw Error(`No '${anchor}' dynamic anchor is in the dynamic scope`);
+          }
+          return schema(handle)(instance, marks);
+        };
+      }
+
+      case "typeIs": {
+        /** @type Set<string> */
+        const types = new Set(expression.types);
+        if (types.size === 1 && !types.has("integer")) {
+          const [only] = types;
+          return (instance) => {
+            const type = ops.typeOf(instance);
+            return type === undefined || type === only;
+          };
+        }
+        return (instance) => {
+          const type = ops.typeOf(instance);
+          return type === undefined || hasType(types, type, () => Number.isInteger(ops.value(instance)));
+        };
+      }
+      case "equals": {
+        const { value } = expression;
+        return (instance) => equal(instance, value);
+      }
+      case "oneOfValues": {
+        const { values } = expression;
+        return (instance) => ops.typeOf(instance) === undefined || values.some((value) => equal(instance, value));
+      }
+
+      case "range": {
+        const { min = -Infinity, max = Infinity, exclusiveMin = false, exclusiveMax = false } = expression;
+        return (instance) => {
+          if (ops.typeOf(instance) !== "number") {
+            return true;
+          }
+          const value = /** @type number */ (ops.value(instance));
+          return (exclusiveMin ? value > min : value >= min) && (exclusiveMax ? value < max : value <= max);
+        };
+      }
+      case "multipleOf": {
+        const { divisor } = expression;
+        return (instance) => {
+          if (ops.typeOf(instance) !== "number") {
+            return true;
+          }
+          const remainder = /** @type number */ (ops.value(instance)) % divisor;
+          return isClose(remainder, 0) || isClose(remainder, divisor);
+        };
+      }
+
+      case "stringLength": {
+        const { min = 0, max = Infinity } = expression;
+        return (instance) => {
+          if (ops.typeOf(instance) !== "string") {
+            return true;
+          }
+          const length = codePointLength(/** @type string */ (ops.value(instance)));
+          return length >= min && length <= max;
+        };
+      }
+      case "matches": {
+        const regExp = new RegExp(expression.pattern, "u");
+        return (instance) => ops.typeOf(instance) !== "string" || regExp.test(/** @type string */ (ops.value(instance)));
+      }
+      case "format": {
+        // It annotates every type it passes. It only asserts on the types
+        // the format applies to.
+        const { name, assert } = expression;
+        const format = assert ? jsonSchema.getFormat(/** @type string */ (expression.uri)) : undefined;
+        return (instance) => {
+          const type = ops.typeOf(instance);
+          if (format !== undefined && type !== undefined && (format.types === undefined || format.types.includes(type)) && !format.validate(ops.value(instance))) {
+            return false;
+          }
+          annotate(info, name);
+          return true;
+        };
+      }
+
+      case "itemCount": {
+        const { min = 0, max = Infinity } = expression;
+        return (instance) => ops.typeOf(instance) !== "array" || (ops.length(instance) >= min && ops.length(instance) <= max);
+      }
+      case "uniqueItems":
+        return (instance) => {
+          if (ops.typeOf(instance) !== "array") {
+            return true;
+          }
+
+          // An item that couldn't be parsed, or that has parts that
+          // couldn't be, isn't a duplicate of anything
+          const items = [...ops.items(instance)];
+          for (let i = 1; i < items.length; i++) {
+            for (let j = 0; j < i; j++) {
+              if (instanceEqual(ops, items[j], ops, items[i], false)) {
+                return false;
+              }
+            }
+          }
+          return true;
+        };
+      case "item": {
+        const { index } = expression;
+        const of = applyTo(expression.of, info);
+        return (instance, marks) => {
+          if (ops.typeOf(instance) !== "array" || index >= ops.length(instance)) {
+            return true;
+          } else if (!of(/** @type I */ (ops.get(instance, index)), undefined, index)) {
+            return false;
+          }
+          marks?.add(index);
+          return true;
+        };
+      }
+      case "eachItem": {
+        const of = applyTo(expression.of, info);
+        const unevaluated = "unevaluated" in expression;
+        const from = "from" in expression ? expression.from : 0;
+        return (instance, marks) => {
+          if (ops.typeOf(instance) !== "array") {
+            return true;
+          }
+          let valid = true;
+          let index = 0;
+          for (const item of ops.items(instance)) {
+            if (index >= from && !(unevaluated && /** @type Set<string | number> */ (marks).has(index))) {
+              if (of(item, undefined, index)) {
+                marks?.add(index);
+              } else {
+                valid = false;
+              }
+            }
+            index++;
+          }
+          return valid;
+        };
+      }
+      case "contains": {
+        const { min, max } = expression;
+        const of = applyTo(expression.of, info);
+        return (instance, marks) => {
+          if (ops.typeOf(instance) !== "array") {
+            return true;
+          }
+          let matches = 0;
+          let index = 0;
+          for (const item of ops.items(instance)) {
+            if (of(item, undefined, index)) {
+              matches++;
+              marks?.add(index);
+            }
+            index++;
+          }
+          return matches >= min && (max === null || matches <= max);
+        };
+      }
+      case "itemSequence":
+        return buildItemSequence(expression.pattern, info);
+
+      case "propertyCount": {
+        const { min = 0, max = Infinity } = expression;
+        return (instance) => ops.typeOf(instance) !== "object" || (ops.length(instance) >= min && ops.length(instance) <= max);
+      }
+      case "hasProperty": {
+        const { name } = expression;
+        return (instance) => ops.typeOf(instance) !== "object" || ops.has(instance, name);
+      }
+      case "propertyEquals": {
+        const { name, value } = expression;
+        return (instance) => {
+          if (ops.typeOf(instance) !== "object") {
+            return true;
+          }
+          const property = ops.get(instance, name);
+          return property !== undefined && equal(property, value);
+        };
+      }
+      case "property":
+      case "eachProperty":
+        return buildAll([expression], info);
+      case "eachPropertyName": {
+        // Names are evaluated at the object's instance location
+        const of = applyTo(expression.of, info);
+        return (instance) => {
+          if (ops.typeOf(instance) !== "object") {
+            return true;
+          }
+          let valid = true;
+          for (const name of ops.keys(instance)) {
+            valid = of(name, undefined) && valid;
+          }
+          return valid;
+        };
+      }
+
+      case "annotate": {
+        const { value } = expression;
+        const types = expression.types && new Set(/** @type TypeName[] */ (expression.types));
+        return (instance) => {
+          if (types === undefined || hasType(types, ops.typeOf(instance), () => Number.isInteger(ops.value(instance)))) {
+            annotate(info, value);
+          }
+          return true;
+        };
+      }
+    }
+  };
+
+  /**
+   * Every subexpression, in order. Property operations are one loop over the
+   * properties, before the rest: a property is checked against the names,
+   * then the patterns, then the `except`s.
+   *
+   * @type (expressions: Expression[], info: KeywordInfo) => Evaluator<I>
+   */
+  const buildAll = (expressions, info) => {
+    /** @type Map<string, SchemaEvaluator<I>[]> */
+    const namedLists = new Map();
+    /** @type ((name: string) => boolean)[] */
+    const selects = [];
+    /** @type SchemaEvaluator<I>[] */
+    const selected = [];
+    /** @type boolean[] */
+    const unevaluated = [];
+    /** @type Evaluator<I>[] */
+    const rest = [];
+    for (const expression of expressions) {
+      if (expression.op === "property") {
+        namedLists.set(expression.name, [...namedLists.get(expression.name) ?? [], applyTo(expression.of, info)]);
+      } else if (expression.op === "eachProperty") {
+        selects.push(selector(expression.select));
+        selected.push(applyTo(expression.of, info));
+        unevaluated.push("unevaluated" in expression.select);
+      } else {
+        rest.push(build(expression, info));
+      }
+    }
+
+    // A name is usually in one `property`
+    /** @type Map<string, SchemaEvaluator<I>> */
+    const named = new Map();
+    for (const [name, evaluators] of namedLists) {
+      if (evaluators.length === 1) {
+        named.set(name, evaluators[0]);
+        continue;
+      }
+
+      named.set(name, (instance, marks, segment) => {
+        let valid = true;
+        for (let index = 0; index < evaluators.length; index++) {
+          valid = evaluators[index](instance, marks, segment) && valid;
+        }
+        return valid;
+      });
+    }
+
+    /** @type Evaluator<I> */
+    let evaluateRest;
+    if (rest.length === 0) {
+      evaluateRest = () => true;
+    } else if (rest.length === 1) {
+      evaluateRest = rest[0];
+    } else {
+      evaluateRest = (instance, marks) => {
+        let valid = true;
+        for (let index = 0; index < rest.length; index++) {
+          valid = rest[index](instance, marks) && valid;
+        }
+        return valid;
+      };
+    }
+
+    if (named.size === 0 && selected.length === 0) {
+      return evaluateRest;
+    }
+
+    // With one name, looking it up is the same as looping over the
+    // properties, and evaluates in the same order
+    if (named.size === 1 && selected.length === 0) {
+      const [[name, evaluate]] = named;
+      return (instance, marks) => {
+        let valid = true;
+        if (ops.typeOf(instance) === "object") {
+          const value = ops.get(instance, name);
+          if (value !== undefined) {
+            valid = evaluate(value, undefined, name);
+            if (valid) {
+              marks?.add(name);
+            }
+          }
+        }
+        return evaluateRest(instance, marks) && valid;
+      };
+    }
+
+    /** @type Evaluator<I> */
+    let loop;
+    if (selected.length === 0) {
+      loop = (instance, marks) => {
+        let valid = true;
+        for (const [name, value] of ops.entries(instance)) {
+          const evaluate = named.get(name);
+          if (evaluate !== undefined) {
+            if (evaluate(value, undefined, name)) {
+              marks?.add(name);
+            } else {
+              valid = false;
+            }
+          }
+        }
+        return valid;
+      };
+    } else {
+      loop = (instance, marks) => {
+        let valid = true;
+        for (const [name, value] of ops.entries(instance)) {
+          let evaluated = false;
+          let isValid = true;
+          const evaluate = named.get(name);
+          if (evaluate !== undefined) {
+            evaluated = true;
+            isValid = evaluate(value, undefined, name);
+          }
+          for (let index = 0; index < selected.length; index++) {
+            if (unevaluated[index] ? !(/** @type Set<string | number> */ (marks).has(name)) : selects[index](name)) {
+              evaluated = true;
+              isValid = selected[index](value, undefined, name) && isValid;
+            }
+          }
+          if (evaluated && isValid) {
+            marks?.add(name);
+          }
+          valid &&= isValid;
+        }
+        return valid;
+      };
+    }
+
+    return (instance, marks) => {
+      const valid = ops.typeOf(instance) !== "object" || loop(instance, marks);
+      return evaluateRest(instance, marks) && valid;
+    };
+  };
+
+  /**
+   * The groups whose expressions are only property operations that don't
+   * read marks
+   *
+   * @type (groups: KeywordGroup[]) => KeywordGroup[]
+   */
+  const mergeable = (groups) => groups.filter(({ expression }) => {
+    /** @type (operation: Expression) => boolean */
+    const isPropertyOperation = (operation) => operation.op === "property"
+      || (operation.op === "eachProperty" && !("unevaluated" in operation.select));
+    return expression.op === "all" ? expression.of.every(isPropertyOperation) : isPropertyOperation(expression);
+  });
+
+  /**
+   * Find the operations each property is for, in the order the groups' own
+   * loops would evaluate them: by property, then by operation. A pattern is
+   * tested once, even if several groups have it, and an `except` that's
+   * exactly the other groups' names and patterns is "nothing else matched".
+   *
+   * @type (groups: (readonly [Expression, KeywordInfo])[]) => (instance: I) => Matches<I>
+   */
+  const buildMatcher = (groups) => {
+    /** @typedef {{ slot: number; evaluate: SchemaEvaluator<I> }} Operation */
+
+    /** @type Map<string, Operation[]> */
+    const named = new Map();
+    /** @type RegExp[] */
+    const regExps = [];
+    /** @type (Operation & { test: number })[] */
+    const patterns = [];
+    /** @type (Operation & { select?: (name: string) => boolean })[] */
+    const excepts = [];
+    /** @type Set<string> */
+    const allNames = new Set();
+    /** @type Set<string> */
+    const allPatterns = new Set();
+
+    groups.forEach(([expression, info], slot) => {
+      for (const operation of expression.op === "all" ? expression.of : [expression]) {
+        if (operation.op === "property") {
+          named.set(operation.name, [...named.get(operation.name) ?? [], { slot, evaluate: applyTo(operation.of, info) }]);
+          allNames.add(operation.name);
+        } else if (operation.op === "eachProperty" && "pattern" in operation.select) {
+          const { pattern } = operation.select;
+          let test = regExps.findIndex((regExp) => regExp.source === new RegExp(pattern, "u").source);
+          if (test === -1) {
+            test = regExps.push(new RegExp(pattern, "u")) - 1;
+          }
+          patterns.push({ slot, evaluate: applyTo(operation.of, info), test });
+          allPatterns.add(pattern);
+        }
+      }
+    });
+    groups.forEach(([expression, info], slot) => {
+      for (const operation of expression.op === "all" ? expression.of : [expression]) {
+        if (operation.op === "eachProperty" && "except" in operation.select) {
+          const { except } = operation.select;
+          const isOwn = except.names.length === allNames.size && except.names.every((name) => allNames.has(name))
+            && except.patterns.length === allPatterns.size && except.patterns.every((pattern) => allPatterns.has(pattern));
+          excepts.push({ slot, evaluate: applyTo(operation.of, info), select: isOwn ? undefined : selector(operation.select) });
+        }
+      }
+    });
+
+    return (instance) => {
+      /** @type Matches<I> */
+      const matches = [];
+      if (ops.typeOf(instance) !== "object") {
+        return matches;
+      }
+
+      /** @type boolean[] */
+      const tested = [];
+      for (const [name, value] of ops.entries(instance)) {
+        let matched = false;
+        const byName = named.get(name);
+        if (byName !== undefined) {
+          for (let index = 0; index < byName.length; index++) {
+            matches.push(byName[index].slot, name, value, byName[index].evaluate);
+          }
+          matched = true;
+        }
+        for (let test = 0; test < regExps.length; test++) {
+          tested[test] = regExps[test].test(name);
+        }
+        for (let index = 0; index < patterns.length; index++) {
+          const { slot, evaluate, test } = patterns[index];
+          if (tested[test]) {
+            matches.push(slot, name, value, evaluate);
+            matched = true;
+          }
+        }
+        for (let index = 0; index < excepts.length; index++) {
+          const { slot, evaluate, select } = excepts[index];
+          if (select === undefined ? !matched : select(name)) {
+            matches.push(slot, name, value, evaluate);
+          }
+        }
+      }
+      return matches;
+    };
+  };
+
+  /**
+   * Evaluate a group's matches. A name is marked if all of its matches pass.
+   *
+   * @type (matches: Matches<I>, slot: number, marks: Marks) => boolean
+   */
+  const evaluateMatches = (matches, slot, marks) => {
+    let valid = true;
+    /** @type Set<string> | undefined */
+    let failed;
+    for (let index = 0; index < matches.length; index += 4) {
+      if (matches[index] !== slot) {
+        continue;
+      }
+
+      const name = /** @type string */ (matches[index + 1]);
+      const evaluate = /** @type SchemaEvaluator<I> */ (matches[index + 3]);
+      if (evaluate(/** @type I */ (matches[index + 2]), undefined, name)) {
+        if (marks !== undefined && !failed?.has(name)) {
+          marks.add(name);
+        }
+      } else {
+        valid = false;
+        marks?.delete(name);
+        (failed ??= new Set()).add(name);
+      }
+    }
+    return valid;
+  };
+
+  /**
+   * The items, in order, have to match the pattern. It's an NFA built from
+   * the pattern's tree.
+   *
+   * @type (pattern: ItemPattern, info: KeywordInfo) => Evaluator<I>
+   */
+  const buildItemSequence = (pattern, info) => {
+    const { states, start, end } = itemSequenceStates(pattern, (of) => applyTo(of, info));
+
+    return (instance, marks) => {
+      if (ops.typeOf(instance) !== "array") {
+        return true;
+      }
+
+      /** @type Set<number> */
+      let current = new Set();
+      addReachable(states, start, current);
+      let index = 0;
+      for (const item of ops.items(instance)) {
+        /** @type Set<number> */
+        const next = new Set();
+        for (const state of current) {
+          const { evaluate } = states[state];
+          if (evaluate !== undefined && evaluate(item, undefined, index)) {
+            addReachable(states, /** @type number */ (states[state].next), next);
+          }
+        }
+        current = next;
+        if (current.size === 0) {
+          return false;
+        }
+        index++;
+      }
+
+      if (!current.has(end)) {
+        return false;
+      }
+      for (let item = 0; item < index; item++) {
+        marks?.add(item);
+      }
+      return true;
+    };
+  };
+
+  const root = schema(kernel.uri);
+
+  return (instance, callPlugins = []) => {
+    const outerPlugin = plugin;
+    const outerKeywordState = keywordState;
+    const outerInstance = currentInstance;
+    const outerInstanceLocation = instanceLocation;
+    const outerAt = currentAt;
+    const outerResource = currentResource;
+    const outerAnchors = dynamicAnchors;
+    const outerKeywordAnnotations = keywordAnnotations;
+
+    // Several plugins are combined into one, so evaluating with one plugin,
+    // which is the usual case, doesn't loop or keep arrays of states
+    plugin = callPlugins.length === 0 ? noPlugin : callPlugins.length === 1 ? callPlugins[0] : combinePlugins(callPlugins);
+    keywordState = undefined;
+    currentInstance = undefined;
+    instanceLocation = "";
+    currentAt = undefined;
+    currentResource = undefined;
+    dynamicAnchors = undefined;
+    keywordAnnotations = undefined;
+
+    try {
+      const valid = root(instance, undefined);
+      if (valid && keywordAnnotations !== undefined) {
+        attachAnnotations(keywordAnnotations);
+      }
+
+      return valid;
+    } finally {
+      plugin = outerPlugin;
+      keywordState = outerKeywordState;
+      currentInstance = outerInstance;
+      instanceLocation = outerInstanceLocation;
+      currentAt = outerAt;
+      currentResource = outerResource;
+      dynamicAnchors = outerAnchors;
+      keywordAnnotations = outerKeywordAnnotations;
+    }
+  };
+};
+
+/** @type (annotations: AnnotationList) => void */
+const attachAnnotations = (annotations) => {
+  for (const annotation of annotations) {
+    if (Array.isArray(annotation)) {
+      attachAnnotations(annotation);
+    } else {
+      /** @type Data */
+      const data = annotation.node.data ??= {};
+      data.annotations ??= new Map();
+      let values = data.annotations.get(annotation.keywordUri);
+      if (values === undefined) {
+        values = [];
+        data.annotations.set(annotation.keywordUri, values);
+      }
+      values.push(annotation.value);
+    }
+  }
+};

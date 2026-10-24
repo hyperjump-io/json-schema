@@ -13,7 +13,5 @@ export default {
   uri: "https://json-schema.org/keyword/exclusiveMinimum",
   shape: "data",
   check: number,
-  evaluate: (exclusiveMinimum, { instance }) => (node) => {
-    return instance.typeOf(node) !== "number" || /** @type number */ (instance.value(node)) > exclusiveMinimum;
-  }
+  lower: (min) => ({ op: "range", min, exclusiveMin: true })
 };

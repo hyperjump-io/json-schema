@@ -2,14 +2,15 @@ import dependenciesKeyword from "../draft-07/dependencies.js";
 import { isErrorNode, nonEmpty, uniqueStrings } from "../checks.js";
 
 /**
- * @import { Keyword, SchemaHandle } from "../../keyword.d.ts"
+ * @import { Keyword } from "../../keyword.d.ts"
+ * @import { Expression } from "../../kernel/kernel.d.ts"
  */
 
 /**
  * `dependencies` in draft-04. It's the same as draft-07's, except that an
  * array can't be empty, as draft-04 says.
  *
- * @type Keyword<[string, SchemaHandle | string[]][]>
+ * @type Keyword<[string, Expression | string[]][]>
  */
 export default {
   ...dependenciesKeyword,

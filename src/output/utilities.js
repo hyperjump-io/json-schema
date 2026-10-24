@@ -1,5 +1,5 @@
 /**
- * @import { EvaluationLocation, KeywordInfo } from "../evaluate/evaluation-plugin.d.ts"
+ * @import { EvaluationLocation, KeywordInfo } from "../kernel/evaluation-plugin.d.ts"
  * @import { JsonSyntaxError, OutputError } from "./output-format.d.ts"
  * @import { ValidationError } from "./validation-error.d.ts"
  */
@@ -8,24 +8,43 @@
 export const falseSchemaRuleId = "https://json-schema.org/validation";
 
 /**
- * Where a keyword's errors start in an error list. For `if` and
- * `conditional`, it also has the handles of their conditions (see
- * {@link conditionsOf}).
+ * Where a keyword's errors start in an error list. For a keyword with
+ * conditions, like `if`, it also has the handles of its conditions, whose
+ * errors aren't reported.
  *
  * @typedef {number | { start: number; conditions: ReadonlySet<string> }} KeywordStart
  */
 
 /** @type (keyword: KeywordInfo, start: number) => KeywordStart */
 export const keywordStart = (keyword, start) => {
-  if (keyword.keywordUri !== ifUri && keyword.keywordUri !== conditionalUri) {
-    return start;
-  }
-
-  return { start, conditions: conditionsOf(keyword) };
+  return keyword.conditions.size === 0 ? start : { start, conditions: keyword.conditions };
 };
 
 /** @type (state: KeywordStart) => number */
 export const startOf = (state) => typeof state === "number" ? state : state.start;
+
+/**
+ * Keywords that explain their failure by the kernel's rule but didn't
+ * before it, when keywords said so themselves (`simpleApplicator`).
+ * `anyOf` and `oneOf` only do with one schema. BASIC keeps their errors
+ * until it uses the kernel's rule (DESIGN.md, "Moving the kernel into
+ * `src/`", stage 3).
+ */
+const explainedNow = new Set([
+  "https://json-schema.org/keyword/conditional",
+  "https://json-schema.org/keyword/draft-07/dependencies",
+  "https://json-schema.org/keyword/draft-04/dependencies",
+  "https://json-schema.org/keyword/anyOf",
+  "https://json-schema.org/keyword/oneOf"
+]);
+
+/**
+ * Whether a keyword's failure is explained by its subschemas' failures, so
+ * BASIC reports only theirs
+ *
+ * @type (keyword: KeywordInfo) => boolean
+ */
+export const explainsFailure = (keyword) => keyword.explainsFailure && !explainedNow.has(keyword.keywordUri);
 
 /**
  * Whether a schema is a condition of the keyword that applied it, so its
@@ -59,43 +78,4 @@ const offset = (error) => {
   const place = error.place;
   const point = place && "start" in place ? place.start : place;
   return point?.offset ?? 0;
-};
-
-const ifUri = "https://json-schema.org/keyword/if";
-const conditionalUri = "https://json-schema.org/keyword/conditional";
-
-/** @type WeakMap<KeywordInfo, ReadonlySet<string>> */
-const conditionsCache = new WeakMap();
-
-/**
- * `if` and `conditional` evaluate conditions, subschemas whose result only
- * decides which other subschema applies. A failing condition isn't an error,
- * so its errors aren't reported. This is a special case for these keywords
- * rather than something a keyword can declare, so keywords aren't encouraged
- * to depend on the result of another subschema.
- *
- * @type (keyword: KeywordInfo) => ReadonlySet<string>
- */
-const conditionsOf = (keyword) => {
-  let conditions = conditionsCache.get(keyword);
-  if (conditions !== undefined) {
-    return conditions;
-  }
-
-  if (keyword.keywordUri === ifUri) {
-    const compiled = /** @type Record<"if", string> */ (keyword.compiled);
-    conditions = new Set([compiled.if]);
-  } else {
-    // Conditions are followed by the schema that applies if they pass. A
-    // schema at the end without a condition is the fallback.
-    const handles = /** @type string[] */ (keyword.compiled);
-    const conditionHandles = new Set();
-    for (let index = 0; index + 1 < handles.length; index += 2) {
-      conditionHandles.add(handles[index]);
-    }
-    conditions = conditionHandles;
-  }
-
-  conditionsCache.set(keyword, conditions);
-  return conditions;
 };

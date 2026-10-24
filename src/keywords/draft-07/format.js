@@ -10,18 +10,18 @@ import { string } from "../checks.js";
  * 2019-09, except that a format the dialect doesn't support is only an
  * annotation, even when formats are validated, as these drafts say.
  *
- * @type Keyword<{ name: string; uri: string | null }>
+ * @type Keyword<string>
  */
 export default {
   ...formatKeyword,
   uri: "https://json-schema.org/keyword/draft-07/format",
   check: string,
-  compile(valueNode, context) {
+  lower(name, siblings, context) {
     const { formats } = context.dialect;
-    if (valueNode.type === "json" && valueNode.jsonType === "string" && !(formats && Object.hasOwn(formats, valueNode.value))) {
-      return { name: valueNode.value, uri: null };
+    if (!(formats && Object.hasOwn(formats, name))) {
+      return { op: "format", name, uri: null, assert: false };
     }
 
-    return /** @type NonNullable<typeof formatKeyword.compile> */ (formatKeyword.compile)(valueNode, context);
+    return /** @type NonNullable<typeof formatKeyword.lower> */ (formatKeyword.lower)(name, siblings, context);
   }
 };

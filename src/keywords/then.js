@@ -5,10 +5,9 @@
 /**
  * `then`. It has no effect on its own. The sibling `if` evaluates it.
  *
- * @type Keyword<null>
+ * @type Keyword
  */
 export default {
   uri: "https://json-schema.org/keyword/then",
-  shape: "schema",
-  compile: () => null
+  shape: "schema"
 };

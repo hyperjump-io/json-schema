@@ -1,4 +1,3 @@
-import { instanceEqual } from "./utilities.js";
 import { boolean } from "./checks.js";
 
 /**
@@ -16,28 +15,5 @@ export default {
   shape: "data",
   default: false,
   check: boolean,
-  evaluate(uniqueItems, { instance }) {
-    if (!uniqueItems) {
-      return;
-    }
-
-    return (node) => {
-      if (instance.typeOf(node) !== "array") {
-        return true;
-      }
-
-      // An item that couldn't be parsed, or that has parts that couldn't be,
-      // isn't a duplicate of anything
-      const items = [...instance.items(node)];
-      for (let i = 1; i < items.length; i++) {
-        for (let j = 0; j < i; j++) {
-          if (instanceEqual(instance, items[j], instance, items[i], false)) {
-            return false;
-          }
-        }
-      }
-
-      return true;
-    };
-  }
+  lower: (uniqueItems) => uniqueItems ? { op: "uniqueItems" } : { op: "pass" }
 };

@@ -14,7 +14,5 @@ export default {
   shape: "data",
   default: 0,
   check: nonNegativeInteger,
-  evaluate: (minItems, { instance }) => (node) => {
-    return instance.typeOf(node) !== "array" || instance.length(node) >= minItems;
-  }
+  lower: (min) => ({ op: "itemCount", min })
 };

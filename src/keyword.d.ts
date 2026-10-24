@@ -3,20 +3,21 @@ import type { VFileMessage } from "vfile-message";
 import type { Json, JsonErrorNode, JsonNode, JsonType } from "@hyperjump/browser/json";
 import type { JsonSchemaNode, JsonSchemaTolerantNode } from "./schema/schema-ast.d.ts";
 import type { Dialect, DialectDefinition } from "./dialect.d.ts";
+import type { Expression, Handle } from "./kernel/kernel.d.ts";
 import type { JsonSchema } from "./json-schema.d.ts";
 
 /**
  * The definition of a keyword. A dialect maps keyword names to these by URI.
  *
  * Keywords are stateless so one definition can be shared by every
- * `JsonSchema` instance and every dialect. Evaluating a keyword has two
- * steps. `compile` turns the keyword's value into data once per
- * schema. `evaluate` turns that data into a function each time a
- * validator is specialized for a kind of instance and output.
+ * `JsonSchema` instance and every dialect. A keyword says what it means by
+ * lowering its value to a kernel expression (`lower`). Evaluating,
+ * optimizing, and output formats only work with expressions.
  *
- * `C` is the type of the compiled value.
+ * `V` is the type of the value `lower` gets, and `S` the type of its
+ * siblings' values.
  */
-export type Keyword<C extends Json = Json> = {
+export type Keyword<V = any, S extends Record<string, any> = Record<string, any>> = {
   /**
    * Identifies the keyword independent of its name in any dialect. Use a
    * domain you control to avoid conflicts.
@@ -41,8 +42,8 @@ export type Keyword<C extends Json = Json> = {
   /**
    * The keywords in the same schema whose values this keyword reads, like
    * `properties` for `additionalProperties`, by a name of the keyword's
-   * choosing. `compile` and `check` get their values by those names
-   * (`context.siblings`), and can't read any other sibling. Moving the
+   * choosing. `lower` gets their values by those names, and so does `check`
+   * (`context.siblings`). Neither can read any other sibling. Moving the
    * keyword away from them, or next to them, changes what it means, so tools
    * that move keywords between schemas, like lint rules, need to know.
    *
@@ -78,70 +79,50 @@ export type Keyword<C extends Json = Json> = {
   resolve?: (valueNode: JsonNode<{ type: "json" }, JsonErrorNode> | JsonErrorNode, context: ResolveContext) => void;
 
   /**
-   * Turn the keyword's value into data the keyword can be evaluated with.
-   * This is where subschemas are compiled and references are retrieved. The
-   * result must be JSON so a compiled schema can be serialized. Without it,
-   * the compiled value is the keyword's value.
-   */
-  compile?(valueNode: JsonSchemaNode, context: CompileContext): C | Promise<C>;
-
-  /**
-   * Build the function that evaluates the keyword. It's called once for
-   * each specialization of a validator, not for each instance, so do any
-   * work that doesn't depend on the instance here.
+   * What the keyword means, as a kernel expression (see `kernel.d.ts`). It's
+   * called once per schema when the schema is compiled. A keyword without
+   * it has no keyword group, like `$id`. A keyword that has a group but no
+   * effect, like `uniqueItems: false`, lowers to `pass`, so plugins still
+   * see it.
    *
-   * The evaluator returns whether the instance is valid. Without
-   * `evaluate`, the keyword has no effect on evaluation, like `$id`.
+   * `value` is the keyword's value parsed by its {@link shape}: a schema is
+   * its expression (`{ op: "apply", schema: handle }`), a reference is a
+   * {@link Reference}, a map is its pairs in order, an array is an array,
+   * and data and unapplied schemas are JSON. `siblings` are the values of
+   * the siblings the keyword declares ({@link siblings}), parsed by their
+   * own shapes, by the names it gives them. A sibling that isn't in the
+   * schema is undefined.
    *
-   * Return `undefined` if the keyword passes every instance in this
-   * context, like an annotation when annotations aren't being collected
-   * (`annotate` is undefined) or `uniqueItems: false`. Then it isn't
-   * evaluated at all, unless there are plugins, which still see it pass.
+   * It's synchronous and only reads its inputs and the context. The kernel
+   * compiles the schemas in them and retrieves what references refer to.
    */
-  evaluate?<I>(compiled: C, context: EvaluateContext<I>): Evaluator<I> | undefined;
-
-  /**
-   * Evaluation state the keyword reads. The core only tracks a kind of
-   * state if a keyword in the compiled schema reads it, so schemas that
-   * don't use these keywords don't pay for them.
-   *
-   * - `evaluated`: The properties or items evaluated so far at the same
-   *   instance location (`unevaluatedProperties`, `unevaluatedItems`). The
-   *   keyword is evaluated after its siblings that don't read it.
-   * - `dynamicScope`: The dynamic anchors in the dynamic scope
-   *   (`$dynamicRef`, `$recursiveRef`).
-   */
-  reads?: EvaluationState[];
-
-  /**
-   * Whether the keyword fails only when a subschema fails and its failure is
-   * fully explained by theirs, like `properties`, `allOf`, and `$ref`. The
-   * BASIC output format reports only the subschemas' errors for these. A
-   * failing `oneOf` isn't explained by its subschemas, so it isn't one.
-   */
-  simpleApplicator?: boolean;
+  lower?: (value: V, siblings: S, context: LowerContext) => Expression;
 };
 
-export type EvaluationState = "evaluated" | "dynamicScope";
+/** What a keyword's `lower` gets for a value of a {@link Shape} */
+export type LowerInput = Expression | Reference | Json | LowerInput[] | [string, LowerInput][];
 
-/** Whether an instance passes a keyword or a schema */
-export type Evaluator<I> = (instance: I) => boolean;
+/** A reference, as `lower` gets it: where it resolved to, and what's known about that */
+export type Reference = {
+  /** The absolute URI it resolves to */
+  uri: string;
 
-/**
- * Identifies a compiled schema. It's the schema's canonical URI.
- */
-export type SchemaHandle = string;
+  /** The schema it refers to (`{ op: "apply", schema: handle }`) */
+  schema: Expression;
 
-export type CompileContext = {
-  /** The instance compiling the schema */
-  jsonSchema: JsonSchema;
+  handle: Handle;
 
   /**
-   * The values of the siblings the keyword declares ({@link Keyword.siblings}),
-   * by the names it gives them. A sibling that isn't in the schema is
-   * undefined.
+   * The dynamic anchors of the schema resource it resolved to, for rules
+   * like 2020-12's bookending, which decide whether a reference uses the
+   * dynamic scope
    */
-  siblings: Record<string, JsonSchemaNode | undefined>;
+  dynamicAnchors: Record<string, Handle>;
+};
+
+export type LowerContext = {
+  /** The instance compiling the schema */
+  jsonSchema: JsonSchema;
 
   /** The dialect of the schema the keyword is in */
   dialect: Dialect;
@@ -151,100 +132,6 @@ export type CompileContext = {
    * and use this to tell themselves apart.
    */
   keywordName: string;
-
-  /**
-   * Compile a subschema, or the schema a URI identifies, which is retrieved
-   * if necessary. A schema is only compiled once, so schemas that refer to
-   * each other are fine.
-   *
-   * A subschema node can be in the keyword's value or in a sibling's, like
-   * `then` for `if`.
-   */
-  compileSchema: (schema: JsonSchemaNode | string) => Promise<SchemaHandle>;
-};
-
-/**
- * `I` is the kind of instance the validator is specialized for. It's `Json`
- * for `validate` and a JSON AST node for the other methods. Keywords don't
- * need to know which. They use `instance` to look at it.
- */
-export type EvaluateContext<I> = {
-  /** The instance evaluating the schema */
-  jsonSchema: JsonSchema;
-
-  instance: InstanceOps<I>;
-
-  /**
-   * Get the evaluator for a compiled schema. Pass `segment` when evaluating
-   * a property or item of the instance (`properties`, `items`) so errors and
-   * annotations get the right instance location. Leave it out when
-   * evaluating the same instance (`allOf`, `$ref`).
-   */
-  schema: (handle: SchemaHandle) => (instance: I, segment?: string | number) => boolean;
-
-  /**
-   * Whether evaluating a compiled schema can be skipped, because it passes
-   * every instance and has no other effect, like `true` or a schema with
-   * only annotations when annotations aren't being collected. It's always
-   * false if annotations are collected, there are plugins, or a keyword in
-   * the compiled schema reads `evaluated`. An applicator can leave out
-   * subschemas it's true for, and return `undefined` from `evaluate` if
-   * that leaves nothing to do.
-   */
-  alwaysPasses: (handle: SchemaHandle) => boolean;
-
-  /**
-   * Add an annotation for the instance. It's kept only if the keyword and
-   * every schema it was evaluated through pass. Plugins see it either way.
-   * It's undefined unless annotations are being collected or there are
-   * plugins, so a keyword can skip work it only does to annotate.
-   */
-  annotate?: (value: Json) => void;
-
-  /**
-   * Whether every subschema needs to be evaluated, because errors or
-   * annotations are being collected. When it's false, a keyword can stop as
-   * soon as its result is known.
-   */
-  exhaustive: boolean;
-
-  /**
-   * Record that the keyword evaluated a property (by name) or an item (by
-   * index) of the instance. Applicators that evaluate properties or items
-   * call it after evaluating the subschema. Only applicators call it, so a
-   * keyword that doesn't apply a subschema doesn't mark anything, which
-   * optimizations rely on. Like annotations, marks are kept only if the
-   * keyword and every schema it was evaluated through pass.
-   *
-   * It's undefined unless a keyword in the compiled schema reads
-   * `evaluated`. While it's defined, a keyword must not stop at a passing
-   * subschema (`anyOf`, `contains`), because the subschemas it skips would
-   * have marked properties or items too. Stopping at a failure is fine.
-   */
-  markEvaluated?: (key: string | number) => void;
-
-  /**
-   * The properties or items marked so far at this instance location. Only
-   * defined for keywords that read `evaluated`.
-   */
-  evaluated?: () => ReadonlySet<string | number>;
-
-  /**
-   * The evaluator for the outermost schema in the dynamic scope with the
-   * given dynamic anchor. Only defined for keywords that read
-   * `dynamicScope`. Rules about the anchor the reference starts from, such
-   * as 2020-12's bookending or 2019-09's `$recursiveAnchor`, are up to the
-   * keyword.
-   */
-  dynamicAnchor?: (name: string) => Evaluator<I> | undefined;
-
-  /**
-   * The dynamic anchors of a schema resource, mapped to the schemas they
-   * identify. It's for rules that depend on the schema a reference resolves
-   * to, such as 2020-12's bookending. Only defined for keywords that read
-   * `dynamicScope`. A resource that no compiled schema belongs to has none.
-   */
-  resourceDynamicAnchors?: (resourceUri: string) => Readonly<Record<string, SchemaHandle>>;
 };
 
 /**

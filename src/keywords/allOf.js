@@ -1,39 +1,19 @@
-import { compileSchemaArray } from "./utilities.js";
+import { all } from "./utilities.js";
 import { nonEmpty } from "./checks.js";
 
 /**
- * @import { Keyword, SchemaHandle } from "../keyword.d.ts"
+ * @import { Keyword } from "../keyword.d.ts"
+ * @import { Expression } from "../kernel/kernel.d.ts"
  */
 
 /**
  * `allOf`
  *
- * @type Keyword<SchemaHandle[]>
+ * @type Keyword<Expression[]>
  */
 export default {
   uri: "https://json-schema.org/keyword/allOf",
   shape: { array: "schema" },
   check: nonEmpty,
-  compile: compileSchemaArray,
-  evaluate(allOf, { schema, alwaysPasses, exhaustive }) {
-    const evaluators = allOf.filter((handle) => !alwaysPasses(handle)).map(schema);
-    if (evaluators.length === 0) {
-      return;
-    }
-
-    return (node) => {
-      let valid = true;
-      for (const evaluate of evaluators) {
-        if (!evaluate(node)) {
-          valid = false;
-          if (!exhaustive) {
-            return false;
-          }
-        }
-      }
-
-      return valid;
-    };
-  },
-  simpleApplicator: true
+  lower: (schemas) => all(schemas)
 };

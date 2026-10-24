@@ -492,13 +492,8 @@ jsonSchema.addKeyword({
       message("Expected a boolean");
     }
   },
-  evaluate(even, { instance }) {
-    if (!even) {
-      return undefined; // Every instance passes
-    }
-
-    return (node) => instance.typeOf(node) !== "number" || instance.value(node) % 2 === 0;
-  }
+  // What the keyword means, as a kernel expression
+  lower: (even) => even ? { op: "multipleOf", divisor: 2 } : { op: "pass" }
 });
 
 jsonSchema.extendDialect(v1DialectUri, {
@@ -506,22 +501,26 @@ jsonSchema.extendDialect(v1DialectUri, {
 });
 ```
 
-`evaluate` is called once each time a validator is specialized, not for every
-instance, so do any work that doesn't depend on the instance there. Keywords
-look at instances through `context.instance`, so the same code works for plain
-values and ASTs. Keywords with subschemas use `compile` to compile them. See
-`src/keyword.d.ts` and the built-in keywords in `src/keywords/`.
+A keyword says what it means by lowering its value to an expression of the
+kernel, a small language of operations every keyword lowers to (see
+`src/kernel/kernel.d.ts` and [KERNEL.md](KERNEL.md)). Evaluation, the
+optimizer, and the output formats only work with expressions, so a keyword
+that lowers works with all of them. `lower` gets the value parsed by its
+shape: a schema is `{ op: "apply", schema: handle }`, already compiled. A
+keyword without an effect, like `even: false`, lowers to `pass`. See the
+built-in keywords in `src/keywords/`.
 
 A keyword that reads another keyword in the same schema, like
 `additionalProperties` reads `properties`, declares it in `siblings` by a name
-of its choosing, and `compile` and `check` get its value by that name.
+of its choosing, and `lower` and `check` get its value by that name.
 
 ```javascript
 siblings: { properties: "https://json-schema.org/keyword/properties" },
-async compile(valueNode, { siblings, compileSchema }) {
-  const propertiesNode = siblings.properties; // Undefined if it isn't there
-  // …
-}
+lower: (schema, { properties = [] }) => ({ // Undefined if it isn't there
+  op: "eachProperty",
+  select: { except: { names: properties.map(([name]) => name), patterns: [] } },
+  of: schema
+})
 ```
 
 Lint rules that move keywords between schemas use `siblings` to know what
@@ -633,6 +632,11 @@ as `<name>`. See `src/lint/` for the built-in rules.
 Plugins observe an evaluation. They have `beforeSchema`, `afterSchema`,
 `beforeKeyword`, `afterKeyword`, and `annotation` hooks. With any plugin, the
 instance is evaluated once and nothing stops early, so it's slower.
+
+What plugins see can depend on optimizations, but it's never wrong. A schema
+that always passes, like `{}`, might not be evaluated as a schema of its own,
+and a keyword that only annotates is left out for plugins without an
+`annotation` hook.
 
 `annotation` gets every annotation, even from schemas that fail, so a tool
 like a language server can show a `description` in an invalid document.

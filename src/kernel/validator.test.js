@@ -12,227 +12,85 @@ import dynamicAnchorKeyword from "../keywords/dynamicAnchor.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
- * @import { CompileContext, Keyword } from "../keyword.d.ts"
- * @import { JsonSchemaNode } from "../schema/schema-ast.d.ts"
+ * @import { Keyword, Reference } from "../keyword.d.ts"
+ * @import { Expression, TypeName } from "./kernel.d.ts"
  * @import { EvaluationLocation, EvaluationPlugin } from "./evaluation-plugin.d.ts"
  * @import { DetailedValidationError, ValidationError } from "../output/validation-error.d.ts"
  */
 
 const dialectUri = "https://example.com/dialect";
 
-/** @type (node: any) => [string, any][] */
-const propertiesOf = (node) => node.children.map((/** @type any */ property) => [property.children[0].value, property.children[1]]);
-
-/** @type (node: any) => any[] */
-const itemsOf = (node) => node.children;
-
-/** @type (node: any) => string */
-const hrefOf = (node) => node.href;
-
-/** @type (valueNode: any, context: CompileContext) => Promise<string[]> */
-const compileSchemas = async (valueNode, context) => {
-  const handles = [];
-  for (const schemaNode of itemsOf(valueNode)) {
-    handles.push(await context.compileSchema(schemaNode));
-  }
-  return handles;
-};
-
-/** @type Keyword<string> */
+/** @type Keyword<TypeName> */
 const typeKeyword = {
   uri: "https://example.com/keyword/type",
   shape: "data",
-  evaluate: (type, { instance }) => (value) => instance.typeOf(value) === type
+  lower: (type) => ({ op: "typeIs", types: [type] })
 };
 
 /** @type Keyword<number> */
 const minimumKeyword = {
   uri: "https://example.com/keyword/minimum",
   shape: "data",
-  evaluate: (minimum, { instance }) => (value) => {
-    return instance.typeOf(value) !== "number" || /** @type number */ (instance.value(value)) >= minimum;
-  }
+  lower: (min) => ({ op: "range", min })
 };
 
 /** @type Keyword<string> */
 const titleKeyword = {
   uri: "https://example.com/keyword/title",
   shape: "data",
-  evaluate(title, { annotate }) {
-    if (annotate === undefined) {
-      return;
-    }
-
-    return () => {
-      annotate(title);
-      return true;
-    };
-  }
+  lower: (value) => ({ op: "annotate", value })
 };
 
-/** @type Keyword<Record<string, string>> */
+/** @type Keyword<[string, Expression][]> */
 const propertiesKeyword = {
   uri: "https://example.com/keyword/properties",
   shape: { map: "schema" },
-  async compile(valueNode, context) {
-    /** @type Record<string, string> */
-    const properties = {};
-    for (const [name, schemaNode] of propertiesOf(valueNode)) {
-      properties[name] = await context.compileSchema(schemaNode);
-    }
-    return properties;
-  },
-  evaluate(properties, context) {
-    const evaluators = Object.entries(properties).map(([name, handle]) => /** @type const */ ([name, context.schema(handle)]));
-    return (value) => {
-      if (context.instance.typeOf(value) !== "object") {
-        return true;
-      }
-
-      let valid = true;
-      for (const [name, evaluate] of evaluators) {
-        const property = context.instance.get(value, name);
-        if (property === undefined) {
-          continue;
-        }
-
-        if (evaluate(property, name)) {
-          context.markEvaluated?.(name);
-        } else {
-          valid = false;
-          if (!context.exhaustive) {
-            return false;
-          }
-        }
-      }
-
-      return valid;
-    };
-  },
-  simpleApplicator: true
+  lower: (pairs) => ({ op: "all", of: pairs.map(([name, schema]) => ({ op: "property", name, of: schema })) })
 };
 
-/** @type Keyword<string[]> */
+/** @type Keyword<Expression[]> */
 const allOfKeyword = {
   uri: "https://example.com/keyword/allOf",
   shape: { array: "schema" },
-  compile: compileSchemas,
-  evaluate(handles, context) {
-    const evaluators = handles.map(context.schema);
-    return (value) => {
-      let valid = true;
-      for (const evaluate of evaluators) {
-        if (!evaluate(value)) {
-          valid = false;
-          if (!context.exhaustive) {
-            return false;
-          }
-        }
-      }
-      return valid;
-    };
-  },
-  simpleApplicator: true
+  lower: (schemas) => ({ op: "all", of: schemas })
 };
 
-/** @type Keyword<string[]> */
+/** @type Keyword<Expression[]> */
 const anyOfKeyword = {
   uri: "https://example.com/keyword/anyOf",
   shape: { array: "schema" },
-  compile: compileSchemas,
-  evaluate(handles, context) {
-    const evaluators = handles.map(context.schema);
-    const evaluateAll = context.exhaustive || context.markEvaluated !== undefined;
-    return (value) => {
-      let valid = false;
-      for (const evaluate of evaluators) {
-        if (evaluate(value)) {
-          valid = true;
-          if (!evaluateAll) {
-            return true;
-          }
-        }
-      }
-      return valid;
-    };
-  }
+  lower: (schemas) => ({ op: "any", of: schemas })
 };
 
-/** @type Keyword<string> */
+/** @type Keyword<Reference> */
 const refKeyword = {
   uri: "https://example.com/keyword/ref",
   shape: "reference",
-  compile: (valueNode, context) => context.compileSchema(hrefOf(valueNode)),
-  evaluate: (handle, context) => context.schema(handle),
-  simpleApplicator: true
+  lower: (reference) => reference.schema
 };
 
-/** @type Keyword<{ name: string; handle: string }> */
+// The outermost schema in the dynamic scope with the fragment's dynamic
+// anchor, or the schema it resolves to
+/** @type Keyword<Reference> */
 const dynamicRefKeyword = {
   uri: "https://example.com/keyword/dynamicRef",
   shape: "reference",
-  async compile(valueNode, context) {
-    const uri = hrefOf(valueNode);
-    const name = uri.slice(uri.indexOf("#") + 1);
-    return { name, handle: await context.compileSchema(uri) };
-  },
-  evaluate({ name, handle }, context) {
-    const lexical = context.schema(handle);
-    const dynamicAnchor = /** @type NonNullable<typeof context.dynamicAnchor> */ (context.dynamicAnchor);
-    return (value) => (dynamicAnchor(name) ?? lexical)(value);
-  },
-  reads: ["dynamicScope"],
-  simpleApplicator: true
+  lower: ({ uri, handle }) => ({ op: "dynamicApply", anchor: uri.slice(uri.indexOf("#") + 1), fallback: handle })
 };
 
-/** @type Keyword<{ if: string; then: string }> */
+/** @type Keyword<Expression, { then?: Expression }> */
 const ifKeyword = {
   uri: "https://example.com/keyword/if",
   shape: "schema",
   siblings: { then: "https://example.com/keyword/then" },
-  async compile(valueNode, context) {
-    return {
-      if: await context.compileSchema(valueNode),
-      then: await context.compileSchema(/** @type JsonSchemaNode */ (context.siblings.then))
-    };
-  },
-  evaluate(compiled, context) {
-    const evaluateIf = context.schema(compiled.if);
-    const evaluateThen = context.schema(compiled.then);
-    return (value) => !evaluateIf(value) || evaluateThen(value);
-  },
-  simpleApplicator: true
+  lower: (schema, { then }) => ({ op: "cases", cases: [[schema, then ?? null]], otherwise: null })
 };
 
-/** @type Keyword<string> */
+/** @type Keyword<Expression> */
 const unevaluatedPropertiesKeyword = {
   uri: "https://example.com/keyword/unevaluatedProperties",
   shape: "schema",
-  compile: (valueNode, context) => context.compileSchema(valueNode),
-  evaluate(handle, context) {
-    const evaluate = context.schema(handle);
-    const evaluated = /** @type NonNullable<typeof context.evaluated> */ (context.evaluated);
-    return (value) => {
-      if (context.instance.typeOf(value) !== "object") {
-        return true;
-      }
-
-      let valid = true;
-      for (const [name, property] of context.instance.entries(value)) {
-        if (evaluated().has(name)) {
-          continue;
-        }
-
-        if (evaluate(property, name)) {
-          context.markEvaluated?.(name);
-        } else {
-          valid = false;
-        }
-      }
-      return valid;
-    };
-  },
-  reads: ["evaluated"]
+  lower: (schema) => ({ op: "eachProperty", select: { unevaluated: true }, of: schema })
 };
 
 /** @type Keyword[] */
@@ -925,8 +783,8 @@ describe("Validator", () => {
       expect(calls).to.eql([`a "Root"`, `b "Root"`]);
     });
 
-    test("plugins see keywords that always pass", async () => {
-      const validator = await jsonSchema.compile(await schemaFile({ title: "foo", type: "number" }));
+    test("plugins see keywords that have no effect", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({ properties: {}, type: "number" }));
 
       /** @type [string, boolean][] */
       const calls = [];
@@ -934,6 +792,21 @@ describe("Validator", () => {
       const plugin = { afterKeyword: (keyword, _at, valid) => calls.push([keyword.keywordUri, valid]) };
 
       expect(validator.validate(1, { plugins: [plugin] })).to.equal(true);
+      expect(calls).to.eql([[propertiesKeyword.uri, true], [typeKeyword.uri, true]]);
+    });
+
+    test("a keyword that only annotates is left out for plugins that don't see annotations", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({ title: "foo", type: "number" }));
+
+      /** @type [string, boolean][] */
+      const calls = [];
+      /** @type EvaluationPlugin */
+      const plugin = { afterKeyword: (keyword, _at, valid) => calls.push([keyword.keywordUri, valid]) };
+      validator.validate(1, { plugins: [plugin] });
+      expect(calls).to.eql([[typeKeyword.uri, true]]);
+
+      calls.length = 0;
+      validator.validate(1, { plugins: [{ ...plugin, annotation: () => undefined }] });
       expect(calls).to.eql([[titleKeyword.uri, true], [typeKeyword.uri, true]]);
     });
 

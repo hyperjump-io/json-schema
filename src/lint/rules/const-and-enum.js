@@ -1,11 +1,11 @@
-import { astInstance } from "../../evaluate/instance.js";
+import { astInstance } from "../../kernel/instance.js";
 import { instanceEqual } from "../../keywords/utilities.js";
 import { lintRule } from "../lint-rule.js";
 import { findKeyword, visitKeywords } from "../utilities.js";
 
 /**
  * @import { JsonSchemaDocumentNode } from "../../schema/schema-ast.d.ts"
- * @import { InstanceNode } from "../../evaluate/instance.js"
+ * @import { InstanceNode } from "../../kernel/instance.js"
  */
 
 const constUri = "https://json-schema.org/keyword/const";

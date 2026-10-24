@@ -1,5 +1,6 @@
 import type { Json, JsonErrorNode, JsonNode } from "@hyperjump/browser/json";
 import type { Keyword } from "../keyword.d.ts";
+import type { Expression, Handle } from "./kernel.d.ts";
 
 /**
  * Observes an evaluation. Plugins can't change the result.
@@ -49,7 +50,7 @@ export type EvaluationPlugin<S = unknown, K = unknown> = {
 };
 
 /**
- * A compiled schema. It's created once per specialization, so it's the same
+ * A compiled schema. It's created once per evaluator, so it's the same
  * object every time the schema is evaluated.
  */
 export type SchemaInfo = {
@@ -61,7 +62,7 @@ export type SchemaInfo = {
 };
 
 /**
- * A keyword in a compiled schema. It's created once per specialization, so
+ * A keyword group in a compiled schema. It's created once per evaluator, so
  * it's the same object every time the keyword is evaluated.
  */
 export type KeywordInfo = {
@@ -72,8 +73,23 @@ export type KeywordInfo = {
 
   keyword: Keyword;
 
-  /** The keyword's compiled value */
-  compiled: Json;
+  /** What the keyword lowered to */
+  expression: Expression;
+
+  /** The locations of the siblings the keyword read */
+  sources: string[];
+
+  /**
+   * Whether the expression fails only when what it applies fails, and their
+   * failures say why, so the BASIC output format reports only theirs
+   */
+  explainsFailure: boolean;
+
+  /**
+   * The schemas the keyword applies as conditions, like `if`'s. A condition
+   * that fails isn't an error.
+   */
+  conditions: ReadonlySet<Handle>;
 };
 
 /**

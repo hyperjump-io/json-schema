@@ -23,8 +23,8 @@ written by hand and have JSDoc explaining the details.
 ## Architecture
 
 ```text
-text ─ rejsonParse ─▶ JSON AST ─ jsonSchemaResolve ─▶ Schema AST ─ (schema validation) ─▶ compile ─▶ IR ─ optimize ─▶ IR ─ specialize ─▶ closures
-       (browser)                  (async)                                                  (async)                         (sync, lazy)
+text ─ rejsonParse ─▶ JSON AST ─ jsonSchemaResolve ─▶ Schema AST ─ (schema validation) ─▶ lower ─▶ kernel ─ optimize ─▶ kernel ─ fast / instrumented ─▶ closures
+       (browser)                  (async)                                                  (async)                              (sync, lazy)
 ```
 
 - `JsonSchema` extends browser's `Hyperjump<JsonSchemaNode>`, and
@@ -43,8 +43,8 @@ text ─ rejsonParse ─▶ JSON AST ─ jsonSchemaResolve ─▶ Schema AST ─
 | `src/session.js` | `JsonSchemaSession` |
 | `src/keyword.d.ts`, `src/dialect.d.ts`, `src/format.d.ts` | What a keyword, dialect, and format are |
 | `src/schema/` | Text to schema AST: the media type plugin, `jsonSchemaResolve`, schema validation, and the schema AST types |
-| `src/evaluate/` | Schema AST to results: `compile` (the IR), `optimize`, `specialize`, `Validator`, instance operations, and evaluation plugin types |
-| `src/evaluate/optimizations/` | Optimization passes on the IR, one per file. `index.js` lists them in the order they run |
+| `src/kernel/` | Schema AST to results: the kernel's expressions (`kernel.d.ts`), `lower` (compiling), the normal form, `optimize`, the evaluators (`fast.js` for plain values without plugins, `instrumented.js` for everything else), `Validator`, instance operations, and evaluation plugin types. See [KERNEL.md](KERNEL.md) |
+| `src/kernel/optimizations/` | Optimization passes on kernel expressions, one per file. `index.js` lists them in the order they run |
 | `src/output/` | Output formats and validation errors |
 | `src/registry/` | `SchemaRegistry`, indexing registries, and how a session finds schemas in them |
 | `src/dialects/` | The presets: `v1`, `draft-04` … `draft-2020-12`. Each has the dialect and its tests, including the test suite runners. `add-preset.js` adds a preset's dialect and the definitions it uses |
@@ -654,7 +654,7 @@ disguised as a `GetOptions` field, and unwrap the error from browser's
 
 ## Validation API (`src/json-schema.d.ts`)
 
-Implemented in `src/evaluate/validator.js`.
+Implemented in `src/kernel/validator.js`.
 
 - `compile(uri)` returns a `Validator` with `validate`, `validateJson`,
   `annotate`, and `annotateJson`. `JsonSchema` has the same four as
@@ -709,6 +709,11 @@ Implemented in `src/evaluate/validator.js`.
   plugins.
 
 ## Compile and evaluate (`src/keyword.d.ts`)
+
+This section and the ones after it, up to "Bundling", describe compiling
+and evaluating before the kernel replaced them (stage 2 of "Moving the
+kernel into `src/`"). What replaced them is in [KERNEL.md](KERNEL.md).
+They're rewritten in stage 6.
 
 Implemented in `src/evaluate/compile.js` (the IR) and
 `src/evaluate/specialize.js`, with the instance operations in
@@ -1617,9 +1622,10 @@ never timed.
    `src/evaluate/`: the expressions (`kernel.d.ts`, and `kernel.js` for
    `subexpressions`, `readsMarks`, `explainsFailure`, and `conditionsOf`),
    `lower.js`, `normalize.js`, `optimizations/` (one pass per file, as
-   today: folding, leaving out groups, merging property loops,
-   `static-unevaluated`), `fast.js`, `instrumented.js` (plugins and
-   collecting annotations), `validator.js`, and `instance.js`. Each
+   today: `static-unevaluated`, folding, leaving out groups), `fast.js`,
+   `instrumented.js` (plugins, collecting annotations, and ASTs),
+   `validator.js`, and `instance.js`. Merging property loops is part of
+   the evaluators, because a merged loop isn't an expression. Each
    keyword gets `lower`, from the prototype's table. `compile.js`,
    `specialize.js`, `optimize.js`, `compile`, `simpleApplicator`, `reads`,
    and the `compileSchemaArray` and `compileSchemaMap` utilities are
@@ -1628,6 +1634,9 @@ never timed.
    one. Without optimizations, hook calls are the same as v2's. Until
    stage 3, the output formats still use `simpleApplicator`'s answers,
    computed from the expression, so the output is the same as v2's too.
+   One result changes: `itemPattern` marks the items it matches, which
+   "Evaluation state" says it does and the evaluator before the kernel
+   didn't.
 3. **Plugins and output formats.** `KeywordInfo` gets `expression`,
    `explainsFailure`, and `conditions`, and BASIC and DETAILED stop
    recognizing `if` and `conditional` by URI. The known changes in BASIC

@@ -1,7 +1,7 @@
 import type { JsonSyntaxError } from "@hyperjump/browser/json";
-import type { EvaluationPlugin } from "../evaluate/evaluation-plugin.d.ts";
+import type { EvaluationPlugin } from "../kernel/evaluation-plugin.d.ts";
 import type { JsonSchema } from "../json-schema.d.ts";
-import type { Keyword } from "../keyword.d.ts";
+import type { KeywordInfo } from "../kernel/evaluation-plugin.d.ts";
 import type { DetailedValidationError, toVFileMessage, ValidationError } from "./validation-error.d.ts";
 
 /**
@@ -53,8 +53,8 @@ export interface OutputFormats {
 
   /**
    * A flat list of every error. A keyword whose failure is fully explained
-   * by its subschemas' failures ({@link Keyword.simpleApplicator}) doesn't get
-   * an error of its own.
+   * by its subschemas' failures ({@link KeywordInfo.explainsFailure}) doesn't
+   * get an error of its own.
    */
   BASIC: { valid: boolean; errors: OutputError[] };
 

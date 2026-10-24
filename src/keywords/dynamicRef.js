@@ -1,4 +1,3 @@
-import { jsonValue } from "@hyperjump/browser/json";
 import { anchorName } from "./checks.js";
 
 /**
@@ -16,19 +15,5 @@ export default {
   uri: "https://json-schema.org/keyword/dynamicRef",
   shape: "data",
   check: anchorName,
-  compile: (valueNode) => /** @type string */ (jsonValue(valueNode)),
-  evaluate(name, context) {
-    const dynamicAnchor = /** @type NonNullable<typeof context.dynamicAnchor> */ (context.dynamicAnchor);
-
-    return (node) => {
-      const evaluate = dynamicAnchor(name);
-      if (evaluate === undefined) {
-        throw Error(`No '${name}' dynamic anchor is in the dynamic scope`);
-      }
-
-      return evaluate(node);
-    };
-  },
-  reads: ["dynamicScope"],
-  simpleApplicator: true
+  lower: (name) => ({ op: "dynamicApply", anchor: name, fallback: null })
 };

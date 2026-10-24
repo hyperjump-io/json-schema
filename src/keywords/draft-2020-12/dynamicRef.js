@@ -1,7 +1,7 @@
-import { parseIri, toAbsoluteIri } from "@hyperjump/uri";
+import { parseIri } from "@hyperjump/uri";
 
 /**
- * @import { Keyword, SchemaHandle } from "../../keyword.d.ts"
+ * @import { Keyword, Reference } from "../../keyword.d.ts"
  */
 
 /**
@@ -11,36 +11,17 @@ import { parseIri, toAbsoluteIri } from "@hyperjump/uri";
  * that anchor applies instead, if there is one. `fragment` is the
  * reference's plain-name fragment, if it has one.
  *
- * @type Keyword<{ handle: SchemaHandle; fragment: string | null }>
+ * @type Keyword<Reference>
  */
 export default {
   uri: "https://json-schema.org/keyword/draft-2020-12/dynamicRef",
   shape: "reference",
-  async compile(valueNode, context) {
-    const uri = /** @type {{ href: string }} */ (valueNode).href;
-    const handle = await context.compileSchema(uri);
-    const { fragment } = parseIri(uri);
-
-    return { handle, fragment: fragment && !fragment.startsWith("/") ? fragment : null };
-  },
-  evaluate({ handle, fragment }, context) {
-    const evaluate = context.schema(handle);
-    if (fragment === null) {
-      return evaluate;
-    }
-
+  lower({ uri, schema, handle, dynamicAnchors }) {
     // A plain-name fragment identifies the schema it resolved to, so the
     // schema has the dynamic anchor if its resource does
-    const resourceDynamicAnchors = /** @type NonNullable<typeof context.resourceDynamicAnchors> */ (context.resourceDynamicAnchors);
-    if (!Object.hasOwn(resourceDynamicAnchors(toAbsoluteIri(handle)), fragment)) {
-      return evaluate;
-    }
-
-    // The schema's own resource has the anchor, so if nothing outer in the
-    // dynamic scope does, the schema it resolved to applies
-    const dynamicAnchor = /** @type NonNullable<typeof context.dynamicAnchor> */ (context.dynamicAnchor);
-    return (node) => (dynamicAnchor(fragment) ?? evaluate)(node);
-  },
-  reads: ["dynamicScope"],
-  simpleApplicator: true
+    const { fragment } = parseIri(uri);
+    return fragment && !fragment.startsWith("/") && Object.hasOwn(dynamicAnchors, fragment)
+      ? { op: "dynamicApply", anchor: fragment, fallback: handle }
+      : schema;
+  }
 };

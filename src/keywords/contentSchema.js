@@ -1,5 +1,3 @@
-import { jsonValue } from "@hyperjump/browser/json";
-
 /**
  * @import { Json } from "@hyperjump/browser/json"
  * @import { Keyword } from "../keyword.d.ts"
@@ -18,20 +16,7 @@ export default {
   siblings: { contentMediaType: "https://json-schema.org/keyword/contentMediaType" },
   shape: "unappliedSchema",
   default: true,
-  compile(valueNode, context) {
-    const contentMediaTypeNode = context.siblings.contentMediaType;
-    return contentMediaTypeNode === undefined ? null : jsonValue(valueNode);
-  },
-  evaluate(contentSchema, { instance, annotate }) {
-    if (contentSchema === null || annotate === undefined) {
-      return;
-    }
-
-    return (node) => {
-      if (instance.typeOf(node) === "string") {
-        annotate(contentSchema);
-      }
-      return true;
-    };
-  }
+  lower: (schema, { contentMediaType }) => contentMediaType === undefined
+    ? { op: "pass" }
+    : { op: "annotate", value: schema, types: ["string"] }
 };

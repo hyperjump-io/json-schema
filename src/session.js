@@ -1,9 +1,8 @@
 import { Session } from "@hyperjump/browser";
 import { encodeIriFragment, toAbsoluteIri } from "@hyperjump/uri";
 import { SessionRegistries } from "./registry/session-registries.js";
-import { compile } from "./evaluate/compile.js";
-import { optimize } from "./evaluate/optimize.js";
-import { Validator } from "./evaluate/validator.js";
+import { lower } from "./kernel/lower.js";
+import { Validator } from "./kernel/validator.js";
 import { bundle } from "./bundle/bundle.js";
 import unknownKeyword, { keywordDefinitionUri } from "./keywords/unknown.js";
 
@@ -223,7 +222,7 @@ export class JsonSchemaSession extends Session {
 
   /** @type API.JsonSchemaSession["compile"] */
   async compile(uri) {
-    return new Validator(this.#jsonSchema, optimize(await compile(this, uri), this.#jsonSchema, false));
+    return new Validator(this.#jsonSchema, await lower(this, uri));
   }
 
   /** @type API.JsonSchemaSession["bundle"] */

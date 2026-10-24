@@ -14,7 +14,5 @@ export default {
   shape: "data",
   default: 0,
   check: nonNegativeInteger,
-  evaluate: (minProperties, { instance }) => (node) => {
-    return instance.typeOf(node) !== "object" || instance.length(node) >= minProperties;
-  }
+  lower: (min) => ({ op: "propertyCount", min })
 };

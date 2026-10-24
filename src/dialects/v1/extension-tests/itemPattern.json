@@ -461,6 +461,52 @@
                     "valid": false
                 }
             ]
+        },
+        {
+            "description": "itemPattern marks every item it matches for unevaluatedItems",
+            "schema": {
+                "itemPattern": [{ "type": "string" }, "*"],
+                "unevaluatedItems": false
+            },
+            "tests": [
+                {
+                    "description": "items that match",
+                    "data": ["a", "b"],
+                    "valid": true
+                },
+                {
+                    "description": "no items",
+                    "data": [],
+                    "valid": true
+                },
+                {
+                    "description": "an item that doesn't match",
+                    "data": ["a", 1],
+                    "valid": false
+                }
+            ]
+        },
+        {
+            "description": "a failing itemPattern doesn't mark items",
+            "schema": {
+                "anyOf": [
+                    { "itemPattern": [{ "type": "string" }, "*"] },
+                    true
+                ],
+                "unevaluatedItems": false
+            },
+            "tests": [
+                {
+                    "description": "items that match are marked",
+                    "data": ["a"],
+                    "valid": true
+                },
+                {
+                    "description": "items that don't match aren't",
+                    "data": [1],
+                    "valid": false
+                }
+            ]
         }
     ]
 }

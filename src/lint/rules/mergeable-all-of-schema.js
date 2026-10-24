@@ -14,8 +14,12 @@ const keyword = "https://json-schema.org/keyword";
  * only belongs at a resource's root, and definitions, which are found by
  * their location. Identifiers, which have a `resolve` hook, and keywords
  * that read what their siblings evaluated can't be moved either.
+ *
+ * The keywords that read what their siblings evaluated are listed until
+ * lint reads what keywords lower to, which says so for any keyword
+ * (DESIGN.md, "Moving the kernel into `src/`", stage 5).
  */
-const unmovable = new Set(["schema", "definitions"].map((name) => `${keyword}/${name}`));
+const unmovable = new Set(["schema", "definitions", "unevaluatedProperties", "unevaluatedItems"].map((name) => `${keyword}/${name}`));
 
 /**
  * Keywords that can be in both schemas, because their values combine:
@@ -56,7 +60,7 @@ const mergeableAllOfSchema = lintRule({ origin: "jsonschema-lint:mergeable-all-o
   /** @type (uri: string) => boolean */
   const isUnmovable = (uri) => {
     const definition = definitionOf(jsonSchema, uri);
-    return unmovable.has(uri) || definition?.resolve !== undefined || (definition?.reads ?? []).includes("evaluated");
+    return unmovable.has(uri) || definition?.resolve !== undefined;
   };
 
   visitKeywords(tree, `${keyword}/allOf`, (allOfNode, schemaNode) => {

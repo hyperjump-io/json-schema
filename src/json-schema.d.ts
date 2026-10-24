@@ -9,7 +9,7 @@ import type { JsonSchemaNode } from "./schema/schema-ast.d.ts";
 import type { Keyword } from "./keyword.d.ts";
 import type { Dialect, DialectExtension } from "./dialect.d.ts";
 import type { Format } from "./format.d.ts";
-import type { EvaluationPlugin } from "./evaluate/evaluation-plugin.d.ts";
+import type { EvaluationPlugin } from "./kernel/evaluation-plugin.d.ts";
 import type { SchemaRegistry } from "./registry/schema-registry.d.ts";
 import type { BundleOptions, JsonSchemaSession, SessionOptions } from "./session.d.ts";
 import type { OutputFormat, OutputFormatDefinition, ValidationResult } from "./output/output-format.d.ts";

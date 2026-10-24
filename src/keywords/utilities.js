@@ -1,10 +1,10 @@
-import { astInstance } from "../evaluate/instance.js";
+import { astInstance } from "../kernel/instance.js";
 
 /**
- * @import { CompileContext, InstanceOps, Keyword, SchemaHandle } from "../keyword.d.ts"
+ * @import { InstanceOps, Keyword } from "../keyword.d.ts"
+ * @import { Expression } from "../kernel/kernel.d.ts"
  * @import { JsonSchemaKeywordNode, JsonSchemaNode, JsonSchemaTolerantNode } from "../schema/schema-ast.d.ts"
- * @import { Json } from "@hyperjump/browser/json"
- * @import { InstanceNode } from "../evaluate/instance.js"
+ * @import { InstanceNode } from "../kernel/instance.js"
  */
 
 /**
@@ -17,54 +17,32 @@ export const annotationKeyword = (uri, check) => ({
   uri: uri,
   shape: "data",
   check: check,
-  evaluate(value, { annotate }) {
-    if (annotate === undefined) {
-      return;
-    }
-
-    return () => {
-      annotate(value);
-      return true;
-    };
-  }
+  lower: (value) => ({ op: "annotate", value })
 });
 
 /**
- * Compile each schema in an array
+ * `all` of expressions. A keyword that says several things lowers to
+ * several operations, and the normal form flattens them.
  *
- * @type (valueNode: JsonSchemaNode, context: CompileContext) => Promise<SchemaHandle[]>
+ * @type (of: Expression[]) => Expression
  */
-export const compileSchemaArray = async (valueNode, context) => {
-  /** @type SchemaHandle[] */
-  const handles = [];
-  if (valueNode.jsonType === "array") {
-    for (const itemNode of valueNode.children) {
-      handles.push(await context.compileSchema(itemNode));
-    }
-  }
-
-  return handles;
-};
+export const all = (of) => ({ op: "all", of });
 
 /**
- * Compile each schema in an object. It compiles to pairs rather than an
- * object, because a name like `__proto__` can't be a property of a plain
- * object.
+ * A condition about a property. An operation passes instances it doesn't
+ * apply to, so a condition has to say the instance is an object, or it
+ * would pass every string and array.
  *
- * @type (valueNode: JsonSchemaNode, context: CompileContext) => Promise<[string, SchemaHandle][]>
+ * @type (condition: Expression, then: Expression) => Expression
  */
-export const compileSchemaMap = async (valueNode, context) => {
-  /** @type [string, SchemaHandle][] */
-  const handles = [];
-  if (valueNode.jsonType === "object") {
-    for (const propertyNode of valueNode.children) {
-      const [nameNode, schemaNode] = propertyNode.children;
-      handles.push([nameNode.value, await context.compileSchema(schemaNode)]);
-    }
-  }
+export const whenProperty = (condition, then) => ({
+  op: "cases",
+  cases: [[{ op: "all", of: [{ op: "typeIs", types: ["object"] }, condition] }, then]],
+  otherwise: null
+});
 
-  return handles;
-};
+/** @type (name: string) => Expression */
+export const hasProperty = (name) => ({ op: "hasProperty", name });
 
 /**
  * The values of the siblings a keyword declares, by the names it gives them,

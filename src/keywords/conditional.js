@@ -1,8 +1,8 @@
 import { nonEmpty } from "./checks.js";
 
 /**
- * @import { Keyword, SchemaHandle } from "../keyword.d.ts"
- * @import { JsonSchemaNode } from "../schema/schema-ast.d.ts"
+ * @import { Keyword } from "../keyword.d.ts"
+ * @import { Expression } from "../kernel/kernel.d.ts"
  */
 
 /**
@@ -11,43 +11,22 @@ import { nonEmpty } from "./checks.js";
  * at the end without a condition applies if none pass. Conditions and their
  * schemas can be grouped in arrays, which are flattened.
  *
- * @type Keyword<SchemaHandle[]>
+ * @type Keyword<(Expression | Expression[])[]>
  */
 export default {
   uri: "https://json-schema.org/keyword/conditional",
   shape: { array: ["schema", { array: "schema" }] },
   check: nonEmpty,
-  async compile(valueNode, context) {
-    /** @type SchemaHandle[] */
-    const handles = [];
-    if (valueNode.jsonType !== "array") {
-      return handles;
+  lower(items) {
+    // Conditions are followed by the schema that applies if they pass
+    const schemas = items.flatMap((item) => Array.isArray(item) ? item : [item]);
+
+    /** @type [Expression, Expression][] */
+    const cases = [];
+    for (let index = 0; index + 1 < schemas.length; index += 2) {
+      cases.push([schemas[index], schemas[index + 1]]);
     }
 
-    for (const itemNode of valueNode.children) {
-      /** @type JsonSchemaNode[] */
-      const schemaNodes = itemNode.jsonType === "array" ? itemNode.children : [itemNode];
-      for (const schemaNode of schemaNodes) {
-        handles.push(await context.compileSchema(schemaNode));
-      }
-    }
-
-    return handles;
-  },
-  evaluate(conditional, { schema }) {
-    const evaluators = conditional.map(schema);
-
-    return (node) => {
-      for (let index = 0; index < evaluators.length; index += 2) {
-        const valid = evaluators[index](node);
-        if (index + 1 === evaluators.length) {
-          return valid;
-        } else if (valid) {
-          return evaluators[index + 1](node);
-        }
-      }
-
-      return true;
-    };
+    return { op: "cases", cases, otherwise: schemas.length % 2 === 1 ? /** @type Expression */ (schemas.at(-1)) : null };
   }
 };

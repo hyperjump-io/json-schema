@@ -13,7 +13,5 @@ export default {
   uri: "https://json-schema.org/keyword/maxProperties",
   shape: "data",
   check: nonNegativeInteger,
-  evaluate: (maxProperties, { instance }) => (node) => {
-    return instance.typeOf(node) !== "object" || instance.length(node) <= maxProperties;
-  }
+  lower: (max) => ({ op: "propertyCount", max })
 };

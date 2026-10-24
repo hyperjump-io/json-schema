@@ -1,4 +1,3 @@
-import { jsonValue } from "@hyperjump/browser/json";
 import { string } from "./checks.js";
 
 /**
@@ -11,48 +10,22 @@ import { string } from "./checks.js";
  * the format has to be one the dialect supports, and its definition has to
  * have been added, or the schema can't be compiled.
  *
- * @type Keyword<{ name: string; uri: string | null }>
+ * @type Keyword<string>
  */
 export default {
   uri: "https://json-schema.org/keyword/format",
   shape: "data",
   check: string,
-  compile(valueNode, { jsonSchema, dialect }) {
-    const name = /** @type string */ (jsonValue(valueNode));
-    if (!(jsonSchema.config.validateFormats ?? dialect.assertFormats ?? false)) {
-      return { name, uri: null };
-    }
-
-    const uri = dialect.formats && Object.hasOwn(dialect.formats, name) ? dialect.formats[name] : undefined;
-    if (uri === undefined) {
-      throw Error(`The '${name}' format isn't supported in the '${dialect.uri}' dialect`);
-    }
-    jsonSchema.getFormat(uri);
-
-    return { name, uri };
-  },
-  evaluate({ name, uri }, { jsonSchema, instance, annotate }) {
-    if (uri === null) {
-      if (annotate === undefined) {
-        return;
+  lower(name, _siblings, { jsonSchema, dialect }) {
+    const uri = dialect.formats && Object.hasOwn(dialect.formats, name) ? dialect.formats[name] : null;
+    const assert = jsonSchema.config.validateFormats ?? dialect.assertFormats ?? false;
+    if (assert) {
+      if (uri === null) {
+        throw Error(`The '${name}' format isn't supported in the '${dialect.uri}' dialect`);
       }
-
-      return () => {
-        annotate(name);
-        return true;
-      };
+      jsonSchema.getFormat(uri);
     }
 
-    const { types, validate } = jsonSchema.getFormat(uri);
-    return (node) => {
-      // A value of a type the format doesn't apply to is valid
-      const type = instance.typeOf(node);
-      if (type !== undefined && (types === undefined || types.includes(type)) && !validate(instance.value(node))) {
-        return false;
-      }
-
-      annotate?.(name);
-      return true;
-    };
+    return { op: "format", name, uri, assert };
   }
 };

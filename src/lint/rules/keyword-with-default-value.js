@@ -1,11 +1,11 @@
-import { astInstance, jsInstance } from "../../evaluate/instance.js";
+import { astInstance, jsInstance } from "../../kernel/instance.js";
 import { instanceEqual } from "../../keywords/utilities.js";
 import { lintRule } from "../lint-rule.js";
 import { visitSchemas } from "../utilities.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
- * @import { InstanceNode } from "../../evaluate/instance.js"
+ * @import { InstanceNode } from "../../kernel/instance.js"
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode } from "../../schema/schema-ast.d.ts"
  */
 

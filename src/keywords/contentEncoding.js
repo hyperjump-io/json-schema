@@ -13,16 +13,5 @@ export default {
   uri: "https://json-schema.org/keyword/contentEncoding",
   shape: "data",
   check: string,
-  evaluate(contentEncoding, { instance, annotate }) {
-    if (annotate === undefined) {
-      return;
-    }
-
-    return (node) => {
-      if (instance.typeOf(node) === "string") {
-        annotate(contentEncoding);
-      }
-      return true;
-    };
-  }
+  lower: (value) => ({ op: "annotate", value, types: ["string"] })
 };
