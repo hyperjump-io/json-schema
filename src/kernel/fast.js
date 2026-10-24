@@ -1,10 +1,11 @@
 import { jsInstance } from "./instance.js";
 import { codePointLength, instanceEqual } from "../keywords/utilities.js";
-import { hasOp, readsMarks } from "./kernel.js";
+import { readsDynamicScope, readsMarks } from "./kernel.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
  * @import { JsonSchema } from "../json-schema.d.ts"
+ * @import { EvaluateContext, Keyword } from "../keyword.d.ts"
  * @import { CompiledSchema, Expression, Handle, ItemPattern, Kernel, Selector } from "./kernel.d.ts"
  */
 
@@ -64,7 +65,12 @@ const isInert = (expression) => expression.op === "pass" || expression.op === "a
  */
 export const fast = (jsonSchema, kernel) => {
   const tracksDynamicScope = Object.values(kernel.schemas).some((schema) => {
-    return typeof schema !== "boolean" && schema.keywords.some(({ expression }) => hasOp(expression, "dynamicApply"));
+    return typeof schema !== "boolean" && schema.keywords.some(({ expression }) => readsDynamicScope(expression));
+  });
+
+  // An `opaque` operation can't stop early if it might get marks
+  const marksAreRead = Object.values(kernel.schemas).some((schema) => {
+    return typeof schema !== "boolean" && schema.keywords.some(({ expression }) => readsMarks(expression));
   });
 
   /** @type string | undefined */
@@ -497,7 +503,80 @@ export const fast = (jsonSchema, kernel) => {
           return true;
         };
       }
+
+      case "predicate": {
+        const evaluate = keywordEvaluate(jsonSchema, expression.keyword)(expression.value, { op: "predicate", jsonSchema, instance: jsInstance });
+        const isOfType = build({ op: "typeIs", types: expression.types });
+        return (instance) => !isOfType(instance, undefined) || evaluate(instance);
+      }
+      case "opaque":
+        return buildOpaque(expression);
     }
+  };
+
+  /**
+   * An `opaque` operation, through the keyword's evaluator. Its context reads
+   * the marks of the evaluation in progress, which are swapped in for each
+   * call, so evaluations that nest (a schema that applies itself) each see
+   * their own.
+   *
+   * @type (expression: Extract<Expression, { op: "opaque" }>) => Evaluator
+   */
+  const buildOpaque = (expression) => {
+    /** @type Marks */
+    let current;
+
+    /** @type (of: Expression) => (instance: Json, segment?: string | number) => boolean */
+    const subschema = (of) => {
+      const onInstance = build(of);
+      const onChild = child(of);
+      return (instance, segment) => {
+        // Marks on a child are the child's. On the same instance, they're
+        // kept only if the schema passes.
+        if (segment !== undefined) {
+          return onChild(instance, undefined);
+        } else if (current === undefined) {
+          return onInstance(instance, undefined);
+        }
+        /** @type Set<string | number> */
+        const own = new Set();
+        const valid = onInstance(instance, own);
+        if (valid) {
+          addAll(current, own);
+        }
+        return valid;
+      };
+    };
+
+    /** @type EvaluateContext<Json> */
+    const context = {
+      op: "opaque",
+      jsonSchema,
+      instance: jsInstance,
+      exhaustive: marksAreRead,
+      schemas: expression.schemas.map(subschema),
+      markEvaluated: (key) => {
+        current?.add(key);
+      }
+    };
+    if (expression.reads?.includes("evaluated")) {
+      context.evaluated = () => current ?? new Set();
+    }
+    if (expression.reads?.includes("dynamicScope")) {
+      context.dynamicAnchor = (name) => {
+        const handle = dynamicAnchors?.[name];
+        return handle === undefined ? undefined : subschema({ op: "apply", schema: handle });
+      };
+    }
+
+    const evaluate = keywordEvaluate(jsonSchema, expression.keyword)(expression.value, context);
+    return (instance, marks) => {
+      const outer = current;
+      current = marks;
+      const valid = evaluate(instance);
+      current = outer;
+      return valid;
+    };
   };
 
   /**
@@ -697,6 +776,20 @@ export const fast = (jsonSchema, kernel) => {
       dynamicAnchors = outerAnchors;
     }
   };
+};
+
+/**
+ * The `evaluate` of the keyword an escape hatch is for
+ *
+ * @type (jsonSchema: JsonSchema, uri: string) => NonNullable<Keyword["evaluate"]>
+ */
+export const keywordEvaluate = (jsonSchema, uri) => {
+  const { evaluate } = jsonSchema.getKeyword(uri);
+  if (evaluate === undefined) {
+    throw Error(`The '${uri}' keyword lowers to an escape hatch, so it needs 'evaluate'`);
+  }
+
+  return evaluate;
 };
 
 /** @type (a: number, b: number) => boolean */

@@ -33,6 +33,8 @@ export const subexpressions = (expression) => {
     }
     case "itemSequence":
       return patternItems(expression.pattern);
+    case "opaque":
+      return expression.schemas;
     default:
       return [];
   }
@@ -68,9 +70,22 @@ export const readsMarks = (expression) => {
     case "eachPropertyName":
     case "itemSequence":
       return false;
+    case "opaque":
+      return expression.reads?.includes("evaluated") ?? false;
     default:
       return subexpressions(expression).some(readsMarks);
   }
+};
+
+/** @type API.readsDynamicScope */
+export const readsDynamicScope = (expression) => {
+  if (expression.op === "dynamicApply") {
+    return true;
+  } else if (expression.op === "opaque") {
+    return expression.reads?.includes("dynamicScope") ?? false;
+  }
+
+  return subexpressions(expression).some(readsDynamicScope);
 };
 
 /** @type API.explainsFailure */
@@ -94,6 +109,8 @@ export const explainsFailure = (expression) => {
     case "cases":
       return expression.cases.every(([, then]) => then === null || explainsFailure(then))
         && (expression.otherwise === null || explainsFailure(expression.otherwise));
+    case "opaque":
+      return expression.explainsFailure ?? false;
     default:
       return false;
   }

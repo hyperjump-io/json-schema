@@ -7,6 +7,7 @@ import schemaKeyword from "./keywords/schema.js";
 import unknownKeyword, { keywordDefinitionUri } from "./keywords/unknown.js";
 import { Validator } from "./kernel/validator.js";
 import { subexpressions } from "./kernel/kernel.js";
+import { keywordEvaluate } from "./kernel/fast.js";
 import { basicOutputFormat } from "./output/basic.js";
 import { detailedOutputFormat } from "./output/detailed.js";
 
@@ -224,23 +225,31 @@ export class JsonSchema extends Hyperjump {
 
   /** @type API.JsonSchema["restoreValidator"] */
   restoreValidator(compiled) {
-    // Plugins see each keyword's definition, and asserting formats are
-    // validated with theirs
+    const kernel = /** @type Kernel */ (compiled);
+    const version = typeof compiled === "object" && compiled !== null && !Array.isArray(compiled) ? compiled.kernel : undefined;
+    if (version !== 1) {
+      throw Error(`Can't restore a compiled schema in kernel version ${JSON.stringify(version)}. This version of the library only supports version 1.`);
+    }
+
+    // Plugins see each keyword's definition, asserting formats are
+    // validated with theirs, and escape hatches by their keyword's
+    // `evaluate`
     /** @type (expression: Expression) => void */
-    const checkFormats = (expression) => {
+    const checkDefinitions = (expression) => {
       if (expression.op === "format" && expression.assert) {
         this.getFormat(/** @type string */ (expression.uri));
+      } else if (expression.op === "predicate" || expression.op === "opaque") {
+        keywordEvaluate(this, expression.keyword);
       }
-      subexpressions(expression).forEach(checkFormats);
+      subexpressions(expression).forEach(checkDefinitions);
     };
 
-    const kernel = /** @type Kernel */ (compiled);
     for (const handle in kernel.schemas) {
       const schema = kernel.schemas[handle];
       if (typeof schema !== "boolean") {
         for (const { keywordUri, expression } of schema.keywords) {
           this.getKeyword(keywordDefinitionUri(keywordUri));
-          checkFormats(expression);
+          checkDefinitions(expression);
         }
       }
     }

@@ -97,6 +97,96 @@ export type Keyword<V = any, S extends Record<string, any> = Record<string, any>
    * compiles the schemas in them and retrieves what references refer to.
    */
   lower?: (value: V, siblings: S, context: LowerContext) => Expression;
+
+  /**
+   * Evaluate an escape hatch the keyword lowered to, a `predicate` or an
+   * `opaque` operation (see `kernel.d.ts`). Only keywords that can't be said
+   * with the kernel's other operations need it. It's called once for each
+   * operation when an evaluator is built, with the operation's `value`, and
+   * returns what evaluates an instance, so work that only depends on the
+   * value is done once. An `opaque` operation's schemas are in the context,
+   * not the value.
+   *
+   * An evaluator is built for plain values and for ASTs, so `context.instance`
+   * is how the instance is read. The context's functions only work while the
+   * returned function is evaluating an instance, so don't keep them for later.
+   */
+  evaluate?: <I>(value: Json, context: EvaluateContext<I>) => (instance: I) => boolean;
+};
+
+/**
+ * What a keyword's {@link Keyword.evaluate} gets: a {@link PredicateContext}
+ * or an {@link OpaqueContext}, by the operation it's evaluating
+ */
+export type EvaluateContext<I> = PredicateContext<I> | OpaqueContext<I>;
+
+/**
+ * For a `predicate`. The instance is always of the operation's `types`. It
+ * applies no schemas and marks nothing.
+ */
+export type PredicateContext<I> = {
+  op: "predicate";
+
+  /** The instance evaluating the schema */
+  jsonSchema: JsonSchema;
+
+  instance: InstanceOps<I>;
+};
+
+/** For an `opaque` operation, which applies schemas */
+export type OpaqueContext<I> = {
+  op: "opaque";
+
+  /** The instance evaluating the schema */
+  jsonSchema: JsonSchema;
+
+  instance: InstanceOps<I>;
+
+  /**
+   * Whether every subschema needs to be evaluated, because errors,
+   * annotations, or marks are being collected. When it's false, the keyword
+   * can stop as soon as its result is known.
+   */
+  exhaustive: boolean;
+
+  /**
+   * The evaluators of the operation's `schemas`, in the same order. Pass
+   * `segment` when evaluating a property or item of the instance, so errors
+   * and annotations get the right instance location. Leave it out when
+   * evaluating the same instance. A schema evaluated on the same instance
+   * marks what it marks for the keyword, if it passes.
+   */
+  schemas: ((instance: I, segment?: string | number) => boolean)[];
+
+  /**
+   * Record that the keyword evaluated a property (by name) or an item (by
+   * index) of the instance. Like annotations, marks are kept only if the
+   * keyword and every schema it was evaluated through pass. It does nothing
+   * when nothing reads marks.
+   */
+  markEvaluated: (key: string | number) => void;
+
+  /**
+   * Add an annotation for the instance. It's kept only if the keyword and
+   * every schema it was evaluated through pass. Plugins see it either way.
+   * It's undefined when nothing can see annotations, so a keyword can skip
+   * work it only does to annotate.
+   */
+  annotate?: (value: Json) => void;
+
+  /**
+   * The properties or items marked so far on the instance, by the keyword's
+   * siblings and what they applied. It's only defined if the operation
+   * `reads` `evaluated`.
+   */
+  evaluated?: () => ReadonlySet<string | number>;
+
+  /**
+   * The evaluator of the outermost schema in the dynamic scope with the
+   * given dynamic anchor, if there is one. It's only defined if the
+   * operation `reads` `dynamicScope`.
+   */
+  dynamicAnchor?: (name: string) => ((instance: I, segment?: string | number) => boolean) | undefined;
 };
 
 /** What a keyword's `lower` gets for a value of a {@link Shape} */

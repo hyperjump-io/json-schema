@@ -45,6 +45,14 @@ export type Limits = { min?: number; max?: number };
  * nested. A schema is used through `apply`. The operations are in the
  * groups of KERNEL.md's "Operations", starting with logic and schemas,
  * which says what each one means.
+ *
+ * A keyword that can't be said with the other operations uses an escape
+ * hatch. `predicate` is a check of instances of `types`, which passes any
+ * other type. `opaque` is an applicator: what it applies is `schemas`
+ * (usually `apply` expressions), and `value` is only data. The keyword's
+ * `evaluate` gets their evaluators, in the same order. It marks what it
+ * says it marks, and nothing about it is known otherwise, so optimizations
+ * treat it as a barrier.
  */
 export type Expression = { op: "pass" }
   | { op: "fail" }
@@ -86,7 +94,17 @@ export type Expression = { op: "pass" }
   | { op: "eachPropertyName"; of: Expression }
 
   // Annotations
-  | { op: "annotate"; value: Json; types?: TypeName[] };
+  | { op: "annotate"; value: Json; types?: TypeName[] }
+
+  // Escape hatches, evaluated by the keyword's `evaluate`
+  | { op: "predicate"; keyword: string; value: Json; types: TypeName[] }
+  | { op: "opaque"; keyword: string; value: Json; schemas: Expression[]; explainsFailure?: boolean; reads?: EvaluationState[] };
+
+/**
+ * What an `opaque` operation reads besides the instance: the properties or
+ * items marked so far (`evaluated`), or the dynamic scope (`dynamicScope`)
+ */
+export type EvaluationState = "evaluated" | "dynamicScope";
 
 export type Op = Expression["op"];
 
@@ -140,6 +158,12 @@ export type Kernel = {
 
 /** The expressions directly in an expression, not through `apply` */
 export const subexpressions: (expression: Expression) => Expression[];
+
+/**
+ * Whether an expression reads the dynamic scope (`dynamicApply`, or an
+ * `opaque` operation that reads it), so evaluators have to track it
+ */
+export const readsDynamicScope: (expression: Expression) => boolean;
 
 /** The item expressions in an item pattern */
 export const patternItems: (pattern: ItemPattern) => Expression[];

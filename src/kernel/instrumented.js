@@ -2,14 +2,14 @@ import * as JsonPointer from "@hyperjump/json-pointer";
 import { keywordDefinitionUri } from "../keywords/unknown.js";
 import { codePointLength, instanceEqual } from "../keywords/utilities.js";
 import { jsInstance } from "./instance.js";
-import { conditionsOf, explainsFailure, hasOp, readsMarks } from "./kernel.js";
-import { addDynamicAnchors, addReachable, isClose, itemSequenceStates, selector } from "./fast.js";
+import { conditionsOf, explainsFailure, readsDynamicScope, readsMarks } from "./kernel.js";
+import { addDynamicAnchors, addReachable, isClose, itemSequenceStates, keywordEvaluate, selector } from "./fast.js";
 
 /**
  * @import { Data, Node } from "unist"
  * @import { Json } from "@hyperjump/browser/json"
  * @import { JsonSchema } from "../json-schema.d.ts"
- * @import { InstanceOps } from "../keyword.d.ts"
+ * @import { EvaluateContext, InstanceOps } from "../keyword.d.ts"
  * @import { EvaluationLocation, EvaluationPlugin, KeywordInfo, SchemaInfo } from "./evaluation-plugin.d.ts"
  * @import { Expression, Handle, ItemPattern, Kernel, KeywordGroup, TypeName } from "./kernel.d.ts"
  */
@@ -173,7 +173,7 @@ export const instrumented = (jsonSchema, kernel, options) => {
   const { instance: ops, isAst, annotating, instrumented: tracking } = options;
 
   const tracksDynamicScope = Object.values(kernel.schemas).some((schema) => {
-    return typeof schema !== "boolean" && schema.keywords.some(({ expression }) => hasOp(expression, "dynamicApply"));
+    return typeof schema !== "boolean" && schema.keywords.some(({ expression }) => readsDynamicScope(expression));
   });
 
   /** @typedef {Parameters<typeof ops.typeOf>[0]} I */
@@ -706,7 +706,84 @@ export const instrumented = (jsonSchema, kernel, options) => {
           return true;
         };
       }
+
+      case "predicate": {
+        const evaluate = keywordEvaluate(jsonSchema, expression.keyword)(expression.value, { op: "predicate", jsonSchema, instance: ops });
+        const types = new Set(/** @type TypeName[] */ (expression.types));
+        return (instance) => {
+          return !hasType(types, ops.typeOf(instance), () => Number.isInteger(ops.value(instance))) || evaluate(instance);
+        };
+      }
+      case "opaque":
+        return buildOpaque(expression, info);
     }
+  };
+
+  /**
+   * An `opaque` operation, through the keyword's evaluator. Its context reads
+   * the marks of the evaluation in progress, which are swapped in for each
+   * call, so evaluations that nest (a schema that applies itself) each see
+   * their own. Schemas it applies have their own hooks, at the instance
+   * location of the segment it gives. An expression in `schemas` that isn't
+   * `apply` is part of the keyword, like any operation's subexpression.
+   *
+   * @type (expression: Extract<Expression, { op: "opaque" }>, info: KeywordInfo) => Evaluator<I>
+   */
+  const buildOpaque = (expression, info) => {
+    /** @type Marks */
+    let current;
+
+    /** @type (of: Expression) => (instance: I, segment?: string | number) => boolean */
+    const subschema = (of) => {
+      const onInstance = build(of, info);
+      const onChild = applyTo(of, info);
+      return (instance, segment) => {
+        // Marks on a child are the child's. On the same instance, they're
+        // kept only if the schema passes.
+        if (segment !== undefined) {
+          return onChild(instance, undefined, segment);
+        }
+        const own = current && new Set(current);
+        const valid = onInstance(instance, own);
+        if (valid) {
+          addAll(current, own);
+        }
+        return valid;
+      };
+    };
+
+    /** @type EvaluateContext<I> */
+    const context = {
+      op: "opaque",
+      jsonSchema,
+      instance: ops,
+      exhaustive: true,
+      schemas: expression.schemas.map(subschema),
+      markEvaluated: (key) => {
+        current?.add(key);
+      }
+    };
+    if (annotating || tracking) {
+      context.annotate = (value) => annotate(info, value);
+    }
+    if (expression.reads?.includes("evaluated")) {
+      context.evaluated = () => current ?? new Set();
+    }
+    if (expression.reads?.includes("dynamicScope")) {
+      context.dynamicAnchor = (name) => {
+        const handle = dynamicAnchors?.[name];
+        return handle === undefined ? undefined : subschema({ op: "apply", schema: handle });
+      };
+    }
+
+    const evaluate = keywordEvaluate(jsonSchema, expression.keyword)(expression.value, context);
+    return (instance, marks) => {
+      const outer = current;
+      current = marks;
+      const valid = evaluate(instance);
+      current = outer;
+      return valid;
+    };
   };
 
   /**

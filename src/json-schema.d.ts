@@ -142,7 +142,9 @@ export class JsonSchema extends Hyperjump<JsonSchemaNode> {
    * Restore a validator from {@link Validator.serialize}. It doesn't
    * retrieve anything, but it needs the same keywords to have been added.
    *
-   * @throws Error if a keyword in the compiled schema hasn't been added.
+   * @throws Error if the compiled schema is in a kernel version other than
+   * this library's (`kernel: 1`), or if a keyword or asserting format in it
+   * hasn't been added.
    */
   restoreValidator(compiled: Json): Validator;
 

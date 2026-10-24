@@ -28,10 +28,10 @@
  *
  * What's marked is known from the operations, without rules for keywords.
  * Operations that apply a schema only under some condition (`any`, `one`,
- * `cases`) only count if nothing they apply marks anything. `contains` and
- * `dynamicApply` are never known. Only the marks of a passing schema
- * matter, because a schema whose sibling fails fails anyway. That's only
- * true without plugins or annotations, so it's for the fast mode only.
+ * `cases`) only count if nothing they apply marks anything. `contains`,
+ * `dynamicApply`, and `opaque` are never known. Only the marks of a passing
+ * schema matter, because a schema whose sibling fails fails anyway. That's
+ * only true without plugins or annotations, so it's for the fast mode only.
  *
  * @type Optimization
  */
@@ -250,6 +250,7 @@ class Analysis {
       case "apply":
         return this.#schemaMarks(expression.schema);
       case "dynamicApply":
+      case "opaque":
         return;
 
       case "property":

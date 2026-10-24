@@ -1648,6 +1648,9 @@ never timed.
    pin them change on purpose.
 4. **Escape hatches and serializing.** `predicate` and `opaque`, tested
    with user-defined keywords, and `kernel: 1` with `restoreValidator`.
+   A keyword's `evaluate` builds an evaluator once, like the kernel's
+   operations, rather than being called for each instance (KERNEL.md,
+   "Escape hatches").
 5. **Lint reads expressions.** `lowerForLint` and `Analysis` move to
    `src/lint/` and replace `keywordType`, `const-or-enum-assertions`' list,
    and what's left of finding references by URI. `contradictory-limits` is

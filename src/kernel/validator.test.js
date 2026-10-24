@@ -12,7 +12,7 @@ import dynamicAnchorKeyword from "../keywords/dynamicAnchor.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
- * @import { Keyword, Reference } from "../keyword.d.ts"
+ * @import { EvaluateContext, Keyword, OpaqueContext, Reference } from "../keyword.d.ts"
  * @import { Expression, TypeName } from "./kernel.d.ts"
  * @import { EvaluationLocation, EvaluationPlugin } from "./evaluation-plugin.d.ts"
  * @import { DetailedValidationError, ValidationError } from "../output/validation-error.d.ts"
@@ -93,10 +93,173 @@ const unevaluatedPropertiesKeyword = {
   lower: (schema) => ({ op: "eachProperty", select: { unevaluated: true }, of: schema })
 };
 
+/** @type <I>(context: EvaluateContext<I>) => OpaqueContext<I> */
+const opaqueContext = (context) => {
+  if (context.op !== "opaque") {
+    throw Error("Expected an opaque operation");
+  }
+  return context;
+};
+
+// Whether an array's numbers are in order. The kernel can't say it, so it's
+// a predicate.
+/** @type Keyword<"ascending" | "descending"> */
+const sortedKeyword = {
+  uri: "https://example.com/keyword/sorted",
+  shape: "data",
+  lower: (order) => ({ op: "predicate", keyword: "https://example.com/keyword/sorted", value: order, types: ["array"] }),
+  evaluate: (order, { instance }) => {
+    const sign = order === "ascending" ? 1 : -1;
+    return (array) => {
+      /** @type number | undefined */
+      let previous;
+      for (const item of instance.items(array)) {
+        const value = /** @type number */ (instance.value(item));
+        if (previous !== undefined && sign * (value - previous) < 0) {
+          return false;
+        }
+        previous = value;
+      }
+      return true;
+    };
+  }
+};
+
+// Applies a schema to each property value by its type, and annotates the
+// names it applied one to. The kernel could say it, but it's a test of
+// `opaque`.
+/** @type Keyword<[string, Expression][]> */
+const propertiesByTypeKeyword = {
+  uri: "https://example.com/keyword/propertiesByType",
+  shape: { map: "schema" },
+  lower: (pairs) => ({
+    op: "opaque",
+    keyword: "https://example.com/keyword/propertiesByType",
+    value: pairs.map(([type]) => type),
+    schemas: pairs.map(([, schema]) => schema),
+    explainsFailure: true
+  }),
+  evaluate: (types, context) => {
+    const { instance, schemas, markEvaluated, annotate, exhaustive } = opaqueContext(context);
+    const evaluators = new Map(/** @type string[] */ (types).map((type, index) => [type, schemas[index]]));
+    return (object) => {
+      if (instance.typeOf(object) !== "object") {
+        return true;
+      }
+
+      let valid = true;
+      /** @type string[] */
+      const names = [];
+      for (const [name, value] of instance.entries(object)) {
+        const evaluate = evaluators.get(/** @type string */ (instance.typeOf(value)));
+        if (evaluate !== undefined) {
+          valid = evaluate(value, name) && valid;
+          if (!valid && !exhaustive) {
+            return false;
+          }
+          markEvaluated(name);
+          names.push(name);
+        }
+      }
+      annotate?.(names);
+      return valid;
+    };
+  }
+};
+
+// Applies schemas to the instance, in order, until one passes
+/** @type Keyword<Expression[]> */
+const firstOfKeyword = {
+  uri: "https://example.com/keyword/firstOf",
+  shape: { array: "schema" },
+  lower: (schemas) => ({ op: "opaque", keyword: "https://example.com/keyword/firstOf", value: null, schemas }),
+  evaluate: (_value, context) => {
+    const { schemas } = opaqueContext(context);
+    return (instance) => schemas.some((evaluate) => evaluate(instance));
+  }
+};
+
+// `firstOf` of objects of property schemas, so what it applies isn't
+// `apply`
+/** @type Keyword<[string, Expression][][]> */
+const firstOfPropertiesKeyword = {
+  uri: "https://example.com/keyword/firstOfProperties",
+  shape: { array: { map: "schema" } },
+  lower: (alternatives) => ({
+    op: "opaque",
+    keyword: "https://example.com/keyword/firstOf",
+    value: null,
+    schemas: alternatives.map((pairs) => ({ op: "all", of: pairs.map(([name, schema]) => ({ op: "property", name, of: schema })) }))
+  })
+};
+
+// Whether the instance is the value. It's `const` as an opaque operation,
+// to show the value is only data.
+/** @type Keyword<Json> */
+const sameAsKeyword = {
+  uri: "https://example.com/keyword/sameAs",
+  shape: "data",
+  lower: (value) => ({ op: "opaque", keyword: "https://example.com/keyword/sameAs", value, schemas: [] }),
+  evaluate: (value, context) => {
+    const { instance } = opaqueContext(context);
+    return (subject) => JSON.stringify(instance.value(subject)) === JSON.stringify(value);
+  }
+};
+
+// At most this many properties aren't evaluated by the keyword's siblings
+/** @type Keyword<number> */
+const maxUnevaluatedKeyword = {
+  uri: "https://example.com/keyword/maxUnevaluated",
+  shape: "data",
+  lower: (max) => ({ op: "opaque", keyword: "https://example.com/keyword/maxUnevaluated", value: max, schemas: [], reads: ["evaluated"] }),
+  evaluate: (max, context) => {
+    const { instance, evaluated } = opaqueContext(context);
+    return (object) => {
+      if (instance.typeOf(object) !== "object") {
+        return true;
+      }
+
+      const marked = /** @type NonNullable<typeof evaluated> */ (evaluated)();
+      let count = 0;
+      for (const [name] of instance.entries(object)) {
+        if (!marked.has(name)) {
+          count++;
+        }
+      }
+      return count <= /** @type number */ (max);
+    };
+  }
+};
+
+// Applies the outermost schema in the dynamic scope with a dynamic anchor to
+// each property value
+/** @type Keyword<string> */
+const dynamicPropertiesKeyword = {
+  uri: "https://example.com/keyword/dynamicProperties",
+  shape: "data",
+  lower: (anchor) => ({ op: "opaque", keyword: "https://example.com/keyword/dynamicProperties", value: anchor, schemas: [], reads: ["dynamicScope"] }),
+  evaluate: (anchor, context) => {
+    const { instance, dynamicAnchor } = opaqueContext(context);
+    return (object) => {
+      const evaluate = /** @type NonNullable<typeof dynamicAnchor> */ (dynamicAnchor)(/** @type string */ (anchor));
+      if (instance.typeOf(object) !== "object" || evaluate === undefined) {
+        return true;
+      }
+
+      let valid = true;
+      for (const [name, value] of instance.entries(object)) {
+        valid = evaluate(value, name) && valid;
+      }
+      return valid;
+    };
+  }
+};
+
 /** @type Keyword[] */
 const keywords = [
   idKeyword, anchorKeyword, dynamicAnchorKeyword, typeKeyword, minimumKeyword, titleKeyword, propertiesKeyword,
   allOfKeyword, anyOfKeyword, refKeyword, dynamicRefKeyword, unevaluatedPropertiesKeyword, ifKeyword,
+  sortedKeyword, propertiesByTypeKeyword, firstOfKeyword, firstOfPropertiesKeyword, sameAsKeyword, maxUnevaluatedKeyword, dynamicPropertiesKeyword,
   { uri: "https://example.com/keyword/defs", shape: { map: "schema" } },
   { uri: "https://example.com/keyword/then", shape: "schema" }
 ];
@@ -124,7 +287,14 @@ const addTestDialect = (jsonSchema) => {
       anyOf: anyOfKeyword.uri,
       if: ifKeyword.uri,
       then: "https://example.com/keyword/then",
-      unevaluatedProperties: unevaluatedPropertiesKeyword.uri
+      unevaluatedProperties: unevaluatedPropertiesKeyword.uri,
+      sorted: sortedKeyword.uri,
+      propertiesByType: propertiesByTypeKeyword.uri,
+      firstOf: firstOfKeyword.uri,
+      firstOfProperties: firstOfPropertiesKeyword.uri,
+      sameAs: sameAsKeyword.uri,
+      maxUnevaluated: maxUnevaluatedKeyword.uri,
+      dynamicProperties: dynamicPropertiesKeyword.uri
     },
     unknownKeywords: "annotation"
   });
@@ -855,6 +1025,203 @@ describe("Validator", () => {
     });
   });
 
+  describe("predicate", () => {
+    test("checks instances of its types and passes the others", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({ sorted: "ascending" }));
+
+      expect(validator.validate([1, 2, 2, 3])).to.equal(true);
+      expect(validator.validate([2, 1])).to.equal(false);
+      expect(validator.validate("not an array")).to.equal(true);
+      expect(validator.validateJson("[1, 3, 2]")).to.equal(false);
+      expect(validator.validateJson("[1, 2, 3]")).to.equal(true);
+    });
+
+    test("an error is for the keyword", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({ $id: "https://example.com/sorted", sorted: "descending" }));
+
+      const result = validator.validate([1, 2], { output: "BASIC" });
+      expect(result.errors.map((error) => locations(/** @type ValidationError */ (error)))).to.eql([
+        { ruleId: sortedKeyword.uri, absoluteKeywordLocation: "https://example.com/sorted#/sorted", instanceLocation: "" }
+      ]);
+    });
+  });
+
+  describe("opaque", () => {
+    test("applies schemas", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({
+        propertiesByType: { number: { minimum: 0 }, string: true }
+      }));
+
+      expect(validator.validate({ a: 1, b: "x", c: null })).to.equal(true);
+      expect(validator.validate({ a: -1 })).to.equal(false);
+      expect(validator.validateJson(`{ "a": -1 }`)).to.equal(false);
+      expect(validator.validate(-1)).to.equal(true);
+    });
+
+    test("errors are at the instance locations it gives", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({
+        $id: "https://example.com/by-type",
+        propertiesByType: { number: { minimum: 0 } }
+      }));
+
+      for (const result of [validator.validate({ a: 1, b: -1, c: -2 }, { output: "BASIC" }), validator.validateJson(`{ "a": 1, "b": -1, "c": -2 }`, { output: "BASIC" })]) {
+        expect(result.errors.map((error) => locations(/** @type ValidationError */ (error)))).to.eql([
+          { ruleId: minimumKeyword.uri, absoluteKeywordLocation: "https://example.com/by-type#/propertiesByType/number/minimum", instanceLocation: "/b" },
+          { ruleId: minimumKeyword.uri, absoluteKeywordLocation: "https://example.com/by-type#/propertiesByType/number/minimum", instanceLocation: "/c" }
+        ]);
+      }
+    });
+
+    test("its value is only data, even if it looks like a schema", async () => {
+      const value = { op: "apply", schema: "https://example.com/not-a-schema" };
+      const validator = await jsonSchema.compile(await schemaFile({ sameAs: value }));
+
+      expect(validator.validate(value)).to.equal(true);
+      expect(jsonSchema.restoreValidator(JSON.parse(JSON.stringify(validator.serialize()))).validate(value)).to.equal(true);
+    });
+
+    test("an opaque operation that doesn't explain its failure has an error of its own", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({ $id: "https://example.com/max-unevaluated", maxUnevaluated: 0 }));
+
+      const result = validator.validate({ a: 1 }, { output: "BASIC" });
+      expect(result.errors.map((error) => locations(/** @type ValidationError */ (error)))).to.eql([
+        { ruleId: maxUnevaluatedKeyword.uri, absoluteKeywordLocation: "https://example.com/max-unevaluated#/maxUnevaluated", instanceLocation: "" }
+      ]);
+    });
+
+    test("plugins see the schemas it applies", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({
+        $id: "https://example.com/by-type-plugin",
+        propertiesByType: { number: { minimum: 0 } }
+      }));
+
+      /** @type string[] */
+      const schemas = [];
+      validator.validate({ a: 1, b: "x" }, {
+        plugins: [{ beforeSchema: (schema, at) => schemas.push(`${schema.absoluteKeywordLocation} at '${at.instanceLocation}'`) }]
+      });
+      expect(schemas).to.eql([
+        "https://example.com/by-type-plugin# at ''",
+        "https://example.com/by-type-plugin#/propertiesByType/number at '/a'"
+      ]);
+    });
+
+    test("annotates", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({ propertiesByType: { number: true } }));
+
+      const { output, node } = validator.annotate({ a: 1, b: "x", c: 2 });
+      expect(output).to.equal(true);
+      expect(node.data?.annotations?.get(propertiesByTypeKeyword.uri)).to.eql([["a", "c"]]);
+    });
+
+    test("what it marks counts for unevaluatedProperties", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({
+        properties: { foo: true },
+        propertiesByType: { number: true },
+        unevaluatedProperties: false
+      }));
+
+      for (const validate of [
+        (/** @type Json */ instance) => validator.validate(instance),
+        (/** @type Json */ instance) => validator.validate(instance, { output: "BASIC" }).valid,
+        (/** @type Json */ instance) => validator.validateJson(JSON.stringify(instance))
+      ]) {
+        expect(validate({ foo: "a", bar: 1 })).to.equal(true);
+        expect(validate({ foo: "a", bar: "b" })).to.equal(false);
+      }
+    });
+
+    test("what a failing subschema on the same instance marks doesn't count", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({
+        firstOf: [{ properties: { b: true, c: { type: "number" } } }, { properties: { a: true, c: true } }],
+        unevaluatedProperties: false
+      }));
+
+      for (const validate of [
+        (/** @type Json */ instance) => validator.validate(instance),
+        (/** @type Json */ instance) => validator.validateJson(JSON.stringify(instance))
+      ]) {
+        expect(validate({ b: 1, c: 1 })).to.equal(true);
+        expect(validate({ a: 1, c: "x" })).to.equal(true);
+        // The first marks `b` before `c` fails
+        expect(validate({ a: 1, b: 1, c: "x" })).to.equal(false);
+      }
+    });
+
+    test("what a failing expression that isn't a schema marks doesn't count", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({
+        firstOfProperties: [{ b: true, c: { type: "number" } }, { a: true, c: true }],
+        unevaluatedProperties: false
+      }));
+
+      for (const validate of [
+        (/** @type Json */ instance) => validator.validate(instance),
+        (/** @type Json */ instance) => validator.validateJson(JSON.stringify(instance))
+      ]) {
+        expect(validate({ b: 1, c: 1 })).to.equal(true);
+        expect(validate({ a: 1, c: "x" })).to.equal(true);
+        expect(validate({ a: 1, b: 1, c: "x" })).to.equal(false);
+      }
+    });
+
+    test("schemas that apply themselves each have their own marks", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({
+        propertiesByType: { object: { $ref: "#" } },
+        unevaluatedProperties: false
+      }));
+
+      for (const validate of [
+        (/** @type Json */ instance) => validator.validate(instance),
+        (/** @type Json */ instance) => validator.validateJson(JSON.stringify(instance))
+      ]) {
+        expect(validate({ a: { b: {} } })).to.equal(true);
+        expect(validate({ a: { b: {}, c: 1 } })).to.equal(false);
+        // `a`'s `c` isn't the root's
+        expect(validate({ a: { c: {} }, c: 1 })).to.equal(false);
+      }
+    });
+
+    test("reads what its siblings marked", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({
+        maxUnevaluated: 1,
+        properties: { foo: true },
+        propertiesByType: { boolean: true }
+      }));
+
+      for (const validate of [
+        (/** @type Json */ instance) => validator.validate(instance),
+        (/** @type Json */ instance) => validator.validateJson(JSON.stringify(instance))
+      ]) {
+        expect(validate({ foo: 1, bar: true, baz: 1 })).to.equal(true);
+        expect(validate({ foo: 1, bar: 1, baz: 1 })).to.equal(false);
+      }
+    });
+
+    test("reads the dynamic scope", async () => {
+      const uri = await schemaFile({
+        $id: "https://example.com/opaque-outer",
+        $dynamicAnchor: "node",
+        type: "object",
+        $ref: "opaque-inner",
+        $defs: {
+          inner: {
+            $id: "https://example.com/opaque-inner",
+            $dynamicAnchor: "node",
+            dynamicProperties: "node"
+          }
+        }
+      });
+
+      const outer = await jsonSchema.compile(uri);
+      expect(outer.validate({ a: { b: {} } })).to.equal(true);
+      expect(outer.validate({ a: { b: 1 } })).to.equal(false);
+      expect(outer.validateJson(`{ "a": { "b": 1 } }`)).to.equal(false);
+
+      const inner = await jsonSchema.compile(`${uri}#/$defs/inner`);
+      expect(inner.validate({ a: { b: 1 } })).to.equal(true);
+    });
+  });
+
   describe("serialize", () => {
     test("a restored validator works without compiling", async () => {
       const validator = await jsonSchema.compile(await schemaFile({ properties: { foo: { type: "number" } } }));
@@ -871,6 +1238,37 @@ describe("Validator", () => {
       const serialized = validator.serialize();
 
       expect(() => new JsonSchema().restoreValidator(serialized)).to.throw("isn't supported");
+    });
+
+    test("a restored validator evaluates escape hatches", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({ sorted: "ascending", propertiesByType: { array: { sorted: "descending" } } }));
+      const serialized = JSON.parse(JSON.stringify(validator.serialize()));
+
+      const restored = jsonSchema.restoreValidator(serialized);
+      expect(restored.validate([1, 2])).to.equal(true);
+      expect(restored.validate({ a: [2, 1] })).to.equal(true);
+      expect(restored.validate({ a: [1, 2] })).to.equal(false);
+    });
+
+    test("restoring needs the keywords of escape hatches to have evaluate", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({ sorted: "ascending" }));
+      const serialized = validator.serialize();
+
+      const other = new JsonSchema();
+      addTestDialect(other);
+      other.addKeyword({ ...sortedKeyword, evaluate: undefined });
+      expect(() => other.restoreValidator(serialized)).to.throw("needs 'evaluate'");
+    });
+
+    test("a compiled schema is in kernel version 1", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({ type: "number" }));
+      const serialized = /** @type Record<string, Json> */ (validator.serialize());
+
+      expect(serialized.kernel).to.equal(1);
+      expect(() => jsonSchema.restoreValidator({ ...serialized, kernel: 2 })).to.throw("kernel version 2");
+      const withoutVersion = { ...serialized };
+      delete withoutVersion.kernel;
+      expect(() => jsonSchema.restoreValidator(withoutVersion)).to.throw("kernel version undefined");
     });
   });
 });

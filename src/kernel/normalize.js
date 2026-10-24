@@ -73,6 +73,8 @@ export const normalForm = (expression) => {
       };
     case "itemSequence":
       return { ...expression, pattern: normalPattern(expression.pattern) };
+    case "opaque":
+      return { ...expression, schemas: expression.schemas.map(normalForm) };
     case "oneOfValues":
       return expression.values.length === 1 ? { op: "equals", value: expression.values[0] } : expression;
     case "typeIs":
