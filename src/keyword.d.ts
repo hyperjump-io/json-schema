@@ -39,13 +39,18 @@ export type Keyword<C extends Json = Json> = {
   default?: Json;
 
   /**
-   * The URIs of keywords in the same schema whose values this keyword reads,
-   * like `properties` for `additionalProperties`. Moving the keyword away
-   * from them, or next to them, changes what it means, so tools that move
-   * keywords between schemas, like lint rules, need to know. Declare every
-   * sibling `compile` finds with `siblingKeyword`.
+   * The keywords in the same schema whose values this keyword reads, like
+   * `properties` for `additionalProperties`, by a name of the keyword's
+   * choosing. `compile` and `check` get their values by those names
+   * (`context.siblings`), and can't read any other sibling. Moving the
+   * keyword away from them, or next to them, changes what it means, so tools
+   * that move keywords between schemas, like lint rules, need to know.
+   *
+   * ```js
+   * siblings: { properties: "https://json-schema.org/keyword/properties" }
+   * ```
    */
-  siblings?: string[];
+  siblings?: Record<string, string>;
 
   /**
    * Report problems with the keyword's value that its {@link shape} doesn't
@@ -132,10 +137,11 @@ export type CompileContext = {
   jsonSchema: JsonSchema;
 
   /**
-   * The schema the keyword is in. Use it to find sibling keywords, such as
-   * `properties` for `additionalProperties`.
+   * The values of the siblings the keyword declares ({@link Keyword.siblings}),
+   * by the names it gives them. A sibling that isn't in the schema is
+   * undefined.
    */
-  schemaNode: JsonSchemaNode;
+  siblings: Record<string, JsonSchemaNode | undefined>;
 
   /** The dialect of the schema the keyword is in */
   dialect: Dialect;
@@ -281,6 +287,12 @@ export type InstanceOps<I> = {
  * Describes which parts of a keyword's value are schemas.
  *
  * - `"schema"` matches an object or a boolean.
+ * - `"unappliedSchema"` is a schema the keyword doesn't apply, like
+ *   `contentSchema`. It's resolved like any schema, so identifiers in it
+ *   work, and tools know it's a schema, but it isn't compiled.
+ * - `"reference"` matches a string that's a URI reference. It's resolved
+ *   against the base URI, and the value node has the result as `href`.
+ *   It's how tools find references (`$ref`) without knowing keywords.
  * - `{ array: Shape }` matches an array whose items have the given shape.
  * - `{ map: Shape }` matches an object whose property values have the given
  *   shape.
@@ -298,6 +310,8 @@ export type InstanceOps<I> = {
  * | Keyword                    | Shape                                         |
  * | -------------------------- | --------------------------------------------- |
  * | `not`, `items` (2020-12)   | `"schema"`                                    |
+ * | `contentSchema`            | `"unappliedSchema"`                           |
+ * | `$ref`, `$recursiveRef`    | `"reference"`                                 |
  * | `allOf`, `prefixItems`     | `{ array: "schema" }`                         |
  * | `properties`, `$defs`      | `{ map: "schema" }`                           |
  * | `items` (draft-04)         | `["schema", { array: "schema" }]`             |
@@ -306,15 +320,16 @@ export type InstanceOps<I> = {
  * | `conditional`              | `{ array: ["schema", { array: "schema" }] }`  |
  * | `const`, `enum`, `default` | `"data"`                                      |
  */
-export type Shape = "schema" | "data" | { array: Shape } | { map: Shape } | Shape[];
+export type Shape = "schema" | "unappliedSchema" | "reference" | "data" | { array: Shape } | { map: Shape } | Shape[];
 
 export type CheckContext = {
   /**
-   * The schema the keyword is in. Use it to find sibling keywords, such as
-   * `maximum` for draft-04's `exclusiveMaximum`. Every sibling's keyword URI
-   * is known, but a sibling's value may not be annotated yet.
+   * The values of the siblings the keyword declares ({@link Keyword.siblings}),
+   * by the names it gives them, such as `maximum` for draft-04's
+   * `exclusiveMaximum`. A sibling that isn't in the schema is undefined. A
+   * sibling's value may not be annotated yet.
    */
-  schemaNode: JsonSchemaNode;
+  siblings: Record<string, JsonSchemaTolerantNode | undefined>;
 
   /**
    * Report a problem with the keyword's value. It's added to the file's

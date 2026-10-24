@@ -1,5 +1,4 @@
 import { jsonValue } from "@hyperjump/browser/json";
-import { siblingKeyword } from "../utilities.js";
 import { number } from "../checks.js";
 
 /**
@@ -14,11 +13,11 @@ import { number } from "../checks.js";
  */
 export default {
   uri: "https://json-schema.org/keyword/draft-04/maximum",
-  siblings: ["https://json-schema.org/keyword/draft-04/exclusiveMaximum"],
+  siblings: { exclusiveMaximum: "https://json-schema.org/keyword/draft-04/exclusiveMaximum" },
   shape: "data",
   check: number,
   compile(valueNode, context) {
-    const exclusiveNode = siblingKeyword(context.schemaNode, "https://json-schema.org/keyword/draft-04/exclusiveMaximum");
+    const exclusiveNode = context.siblings.exclusiveMaximum;
     return {
       maximum: /** @type number */ (jsonValue(valueNode)),
       exclusive: exclusiveNode?.jsonType === "boolean" && exclusiveNode.value

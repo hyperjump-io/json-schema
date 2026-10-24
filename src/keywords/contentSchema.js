@@ -1,5 +1,4 @@
 import { jsonValue } from "@hyperjump/browser/json";
-import { siblingKeyword } from "./utilities.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
@@ -16,11 +15,11 @@ import { siblingKeyword } from "./utilities.js";
  */
 export default {
   uri: "https://json-schema.org/keyword/contentSchema",
-  siblings: ["https://json-schema.org/keyword/contentMediaType"],
-  shape: "schema",
+  siblings: { contentMediaType: "https://json-schema.org/keyword/contentMediaType" },
+  shape: "unappliedSchema",
   default: true,
   compile(valueNode, context) {
-    const contentMediaTypeNode = siblingKeyword(context.schemaNode, "https://json-schema.org/keyword/contentMediaType");
+    const contentMediaTypeNode = context.siblings.contentMediaType;
     return contentMediaTypeNode === undefined ? null : jsonValue(valueNode);
   },
   evaluate(contentSchema, { instance, annotate }) {

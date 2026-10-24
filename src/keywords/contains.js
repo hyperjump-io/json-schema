@@ -1,5 +1,4 @@
 import { jsonValue } from "@hyperjump/browser/json";
-import { siblingKeyword } from "./utilities.js";
 
 /**
  * @import { Keyword, SchemaHandle } from "../keyword.d.ts"
@@ -14,11 +13,11 @@ import { siblingKeyword } from "./utilities.js";
  */
 export default {
   uri: "https://json-schema.org/keyword/contains",
-  siblings: ["https://json-schema.org/keyword/maxContains", "https://json-schema.org/keyword/minContains"],
+  siblings: { minContains: "https://json-schema.org/keyword/minContains", maxContains: "https://json-schema.org/keyword/maxContains" },
   shape: "schema",
   async compile(valueNode, context) {
-    const minContainsNode = siblingKeyword(context.schemaNode, "https://json-schema.org/keyword/minContains");
-    const maxContainsNode = siblingKeyword(context.schemaNode, "https://json-schema.org/keyword/maxContains");
+    const minContainsNode = context.siblings.minContains;
+    const maxContainsNode = context.siblings.maxContains;
 
     return {
       handle: await context.compileSchema(valueNode),

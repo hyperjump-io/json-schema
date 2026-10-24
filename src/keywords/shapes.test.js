@@ -38,8 +38,11 @@ import { addDraft202012, draft202012DialectUri } from "../dialects/draft-2020-12
 const misfits = (shape, depth = 0) => {
   if (depth > 3 || shape === "data") {
     return [];
-  } else if (shape === "schema") {
+  } else if (shape === "schema" || shape === "unappliedSchema") {
     return [{ value: 1, pointer: "", reportedBy: "schema" }];
+  } else if (shape === "reference") {
+    // A string that isn't a URI reference doesn't fit either
+    return [{ value: 1, pointer: "", reportedBy: "shape" }, { value: "a b", pointer: "", reportedBy: "shape" }];
   } else if (Array.isArray(shape)) {
     /** @type Case[] */
     const cases = [{ value: 1, pointer: "", reportedBy: shape.includes("data") ? "keyword" : "shape" }];

@@ -1,4 +1,4 @@
-import { isIriReference, isRegex } from "@hyperjump/json-schema-formats";
+import { isRegex } from "@hyperjump/json-schema-formats";
 
 /**
  * @import { JsonErrorNode } from "@hyperjump/browser/json"
@@ -35,10 +35,6 @@ export const nonNegativeInteger = expected("a non-negative integer", (node) => {
 
 export const positiveNumber = expected("a number greater than 0", (node) => {
   return node.jsonType === "number" && node.value > 0;
-});
-
-export const iriReference = expected("a URI reference", (node) => {
-  return node.jsonType === "string" && isIriReference(node.value);
 });
 
 export const regex = expected("a regular expression", (node) => {

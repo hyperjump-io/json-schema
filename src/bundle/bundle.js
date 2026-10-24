@@ -1,6 +1,6 @@
 import { jsonValue } from "@hyperjump/browser/json";
 import { parseIri, resolveIri, toAbsoluteIri, toRelativeIri } from "@hyperjump/uri";
-import { visitKeywords, visitReferences } from "../lint/utilities.js";
+import { visitReferences } from "../lint/utilities.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
@@ -13,7 +13,6 @@ const definitionsUri = "https://json-schema.org/keyword/definitions";
 const idUri = "https://json-schema.org/keyword/id";
 const legacyIdUri = "https://json-schema.org/keyword/draft-07/id";
 const notUri = "https://json-schema.org/keyword/not";
-const dynamicRefUri = "https://json-schema.org/keyword/draft-2020-12/dynamicRef";
 
 /**
  * See `JsonSchemaSession.bundle`
@@ -123,8 +122,8 @@ const referencedDocuments = async (session, main, externalSchemas) => {
 };
 
 /**
- * The URIs a document references. `$recursiveRef` is always `#`, and v1's
- * `$dynamicRef` is a name, so they never reference another document.
+ * The URIs a document references. v1's `$dynamicRef` is a name, so it never
+ * references another document.
  *
  * @type (document: JsonSchemaDocumentNode) => string[]
  */
@@ -133,16 +132,6 @@ const references = (document) => {
   const uris = [];
   visitReferences(document, (uri) => {
     uris.push(uri);
-  });
-  visitKeywords(document, dynamicRefUri, (keywordNode, schemaNode) => {
-    const valueNode = keywordNode.children[1];
-    if (valueNode.jsonType === "string") {
-      try {
-        uris.push(resolveIri(valueNode.value, toAbsoluteIri(schemaNode.location)));
-      } catch {
-        // An invalid reference is a schema problem
-      }
-    }
   });
 
   return uris;

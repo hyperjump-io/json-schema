@@ -1,5 +1,4 @@
 import { jsonValue } from "@hyperjump/browser/json";
-import { siblingKeyword } from "./utilities.js";
 import { uniqueStrings } from "./checks.js";
 
 /**
@@ -14,15 +13,15 @@ import { uniqueStrings } from "./checks.js";
  */
 export default {
   uri: "https://json-schema.org/keyword/requireAllExcept",
-  siblings: ["https://json-schema.org/keyword/properties"],
+  siblings: { properties: "https://json-schema.org/keyword/properties" },
   shape: "data",
   check: uniqueStrings,
-  compile(valueNode, { schemaNode }) {
+  compile(valueNode, { siblings }) {
     const except = new Set(/** @type string[] */ (jsonValue(valueNode)));
 
     /** @type string[] */
     const required = [];
-    const propertiesNode = siblingKeyword(schemaNode, "https://json-schema.org/keyword/properties");
+    const propertiesNode = siblings.properties;
     if (propertiesNode?.jsonType === "object") {
       for (const propertyNode of propertiesNode.children) {
         const name = propertyNode.children[0].value;

@@ -16,7 +16,8 @@ import type { DialectDefinition } from "../dialect.d.ts";
  *
  * - `json`: A value that isn't a schema, such as the value of `const`, an
  *   item in `required`, or the object that holds the subschemas of
- *   `properties`.
+ *   `properties`. A value where a keyword's shape expects a reference
+ *   (`$ref` since 2019-09) has the URI it resolves to as `href`.
  * - `json-schema`: An object or boolean schema. Each property of an object
  *   schema is a {@link JsonSchemaKeywordNode}. A value where a keyword's
  *   shape expects a schema is a schema even if it isn't an object or boolean.
@@ -37,6 +38,8 @@ export type JsonSchemaNode<X = never> = JsonNode<JsonSchemaAnnotations, X, JsonS
 /** The annotations of value nodes. See {@link JsonSchemaNode}. */
 export type JsonSchemaAnnotations = {
   type: "json";
+  /** The resolved URI of a value that's a reference */
+  href?: string;
 } | {
   type: "json-schema";
   /** The dialect of the schema resource this schema belongs to */

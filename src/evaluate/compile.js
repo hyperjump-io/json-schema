@@ -1,6 +1,7 @@
 import { toAbsoluteIri } from "@hyperjump/uri";
 import { appendToLocation, jsonValue, pointerGet } from "@hyperjump/browser/json";
 import { keywordDefinitionUri } from "../keywords/unknown.js";
+import { siblingValues } from "../keywords/utilities.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
@@ -119,7 +120,7 @@ class Compiler {
       /** @type CompileContext */
       const context = {
         jsonSchema: this.#session.jsonSchema,
-        schemaNode: node,
+        siblings: siblingValues(node, keyword.siblings),
         dialect: dialect,
         keywordName: nameNode.value,
         compileSchema: async (schema) => {

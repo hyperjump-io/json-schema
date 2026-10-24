@@ -1,6 +1,4 @@
-import { jsonValue } from "@hyperjump/browser/json";
-import { resolveIri, toAbsoluteIri } from "@hyperjump/uri";
-import { iriReference } from "../checks.js";
+import { toAbsoluteIri } from "@hyperjump/uri";
 
 /**
  * @import { Keyword, SchemaHandle } from "../../keyword.d.ts"
@@ -16,12 +14,8 @@ import { iriReference } from "../checks.js";
  */
 export default {
   uri: "https://json-schema.org/keyword/draft-2019-09/recursiveRef",
-  shape: "data",
-  check: iriReference,
-  compile(valueNode, context) {
-    const reference = /** @type string */ (jsonValue(valueNode));
-    return context.compileSchema(resolveIri(reference, toAbsoluteIri(context.schemaNode.location)));
-  },
+  shape: "reference",
+  compile: (valueNode, context) => context.compileSchema(/** @type {{ href: string }} */ (valueNode).href),
   evaluate(handle, context) {
     const evaluate = context.schema(handle);
 

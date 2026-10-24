@@ -111,8 +111,14 @@ were considered. See "Open questions".)
 
 - `uri`: Identifies the keyword independent of its name in any dialect.
 - `shape`: Where the value contains schemas, using combinators: `"schema"`,
-  `"data"`, `{ array: Shape }`, `{ map: Shape }`, or `Shape[]` (the first
-  alternative whose JSON type matches). The shape owns the JSON types of
+  `"unappliedSchema"`, `"reference"`, `"data"`, `{ array: Shape }`,
+  `{ map: Shape }`, or `Shape[]` (the first alternative whose JSON type
+  matches). `"unappliedSchema"` is a schema the keyword doesn't apply
+  (`contentSchema`). It's resolved like any schema but isn't compiled.
+  `"reference"` is a URI reference (`$ref`, 2020-12's `$dynamicRef`,
+  `$recursiveRef`). The resolver gives its node the URI it resolves to as
+  `href`, like a schema that's a reference, so lint and bundling find
+  references by the AST, without knowing keywords. The shape owns the JSON types of
   what it describes, and the resolver reports a value that doesn't fit. A
   value where the shape says `"schema"` is a schema node even if it isn't an
   object or boolean (`invalid-schema`). Only alternatives are chosen by the
@@ -183,12 +189,12 @@ were considered. See "Open questions".)
   through draft-07 have their own `format` keyword that ignores formats the
   dialect doesn't have, rather than a dialect option for it.
 - A keyword that reads its siblings' values, like `additionalProperties`
-  reading `properties`, declares their URIs in `siblings`, the same way a
-  format declares its `types`. It's metadata for tools, like
-  `mergeable-all-of-schema`, rather than something evaluation uses. A test
-  checks each built-in keyword's `siblings` against its `siblingKeyword`
-  calls, so they can't drift. Keywords that read evaluation state instead
-  say so with `reads`.
+  reading `properties`, declares them in `siblings`, a record of names it
+  chooses to keyword URIs. `compile` and `check` get their values by those
+  names (`context.siblings`) and have no other way to find a sibling, so
+  the declaration can't drift from what the keyword reads. Tools use it
+  too, like `mergeable-all-of-schema`. Keywords that read evaluation state
+  instead say so with `reads`.
 - The lite formats (`src/formats/lite.js`) are every format JSON Schema
   defines except `hostname`, `idn-hostname`, and `idn-email`, which need large
   tables of Unicode data. Presets don't use the list. Each lists the
@@ -1604,8 +1610,9 @@ never timed.
 1. **Syntax, with no change in behavior.** `Shape` gets `"reference"` and
    `"unappliedSchema"`, and `siblings` is a record. Resolving, bundling,
    `schema-group.js`, and lint's `refUri` and `visitReferences` find
-   references by shape instead of keyword URIs. `compile` reads siblings
-   from the record.
+   references by shape instead of keyword URIs. `compile` and `check` read
+   siblings from the record, so the `siblingKeyword` utility and
+   `siblings.test.js` are removed.
 2. **The kernel replaces compile and evaluate.** `src/kernel/` replaces
    `src/evaluate/`: the expressions (`kernel.d.ts`, and `kernel.js` for
    `subexpressions`, `readsMarks`, `explainsFailure`, and `conditionsOf`),
@@ -1615,8 +1622,8 @@ never timed.
    collecting annotations), `validator.js`, and `instance.js`. Each
    keyword gets `lower`, from the prototype's table. `compile.js`,
    `specialize.js`, `optimize.js`, `compile`, `simpleApplicator`, `reads`,
-   the `siblingKeyword`, `compileSchemaArray`, and `compileSchemaMap`
-   utilities, and `siblings.test.js` are removed. The old and new
+   and the `compileSchemaArray` and `compileSchemaMap` utilities are
+   removed. The old and new
    evaluators don't live side by side, because the reference is the old
    one. Without optimizations, hook calls are the same as v2's. Until
    stage 3, the output formats still use `simpleApplicator`'s answers,

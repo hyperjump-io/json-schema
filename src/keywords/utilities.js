@@ -67,21 +67,22 @@ export const compileSchemaMap = async (valueNode, context) => {
 };
 
 /**
- * The value of a sibling keyword, by keyword URI, such as `properties` for
- * `additionalProperties`
+ * The values of the siblings a keyword declares, by the names it gives them,
+ * for `context.siblings`. A sibling that isn't in the schema is undefined.
  *
- * @type (schemaNode: JsonSchemaNode, keywordUri: string) => JsonSchemaNode | undefined
+ * @type <N extends JsonSchemaNode | JsonSchemaTolerantNode>(schemaNode: N, siblings: Record<string, string> | undefined) => Record<string, N | undefined>
  */
-export const siblingKeyword = (schemaNode, keywordUri) => {
-  if (schemaNode.jsonType !== "object") {
-    return;
-  }
-
-  for (const property of /** @type JsonSchemaKeywordNode[] */ (schemaNode.children)) {
-    if (property.keywordUri === keywordUri) {
-      return property.children[1];
+export const siblingValues = (schemaNode, siblings = {}) => {
+  /** @type Record<string, any> */
+  const values = {};
+  for (const [name, keywordUri] of Object.entries(siblings)) {
+    values[name] = undefined;
+    if (schemaNode.jsonType === "object") {
+      const property = /** @type JsonSchemaKeywordNode[] */ (schemaNode.children).find((property) => property.keywordUri === keywordUri);
+      values[name] = property?.children[1];
     }
   }
+  return values;
 };
 
 /**

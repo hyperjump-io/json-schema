@@ -57,6 +57,16 @@ describe("reference-without-target", () => {
     expect(reasons(file)).toEqual([expect.stringContaining("There's no 'foo' anchor")]);
   });
 
+  test("a dynamic reference that finds nothing", async () => {
+    const file = await lint(`{ "$schema": "https://json-schema.org/draft/2020-12/schema", "$dynamicRef": "#meta" }`);
+    expect(reasons(file)).toEqual([expect.stringContaining("There's no 'meta' anchor")]);
+  });
+
+  test("a dynamic reference that finds a schema", async () => {
+    const file = await lint(`{ "$schema": "https://json-schema.org/draft/2020-12/schema", "$dynamicAnchor": "meta", "$dynamicRef": "#meta" }`);
+    expect(file.messages).to.eql([]);
+  });
+
   test("an embedded resource", async () => {
     const file = await lint(`{
       "$schema": "${v1}",

@@ -1,5 +1,3 @@
-import { resolveIri, toAbsoluteIri } from "@hyperjump/uri";
-
 /**
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode, JsonSchemaTolerantNode } from "../schema/schema-ast.d.ts"
  */
@@ -36,36 +34,22 @@ export const visitSchemas = (tree, visitor) => {
   });
 };
 
-const refUri = "https://json-schema.org/keyword/ref";
-
 /**
- * Call `visitor` with every static reference in the document and the
- * absolute URI it refers to. That's the value of a `$ref` keyword (2019-09
- * and later), resolved against the schema resource it's in, or a schema
- * that's a reference (`$ref` in draft-04 through draft-07). `node` is the
- * `$ref` keyword's value or the reference. A `$ref` whose value isn't a
- * valid IRI reference is a schema problem, so it isn't visited.
+ * Call `visitor` with every reference in the document and the absolute URI
+ * it refers to. That's the value of a keyword whose shape is `"reference"`
+ * (`$ref` since 2019-09, 2020-12's `$dynamicRef`, `$recursiveRef`), or a
+ * schema that's a reference (`$ref` in draft-04 through draft-07). The
+ * resolver gives both the URI as `href`. `node` is the keyword's value or
+ * the reference. A value that isn't a valid IRI reference is a schema
+ * problem, so it isn't visited.
  *
  * @type (tree: JsonSchemaDocumentNode, visitor: (uri: string, node: JsonSchemaNode) => void) => void
  */
 export const visitReferences = (tree, visitor) => {
   visitNodes(tree, (node) => {
-    const schemaNode = /** @type JsonSchemaNode */ (node);
-    if (schemaNode.type === "reference") {
-      visitor(schemaNode.href, schemaNode);
-    } else if (schemaNode.type === "json-schema" && schemaNode.jsonType === "object") {
-      for (const property of /** @type JsonSchemaKeywordNode[] */ (schemaNode.children)) {
-        const valueNode = property.children[1];
-        if (property.keywordUri === refUri && valueNode.jsonType === "string") {
-          let uri;
-          try {
-            uri = resolveIri(valueNode.value, toAbsoluteIri(schemaNode.location));
-          } catch {
-            continue;
-          }
-          visitor(uri, valueNode);
-        }
-      }
+    const referenceNode = /** @type JsonSchemaNode */ (node);
+    if ((referenceNode.type === "reference" || referenceNode.type === "json") && referenceNode.href !== undefined) {
+      visitor(referenceNode.href, referenceNode);
     }
   });
 };
@@ -157,6 +141,15 @@ export const findKeyword = (schemaNode, keywordUri) => {
     }
   }
 };
+
+/**
+ * The value of a keyword in a schema, by keyword URI, such as `if` for
+ * `then`. It's undefined if the schema doesn't have the keyword or isn't an
+ * object.
+ *
+ * @type (schemaNode: JsonSchemaNode, keywordUri: string) => JsonSchemaNode | undefined
+ */
+export const siblingKeyword = (schemaNode, keywordUri) => findKeyword(schemaNode, keywordUri)?.children[1];
 
 const requiredUris = [
   "https://json-schema.org/keyword/required",
@@ -355,5 +348,3 @@ const keywordTypes = new Map([
  * @type (keywordUri: string) => "number" | "string" | "array" | "object" | undefined
  */
 export const keywordType = (keywordUri) => keywordTypes.get(keywordUri);
-
-export { siblingKeyword } from "../keywords/utilities.js";

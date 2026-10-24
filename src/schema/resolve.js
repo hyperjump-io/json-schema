@@ -1,7 +1,9 @@
 import * as JsonPointer from "@hyperjump/json-pointer";
+import { isIriReference } from "@hyperjump/json-schema-formats";
 import { encodeIriFragment, parseIri, resolveIri, toAbsoluteIri } from "@hyperjump/uri";
 import schemaKeyword from "../keywords/schema.js";
 import unknownKeyword from "../keywords/unknown.js";
+import { siblingValues } from "../keywords/utilities.js";
 
 /**
  * @import { Node } from "unist"
@@ -243,7 +245,7 @@ class Resolver {
       // parts are schemas
       if (keyword.check && !isErrorNode(valueNode)) {
         keyword.check(valueNode, {
-          schemaNode,
+          siblings: siblingValues(/** @type JsonSchemaTolerantNode */ (schemaNode), keyword.siblings),
           message: (reason, node = valueNode) => this.#message(reason, node, keyword.uri)
         });
       }
@@ -387,7 +389,7 @@ class Resolver {
       } else {
         await this.#shape(node, alternative, keywordUri, resource, pointer, dialect);
       }
-    } else if (shape === "schema") {
+    } else if (shape === "schema" || shape === "unappliedSchema") {
       // A position the shape says is a schema holds a schema, even one that
       // isn't valid. Only alternatives are chosen by the value.
       await this.#schema(node, resource, pointer, dialect, false);
@@ -395,6 +397,10 @@ class Resolver {
       this.#data(node, resource, pointer);
     } else if (!matchesShape(shape, node)) {
       this.#mismatch(node, shape, keywordUri, resource, pointer);
+    } else if (shape === "reference") {
+      this.#data(node, resource, pointer);
+      const referenceNode = /** @type TreeNode & { type: "json"; jsonType: "string"; value: string; href?: string } */ (node);
+      referenceNode.href = resolveIri(referenceNode.value, resource.uri);
     } else if ("array" in shape && !isErrorNode(node) && node.jsonType === "array") {
       node.location = location(resource, pointer);
       let index = 0;
@@ -544,10 +550,12 @@ const matchesShape = (shape, node) => {
     return shape.some((alternative) => matchesShape(alternative, node));
   } else if (shape === "data") {
     return true;
-  } else if (shape === "schema") {
+  } else if (shape === "schema" || shape === "unappliedSchema") {
     return isSchemaNode(node);
   } else if (isErrorNode(node)) {
     return false;
+  } else if (shape === "reference") {
+    return node.jsonType === "string" && isIriReference(node.value);
   } else if ("array" in shape) {
     return node.jsonType === "array";
   } else {
@@ -562,8 +570,10 @@ const describeShape = (shape) => {
     return descriptions.length > 2
       ? `${descriptions.slice(0, -1).join(", ")}, or ${descriptions.at(-1)}`
       : descriptions.join(" or ");
-  } else if (shape === "schema") {
+  } else if (shape === "schema" || shape === "unappliedSchema") {
     return "a schema";
+  } else if (shape === "reference") {
+    return "a URI reference";
   } else if (shape === "data") {
     return "any value";
   } else if ("array" in shape) {

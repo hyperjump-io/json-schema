@@ -1,4 +1,3 @@
-import { siblingKeyword } from "../utilities.js";
 import { boolean } from "../checks.js";
 
 /**
@@ -13,12 +12,12 @@ import { boolean } from "../checks.js";
  */
 export default {
   uri: "https://json-schema.org/keyword/draft-04/exclusiveMinimum",
-  siblings: ["https://json-schema.org/keyword/draft-04/minimum"],
+  siblings: { minimum: "https://json-schema.org/keyword/draft-04/minimum" },
   shape: "data",
   default: false,
   check(valueNode, context) {
     boolean(valueNode, context);
-    if (siblingKeyword(context.schemaNode, "https://json-schema.org/keyword/draft-04/minimum") === undefined) {
+    if (context.siblings.minimum === undefined) {
       context.message("'exclusiveMinimum' requires 'minimum'");
     }
   }

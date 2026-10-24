@@ -110,7 +110,7 @@ const evaluate = async (session, tree) => {
       }
 
       // The assertion and the siblings it reads, in a schema of their own
-      const schemaKeywordNodes = [assertionNode, ...(definition.siblings ?? []).map((siblingUri) => findKeyword(schemaNode, siblingUri))];
+      const schemaKeywordNodes = [assertionNode, ...Object.values(definition.siblings ?? {}).map((siblingUri) => findKeyword(schemaNode, siblingUri))];
       let validator;
       try {
         /** @type Record<string, Json> */

@@ -4,7 +4,6 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { describe, test, beforeEach, beforeAll, afterAll, expect } from "vitest";
 import { VFileMessage } from "vfile-message";
-import { resolveIri, toAbsoluteIri } from "@hyperjump/uri";
 import { fromJson, pointerGet } from "@hyperjump/browser/json";
 import { JsonSchema, outputErrorMessage, toVFileMessage } from "../json-schema.js";
 import idKeyword from "../keywords/id.js";
@@ -14,6 +13,7 @@ import dynamicAnchorKeyword from "../keywords/dynamicAnchor.js";
 /**
  * @import { Json } from "@hyperjump/browser/json"
  * @import { CompileContext, Keyword } from "../keyword.d.ts"
+ * @import { JsonSchemaNode } from "../schema/schema-ast.d.ts"
  * @import { EvaluationLocation, EvaluationPlugin } from "./evaluation-plugin.d.ts"
  * @import { DetailedValidationError, ValidationError } from "../output/validation-error.d.ts"
  */
@@ -27,7 +27,7 @@ const propertiesOf = (node) => node.children.map((/** @type any */ property) => 
 const itemsOf = (node) => node.children;
 
 /** @type (node: any) => string */
-const stringOf = (node) => node.value;
+const hrefOf = (node) => node.href;
 
 /** @type (valueNode: any, context: CompileContext) => Promise<string[]> */
 const compileSchemas = async (valueNode, context) => {
@@ -161,10 +161,8 @@ const anyOfKeyword = {
 /** @type Keyword<string> */
 const refKeyword = {
   uri: "https://example.com/keyword/ref",
-  shape: "data",
-  compile(valueNode, context) {
-    return context.compileSchema(resolveIri(stringOf(valueNode), toAbsoluteIri(context.schemaNode.location)));
-  },
+  shape: "reference",
+  compile: (valueNode, context) => context.compileSchema(hrefOf(valueNode)),
   evaluate: (handle, context) => context.schema(handle),
   simpleApplicator: true
 };
@@ -172,9 +170,9 @@ const refKeyword = {
 /** @type Keyword<{ name: string; handle: string }> */
 const dynamicRefKeyword = {
   uri: "https://example.com/keyword/dynamicRef",
-  shape: "data",
+  shape: "reference",
   async compile(valueNode, context) {
-    const uri = resolveIri(stringOf(valueNode), toAbsoluteIri(context.schemaNode.location));
+    const uri = hrefOf(valueNode);
     const name = uri.slice(uri.indexOf("#") + 1);
     return { name, handle: await context.compileSchema(uri) };
   },
@@ -191,12 +189,11 @@ const dynamicRefKeyword = {
 const ifKeyword = {
   uri: "https://example.com/keyword/if",
   shape: "schema",
+  siblings: { then: "https://example.com/keyword/then" },
   async compile(valueNode, context) {
-    const schemaNode = /** @type any */ (context.schemaNode);
-    const thenProperty = schemaNode.children.find((/** @type any */ property) => property.children[0].value === "then");
     return {
       if: await context.compileSchema(valueNode),
-      then: await context.compileSchema(thenProperty.children[1])
+      then: await context.compileSchema(/** @type JsonSchemaNode */ (context.siblings.then))
     };
   },
   evaluate(compiled, context) {

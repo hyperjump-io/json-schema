@@ -1,4 +1,3 @@
-import { resolveIri, toAbsoluteIri } from "@hyperjump/uri";
 import { findSchema } from "./find-schema.js";
 
 /**
@@ -26,8 +25,6 @@ const childUris = new Set([
   "items", "prefixItems", "contains", "unevaluatedItems", "itemPattern", "contentSchema",
   "draft-2019-09/items", "draft-2019-09/additionalItems"
 ].map((name) => `${keyword}/${name}`));
-
-const refUri = `${keyword}/ref`;
 
 /** A schema that's a reference, in draft-04 through draft-07 */
 const draft07RefUri = `${keyword}/draft-07/ref`;
@@ -65,6 +62,21 @@ const schemasIn = (node) => {
 };
 
 /**
+ * The URIs of the references in a keyword's value (the `"reference"`
+ * shape), not including their subschemas'
+ *
+ * @type (node: TreeNode) => string[]
+ */
+const referencesIn = (node) => {
+  if (node.type === "json-schema" || node.type === "reference") {
+    return [];
+  }
+
+  const { href } = /** @type TreeNode & { href?: string } */ (node);
+  return href === undefined ? (node.children ?? []).flatMap(referencesIn) : [href];
+};
+
+/**
  * The schemas a schema applies in place, with the keyword each is in, and
  * the URI each of its static references refers to. `dynamic` is true if it
  * has a reference whose target isn't known.
@@ -91,15 +103,12 @@ const inPlace = (schemaNode) => {
         for (const subschema of schemasIn(/** @type TreeNode */ (valueNode))) {
           subschemas.push([property.keywordUri, subschema]);
         }
-      } else if (property.keywordUri === refUri && valueNode.jsonType === "string") {
-        try {
-          references.push([refUri, resolveIri(valueNode.value, toAbsoluteIri(schemaNode.location))]);
-        } catch {
-          // Not a valid IRI reference, which is a schema problem
-          dynamic = true;
-        }
       } else if (dynamicRefUris.has(property.keywordUri)) {
         dynamic = true;
+      } else {
+        for (const uri of referencesIn(/** @type TreeNode */ (valueNode))) {
+          references.push([property.keywordUri, uri]);
+        }
       }
     }
   }

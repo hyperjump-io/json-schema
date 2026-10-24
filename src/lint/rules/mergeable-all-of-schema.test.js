@@ -142,7 +142,7 @@ describe("mergeable-all-of-schema", () => {
   test("a custom keyword that reads a sibling", async () => {
     const jsonSchema = new JsonSchema();
     addDraft202012(jsonSchema);
-    jsonSchema.addKeyword({ uri: "https://example.com/keyword/scale", shape: "data", siblings: ["https://json-schema.org/keyword/maximum"] });
+    jsonSchema.addKeyword({ uri: "https://example.com/keyword/scale", shape: "data", siblings: { maximum: "https://json-schema.org/keyword/maximum" } });
     jsonSchema.extendDialect(draft2020, { keywords: { scale: "https://example.com/keyword/scale" } });
 
     /** @type (json: string) => Promise<string[]> */

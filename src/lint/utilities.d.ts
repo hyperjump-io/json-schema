@@ -23,14 +23,16 @@ export const visitKeywords: (
 ) => void;
 
 /**
- * Calls `visitor` with every static reference in the document and the
- * absolute URI it refers to. That's the value of a `$ref` keyword (2019-09
- * and later), resolved against the schema resource it's in, or a schema
- * that's a reference (`$ref` in draft-04 through draft-07). `node` is the
- * `$ref` keyword's value or the reference.
+ * Calls `visitor` with every reference in the document and the absolute URI
+ * it refers to. That's the value of a keyword whose shape is `"reference"`
+ * (`$ref` since 2019-09, 2020-12's `$dynamicRef`, `$recursiveRef`),
+ * resolved against the schema resource it's in, or a schema that's a
+ * reference (`$ref` in draft-04 through draft-07). `node` is the keyword's
+ * value or the reference.
  *
- * Dynamic references (`$dynamicRef`, `$recursiveRef`) aren't visited,
- * because what they refer to depends on evaluation.
+ * A dynamic reference is visited with the schema it resolves to, which is
+ * where it starts. What it applies can be another schema, depending on
+ * evaluation. v1's `$dynamicRef` is an anchor name, not a reference.
  */
 export const visitReferences: (
   tree: JsonSchemaDocumentNode,

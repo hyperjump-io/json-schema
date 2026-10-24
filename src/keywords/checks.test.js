@@ -8,7 +8,6 @@ import { VFile } from "vfile";
 import { rejsonParse } from "@hyperjump/browser/json";
 import { JsonSchema } from "../json-schema.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
-import { siblingKeyword } from "./utilities.js";
 import { addV1, v1DialectUri } from "../dialects/v1/index.js";
 import { addDraft04, draft04DialectUri } from "../dialects/draft-04/index.js";
 import { addDraft07, draft07DialectUri } from "../dialects/draft-07/index.js";
@@ -186,14 +185,15 @@ describe("keyword checks", () => {
     expect(messages).to.eql([]);
   });
 
-  test("a check can find a sibling that comes after it", async () => {
+  test("a check can read a sibling that comes after it", async () => {
     /** @type (string | undefined)[] */
     const siblings = [];
     jsonSchema.addKeyword({
       uri: "https://example.com/keyword/a",
       shape: "data",
+      siblings: { minLength: "https://json-schema.org/keyword/minLength" },
       check(_valueNode, context) {
-        siblings.push(siblingKeyword(context.schemaNode, "https://json-schema.org/keyword/minLength")?.type);
+        siblings.push(context.siblings.minLength?.type);
       }
     });
     jsonSchema.extendDialect(v1DialectUri, { keywords: { a: "https://example.com/keyword/a" } });

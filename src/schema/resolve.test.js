@@ -39,6 +39,8 @@ const addTestDialects = (jsonSchema) => {
   jsonSchema.addKeyword({ uri: "https://example.com/keyword/items", shape: ["schema", { array: "schema" }] });
   jsonSchema.addKeyword({ uri: "https://example.com/keyword/type", shape: "data" });
   jsonSchema.addKeyword({ uri: "https://example.com/keyword/const", shape: "data" });
+  jsonSchema.addKeyword({ uri: "https://example.com/keyword/ref", shape: "reference" });
+  jsonSchema.addKeyword({ uri: "https://example.com/keyword/contentSchema", shape: "unappliedSchema" });
 
   jsonSchema.addDialect({
     uri: dialectUri,
@@ -54,6 +56,8 @@ const addTestDialects = (jsonSchema) => {
       items: "https://example.com/keyword/items",
       type: "https://example.com/keyword/type",
       const: "https://example.com/keyword/const",
+      $ref: "https://example.com/keyword/ref",
+      contentSchema: "https://example.com/keyword/contentSchema",
       notSupported: "https://example.com/keyword/not-supported"
     },
     unknownKeywords: "annotation"
@@ -236,6 +240,42 @@ describe("jsonSchemaResolve", () => {
       expect(at("/properties/tuple/items", root).type).to.equal("json");
       expect(at("/properties/tuple/items/0", root).type).to.equal("json-schema");
       expect(at("/properties/neither/items", root).type).to.equal("json");
+    });
+
+    test("a reference has the URI it resolves to, against the resource it's in", async () => {
+      const { root, file } = await resolve(jsonSchema, `{
+        "$schema": "${dialectUri}",
+        "$ref": "#/$defs/a",
+        "$defs": {
+          "a": { "$id": "/other/", "$ref": "b.json" }
+        }
+      }`);
+
+      expect(file.messages).to.eql([]);
+      expect(at("/$ref", root)).to.include({ type: "json", href: "https://example.com/schema#/$defs/a" });
+      expect(at("/$defs/a/$ref", root)).to.include({ type: "json", href: "https://example.com/other/b.json" });
+    });
+
+    test("a value that isn't a URI reference where its shape expects one is reported and has no URI", async () => {
+      const { root, file } = await resolve(jsonSchema, `{ "$schema": "${dialectUri}", "$ref": "a b", "allOf": [{ "$ref": 1 }] }`);
+
+      expect(file.messages.map(({ reason, ruleId }) => [reason, ruleId])).to.eql([
+        ["Expected a URI reference", "https://example.com/keyword/ref"],
+        ["Expected a URI reference", "https://example.com/keyword/ref"]
+      ]);
+      expect(at("/$ref", root).href).to.equal(undefined);
+      expect(at("/allOf/0/$ref", root).href).to.equal(undefined);
+    });
+
+    test("a schema a keyword doesn't apply is resolved like any schema", async () => {
+      const { document, root, file } = await resolve(jsonSchema, `{
+        "$schema": "${dialectUri}",
+        "contentSchema": { "$id": "/content", "type": "string" }
+      }`);
+
+      expect(file.messages).to.eql([]);
+      expect(at("/contentSchema", root).type).to.equal("json-schema");
+      expect(Object.keys(document.embedded)).to.include("https://example.com/content");
     });
 
     test("every problem is an error, and the rest of the document is still resolved", async () => {

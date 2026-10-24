@@ -1,5 +1,4 @@
 import { jsonValue } from "@hyperjump/browser/json";
-import { siblingKeyword } from "../utilities.js";
 import { number } from "../checks.js";
 
 /**
@@ -14,11 +13,11 @@ import { number } from "../checks.js";
  */
 export default {
   uri: "https://json-schema.org/keyword/draft-04/minimum",
-  siblings: ["https://json-schema.org/keyword/draft-04/exclusiveMinimum"],
+  siblings: { exclusiveMinimum: "https://json-schema.org/keyword/draft-04/exclusiveMinimum" },
   shape: "data",
   check: number,
   compile(valueNode, context) {
-    const exclusiveNode = siblingKeyword(context.schemaNode, "https://json-schema.org/keyword/draft-04/exclusiveMinimum");
+    const exclusiveNode = context.siblings.exclusiveMinimum;
     return {
       minimum: /** @type number */ (jsonValue(valueNode)),
       exclusive: exclusiveNode?.jsonType === "boolean" && exclusiveNode.value

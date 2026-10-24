@@ -513,9 +513,19 @@ values and ASTs. Keywords with subschemas use `compile` to compile them. See
 `src/keyword.d.ts` and the built-in keywords in `src/keywords/`.
 
 A keyword that reads another keyword in the same schema, like
-`additionalProperties` reads `properties`, finds it with `siblingKeyword` in
-`compile` and lists its URI in `siblings`. Lint rules that move keywords
-between schemas use it to know what can't be separated.
+`additionalProperties` reads `properties`, declares it in `siblings` by a name
+of its choosing, and `compile` and `check` get its value by that name.
+
+```javascript
+siblings: { properties: "https://json-schema.org/keyword/properties" },
+async compile(valueNode, { siblings, compileSchema }) {
+  const propertiesNode = siblings.properties; // Undefined if it isn't there
+  // …
+}
+```
+
+Lint rules that move keywords between schemas use `siblings` to know what
+can't be separated.
 
 ### Custom formats
 

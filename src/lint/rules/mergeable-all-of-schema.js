@@ -50,8 +50,8 @@ const mergeableAllOfSchema = lintRule({ origin: "jsonschema-lint:mergeable-all-o
    *
    * @type (a: string, b: string) => boolean
    */
-  const interact = (a, b) => (definitionOf(jsonSchema, a)?.siblings ?? []).includes(b)
-    || (definitionOf(jsonSchema, b)?.siblings ?? []).includes(a);
+  const interact = (a, b) => Object.values(definitionOf(jsonSchema, a)?.siblings ?? {}).includes(b)
+    || Object.values(definitionOf(jsonSchema, b)?.siblings ?? {}).includes(a);
 
   /** @type (uri: string) => boolean */
   const isUnmovable = (uri) => {

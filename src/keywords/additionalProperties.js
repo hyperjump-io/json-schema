@@ -1,5 +1,3 @@
-import { siblingKeyword } from "./utilities.js";
-
 /**
  * @import { Keyword, SchemaHandle } from "../keyword.d.ts"
  */
@@ -12,13 +10,13 @@ import { siblingKeyword } from "./utilities.js";
  */
 export default {
   uri: "https://json-schema.org/keyword/additionalProperties",
-  siblings: ["https://json-schema.org/keyword/patternProperties", "https://json-schema.org/keyword/properties"],
+  siblings: { properties: "https://json-schema.org/keyword/properties", patternProperties: "https://json-schema.org/keyword/patternProperties" },
   shape: "schema",
   default: true,
   async compile(valueNode, context) {
     /** @type string[] */
     const properties = [];
-    const propertiesNode = siblingKeyword(context.schemaNode, "https://json-schema.org/keyword/properties");
+    const propertiesNode = context.siblings.properties;
     if (propertiesNode?.jsonType === "object") {
       for (const propertyNode of propertiesNode.children) {
         properties.push(propertyNode.children[0].value);
@@ -27,7 +25,7 @@ export default {
 
     /** @type string[] */
     const patterns = [];
-    const patternPropertiesNode = siblingKeyword(context.schemaNode, "https://json-schema.org/keyword/patternProperties");
+    const patternPropertiesNode = context.siblings.patternProperties;
     if (patternPropertiesNode?.jsonType === "object") {
       for (const propertyNode of patternPropertiesNode.children) {
         patterns.push(propertyNode.children[0].value);
