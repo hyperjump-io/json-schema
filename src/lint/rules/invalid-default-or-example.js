@@ -13,12 +13,6 @@ const defaultUri = "https://json-schema.org/keyword/default";
 const examplesUri = "https://json-schema.org/keyword/examples";
 
 /**
- * A schema is applied through these without having to pass, so a value in it
- * isn't meant to be valid against the schema that applies it
- */
-const notRequiredUris = new Set(["not", "if"].map((name) => `https://json-schema.org/keyword/${name}`));
-
-/**
  * @typedef {{ schemaNode: JsonSchemaNode; defaultNode?: JsonSchemaKeywordNode; examplesNode?: JsonSchemaKeywordNode }} Annotated
  */
 
@@ -43,7 +37,10 @@ const outermost = (group, schemaNode) => {
     }
 
     for (const link of incoming) {
-      if (!notRequiredUris.has(link.keywordUri) && !seen.has(link.from)) {
+      // A schema applied through `not` or as a condition doesn't have to
+      // pass, so a value in it isn't meant to be valid against the schema
+      // that applies it
+      if (!link.negated && !link.condition && !seen.has(link.from)) {
         seen.add(link.from);
         walk(link.from, link);
       }

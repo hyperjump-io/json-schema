@@ -1717,9 +1717,17 @@ never timed.
    new rule, `impossible-property`, finds a property no valid object can
    have. On the corpora, the only differences from the reference are
    `keyword-without-type` no longer reporting keywords with no effect.
-   Later steps, after stage 5: `schema-group.js` finds which keywords apply
-   schemas in place or to children, and `not`, from the expressions instead
-   of URI lists. Lint evaluates the document's lowered expressions with
+   After stage 5, `schema-group.js` finds which keywords apply schemas in
+   place or to children from the expressions instead of URI lists: an
+   `apply` outside the operations on a property or an item is in place, and
+   its links say whether it's under `not` (`negated`) or a condition of
+   `cases` (`condition`), which `isNegated` and `invalid-default-or-example`
+   read instead of the URIs of `not` and `if`. A schema an `opaque`
+   operation applies isn't linked, and a reference in one makes the group
+   `unknown`. A schema that's only annotated (`contentSchema`) or not
+   applied at all (`then` without `if`) is open and not applied, like one in
+   `$defs`. The lint messages on the corpora didn't change. A later step:
+   lint evaluates the document's lowered expressions with
    pass, fail, or unknown (other documents, undecidable `dynamicApply`), so
    `const-or-enum-value-rejected`, `assertion-implied-by-const-or-enum`, and
    `invalid-default-or-example` handle applicators without compiling. For

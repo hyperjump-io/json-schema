@@ -409,8 +409,7 @@ type Shape = "schema" | "unappliedSchema" | "reference" | "data" | { array: Shap
   and `shape` can't disagree with what the keyword does.
 - **`"reference"`** is a URI of a schema, resolved against the base
   URI (`$ref`, 2020-12's `$dynamicRef`, `$recursiveRef`). It's what lint's
-  `refUri`, `schema-group.js`' list of dynamic references, and bundling find
-  references with, instead of keyword URIs. A reference's input is
+  `refUri` and bundling find references with, instead of keyword URIs. A reference's input is
   `{ uri: string; schema: Expression; handle: Handle; dynamicAnchors: Record<string, Handle> | undefined }`:
   `$dynamicRef` reads its fragment, and the dynamic anchors of the resource
   it resolved to are what `$dynamicRef` and `$recursiveRef` decide with.
@@ -569,7 +568,6 @@ the kernel missed. A rule about a particular keyword's syntax
 
 ## Open questions
 
-None yet. Later steps are at the end of "Moving the kernel into `src/`" in
-[DESIGN.md](DESIGN.md): finding which keywords apply schemas in place or to
-children from the expressions in `schema-group.js`, and lint evaluating
-lowered expressions with pass, fail, or unknown.
+None yet. A later step is at the end of "Moving the kernel into `src/`" in
+[DESIGN.md](DESIGN.md): lint evaluating lowered expressions with pass,
+fail, or unknown.

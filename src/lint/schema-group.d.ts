@@ -2,14 +2,26 @@ import type { JsonSchemaSession } from "../session.d.ts";
 import type { JsonSchemaDocumentNode, JsonSchemaNode } from "../schema/schema-ast.d.ts";
 
 /**
- * A schema that applies another to the same instance. `keywordUri` is the
- * keyword that does it, like `allOf`, or the reference keyword for a
- * reference, which is draft-07's `$ref` for a schema that's a reference.
+ * A schema that applies another to the same instance, found from the
+ * expressions `from` lowers to.
+ *
+ * - `keywordUri`: The keyword `to` is in, like `allOf`, or `then` for a
+ *   schema `if` applies, or the reference keyword for a reference, which is
+ *   draft-07's `$ref` for a schema that's a reference.
+ * - `reference`: `to` is what a reference refers to, not a subschema of
+ *   `from`.
+ * - `negated`: `to` is applied through an odd number of `not`s, so `from`
+ *   passes where `to` fails.
+ * - `condition`: `to` is applied as a condition, like `if`, so it doesn't
+ *   have to pass.
  */
 export type SchemaLink = {
   from: JsonSchemaNode;
   to: JsonSchemaNode;
   keywordUri: string;
+  reference: boolean;
+  negated: boolean;
+  condition: boolean;
 };
 
 /**
@@ -42,22 +54,27 @@ export type SchemaGroup = {
  * The group of schemas that can apply to the same instance as a schema.
  * They're the schemas connected to it through keywords that apply a schema
  * in place, like `allOf`, `anyOf`, and `if`, and through references, in
- * either direction. A reference to another document is followed if the
- * session can find it, along with what that schema applies in place. What
- * references a schema from another document isn't known, which is what
- * `open` says.
+ * either direction. Which keywords do is found from what they lower to
+ * (`lowerForLint`): a schema applied by `apply` outside the operations on a
+ * property or an item. A schema an `opaque` operation applies isn't linked,
+ * because where it applies isn't known. A reference to another document is
+ * followed if the session can find it, along with what that schema applies
+ * in place. What references a schema from another document isn't known,
+ * which is what `open` says.
  *
  * Pass the session the schema was resolved in
- * (`file.data.jsonSchemaSession`), if there is one. Without it, references
- * aren't followed. What's found for a document is shared by every rule that
- * uses it, and every schema in a group gets the same group.
+ * (`file.data.jsonSchemaSession`). Without it, nothing is lowered, so the
+ * group is only the schema, and `unknown`. What's found for a document is
+ * shared by every rule that uses it, and every schema in a group gets the
+ * same group.
  */
 export const schemaGroup: (session: JsonSchemaSession | undefined, tree: JsonSchemaDocumentNode, schemaNode: JsonSchemaNode) => Promise<SchemaGroup>;
 
 /**
  * Whether a schema in a group is applied through an odd number of `not`s,
- * following the schemas that apply it in place up to the first that isn't
- * applied in place. Its keywords then reject what they'd otherwise allow.
- * `required` in a `not` requires a property to be missing.
+ * following the subschema links to it up to a schema that isn't a subschema
+ * applied in place. References aren't followed. Its keywords then reject
+ * what they'd otherwise allow. `required` in a `not` requires a property to
+ * be missing.
  */
 export const isNegated: (group: SchemaGroup, schemaNode: JsonSchemaNode) => boolean;

@@ -5,8 +5,8 @@ import type { JsonSchemaDocumentNode, JsonSchemaNode } from "../schema/schema-as
 /**
  * What a reference finds. A rule reports `missing`, and not `unknown`.
  *
- * - `found`: There's a schema there. It may be a reference itself, which
- *   isn't followed.
+ * - `found`: There's a schema there, in `document`. It may be a reference
+ *   itself, which isn't followed.
  * - `missing`: There's no schema there. The file or HTTP resource doesn't
  *   exist (404 or 410), the document isn't a schema, the fragment doesn't
  *   point to anything, or it points to something that isn't a schema.
@@ -19,6 +19,7 @@ import type { JsonSchemaDocumentNode, JsonSchemaNode } from "../schema/schema-as
 export type FindSchemaResult = {
   status: "found";
   node: JsonSchemaNode;
+  document: JsonSchemaDocumentNode;
 } | {
   status: "missing" | "unknown";
   /** Why, as an error that can be shown to the schema's author */

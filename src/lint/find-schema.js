@@ -6,7 +6,7 @@ import { AnchorNotFoundError } from "../schema/media-type-plugin.js";
 /**
  * @import { DocumentNode } from "@hyperjump/browser"
  * @import { JsonSchemaSession } from "../session.d.ts"
- * @import { JsonSchemaNode } from "../schema/schema-ast.d.ts"
+ * @import { JsonSchemaDocumentNode, JsonSchemaNode } from "../schema/schema-ast.d.ts"
  * @import * as API from "./find-schema.d.ts"
  */
 
@@ -66,5 +66,5 @@ export const findSchema = async (session, uri, options = {}) => {
     return { status: "missing", reason: Error(`'${uri}' isn't a schema`) };
   }
 
-  return { status: "found", node };
+  return { status: "found", node, document: /** @type JsonSchemaDocumentNode */ (/** @type unknown */ (document)) };
 };
