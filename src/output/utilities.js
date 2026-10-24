@@ -24,29 +24,6 @@ export const keywordStart = (keyword, start) => {
 export const startOf = (state) => typeof state === "number" ? state : state.start;
 
 /**
- * Keywords that explain their failure by the kernel's rule but didn't
- * before it, when keywords said so themselves (`simpleApplicator`).
- * `anyOf` and `oneOf` only do with one schema. BASIC keeps their errors
- * until it uses the kernel's rule (DESIGN.md, "Moving the kernel into
- * `src/`", stage 3).
- */
-const explainedNow = new Set([
-  "https://json-schema.org/keyword/conditional",
-  "https://json-schema.org/keyword/draft-07/dependencies",
-  "https://json-schema.org/keyword/draft-04/dependencies",
-  "https://json-schema.org/keyword/anyOf",
-  "https://json-schema.org/keyword/oneOf"
-]);
-
-/**
- * Whether a keyword's failure is explained by its subschemas' failures, so
- * BASIC reports only theirs
- *
- * @type (keyword: KeywordInfo) => boolean
- */
-export const explainsFailure = (keyword) => keyword.explainsFailure && !explainedNow.has(keyword.keywordUri);
-
-/**
  * Whether a schema is a condition of the keyword that applied it, so its
  * errors aren't reported
  *

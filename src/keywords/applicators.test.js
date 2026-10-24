@@ -165,7 +165,6 @@ describe("applicator errors", () => {
       const validator = await jsonSchema.compile(await schemaFile(schema));
 
       expect(validator.validate(5, { output: "BASIC" }).errors.map(keywordPointers)).to.eql([
-        "/conditional",
         "/conditional/2/1/minimum"
       ]);
     });
@@ -174,8 +173,37 @@ describe("applicator errors", () => {
       const validator = await jsonSchema.compile(await schemaFile(schema));
 
       expect(validator.validate(true, { output: "BASIC" }).errors.map(keywordPointers)).to.eql([
-        "/conditional",
         "/conditional/3/const"
+      ]);
+    });
+  });
+
+  describe("anyOf and oneOf", () => {
+    test("of one schema, only its errors are errors", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({
+        anyOf: [{ type: "string" }],
+        oneOf: [{ minimum: 10 }]
+      }));
+
+      expect(validator.validate(5, { output: "BASIC" }).errors.map(keywordPointers)).to.eql([
+        "/anyOf/0/type",
+        "/oneOf/0/minimum"
+      ]);
+    });
+
+    test("of more schemas, they're errors too", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({
+        anyOf: [{ type: "string" }, { type: "boolean" }],
+        oneOf: [{ minimum: 10 }, { maximum: 0 }]
+      }));
+
+      expect(validator.validate(5, { output: "BASIC" }).errors.map(keywordPointers)).to.eql([
+        "/anyOf",
+        "/anyOf/0/type",
+        "/anyOf/1/type",
+        "/oneOf",
+        "/oneOf/0/minimum",
+        "/oneOf/1/maximum"
       ]);
     });
   });

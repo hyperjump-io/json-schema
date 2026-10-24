@@ -1005,13 +1005,15 @@ objects the caller reads results from afterwards.
   user plugins, there's one instrumented evaluation that includes the
   format's plugin.
 - BASIC doesn't give an error of its own to a keyword whose failure is fully
-  explained by its subschemas' (`Keyword.simpleApplicator`, as in v1). The
-  core can't infer it: a failing `oneOf` isn't explained by its subschemas.
+  explained by its subschemas' (`KeywordInfo.explainsFailure`, read from
+  the keyword's expression). A failing `oneOf` of two schemas isn't
+  explained by its subschemas, but `anyOf` or `oneOf` of one schema is, and
+  so are `conditional` and `dependencies` with only schemas.
 - A failing condition (the `if` subschema, or a condition of
   `conditional`) only decides which subschema applies, so BASIC and DETAILED
-  don't report its errors. They recognize these two keywords by URI. It's a
-  special case on purpose, rather than something a keyword can declare, so
-  keywords aren't encouraged to depend on another subschema's result.
+  don't report its errors. They know the conditions from
+  `KeywordInfo.conditions`, read from the keyword's expression, so they
+  don't recognize any keyword by URI.
 - The built-in formats' errors don't have messages. Explaining errors is
   left to other output formats, such as `json-schema-errors`, so messages
   aren't part of the keyword interface.
@@ -1632,14 +1634,15 @@ never timed.
    removed. The old and new
    evaluators don't live side by side, because the reference is the old
    one. Without optimizations, hook calls are the same as v2's. Until
-   stage 3, the output formats still use `simpleApplicator`'s answers,
-   computed from the expression, so the output is the same as v2's too.
+   stage 3, BASIC still uses `simpleApplicator`'s answers, computed from
+   the expression, so the output is the same as v2's too.
    One result changes: `itemPattern` marks the items it matches, which
    "Evaluation state" says it does and the evaluator before the kernel
    didn't.
 3. **Plugins and output formats.** `KeywordInfo` gets `expression`,
-   `explainsFailure`, and `conditions`, and BASIC and DETAILED stop
-   recognizing `if` and `conditional` by URI. The known changes in BASIC
+   `explainsFailure`, and `conditions` (done in stage 2, which also stopped
+   BASIC and DETAILED recognizing `if` and `conditional` by URI), and BASIC
+   uses `explainsFailure`. The known changes in BASIC
    (`conditional`, `dependencies` with only schemas, `anyOf` and `oneOf` of
    one schema) are the only differences from the reference, and tests that
    pin them change on purpose.

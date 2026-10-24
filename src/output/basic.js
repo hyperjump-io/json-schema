@@ -1,4 +1,4 @@
-import { explainsFailure, falseSchemaRuleId, inDocumentOrder, isCondition, keywordStart, startOf, validationError } from "./utilities.js";
+import { falseSchemaRuleId, inDocumentOrder, isCondition, keywordStart, startOf, validationError } from "./utilities.js";
 
 /**
  * @import { EvaluationPlugin } from "../kernel/evaluation-plugin.d.ts"
@@ -41,7 +41,7 @@ export class BasicOutputPlugin {
     const start = startOf(state);
     if (valid) {
       this.#dropFrom(start);
-    } else if (!explainsFailure(keyword)) {
+    } else if (!keyword.explainsFailure) {
       // A failing keyword's error comes before its subschemas' errors
       const error = validationError(keyword.keywordUri, keyword.absoluteKeywordLocation, at);
       if (start === this.errors.length) {
