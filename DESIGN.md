@@ -1309,7 +1309,9 @@ plugins, configured per project, with presets, like remark-lint.
   know what a keyword means, like which types it applies to, reads what it
   lowers to (`lowerForLint`, and `appliesTo`, `keywordAppliesTo`,
   `canPass`, and `assertsOnItsOwn` in `analysis.js`; KERNEL.md, "Lowering
-  for lint").
+  for lint"). A rule that needs to know whether a value is valid evaluates
+  the lowered schemas (`evaluatorForLint` in `evaluate.js`) instead of
+  compiling.
 
 ### The rule catalogue
 
@@ -1340,10 +1342,13 @@ It's a list of candidates, not a spec.
   matters of taste (`explicit_additional_properties`,
   `require_description_title`, `unknown_keywords_prefix`) aren't in
   `recommended`, if they're ported at all.
-- A rule that compiles and runs a schema isn't in `recommended`, however
-  likely its finding is a mistake, because of what it can cost on a large
-  schema: `invalid-default-or-example`, `assertion-implied-by-const-or-enum`,
-  and `const-or-enum-value-rejected`. Its `.d.ts` says so.
+- A rule that compiles a schema isn't in `recommended`, however likely its
+  finding is a mistake, because of what it can cost on a large schema.
+  None does now: `invalid-default-or-example`,
+  `keyword-implied-by-const-or-enum`, and `const-or-enum-value-rejected`
+  compiled before lint evaluated lowered schemas (`evaluatorForLint`), and
+  they're in `recommended` since. `keyword-implied-by-const-or-enum` was
+  `assertion-implied-by-const-or-enum` until it checked applicators too.
 - A catalogue rule whose premise the spec contradicts isn't ported.
   `content_media_type_without_encoding` says `contentMediaType` means
   nothing without `contentEncoding`, but no encoding means the string
@@ -1366,7 +1371,7 @@ catalogue doesn't cover. Done so far: `empty-type`,
 `contradictory-limits`, `const-or-enum-value-rejected`,
 `required-dependent-property`, and `invalid-default-or-example` checking
 values against the schemas that apply theirs.
-`assertion-implied-by-const-or-enum` also covers the catalogue's
+`keyword-implied-by-const-or-enum` also covers the catalogue's
 `enum_validation_keywords_default`. There are no candidates left.
 
 ### Configuration comments
@@ -1726,12 +1731,18 @@ never timed.
    operation applies isn't linked, and a reference in one makes the group
    `unknown`. A schema that's only annotated (`contentSchema`) or not
    applied at all (`then` without `if`) is open and not applied, like one in
-   `$defs`. The lint messages on the corpora didn't change. A later step:
-   lint evaluates the document's lowered expressions with
-   pass, fail, or unknown (other documents, undecidable `dynamicApply`), so
-   `const-or-enum-value-rejected`, `assertion-implied-by-const-or-enum`, and
-   `invalid-default-or-example` handle applicators without compiling. For
-   `assertion-implied-by-const-or-enum`, an annotation is an effect.
+   `$defs`. The lint messages on the corpora didn't change.
+   After that, lint evaluates the lowered expressions with pass, fail, or
+   unknown (`evaluatorForLint`, `src/lint/evaluate.js`; KERNEL.md,
+   "Evaluating for lint"), so `const-or-enum-value-rejected`,
+   `keyword-implied-by-const-or-enum`, and `invalid-default-or-example`
+   handle applicators without compiling. The first two check every keyword
+   next to `const` or `enum` but `type` and ones with no effect, not only
+   assertions. For `keyword-implied-by-const-or-enum`, an annotation is
+   an effect, and so are marks, if an `unevaluated*` in the schema's group
+   might read them. On the corpora, the only differences are that
+   `invalid-default-or-example` doesn't need the document in a registry
+   anymore, so it reports without one what it reported with one before.
 6. **Documentation and measurements.** "Compile and evaluate" and the
    sections after it, and the code map, describe the kernel. KERNEL.md
    isn't a draft anymore. BENCHMARKS.md has `src/`'s numbers ("The kernel

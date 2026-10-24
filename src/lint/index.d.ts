@@ -1,4 +1,5 @@
 export * from "./analysis.js";
+export * from "./evaluate.js";
 export * from "./lint-rule.js";
 export * from "./find-schema.js";
 export * from "./format-types.js";

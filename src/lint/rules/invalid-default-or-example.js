@@ -1,11 +1,10 @@
+import { evaluatorForLint } from "../evaluate.js";
 import { lintRule } from "../lint-rule.js";
 import { schemaGroup } from "../schema-group.js";
 import { findKeyword, visitSchemas } from "../utilities.js";
 
 /**
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode, JsonSchemaTolerantNode } from "../../schema/schema-ast.d.ts"
- * @import { Validator } from "../../json-schema.d.ts"
- * @import { JsonSchemaSession } from "../../session.d.ts"
  * @import { SchemaGroup, SchemaLink } from "../schema-group.d.ts"
  */
 
@@ -58,7 +57,7 @@ const linkName = (link) => findKeyword(link.from, link.keywordUri)?.children[0].
 const invalidDefaultOrExample = lintRule({ origin: "jsonschema-lint:invalid-default-or-example" }, async (tree, file) => {
   const session = file.data.jsonSchemaSession;
   if (session === undefined) {
-    // The schema wasn't resolved, so it can't be compiled
+    // The schema wasn't resolved, so it can't be evaluated
     return;
   }
 
@@ -71,45 +70,25 @@ const invalidDefaultOrExample = lintRule({ origin: "jsonschema-lint:invalid-defa
       annotated.push({ schemaNode, defaultNode, examplesNode });
     }
   });
+  if (annotated.length === 0) {
+    return;
+  }
 
-  /** @type Map<JsonSchemaNode, Promise<Validator | undefined>> */
-  const validators = new Map();
-  /** @type (schemaNode: JsonSchemaNode) => Promise<Validator | undefined> */
-  const validatorFor = (schemaNode) => {
-    let validator = validators.get(schemaNode);
-    if (validator === undefined) {
-      // A schema that can't be compiled, such as one with a reference that
-      // can't be retrieved, is reported by other rules, if at all
-      validator = compile(session, schemaNode);
-      validators.set(schemaNode, validator);
-    }
-    return validator;
-  };
-
+  // A value is reported only if it fails. One that might, like one a
+  // reference that can't be followed decides, isn't.
+  const evaluator = await evaluatorForLint(session, tree);
   for (const { schemaNode, defaultNode, examplesNode } of annotated) {
-    const validator = await validatorFor(schemaNode);
-    if (validator === undefined) {
-      continue;
-    }
-
     const group = await schemaGroup(session, tree, schemaNode);
-    /** @type [Validator, SchemaLink][] */
-    const outer = [];
-    for (const [outerNode, link] of outermost(group, schemaNode)) {
-      const outerValidator = await validatorFor(outerNode);
-      if (outerValidator !== undefined) {
-        outer.push([outerValidator, link]);
-      }
-    }
+    const outer = outermost(group, schemaNode);
 
     /** @type (valueNode: JsonSchemaTolerantNode, label: string) => void */
     const check = (valueNode, label) => {
-      if (!validator.validateNode(valueNode)) {
+      if (evaluator.schema(schemaNode, valueNode).valid === false) {
         file.message(`${label} isn't valid against the schema it's in`, { place: valueNode.position });
         return;
       }
 
-      const failed = outer.find(([outerValidator]) => !outerValidator.validateNode(valueNode));
+      const failed = outer.find(([outerNode]) => evaluator.schema(outerNode, valueNode).valid === false);
       if (failed !== undefined) {
         file.message(`${label} is valid against the schema it's in, but not against the schema that applies it with '${linkName(failed[1])}'`, { place: valueNode.position });
       }
@@ -127,14 +106,5 @@ const invalidDefaultOrExample = lintRule({ origin: "jsonschema-lint:invalid-defa
     }
   }
 });
-
-/** @type (session: JsonSchemaSession, schemaNode: JsonSchemaNode) => Promise<Validator | undefined> */
-const compile = async (session, schemaNode) => {
-  try {
-    return await session.compile(schemaNode.location);
-  } catch {
-    return undefined;
-  }
-};
 
 export default invalidDefaultOrExample;

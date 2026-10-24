@@ -76,4 +76,28 @@ describe("const-or-enum-value-rejected", () => {
       "'minimum' rejects this value, so it's never valid"
     ]);
   });
+
+  test("applicators", async () => {
+    expect(await reasons(`{ "$schema": "${draft202012}", "enum": [{ "a": 1 }, { "a": "x" }], "properties": { "a": { "type": "integer" } } }`)).to.eql([
+      "'properties' rejects this value, so it's never valid"
+    ]);
+    expect(await reasons(`{ "$schema": "${draft202012}", "const": 3, "anyOf": [{ "multipleOf": 2 }, { "maximum": 2 }] }`)).to.eql([
+      "'anyOf' rejects the 'const' value, so nothing is valid"
+    ]);
+  });
+
+  test("unevaluatedProperties gets what the keywords next to it mark", async () => {
+    expect(await reasons(`{
+      "$schema": "${draft202012}",
+      "enum": [{ "a": 1 }, { "b": 1 }],
+      "properties": { "a": true },
+      "unevaluatedProperties": false
+    }`)).to.eql([
+      "'unevaluatedProperties' rejects this value, so it's never valid"
+    ]);
+  });
+
+  test("a keyword that might reject a value isn't reported", async () => {
+    expect(await reasons(`{ "$schema": "${draft202012}", "enum": [1], "$ref": "https://example.com/nope" }`)).to.eql([]);
+  });
 });

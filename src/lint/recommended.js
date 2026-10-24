@@ -40,6 +40,9 @@ import singleValueEnum from "./rules/single-value-enum.js";
 import singleValueRange from "./rules/single-value-range.js";
 import propertyNamesType from "./rules/property-names-type.js";
 import requiredDependentProperty from "./rules/required-dependent-property.js";
+import keywordImpliedByConstOrEnum from "./rules/keyword-implied-by-const-or-enum.js";
+import constOrEnumValueRejected from "./rules/const-or-enum-value-rejected.js";
+import invalidDefaultOrExample from "./rules/invalid-default-or-example.js";
 
 /**
  * @import { Preset } from "unified"
@@ -88,6 +91,9 @@ const recommended = {
     [singleValueRange, ["warn"]],
     [propertyNamesType, ["warn"]],
     [requiredDependentProperty, ["warn"]],
+    [keywordImpliedByConstOrEnum, ["warn"]],
+    [constOrEnumValueRejected, ["warn"]],
+    [invalidDefaultOrExample, ["warn"]],
     [invalidDialectUri, ["error"]],
     [referenceWithoutTarget, ["error"]]
   ]

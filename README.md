@@ -352,12 +352,15 @@ allow, like a v1 `$schema` with a fragment, which are errors.
 | `const-and-enum` | `const` and `enum` in the same schema, where `enum` either has no effect or nothing is valid |
 | `single-value-enum` | `enum` with only one value, which `const` says more directly (draft-06 and later) |
 | `content-schema-without-media-type` | `contentSchema` without `contentMediaType` |
+| `invalid-default-or-example` | A `default` value or a value in `examples` that isn't valid against the schema it's in, or against a schema that applies it, like one with `allOf` |
 | `dependency-on-required-property` | A dependency in `dependentRequired`, `dependentSchemas`, or `dependencies` on a property that's in `required`, so it always applies |
 | `required-dependent-property` | A property a dependency in `dependentRequired` or `dependencies` requires that `required` already requires, so requiring it there has no effect |
 | `keyword-for-disallowed-type` | A keyword or known format for one type of value, like `minimum`, `properties`, or the `date` format, in a schema whose `type` doesn't allow that type |
 | `min-properties-covered-by-required` | `minProperties` that's no more than the number of properties in `required`, so it has no effect |
 | `type-implied-by-const-or-enum` | `type` that allows the `const` value or every value in `enum`, so it has no effect. Turn it off if your tools need `type` |
 | `const-or-enum-value-for-disallowed-type` | A `const` value or a value in `enum` that `type` doesn't allow, so it's never valid |
+| `keyword-implied-by-const-or-enum` | A keyword next to `const` or `enum`, like `minLength` or `allOf`, that allows every value, so it has no effect |
+| `const-or-enum-value-rejected` | A `const` value or a value in `enum` that a keyword next to it, like `multipleOf` or `properties`, rejects, so it's never valid |
 | `required-property-not-allowed` | A property in `required` that `properties`, `patternProperties`, or `additionalProperties` doesn't allow, so no object is valid |
 | `required-property-not-defined` | A property in `required` that no schema applying to the same object defines in `properties` or `patternProperties`, including schemas it's combined with by `allOf`, `anyOf`, `$ref`, and so on |
 | `keyword-without-type` | A keyword or known format for one type of value, like `properties`, `minimum`, or the `date` format, where no `type`, `const`, or `enum` says what type the value is, so values of other types are valid |
@@ -372,16 +375,13 @@ allow, like a v1 `$schema` with a fragment, which are errors.
 | `implicit-dialect` | A root schema without `$schema` whose dialect came from a media type parameter or the default dialect, so other tools may not know it |
 | `reference-without-target` | A `$ref` that doesn't find a schema, such as a file that doesn't exist or a JSON Pointer that doesn't point to anything |
 
-These rules aren't in the recommended preset, because they're matters of style
-or they're expensive to run.
+These rules aren't in the recommended preset, because they're matters of
+style.
 Turn them on with a severity, like `["hjlint/rules/mergeable-all-of-schema", ["warn"]]`.
 
 | Rule | Reports |
 | --- | --- |
 | `mergeable-all-of-schema` | A schema in `allOf` whose keywords can be moved into the schema `allOf` is in without changing what's valid |
-| `assertion-implied-by-const-or-enum` | An assertion next to `const` or `enum`, like `minLength` or `maximum`, that allows every value, so it has no effect (expensive) |
-| `const-or-enum-value-rejected` | A `const` value or a value in `enum` that an assertion next to it, like `minLength` or `multipleOf`, rejects, so it's never valid (expensive) |
-| `invalid-default-or-example` | A `default` value or a value in `examples` that isn't valid against the schema it's in, or against a schema that applies it, like one with `allOf` (expensive) |
 
 A `$comment` that starts with `jsonschema-lint-disable` turns rules off for the
 schema it's in and its subschemas, and `jsonschema-lint-enable` turns them back
@@ -644,6 +644,20 @@ for (const keywords of schemas.values()) {
       file.message("This keyword has no effect", { place: keywordNode.position });
     }
   }
+}
+```
+
+`evaluatorForLint` evaluates the document's schemas on values in it, like a
+`default`, without compiling, from what they lower to. A value passes,
+fails, or is unknown (`valid` is undefined), when what decides it isn't
+known, like a reference that can't be followed or a `$dynamicRef`. It also
+says whether a schema or a keyword might annotate the value or mark part of
+it as evaluated.
+
+```javascript
+const evaluator = await evaluatorForLint(file.data.jsonSchemaSession, tree);
+if (evaluator.schema(schemaNode, defaultNode.children[1]).valid === false) {
+  file.message("The default isn't valid", { place: defaultNode.position });
 }
 ```
 

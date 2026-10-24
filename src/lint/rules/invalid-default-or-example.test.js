@@ -7,6 +7,7 @@ import { SchemaRegistry } from "../../registry/schema-registry.js";
 import { jsonSchemaResolve } from "../../schema/resolve.js";
 import { addDraft04 } from "../../dialects/draft-04/index.js";
 import { addDraft202012 } from "../../dialects/draft-2020-12/index.js";
+import { linter } from "../test-linter.js";
 import invalidDefaultOrExample from "./invalid-default-or-example.js";
 
 const draft2020 = "https://json-schema.org/draft/2020-12/schema";
@@ -130,7 +131,7 @@ describe("invalid-default-or-example", () => {
     expect(await reasons(`{ "$schema": "${draft2020}", "type": "integer", "allOf": [{ "minimum": 0, "default": -1 }] }`)).to.eql([invalidDefault]);
   });
 
-  test("a schema that can't be compiled isn't checked", async () => {
+  test("a value that might be valid isn't reported", async () => {
     expect(await reasons(`{ "$schema": "${draft2020}", "$ref": "https://example.com/nope", "default": 5 }`)).to.eql([]);
   });
 
@@ -144,5 +145,22 @@ describe("invalid-default-or-example", () => {
 
   test("draft-04 doesn't have examples", async () => {
     expect(await reasons(`{ "$schema": "http://json-schema.org/draft-04/schema#", "type": "string", "examples": [1] }`)).to.eql([]);
+  });
+
+  test("unevaluatedItems", async () => {
+    expect(await reasons(`{
+      "$schema": "${draft2020}",
+      "prefixItems": [{ "type": "integer" }],
+      "unevaluatedItems": { "type": "string" },
+      "examples": [[1, "a"], [1, 2]]
+    }`)).to.eql([invalidExample]);
+  });
+
+  test("without the schema in a registry", async () => {
+    const file = new VFile({ path: "/schemas/a.schema.json", value: `{ "$schema": "${draft2020}", "type": "integer", "default": "a" }` });
+    await linter()
+      .use(invalidDefaultOrExample)
+      .process(file);
+    expect(file.messages.map((message) => message.reason)).to.eql([invalidDefault]);
   });
 });

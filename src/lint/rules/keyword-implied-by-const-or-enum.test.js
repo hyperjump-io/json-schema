@@ -1,7 +1,7 @@
 import { describe, test, expect } from "vitest";
 import { VFile } from "vfile";
 import { linter } from "../test-linter.js";
-import assertionImpliedByConstOrEnum from "./assertion-implied-by-const-or-enum.js";
+import keywordImpliedByConstOrEnum from "./keyword-implied-by-const-or-enum.js";
 
 const draft04 = "http://json-schema.org/draft-04/schema#";
 const draft202012 = "https://json-schema.org/draft/2020-12/schema";
@@ -10,7 +10,7 @@ const draft202012 = "https://json-schema.org/draft/2020-12/schema";
 const lint = async (json) => {
   const file = new VFile({ path: "/schemas/a.schema.json", value: json });
   await linter()
-    .use(assertionImpliedByConstOrEnum)
+    .use(keywordImpliedByConstOrEnum)
     .process(file);
   return file;
 };
@@ -18,13 +18,13 @@ const lint = async (json) => {
 /** @type (json: string) => Promise<string[]> */
 const reasons = async (json) => (await lint(json)).messages.map((message) => message.reason);
 
-describe("assertion-implied-by-const-or-enum", () => {
+describe("keyword-implied-by-const-or-enum", () => {
   test("an assertion every enum value passes", async () => {
     const file = await lint(`{ "$schema": "${draft202012}", "enum": ["one", "two"], "minLength": 3 }`);
     expect(file.messages.map((message) => message.reason)).to.eql([
       "'minLength' has no effect, because it allows every value in 'enum'"
     ]);
-    expect(file.messages[0].ruleId).to.equal("assertion-implied-by-const-or-enum");
+    expect(file.messages[0].ruleId).to.equal("keyword-implied-by-const-or-enum");
     expect(file.messages[0].source).to.equal("jsonschema-lint");
     expect(file.messages[0].fatal).to.equal(false);
     expect(file.messages[0].place).to.eql({
@@ -95,5 +95,33 @@ describe("assertion-implied-by-const-or-enum", () => {
 
   test("properties named like the keywords", async () => {
     expect(await reasons(`{ "$schema": "${draft202012}", "properties": { "enum": { "const": 1 }, "minimum": { "const": 0 } } }`)).to.eql([]);
+  });
+
+  test("an applicator that allows every value", async () => {
+    expect(await reasons(`{ "$schema": "${draft202012}", "enum": [1, 2], "allOf": [{ "minimum": 0 }] }`)).to.eql([
+      "'allOf' has no effect, because it allows every value in 'enum'"
+    ]);
+  });
+
+  test("a keyword that annotates has an effect", async () => {
+    expect(await reasons(`{ "$schema": "${draft202012}", "enum": [1, 2], "allOf": [{ "title": "a" }] }`)).to.eql([]);
+  });
+
+  test("what a keyword marks has an effect if something reads it", async () => {
+    expect(await reasons(`{ "$schema": "${draft202012}", "enum": [{ "a": 1 }], "properties": { "a": { "type": "integer" } } }`)).to.eql([
+      "'properties' has no effect, because it allows every value in 'enum'"
+    ]);
+    expect(await reasons(`{
+      "$schema": "${draft202012}",
+      "enum": [{ "a": 1 }],
+      "properties": { "a": { "type": "integer" } },
+      "unevaluatedProperties": false
+    }`)).to.eql([
+      "'unevaluatedProperties' has no effect, because it allows every value in 'enum'"
+    ]);
+  });
+
+  test("a keyword that might reject a value isn't reported", async () => {
+    expect(await reasons(`{ "$schema": "${draft202012}", "enum": [1], "$ref": "https://example.com/nope" }`)).to.eql([]);
   });
 });
