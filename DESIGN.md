@@ -190,11 +190,11 @@ were considered. See "Open questions".)
   dialect doesn't have, rather than a dialect option for it.
 - A keyword that reads its siblings' values, like `additionalProperties`
   reading `properties`, declares them in `siblings`, a record of names it
-  chooses to keyword URIs. `compile` and `check` get their values by those
-  names (`context.siblings`) and have no other way to find a sibling, so
-  the declaration can't drift from what the keyword reads. Tools use it
-  too, like `mergeable-all-of-schema`. Keywords that read evaluation state
-  instead say so with `reads`.
+  chooses to keyword URIs. `lower` and `check` get their values by those
+  names (`context.siblings` for `check`) and have no other way to find a
+  sibling, so the declaration can't drift from what the keyword reads.
+  Tools use it too, like `mergeable-all-of-schema`. What a keyword reads
+  of the evaluation (marks, the dynamic scope) is in its expression.
 - The lite formats (`src/formats/lite.js`) are every format JSON Schema
   defines except `hostname`, `idn-hostname`, and `idn-email`, which need large
   tables of Unicode data. Presets don't use the list. Each lists the
@@ -322,7 +322,7 @@ Both libraries have a long-lived object and sessions created from it, and
 - `JsonSchema.compile(uri, { registries })` creates a session for that
   compilation. Compilations that run at the same time each have their own
   session, so they can't see each other's registries. A `Validator` doesn't
-  need its session after compiling, because its IR is self-contained.
+  need its session after compiling, because its kernel is self-contained.
 - The `getDocument` override and the embedded index (see "Schema AST") are
   on `JsonSchemaSession`.
 - `JsonSchema.compile(uri)` compiles in a new session, so each compilation
@@ -649,7 +649,7 @@ disguised as a `GetOptions` field, and unwrap the error from browser's
   aren't HTTP cached, so a new session sees the edits.
 - A new session for each change to the workspace sees a consistent snapshot,
   and the old one is dropped. Validators compiled in an old session have to
-  be compiled again. The URIs a validator was compiled from (its IR's keys)
+  be compiled again. The URIs a validator was compiled from (its kernel's handles)
   could be exposed for that.
 
 ## Validation API (`src/json-schema.d.ts`)
@@ -708,229 +708,254 @@ Implemented in `src/kernel/validator.js`.
   branches, annotations from failing schemas) comes from evaluation
   plugins.
 
-## Compile and evaluate (`src/keyword.d.ts`)
+## Compile and evaluate (`src/kernel/`)
 
-This section and the ones after it, up to "Bundling", describe compiling
-and evaluating before the kernel replaced them (stage 2 of "Moving the
-kernel into `src/`"). What replaced them is in [KERNEL.md](KERNEL.md).
-They're rewritten in stage 6.
-
-Implemented in `src/evaluate/compile.js` (the IR) and
-`src/evaluate/specialize.js`, with the instance operations in
-`src/evaluate/instance.js`. Requirements: fast on plain JS values, exact
-error locations, and extensibility (user keywords and plugins can run
-arbitrary code) can't be traded away for speed.
+Keywords lower to the kernel, a small language of operations that the
+optimizer, the output formats, and lint understand. [KERNEL.md](KERNEL.md)
+specifies it: the operations, the normal form, what the optimizer may do,
+and what every keyword lowers to. This section is about how it's
+implemented. Requirements: fast on plain JS values, exact error locations,
+and extensibility (user keywords and plugins can run arbitrary code) can't
+be traded away for speed.
 
 There are two phases:
 
-1. **Compile** (async, once per `Validator`). Walk the schema AST from the
-   entry URI, retrieving referenced schemas with `get`. The result is an IR:
-   a table of schema canonical URI to a boolean or a list of
-   `[keywordUri, absoluteKeywordLocation, compiledValue]`, plus each schema's
-   resource. Subschemas are referenced by URI, so cycles are fine. It's v1's
-   compiled AST, but built from schema AST nodes. All I/O happens here.
-2. **Specialize** (sync, lazy). Turn the IR into closures for one combination
-   of instance representation (plain JS values for `validate`, AST nodes for
-   everything else), whether annotations are collected, and whether there
-   are plugins (see "Plugins"). Each combination is built the first time
-   it's needed and cached on the `Validator`. No `eval`. Bytecode run by
-   one interpreter loop was tried instead of closures and wasn't faster
-   (see [BENCHMARKS.md](BENCHMARKS.md)).
+1. **Lower** (async, once per `Validator`, `lower.js`). Walk the schema AST
+   from the entry URI, retrieving referenced schemas with `get`. Each
+   keyword's value is parsed by its shape, with the schemas in it compiled,
+   and given to its `lower` with the siblings it declares. The result is a
+   `Kernel`: a table of handles (canonical URIs) to a boolean or the
+   schema's keyword groups, and the dynamic anchors of every resource.
+   Schemas refer to each other by handle, so cycles are fine. Expressions
+   are in the normal form (`normalize.js`). All I/O happens here.
+2. **Build evaluators** (sync, lazy). The kernel is optimized for what an
+   evaluation can observe (see "Optimizations") and turned into closures.
+   Each evaluator is built the first time it's needed and cached on the
+   `Validator`. No `eval`. Bytecode run by one interpreter loop was tried
+   instead of closures and wasn't faster (see
+   [BENCHMARKS.md](BENCHMARKS.md)).
 
-Between the two, the IR is optimized (see "Optimizations"). It's JSON, so a
-compiled schema can be serialized (`Validator.serialize`,
-`JsonSchema.restoreValidator`). That means a keyword's compiled value must be
-JSON.
+The kernel is JSON, so a compiled schema can be serialized
+(`Validator.serialize`, `JsonSchema.restoreValidator`). It's serialized as
+lowered, before any optimization. It has `kernel: 1`, and
+`restoreValidator` rejects any other version. Restoring also looks up every
+keyword, asserting format, and escape hatch's `evaluate` the kernel needs,
+so a definition that's missing from the `JsonSchema` fails there, not on
+the first evaluation.
 
 Keywords:
 
-- `compile(valueNode, context)` returns the compiled value. Without it, the
-  compiled value is the keyword's value. `context.compileSchema` compiles a
-  subschema node or a URI and returns a handle (the canonical URI). Sibling
-  keywords are found through `context.schemaNode`.
-- `evaluate(compiled, context)` returns `(instance) => boolean`. It runs once
-  per specialization, so instance-independent work goes there. A keyword
-  without `evaluate` has no effect on evaluation (`$id`, `$anchor`).
-  `evaluate` returns `undefined` if the keyword passes every instance in
-  that specialization, like an annotation when annotations aren't
-  collected, `format` without a validator, or `uniqueItems: false`. The
-  keyword is left out, unless there are plugins, which see it pass. This
-  saved 3–15% on real schemas.
-  `context.alwaysPasses(handle)` says whether a subschema passes every
-  instance and has no other effect (`true`, `{}`, or only keywords that
-  were left out), so applicators can leave it out too, and return
-  `undefined` if nothing is left. It's always false when annotations are
-  collected, there are plugins, or the specialization tracks `evaluated`,
-  and for a schema that refers to itself and isn't built yet.
-- Keywords are written once for every instance representation. They look at
-  instances through `context.instance` (`InstanceOps`: `typeOf`, `value`,
-  `length`, `has`, `get`, `entries`, `keys`, `items`), which is fixed for a
-  specialization. `keys` gives property names as instances (name nodes in an
-  AST) for `propertyNames`, so their annotations go on the names. `typeOf` is
-  undefined for `json-missing` and `json-invalid` nodes, and `has` is true for
-  a property whose value is missing. That's how keywords get the
-  error-tolerance rules without extra code.
-- Applicators evaluate subschemas through `context.schema(handle)(instance,
-  segment)`. The core tracks instance location and which AST node to
-  annotate, so keywords never build pointers. In flag mode, the segment is
-  ignored. `if` can evaluate `then` and `else` itself, so the `if`
-  subschema is only evaluated once, and their errors still have their own
-  absolute keyword locations.
-- There's no keyword location that follows references (the output spec's
-  `keywordLocation`), only the absolute keyword location. It cost every
-  evaluation with plugins a string for every keyword, and a step from each
-  keyword to its subschemas recorded in the IR, for something that's rarely
-  useful. A plugin that wants it can build it from `beforeSchema` and
-  `afterSchema`.
-- Evaluation state (frames, locations, dynamic scope, plugins) lives in the
-  specialization's closure instead of being passed through every call. An
-  evaluation started from inside another one, such as by a plugin, saves the
-  outer one's state and restores it. The fastest specialization doesn't use
-  any state, so it doesn't save anything.
-- `context.annotate` is only defined when annotations are being collected
-  or there are plugins. Annotations are buffered in frames (see "Evaluation
-  state"). Plugins get each one when it's made.
-- Unknown keywords: the core looks up the definition by `keywordUri` without
-  its fragment and passes the property name as `context.keywordName`. The
-  unknown keyword's `compile` uses `context.dialect.unknownKeywords` to decide
-  whether it's an annotation.
+- `lower(value, siblings, context)` returns what the keyword means, as an
+  expression. It's synchronous and only reads its inputs and the context
+  (`jsonSchema`, `dialect`, `keywordName`). A keyword without `lower` has no
+  keyword group (`$id`, `$defs`, and `then`, `minContains`, and draft-04's
+  `exclusiveMaximum`, which their siblings read). A keyword with no effect
+  (`uniqueItems: false`) lowers to `pass`, so plugins see it pass, and the
+  optimizer leaves it out when nothing can see it.
+- Every built-in keyword lowers to the kernel's operations. One that can't
+  uses an escape hatch: `predicate`, a check, or `opaque`, an applicator.
+  The keyword's `evaluate(value, context)` is called once for each such
+  operation when an evaluator is built, and returns `(instance) =>
+  boolean`, so work that only depends on the value is done once. The
+  context is discriminated by `op`. `opaque` has its schemas in a field of
+  their own, apart from `value`, which is only data, so nothing in the data
+  is mistaken for a schema. The context has their evaluators, in order.
+  Placeholders for schemas in `value` were considered and rejected for
+  that reason.
+- `format` decides whether it asserts when it's lowered, from the
+  `JsonSchema`'s configuration, so a serialized expression means the same
+  wherever it's restored.
+- Unknown keywords: the core looks up the definition by `keywordUri`
+  without its fragment and passes the property name as
+  `context.keywordName`. The unknown keyword's `lower` uses
+  `context.dialect.unknownKeywords` to decide whether it's an annotation.
+- Before the kernel, a keyword had `compile`, which returned an opaque JSON
+  value, and `evaluate`, a closure, so everything that needed to know what
+  a keyword means had a table of keyword URIs: the optimization passes,
+  lint's `keywordType` and list of assertions, and the output formats'
+  `if` and `conditional`. `simpleApplicator`, `reads`, and the
+  `compileSchemaArray` and `compileSchemaMap` utilities went with them. The
+  operations say what those did.
+
+Evaluators:
+
+- `fast.js` evaluates plain values without plugins or annotations, which
+  is `validate` with FLAG output, the most common call. It's written for
+  plain values instead of reading them through `InstanceOps`. Sharing one
+  implementation between plain values and ASTs made call sites
+  polymorphic, and closures written for plain values were 1.06–1.23 times
+  faster on real schemas (see [BENCHMARKS.md](BENCHMARKS.md)). That was an
+  open question before the kernel, because every keyword would have needed
+  a second evaluator. Now it's one evaluator for each operation.
+- `instrumented.js` evaluates everything else: with plugins, annotating,
+  and ASTs (`validateJson`, `validateNode`). It reads instances through
+  `InstanceOps` (`instance.js`), so it's written once for plain values and
+  AST nodes. `jsInstance` and `astInstance` are instances of two classes,
+  not object literals. Literals with the same properties share a hidden
+  class, so `ops.typeOf` couldn't be inlined once both had been used,
+  which made plain values with plugins about 20% slower in a process that
+  also evaluated ASTs. `typeOf` is undefined for `json-missing` and `json-invalid`
+  nodes, which pass every schema, and `has` is true for a property whose
+  value is missing, so the syntax error is the only error for it.
+- A schema's property operations are merged into one loop over the
+  instance's properties. That's what makes real schemas faster than
+  evaluating each operation on its own. Each property is matched once
+  against the names, the patterns, and the `except` selectors, with
+  `additionalProperties` being "nothing else matched", instead of testing
+  them again. Merging is part of the evaluators, not a pass, because a
+  merged loop isn't an expression. With plugins, only matching is merged
+  (see "Plugins").
+- Evaluators depend on the instance representation, whether it's
+  annotating, whether there are plugins, and whether one has an
+  `annotation` hook, because that's what the optimizations depend on. Not
+  on which plugins they are: plugins are often created for each call, so
+  a cache keyed by plugin would miss every time. `validate` without
+  options goes straight to the fast evaluator.
+- Evaluation state (the instance location, the dynamic scope, the plugin
+  and its state, annotations) lives in the evaluator's closure instead of
+  being passed through every call. An evaluation started from inside
+  another one, such as by a plugin, saves the outer one's state and
+  restores it. The fast evaluator only tracks the dynamic scope.
 
 `validateJson` and `annotateJson` parse with browser's error-tolerant
 `fromJson` and then evaluate the AST. Validating while parsing is a possible
-optimization later. The two-phase design doesn't rule it out.
+optimization later. The two phases don't rule it out.
 
-Sharing one keyword implementation between representations makes call
-sites polymorphic, because V8 shares type feedback between closures created
-from the same code. `validate` is about 15% slower in a process that has
-also evaluated ASTs, and closures written for plain values are 1.06–1.23
-times faster than the specialization on real schemas (see
-[BENCHMARKS.md](BENCHMARKS.md)). What's left is mostly iterating an
-object's properties and the polymorphism. Keywords could provide a separate evaluator for plain values
-for those. That would be an addition to the interface, not a redesign. It's
-undecided until after the optimization passes.
+There's no keyword location that follows references (the output spec's
+`keywordLocation`), only the absolute keyword location. It cost every
+evaluation with plugins a string for every keyword, and a step from each
+keyword to its subschemas recorded in the compiled schema, for something
+that's rarely useful. A plugin that wants it can build it from
+`beforeSchema` and `afterSchema`.
 
 Annotations follow the spec: they're kept only if the keyword and every
 schema they were evaluated through pass. An invalid instance gets no
 annotations from the failing parts of the schema. The language server has its
 own annotation implementation for that reason. Plugins see every
-annotation, including the ones that aren't kept (see "Plugins").
+annotation, including the ones that aren't kept (see "Plugins"). Annotations
+are collected in nested lists, so a passing schema adds its subschemas'
+annotations to its own without copying them, and they're flattened when
+they're attached to the instance's nodes.
 
-### Optimizations (`src/evaluate/optimizations/`)
+### Optimizations (`src/kernel/optimizations/`)
 
-Each optimization pass is a file in `src/evaluate/optimizations/`, so what
+Each optimization pass is a file in `src/kernel/optimizations/`, so what
 the optimizer can do and where each pass is implemented can be seen from the
 file structure, like keywords and dialects. `optimizations/index.js` lists
-them, and `src/evaluate/optimize.js` runs them.
+them, and `src/kernel/optimize.js` runs them.
 
-- A pass is an `Optimization`: `{ fastOnly, optimize }`. `optimize` takes
-  the IR and the `JsonSchema`, to look up keyword definitions, and returns
-  a new IR. It doesn't change the one it's given, because the `Validator`
-  keeps it for its other specializations and for `serialize`. A pass that
+- A pass is an `Optimization`: `{ optimize(kernel, mode) }`. The mode is
+  what the evaluation can observe: `fast` (no plugins and no annotations,
+  so only the result and the marks matter), `plugins`, and `annotations`
+  (annotating, or a plugin with an `annotation` hook). A pass returns a new
+  kernel. It doesn't change the one it's given, because the `Validator`
+  keeps it for its other evaluators and for `serialize`. A pass that
   doesn't change anything returns the one it's given.
+- Passes run when an evaluator is built, for its mode, so a serialized
+  kernel isn't optimized for any one mode.
 - Passes run in the order `index.js` lists them, because one can leave work
-  for another, like folding a constant leaving a subschema nothing
-  references. Unlike keywords, they aren't independent.
-- A pass that keeps error locations runs once, when a schema is compiled,
-  so a serialized IR already has it. A pass that loses them is `fastOnly`.
-  It runs on that IR when the `Validator` builds a fast specialization (no
-  plugins, no annotations), which only says whether an instance is valid.
-  Errors come from an instrumented evaluation, which doesn't use it.
-- A pass that depends on what a keyword means, like folding `not: true`,
-  has rules for that keyword's URI. The knowledge stays in the pass, and a
-  keyword it doesn't know about is left alone. If user keywords ever need
-  to take part, keywords could provide the rules instead.
+  for another, like `static-unevaluated` leaving a schema whose marks
+  nothing reads, which folding can then fold. Unlike keywords, they aren't
+  independent.
+- Passes only know operations, never keywords, so any keyword that lowers
+  to the kernel's operations is optimized like the built-in ones. Before
+  the kernel, a pass had rules for keyword URIs. `opaque` is a barrier:
+  nothing is folded inside it, and what it marks is unknown.
+- With plugins, what plugins see can depend on the optimizations, but it's
+  never wrong (KERNEL.md, "Optimizer"). A schema that always passes might
+  not be evaluated as a schema of its own, and a keyword that only
+  annotates is left out for plugins without an `annotation` hook. Each hook
+  call is still about what it says.
 - Passes aren't part of the API. There's no `addOptimization`.
-- A pass over a large IR isn't free. Copying or iterating the 4,304
+- A pass over a large kernel isn't free. Copying or iterating the 4,304
   schemas of SchemaStore's `package.json` schema takes 0.5–1.6 ms, so a
-  pass returns the IR it's given when there's nothing to do, and a pass has
-  to save more than it costs (see "Optimizations" in
+  pass returns the kernel it's given when there's nothing to do, and a
+  pass has to save more than it costs (see "Optimizations" in
   [BENCHMARKS.md](BENCHMARKS.md)).
 
 The passes:
 
-- `static-unevaluated.js` (`fastOnly`): `unevaluatedProperties` becomes
-  `additionalProperties` with the properties and patterns its siblings
-  evaluate, and `unevaluatedItems` becomes `items` (2019-09's
-  `additionalItems`) starting after its siblings' prefix, when what they
-  evaluate is known without the instance. One whose siblings evaluate
-  everything is left out. When no keyword reads `evaluated` anymore, the
-  specialization doesn't track it. What's evaluated is known when the
-  schemas applied to the same instance only use keywords the pass has
-  rules for, conditional applicators (`anyOf`, `if`, …) don't mark
-  anything in any subschema, and there's no `contains` or dynamic
-  reference. Keywords that aren't applicators don't need rules: only
-  applicators mark (`markEvaluated`), and a keyword can only apply the
-  schemas whose handles are in its compiled value, or, if it reads
-  `dynamicScope`, the ones dynamic anchors identify. Applicators need rules
-  because nothing in a keyword definition says what it marks. It only needs the marks of a passing schema, because a
-  schema whose sibling fails fails anyway, which isn't true with plugins
-  or annotations.
+- `static-unevaluated.js` (fast only): an `unevaluated` selector becomes
+  one that doesn't read marks where what the other groups in its schema
+  mark is known without the instance. `eachProperty({ unevaluated })`
+  selects the names they don't mark (`except`), and
+  `eachItem({ unevaluated })` starts after their prefix. One whose siblings
+  mark everything is `pass`. When nothing reads marks, the evaluators don't
+  track them. What's marked is known from the operations: operations that
+  apply a schema only under some condition (`any`, `one`, `cases`) count
+  only if nothing they apply marks anything, and `contains`,
+  `dynamicApply`, and `opaque` are never known. It only needs the marks of
+  a passing schema, because a schema whose sibling fails fails anyway,
+  which isn't true with plugins or annotations.
+- `fold-passing.js`: a schema that passes every instance and has no effect
+  anything in the mode can see (`true`, `{}`, or only annotations when
+  nothing sees them) is `pass` wherever it's applied. An operation that
+  applies `pass` to children is `pass` too, unless something reads marks,
+  because it marks what it evaluates. It's what `alwaysPasses` did before
+  the kernel, and it was worth 10–20% on `package.json`.
+- `drop-groups.js`: keyword groups with no effect anything in the mode can
+  see are left out, so they have no hook calls: `pass` without plugins, and
+  `annotate` when nothing sees annotations. For BASIC and DETAILED, which
+  have no `annotation` hook, that was worth 5–15%, more than merging.
 
-Passes that were tried and aren't used:
+Optimizations that were tried and aren't used:
 
 - Inlining the schemas `$ref` and `allOf` apply (their keywords in place of
-  the keyword) saved about 3% on `package.json` as 2020-12, where `$ref`
-  is a keyword, and nothing on the test suite. Before 2019-09, `$ref` is
-  already followed when compiling. It made the first `validate` about
-  twice as slow (7 to 13–15 ms), half in the pass and half in building
-  the 34% more keywords it copies, so it would take about 65,000
-  validations to make that back.
-
-Some optimizations aren't passes, because they're about how specialization
-works rather than what the IR says, so they stay in `specialize.js`:
-
-- Keywords whose `evaluate` returns `undefined` and subschemas that always
-  pass are left out (see "Compile and evaluate"). Whether a keyword always
-  passes is only known by building its evaluator.
-- Evaluation state is only tracked if a keyword in the compiled schema
-  `reads` it (see "Evaluation state").
-- Evaluation state is kept in the specialization's closure instead of being
-  passed through every call.
+  the keyword), before the kernel, saved about 3% on `package.json` as
+  2020-12, where `$ref` is a keyword, and nothing on the test suite. It
+  made the first `validate` about twice as slow (7 to 13–15 ms), half in
+  the pass and half in building the 34% more keywords it copies, so it
+  would take about 65,000 validations to make that back.
+- Finding the instance's type once per schema and only evaluating the
+  operations for that type was up to 18% slower.
 
 ### Evaluation state
 
 Cross-cutting keywords don't use plugins. v1 implemented `unevaluated*` and
 `$dynamicRef` as plugins, which put every evaluation through hook wrappers.
-Here, the core tracks two kinds of state, each only when a keyword in the IR
-declares that it reads it (`Keyword.reads`):
+Here, evaluators track two kinds of state, each only when an expression in
+the kernel reads it:
 
-- **`evaluated`**: The properties or items evaluated at an instance location.
-  Applicators (`properties`, `patternProperties`, `additionalProperties`,
-  `prefixItems`, `items`, `itemPattern`, `contains` for matching items, and
-  `unevaluated*`) call `context.markEvaluated?.(key)`. Readers
-  (`unevaluated*`) call `context.evaluated()` and are evaluated after their
-  siblings that don't read it, which replaces v1's hard-coded keyword order.
-  Objects and arrays share one set because an instance can't be both. This
-  is a built-in set rather than a general way for keywords to read each
-  other's annotations, which would make every reader understand every
-  producer's annotation format.
-- **`dynamicScope`**: `context.dynamicAnchor(name)` returns the evaluator for
-  the outermost schema in the dynamic scope with that anchor. The core
-  updates an anchor-to-evaluator map when evaluation enters a different
-  schema resource, reusing the outer map when the resource adds nothing.
-  Bookending (2020-12) and `$recursiveAnchor` (2019-09) are up to the
-  keyword. `context.resourceDynamicAnchors(uri)` gives it a resource's
-  dynamic anchors from the IR, so it can check whether the schema a
-  reference resolved to has one. It's checked in `evaluate`, once per
-  specialization, because the IR is only complete then. Checking while
-  compiling would miss an anchor whose schema is still being compiled, like
-  `meta/core`'s `"meta"` from a `$dynamicRef` inside it. Compiling any schema in a resource also compiles that resource's
-  dynamic anchor targets, because specialization can't retrieve anything.
+- **Marks**: the properties or items evaluated at an instance location.
+  The operations that evaluate properties or items (`property`,
+  `eachProperty`, `item`, `eachItem`, `contains`, `itemSequence`) mark
+  them, and an `unevaluated` selector reads them (`readsMarks`). A group
+  with an `unevaluated` selector is evaluated after the groups that don't
+  have one, so it sees what they marked. That replaces v1's hard-coded
+  keyword order. Objects and arrays share one set because an instance
+  can't be both. This is a built-in set rather than a general way for
+  keywords to read each other's annotations, which would make every reader
+  understand every producer's annotation format.
+- **The dynamic scope**: `dynamicApply(anchor, fallback)` applies the
+  outermost schema in the dynamic scope with that dynamic anchor. Evaluators
+  update an anchor-to-handle map when evaluation enters a different schema
+  resource, reusing the outer map when the resource adds nothing. 2020-12's
+  bookending and 2019-09's `$recursiveAnchor` are decided when lowering,
+  from the dynamic anchors of the resource a reference resolves to, so a
+  reference that doesn't use the dynamic scope is a plain `apply`, and
+  `dynamicApply` has no dialect rules. Lowering a schema in a resource also
+  lowers that resource's dynamic anchor targets, because evaluation can't
+  retrieve anything. They're recorded before they're lowered, so a
+  reference lowered meanwhile, like `meta/core`'s `$dynamicRef` to its own
+  `"meta"` anchor, sees every one.
 
-Scoping is the core's job. Each keyword and schema evaluation gets a frame
-for its marks and annotations, which follow the same rule, as the spec does
-for annotations: a frame is kept only if it passes. A subschema evaluated on
-the same instance (no `segment`) merges its frame into its parent's. One
-evaluated on a property or item gets its own, because its marks are about a
-different instance. Frames only exist while marks or annotations are being
-collected.
+Marks follow the same rule as annotations: an operation's marks are kept
+only if it passes. A subexpression's marks on the same instance are its
+parent's. Marks made on a property or item are about that child, so they
+never reach the parent. Marks are demand-driven: an evaluator gets the set
+to mark in, or nothing if nothing reads what it marks. A schema with a
+group that reads marks starts its own set and adds it to its caller's if it
+passes. An operation whose subexpressions can fail without it failing
+(`any`, `one`, a condition of `cases`) gives each one its own set and keeps
+the ones that pass.
 
-Because only passing schemas keep marks, a keyword can always stop at a
-failure. It must not stop at a passing subschema while `markEvaluated` is
-defined. `context.exhaustive` is true when errors or annotations are being
-collected, and then nothing may stop early.
+Because only passing expressions keep marks, an evaluator can always stop
+at a failure. Without plugins or annotations, `any` stops at the first that
+passes unless its marks are read, `one` at the second, and `contains` at
+its minimum. `opaque`'s `context.exhaustive` says when a keyword can't stop
+early.
 
-### Plugins (`src/evaluate/evaluation-plugin.d.ts`)
+### Plugins (`src/kernel/evaluation-plugin.d.ts`)
 
 Plugins only observe evaluation. Nothing built in needs to change it. They're
 passed per call (`ValidationOptions.plugins`) and are usually stateful
@@ -943,37 +968,45 @@ objects the caller reads results from afterwards.
   evaluated inside it (a schema's state to its keywords, a keyword's state to
   the subschemas it applies). The core keeps the stack. That's enough to
   build nested results like DETAILED without touching shared objects.
+- Plugins see keyword groups, never operations. An error is reported for a
+  keyword, never for an operation inside it.
+- Hook calls nest: everything between a group's `beforeKeyword` and
+  `afterKeyword` is that group's. Output formats depend on it (BASIC's state
+  is where a keyword's errors start in one list), so two groups' subschemas
+  are never evaluated interleaved. Across a schema's groups, only matching
+  properties is merged: one pass over the properties finds which groups'
+  operations each one is for, and each group then evaluates its matches
+  between its own hooks.
 - `annotation` is called when a keyword annotates, with the keyword's
   state, before `afterKeyword`. It's called for every annotation, even ones
   that aren't kept because the keyword or a schema it was evaluated through
   fails, because the language server needs annotations for invalid
   documents. A plugin that wants the spec's rule can apply it, because
-  `afterKeyword` and `afterSchema` say what passed. Only keywords that
-  annotate with a value they already have (`title`, `format`, …) annotate,
-  so it costs a call for each one.
-- Hooks get a `SchemaInfo` or `KeywordInfo`, created once per specialization
-  so passing it doesn't allocate, with its absolute keyword location. They
-  also get an `EvaluationLocation` with the instance location, the AST node
-  when there is one, and a lazy `value()`.
-- With any plugin, the instance is evaluated once with `exhaustive` on. A
-  plugin never sees an instance twice (coverage counts) and always sees every
-  keyword that applies. That makes plugins slower, which is the trade-off.
-- Validators are specialized on whether there are plugins, not on which
-  ones. Plugins are often created fresh for each call, so a cache keyed by
-  plugin set would miss every time. That makes at most four specializations
-  per representation: fast, instrumented, annotate, and annotate with
-  plugins (annotate is AST only).
+  `afterKeyword` and `afterSchema` say what passed.
+- Hooks get a `SchemaInfo` or `KeywordInfo`, created once per evaluator
+  so passing it doesn't allocate, with its absolute keyword location.
+  `KeywordInfo` has the group's `expression` and `sources`, and what output
+  formats need from the expression, computed once: `explainsFailure` and
+  `conditions`. Hooks also get an `EvaluationLocation` with the instance
+  location, the AST node when there is one, and a lazy `value()`.
+- With any plugin, the instance is evaluated once and nothing stops early.
+  A plugin never sees an instance twice (coverage counts) and always sees
+  every keyword that applies. That makes plugins slower, which is the
+  trade-off.
+- Without optimizations, the hook calls are the same as before the kernel.
+  With them, each hook call is one the unoptimized evaluation makes too, in
+  the same order.
 - Plugins are an important path (the language server evaluates with them),
   so what the core does for them is kept small:
   - Several plugins are combined into one plugin whose states are arrays.
-    The specialization calls one plugin's hooks with plain states, so the
+    The evaluator calls one plugin's hooks with plain states, so the
     usual case of one plugin doesn't loop or allocate arrays.
   - An `EvaluationLocation` is only about where in the instance, so every
     schema and keyword evaluated on the same instance (through `allOf`,
     `$ref`, …) shares one. It's created when evaluation moves to a property
     or item, not for every hook call, and it doesn't change, so a plugin
     can keep it.
-  - It's an instance of one class shared by every specialization, with
+  - It's an instance of one class shared by every evaluator, with
     `value()` as a method, so it's one allocation and hooks always see the
     same shape.
   - An array index is appended to the instance location without escaping.
@@ -1268,7 +1301,11 @@ plugins, configured per project, with presets, like remark-lint.
   draft-04's empty `enum`, leaves that keyword's URI out.
 - Utilities in `src/lint/` keep rules short: visit every schema, visit every
   keyword by URI, get a sibling keyword, and find what a reference points
-  to. They know nothing about particular keywords.
+  to. They know nothing about particular keywords. A rule that needs to
+  know what a keyword means, like which types it applies to, reads what it
+  lowers to (`lowerForLint`, and `appliesTo`, `keywordAppliesTo`,
+  `canPass`, and `assertsOnItsOwn` in `analysis.js`; KERNEL.md, "Lowering
+  for lint").
 
 ### The rule catalogue
 
@@ -1584,8 +1621,8 @@ What this relies on from browser's `v2` branch:
    kernel's operations would need. The second prototype covers lowering
    from the schema AST, plugins and AST instances, optimizing with
    plugins, and lowering for lint (BENCHMARKS.md, "Kernel prototype from
-   the schema AST"). Next: moving it into `src/` (see "Moving the kernel
-   into `src/`").
+   the schema AST"). Done: it's in `src/` (see "Moving the kernel into
+   `src/`" for the steps after it).
 2. Port lint rules from the catalogue (see "The rule catalogue"). Done so
    far: everything in `src/lint/rules/`.
 3. Lint while resolving (see "Linting while resolving"): plain lint
@@ -1685,7 +1722,12 @@ never timed.
    `assertion-implied-by-const-or-enum`, an annotation is an effect.
 6. **Documentation and measurements.** "Compile and evaluate" and the
    sections after it, and the code map, describe the kernel. KERNEL.md
-   isn't a draft anymore. BENCHMARKS.md has `src/`'s numbers.
+   isn't a draft anymore. BENCHMARKS.md has `src/`'s numbers ("The kernel
+   in `src/`"). Done. The first `validate` of `tsconfig.json` takes
+   1.35–1.5 times as long as before the kernel, at the limit.
+   `jsInstance` and `astInstance` became classes, so evaluating plain
+   values with plugins isn't slower in a process that also evaluates ASTs
+   (BENCHMARKS.md, "The kernel in `src/`").
 
 Before the old code is gone for good (the end of stage 2), FLAG and BASIC
 can't be slower than v2 on the real-world schemas, and the first

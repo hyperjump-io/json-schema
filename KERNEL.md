@@ -1,7 +1,8 @@
 # The kernel
 
-A draft specification, started 2026-10-23. Nothing here is implemented yet.
-The plan is in "Plan" in [DESIGN.md](DESIGN.md).
+The specification of the kernel, implemented in `src/kernel/`. How it's
+implemented is in "Compile and evaluate" in [DESIGN.md](DESIGN.md), and its
+measurements are in [BENCHMARKS.md](BENCHMARKS.md).
 
 The kernel is a small language that every keyword lowers to. A keyword says
 what it means as kernel expressions, and the kernel knows what every
@@ -9,21 +10,19 @@ expression means. The optimizer, the linter, and the output formats only work
 with kernel expressions, so they support any keyword that lowers to them,
 including user-defined ones, without knowing its URI.
 
-It replaces `compile` and `evaluate` in the keyword interface. Today a
-keyword compiles to an opaque JSON value and evaluates through an opaque
-closure, so everything that needs to know what a keyword means has a table
-of keyword URIs: the passes (`static-unevaluated.js`), lint
-(`keywordTypes`, `assertionUris`, `contradictory-limits`' pairs), and the
+It replaced `compile` and `evaluate` in the keyword interface. Before the
+kernel, a keyword compiled to an opaque JSON value and evaluated through an
+opaque closure, so everything that needed to know what a keyword means had
+a table of keyword URIs: the passes (`static-unevaluated.js`), lint
+(`keywordType`, `assertionUris`, `contradictory-limits`' pairs), and the
 output formats (`if` and `conditional` in `output/utilities.js`).
 
-A prototype (`benchmark/claude/core/`, not committed) lowered today's
-compiled values to an earlier, coarser version of these operations. Its
-fast closures agreed with `validate` on every instance of the real-world
-corpora and the test suites. They were 1.0–3.1 times faster, and merging a
-schema's property loops is what made real schemas faster. Evaluating them
-with plugins gave the same hook calls as `specialize` (about 4 million,
-compared one by one) and the same BASIC and DETAILED output, at the same
-speed or faster.
+Two prototypes came first (BENCHMARKS.md, "Kernel prototype" and "Kernel
+prototype from the schema AST"). The implementation was checked against
+the code before it on the real-world corpora and the test suites: the same
+results, annotations, and output, except where this specification changes
+BASIC, and the same hook calls without optimizations (BENCHMARKS.md, "The
+kernel in `src/`").
 
 ## Principles
 
@@ -77,16 +76,17 @@ annotations it makes.
   be both an object and an array.
 - **Annotations** are kept only if the expression that made them and every
   expression it was evaluated through pass. Plugins see every annotation,
-  as they do today.
+  as they did before the kernel.
 - **Values that couldn't be parsed** (`json-missing` and `json-invalid`
   nodes when evaluating JSON text) pass every schema. A property whose value
   couldn't be parsed is still present for `hasProperty`.
 - **Explains its failure.** An operation explains its failure if it fails
   only when a subexpression fails, and their failures say why. The BASIC
   output format reports only the subexpressions' errors for those. This
-  replaces `simpleApplicator`. It's what `simpleApplicator` says today,
-  except for `conditional` and for `dependencies` when every dependency is
-  a schema, which now explain their failures, so BASIC reports less.
+  replaced `simpleApplicator`. It's what `simpleApplicator` said, except
+  for `conditional`, for `dependencies` when every dependency is a schema,
+  and for `anyOf` and `oneOf` of one schema, which explain their failures,
+  so BASIC reports less.
 
 ## Schemas and keyword groups
 
@@ -128,7 +128,7 @@ type KeywordGroup = {
   has needed more yet.
 - **Order.** A group whose expression has an `unevaluated` selector is
   evaluated after the groups that don't, in document order otherwise. This
-  replaces `reads: ["evaluated"]` and the ordering in `compile.js`.
+  replaced `reads: ["evaluated"]` and the ordering in `compile.js`.
 - A schema is referred to by its handle (its canonical URI), so schemas can
   refer to each other and to themselves.
 - **Versioning.** A serialized compiled schema has `kernel: 1`, the version
@@ -217,7 +217,7 @@ doesn't explain its failure.
   restored, and restoring fails if an asserting format isn't registered. It
   asserts only on the types the format declares (`Format.types`), so lint
   gets them from the operation, but it annotates instances of every type,
-  as `format` does today. It's the one exception to "applies to".
+  as `format` did before the kernel. It's the one exception to "applies to".
 
 ### Arrays
 
@@ -238,7 +238,7 @@ doesn't explain its failure.
   `{ sequence: ItemPattern[] }`, `{ either: ItemPattern[] }`, and
   `{ repeat: ItemPattern, min: 0 | 1, max: 1 | null }` for `?`, `*`, and
   `+`. Lowering builds this tree, and the kernel builds the automaton
-  `itemPattern` builds in `compile` today.
+  `itemPattern` built in `compile` before the kernel.
 
 ### Objects
 
@@ -274,7 +274,7 @@ doesn't explain its failure.
 | `{ op: "annotate", value: Json, types?: TypeName[] }` | `types`, or everything | always |
 
 It annotates `value`, on instances of `types`. Without annotations or
-plugins, it does nothing, so the optimizer leaves it out. That replaces the
+plugins, it does nothing, so the optimizer leaves it out. That replaced the
 hand-written list of keywords that always pass.
 
 ### Escape hatches
@@ -338,10 +338,12 @@ The rules so far:
 
 ## Optimizer
 
-The optimizer rewrites expressions for evaluation: merging a schema's
-property operations into one loop, inlining `apply`, `not` of `not`,
-leaving out `annotate`, folding groups that always pass. Without plugins,
-anything that keeps the result and the marks is allowed.
+The optimizer rewrites expressions for evaluation. Without plugins,
+anything that keeps the result and the marks is allowed, like inlining
+`apply` or `not` of `not`. What's implemented is merging a schema's
+property operations into one loop, resolving `unevaluated` selectors that
+don't depend on the instance, folding schemas that always pass, and
+leaving out groups with no effect (DESIGN.md, "Optimizations").
 
 With plugins, what plugins see can depend on the optimizations: which
 schemas are evaluated as schemas of their own, how DETAILED nests, the
@@ -358,16 +360,16 @@ plugins see can't be wrong, though:
   loses that.
 - **Nothing stops early** when a plugin needs every error. `any` stopping
   at the first that passes, `one` at the second, and a schema at its first
-  failure are only without plugins, as today.
+  failure are only without plugins.
 
 An optimization keeps this with a **source map**: each part of an
 optimized expression says which keyword group it came from, so the
 evaluator can make that group's hook calls with its result. It doesn't
-have to reproduce today's tree of hook calls. Without optimizations,
-evaluation with plugins makes the same hook calls as `specialize` today,
-which is how the prototype is checked. With optimizations, it's checked by
-validity, annotations, and the optimized hook calls being a subsequence of
-the unoptimized ones.
+have to reproduce the tree of hook calls from before the kernel. Without
+optimizations, evaluation with plugins makes the same hook calls as
+`specialize` did, which is how the implementation was checked. With
+optimizations, it's checked by validity, annotations, and the optimized
+hook calls being a subsequence of the unoptimized ones.
 
 Hook calls nest (see "Schemas and keyword groups"), so across groups, only
 the *matching* of a merged property loop can be merged with plugins. One
@@ -401,40 +403,41 @@ type Shape = "schema" | "unappliedSchema" | "reference" | "data" | { array: Shap
 ```
 
 - **`shape`** is the input type of `lower`. The kernel parses the value by
-  its shape, reports values that don't fit as today, and gives `lower` the
+  its shape, reports values that don't fit, and gives `lower` the
   value with schemas replaced by expressions (`apply` of the handle they'll
   compile to) and references resolved. So `lower` never looks for schemas,
   and `shape` can't disagree with what the keyword does.
-- **`"reference"`** is new: a URI of a schema, resolved against the base
+- **`"reference"`** is a URI of a schema, resolved against the base
   URI (`$ref`, 2020-12's `$dynamicRef`, `$recursiveRef`). It's what lint's
   `refUri`, `schema-group.js`' list of dynamic references, and bundling find
   references with, instead of keyword URIs. A reference's input is
-  `{ uri: string; schema: Expression; handle: Handle; dynamicAnchors: Record<string, Handle> }`:
+  `{ uri: string; schema: Expression; handle: Handle; dynamicAnchors: Record<string, Handle> | undefined }`:
   `$dynamicRef` reads its fragment, and the dynamic anchors of the resource
   it resolved to are what `$dynamicRef` and `$recursiveRef` decide with.
-- **`"unappliedSchema"`** is new: a schema that the keyword doesn't apply
+  They're undefined when lint doesn't know them (see "Lowering for lint").
+- **`"unappliedSchema"`** is a schema that the keyword doesn't apply
   (`contentSchema`). Resolving finds identifiers in it, and lint and the LS
   know it's a schema, but it isn't compiled, and `lower` gets its JSON.
 - **`siblings`** are inputs too, by the names the record gives them, each
   parsed by its own keyword's shape. A sibling that's missing, or whose
   value didn't fit its shape or failed its check, is `undefined`. A keyword
   can only read the siblings it declares, and they're recorded as the
-  group's `sources`. `siblings.test.js` isn't needed anymore.
+  group's `sources`.
 - **`lower`** is synchronous and only reads its inputs and the context
   (`dialect`, `keywordName`, the `JsonSchema`). The kernel compiles: it
-  retrieves what references refer to and replaces placeholders with
-  handles. It isn't called if the value or a sibling it needs didn't fit
-  its shape. A keyword without `lower` has no keyword group, like `$id`
-  today. A keyword that has a group but no effect (`uniqueItems: false`, an
+  compiles the schemas in the value and retrieves what references refer
+  to before `lower` is called. It isn't called if the value didn't fit its
+  shape. A keyword without `lower` has no keyword group, like `$id`. A keyword that has a group but no effect (`uniqueItems: false`, an
   unknown keyword that isn't an annotation) lowers to `pass`, so plugins see
   it pass, and the optimizer leaves it out without plugins.
-- **Removed:** `compile`, `simpleApplicator` (the operations say),
-  `reads` (except on `opaque`), and the `siblingKeyword`,
-  `compileSchemaArray`, and `compileSchemaMap` utilities.
+- **Removed with the kernel:** `compile`, `simpleApplicator` (the
+  operations say), `reads` (except on `opaque`), the keywords'
+  `siblingKeyword`, `compileSchemaArray`, and `compileSchemaMap`
+  utilities, and `siblings.test.js`.
 
 ## Every keyword
 
-Every keyword in every dialect today, and what it lowers to. `S` is a
+Every keyword in every dialect, and what it lowers to. `S` is a
 schema's expression (`apply`), and `[…]` is `all` of what's in it.
 
 ### No keyword group
@@ -522,7 +525,8 @@ Every keyword lowers to kernel operations. None needs `predicate` or
 ## Lowering for lint
 
 Lint runs without compiling, so it lowers each document itself, in the
-normal form, without compiling or retrieving anything:
+normal form, without compiling or retrieving anything (`lowerForLint` in
+`src/lint/lower.js`, which shares `lowerKeywords` with compiling):
 
 - A subschema is `apply` of its location, and a reference is `apply` of
   the URI it resolves to. The dynamic anchors of a resource in the
@@ -530,34 +534,42 @@ normal form, without compiling or retrieving anything:
   retrieved can't be decided, so lint lowers it to `dynamicApply`, which
   can only overstate which schemas might apply.
 - A keyword whose value can't be lowered, like one that doesn't fit its
-  shape in a broken document, has no group. Lint reports the value.
+  shape in a broken document or one its keyword's `check` rejects
+  (`"maximum": "x"`, because shape `"data"` fits anything), has no group,
+  and such a sibling is left out. Lint reports the value.
 - Every keyword's value is parsed by its shape, including keywords without
   `lower`, so the references in `definitions` are found too.
 - Each group keeps its keyword's node and its sources' nodes, for where
   messages go.
 
-What lint knows from the expressions:
+What lint knows from the expressions (`src/lint/analysis.js`: `appliesTo`,
+`keywordAppliesTo`, `canPass`, `assertsOnItsOwn`):
 
 - **The types a keyword applies to** are the types on which it can fail,
   mark, or annotate. A `cases` only applies where its condition can pass,
   which is why conditions say their type. A keyword with no effect in its
   schema (`uniqueItems: false`, `properties: {}`, an unknown keyword that
-  isn't an annotation) applies to nothing. This replaces `keywordType`.
+  isn't an annotation) applies to nothing. A sibling applies to what the
+  keywords that read it apply to (draft-04's `exclusiveMaximum`). This
+  replaced `keywordType`.
 - **Whether a keyword asserts on its own**: it has an operation that can
-  fail without a schema, and applies none. This replaces
+  fail without a schema, and applies none. This replaced
   `const-or-enum-assertions`' list.
 - **References** are the inputs of the `"reference"` shape and the schemas
-  that are references. This replaces `visitReferences`' keyword URI.
+  that are references. This replaced `visitReferences`' keyword URI.
 
-In the prototype, these agreed with today's tables on every keyword in the
-corpora and the test suites, except where the kernel knows more
-(BENCHMARKS.md, "Lowering for lint"). `contradictory-limits` was ported to
-read `range`, `stringLength`, `itemCount`, `propertyCount`, `contains`, and
-`hasProperty`, without naming a keyword, and it passed the rule's tests. It
-also finds v1's `requireAllExcept` with too small a `maxProperties`, which
-the rule misses.
+In the prototype, these agreed with the tables they replaced on every
+keyword in the corpora and the test suites, except where the kernel knows
+more (BENCHMARKS.md, "Lowering for lint"). `contradictory-limits` reads
+`range`, `stringLength`, `itemCount`, `propertyCount`, `contains`, and
+`hasProperty`, without naming a keyword. It also finds v1's
+`requireAllExcept` with too small a `maxProperties`, which the rule before
+the kernel missed. A rule about a particular keyword's syntax
+(`then-else-without-if`) still names it.
 
 ## Open questions
 
-None yet. The plan for moving it into `src/` is "Moving the kernel into
-`src/`" in [DESIGN.md](DESIGN.md).
+None yet. Later steps are at the end of "Moving the kernel into `src/`" in
+[DESIGN.md](DESIGN.md): finding which keywords apply schemas in place or to
+children from the expressions in `schema-group.js`, and lint evaluating
+lowered expressions with pass, fail, or unknown.

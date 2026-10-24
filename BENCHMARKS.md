@@ -697,3 +697,92 @@ documents (the corpora and the test suites, 12,783 keyword groups):
   contradictory limits, and on broken documents.
 - Lowering a document took 0.7–1.7 ms for `package.json` and
   `tsconfig.json`, and about 7 µs for a test case's schema.
+
+## The kernel in `src/`
+
+`benchmark/claude/kernel/check-src.ts` checks `src/` against the last
+commit before the kernel moved into it (a worktree at
+`../json-schema-kernel-baseline`), on the corpora, the corpora changed to
+2020-12, and the test suites. It checks `validate`, a restored validator,
+annotations, BASIC, and DETAILED, and every hook call from an evaluator
+built without optimizations. Through `Validator`, which optimizes for what
+plugins can see, every hook call has to be one the baseline makes too, in
+the same order. It found no differences, about 8 million hook calls. The
+expected BASIC differences (58) are errors the baseline reports for
+keywords the kernel says explain their failure (`conditional`,
+`dependencies` with only schemas, `anyOf` and `oneOf` of one schema), and
+BASIC is exactly the baseline's without them.
+
+Results from 2026-10-24, one run on a quiet machine (baseline time divided
+by `src/`'s, so more than 1 is faster; ranges are over a corpus and its
+2020-12 version, or over the suites). BASIC output only runs its plugin on
+instances that fail. "Every hook" is a plugin with every hook that does
+nothing, on every instance.
+
+| | FLAG | BASIC output | Every hook | First `validate` |
+| --- | --- | --- | --- | --- |
+| `package.json`, small | 1.64–1.80× | 1.57–1.64× | 0.95× | 0.82× |
+| `package.json`, medium | 1.42–1.47× | 1.44–1.50× | 0.94–0.98× | 0.83–0.84× |
+| `package.json`, large | 3.01–3.23× | 3.02–3.27× | 1.11× | 0.77–0.85× |
+| `tsconfig.json`, small | 1.88–2.00× | 1.84–1.95× | 0.92–0.94× | 0.61× |
+| `tsconfig.json`, medium | 1.32–1.36× | 1.54–1.57× | 0.85–0.86× | 0.62–0.84× |
+| OpenAPI 3.0, medium | 1.99× | 1.92× | 1.03× | 0.88× |
+| Test suites | 1.28–1.57× | 0.88–1.05× | 0.87–0.96× | 0.89–0.93× |
+
+- FLAG and BASIC are faster on every real-world group. FLAG on the suites
+  is faster than in the prototype (0.94–1.23×).
+- BASIC on the suites, where most instances fail, is about the same as
+  the baseline.
+- `check-src.ts` times everything at the end of one long process, which
+  has already evaluated ASTs, annotated, and run other plugins, so its
+  "Every hook" and "First `validate`" are worse than in a process of their
+  own. An earlier run of it had the first `validate` of `tsconfig.json` at
+  0.74–0.91×.
+- Alone, alternating with the baseline (`first-validate.ts`, median of 15
+  rounds), the first `validate` of `tsconfig.json` is 0.66–0.74×. That's
+  1.35–1.5 times as long, at the limit the plan allowed. It's about the
+  same with and without the change below.
+- Evaluating with every hook was 0.77–0.93 times the baseline on most
+  groups before `jsInstance` and `astInstance` were instances of classes.
+  In a process of its own (`profile-src.ts`), `src/` was faster than the
+  baseline, and only slower after the process had also evaluated ASTs.
+  `instrumented.js` evaluates plain values and ASTs, and V8 shares type
+  feedback between the closures it builds. The two instance operation
+  objects were object literals with the same properties, so they had one
+  hidden class, and a call like `ops.typeOf` that saw both had no known
+  target. The profile showed `typeOf`, `value`, and `get` no longer
+  inlined, and plain values with plugins got about 20% slower (1.35 to
+  1.64 ms on small `tsconfig.json` files). With a class each, V8 inlines
+  both. A second copy of `instrumented.js` for ASTs
+  (`./instrumented.js?ast`) did about as well, but needed a module
+  specifier with a query, which not every tool supports.
+
+  | Every hook | Alone, before | After ASTs, before | Alone | After ASTs |
+  | --- | --- | --- | --- | --- |
+  | `tsconfig.json`, small | 1.33× | 0.99× | 1.36× | 1.26× |
+  | `tsconfig.json`, medium | 1.22× | 0.94× | 1.21× | 1.06× |
+  | `package.json`, small | 1.06× | 1.06× | 1.14× | 1.13× |
+  | v1 suite | 0.98× | 0.85× | 0.98× | 1.01× |
+
+  What's left after ASTs (about 10% on small `tsconfig.json` files) is the
+  closures themselves seeing two kinds of instance, which only duplicating
+  the code would avoid. Evaluating ASTs with plugins (`validateJson`) was
+  the same or faster with the change (2.76 to 2.41 ms on the v1 suite).
+
+`time-phases.ts` splits the first `validate` (per case, median of 7
+rounds). Compiling is in a new session, so it includes retrieving and
+resolving. Lowering is again in a session that has every document, so it's
+lowering alone. Building is lazy, so it's timed with the first evaluation.
+
+| | Compile | Lower | Optimize for FLAG | Build fast, first FLAG | Optimize and build with plugins, first evaluation |
+| --- | --- | --- | --- | --- | --- |
+| `package.json` | 85–102 ms | 38–50 ms | 6.7–10.7 ms | 6.4–12.9 ms | 14–25 ms |
+| `tsconfig.json` | 10.9–11.3 ms | 3.1–4.8 ms | 1.0–1.1 ms | 0.56–0.60 ms | 1.5–1.7 ms |
+| OpenAPI 3.0 | 8.9 ms | 3.3 ms | 0.68 ms | 0.52 ms | 1.1 ms |
+| Test suites | 0.050–0.071 ms | 0.018–0.029 ms | 0.004–0.007 ms | 0.003–0.006 ms | 0.006–0.014 ms |
+
+- Lowering is about 40% of compiling. The rest is retrieving, parsing, and
+  resolving.
+- Optimizing `package.json` for FLAG takes about as long as building its
+  evaluator. `fold-passing` rebuilds the groups of all 4,304 schemas every
+  time.
