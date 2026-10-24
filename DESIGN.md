@@ -868,9 +868,11 @@ them, and `src/kernel/optimize.js` runs them.
   call is still about what it says.
 - Passes aren't part of the API. There's no `addOptimization`.
 - A pass over a large kernel isn't free. Copying or iterating the 4,304
-  schemas of SchemaStore's `package.json` schema takes 0.5–1.6 ms, so a
-  pass returns the kernel it's given when there's nothing to do, and a
-  pass has to save more than it costs (see "Optimizations" in
+  schemas of SchemaStore's `package.json` schema takes 0.5–1.6 ms, because
+  an object with that many keys is in V8's dictionary mode, so a pass
+  keeps what it doesn't change and returns the kernel it's given when
+  there's nothing to do, and a pass has to save more than it costs (see
+  "Optimizations" and "The kernel in `src/`" in
   [BENCHMARKS.md](BENCHMARKS.md)).
 
 The passes:
@@ -893,10 +895,12 @@ The passes:
   applies `pass` to children is `pass` too, unless something reads marks,
   because it marks what it evaluates. It's what `alwaysPasses` did before
   the kernel, and it was worth 10–20% on `package.json`.
-- `drop-groups.js`: keyword groups with no effect anything in the mode can
-  see are left out, so they have no hook calls: `pass` without plugins, and
-  `annotate` when nothing sees annotations. For BASIC and DETAILED, which
-  have no `annotation` hook, that was worth 5–15%, more than merging.
+- `drop-groups.js` (plugins only): keyword groups with no effect the
+  plugins can see are left out, so they have no hook calls: `annotate`
+  when no plugin has an `annotation` hook and nothing is annotated. For
+  BASIC and DETAILED, that was worth 5–15%, more than merging. Without
+  plugins, the evaluators leave out `pass` and `annotate` groups that have
+  no effect as they build them, so there's nothing for it to do.
 
 Optimizations that were tried and aren't used:
 
@@ -1723,8 +1727,9 @@ never timed.
 6. **Documentation and measurements.** "Compile and evaluate" and the
    sections after it, and the code map, describe the kernel. KERNEL.md
    isn't a draft anymore. BENCHMARKS.md has `src/`'s numbers ("The kernel
-   in `src/`"). Done. The first `validate` of `tsconfig.json` takes
-   1.35–1.5 times as long as before the kernel, at the limit.
+   in `src/`"). Done. The first `validate` takes 1.09–1.18 times as long
+   as before the kernel, measured fairly (`check-src.ts` times the
+   baseline already optimized by V8 and `src/` not).
    `jsInstance` and `astInstance` became classes, so evaluating plain
    values with plugins isn't slower in a process that also evaluates ASTs
    (BENCHMARKS.md, "The kernel in `src/`").

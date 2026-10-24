@@ -735,13 +735,27 @@ nothing, on every instance.
   the baseline.
 - `check-src.ts` times everything at the end of one long process, which
   has already evaluated ASTs, annotated, and run other plugins, so its
-  "Every hook" and "First `validate`" are worse than in a process of their
-  own. An earlier run of it had the first `validate` of `tsconfig.json` at
-  0.74–0.91×.
-- Alone, alternating with the baseline (`first-validate.ts`, median of 15
-  rounds), the first `validate` of `tsconfig.json` is 0.66–0.74×. That's
-  1.35–1.5 times as long, at the limit the plan allowed. It's about the
-  same with and without the change below.
+  "Every hook" is worse than in a process of its own.
+- Its "First `validate`" isn't a fair comparison. `cases.ts` compiles every
+  case with the baseline while loading them, so the baseline's compiling is
+  already optimized by V8 when it's timed, and `src/`'s isn't. Timed round
+  by round, `src/` takes 21–27 ms on small `tsconfig.json` files at first,
+  and 12 ms, the same as the baseline, from about the 16th round on, so 7
+  rounds catch it warming up. Measured fairly, `src/` takes 1.03–1.2 times
+  as long, well within the 1.5 times the plan allowed. That was before the
+  optimizer changes below, which made it 1.09–1.18 on these:
+
+  | First `validate` | Cold, before | Cold | Both warm, before | Both warm |
+  | --- | --- | --- | --- | --- |
+  | `tsconfig.json` | 0.84× | 0.88× | 0.87–0.89× | 0.91–0.92× |
+  | `package.json` | 0.82× | 0.87× | 0.83–0.87× | 0.87–0.90× |
+  | OpenAPI 3.0 | 0.86× | 0.88× | 0.86–0.88× | 0.85–0.89× |
+
+  Cold is the very first compile in a fresh process, nothing compiled
+  before (`cold-first-validate.ts`, median of 5 processes: 44.7 ms for the
+  baseline on `tsconfig.json`, 53.0 ms for `src/`, then 50.7). Both warm
+  is `first-validate.ts` with `WARM_SRC=1`, which compiles every case with
+  `src/` too, then alternates the two (median of 15 rounds).
 - Evaluating with every hook was 0.77–0.93 times the baseline on most
   groups before `jsInstance` and `astInstance` were instances of classes.
   In a process of its own (`profile-src.ts`), `src/` was faster than the
@@ -776,13 +790,25 @@ lowering alone. Building is lazy, so it's timed with the first evaluation.
 
 | | Compile | Lower | Optimize for FLAG | Build fast, first FLAG | Optimize and build with plugins, first evaluation |
 | --- | --- | --- | --- | --- | --- |
-| `package.json` | 85–102 ms | 38–50 ms | 6.7–10.7 ms | 6.4–12.9 ms | 14–25 ms |
-| `tsconfig.json` | 10.9–11.3 ms | 3.1–4.8 ms | 1.0–1.1 ms | 0.56–0.60 ms | 1.5–1.7 ms |
-| OpenAPI 3.0 | 8.9 ms | 3.3 ms | 0.68 ms | 0.52 ms | 1.1 ms |
-| Test suites | 0.050–0.071 ms | 0.018–0.029 ms | 0.004–0.007 ms | 0.003–0.006 ms | 0.006–0.014 ms |
+| `package.json` | 81–109 ms | 37–50 ms | 4.0–6.9 ms | 6.6–9.9 ms | 13–23 ms |
+| `tsconfig.json` | 10.9–11.8 ms | 3.1–5.2 ms | 0.66–0.69 ms | 0.58–0.63 ms | 1.4–1.5 ms |
+| OpenAPI 3.0 | 7.9 ms | 4.6 ms | 0.48 ms | 0.52 ms | 1.1 ms |
+| Test suites | 0.055–0.072 ms | 0.019–0.025 ms | 0.003–0.006 ms | 0.003–0.007 ms | 0.006–0.014 ms |
 
 - Lowering is about 40% of compiling. The rest is retrieving, parsing, and
   resolving.
-- Optimizing `package.json` for FLAG takes about as long as building its
-  evaluator. `fold-passing` rebuilds the groups of all 4,304 schemas every
-  time.
+- Optimizing for FLAG took 6.7–10.7 ms on `package.json` and 1.0–1.1 ms on
+  `tsconfig.json` at first, about as long as building the evaluator.
+  `drop-groups` copied every schema with an annotation, which `fast.js`
+  skips anyway (2.1 ms on `package.json`), so it only runs with plugins
+  now, and the evaluator for ASTs without plugins skips them too.
+  `fold-passing` rebuilt every schema and normalized every expression
+  again, though only 290 of `package.json`'s 4,304 schemas change. Keeping
+  what doesn't change took it from 4.1 to 3.4 ms.
+- Most of what's left is iterating the kernel's `schemas`. An object with
+  4,304 URIs as keys is in V8's dictionary mode: building a table of them
+  with `for … in` takes 0.74 ms, and checking whether any group reads
+  marks takes 1.0 ms, about the same with `readsMarks` written not to
+  allocate. Each pass and evaluator that scans the kernel pays that.
+  Building `fold-passing`'s table in a `Map` was slower (4.4 ms), because
+  the kernel needs an object again afterwards.
