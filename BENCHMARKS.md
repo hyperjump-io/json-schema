@@ -743,19 +743,22 @@ nothing, on every instance.
   and 12 ms, the same as the baseline, from about the 16th round on, so 7
   rounds catch it warming up. Measured fairly, `src/` takes 1.03–1.2 times
   as long, well within the 1.5 times the plan allowed. That was before the
-  optimizer changes below, which made it 1.09–1.18 on these:
+  optimizer changes below, which made it 1.09–1.18 on these. Lowering
+  each thing once (below) made `src/` faster than the baseline when both
+  are warm (0.83–0.95 times as long), and about the same cold (0.93–1.05):
 
-  | First `validate` | Cold, before | Cold | Both warm, before | Both warm |
-  | --- | --- | --- | --- | --- |
-  | `tsconfig.json` | 0.84× | 0.88× | 0.87–0.89× | 0.91–0.92× |
-  | `package.json` | 0.82× | 0.87× | 0.83–0.87× | 0.87–0.90× |
-  | OpenAPI 3.0 | 0.86× | 0.88× | 0.86–0.88× | 0.85–0.89× |
+  | First `validate` | Cold, at first | Optimizer changes | Lowering once | Both warm, at first | Optimizer changes | Lowering once |
+  | --- | --- | --- | --- | --- | --- | --- |
+  | `tsconfig.json` | 0.84× | 0.88× | 0.95× | 0.87–0.89× | 0.91–0.92× | 1.05–1.10× |
+  | `package.json` | 0.82× | 0.87× | 1.01× | 0.83–0.87× | 0.87–0.90× | 1.09–1.21× |
+  | OpenAPI 3.0 | 0.86× | 0.88× | 1.08× | 0.86–0.88× | 0.85–0.89× | 1.21× |
 
   Cold is the very first compile in a fresh process, nothing compiled
   before (`cold-first-validate.ts`, median of 5 processes: 44.7 ms for the
-  baseline on `tsconfig.json`, 53.0 ms for `src/`, then 50.7). Both warm
-  is `first-validate.ts` with `WARM_SRC=1`, which compiles every case with
-  `src/` too, then alternates the two (median of 15 rounds).
+  baseline on `tsconfig.json`, 53.0 ms for `src/`, then 50.7, then 48.3
+  against 45.8 for the baseline). Both warm is `first-validate.ts` with
+  `WARM_SRC=1`, which compiles every case with `src/` too, then alternates
+  the two (median of 15 rounds).
 - Evaluating with every hook was 0.77–0.93 times the baseline on most
   groups before `jsInstance` and `astInstance` were instances of classes.
   In a process of its own (`profile-src.ts`), `src/` was faster than the
@@ -790,13 +793,28 @@ lowering alone. Building is lazy, so it's timed with the first evaluation.
 
 | | Compile | Lower | Optimize for FLAG | Build fast, first FLAG | Optimize and build with plugins, first evaluation |
 | --- | --- | --- | --- | --- | --- |
-| `package.json` | 81–109 ms | 37–50 ms | 4.0–6.9 ms | 6.6–9.9 ms | 13–23 ms |
-| `tsconfig.json` | 10.9–11.8 ms | 3.1–5.2 ms | 0.66–0.69 ms | 0.58–0.63 ms | 1.4–1.5 ms |
-| OpenAPI 3.0 | 7.9 ms | 4.6 ms | 0.48 ms | 0.52 ms | 1.1 ms |
-| Test suites | 0.055–0.072 ms | 0.019–0.025 ms | 0.003–0.006 ms | 0.003–0.007 ms | 0.006–0.014 ms |
+| `package.json` | 59–71 ms | 15–20 ms | 4.4–8.1 ms | 7.4–9.8 ms | 13–25 ms |
+| `tsconfig.json` | 9.4–9.8 ms | 1.3–1.4 ms | 0.72–0.75 ms | 0.64–0.73 ms | 1.4–1.6 ms |
+| OpenAPI 3.0 | 6.7 ms | 1.6 ms | 0.54 ms | 0.66 ms | 1.2 ms |
+| Test suites | 0.058–0.066 ms | 0.016–0.022 ms | 0.003–0.006 ms | 0.003–0.007 ms | 0.006–0.014 ms |
 
-- Lowering is about 40% of compiling. The rest is retrieving, parsing, and
-  resolving.
+- Lowering was about 40% of compiling at first: 37–50 ms on
+  `package.json`, 3.1–5.2 ms on `tsconfig.json`, 4.6 ms on OpenAPI 3.0.
+  Most of it was parsing IRIs (`@hyperjump/uri`'s regular expressions)
+  and browser's `get`, for the same few answers. Lowering `package.json`'s
+  4,304 schemas called `session.get` 1,824 times for 133 different
+  references, `getDialect` 3,840 times (normalizing the IRI three times
+  each), and `toAbsoluteIri` for each schema's resource, of which there are
+  11 (`count-lower.ts`). `Lowerer` now works each out once per lowering:
+  the node a reference refers to, a dialect, and a resource's IRI, by the
+  part of a location before the fragment. It caches the node, not the
+  handle, because a reference to a schema that's still being lowered would
+  wait on itself. Lowering alone (`profile-lower.ts`) went from 38 to
+  15 ms on small `package.json` files, and it's about 25% of compiling now
+  (one `tsconfig.json` group took 3.2 ms in one run, an outlier). What's
+  left is spread out: lowering's own code, `await`s, garbage collection
+  (15%), and browser's `get` for the 133 references (10%). The rest of
+  compiling is retrieving, parsing, and resolving.
 - Optimizing for FLAG took 6.7–10.7 ms on `package.json` and 1.0–1.1 ms on
   `tsconfig.json` at first, about as long as building the evaluator.
   `drop-groups` copied every schema with an annotation, which `fast.js`

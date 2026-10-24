@@ -1746,9 +1746,11 @@ never timed.
 6. **Documentation and measurements.** "Compile and evaluate" and the
    sections after it, and the code map, describe the kernel. KERNEL.md
    isn't a draft anymore. BENCHMARKS.md has `src/`'s numbers ("The kernel
-   in `src/`"). Done. The first `validate` takes 1.09–1.18 times as long
-   as before the kernel, measured fairly (`check-src.ts` times the
-   baseline already optimized by V8 and `src/` not).
+   in `src/`"). Done. Measured fairly (`check-src.ts` times the baseline
+   already optimized by V8 and `src/` not), the first `validate` takes
+   0.83–0.95 times as long as before the kernel when both are warm, and
+   0.93–1.05 cold, since lowering works out what references refer to,
+   dialects, and resources once.
    `jsInstance` and `astInstance` became classes, so evaluating plain
    values with plugins isn't slower in a process that also evaluates ASTs
    (BENCHMARKS.md, "The kernel in `src/`").

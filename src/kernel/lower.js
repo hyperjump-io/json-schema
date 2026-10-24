@@ -48,6 +48,19 @@ class Lowerer {
   /** @type Inputs */
   #inputs;
 
+  // Lowering asks for the same few things over and over: a schema's
+  // resource, its dialect, and the node a reference refers to. They don't change
+  // during a lowering, so each is only worked out once.
+
+  /** @type Map<string, string> */
+  #absoluteIris;
+
+  /** @type Map<string, Promise<Dialect>> */
+  #dialects;
+
+  /** @type Map<string, Promise<JsonSchemaNode>> */
+  #nodes;
+
   /**
    * @param {JsonSchemaSession} session
    */
@@ -55,12 +68,15 @@ class Lowerer {
     this.#session = session;
     this.#schemas = {};
     this.#resources = {};
+    this.#absoluteIris = new Map();
+    this.#dialects = new Map();
+    this.#nodes = new Map();
     this.#inputs = {
       schema: (node) => this.#compileNode(node),
       reference: async (node) => {
         const uri = /** @type {{ href: string }} */ (node).href;
-        const handle = await this.#compileUri(uri, toAbsoluteIri(node.location));
-        const { dynamicAnchors } = this.#resources[toAbsoluteIri(handle)];
+        const handle = await this.#compileUri(uri, this.#absoluteIri(node.location));
+        const { dynamicAnchors } = this.#resources[this.#absoluteIri(handle)];
         return { uri, schema: { op: "apply", schema: handle }, handle, dynamicAnchors };
       }
     };
@@ -74,14 +90,46 @@ class Lowerer {
 
   /** @type (uri: string, referencedFrom?: string) => Promise<Handle> */
   async #compileUri(uri, referencedFrom) {
-    const node = await this.#session.get(uri, referencedFrom === undefined ? undefined : { referencedFrom });
-    return this.#compileNode(node);
+    const key = `${referencedFrom ?? ""} ${uri}`;
+    let node = this.#nodes.get(key);
+    if (node === undefined) {
+      node = this.#session.get(uri, referencedFrom === undefined ? undefined : { referencedFrom });
+      this.#nodes.set(key, node);
+    }
+    return this.#compileNode(await node);
+  }
+
+  /**
+   * The absolute IRI of a location, worked out once for each part before the
+   * fragment, so once for each resource
+   *
+   * @type (location: string) => string
+   */
+  #absoluteIri(location) {
+    const position = location.indexOf("#");
+    const prefix = position === -1 ? location : location.slice(0, position);
+    let absoluteIri = this.#absoluteIris.get(prefix);
+    if (absoluteIri === undefined) {
+      absoluteIri = toAbsoluteIri(prefix);
+      this.#absoluteIris.set(prefix, absoluteIri);
+    }
+    return absoluteIri;
+  }
+
+  /** @type (uri: string) => Promise<Dialect> */
+  #dialect(uri) {
+    let dialect = this.#dialects.get(uri);
+    if (dialect === undefined) {
+      dialect = this.#session.getDialect(uri);
+      this.#dialects.set(uri, dialect);
+    }
+    return dialect;
   }
 
   /** @type (node: JsonSchemaNode) => Promise<Handle> */
   async #compileNode(node) {
     if (node.type === "reference") {
-      return this.#compileUri(node.href, toAbsoluteIri(node.location));
+      return this.#compileUri(node.href, this.#absoluteIri(node.location));
     } else if (node.type !== "json-schema") {
       throw Error(`No schema found at '${node.location}'`);
     }
@@ -95,7 +143,7 @@ class Lowerer {
     // once
     this.#schemas[handle] = false;
 
-    const resource = toAbsoluteIri(handle);
+    const resource = this.#absoluteIri(handle);
     await this.#compileResource(resource);
 
     if (node.jsonType === "boolean") {
@@ -105,7 +153,7 @@ class Lowerer {
       throw Error(`No schema found at '${handle}'`);
     }
 
-    const dialect = await this.#session.getDialect(node.dialectUri);
+    const dialect = await this.#dialect(node.dialectUri);
     const lowered = await lowerKeywords(this.#session.jsonSchema, /** @type ObjectSchemaNode */ (node), dialect, this.#inputs, false);
     this.#schemas[handle] = { resource, keywords: lowered.map(({ group }) => group) };
     return handle;
