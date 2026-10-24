@@ -84,7 +84,9 @@ annotations it makes.
 - **Explains its failure.** An operation explains its failure if it fails
   only when a subexpression fails, and their failures say why. The BASIC
   output format reports only the subexpressions' errors for those. This
-  replaces `simpleApplicator`.
+  replaces `simpleApplicator`. It's what `simpleApplicator` says today,
+  except for `conditional` and for `dependencies` when every dependency is
+  a schema, which now explain their failures, so BASIC reports less.
 
 ## Schemas and keyword groups
 
@@ -104,9 +106,9 @@ type KeywordGroup = {
 - A schema passes if every keyword group passes. Without plugins or
   annotations, evaluation stops at the first failure.
 - **Keyword groups are what plugins and errors see.** An error is reported
-  for a keyword, never for an operation inside it. The optimizer can merge
-  across groups when evaluating with plugins only if it keeps a source map
-  (see "Optimizer").
+  for a keyword, never for an operation inside it. With plugins, the
+  optimizer can merge across groups only if it keeps a source map (see
+  "Optimizer").
 - **Plugins** see a tree of hook calls: each schema and keyword group with
   its result and its parent's state. The order of siblings isn't
   guaranteed, so a merged loop can call the hooks of `properties`' and
@@ -145,9 +147,13 @@ doesn't explain its failure.
 | `{ op: "not", of: Expression }` | everything | it fails | – |
 | `{ op: "cases", cases: [Expression, Expression \| null][], otherwise: Expression \| null }` | everything | see below | the condition's and branch's that applied |
 | `{ op: "apply", schema: Handle }` | everything | the schema passes | the schema's |
-| `{ op: "dynamicApply", anchor: string, fallback: Handle \| null, when: When }` | everything | see below | the applied schema's |
+| `{ op: "dynamicApply", anchor: string, fallback: Handle \| null }` | everything | see below | the applied schema's |
 
-- `all`, `cases`, `apply`, and `dynamicApply` explain their failures.
+- `apply` and `dynamicApply` explain their failures. `all` does if every
+  one of its expressions does (`required` lowers to an `all` that doesn't),
+  and `cases` does if every branch does. `any` and `one` of one expression
+  do, because "none passed" is then just "it failed", so `any` of one can
+  be the one in normal form.
 - **`cases`**: the first case whose condition passes applies its branch
   (`null` passes). If no condition passes, `otherwise` applies (`null`
   passes). A condition that fails is a condition, not an error: the output
@@ -155,23 +161,23 @@ doesn't explain its failure.
   the `if` and `conditional` keyword URIs. `if`/`then`/`else`, v1's
   `conditional`, `dependentSchemas`, `dependentRequired`, and
   `propertyDependencies` all lower to it.
+- **A condition has to say its type.** An operation passes instances it
+  doesn't apply to, so `hasProperty(name)` alone is a condition that passes
+  every string and array, and `cases([[hasProperty(name), S]], null)` would
+  apply `S` to them. A condition about properties is
+  `all(typeIs(["object"]), hasProperty(name))`, written `isObject` below.
+  User-defined keywords have to do the same.
 - **`any`, `one`**: without plugins or annotations, `any` can stop at the
   first that passes unless something reads what's evaluated, and `one` can
   stop at the second.
 - **`dynamicApply`** applies the outermost schema in the dynamic scope with
-  the dynamic anchor `anchor`, if `when` holds. Otherwise it applies
-  `fallback`, and if that's `null`, it's an error (v1's `$dynamicRef`
-  without an anchor in scope). `when` is:
-  - `"always"`: v1's `$dynamicRef`
-  - `"fallbackResourceHasAnchor"`: 2020-12's `$dynamicRef`, whose
-    bookending rule uses the dynamic scope only if the resource of the
-    schema it resolved to has the anchor
-  - `"fallbackIsAnchor"`: 2019-09's `$recursiveRef`, with `anchor` `""`,
-    which uses the dynamic scope only if the schema it resolved to has
-    `$recursiveAnchor: true`
-
-  It's one operation rather than one for each dialect, because passes treat
-  them the same: they're the only operations that read the dynamic scope.
+  the dynamic anchor `anchor`. If there isn't one, it applies `fallback`,
+  and if that's `null`, it's an error (v1's `$dynamicRef` without an anchor
+  in scope). It has no dialect rules. 2020-12's bookending and 2019-09's
+  `$recursiveAnchor` decide whether a reference uses the dynamic scope at
+  all, from the dynamic anchors of the resource it resolves to, which are
+  known when lowering. So lowering decides: a reference that doesn't use
+  the dynamic scope is a plain `apply`.
 
 ### Values of any type
 
@@ -194,14 +200,15 @@ doesn't explain its failure.
 | --- | --- | --- |
 | `{ op: "stringLength", min?: number, max?: number }` | string | its length in code points is within the limits |
 | `{ op: "matches", pattern: string }` | string | the ECMA-262 pattern with the `u` flag matches |
-| `{ op: "format", name: string, uri: string \| null, assert: boolean }` | the format's `types` | see below |
+| `{ op: "format", name: string, uri: string \| null, assert: boolean }` | the format's `types` (to assert) | see below |
 
 - **`format`** annotates `name`. If `assert` is true, it also asserts the
   format `uri`. Lowering decides `assert` from the `JsonSchema`'s
   configuration, so a serialized expression means the same wherever it's
   restored, and restoring fails if an asserting format isn't registered. It
-  applies to the types the format declares (`Format.types`), so lint gets
-  them from the operation.
+  asserts only on the types the format declares (`Format.types`), so lint
+  gets them from the operation, but it annotates instances of every type,
+  as `format` does today. It's the one exception to "applies to".
 
 ### Arrays
 
@@ -242,9 +249,9 @@ doesn't explain its failure.
   listed and don't match any of the patterns
 - `{ unevaluated: true }`: names not marked yet
 
-- `property` and `eachProperty` explain their failures. They evaluate
-  property values, which are children. `eachPropertyName` evaluates names,
-  which are children too.
+- `property`, `eachProperty`, and `eachPropertyName` explain their
+  failures. The first two evaluate property values, which are children.
+  `eachPropertyName` evaluates names, which are children too.
 - **`propertyEquals`** is separate from `property(name, equals(value))`
   because it doesn't mark the property. `propertyDependencies` uses it as a
   condition, and a condition that passes keeps its marks, so the other form
@@ -283,13 +290,22 @@ hand-written list of keywords that always pass.
 
 A pass rewrites expressions to their normal form before anything else, so
 lint, the other passes, and evaluation with or without plugins only see one
-form of each meaning. A normal-form rule can't be observed by anything,
-plugins and output formats included, so it always applies. A rule that's
-only right when nothing observes it is an optimization. The rules so far:
+form of each meaning. What may change, and what may not:
 
-- `all` and `any` in themselves are flattened, and `all` of one is the one.
-  Plugins see keyword groups, not the operations in them, so this can't be
-  observed.
+1. **A rewrite never changes** the result, the marks, or the annotations.
+2. **A normal-form rule can change what's derived from expressions**, like
+   whether a keyword explains its failure, and so what an output format
+   reports. It always applies, so the output is still the same for every
+   evaluation. Such a change is a change in the output, so it needs a new
+   kernel version.
+3. **Hook calls can depend on optimizations** (see "Optimizer"), but never
+   be wrong.
+
+The rules so far:
+
+- `all` and `any` in themselves are flattened, and `all` of one is the one
+- `any` of one is the one. Both explain their failures, so BASIC reports
+  the same, without the `anyOf` error that only said its schema failed.
 - `oneOfValues` of one value is `equals`
 - `typeIs` with no types is `fail`
 - `pass` in `all` is dropped, and `fail` in `any` is dropped
@@ -304,31 +320,34 @@ property operations into one loop, inlining `apply`, `not` of `not`,
 leaving out `annotate`, folding groups that always pass. Without plugins,
 anything that keeps the result and the marks is allowed.
 
-With plugins, an optimization is allowed if it keeps a **source map**: each
-node of the optimized expression says which schema or keyword group it came
-from, so the evaluator can still make every group's hook calls, with the
-right result and the right parent. Optimizations are of two kinds:
+With plugins, what plugins see can depend on the optimizations: which
+schemas are evaluated as schemas of their own, how DETAILED nests, the
+order of siblings, how often something is evaluated. A coverage plugin
+reports what was evaluated, which is true of that evaluation. What
+plugins see can't be wrong, though:
 
-- **Restructuring.** Every group is still evaluated, organized differently:
-  a merged property loop, an inlined `apply`, a statically resolved
-  `unevaluatedProperties`. The map says which group each part belongs to.
-  The evaluator calls the groups' `before` hooks, evaluates the merged
-  operation, giving each subschema's hooks its own group's state, and calls
-  the `after` hooks.
-- **Elimination.** A group isn't evaluated, and the map says how to get its
-  result: a constant (`pass`, or a group proven to always pass), another
-  node's result or its negation (`not` of `not` evaluates `S` once and the
-  two `not` groups are `!S` and `S`), or an annotation's value (`annotate`
-  left out, its hooks made from the value).
+- **Every hook call is about what it says.** Each keyword group a merged
+  operation came from still gets its own `beforeKeyword` and
+  `afterKeyword`, with its own result, so an error is never reported at a
+  keyword that didn't fail. Conditions stay recognizable: BASIC drops a
+  condition's errors when `afterSchema` says it's a condition of the
+  keyword that applied it, so a condition can't be inlined in a way that
+  loses that.
+- **Nothing stops early** when a plugin needs every error. `any` stopping
+  at the first that passes, `one` at the second, and a schema at its first
+  failure are only without plugins, as today.
 
-Stopping early can't be mapped, because what wasn't evaluated has no result.
-So `any` stopping at the first that passes, `one` at the second, and a
-schema at its first failure are only without plugins, as today.
+An optimization keeps this with a **source map**: each part of an
+optimized expression says which keyword group it came from, so the
+evaluator can make that group's hook calls with its result. It doesn't
+have to reproduce today's tree of hook calls. Without optimizations,
+evaluation with plugins makes the same hook calls as `specialize` today,
+which is how the prototype is checked. With optimizations, it's checked by
+validity, annotations, and every error being at a keyword that failed.
 
-None of this is prototyped. The earlier prototype was as fast as
-`specialize` with plugins while merging only within groups. With plugins,
-the hook calls may be most of the cost, so the first thing to measure is a
-merged property loop with a source map against BASIC today.
+The source map isn't prototyped. With plugins, the hook calls may be most
+of the cost, so the first thing to measure is a merged property loop with a
+source map against BASIC today.
 
 ## The keyword interface
 
@@ -356,8 +375,9 @@ type Shape = "schema" | "unappliedSchema" | "reference" | "data" | { array: Shap
   URI (`$ref`, 2020-12's `$dynamicRef`, `$recursiveRef`). It's what lint's
   `refUri`, `schema-group.js`' list of dynamic references, and bundling find
   references with, instead of keyword URIs. A reference's input is
-  `{ uri: string; schema: Expression }`, so `$dynamicRef` can read its
-  fragment.
+  `{ uri: string; schema: Expression; handle: Handle; dynamicAnchors: Record<string, Handle> }`:
+  `$dynamicRef` reads its fragment, and the dynamic anchors of the resource
+  it resolved to are what `$dynamicRef` and `$recursiveRef` decide with.
 - **`"unappliedSchema"`** is new: a schema that the keyword doesn't apply
   (`contentSchema`). Resolving finds identifiers in it, and lint and the LS
   know it's a schema, but it isn't compiled, and `lower` gets its JSON.
@@ -408,12 +428,12 @@ don't have `lower`.
 | `if` | `"schema"` | `then`, `else` | `cases([[S, then ?? null]], else ?? null)` |
 | `conditional` | `{ array: ["schema", { array: "schema" }] }` | | `cases` of the pairs, with a last odd one as `otherwise` |
 | `ref` | `"reference"` | | `S` |
-| `dynamicRef` (v1) | `"data"` (an anchor name) | | `dynamicApply(name, null, "always")` |
-| `draft-2020-12/dynamicRef` | `"reference"` | | `dynamicApply(fragment, S, "fallbackResourceHasAnchor")`, or `S` if the fragment isn't a plain name |
-| `draft-2019-09/recursiveRef` | `"reference"` | | `dynamicApply("", S, "fallbackIsAnchor")` |
-| `dependentSchemas` | `{ map: "schema" }` | | `[cases([[hasProperty(name), S]], null)…]` |
-| `propertyDependencies` | `{ map: { map: "schema" } }` | | `[cases([[propertyEquals(name, value), S]], null)…]` |
-| `draft-07/dependencies`, `draft-04/dependencies` | `{ map: ["schema", { array: "data" }] }` | | `[cases([[hasProperty(name), S or [hasProperty(n)…]]], null)…]` |
+| `dynamicRef` (v1) | `"data"` (an anchor name) | | `dynamicApply(name, null)` |
+| `draft-2020-12/dynamicRef` | `"reference"` | | `dynamicApply(fragment, S)` if the fragment is a plain name that's a dynamic anchor of the resource it resolved to, otherwise `S` |
+| `draft-2019-09/recursiveRef` | `"reference"` | | `dynamicApply("", S)` if the schema it resolved to has `$recursiveAnchor: true`, otherwise `S` |
+| `dependentSchemas` | `{ map: "schema" }` | | `[cases([[[isObject, hasProperty(name)], S]], null)…]` |
+| `propertyDependencies` | `{ map: { map: "schema" } }` | | `[cases([[[isObject, propertyEquals(name, value)], S]], null)…]` |
+| `draft-07/dependencies`, `draft-04/dependencies` | `{ map: ["schema", { array: "data" }] }` | | `[cases([[[isObject, hasProperty(name)], S or [hasProperty(n)…]]], null)…]` |
 
 ### Applicators to properties and items
 
@@ -450,7 +470,7 @@ don't have `lower`.
 | `uniqueItems` | | `uniqueItems` if `true`, `pass` if `false` |
 | `minProperties`, `maxProperties` | | `propertyCount({ min })`, `propertyCount({ max })` |
 | `required`, `draft-04/required` | | `[hasProperty(name)…]` |
-| `dependentRequired` | | `[cases([[hasProperty(name), [hasProperty(n)…]]], null)…]` |
+| `dependentRequired` | | `[cases([[[isObject, hasProperty(name)], [hasProperty(n)…]]], null)…]` |
 | `requireAllExcept` | `properties` | `[hasProperty(name)…]` for the names in `properties` it doesn't list |
 
 ### Annotations
@@ -469,6 +489,8 @@ Every keyword lowers to kernel operations. None needs `predicate` or
 
 - **Lowering on the schema AST for lint.** Lint runs without compiling, so
   it would lower each schema itself, with schemas lowered but not compiled
-  and references not retrieved. That isn't prototyped.
+  and references not retrieved. That isn't prototyped. A dynamic reference
+  into a document that isn't retrieved can't be decided, so lint lowers it
+  to `dynamicApply`, which can only overstate which schemas might apply.
 - **The source map** (see "Optimizer") isn't prototyped, and whether
   merging across groups pays for itself with plugins isn't measured.
