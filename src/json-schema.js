@@ -11,7 +11,8 @@ import { keywordEvaluate } from "./kernel/fast.js";
 import { basicOutputFormat } from "./output/basic.js";
 import { detailedOutputFormat } from "./output/detailed.js";
 
-export { InvalidSchemaError, outputErrorMessage, toVFileMessage } from "./output/validation-error.js";
+export { outputErrorMessage, toVFileMessage } from "./output/validation-error.js";
+export { SchemaError } from "./schema/schema-error.js";
 export { RetrievalNotAllowedError } from "@hyperjump/browser";
 
 /**

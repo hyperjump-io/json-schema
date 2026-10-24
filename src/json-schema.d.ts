@@ -14,9 +14,11 @@ import type { SchemaRegistry } from "./registry/schema-registry.d.ts";
 import type { BundleOptions, JsonSchemaSession, SessionOptions } from "./session.d.ts";
 import type { OutputFormat, OutputFormatDefinition, ValidationResult } from "./output/output-format.d.ts";
 
-export { InvalidSchemaError, outputErrorMessage, toVFileMessage } from "./output/validation-error.js";
+export { outputErrorMessage, toVFileMessage } from "./output/validation-error.js";
+export { SchemaError } from "./schema/schema-error.js";
 export { RetrievalNotAllowedError } from "@hyperjump/browser";
 export type { ValidationError, DetailedValidationError } from "./output/validation-error.js";
+export type { SchemaMessage } from "./schema/schema-error.js";
 export type { OutputError, OutputFormat, OutputFormatDefinition, OutputFormats, JsonSyntaxError, ValidationResult } from "./output/output-format.d.ts";
 
 export type JsonSchemaConfig = HyperjumpConfig & {
@@ -125,9 +127,10 @@ export class JsonSchema extends Hyperjump<JsonSchemaNode> {
    * Compile a schema into a {@link Validator} that can be used for any
    * number of instances, in a new session.
    *
+   * @throws SchemaError if a schema has problems. It has every problem in
+   * the first document found to have any.
    * @throws RetrievalError from `@hyperjump/browser` if a schema can't be
-   * retrieved or isn't valid. For an invalid schema, the `cause` is the
-   * problem, as a `VFileMessage`.
+   * retrieved.
    */
   compile(uri: string, options?: SessionOptions): Promise<Validator>;
 

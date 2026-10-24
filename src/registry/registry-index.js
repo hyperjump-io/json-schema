@@ -15,7 +15,7 @@ import { entriesOf } from "./registry-entries.js";
 
 /**
  * An entry by a URI it's found by. One that can't be identified is found by
- * its retrieval URI, and finding it throws the problem.
+ * its retrieval URI, with the problem.
  *
  * @typedef {{
  *   entry: RegistryEntry;
@@ -210,8 +210,7 @@ export class RegistryIndex {
    * The entry found by a URI
    *
    * @type (uri: string) => IndexedEntry | undefined
-   * @throws Error if more than one entry is found by the URI, or the entry
-   * can't be identified
+   * @throws Error if more than one entry is found by the URI
    */
   lookup(uri) {
     let found = this.#byUri.get(uri);
@@ -225,8 +224,6 @@ export class RegistryIndex {
       return;
     } else if (found.length > 1) {
       throw Error(`More than one schema in the registry is found by '${uri}'`);
-    } else if (found[0].error) {
-      throw found[0].error;
     }
 
     return found[0];

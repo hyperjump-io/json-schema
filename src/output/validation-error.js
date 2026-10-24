@@ -29,6 +29,18 @@ export const toVFileMessage = (error) => {
   const stackTraceLimit = Error.stackTraceLimit;
   Error.stackTraceLimit = 0;
   try {
+    if ("severity" in error) {
+      const message = new VFileMessage(error.message, {
+        place: error.place,
+        ruleId: error.ruleId,
+        source: error.source
+      });
+      message.cause = error.cause;
+      message.fatal = error.severity === "error";
+      message.file = error.uri;
+      return message;
+    }
+
     const message = new VFileMessage(outputErrorMessage(error), {
       place: error.place,
       ruleId: error.ruleId,
@@ -42,14 +54,3 @@ export const toVFileMessage = (error) => {
     Error.stackTraceLimit = stackTraceLimit;
   }
 };
-
-/** @implements API.InvalidSchemaError */
-export class InvalidSchemaError extends Error {
-  /**
-   * @param {OutputError[]} errors
-   */
-  constructor(errors) {
-    super("The schema is invalid");
-    this.errors = errors;
-  }
-}

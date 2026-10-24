@@ -90,8 +90,8 @@ describe("draft-04", () => {
     });
 
     test("exclusiveMinimum and exclusiveMaximum require minimum and maximum", async () => {
-      await expect(compile(jsonSchema, { $schema, exclusiveMinimum: true })).rejects.toMatchObject({ cause: { reason: "'exclusiveMinimum' requires 'minimum'" } });
-      await expect(compile(jsonSchema, { $schema, exclusiveMaximum: false })).rejects.toMatchObject({ cause: { reason: "'exclusiveMaximum' requires 'maximum'" } });
+      await expect(compile(jsonSchema, { $schema, exclusiveMinimum: true })).rejects.toMatchObject({ messages: [{ message: "'exclusiveMinimum' requires 'minimum'" }] });
+      await expect(compile(jsonSchema, { $schema, exclusiveMaximum: false })).rejects.toMatchObject({ messages: [{ message: "'exclusiveMaximum' requires 'maximum'" }] });
     });
   });
 

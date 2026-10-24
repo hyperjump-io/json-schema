@@ -6,7 +6,7 @@ import { describe, test, beforeEach, beforeAll, afterAll, expect } from "vitest"
 import { unified } from "unified";
 import { VFile } from "vfile";
 import { pointerGet, rejsonParse } from "@hyperjump/browser/json";
-import { JsonSchema } from "../json-schema.js";
+import { JsonSchema, SchemaError } from "../json-schema.js";
 import { jsonSchemaResolve } from "./resolve.js";
 import idKeyword from "../keywords/id.js";
 import anchorKeyword from "../keywords/anchor.js";
@@ -622,7 +622,12 @@ describe("jsonSchemaResolve", () => {
       };
 
       /** @type (error: unknown) => string */
-      const causes = (error) => error instanceof Error ? `${error.message} ${causes(error.cause)}` : "";
+      const causes = (error) => {
+        if (error instanceof SchemaError) {
+          return error.messages.map((message) => `${message.message} ${causes(message.cause)}`).join(" ");
+        }
+        return error instanceof Error ? `${error.message} ${causes(error.cause)}` : "";
+      };
 
       beforeAll(async () => {
         directory = await mkdtemp(join(tmpdir(), "json-schema-"));
@@ -949,7 +954,29 @@ describe("jsonSchemaResolve", () => {
       const session = jsonSchema.session();
       const uri = await schemaFile("invalid.schema.json", { type: "string" });
 
-      await expect(session.get(uri)).rejects.toMatchObject({ cause: { ruleId: "missing-dialect" } });
+      await expect(session.get(uri)).rejects.toMatchObject({
+        messages: [{ ruleId: "missing-dialect", severity: "error", uri: uri }]
+      });
+    });
+
+    test("every problem in a schema is in the error", async () => {
+      const session = jsonSchema.session();
+      const path = join(directory, "problems.schema.json");
+      await writeFile(path, `{
+  "$schema": "${dialectUri}",
+  "$id": "https://example.com/problems#foo",
+  "$defs": { "a": "foo", },
+}`);
+      const uri = pathToFileURL(path).toString();
+
+      await expect(session.get(uri)).rejects.toMatchObject({
+        messages: [
+          { source: "json", ruleId: "trailing-comma", severity: "error", uri: uri, place: { start: { line: 4, column: 24 } } },
+          { source: "json", ruleId: "trailing-comma", place: { start: { line: 4, column: 27 } } },
+          { source: "json-schema", ruleId: idKeyword.uri, place: { start: { line: 3, column: 10 } } },
+          { source: "json-schema", ruleId: "invalid-schema", place: { start: { line: 4, column: 19 } } }
+        ]
+      });
     });
   });
 });

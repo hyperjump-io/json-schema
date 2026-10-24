@@ -1,9 +1,6 @@
-import { unified } from "unified";
-import { VFile } from "vfile";
 import { RetrievalError } from "@hyperjump/browser";
-import { rejsonParse } from "@hyperjump/browser/json";
 import { toAbsoluteIri } from "@hyperjump/uri";
-import { jsonSchemaResolve } from "../schema/resolve.js";
+import { resolveSchemaText } from "../schema/resolve-text.js";
 import { RegistryIndex, entryText } from "./registry-index.js";
 
 /**
@@ -186,6 +183,11 @@ export class SessionRegistries {
     }
 
     const document = await pending;
+    if (indexed.error) {
+      // Resolving throws the problem that kept the entry from being
+      // identified, with any others. If it didn't, it's still a problem.
+      throw new RetrievalError(`Unable to load resource '${indexed.uri}'`, { cause: indexed.error });
+    }
     if (Object.values(document.embedded).every((resource) => resource.dialectUri === undefined || jsonSchema.hasDialect(resource.dialectUri))) {
       let documents = sharedDocuments.get(jsonSchema);
       if (!documents) {
@@ -243,18 +245,5 @@ const sharedDocuments = new WeakMap();
  * @type (session: JsonSchemaSession, indexed: IndexedEntry) => Promise<JsonSchemaDocumentNode>
  */
 const resolveEntry = async (session, { entry, uri }) => {
-  const file = new VFile(entryText(entry));
-  const processor = unified()
-    .use(rejsonParse)
-    .use(jsonSchemaResolve, { session, uri: entry.retrievalUri ?? uri, dialectUri: entry.dialectUri });
-  const document = await processor.run(processor.parse(file), file);
-
-  // A schema with problems can't be used reliably, so any problem is fatal
-  if (file.messages.length > 0) {
-    const message = file.messages[0];
-    message.fatal = true;
-    throw new RetrievalError(`Unable to load resource '${uri}'`, { cause: message });
-  }
-
-  return document;
+  return resolveSchemaText(entryText(entry), session, entry.retrievalUri ?? uri, entry.dialectUri);
 };

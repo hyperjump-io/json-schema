@@ -297,9 +297,10 @@ The [`hjlint`](https://github.com/hyperjump-io/hjlint) CLI has every format.
 ### Invalid schemas
 
 Schemas are always validated before they're used. A schema that isn't valid
-can't be retrieved, so `compile` throws a `RetrievalError` from
-`@hyperjump/browser`. Its `cause` is the problem, with a position if the
-schema was JSON text.
+can't be used, so `compile` throws a `SchemaError`. Its `messages` are every
+problem in the document, as plain objects with the document's `uri`, a
+`message`, and a `place` if the schema was JSON text. `toVFileMessage`
+converts one to a `VFileMessage`.
 
 ```javascript
 jsonSchema.addRegistry(new SchemaRegistry().with(`{
@@ -311,7 +312,8 @@ jsonSchema.addRegistry(new SchemaRegistry().with(`{
 try {
   await jsonSchema.compile("https://example.com/bad");
 } catch (error) {
-  String(error.cause); // "4:16-4:18: Expected a non-negative integer"
+  error.messages[0].message; // "Expected a non-negative integer"
+  String(toVFileMessage(error.messages[0])); // "4:16-4:18: Expected a non-negative integer"
 }
 ```
 

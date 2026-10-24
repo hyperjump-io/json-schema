@@ -1,8 +1,5 @@
 import { parse as parseContentType } from "content-type";
-import { unified } from "unified";
-import { VFile } from "vfile";
-import { rejsonParse } from "@hyperjump/browser/json";
-import { jsonSchemaResolve } from "./resolve.js";
+import { resolveSchemaText } from "./resolve-text.js";
 import { JsonSchemaSession } from "../session.js";
 
 /**
@@ -29,19 +26,7 @@ export class JsonSchemaMediaTypePlugin {
     const contentType = parseContentType(response.headers.get("content-type") ?? "");
     const dialectUri = contentType.parameters.schema ?? contentType.parameters.profile;
 
-    const file = new VFile(await response.text());
-    const processor = unified()
-      .use(rejsonParse)
-      .use(jsonSchemaResolve, { session, uri: response.url, dialectUri });
-    const document = await processor.run(processor.parse(file), file);
-
-    // A schema with problems can't be used reliably, so any problem is fatal
-    if (file.messages.length > 0) {
-      const message = file.messages[0];
-      message.fatal = true;
-      throw message;
-    }
-
+    const document = await resolveSchemaText(await response.text(), session, response.url, dialectUri);
     return /** @type JsonSchemaDocumentNode<"success"> */ (document);
   }
 

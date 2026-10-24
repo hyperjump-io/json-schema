@@ -1,9 +1,10 @@
-import { Session } from "@hyperjump/browser";
+import { RetrievalError, Session } from "@hyperjump/browser";
 import { encodeIriFragment, toAbsoluteIri } from "@hyperjump/uri";
 import { SessionRegistries } from "./registry/session-registries.js";
 import { lower } from "./kernel/lower.js";
 import { Validator } from "./kernel/validator.js";
 import { bundle } from "./bundle/bundle.js";
+import { SchemaError } from "./schema/schema-error.js";
 import unknownKeyword, { keywordDefinitionUri } from "./keywords/unknown.js";
 
 /**
@@ -101,6 +102,11 @@ export class JsonSchemaSession extends Session {
       try {
         document = await super.getDocument(uri, options);
       } catch (error) {
+        // A schema with problems was retrieved. It isn't a failure to
+        // retrieve it.
+        if (error instanceof RetrievalError && error.cause instanceof SchemaError) {
+          throw error.cause;
+        }
         throw this.#registries.retrievalError(uri, error);
       }
     }

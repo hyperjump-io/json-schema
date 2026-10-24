@@ -32,7 +32,8 @@ text ─ rejsonParse ─▶ JSON AST ─ jsonSchemaResolve ─▶ Schema AST ─
   and compiled in a session (see "Sessions and registries").
 - Schemas are retrieved with browser's `get`. The schema media type plugin
   (`application/schema+json`, `.schema.json`) runs `rejsonParse` and
-  `jsonSchemaResolve`. Any message from either is fatal there.
+  `jsonSchemaResolve`. Any message from either is fatal there: it throws a
+  `SchemaError` with all of them (see "Validation API").
 - Plain JSON files are never treated as schemas.
 
 ### Code map
@@ -289,7 +290,8 @@ an internal meta-schema.
   `VFileMessage` with `source: "json-schema"`, a `ruleId`, and `fatal: true`,
   because a schema with a problem can't be used. It's an error that isn't
   thrown, as a lint rule configured as an error is in unified, so the rest of
-  the document is still checked. Messages from a
+  the document is still checked, and every problem is thrown at once, in a
+  `SchemaError`. Messages from a
   keyword's shape, `check`, or `resolve` hook use the keyword's URI as the
   `ruleId`.
 
@@ -447,7 +449,8 @@ entries. Each `JsonSchema` indexes each registry it's used with.
   BENCHMARKS.md).
 - An entry that can't be identified, such as one that isn't valid JSON or
   has an invalid `$id`, is found by its `retrievalUri`, and finding it
-  throws the problem, like a retrieved file that can't be parsed. One
+  resolves it, which throws a `SchemaError` with that problem and any
+  others, like a retrieved file with problems. One
   without a `retrievalUri` can't be found, so its problem is reported when
   a lookup misses.
 - An entry's dialect is one added to the `JsonSchema` or one defined by
@@ -468,7 +471,7 @@ entries. Each `JsonSchema` indexes each registry it's used with.
   entry, because the dialect comes from the entry's resolved document. A
   registry without the entry doesn't have the dialect.
 - Full resolution is lazy, the first time a session asks for the entry.
-  Problems are thrown as fatal messages then, as they are for a retrieved
+  Problems are thrown in a `SchemaError` then, as they are for a retrieved
   schema.
 
 ### Making sessions cheap
@@ -674,7 +677,12 @@ Implemented in `src/kernel/validator.js`.
   errors also have absolute keyword location and instance location), and
   no message. Text input adds positions. Any syntax
   error makes the instance invalid, but it's still validated as far as it
-  could be parsed. Schema problems are thrown, so they're `VFileMessage`s.
+  could be parsed. Schema problems are thrown together, in a `SchemaError`,
+  which is an `Error`, but each problem in it is plain data
+  (`SchemaMessage`), with a message, because only the resolver or keyword
+  that found it can say what's wrong. They're collected, not thrown one at
+  a time, and lint results are the same type (see "Linting while
+  resolving").
 - Errors are converted to `VFileMessage`s where they're reported, with
   `toVFileMessage`, which gives them a generic message. A validation error
   says it fails the constraint at its absolute keyword location, which
@@ -1508,8 +1516,8 @@ use, without building one.
   file in unified. `warn` results stay on the validator.
 - Compiling doesn't stop at a schema's first problem. What's thrown is a
   `SchemaError` with every schema problem and every lint error, as plain
-  objects. Today the media type plugin throws the first problem as a
-  `VFileMessage`.
+  objects. The schema problems part is done: the `SchemaError` has every
+  problem in the first document found to have any.
 - `lint(uri)` on `JsonSchema` and `JsonSchemaSession` lints a schema and
   everything it references, the graph `bundle` walks, without compiling.
   It returns results by document URI and doesn't throw for schema
@@ -1636,7 +1644,8 @@ What this relies on from browser's `v2` branch:
    far: everything in `src/lint/rules/`.
 3. Lint while resolving (see "Linting while resolving"): plain lint
    results, every schema problem in one `SchemaError`, lint on the
-   session, then `lint(uri)`.
+   session, then `lint(uri)`. In stages ("Linting while resolving, in
+   stages").
 4. A style lint preset. It's opinionated about how a schema is organized,
    with rules for things like whether `$defs` comes first or last.
 5. A bundle command in the CLI.
@@ -1758,6 +1767,44 @@ never timed.
 Before the old code is gone for good (the end of stage 2), FLAG and BASIC
 can't be slower than v2 on the real-world schemas, and the first
 `validate` of a schema can't take more than about 1.5 times as long.
+
+### Linting while resolving, in stages
+
+Plan item 3 (see "Linting while resolving"). Each stage passes `npm test`,
+lint, and type-check, and is reviewed before the next.
+
+1. **Every schema problem in one `SchemaError`.** A schema problem is a
+   plain object, `SchemaMessage`: `source`, `ruleId`, `severity`
+   (`"error"` or `"warn"`, like lint rules' severities), the document's
+   `uri`, `place`, `message`, and `cause`. Lint results in stage 2 are the same type, so a
+   `SchemaError` can hold both. `toVFileMessage` converts one. The media
+   type plugin and a registry entry's resolution throw a `SchemaError`
+   with every problem in the document, including every syntax error. The
+   document is parsed with `accept: "recovered"`, as the CLI does, so a
+   recovered syntax error doesn't hide the problems after it.
+   `JsonSchemaSession.getDocument` throws it as it is, not as a
+   `RetrievalError`'s `cause`, so `compile` and `bundle` do too, and
+   `findSchema` finds a document with problems `unknown`. An entry that
+   can't be identified is a `SchemaError` too, with its one problem. It
+   replaces `InvalidSchemaError`, which was never thrown. `compile` still
+   stops at the first document with problems.
+   Done: `src/schema/schema-error.js`, and `src/schema/resolve-text.js`,
+   which the media type plugin and registries share. An entry that can't
+   be identified is resolved when it's found by its `retrievalUri`, which
+   finds the problem again with any others, so `RegistryIndex.lookup`
+   returns the entry with its problem instead of throwing it.
+2. **Lint on the session.** `SessionOptions.lint`, a processor the session
+   builds once. A document is linted the first time the session gets it,
+   in a `VFile` with the session on `file.data.jsonSchemaSession`.
+   `getDocument` doesn't wait for it, because a rule that finds a schema in
+   another document would wait for that document's lint, which could be
+   waiting for this one. `compile` waits for the lint of every document it
+   lowered, puts their results on the `Validator`, and throws a
+   `SchemaError` with every result at `error`.
+3. **`lint(uri)`** on `JsonSchema` and `JsonSchemaSession`: the graph
+   `bundle` walks, results by document URI, schema problems included and
+   not thrown. A document with problems has no tree, so what it
+   references isn't linted.
 
 ## Known limitations
 

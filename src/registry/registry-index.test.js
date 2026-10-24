@@ -37,13 +37,7 @@ describe("RegistryIndex", () => {
 }`, { retrievalUri: uri });
     const index = new RegistryIndex(v1(), registry);
 
-    let error;
-    try {
-      index.lookup(uri);
-    } catch (thrown) {
-      error = thrown;
-    }
-    expect(error).toMatchObject({
+    expect(index.lookup(uri)?.error).toMatchObject({
       reason: expect.stringContaining("can't have a fragment"),
       place: { start: { line: 3, column: 10, offset: 54 }, end: { line: 3, column: 37, offset: 81 } }
     });
@@ -53,7 +47,7 @@ describe("RegistryIndex", () => {
     const registry = new SchemaRegistry().with(`{ "$schema": "${v1DialectUri}", }`, { retrievalUri: uri });
     const index = new RegistryIndex(v1(), registry);
 
-    expect(() => index.lookup(uri)).to.throw("isn't valid JSON");
+    expect(index.lookup(uri)?.error?.message).to.contain("isn't valid JSON");
   });
 
   test("text and values are identified the same way", () => {

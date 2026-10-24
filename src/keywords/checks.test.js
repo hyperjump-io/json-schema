@@ -16,7 +16,6 @@ import { addDraft202012, draft202012DialectUri } from "../dialects/draft-2020-12
 
 /**
  * @import { JsonParseStatus } from "@hyperjump/browser/json"
- * @import { VFileMessage } from "vfile-message"
  */
 
 const baseUri = "https://example.com/schema";
@@ -286,8 +285,8 @@ describe("a schema with an invalid keyword value", () => {
 
     const jsonSchema = new JsonSchema({ allowRetrieval: [pathToFileURL(join(tmpdir(), "/")).href] });
     addV1(jsonSchema);
-    await expect(jsonSchema.compile(pathToFileURL(path).toString())).rejects.toSatisfy((/** @type Error */ error) => {
-      return /** @type VFileMessage */ (error.cause).ruleId === "https://json-schema.org/keyword/minLength";
+    await expect(jsonSchema.compile(pathToFileURL(path).toString())).rejects.toMatchObject({
+      messages: [{ ruleId: "https://json-schema.org/keyword/minLength" }]
     });
   });
 });

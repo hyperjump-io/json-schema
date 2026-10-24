@@ -1,6 +1,7 @@
 import type { Position } from "unist";
 import type { VFileMessage } from "vfile-message";
 import type { OutputError } from "./output-format.d.ts";
+import type { SchemaMessage } from "../schema/schema-error.d.ts";
 
 /**
  * An instance location failed a keyword. It's plain data, without a message.
@@ -41,19 +42,9 @@ export const outputErrorMessage: (error: OutputError) => string;
 
 /**
  * An output error as a `VFileMessage`, described by
- * {@link outputErrorMessage}. To add it to a `VFile`, use `file.message` with
- * the message and the error's `place`, `ruleId`, and `source` instead.
+ * {@link outputErrorMessage}, or a {@link SchemaMessage} with its own
+ * message, its document's URI as the `file`, and `fatal` if it's an error.
+ * To add one to a `VFile`, use `file.message` with the message and its
+ * `place`, `ruleId`, and `source` instead.
  */
-export const toVFileMessage: (error: OutputError) => VFileMessage;
-
-/**
- * Not thrown yet. An invalid schema can't be retrieved, so compiling one
- * throws a `RetrievalError` from `@hyperjump/browser` whose `cause` is the
- * problem.
- */
-export class InvalidSchemaError extends Error {
-  /** Errors are positioned in the schema document if it was parsed from text. */
-  errors: OutputError[];
-
-  constructor(errors: OutputError[]);
-}
+export const toVFileMessage: (error: OutputError | SchemaMessage) => VFileMessage;

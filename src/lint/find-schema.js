@@ -2,6 +2,7 @@ import { HttpError, RetrievalError, RetrievalNotAllowedError } from "@hyperjump/
 import { JsonPointerError, pointerGet } from "@hyperjump/browser/json";
 import { parseIri, toAbsoluteIri } from "@hyperjump/uri";
 import { AnchorNotFoundError } from "../schema/media-type-plugin.js";
+import { SchemaError } from "../schema/schema-error.js";
 
 /**
  * @import { DocumentNode } from "@hyperjump/browser"
@@ -36,7 +37,7 @@ export const findSchema = async (session, uri, options = {}) => {
   try {
     document ??= await session.getDocument(uri, getOptions);
   } catch (error) {
-    if (error instanceof RetrievalNotAllowedError) {
+    if (error instanceof RetrievalNotAllowedError || error instanceof SchemaError) {
       return { status: "unknown", reason: error };
     } else if (error instanceof RetrievalError) {
       const reason = absence(toAbsoluteIri(uri), error.cause);

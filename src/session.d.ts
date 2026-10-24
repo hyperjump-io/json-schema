@@ -5,6 +5,7 @@ import type { JsonSchemaNode } from "./schema/schema-ast.d.ts";
 import type { Dialect } from "./dialect.d.ts";
 import type { SchemaRegistry } from "./registry/schema-registry.d.ts";
 import type { JsonSchema, Validator } from "./json-schema.d.ts";
+import type { SchemaError } from "./schema/schema-error.d.ts";
 
 export type SessionOptions = {
   /**
@@ -62,9 +63,10 @@ export class JsonSchemaSession extends Session<JsonSchemaNode> {
    * schema in a session registry, then in one of the {@link JsonSchema}'s
    * registries; then it's retrieved.
    *
+   * @throws SchemaError if the schema has problems. It has every problem in
+   * the document.
    * @throws RetrievalError from `@hyperjump/browser` if more than one schema
-   * in the registries is found by the URI, or the schema found by it can't be
-   * identified.
+   * in the registries is found by the URI.
    */
   getDocument(uri: string, options?: GetOptions): Promise<DocumentNode<JsonSchemaNode>>;
 
@@ -91,9 +93,10 @@ export class JsonSchemaSession extends Session<JsonSchemaNode> {
    * Compile a schema into a {@link Validator}. The validator doesn't need
    * the session after it's compiled.
    *
+   * @throws SchemaError if a schema has problems. It has every problem in
+   * the first document found to have any.
    * @throws RetrievalError from `@hyperjump/browser` if a schema can't be
-   * retrieved or isn't valid. For an invalid schema, the `cause` is the
-   * problem, as a `VFileMessage`.
+   * retrieved.
    */
   compile(uri: string): Promise<Validator>;
 
@@ -119,8 +122,9 @@ export class JsonSchemaSession extends Session<JsonSchemaNode> {
    * a `$ref` that replaces the whole object (draft-04 through draft-07),
    * which would ignore its identifier, or the main schema's dialect has
    * nowhere to put it.
+   * @throws SchemaError if a schema has problems.
    * @throws RetrievalError from `@hyperjump/browser` if a schema can't be
-   * found or isn't valid.
+   * found.
    */
   bundle(uri: string, options?: BundleOptions): Promise<Json>;
 

@@ -114,7 +114,7 @@ describe("SchemaRegistry", () => {
       const registry = new SchemaRegistry().with(v1({ $id: "file:///a.schema.json" }), { retrievalUri: "https://example.com/a" });
 
       await expect(compile(registry, "https://example.com/a")).rejects.toMatchObject({
-        cause: { message: expect.stringContaining("'file:'") }
+        messages: [{ ruleId: "file-uri-not-allowed", uri: "https://example.com/a" }]
       });
     });
 
@@ -344,7 +344,7 @@ describe("SchemaRegistry", () => {
         const registry = new SchemaRegistry().with(metaSchema({ "https://example.com/vocab/unknown": true }), { retrievalUri: dialectUri });
 
         await expect(compile(registry, dialectUri)).rejects.toMatchObject({
-          cause: { message: expect.stringContaining("https://example.com/vocab/unknown") }
+          messages: [{ message: expect.stringContaining("https://example.com/vocab/unknown") }]
         });
       });
     });
@@ -355,7 +355,7 @@ describe("SchemaRegistry", () => {
       const registry = registryOf(v1({ $id: "https://example.com/a", type: 42 }));
 
       await expect(compile(registry, "https://example.com/a")).rejects.toMatchObject({
-        cause: { ruleId: "https://json-schema.org/keyword/type" }
+        messages: [{ ruleId: "https://json-schema.org/keyword/type", severity: "error", uri: "https://example.com/a" }]
       });
     });
 
@@ -363,7 +363,10 @@ describe("SchemaRegistry", () => {
       const registry = new SchemaRegistry().with("{", { retrievalUri: "https://example.com/a" });
 
       await expect(compile(registry, "https://example.com/a")).rejects.toMatchObject({
-        cause: { message: expect.stringContaining("isn't valid JSON") }
+        messages: [
+          { source: "json", message: "Object is missing its closing brace", uri: "https://example.com/a" },
+          { source: "json-schema", ruleId: "missing-dialect" }
+        ]
       });
     });
   });
