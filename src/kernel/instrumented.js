@@ -288,7 +288,13 @@ export const instrumented = (jsonSchema, kernel, options) => {
     const resource = typeof compiled === "boolean" ? handle.replace(/#.*$/, "") : compiled.resource;
     const resourceAnchors = kernel.resources[resource]?.dynamicAnchors ?? {};
 
-    const keywordGroups = typeof compiled === "boolean" ? [] : compiled.keywords;
+    // Without plugins, a group with no effect is left out, as in `fast.js`.
+    // With plugins, `drop-groups` leaves out what they can't see.
+    /** @type KeywordGroup[] */
+    let keywordGroups = typeof compiled === "boolean" ? [] : compiled.keywords;
+    if (!tracking) {
+      keywordGroups = keywordGroups.filter(({ expression }) => expression.op !== "pass" && (annotating || expression.op !== "annotate"));
+    }
     const infos = new Map(keywordGroups.map((group) => [group, keywordInfo(group)]));
     const merged = mergeable(keywordGroups);
     const matcher = merged.length > 1
