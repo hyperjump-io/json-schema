@@ -950,6 +950,13 @@ Optimizations that were tried and aren't used:
   would take about 65,000 validations to make that back.
 - Finding the instance's type once per schema and only evaluating the
   operations for that type was up to 18% slower.
+- Annotating a JS value by evaluating the value instead of its AST
+  (`fromJs` still makes the AST to return), recording each annotation's
+  location and finding its node in the AST afterwards, was 7–8% slower on
+  `package.json` and `tsconfig.json` and 6% faster on OpenAPI 3.0. Real
+  schemas annotate almost every value (a `description` on each property),
+  so nearly every annotation needs its node found, which evaluating the
+  AST gets for free, and a location is made for every value evaluated.
 - Choosing by type in an `any` whose schemas aren't only a `type` was
   slower: it already stops at the first that passes. So was choosing in a
   `one` where a type still has more than one schema, or looking the type
