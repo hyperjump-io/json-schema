@@ -19,4 +19,4 @@ import { addFullFormats } from "@hyperjump/json-schema/formats/full";
 addFullFormats(jsonSchema);
 ```
 
-The [`hjlint`](https://github.com/hyperjump-io/hjlint) CLI has every format.
+The [`hjlint`](https://github.com/hyperjump-io/hjlint/blob/main/website/README.md) CLI has every format.

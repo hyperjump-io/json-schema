@@ -2,8 +2,8 @@
 
 Lint rules find things that are likely mistakes in a schema that still works,
 such as `then` without `if`. Run them with the
-[`hjlint`](https://github.com/hyperjump-io/hjlint) CLI, whose README says how
-to configure them, or from code (see [Linting in a pipeline](../unified/linting-in-a-pipeline.md)).
+[`hjlint`](https://github.com/hyperjump-io/hjlint/blob/main/website/README.md) CLI (see
+[Lint rules](https://github.com/hyperjump-io/hjlint/blob/main/website/lint-rules.md) for configuring them), or from code (see [Linting in a pipeline](../unified/linting-in-a-pipeline.md)).
 The recommended preset, `@hyperjump/json-schema/lint/recommended`, turns on every rule that's likely a
 mistake. They're warnings, except for ones that find a schema that can't be
 compiled, like a `$ref` that doesn't find a schema, or one the spec doesn't
