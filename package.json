@@ -67,7 +67,8 @@
     "lint": "oxlint",
     "test": "vitest run",
     "type-check": "tsc --noEmit",
-    "docs": "typedoc"
+    "docs": "typedoc",
+    "version": "node scripts/version-docs.js && git add website"
   },
   "devDependencies": {
     "@stylistic/eslint-plugin": "*",

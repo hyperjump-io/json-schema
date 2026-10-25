@@ -13,3 +13,4 @@ test/
 src/dialects/v1/extension-tests/
 src/lint/test-linter.js
 benchmark/
+scripts/
