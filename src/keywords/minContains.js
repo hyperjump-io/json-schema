@@ -12,6 +12,5 @@ import { nonNegativeInteger } from "./checks.js";
 export default {
   uri: "https://json-schema.org/keyword/minContains",
   shape: "data",
-  default: 1,
   check: nonNegativeInteger
 };

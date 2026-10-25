@@ -13,6 +13,5 @@
 export default {
   uri: "https://json-schema.org/keyword/unevaluatedItems",
   shape: "schema",
-  default: true,
   lower: (schema) => ({ op: "eachItem", unevaluated: true, of: schema })
 };

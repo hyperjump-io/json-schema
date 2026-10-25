@@ -13,6 +13,5 @@ import { boolean } from "./checks.js";
  */
 export default {
   ...annotationKeyword("https://json-schema.org/keyword/deprecated", boolean),
-  lower: (value) => value ? { op: "annotate", value } : { op: "pass" },
-  default: false
+  lower: (value) => value ? { op: "annotate", value } : { op: "pass" }
 };

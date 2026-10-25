@@ -12,6 +12,5 @@
 export default {
   uri: "https://json-schema.org/keyword/propertyNames",
   shape: "schema",
-  default: true,
   lower: (schema) => ({ op: "eachPropertyName", of: schema })
 };

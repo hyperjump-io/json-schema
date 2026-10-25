@@ -17,7 +17,6 @@ import { isErrorNode, uniqueStrings } from "../checks.js";
 export default {
   uri: "https://json-schema.org/keyword/draft-07/dependencies",
   shape: { map: ["schema", { array: "data" }] },
-  default: {},
   check(valueNode, context) {
     if (valueNode.jsonType !== "object") {
       return;

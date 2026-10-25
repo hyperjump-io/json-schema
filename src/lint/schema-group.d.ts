@@ -78,3 +78,13 @@ export const schemaGroup: (session: JsonSchemaSession | undefined, tree: JsonSch
  * be missing.
  */
 export const isNegated: (group: SchemaGroup, schemaNode: JsonSchemaNode) => boolean;
+
+/**
+ * Whether something in a group could read what its schemas mark as
+ * evaluated: one of them has a keyword that reads marks, like
+ * `unevaluatedProperties`, or isn't known, because it's in another
+ * document, or the group is `unknown`. A group that's `open` could be
+ * applied with an `unevaluated*` from another document too, which this
+ * doesn't count.
+ */
+export const marksAreRead: (session: JsonSchemaSession, tree: JsonSchemaDocumentNode, group: SchemaGroup) => Promise<boolean>;

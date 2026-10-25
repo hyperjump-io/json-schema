@@ -7,6 +7,8 @@ export type LoweredKeyword = {
   group: KeywordGroup;
   keywordNode: JsonSchemaKeywordNode;
   sourceNodes: JsonSchemaKeywordNode[];
+  /** The siblings it read that it lowers the same without, like `minContains: 1` for `contains` */
+  sourcesWithoutEffect: JsonSchemaKeywordNode[];
   cameFrom: CameFrom;
 };
 

@@ -1,4 +1,4 @@
-import { subexpressions } from "../kernel/kernel.js";
+import { readsMarks, subexpressions } from "../kernel/kernel.js";
 import { findSchema } from "./find-schema.js";
 import { lowerForLint } from "./lower.js";
 
@@ -334,4 +334,15 @@ export const isNegated = (group, schemaNode) => {
     negated = negated !== link.negated;
     node = link.from;
   }
+};
+
+/** @type API.marksAreRead */
+export const marksAreRead = async (session, tree, group) => {
+  const lowered = await lowerForLint(session, tree);
+  return group.unknown || group.schemas.some((node) => {
+    const keywords = lowered.get(node);
+    return keywords === undefined
+      ? node.type === "json-schema" && node.jsonType === "object"
+      : keywords.some(({ group }) => readsMarks(group.expression));
+  });
 };

@@ -370,12 +370,17 @@ allow, like a v1 `$schema` with a fragment, which are errors.
 | `read-only-and-write-only` | `readOnly` and `writeOnly` both `true` in the same schema |
 | `min-max-contains-without-contains` | `minContains` or `maxContains` without `contains` |
 | `min-contains-zero-without-max-contains` | `minContains: 0` next to `contains` without `maxContains`, so `contains` never fails |
-| `keyword-with-default-value` | A keyword that's the same as leaving it out, like `additionalProperties: true`, `properties: {}`, `minLength: 0`, or `uniqueItems: false` |
+| `keyword-without-effect` | A keyword that's the same as leaving it out, like `properties: {}`, `minLength: 0`, `uniqueItems: false`, or `minContains: 1`, or that only marks properties or items nothing reads |
+| `empty-catch-all-schema` | A keyword that applies a schema that allows everything to every property or item others don't, like `additionalProperties: true` or `items: {}` |
+| `unknown-keyword` | A property of a schema that isn't a keyword in its dialect, usually a misspelling, with a suggestion when a keyword is close. The `ignore` option lists names not to report |
 | `non-canonical-dialect-uri` | A `$schema` with a fragment that isn't empty, that isn't normalized, or that doesn't match its official dialect's URI, like draft-07 without `#`, which other implementations may not recognize |
 | `invalid-dialect-uri` | A v1 `$schema` with a fragment or that isn't normalized, which v1 doesn't allow (an error) |
 | `relative-root-id` | A relative `$id` on the root schema, like `/user`, so the schema's identifier depends on where it was retrieved from |
 | `implicit-dialect` | A root schema without `$schema` whose dialect came from a media type parameter or the default dialect, so other tools may not know it |
 | `reference-without-target` | A `$ref` that doesn't find a schema, such as a file that doesn't exist or a JSON Pointer that doesn't point to anything |
+
+A rule with options takes them after the severity, like
+`["hjlint/rules/unknown-keyword", ["warn", { "ignore": ["x-internal"] }]]`.
 
 These rules aren't in the recommended preset, because they're matters of
 style.

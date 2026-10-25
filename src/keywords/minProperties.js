@@ -12,7 +12,6 @@ import { nonNegativeInteger } from "./checks.js";
 export default {
   uri: "https://json-schema.org/keyword/minProperties",
   shape: "data",
-  default: 0,
   check: nonNegativeInteger,
   lower: (min) => ({ op: "propertyCount", min })
 };

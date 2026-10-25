@@ -13,6 +13,5 @@ export default {
   uri: "https://json-schema.org/keyword/items",
   siblings: { prefixItems: "https://json-schema.org/keyword/prefixItems" },
   shape: "schema",
-  default: true,
   lower: (schema, { prefixItems }) => ({ op: "eachItem", from: prefixItems?.length ?? 0, of: schema })
 };

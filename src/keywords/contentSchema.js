@@ -15,7 +15,6 @@ export default {
   uri: "https://json-schema.org/keyword/contentSchema",
   siblings: { contentMediaType: "https://json-schema.org/keyword/contentMediaType" },
   shape: "unappliedSchema",
-  default: true,
   lower: (schema, { contentMediaType }) => contentMediaType === undefined
     ? { op: "pass" }
     : { op: "annotate", value: schema, types: ["string"] }

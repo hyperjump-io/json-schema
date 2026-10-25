@@ -1,7 +1,7 @@
 import { pointerGet } from "@hyperjump/browser/json";
 import { toAbsoluteIri } from "@hyperjump/uri";
 import { lowerKeywords } from "../kernel/lower.js";
-import { provenance } from "./provenance.js";
+import { provenance, sourcesWithoutEffect } from "./provenance.js";
 import { visitSchemas } from "./utilities.js";
 
 /**
@@ -98,6 +98,7 @@ const lowerDocument = async (session, tree) => {
           group: keyword.group,
           keywordNode: keyword.keywordNode,
           sourceNodes: keyword.sourceNodes,
+          sourcesWithoutEffect: sourcesWithoutEffect(keyword),
           cameFrom: provenance(keyword)
         }));
       const order = new Map(schemaNode.children.map((keywordNode, index) => [keywordNode, index]));

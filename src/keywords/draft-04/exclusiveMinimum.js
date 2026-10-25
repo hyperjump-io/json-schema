@@ -14,7 +14,6 @@ export default {
   uri: "https://json-schema.org/keyword/draft-04/exclusiveMinimum",
   siblings: { minimum: "https://json-schema.org/keyword/draft-04/minimum" },
   shape: "data",
-  default: false,
   check(valueNode, context) {
     boolean(valueNode, context);
     if (context.siblings.minimum === undefined) {

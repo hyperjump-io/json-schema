@@ -1857,6 +1857,22 @@ lint, and type-check, and is reviewed before the next.
      `eachItem`. It's reported even when an `unevaluated*` could read its
      marks, because writing it is a mistake.
 
+   Done: `src/lint/effect.js` says what a group does (`none`, `marks`,
+   `marksAll`, or `some`), and both rules are in `recommended`.
+   `keyword-without-effect` leaves a keyword that declares siblings to the
+   rules about them (`if-without-then-else`,
+   `content-schema-without-media-type`,
+   `additional-items-without-items-array`,
+   `min-contains-zero-without-max-contains`), so they aren't reported
+   twice. Unknown keywords are `unknown-keyword`'s, in every dialect,
+   because it's mostly a check for misspellings: it suggests a keyword
+   that's close, and its `ignore` option lists names not to report.
+   References are followed with `findSchema`, into other documents too;
+   one that can't be followed is `some`. Otherwise it's conservative: `any`
+   or `one` with a schema that has an effect, and what a schema applied to
+   a property or an item marks, are `some`. `const-or-enum-keywords` skips a keyword with `none` or
+   `marksAll` instead of one with its default value.
+
 ## Known limitations
 
 - `allowRetrieval` can't stop a request that a redirect leads to. It's

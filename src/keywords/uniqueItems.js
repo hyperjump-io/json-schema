@@ -13,7 +13,6 @@ import { boolean } from "./checks.js";
 export default {
   uri: "https://json-schema.org/keyword/uniqueItems",
   shape: "data",
-  default: false,
   check: boolean,
   lower: (uniqueItems) => uniqueItems ? { op: "uniqueItems" } : { op: "pass" }
 };

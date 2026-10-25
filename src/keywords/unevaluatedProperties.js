@@ -13,6 +13,5 @@
 export default {
   uri: "https://json-schema.org/keyword/unevaluatedProperties",
   shape: "schema",
-  default: true,
   lower: (schema) => ({ op: "eachProperty", select: { unevaluated: true }, of: schema })
 };

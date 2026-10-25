@@ -14,7 +14,6 @@ import { uniqueStrings } from "./checks.js";
 export default {
   uri: "https://json-schema.org/keyword/required",
   shape: "data",
-  default: [],
   check: uniqueStrings,
   lower: (required) => all(required.map(hasProperty))
 };

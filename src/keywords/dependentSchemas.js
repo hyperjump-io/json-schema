@@ -14,6 +14,5 @@ import { all, hasProperty, whenProperty } from "./utilities.js";
 export default {
   uri: "https://json-schema.org/keyword/dependentSchemas",
   shape: { map: "schema" },
-  default: {},
   lower: (pairs) => all(pairs.map(([name, schema]) => whenProperty(hasProperty(name), schema)))
 };

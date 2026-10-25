@@ -14,7 +14,6 @@ export default {
   uri: "https://json-schema.org/keyword/draft-2019-09/additionalItems",
   siblings: { items: "https://json-schema.org/keyword/draft-2019-09/items" },
   shape: "schema",
-  default: true,
   lower: (schema, { items }) => Array.isArray(items)
     ? { op: "eachItem", from: items.length, of: schema }
     : { op: "pass" }

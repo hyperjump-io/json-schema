@@ -13,6 +13,5 @@ import { all } from "./utilities.js";
 export default {
   uri: "https://json-schema.org/keyword/properties",
   shape: { map: "schema" },
-  default: {},
   lower: (pairs) => all(pairs.map(([name, schema]) => ({ op: "property", name, of: schema })))
 };

@@ -140,6 +140,15 @@ export const provenance = ({ group, keywordNode, sourceNodes, withoutSiblings = 
   };
 };
 
+/**
+ * The siblings a keyword read that it lowers the same without, like
+ * `minContains: 1`
+ *
+ * @type (lowered: LoweredKeyword) => JsonSchemaKeywordNode[]
+ */
+export const sourcesWithoutEffect = ({ group, sourceNodes, withoutSiblings = [] }) => sourceNodes
+  .filter((_sourceNode, index) => withoutSiblings[index] !== undefined && equal(group.expression, withoutSiblings[index]));
+
 /** @type (value: unknown) => value is Expression */
 const isOperation = (value) => value !== null && typeof value === "object" && !Array.isArray(value)
   && typeof (/** @type Record<string, unknown> */ (value)).op === "string";

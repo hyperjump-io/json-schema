@@ -32,7 +32,9 @@ import nonCanonicalDialectUri from "./rules/non-canonical-dialect-uri.js";
 import invalidDialectUri from "./rules/invalid-dialect-uri.js";
 import relativeRootId from "./rules/relative-root-id.js";
 import implicitDialect from "./rules/implicit-dialect.js";
-import keywordWithDefaultValue from "./rules/keyword-with-default-value.js";
+import keywordWithoutEffect from "./rules/keyword-without-effect.js";
+import emptyCatchAllSchema from "./rules/empty-catch-all-schema.js";
+import unknownKeyword from "./rules/unknown-keyword.js";
 import multipleOfOne from "./rules/multiple-of-one.js";
 import singleTypeArray from "./rules/single-type-array.js";
 import misnamedDefinitions from "./rules/misnamed-definitions.js";
@@ -83,7 +85,9 @@ const recommended = {
     [nonCanonicalDialectUri, ["warn"]],
     [relativeRootId, ["warn"]],
     [implicitDialect, ["warn"]],
-    [keywordWithDefaultValue, ["warn"]],
+    [keywordWithoutEffect, ["warn"]],
+    [emptyCatchAllSchema, ["warn"]],
+    [unknownKeyword, ["warn"]],
     [multipleOfOne, ["warn"]],
     [singleTypeArray, ["warn"]],
     [misnamedDefinitions, ["warn"]],

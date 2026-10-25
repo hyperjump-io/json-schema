@@ -15,7 +15,6 @@ import { all } from "./utilities.js";
 export default {
   uri: "https://json-schema.org/keyword/patternProperties",
   shape: { map: "schema" },
-  default: {},
   check(valueNode, context) {
     if (valueNode.jsonType !== "object") {
       return;

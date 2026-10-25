@@ -13,7 +13,6 @@ import { mapOf, uniqueStrings } from "./checks.js";
 export default {
   uri: "https://json-schema.org/keyword/dependentRequired",
   shape: "data",
-  default: {},
   check: mapOf(uniqueStrings),
   lower: (dependentRequired) => all(Object.entries(dependentRequired).map(([name, required]) => {
     return whenProperty(hasProperty(name), all(required.map(hasProperty)));

@@ -13,7 +13,6 @@ export default {
   uri: "https://json-schema.org/keyword/additionalProperties",
   siblings: { properties: "https://json-schema.org/keyword/properties", patternProperties: "https://json-schema.org/keyword/patternProperties" },
   shape: "schema",
-  default: true,
   lower: (schema, { properties = [], patternProperties = [] }) => ({
     op: "eachProperty",
     select: { except: { names: properties.map(([name]) => name), patterns: patternProperties.map(([pattern]) => pattern) } },

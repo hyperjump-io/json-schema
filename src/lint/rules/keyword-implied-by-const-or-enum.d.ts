@@ -13,8 +13,9 @@ import type { JsonSchemaDocumentNode } from "../../schema/schema-ast.d.ts";
  * `allOf` with a `title`, so `format` is never reported. So does one that
  * marks a property or an item as evaluated, if `unevaluatedProperties` or
  * `unevaluatedItems` might read it. `type` is reported by
- * `type-implied-by-const-or-enum`, and a keyword with its default value by
- * `keyword-with-default-value`. A keyword that rejects a value is reported
+ * `type-implied-by-const-or-enum`, and a keyword with no effect, or that
+ * applies a schema that allows everything to every property or item, by
+ * `keyword-without-effect` and `empty-catch-all-schema`. A keyword that rejects a value is reported
  * by `const-or-enum-value-rejected`, and one that might isn't reported.
  *
  * It has no options.

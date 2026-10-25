@@ -12,7 +12,6 @@ import { nonNegativeInteger } from "./checks.js";
 export default {
   uri: "https://json-schema.org/keyword/minLength",
   shape: "data",
-  default: 0,
   check: nonNegativeInteger,
   lower: (min) => ({ op: "stringLength", min })
 };
