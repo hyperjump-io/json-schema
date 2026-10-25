@@ -1,7 +1,7 @@
 import { optimizations } from "./optimizations/index.js";
 
 /**
- * @import { Expression, Kernel } from "./kernel.d.ts"
+ * @import { CompiledSchema, Expression, Handle, Kernel } from "./kernel.d.ts"
  */
 
 /**
@@ -22,12 +22,14 @@ import { optimizations } from "./optimizations/index.js";
  */
 
 /**
- * A rewrite of a kernel for a mode. It returns a new kernel rather than
- * changing the one it's given, because a `Validator` keeps that one for its
- * other modes and for `serialize`. A pass that has nothing to do for a mode
- * returns the kernel it's given.
+ * A rewrite of a kernel for a mode. It returns the schemas it replaces, by
+ * handle, and doesn't change the kernel it's given. `optimize` puts them in
+ * one copy of the kernel's schemas for every pass, because copying a large
+ * kernel's schemas costs about as much as a pass's own work (1 ms for the
+ * 4,304 of SchemaStore's `package.json` schema). A pass that has nothing to
+ * do for a mode returns an empty map.
  *
- * @typedef {{ optimize: (kernel: Kernel, mode: Mode) => Kernel }} Optimization
+ * @typedef {{ optimize: (kernel: Kernel, mode: Mode) => Map<Handle, CompiledSchema> }} Optimization
  */
 
 /**
@@ -47,9 +49,25 @@ export const isInert = (expression, { plugins, annotations }) => {
  * @type (kernel: Kernel, mode: Mode) => Kernel
  */
 export const optimize = (kernel, mode) => {
+  // The kernel the `Validator` keeps is copied once, the first time a pass
+  // changes something, and later passes get the copy
+  let optimized = kernel;
+  /** @type Kernel["schemas"] | undefined */
+  let schemas;
   for (const optimization of optimizations) {
-    kernel = optimization.optimize(kernel, mode);
+    const replaced = optimization.optimize(optimized, mode);
+    if (replaced.size === 0) {
+      continue;
+    }
+
+    if (schemas === undefined) {
+      schemas = { ...kernel.schemas };
+      optimized = { ...kernel, schemas };
+    }
+    for (const [handle, schema] of replaced) {
+      schemas[handle] = schema;
+    }
   }
 
-  return kernel;
+  return optimized;
 };

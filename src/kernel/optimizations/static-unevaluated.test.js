@@ -36,8 +36,8 @@ const compile = async (schema, dialect = { jsonSchema, dialectUri: v1DialectUri 
  * @type (schema: Record<string, Json>, dialect?: { jsonSchema: JsonSchema; dialectUri: string }) => Promise<[string, Json][]>
  */
 const optimizedGroups = async (schema, dialect) => {
-  const kernel = staticUnevaluated.optimize(await compile(schema, dialect), mode);
-  const root = kernel.schemas[kernel.uri];
+  const kernel = await compile(schema, dialect);
+  const root = staticUnevaluated.optimize(kernel, mode).get(kernel.uri) ?? kernel.schemas[kernel.uri];
   if (typeof root === "boolean") {
     throw Error("Expected an object schema");
   }
@@ -183,12 +183,12 @@ describe("staticUnevaluated", () => {
 
   test("doesn't change schemas without unevaluated selectors", async () => {
     const kernel = await compile({ properties: { foo: true } });
-    expect(staticUnevaluated.optimize(kernel, mode)).to.equal(kernel);
+    expect(staticUnevaluated.optimize(kernel, mode).size).to.equal(0);
   });
 
   test("doesn't change anything for plugins or annotations, which see marks of schemas that fail", async () => {
     const kernel = await compile({ properties: { foo: true }, unevaluatedProperties: false });
-    expect(staticUnevaluated.optimize(kernel, { fast: false, plugins: true, annotations: false })).to.equal(kernel);
-    expect(staticUnevaluated.optimize(kernel, { fast: false, plugins: false, annotations: true })).to.equal(kernel);
+    expect(staticUnevaluated.optimize(kernel, { fast: false, plugins: true, annotations: false }).size).to.equal(0);
+    expect(staticUnevaluated.optimize(kernel, { fast: false, plugins: false, annotations: true }).size).to.equal(0);
   });
 });

@@ -31,8 +31,8 @@ const compile = async (schema) => {
  * @type (schema: Record<string, Json>, keyword: string, mode?: Mode) => Promise<Json>
  */
 const optimized = async (schema, keyword, mode = fast) => {
-  const kernel = typeDispatch.optimize(/** @type Kernel */ ((await compile(schema)).serialize()), mode);
-  const root = kernel.schemas[kernel.uri];
+  const kernel = /** @type Kernel */ ((await compile(schema)).serialize());
+  const root = typeDispatch.optimize(kernel, mode).get(kernel.uri) ?? kernel.schemas[kernel.uri];
   if (typeof root === "boolean") {
     throw Error("Expected an object schema");
   }
@@ -108,7 +108,7 @@ describe("typeDispatch", () => {
   test("doesn't change anything for plugins, which see every error", async () => {
     const schema = { oneOf: [{ type: "string" }, { type: "object" }], anyOf: [{ type: "string" }, { type: "null" }] };
     const kernel = /** @type Kernel */ ((await compile(schema)).serialize());
-    expect(typeDispatch.optimize(kernel, { fast: false, plugins: true, annotations: false })).to.equal(kernel);
+    expect(typeDispatch.optimize(kernel, { fast: false, plugins: true, annotations: false }).size).to.equal(0);
   });
 
   describe("evaluated", () => {

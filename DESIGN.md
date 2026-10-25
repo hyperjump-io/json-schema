@@ -855,10 +855,12 @@ them, and `src/kernel/optimize.js` runs them.
 - A pass is an `Optimization`: `{ optimize(kernel, mode) }`. The mode is
   what the evaluation can observe: `fast` (no plugins and no annotations,
   so only the result and the marks matter), `plugins`, and `annotations`
-  (annotating, or a plugin with an `annotation` hook). A pass returns a new
-  kernel. It doesn't change the one it's given, because the `Validator`
-  keeps it for its other evaluators and for `serialize`. A pass that
-  doesn't change anything returns the one it's given.
+  (annotating, or a plugin with an `annotation` hook). A pass returns the
+  schemas it replaces, by handle, and doesn't change the kernel it's given,
+  because the `Validator` keeps it for its other evaluators and for
+  `serialize`. `optimize` puts what each pass replaces in one copy of the
+  kernel's schemas, made the first time a pass replaces anything, and
+  later passes get that copy. A kernel that no pass changes isn't copied.
 - Passes run when an evaluator is built, for its mode, so a serialized
   kernel isn't optimized for any one mode.
 - Passes run in the order `index.js` lists them, because one can leave work
@@ -878,8 +880,7 @@ them, and `src/kernel/optimize.js` runs them.
 - A pass over a large kernel isn't free. Copying or iterating the 4,304
   schemas of SchemaStore's `package.json` schema takes 0.5–1.6 ms, because
   an object with that many keys is in V8's dictionary mode, so a pass
-  keeps what it doesn't change and returns the kernel it's given when
-  there's nothing to do, and a pass has to save more than it costs (see
+  only returns what it changes, and a pass has to save more than it costs (see
   "Optimizations" and "The kernel in `src/`" in
   [BENCHMARKS.md](BENCHMARKS.md)).
 

@@ -16,9 +16,8 @@ import { isInert } from "../optimize.js";
  * anything, so it always is.
  *
  * It's `alwaysPasses` from before the kernel, as an expression rewrite.
- * What doesn't change is kept, down to the kernel itself, because
- * rebuilding every schema of a large kernel cost as much as building its
- * evaluator.
+ * Only the schemas that change are replaced, because rebuilding every
+ * schema of a large kernel cost as much as building its evaluator.
  *
  * @type Optimization
  */
@@ -28,9 +27,11 @@ export default {
       return typeof schema !== "boolean" && schema.keywords.some(({ expression }) => readsMarks(expression));
     });
 
+    // A table of every schema is faster in an object than in a `Map`
     /** @type Record<Handle, CompiledSchema> */
     const optimized = {};
-    let changed = false;
+    /** @type Map<Handle, CompiledSchema> */
+    const replaced = new Map();
 
     /** @type Set<Handle> */
     const inProgress = new Set();
@@ -59,9 +60,10 @@ export default {
         return compiled;
       }
 
-      optimized[handle] = { ...compiled, keywords };
-      changed = true;
-      return optimized[handle];
+      const folded = { ...compiled, keywords };
+      optimized[handle] = folded;
+      replaced.set(handle, folded);
+      return folded;
     };
 
     // A schema that's being optimized, because it applies itself, is
@@ -127,6 +129,6 @@ export default {
       schema(handle);
     }
 
-    return changed ? { ...kernel, schemas: optimized } : kernel;
+    return replaced;
   }
 };

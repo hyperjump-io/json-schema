@@ -28,8 +28,10 @@ import { isInert } from "../optimize.js";
  */
 export default {
   optimize(kernel, mode) {
+    /** @type Map<Handle, CompiledSchema> */
+    const replaced = new Map();
     if (mode.plugins) {
-      return kernel;
+      return replaced;
     }
 
     /** @type Map<Handle, Set<TypeName> | null> */
@@ -205,8 +207,6 @@ export default {
       }
     };
 
-    /** @type Record<Handle, CompiledSchema> | undefined */
-    let schemas;
     for (const handle in kernel.schemas) {
       const schema = kernel.schemas[handle];
       if (typeof schema === "boolean") {
@@ -224,12 +224,11 @@ export default {
         }
       }
       if (keywords !== undefined) {
-        schemas ??= { ...kernel.schemas };
-        schemas[handle] = { ...schema, keywords };
+        replaced.set(handle, { ...schema, keywords });
       }
     }
 
-    return schemas === undefined ? kernel : { ...kernel, schemas };
+    return replaced;
   }
 };
 

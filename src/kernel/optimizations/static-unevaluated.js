@@ -37,8 +37,10 @@
  */
 export default {
   optimize(kernel, { fast }) {
+    /** @type Map<Handle, CompiledSchema> */
+    const replaced = new Map();
     if (!fast) {
-      return kernel;
+      return replaced;
     }
 
     const analyses = {
@@ -46,8 +48,6 @@ export default {
       items: new Analysis(kernel.schemas, "items")
     };
 
-    /** @type Record<Handle, CompiledSchema> | undefined */
-    let schemas;
     for (const handle in kernel.schemas) {
       const schema = kernel.schemas[handle];
       if (typeof schema === "boolean" || !schema.keywords.some(({ expression }) => readerKind(expression) !== undefined)) {
@@ -63,11 +63,10 @@ export default {
         keywords.push(expression ? { ...group, expression } : group);
       }
 
-      schemas ??= { ...kernel.schemas };
-      schemas[handle] = { ...schema, keywords };
+      replaced.set(handle, { ...schema, keywords });
     }
 
-    return schemas === undefined ? kernel : { ...kernel, schemas };
+    return replaced;
   }
 };
 
