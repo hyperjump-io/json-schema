@@ -1820,7 +1820,10 @@ lint, and type-check, and is reviewed before the next.
    `writeOnly`, and `deprecated` lower to `pass` when they're `false`,
    because the specs say leaving them out is the same, so that
    annotation isn't collected anymore. A keyword then has the same
-   expression with its default value as without it.
+   expression with its default value as without it. Done:
+   `src/kernel/normalize.js` and the three keywords. `contains` with
+   `min: 0` keeps its form, because it marks what passes;
+   `keyword-without-effect` reads that instead.
 2. **Where each operation came from.** Lint lowers a keyword again
    without each sibling it read that's in the schema. What differs came
    from that sibling, and the rest from the keyword. A rule asks which

@@ -29,6 +29,9 @@ export const normalize = (kernel) => {
  *   in `any` are dropped, and `all` or `any` of one is the one
  * - `oneOfValues` of one value is `equals`
  * - `typeIs` with no types is `fail`
+ * - limits that always pass are dropped (a count's `min: 0`, and `false`
+ *   for `exclusiveMin` or `exclusiveMax`), and `range` or a count without
+ *   limits is `pass`
  *
  * A rule has to keep what an expression applies to, so `range` with equal
  * limits stays a `range`. `equals` doesn't pass every string.
@@ -79,6 +82,26 @@ export const normalForm = (expression) => {
       return expression.values.length === 1 ? { op: "equals", value: expression.values[0] } : expression;
     case "typeIs":
       return expression.types.length === 0 ? { op: "fail" } : expression;
+    case "range": {
+      const { exclusiveMin, exclusiveMax, ...range } = expression;
+      if (range.min === undefined && range.max === undefined) {
+        return { op: "pass" };
+      }
+      return {
+        ...range,
+        ...exclusiveMin && range.min !== undefined && { exclusiveMin },
+        ...exclusiveMax && range.max !== undefined && { exclusiveMax }
+      };
+    }
+    case "stringLength":
+    case "itemCount":
+    case "propertyCount": {
+      const { min, ...count } = expression;
+      if (min === undefined || min === 0) {
+        return count.max === undefined ? { op: "pass" } : count;
+      }
+      return expression;
+    }
     default:
       return expression;
   }

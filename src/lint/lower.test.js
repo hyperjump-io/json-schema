@@ -127,8 +127,26 @@ describe("lowerForLint", () => {
   test("a sibling whose value doesn't fit its shape is left out", async () => {
     const { at } = await lower(`{ "$schema": "${draft04}", "maximum": 5, "exclusiveMaximum": "x" }`);
     const [maximum] = at("");
-    expect(maximum.group.expression).to.eql({ op: "range", max: 5, exclusiveMax: false });
+    expect(maximum.group.expression).to.eql({ op: "range", max: 5 });
     expect(maximum.sourceNodes).to.eql([]);
+  });
+
+  test("a keyword with its default value lowers to the same as without it", async () => {
+    const { at } = await lower(JSON.stringify({
+      $schema: draft2020,
+      minLength: 0,
+      minItems: 0,
+      minProperties: 0,
+      readOnly: false,
+      writeOnly: false,
+      deprecated: false
+    }));
+    expect(at("").map(({ group }) => group.expression)).to.eql(Array(6).fill({ op: "pass" }));
+  });
+
+  test("a draft-04 limit that's not exclusive", async () => {
+    const { at } = await lower(JSON.stringify({ $schema: draft04, minimum: 1, exclusiveMinimum: false }));
+    expect(expressions(at(""))).to.eql([["minimum", { op: "range", min: 1 }]]);
   });
 
   test("a keyword without lower has no group", async () => {

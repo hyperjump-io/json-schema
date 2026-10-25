@@ -2,9 +2,17 @@ import { annotationKeyword } from "./utilities.js";
 import { boolean } from "./checks.js";
 
 /**
- * `readOnly`
+ * @import { Keyword } from "../keyword.d.ts"
+ */
+
+/**
+ * `readOnly`. `false` is the same as leaving it out, so it isn't an
+ * annotation.
+ *
+ * @type Keyword<boolean>
  */
 export default {
   ...annotationKeyword("https://json-schema.org/keyword/readOnly", boolean),
+  lower: (value) => value ? { op: "annotate", value } : { op: "pass" },
   default: false
 };

@@ -332,6 +332,12 @@ The rules so far:
 - `oneOfValues` of one value is `equals`
 - `typeIs` with no types is `fail`
 - `pass` in `all` is dropped, and `fail` in `any` is dropped
+- Limits that always pass are dropped: a count's `min: 0`, and
+  `exclusiveMin` or `exclusiveMax` that's `false` or has no limit to go
+  with. `range`, `stringLength`, `itemCount`, or `propertyCount` without
+  limits is `pass`. A keyword then has the same expression with its
+  default value as without it. `contains` with `min: 0` stays, because it
+  marks what passes.
 - A rule has to keep what the expression applies to. `range` with equal,
   inclusive limits isn't `equals`, because `range` passes every string and
   `equals` doesn't, so it stays a `range`.
@@ -513,7 +519,8 @@ don't have `lower`.
 
 | Keyword | Siblings | Lowers to |
 | --- | --- | --- |
-| `title`, `description`, `default`, `examples`, `deprecated`, `readOnly`, `writeOnly` | | `annotate(value)` |
+| `title`, `description`, `default`, `examples` | | `annotate(value)` |
+| `deprecated`, `readOnly`, `writeOnly` | | `annotate(value)` if it's `true`, otherwise `pass` (the specs say `false` is the same as leaving it out) |
 | `contentEncoding`, `contentMediaType` | | `annotate(value, ["string"])` |
 | `contentSchema` (shape `"unappliedSchema"`) | `contentMediaType` | `annotate(value, ["string"])` if `contentMediaType` is there, otherwise `pass` |
 | `unknown` | | `annotate(value)` if the dialect's unknown keywords are annotations, otherwise `pass` |
