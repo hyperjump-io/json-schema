@@ -1,8 +1,9 @@
 # The rule catalogue
 
-Rules are being ported, one at a time, from the linter-agnostic catalogue
+Rules were ported, one at a time, from the linter-agnostic catalogue
 at https://github.com/Karan-Palan/json-schema-lint-rules (`rules/*.json`).
-It's a list of candidates, not a spec.
+It's a list of candidates, not a spec. All 77 of its rules are handled:
+ported, merged into another rule, or not ported for a reason below.
 
 - Catalogue rules that differ only by keyword are one rule here:
   `then_without_if` and `else_without_if` are `then-else-without-if`, and
@@ -50,7 +51,7 @@ It's a list of candidates, not a spec.
   mistake and cheap to run.
 
 Rules of our own are added too, when porting turns up a mistake the
-catalogue doesn't cover. Done so far: `empty-type`,
+catalogue doesn't cover: `empty-type`,
 `const-or-enum-value-for-disallowed-type`, `required-property-not-allowed`,
 `keyword-without-type`, `required` against `maxProperties` in
 `contradictory-limits`, `const-or-enum-value-rejected`,
