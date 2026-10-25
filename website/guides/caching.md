@@ -1,0 +1,31 @@
+# Caching compiled schemas
+
+Compiling retrieves and checks every schema, which takes time when your
+application starts or when a schema is on a slow server. A compiled schema
+can be saved as JSON and restored later, without retrieving or compiling
+anything.
+
+```javascript
+const validator = await jsonSchema.compile("https://example.com/person");
+await writeFile("./person.compiled.json", JSON.stringify(validator.serialize()));
+```
+
+```javascript
+const compiled = JSON.parse(await readFile("./person.compiled.json", "utf8"));
+const validator = jsonSchema.restoreValidator(compiled);
+
+validator.validate({ name: "Jason" }); // true
+```
+
+`restoreValidator` is synchronous, and the validator works like a compiled
+one.
+
+The `JsonSchema` that restores it needs the same keywords and formats as the
+one that compiled it. That's usually the same dialects, plus any
+[custom keywords](../extending/keywords.md) or
+[formats](../extending/formats.md) you added. It throws if one is missing.
+It also throws for a schema compiled by a version of the library with a
+different compiled format, so compile again after upgrading.
+
+A compiled schema doesn't change when its source schemas do. Compile again
+when they change, such as in your build.

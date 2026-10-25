@@ -1,19 +1,17 @@
 # Lint rules
 
-A lint rule is a unified plugin made with `lintRule` from
-`@hyperjump/json-schema/lint`. It's
-[`unified-lint-rule`](https://github.com/remarkjs/remark-lint/tree/main/packages/unified-lint-rule)'s
-`lintRule`, and it also applies `$comment` directives to the rule's messages.
-A `url` next to `origin` is put on every message, for a page about the rule.
-A rule runs on a schema AST, after every schema and keyword has been
-identified. Find keywords by keyword URI, not by name, so the rule works in
-every dialect with the keyword. The same module has utilities to find schemas
-and keywords.
+A lint rule is a [unified](https://unifiedjs.com/) plugin that looks at a
+schema AST and reports what it finds. Make one with `lintRule` from
+`@hyperjump/json-schema/lint`.
+
+## A first rule
+
+This rule reports a `minimum` without a `maximum`:
 
 ```javascript
 import { lintRule, siblingKeyword, visitKeywords } from "@hyperjump/json-schema/lint";
 
-export default lintRule({ origin: "jsonschema-lint-example:min-without-max" }, (tree, file) => {
+export default lintRule({ origin: "my-rules:min-without-max", url: "https://example.com/rules/min-without-max" }, (tree, file) => {
   visitKeywords(tree, "https://json-schema.org/keyword/minimum", (keywordNode, schemaNode) => {
     if (siblingKeyword(schemaNode, "https://json-schema.org/keyword/maximum") === undefined) {
       file.message("'minimum' without 'maximum'", { place: keywordNode.position });
@@ -22,15 +20,46 @@ export default lintRule({ origin: "jsonschema-lint-example:min-without-max" }, (
 });
 ```
 
-A rule that needs another schema, such as the target of a reference, uses
-`findSchema` with the session the schema was resolved in
-(`file.data.jsonSchemaSession`), so it only sees what your application's
-registries and `allowRetrieval` allow. Pass the tree as `document`, so
-references into the schema being linted find what's in it. It says whether
-the schema is `found`, `missing`, or `unknown`. Report `missing` only.
-`unknown` means it can't be told, such as for a URL `allowRetrieval`
-refuses. `visitReferences` finds every `$ref` in every dialect, with the URI
-it refers to.
+- `origin` is the rule's source and name, as `source:name`. The name is how
+  it's turned off in a
+  [configuration comment](../linting/configuration-comments.md).
+- `url` is a page about the rule, put on every message it reports.
+- The function gets the schema AST and the file, and reports with
+  `file.message`, with the position of the node it's about.
+
+`lintRule` is
+[`unified-lint-rule`](https://github.com/remarkjs/remark-lint/tree/main/packages/unified-lint-rule)'s,
+so the rule takes a severity and options like any other rule. It also
+applies configuration comments to the rule's messages.
+
+Use it like a built-in rule:
+
+```javascript
+import minWithoutMax from "./min-without-max.js";
+
+const results = await jsonSchema.lint(uri, { plugins: [recommended, [minWithoutMax, ["warn"]]] });
+```
+
+## Finding keywords
+
+A rule runs after every schema and keyword in the document has been
+identified. Find keywords by URI, not by name, so the rule works in every
+dialect that has the keyword, under whatever name it has there.
+
+`@hyperjump/json-schema/lint` has utilities to find what a rule needs, like
+`visitKeywords`, which visits every keyword with a URI, and
+`siblingKeyword`, which finds another keyword in the same schema. See the
+[API reference](https://hyperjump.io/json-schema/api/lint/) for the
+others, and the built-in rules in [`src/lint/rules/`](https://github.com/hyperjump-io/json-schema/tree/v2/src/lint/rules) for how
+they're used.
+
+## Looking at other schemas
+
+A rule that needs another schema, such as the target of a `$ref`, finds it
+with `findSchema`. Use the session the schema was resolved in,
+`file.data.jsonSchemaSession`, so the rule only sees what your
+application's registries and `allowRetrieval` allow. Pass the tree as
+`document`, so references into the schema being linted find what's in it.
 
 ```javascript
 import { findSchema, visitReferences } from "@hyperjump/json-schema/lint";
@@ -45,31 +74,44 @@ for (const [uri, node] of references) {
 }
 ```
 
+`visitReferences` finds every `$ref`, in every dialect, with the URI it
+refers to. `findSchema` says whether the schema is `found`, `missing`, or
+`unknown`. Only report `missing`. `unknown` means it can't be told, such as
+for a URL that `allowRetrieval` doesn't allow.
+
+## Schemas that apply together
+
 `schemaGroup` finds every schema that can apply to the same value as a
-schema: the ones connected to it by keywords like `allOf`, `anyOf`, and
-`if`, and by references, in either direction. Which keywords those are is
-found from what they lower to, so a custom keyword counts too. A rule uses
-it to look past the schema a keyword is in, such as to find `properties`
-next to the `anyOf` a `required` is in. Its `links` say how they're
-connected, because schemas in an `anyOf` can apply without all having to
-pass, and say whether a schema is applied through `not` or as a condition,
-like `if`. `open` means a schema in it could be referenced from another
-document, and `unknown` means a reference couldn't be followed.
+given schema: the ones connected to it by keywords like `allOf`, `anyOf`,
+and `if`, and by references, in either direction. A rule uses it to look
+past the schema a keyword is in, such as to find the `properties` next to
+the `anyOf` that a `required` is in.
 
 ```javascript
 const group = await schemaGroup(file.data.jsonSchemaSession, tree, schemaNode);
 ```
 
-`formatTypes` says which types of value a `format` keyword's format applies
-to, from the format's definition, or undefined if it could apply to any.
+Which keywords connect schemas is worked out from what they lower to, so a
+custom keyword counts too. The group's `links` say how schemas are
+connected, because schemas in an `anyOf` can apply without all having to
+pass, and whether a schema is applied through `not` or as a condition, like
+`if`. `open` means a schema in the group could be referenced from another
+document, and `unknown` means a reference couldn't be followed.
 
-A rule that needs to know what a keyword means, rather than where it is,
-reads what it lowers to. `lowerForLint` lowers every schema in the document
-without compiling or retrieving anything, and gives each keyword's group
-with its node and the nodes of the siblings it read. `keywordAppliesTo` says
-which types of value a keyword applies to, and `assertsOnItsOwn` whether it
-can fail without applying a schema, so a rule supports any keyword that
-lowers, including custom ones.
+## What keywords mean
+
+A rule that needs to know what a keyword does, rather than where it is,
+reads what it lowers to. That way, it supports every keyword that lowers,
+including custom ones.
+
+- `lowerForLint` lowers every schema in the document, without compiling or
+  retrieving anything. It gives each keyword's group, with its node and the
+  nodes of the siblings it read.
+- `keywordAppliesTo` says which types of value a keyword applies to.
+- `assertsOnItsOwn` says whether a keyword can fail without applying a
+  schema.
+- `formatTypes` says which types of value a `format` keyword's format
+  applies to, or `undefined` if it could apply to any.
 
 ```javascript
 const session = file.data.jsonSchemaSession;
@@ -83,12 +125,13 @@ for (const keywords of schemas.values()) {
 }
 ```
 
-`evaluatorForLint` evaluates the document's schemas on values in it, like a
-`default`, without compiling, from what they lower to. A value passes,
-fails, or is unknown (`valid` is undefined), when what decides it isn't
-known, like a reference that can't be followed or a `$dynamicRef`. It also
-says whether a schema or a keyword might annotate the value or mark part of
-it as evaluated.
+## Evaluating values
+
+`evaluatorForLint` evaluates the document's schemas against values in it,
+like a `default`, without compiling. A value passes, fails, or is unknown
+(`valid` is `undefined`) when what decides it isn't known, like a reference
+that can't be followed or a `$dynamicRef`. It also says whether a schema or
+keyword might annotate the value or mark part of it as evaluated.
 
 ```javascript
 const evaluator = await evaluatorForLint(file.data.jsonSchemaSession, tree);
@@ -97,5 +140,8 @@ if (evaluator.schema(schemaNode, defaultNode.children[1]).valid === false) {
 }
 ```
 
-A package named `hyperjump-<name>` can be used in `hjlint`'s `.hyperjumprc`
-as `<name>`. See `src/lint/` for the built-in rules.
+## Publishing rules
+
+A package named `hyperjump-<name>` can be used in hjlint's `.hyperjumprc`
+as `<name>`. A package can export a preset, a list of rules with their
+settings, like `@hyperjump/json-schema/lint/recommended`.

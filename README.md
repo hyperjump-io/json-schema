@@ -6,7 +6,7 @@ A JSON Schema validator and linter built on
 
 - Dialects: v1, draft-2020-12, draft-2019-09, draft-07, draft-06, draft-04
 - Get a boolean, errors, or annotations, for a plain JS value, JSON text, or
-  a JSON AST. See [Modes](website/usage/modes.md).
+  a JSON AST. See [Validating](website/guides/validating.md).
 - With JSON text, every error has a position, and syntax errors are reported
   with validation errors
 - Annotations come back as an AST with annotations on its nodes
