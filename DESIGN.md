@@ -936,7 +936,9 @@ one type with a bit mask, calls two or three keyword groups (or an `all`
 of two or three) without a loop, and looks up a `cases` whose conditions
 are only `typeIs` by the instance's type. `instrumented.js` does the same,
 except that it evaluates every expression of an `all`, and an `apply` is
-the schema's evaluator without a closure around it.
+the schema's evaluator without a closure around it. Both look property
+names up in an object without a prototype rather than a `Map`, which was
+faster, and no name is inherited, not even `__proto__`.
 
 Optimizations that were tried and aren't used:
 

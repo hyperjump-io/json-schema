@@ -349,6 +349,20 @@ describe("Validator", () => {
   });
 
   describe("validate", () => {
+    test("property names that objects inherit are names like any other", async () => {
+      const validator = await jsonSchema.compile(await schemaFile(JSON.parse(`{
+        "properties": { "__proto__": { "type": "number" }, "foo": { "type": "number" }, "bar": { "type": "number" } }
+      }`)));
+      /** @type EvaluationPlugin */
+      const plugin = {};
+
+      for (const options of [undefined, { plugins: [plugin] }]) {
+        expect(validator.validate(JSON.parse(`{ "constructor": "x", "toString": "x", "foo": 1 }`), options)).to.equal(true);
+        expect(validator.validate(JSON.parse(`{ "__proto__": 1, "foo": 1 }`), options)).to.equal(true);
+        expect(validator.validate(JSON.parse(`{ "__proto__": "x", "foo": 1 }`), options)).to.equal(false);
+      }
+    });
+
     test("keywords", async () => {
       const validator = await jsonSchema.compile(await schemaFile({
         type: "object",
