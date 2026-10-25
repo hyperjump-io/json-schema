@@ -907,3 +907,20 @@ median of 21 rounds, HEAD against the changes:
   (`appendToLocation`, a JSON Pointer escape and an IRI check for every
   node), and 7% attaching annotations. The evaluator is about 30%.
   `validateJson` is mostly parsing.
+- `@hyperjump/browser` now caches encoded segments in `appendToLocation`
+  (up to 10,000 names of up to 100 characters), and appends array indexes
+  without encoding them. Encoding was 16 of `fromJs`'s 25 ms on the
+  `package.json` instances: checking each name for characters to encode
+  cost about 46 ns a name, against 9 ns to concatenate, and only 7,453 of
+  its 161,581 names are different. An A/B of the browser's two versions
+  (the same way as `ab.ts`):
+
+  | | `package.json` | `tsconfig.json` | OpenAPI 3.0 |
+  | --- | --- | --- | --- |
+  | `fromJs` | 0.537 | 0.349 | 0.445 |
+  | Parsing (`fromJson`) | 0.918 | 0.854 | 0.821 |
+  | Indexes appended directly, after the cache | 0.932, 0.995 | 0.999, 0.999 | 1.031, 0.982 |
+
+  Annotating small `package.json` files went from 12.6–14.5 to
+  10.4–12.3 ms in separate runs; the other groups were within their
+  noise.
