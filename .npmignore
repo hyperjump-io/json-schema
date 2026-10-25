@@ -7,7 +7,8 @@ docs/
 tsconfig.json
 scratch/
 TODO*
-DESIGN.md
+design/
+website/
 CLAUDE.md
 test/
 src/dialects/v1/extension-tests/
