@@ -4,21 +4,21 @@
   "sourceLinkTemplate": "https://github.com/hyperjump-io/json-schema/blob/{gitRevision}/{path}#L{line}",
   "externalSymbolLinkMappings": {
     "@hyperjump/browser": {
-      "Hyperjump.addMediaTypePlugin": "https://hyperjump-io.github.io/browser/classes/hyperjump.Hyperjump.html#addmediatypeplugin",
-      "Hyperjump.addUriSchemePlugin": "https://hyperjump-io.github.io/browser/classes/hyperjump.Hyperjump.html#addurischemeplugin",
-      "FileUriSchemePlugin": "https://hyperjump-io.github.io/browser/classes/hyperjump.FileUriSchemePlugin.html",
-      "HttpUriSchemePlugin": "https://hyperjump-io.github.io/browser/classes/hyperjump.HttpUriSchemePlugin.html",
-      "JrefMediaTypePlugin": "https://hyperjump-io.github.io/browser/classes/hyperjump.JrefMediaTypePlugin.html",
-      "JsonMediaTypePlugin": "https://hyperjump-io.github.io/browser/classes/hyperjump.JsonMediaTypePlugin.html",
-      "MediaTypePlugin": "https://hyperjump-io.github.io/browser/interfaces/hyperjump.MediaTypePlugin.html",
-      "UriSchemePlugin": "https://hyperjump-io.github.io/browser/interfaces/hyperjump.UriSchemePlugin.html",
-      "UriSchemePlugin.retrieve": "https://hyperjump-io.github.io/browser/interfaces/hyperjump.UriSchemePlugin.html#retrieve",
-      "RetrievalError": "https://hyperjump-io.github.io/browser/classes/hyperjump.RetrievalError.html",
-      "ReferenceCycleError": "https://hyperjump-io.github.io/browser/classes/hyperjump.ReferenceCycleError.html",
-      "UnknownMediaTypeError": "https://hyperjump-io.github.io/browser/classes/hyperjump.UnknownMediaTypeError.html",
-      "UnsupportedMediaTypeError": "https://hyperjump-io.github.io/browser/classes/hyperjump.UnsupportedMediaTypeError.html",
-      "JsonErrorNode": "https://hyperjump-io.github.io/browser/types/json.JsonErrorNode.html",
-      "JsonPointerError": "https://hyperjump-io.github.io/browser/classes/json.JsonPointerError.html"
+      "Hyperjump.addMediaTypePlugin": "https://hyperjump.io/browser/api/classes/hyperjump/#addmediatypeplugin",
+      "Hyperjump.addUriSchemePlugin": "https://hyperjump.io/browser/api/classes/hyperjump/#addurischemeplugin",
+      "FileUriSchemePlugin": "https://hyperjump.io/browser/api/classes/fileurischemeplugin/",
+      "HttpUriSchemePlugin": "https://hyperjump.io/browser/api/classes/httpurischemeplugin/",
+      "JrefMediaTypePlugin": "https://hyperjump.io/browser/api/classes/jrefmediatypeplugin/",
+      "JsonMediaTypePlugin": "https://hyperjump.io/browser/api/classes/jsonmediatypeplugin/",
+      "MediaTypePlugin": "https://hyperjump.io/browser/api/interfaces/mediatypeplugin/",
+      "UriSchemePlugin": "https://hyperjump.io/browser/api/interfaces/urischemeplugin/",
+      "UriSchemePlugin.retrieve": "https://hyperjump.io/browser/api/interfaces/urischemeplugin/#retrieve",
+      "RetrievalError": "https://hyperjump.io/browser/api/classes/retrievalerror/",
+      "ReferenceCycleError": "https://hyperjump.io/browser/api/classes/referencecycleerror/",
+      "UnknownMediaTypeError": "https://hyperjump.io/browser/api/classes/unknownmediatypeerror/",
+      "UnsupportedMediaTypeError": "https://hyperjump.io/browser/api/classes/unsupportedmediatypeerror/",
+      "JsonErrorNode": "https://hyperjump.io/browser/api/json/type-aliases/jsonerrornode/",
+      "JsonPointerError": "https://hyperjump.io/browser/api/json/classes/jsonpointererror/"
     }
   }
 }
