@@ -23,7 +23,7 @@ the resolver doesn't give that document a dialect. It has no options.
 
 With `defaultDialectUri` set to `https://json-schema.org/draft/2020-12/schema`:
 
-```json
+```json dialect=https://json-schema.org/draft/2020-12/schema
 {
   "type": "string"
 }
