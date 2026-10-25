@@ -5,14 +5,13 @@ import type { Preset } from "unified";
  * A rule is a warning if the schema still works, and an error if it can't
  * be compiled, like `reference-without-target`.
  *
- * Use it in `hjlint`'s `.hyperjumprc`, where it's `hjlint/recommended`, and
- * adjust rules after it:
+ * Use it in `hjlint`'s `.hyperjumprc`, and adjust rules after it:
  *
  * ```json
  * {
  *   "plugins": [
- *     "hjlint/recommended",
- *     ["hjlint/rules/then-else-without-if", ["error"]]
+ *     "@hyperjump/json-schema/lint/recommended",
+ *     ["@hyperjump/json-schema/lint/rules/then-else-without-if", ["error"]]
  *   ]
  * }
  * ```

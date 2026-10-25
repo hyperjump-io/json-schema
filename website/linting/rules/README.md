@@ -56,13 +56,13 @@ examples of what it reports and what it doesn't.
 | [`reference-without-target`](reference-without-target.md) | A `$ref` that doesn't find a schema, such as a file that doesn't exist or a JSON Pointer that doesn't point to anything |
 
 A rule with options takes them after the severity, like
-`["hjlint/rules/unknown-keyword", ["warn", { "ignore": ["x-internal"] }]]`.
+`["@hyperjump/json-schema/lint/rules/unknown-keyword", ["warn", { "ignore": ["x-internal"] }]]`.
 
 ## Not in a preset
 
 These rules aren't in the recommended preset, because they're matters of
 style.
-Turn them on with a severity, like `["hjlint/rules/mergeable-all-of-schema", ["warn"]]`.
+Turn them on with a severity, like `["@hyperjump/json-schema/lint/rules/mergeable-all-of-schema", ["warn"]]`.
 
 | Rule | Reports |
 | --- | --- |
