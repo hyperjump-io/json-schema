@@ -4,7 +4,7 @@ import { appendToLocation, jsonValue, pointerGet } from "@hyperjump/browser/json
 import { isErrorNode } from "../keywords/checks.js";
 import { keywordDefinitionUri } from "../keywords/unknown.js";
 import { siblingValues } from "../keywords/utilities.js";
-import { readsMarks, schemaReads } from "./kernel.js";
+import { readsDynamicScope, readsMarks } from "./kernel.js";
 import { normalForm } from "./normalize.js";
 
 /**
@@ -159,10 +159,16 @@ class Lowerer {
 
     const dialect = await this.#dialect(node.dialectUri);
     const lowered = await lowerKeywords(this.#session.jsonSchema, /** @type ObjectSchemaNode */ (node), dialect, this.#inputs, false);
-    const schema = { resource, keywords: lowered.map(({ group }) => group) };
-    this.#schemas[handle] = schema;
-    for (const state of schemaReads(schema)) {
-      this.#reads[state].push(handle);
+    const keywords = lowered.map(({ group }) => group);
+    this.#schemas[handle] = { resource, keywords };
+
+    // The groups that read marks are last, so only the last one is checked
+    const last = keywords.at(-1);
+    if (last !== undefined && readsMarks(last.expression)) {
+      this.#reads.evaluated.push(handle);
+    }
+    if (keywords.some(({ expression }) => readsDynamicScope(expression))) {
+      this.#reads.dynamicScope.push(handle);
     }
     return handle;
   }
