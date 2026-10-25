@@ -5,6 +5,8 @@ examples of what it reports and what it doesn't.
 
 ## In `recommended`
 
+Every rule is in the recommended preset.
+
 | Rule | Reports |
 | --- | --- |
 | [`then-else-without-if`](then-else-without-if.md) | `then` or `else` without `if` |
@@ -24,6 +26,7 @@ examples of what it reports and what it doesn't.
 | [`unsafe-integer-limit`](unsafe-integer-limit.md) | A limit beyond ±2⁵³ - 1 where `type` only allows integers, which implementations that use doubles may compare inexactly |
 | [`multiple-of-one`](multiple-of-one.md) | `multipleOf: 1` where `type` allows numbers, which `type: "integer"` says more clearly, or where `type` only allows integers, so it has no effect |
 | [`single-type-array`](single-type-array.md) | `type` that's an array of one type, like `["string"]`, instead of the type on its own |
+| [`mergeable-all-of-schema`](mergeable-all-of-schema.md) | A schema in `allOf` whose keywords can be moved into the schema `allOf` is in without changing what's valid |
 | [`additional-items-without-items-array`](additional-items-without-items-array.md) | `additionalItems` without an `items` that's an array of schemas (draft-04 through 2019-09) |
 | [`ignored-ref-siblings`](ignored-ref-siblings.md) | A property next to `$ref` in draft-04 through draft-07, where `$ref` replaces the whole schema |
 | [`misnamed-definitions`](misnamed-definitions.md) | `definitions` in 2019-09 and later, or `$defs` in draft-04 through draft-07, where it isn't a keyword, so what's in it isn't a schema |
@@ -57,13 +60,3 @@ examples of what it reports and what it doesn't.
 
 A rule with options takes them after the severity, like
 `["@hyperjump/json-schema/lint/rules/unknown-keyword", ["warn", { "ignore": ["x-internal"] }]]`.
-
-## Not in a preset
-
-These rules aren't in the recommended preset, because they're matters of
-style.
-Turn them on with a severity, like `["@hyperjump/json-schema/lint/rules/mergeable-all-of-schema", ["warn"]]`.
-
-| Rule | Reports |
-| --- | --- |
-| [`mergeable-all-of-schema`](mergeable-all-of-schema.md) | A schema in `allOf` whose keywords can be moved into the schema `allOf` is in without changing what's valid |

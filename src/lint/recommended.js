@@ -37,6 +37,7 @@ import emptyCatchAllSchema from "./rules/empty-catch-all-schema.js";
 import unknownKeyword from "./rules/unknown-keyword.js";
 import multipleOfOne from "./rules/multiple-of-one.js";
 import singleTypeArray from "./rules/single-type-array.js";
+import mergeableAllOfSchema from "./rules/mergeable-all-of-schema.js";
 import misnamedDefinitions from "./rules/misnamed-definitions.js";
 import singleValueEnum from "./rules/single-value-enum.js";
 import singleValueRange from "./rules/single-value-range.js";
@@ -90,6 +91,7 @@ const recommended = {
     [unknownKeyword, ["warn"]],
     [multipleOfOne, ["warn"]],
     [singleTypeArray, ["warn"]],
+    [mergeableAllOfSchema, ["warn"]],
     [misnamedDefinitions, ["warn"]],
     [singleValueEnum, ["warn"]],
     [singleValueRange, ["warn"]],

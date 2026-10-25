@@ -1,11 +1,11 @@
 # `mergeable-all-of-schema`
 
-Not in a preset.
+In `recommended`, as a warning.
 
 A schema in `allOf` whose keywords can be moved into the schema the
 `allOf` is in without changing what's valid, so wrapping it in `allOf`
-isn't needed. It's a matter of style, because composing schemas in
-`allOf` can be clearer, so it isn't in `recommended`.
+isn't needed. Turn it off if you compose schemas in `allOf` because
+it's clearer.
 
 A schema can't be moved if a keyword in it is already there, from the
 schema or from a schema before it that can be moved, except that

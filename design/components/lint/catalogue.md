@@ -24,10 +24,13 @@ ported, merged into another rule, or not ported for a reason below.
 - A rule that some users' tools disagree with is still ported and still in
   `recommended`, if it's usually right. That's what configuration is for.
   `type-implied-by-const-or-enum` reports a `type` that code generators
-  may want, and those users turn it off. Opinionated rules that are
-  matters of taste (`explicit_additional_properties`,
-  `require_description_title`, `unknown_keywords_prefix`) aren't in
-  `recommended`, if they're ported at all.
+  may want, and those users turn it off. A rule that's a matter of style
+  is in `recommended` too, like `mergeable-all-of-schema`, which was
+  outside it until 2026-10-25. Rules that are much more opinionated, like
+  whether `$defs` comes first or last, go in a style preset instead.
+  The catalogue's rules that are matters of taste
+  (`explicit_additional_properties`, `require_description_title`,
+  `unknown_keywords_prefix`) weren't ported.
 - A rule that compiles a schema isn't in `recommended`, however likely its
   finding is a mistake, because of what it can cost on a large schema.
   None does now: `invalid-default-or-example`,
@@ -47,8 +50,8 @@ ported, merged into another rule, or not ported for a reason below.
   'then' or 'else' only collects annotations".
 - Each rule gets a `.d.ts` that explains why it matters, tests (including a
   dialect without the keyword and a property with the keyword's name), a
-  row in the README's table, and a place in `recommended` if it's likely a
-  mistake and cheap to run.
+  row in the README's table, and a place in `recommended`, or in the style
+  preset if it's much more opinionated.
 
 Rules of our own are added too, when porting turns up a mistake the
 catalogue doesn't cover: `empty-type`,
