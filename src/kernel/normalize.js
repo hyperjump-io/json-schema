@@ -3,8 +3,8 @@
  */
 
 /**
- * Rewrite every keyword group's expression to its normal form (KERNEL.md,
- * "Normal form"), so everything after only sees one form of each meaning.
+ * Rewrite every keyword group's expression to its normal form
+ * (`design/specs/kernel/normal-form.md`), so everything after only sees one form of each meaning.
  * Nothing can observe these rewrites, plugins included, so they always
  * apply. A group's expression can become `pass`, but the group stays,
  * because plugins see it.

@@ -1,7 +1,7 @@
 import type { Json } from "@hyperjump/browser/json";
 
 /**
- * The kernel: the expressions every keyword lowers to (see KERNEL.md). The
+ * The kernel: the expressions every keyword lowers to (see `design/specs/kernel/`). The
  * optimizer, the output formats, and lint only work with these, so they
  * support any keyword that lowers to them, without knowing its URI.
  *
@@ -49,7 +49,7 @@ export type Limits = { min?: number; max?: number };
 /**
  * A kernel expression. Fields that hold expressions can hold any expression,
  * nested. A schema is used through `apply`. The operations are in the
- * groups of KERNEL.md's "Operations", starting with logic and schemas,
+ * groups of `design/specs/kernel/operations/`, starting with logic and schemas,
  * which says what each one means.
  *
  * A keyword that can't be said with the other operations uses an escape

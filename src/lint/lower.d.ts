@@ -28,8 +28,8 @@ export type CameFrom = (operation: Expression, field?: string) => JsonSchemaKeyw
 export type LintSchemas = Map<JsonSchemaNode, LoweredKeyword[]>;
 
 /**
- * What every object schema in a document lowers to (KERNEL.md, "Lowering for
- * lint"), without compiling or retrieving anything. A subschema is `apply`
+ * What every object schema in a document lowers to
+ * (`design/specs/kernel/lowering-for-lint.md`), without compiling or retrieving anything. A subschema is `apply`
  * of its location, and a reference is `apply` of the URI it resolves to. The
  * dynamic anchors of a resource in the document are known, so a dynamic
  * reference into one that isn't lowers to `dynamicApply`. A keyword whose

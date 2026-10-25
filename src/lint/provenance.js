@@ -14,7 +14,7 @@ const structural = new Set(["of", "cases", "otherwise", "other", "absent", "none
 
 /**
  * Where each operation of a keyword's group, and each of its fields, came
- * from (KERNEL.md, "Lowering for lint"). The keyword was lowered again
+ * from (`design/specs/kernel/lowering-for-lint.md`). The keyword was lowered again
  * without each sibling it read. A field that's different without a sibling
  * came from the sibling, and an operation that isn't there without it came
  * from both. The rest came from the keyword.

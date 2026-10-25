@@ -7,7 +7,7 @@ import { schemaReads } from "./kernel.js";
 
 /**
  * What an evaluation can observe, which decides what can be optimized
- * (KERNEL.md, "Optimizer"):
+ * (`design/specs/kernel/optimizer.md`):
  *
  * - `fast`: There are no plugins and nothing is annotated, so only the
  *   result and marks matter. Error locations can be lost.
