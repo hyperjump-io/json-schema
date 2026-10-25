@@ -31,6 +31,10 @@ export const subexpressions = (expression) => {
       }
       return expressions;
     }
+    case "typeSwitch":
+      return [...Object.values(expression.cases), expression.otherwise];
+    case "propertySwitch":
+      return [...expression.cases.map(([, then]) => then), expression.other, expression.absent, expression.unparsed];
     case "itemSequence":
       return patternItems(expression.pattern);
     case "opaque":
@@ -124,6 +128,9 @@ export const explainsFailure = (expression) => {
     case "cases":
       return expression.cases.every(([, then]) => then === null || explainsFailure(then))
         && (expression.otherwise === null || explainsFailure(expression.otherwise));
+    case "typeSwitch":
+    case "propertySwitch":
+      return subexpressions(expression).every(explainsFailure);
     case "opaque":
       return expression.explainsFailure ?? false;
     default:

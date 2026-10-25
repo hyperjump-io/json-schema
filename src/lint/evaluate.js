@@ -366,6 +366,24 @@ const buildEvaluator = async (session, tree) => {
       }
       case "cases":
         return evaluateCases(expression, 0, instance, marks);
+      case "typeSwitch":
+        return evaluate(expression.cases[type] ?? expression.otherwise, instance, marks);
+      case "propertySwitch": {
+        if (type !== "object") {
+          return pass;
+        }
+        const value = /** @type InstanceNode | undefined */ (astInstance.get(instance, expression.name));
+        if (value === undefined) {
+          return evaluate(expression.absent, instance, marks);
+        }
+        const valueType = astInstance.typeOf(value);
+        if (valueType === undefined) {
+          return evaluate(expression.unparsed, instance, marks);
+        }
+        const scalar = valueType === "object" || valueType === "array" ? undefined : astInstance.value(value);
+        const branch = expression.cases.find(([caseValue]) => caseValue === scalar)?.[1] ?? expression.other;
+        return evaluate(branch, instance, marks);
+      }
       case "apply":
         return evaluateSchema(handles.get(expression.schema), instance, marks);
       case "dynamicApply":

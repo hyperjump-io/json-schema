@@ -37,6 +37,12 @@ export type ItemPattern = { item: Expression }
   | { either: ItemPattern[] }
   | { repeat: ItemPattern; min: 0 | 1; max: 1 | null };
 
+/** A JSON type, which `integer` isn't */
+export type JsonTypeName = Exclude<TypeName, "integer">;
+
+/** A JSON value that isn't an object or an array */
+export type Scalar = null | boolean | number | string;
+
 /** Inclusive limits. A limit that's left out isn't checked. */
 export type Limits = { min?: number; max?: number };
 
@@ -59,6 +65,8 @@ export type Expression = { op: "pass" }
   | { op: "all" | "any" | "one"; of: Expression[] }
   | { op: "not"; of: Expression }
   | { op: "cases"; cases: [Expression, Expression | null][]; otherwise: Expression | null }
+  | { op: "typeSwitch"; cases: Partial<Record<JsonTypeName, Expression>>; otherwise: Expression }
+  | { op: "propertySwitch"; name: string; cases: [Scalar, Expression][]; other: Expression; absent: Expression; unparsed: Expression }
   | { op: "apply"; schema: Handle }
   | { op: "dynamicApply"; anchor: string; fallback: Handle | null }
 

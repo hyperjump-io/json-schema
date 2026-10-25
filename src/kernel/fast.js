@@ -6,7 +6,7 @@ import { readsMarks } from "./kernel.js";
  * @import { Json } from "@hyperjump/browser/json"
  * @import { JsonSchema } from "../json-schema.d.ts"
  * @import { EvaluateContext, Keyword } from "../keyword.d.ts"
- * @import { CompiledSchema, Expression, Handle, ItemPattern, Kernel, Selector, TypeName } from "./kernel.d.ts"
+ * @import { CompiledSchema, Expression, Handle, ItemPattern, JsonTypeName, Kernel, Selector, TypeName } from "./kernel.d.ts"
  */
 
 /**
@@ -218,16 +218,11 @@ export const fast = (jsonSchema, kernel) => {
         const of = build(expression.of);
         return (instance) => !of(instance, undefined);
       }
+      case "typeSwitch":
+        return buildTypeSwitch(expression);
+      case "propertySwitch":
+        return buildPropertySwitch(expression);
       case "cases": {
-        const byType = casesByType(expression);
-        if (byType !== undefined) {
-          return (instance, marks) => byType[typeIndex(instance)](instance, marks);
-        }
-        const byValue = casesByValue(expression);
-        if (byValue !== undefined) {
-          return byValue;
-        }
-
         const cases = expression.cases.map(([condition, then]) => /** @type const */ ([build(condition), then && build(then)]));
         const otherwise = expression.otherwise && build(expression.otherwise);
         return (instance, marks) => {
@@ -507,80 +502,63 @@ export const fast = (jsonSchema, kernel) => {
   };
 
   /**
-   * A `cases` whose conditions are only `typeIs` (what `dispatch` makes
-   * of `oneOf` with a different `type` in each schema), as the branch for
-   * each instance type, so it's one lookup instead of a test for each case.
-   * A condition that's `typeIs` marks nothing.
+   * Builds each branch of a switch once, where branches are the same
+   * expression, like a `oneOf` schema that can pass more than one type
    *
-   * @type (expression: Extract<Expression, { op: "cases" }>) => Evaluator[] | undefined
+   * @type () => (expression: Expression) => Evaluator
    */
-  const casesByType = (expression) => {
-    const byType = branchesByType(expression);
-    if (byType === undefined) {
-      return undefined;
-    }
-
-    /** @type Map<Expression | null, Evaluator> */
-    const branches = new Map();
-    return byType.map((then) => {
-      let evaluator = branches.get(then);
+  const branchBuilder = () => {
+    /** @type Map<Expression, Evaluator> */
+    const built = new Map();
+    return (expression) => {
+      let evaluator = built.get(expression);
       if (evaluator === undefined) {
-        evaluator = then === null ? () => true : build(then);
-        branches.set(then, evaluator);
-      }
-      return evaluator;
-    });
-  };
-
-  /**
-   * A `cases` whose conditions are only `propertyEquals` of one property
-   * with scalar values (what `dispatch` makes of a `oneOf` with a different
-   * `const` for a property in each schema), as a lookup by the property's
-   * value instead of a test for each case. A condition that's
-   * `propertyEquals` passes what isn't an object and marks nothing.
-   *
-   * @type (expression: Extract<Expression, { op: "cases" }>) => Evaluator | undefined
-   */
-  const casesByValue = ({ cases, otherwise }) => {
-    const [first] = cases;
-    if (first?.[0].op !== "propertyEquals") {
-      return undefined;
-    }
-    const { name } = first[0];
-
-    /** @type Map<Expression | null, Evaluator> */
-    const evaluators = new Map();
-    /** @type (then: Expression | null) => Evaluator */
-    const branch = (then) => {
-      let evaluator = evaluators.get(then);
-      if (evaluator === undefined) {
-        evaluator = then === null ? () => true : build(then);
-        evaluators.set(then, evaluator);
+        evaluator = build(expression);
+        built.set(expression, evaluator);
       }
       return evaluator;
     };
+  };
 
-    // A Map compares scalars as JSON does: `1` is `1.0`, but not `"1"`
+  /**
+   * A `typeSwitch`, as the branch for each instance type, in the order of
+   * `typeIndexes`
+   *
+   * @type (expression: Extract<Expression, { op: "typeSwitch" }>) => Evaluator
+   */
+  const buildTypeSwitch = ({ cases, otherwise }) => {
+    const branch = branchBuilder();
+    const branches = typeIndexes.map((type) => branch(cases[type] ?? otherwise));
+    return (instance, marks) => branches[typeIndex(instance)](instance, marks);
+  };
+
+  /**
+   * A `propertySwitch`, as a lookup by the property's value. A `Map`
+   * compares scalars as JSON does: `1` is `1.0`, but not `"1"`.
+   *
+   * @type (expression: Extract<Expression, { op: "propertySwitch" }>) => Evaluator
+   */
+  const buildPropertySwitch = ({ name, cases, other, absent }) => {
+    const branch = branchBuilder();
     /** @type Map<Json, Evaluator> */
-    const byValue = new Map();
-    for (const [condition, then] of cases) {
-      if (condition.op !== "propertyEquals" || condition.name !== name || !isScalar(condition.value)) {
-        return undefined;
-      }
-      if (!byValue.has(condition.value)) {
-        byValue.set(condition.value, branch(then));
+    const branches = new Map();
+    for (const [value, then] of cases) {
+      if (!branches.has(value)) {
+        branches.set(value, branch(then));
       }
     }
-    const firstBranch = branch(first[1]);
-    const otherwiseBranch = branch(otherwise);
+    const otherBranch = branch(other);
+    const absentBranch = branch(absent);
 
     return (instance, marks) => {
       if (!isObject(instance)) {
-        return firstBranch(instance, marks);
+        return true;
+      } else if (!Object.hasOwn(instance, name)) {
+        return absentBranch(instance, marks);
       }
-      const value = Object.hasOwn(instance, name) ? instance[name] : undefined;
-      const evaluate = value !== undefined && isScalar(value) ? byValue.get(value) : undefined;
-      return (evaluate ?? otherwiseBranch)(instance, marks);
+      const value = instance[name];
+      const evaluate = isScalar(value) ? branches.get(value) : undefined;
+      return (evaluate ?? otherBranch)(instance, marks);
     };
   };
 
@@ -865,32 +843,8 @@ export const keywordEvaluate = (jsonSchema, uri) => {
   return evaluate;
 };
 
-/** @type TypeName[] */
+/** @type JsonTypeName[] */
 export const typeIndexes = ["null", "boolean", "number", "string", "array", "object"];
-
-/**
- * The branch a `cases` whose conditions are only `typeIs` applies for each
- * instance type, in the order of `typeIndexes`, or `undefined` if it isn't
- * one. A branch can be `null`, which passes. An `integer` condition depends
- * on more than the type, so it isn't one.
- *
- * @type (expression: Extract<Expression, { op: "cases" }>) => (Expression | null)[] | undefined
- */
-export const branchesByType = ({ cases, otherwise }) => {
-  /** @type TypeName[][] */
-  const types = [];
-  for (const [condition] of cases) {
-    if (condition.op !== "typeIs" || condition.types.includes("integer")) {
-      return undefined;
-    }
-    types.push(condition.types);
-  }
-
-  return typeIndexes.map((type) => {
-    const index = types.findIndex((caseTypes) => caseTypes.includes(type));
-    return index === -1 ? otherwise : cases[index][1];
-  });
-};
 
 /** @type (instance: Json) => number */
 const typeIndex = (instance) => {

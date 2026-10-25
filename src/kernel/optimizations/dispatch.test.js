@@ -3,13 +3,13 @@ import { fromJson } from "@hyperjump/browser/json";
 import { JsonSchema } from "../../json-schema.js";
 import { SchemaRegistry } from "../../registry/schema-registry.js";
 import { addV1, v1DialectUri } from "../../dialects/v1/index.js";
-import { astInstance } from "../instance.js";
+import { astInstance, jsInstance } from "../instance.js";
 import { instrumented } from "../instrumented.js";
 import dispatch from "./dispatch.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
- * @import { Kernel } from "../kernel.d.ts"
+ * @import { Expression, Kernel } from "../kernel.d.ts"
  * @import { Mode } from "../optimize.js"
  */
 
@@ -65,21 +65,22 @@ describe("dispatch", () => {
   });
 
   describe("one", () => {
-    test("of schemas with different types is a cases by type", async () => {
+    test("of schemas with different types is a typeSwitch", async () => {
       const expression = await optimized({ oneOf: [{ type: ["string", "null"] }, { type: "object", required: ["foo"] }] }, "oneOf");
       expect(expression).to.eql({
-        op: "cases",
-        cases: [
-          [{ op: "typeIs", types: ["string", "null"] }, { op: "apply", schema: "/oneOf/0" }],
-          [{ op: "typeIs", types: ["object"] }, { op: "apply", schema: "/oneOf/1" }]
-        ],
+        op: "typeSwitch",
+        cases: {
+          string: { op: "apply", schema: "/oneOf/0" },
+          null: { op: "apply", schema: "/oneOf/0" },
+          object: { op: "apply", schema: "/oneOf/1" }
+        },
         otherwise: { op: "fail" }
       });
     });
 
     test("knows the types of const and enum", async () => {
       const expression = await optimized({ oneOf: [{ const: 1 }, { enum: ["a", "b"] }] }, "oneOf");
-      expect(expression).to.include({ op: "cases" });
+      expect(expression).to.include({ op: "typeSwitch" });
     });
 
     test("is kept if integer and number overlap", async () => {
@@ -94,7 +95,7 @@ describe("dispatch", () => {
 
     test("knows the types of a schema that applies itself from its other keywords", async () => {
       const expression = await optimized({ type: "object", oneOf: [{ type: "string" }, { $ref: "#" }] }, "oneOf");
-      expect(expression).to.include({ op: "cases" });
+      expect(expression).to.include({ op: "typeSwitch" });
     });
 
     test("is kept if a schema that applies itself has no other type", async () => {
@@ -124,39 +125,30 @@ describe("dispatch", () => {
 
     /** @type (name: string) => Json */
     const isParsed = (name) => ({ op: "not", of: { op: "property", name, of: { op: "fail" } } });
-    const isObject = { op: "typeIs", types: ["object"] };
 
-    test("a one of objects with a different value of a property is a cases by that value", async () => {
+    /** @type (forObjects: Json, otherwise?: Json) => Json */
+    const objects = (forObjects, otherwise = { op: "fail" }) => ({ op: "typeSwitch", cases: { object: forObjects }, otherwise });
+
+    test("a one of objects with a different value of a property is a propertySwitch", async () => {
       const expression = await optimized({ oneOf: [tagged("a"), tagged("b")] }, "oneOf");
-      expect(expression).to.eql({
-        op: "cases",
-        cases: [
-          [isParsed("kind"), {
-            op: "cases",
-            cases: [
-              [{ op: "propertyEquals", name: "kind", value: "a" }, { op: "apply", schema: "/oneOf/0" }],
-              [{ op: "propertyEquals", name: "kind", value: "b" }, { op: "apply", schema: "/oneOf/1" }]
-            ],
-            otherwise: { op: "fail" }
-          }],
-          [{ op: "all", of: [isObject, { op: "hasProperty", name: "kind" }] }, {
-            op: "one",
-            of: [{ op: "apply", schema: "/oneOf/0" }, { op: "apply", schema: "/oneOf/1" }]
-          }],
-          [isObject, { op: "fail" }]
-        ],
-        otherwise: { op: "fail" }
-      });
+      expect(expression).to.eql(objects({
+        op: "propertySwitch",
+        name: "kind",
+        cases: [["a", { op: "apply", schema: "/oneOf/0" }], ["b", { op: "apply", schema: "/oneOf/1" }]],
+        other: { op: "fail" },
+        absent: { op: "fail" },
+        unparsed: { op: "one", of: [{ op: "apply", schema: "/oneOf/0" }, { op: "apply", schema: "/oneOf/1" }] }
+      }));
     });
 
     test("an any is dispatched the same way", async () => {
-      const expression = await optimized({ anyOf: [tagged("a"), tagged("b")] }, "anyOf");
-      expect(expression).to.deep.include({ op: "cases", otherwise: { op: "fail" } });
+      const expression = /** @type any */ (await optimized({ anyOf: [tagged("a"), tagged("b")] }, "anyOf"));
+      expect(expression.cases.object).to.include({ op: "propertySwitch" });
     });
 
     test("a value of an enum is a case of its own", async () => {
       const expression = /** @type any */ (await optimized({ oneOf: [tagged(["a", "b"]), tagged("c")] }, "oneOf"));
-      expect(expression.cases[0][1].cases.map((/** @type any */ [condition, then]) => [condition.value, then.schema])).to.eql([
+      expect(expression.cases.object.cases.map((/** @type any */ [value, then]) => [value, then.schema])).to.eql([
         ["a", "/oneOf/0"],
         ["b", "/oneOf/0"],
         ["c", "/oneOf/1"]
@@ -167,15 +159,15 @@ describe("dispatch", () => {
       const expression = /** @type any */ (await optimized({
         oneOf: [tagged("a"), tagged("b"), { type: "object", required: ["kind", "other"] }]
       }, "oneOf"));
-      expect(expression.cases[0][1].cases[0][1]).to.eql({ op: "one", of: [{ op: "apply", schema: "/oneOf/0" }, { op: "apply", schema: "/oneOf/2" }] });
-      expect(expression.cases[0][1].otherwise).to.eql({ op: "apply", schema: "/oneOf/2" });
+      expect(expression.cases.object.cases[0][1]).to.eql({ op: "one", of: [{ op: "apply", schema: "/oneOf/0" }, { op: "apply", schema: "/oneOf/2" }] });
+      expect(expression.cases.object.other).to.eql({ op: "apply", schema: "/oneOf/2" });
     });
 
     test("a schema that doesn't require the property is the case without it", async () => {
       const expression = /** @type any */ (await optimized({
         oneOf: [tagged("a"), tagged("b"), { type: "object", properties: { kind: { const: "c" } } }]
       }, "oneOf"));
-      expect(expression.cases[2]).to.eql([isObject, { op: "apply", schema: "/oneOf/2" }]);
+      expect(expression.cases.object.absent).to.eql({ op: "apply", schema: "/oneOf/2" });
     });
 
     test("a schema that can pass other types than objects is what's left", async () => {
@@ -183,7 +175,15 @@ describe("dispatch", () => {
       expect(expression.otherwise).to.eql({ op: "apply", schema: "/oneOf/2" });
     });
 
-    test("schemas that can pass any type are what's left too, by type", async () => {
+    test("schemas that are dispatched by type are merged into one typeSwitch", async () => {
+      const expression = /** @type any */ (await optimized({
+        oneOf: [tagged("a"), tagged("b"), { type: "string" }, { type: "number" }]
+      }, "oneOf"));
+      expect(Object.keys(expression.cases).toSorted()).to.eql(["number", "object", "string"]);
+      expect(expression.otherwise).to.eql({ op: "fail" });
+    });
+
+    test("schemas that can pass any type are what's left too", async () => {
       const expression = /** @type any */ (await optimized({
         oneOf: [{ required: ["kind"], properties: { kind: { const: "a" } } }, { required: ["kind"], properties: { kind: { const: "b" } } }]
       }, "oneOf"));
@@ -197,19 +197,18 @@ describe("dispatch", () => {
           { type: "object", required: ["gt"], properties: { gt: true }, additionalProperties: false }
         ]
       }, "oneOf");
-      expect(expression).to.eql({
+      expect(expression).to.eql(objects({
         op: "cases",
         cases: [
           [isParsed("eq"), { op: "apply", schema: "/oneOf/0" }],
           [isParsed("gt"), { op: "apply", schema: "/oneOf/1" }],
-          [{ op: "all", of: [isObject, { op: "any", of: [{ op: "hasProperty", name: "eq" }, { op: "hasProperty", name: "gt" }] }] }, {
+          [{ op: "any", of: [{ op: "hasProperty", name: "eq" }, { op: "hasProperty", name: "gt" }] }, {
             op: "one",
             of: [{ op: "apply", schema: "/oneOf/0" }, { op: "apply", schema: "/oneOf/1" }]
-          }],
-          [isObject, { op: "fail" }]
+          }]
         ],
         otherwise: { op: "fail" }
-      });
+      }));
     });
 
     test("is kept if every case would evaluate every schema", async () => {
@@ -224,7 +223,7 @@ describe("dispatch", () => {
         $defs: { a: tagged("a"), b: { allOf: [tagged("b")] } },
         oneOf: [{ $ref: "#/$defs/a" }, { $ref: "#/$defs/b" }]
       }, "oneOf");
-      expect(expression).to.include({ op: "cases" });
+      expect(expression).to.include({ op: "typeSwitch" });
     });
 
     test("knows the tags of a schema that applies itself", async () => {
@@ -235,7 +234,7 @@ describe("dispatch", () => {
         },
         oneOf: [{ $ref: "#/$defs/leaf" }, { $ref: "#/$defs/branch" }]
       }, "oneOf");
-      expect(expression).to.include({ op: "cases" });
+      expect(expression).to.include({ op: "typeSwitch" });
     });
   });
 
@@ -300,6 +299,47 @@ describe("dispatch", () => {
       };
       expect(await both(keys, `{ "eq": , "gt": 1 }`)).to.eql([true, true]);
       expect(await both(keys, `{ "eq": 1, "gt": 1 }`)).to.eql([false, false]);
+    });
+
+    test("the switches mean the same to every evaluator", async () => {
+      const kernel = /** @type Kernel */ ((await compile({ type: "object" })).serialize());
+      /** @type (expression: Expression) => Kernel */
+      const withRoot = (expression) => {
+        const root = /** @type Exclude<Kernel["schemas"][string], boolean> */ (kernel.schemas[kernel.uri]);
+        return { ...kernel, schemas: { ...kernel.schemas, [kernel.uri]: { ...root, keywords: [{ ...root.keywords[0], expression }] } } };
+      };
+      /** @type (expression: Expression, jsons: string[]) => boolean[][] */
+      const results = (expression, jsons) => {
+        const parsed = jsons.filter((json) => !/: [,}]/.test(json));
+        const evaluations = [
+          parsed.map((json) => jsonSchema.restoreValidator(withRoot(expression)).validate(JSON.parse(json)))
+        ];
+        for (const [instance, isAst] of /** @type const */ ([[astInstance, true], [jsInstance, false]])) {
+          const evaluate = instrumented(jsonSchema, withRoot(expression), /** @type any */ ({ instance, isAst, annotating: false, instrumented: false }));
+          evaluations.push((isAst ? jsons : parsed).map((json) => evaluate(isAst ? fromJson(json).node : JSON.parse(json))));
+        }
+        return evaluations;
+      };
+
+      /** @type Expression */
+      const propertySwitch = {
+        op: "propertySwitch",
+        name: "kind",
+        cases: [["a", { op: "fail" }], ["b", { op: "pass" }], [1, { op: "pass" }], ["b", { op: "fail" }]],
+        other: { op: "propertyCount", max: 1 },
+        absent: { op: "fail" },
+        unparsed: { op: "propertyCount", min: 2 }
+      };
+      const jsons = [`{ "kind": "a" }`, `{ "kind": "b" }`, `{ "kind": 1.0 }`, `{ "kind": "1", "x": 1 }`, `{ "kind": {} }`, `{}`, `"a"`, `[]`, `{ "kind": }`, `{ "kind": , "x": 1 }`];
+      const expected = [false, true, true, false, true, false, true, true, false, true];
+      const parsed = expected.slice(0, -2);
+      expect(results(propertySwitch, jsons)).to.eql([parsed, expected, parsed]);
+
+      /** @type Expression */
+      const typeSwitch = { op: "typeSwitch", cases: { string: { op: "fail" }, number: { op: "pass" } }, otherwise: { op: "typeIs", types: ["null"] } };
+      const typeJsons = [`"a"`, `1`, `1.5`, `null`, `{}`, `[]`];
+      const typeExpected = [false, true, true, true, false, false];
+      expect(results(typeSwitch, typeJsons)).to.eql([typeExpected, typeExpected, typeExpected]);
     });
 
     test("keeps the marks of the schema for the tag", async () => {

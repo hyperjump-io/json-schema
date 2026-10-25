@@ -923,9 +923,9 @@ The passes:
   - By type: an `any` of schemas that only have a `type` (tsconfig's
     `anyOf` of `boolean` and `null`) is a `typeIs` with all their types. A
     `one` whose expressions can't pass the same type (662 of
-    `package.json`'s 697 `oneOf`s) is a `cases` with a `typeIs` condition
-    for each, otherwise `fail`, so it doesn't evaluate every schema to find
-    out none of the others passes. The types an expression can pass come
+    `package.json`'s 697 `oneOf`s) is a `typeSwitch` with a branch for each
+    type, otherwise `fail`, so it doesn't evaluate every schema to find out
+    none of the others passes. The types an expression can pass come
     from `typeIs`, `equals`, and `oneOfValues`, through `all`, `any`,
     `one`, and `apply`, and anything else, or a schema that applies itself,
     counts as every type, so a schema is only left out if it can't pass.
@@ -939,14 +939,21 @@ The passes:
     names it allows) comes from `hasProperty`, `propertyEquals`,
     `property` of known values, and `eachProperty` of what can't pass,
     through `all`, `any`, `one`, and `apply`. The tag that leaves the
-    fewest expressions in its largest case is a `cases`: for each value or
-    property, the `any` or `one` of the expressions that can pass it,
-    dispatched again, then what doesn't require the property, otherwise
-    what can pass other types. A tag is a case only where the property was
-    parsed, `not(property(name, fail))`, because a value that couldn't be
-    parsed equals every value and passes every schema. A tag that couldn't
-    be parsed gets the expression as it was. Partial tags count: a schema
-    that doesn't constrain the tag is in every case that has it. Of
+    fewest expressions in its largest case is the `object` branch of a
+    `typeSwitch`, whose other branches are what can pass other types,
+    dispatched by type. A value is a `propertySwitch`: for each value, the
+    `any` or `one` of the expressions that can pass it, dispatched again,
+    then for other values, without the property, and for a value that
+    couldn't be parsed, which equals every value, the expression as it was,
+    so its result and errors are the same as before. Letting it pass
+    instead hid errors that don't depend on the tag, and could make an
+    enclosing `oneOf` or `not` fail. Which property an object has is a `cases`
+    whose conditions are cheap, so it isn't an operation. A property only
+    decides where it was parsed, `not(property(name, fail))`, because one
+    that couldn't be parsed passes the `eachProperty` that doesn't allow
+    it, and otherwise the expression is evaluated as it was. Partial tags
+    count: a schema that doesn't constrain the tag is in every case that
+    has it. Of
     SchemaStore's 886 schemas that compile, about 790 `oneOf`s and `anyOf`s
     can be dispatched by a tag that can't be by type, in about 230 schemas,
     100 of them recursive. Unions of `const`s (300 more) could be dispatched
@@ -957,11 +964,13 @@ The passes:
 The evaluators also choose how to evaluate an operation, which isn't a
 pass, because it doesn't change the expression. `fast.js` checks more than
 one type with a bit mask, calls two or three keyword groups (or an `all`
-of two or three) without a loop, looks up a `cases` whose conditions
-are only `typeIs` by the instance's type, and one whose conditions are only
-`propertyEquals` of one property by its value. `instrumented.js` does the same,
-except that it evaluates every expression of an `all`, and an `apply` is
-the schema's evaluator without a closure around it. Both look property
+of two or three) without a loop, and builds `typeSwitch` as an array by
+type and `propertySwitch` as a `Map` by value (which compares scalars as
+JSON does). `instrumented.js` does the same, except that it evaluates every
+expression of an `all`, and an `apply` is the schema's evaluator without a
+closure around it. The switches are operations, rather than `cases` the
+evaluators recognize, so every evaluator gets the lookup, and lint can read
+them. Both look property
 names up in an object without a prototype rather than a `Map`, which was
 faster, and no name is inherited, not even `__proto__`.
 

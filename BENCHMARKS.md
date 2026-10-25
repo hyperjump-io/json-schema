@@ -988,6 +988,25 @@ value, `ab.ts` FLAG, B/A, against the pass without it:
 | Keyed by a string of the type and value | 0.954 | 1.078 | 0.935 | 1.026 |
 | Keyed by the value (a `Map` compares scalars as JSON does) | 0.481 | 0.890 | 0.731 | 0.997 |
 
+Then the lookups became operations, `typeSwitch` and `propertySwitch`, so
+every evaluator gets them without recognizing a `cases`. `ab.ts`, B/A,
+against `fast.js` recognizing them (`validateJson` includes parsing, so its
+ranges are wide):
+
+| | tree-sitter | GeoJSON | CQL2 | cmake-presets |
+| --- | --- | --- | --- | --- |
+| FLAG | 0.918 | 0.979 | 0.843 | 0.996 |
+| Hooks that do nothing | 0.616 | 0.964 | 0.811 | 0.988 |
+| `validateJson` | 0.890 (0.855–0.953) | 0.984 | 0.919 (0.819–0.949) | 0.996 |
+
+On `package.json`, `tsconfig.json`, and OpenAPI 3.0, each on its own, FLAG,
+hooks, and BASIC were 0.98–1.015. With `propertySwitch` passing a tag that
+couldn't be parsed, 724 of the mutants below passed that hadn't, and one
+CQL2 mutant failed that hadn't, a tagged `oneOf` inside another `oneOf`
+that now had two passing schemas. With the expression as it was for that
+tag (`unparsed`), all 33,226 mutants of both corpora had the same results
+and the same BASIC errors as the `cases` the pass made before.
+
 - Against HEAD, `ab.ts` FLAG on the usual corpora was 0.98–1.01, except
   OpenAPI 3.0 at 1.02–1.03 when it ran after `package.json` in the same
   process. On its own it was 0.993, and with tags turned off 1.001, so

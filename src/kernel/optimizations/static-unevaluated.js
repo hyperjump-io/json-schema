@@ -1,3 +1,5 @@
+import { subexpressions } from "../kernel.js";
+
 /**
  * @import { CompiledSchema, Expression, Handle, KeywordGroup } from "../kernel.d.ts"
  * @import { Optimization } from "../optimize.js"
@@ -247,6 +249,9 @@ class Analysis {
           ...expression.cases.flatMap(([condition, then]) => then === null ? [condition] : [condition, then]),
           ...expression.otherwise === null ? [] : [expression.otherwise]
         ]);
+      case "typeSwitch":
+      case "propertySwitch":
+        return this.#conditionalMarks(subexpressions(expression));
       case "apply":
         return this.#schemaMarks(expression.schema);
       case "dynamicApply":

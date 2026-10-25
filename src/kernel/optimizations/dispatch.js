@@ -3,7 +3,7 @@ import { isInert } from "../optimize.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
- * @import { CompiledSchema, Expression, Handle, KeywordGroup, TypeName } from "../kernel.d.ts"
+ * @import { CompiledSchema, Expression, Handle, JsonTypeName, KeywordGroup, Scalar, TypeName } from "../kernel.d.ts"
  * @import { Optimization } from "../optimize.js"
  */
 
@@ -11,7 +11,7 @@ import { isInert } from "../optimize.js";
  * Scalar values. A Set compares them as JSON does: `1` is `1.0`, but not
  * `"1"`.
  *
- * @typedef {Set<Json>} Values
+ * @typedef {Set<Scalar>} Values
  */
 
 /**
@@ -31,30 +31,28 @@ import { isInert } from "../optimize.js";
  *   `anyOf` of `{ "type": "boolean" }` and `{ "type": "null" }`, is a
  *   `typeIs` with all their types. A `one` whose expressions can't pass the
  *   same type, like `oneOf` with a different `type` in each schema, is a
- *   `cases` with a `typeIs` condition for each, otherwise `fail`. The
- *   evaluators look a `cases` like that up by type. An `any` like that
- *   isn't a `cases`: it already stops at the first that passes, and
- *   dispatching was slower.
+ *   `typeSwitch` with a branch for each, otherwise `fail`. An `any` like
+ *   that isn't a `typeSwitch`: it already stops at the first that passes,
+ *   and dispatching was slower.
  * - **By tag.** Among the expressions that can pass an object, by the value
  *   of a property they constrain, like `"type": { "const": "SEQ" }` in each
- *   schema of a `oneOf` (a discriminator), or by which property an object
- *   has, where they're closed and require different properties, like
- *   `{ "eq": … }` or `{ "gt": … }`. Each tag is a case that evaluates only
- *   the expressions that can pass it, which can be type dispatched or
- *   tagged again. For a schema that applies itself through every branch,
- *   like a syntax tree, evaluating every branch takes time exponential in
- *   the instance's depth, and this makes it linear.
+ *   schema of a `oneOf` (a discriminator), which is a `propertySwitch`, or
+ *   by which property an object has, where they're closed and require
+ *   different properties, like `{ "eq": … }` or `{ "gt": … }`, which is a
+ *   `cases`. Each tag is a case that evaluates only the expressions that
+ *   can pass it, which can be type dispatched or tagged again. For a schema
+ *   that applies itself through every branch, like a syntax tree,
+ *   evaluating every branch takes time exponential in the instance's
+ *   depth, and this makes it linear.
  *
  * What isn't evaluated would fail, so the result, the marks, and the
  * annotations that are kept are the same. Plugins see only what's evaluated,
  * so a `oneOf` gets errors from the schema for its tag, not from every
- * schema.
- *
- * A value that couldn't be parsed passes every schema and equals every
- * value, so a tag that couldn't be parsed would pass every `propertyEquals`.
- * A tag is only looked up where `not(property(name, fail))` passes, which is
- * when the object has the property and it was parsed, and otherwise the
- * expression is evaluated as it was.
+ * schema. A value that couldn't be parsed equals every value and passes
+ * every schema, so where a tag couldn't be parsed, the expression is
+ * evaluated as it was: it's a `propertySwitch`'s `unparsed`, and for a tag
+ * by which property an object has, a property only decides where
+ * `not(property(name, fail))` passes, which is when it was parsed.
  *
  * @type Optimization
  */
@@ -174,8 +172,8 @@ export default {
         return candidates.length === 0 ? { op: "fail" } : candidates[0][1];
       }
       return {
-        op: "cases",
-        cases: candidates.map(([types, subexpression]) => [{ op: "typeIs", types: [...types] }, subexpression]),
+        op: "typeSwitch",
+        cases: Object.fromEntries(candidates.flatMap(([types, subexpression]) => [...types].map((type) => [type, subexpression]))),
         otherwise: { op: "fail" }
       };
     };
@@ -366,32 +364,35 @@ export default {
         return union;
       };
 
-      /** @type [Expression, Expression | null][] */
-      let cases;
-      if (tag.by === "value") {
-        const { name } = tag;
-        cases = [
-          [isParsedProperty(name), {
+      /** @type Expression */
+      const forObjects = tag.by === "value"
+        ? {
+            op: "propertySwitch",
+            name: tag.name,
+            cases: tag.cases.map(([value, indexes]) => [value, unionAt(indexes)]),
+            other: unionAt(tag.other),
+            absent: unionAt(tag.absent),
+            // A tag that couldn't be parsed equals every value
+            unparsed: expression
+          }
+        : {
             op: "cases",
-            cases: tag.cases.map(([value, indexes]) => [{ op: "propertyEquals", name, value }, unionAt(indexes)]),
-            otherwise: unionAt(tag.other)
-          }],
-          [{ op: "all", of: [isObject, { op: "hasProperty", name }] }, expression],
-          [isObject, unionAt(tag.absent)]
-        ];
-      } else {
-        cases = [
-          ...tag.cases.map(([name, indexes]) => /** @type [Expression, Expression] */ ([isParsedProperty(name), unionAt(indexes)])),
-          [{ op: "all", of: [isObject, { op: "any", of: tag.cases.map(([name]) => ({ op: "hasProperty", name })) }] }, expression],
-          [isObject, unionAt(tag.absent)]
-        ];
-      }
+            cases: [
+              ...tag.cases.map(([name, indexes]) => /** @type [Expression, Expression] */ ([isParsedProperty(name), unionAt(indexes)])),
+              // A property that couldn't be parsed doesn't fail what doesn't allow it
+              [{ op: "any", of: tag.cases.map(([name]) => ({ op: "hasProperty", name })) }, expression]
+            ],
+            otherwise: unionAt(tag.absent)
+          };
 
       // What's left isn't an object, so it has no tag
       const others = of.filter((subexpression) => !onlyObjects(subexpression));
       /** @type Extract<Expression, { op: "all" | "any" | "one" }> */
       const otherwise = { op, of: others };
-      return { op: "cases", cases, otherwise: others.length < 2 ? unionOf(op, others) : byType(otherwise) ?? otherwise };
+      const forOthers = others.length < 2 ? unionOf(op, others) : byType(otherwise) ?? otherwise;
+      return forOthers.op === "typeSwitch"
+        ? { op: "typeSwitch", cases: { ...forOthers.cases, object: forObjects }, otherwise: forOthers.otherwise }
+        : { op: "typeSwitch", cases: { object: forObjects }, otherwise: forOthers };
     };
 
     /**
@@ -455,6 +456,24 @@ export default {
           });
           return same ? expression : { ...expression, cases, otherwise };
         }
+        case "typeSwitch": {
+          const cases = Object.fromEntries(Object.entries(expression.cases).map(([type, then]) => [type, rewrite(then)]));
+          const otherwise = rewrite(expression.otherwise);
+          const same = otherwise === expression.otherwise && Object.entries(cases).every(([type, then]) => {
+            return then === expression.cases[/** @type JsonTypeName */ (type)];
+          });
+          return same ? expression : { ...expression, cases, otherwise };
+        }
+        case "propertySwitch": {
+          /** @type [Scalar, Expression][] */
+          const cases = expression.cases.map(([value, then]) => [value, rewrite(then)]);
+          const other = rewrite(expression.other);
+          const absent = rewrite(expression.absent);
+          const unparsed = rewrite(expression.unparsed);
+          const same = other === expression.other && absent === expression.absent && unparsed === expression.unparsed
+            && cases.every(([, then], index) => then === expression.cases[index][1]);
+          return same ? expression : { ...expression, cases, other, absent, unparsed };
+        }
         default:
           return expression;
       }
@@ -499,7 +518,7 @@ const typeOf = (value) => {
 const constrainsTypes = new Set(["fail", "typeIs", "equals", "oneOfValues", "all", "any", "one", "apply"]);
 
 /**
- * @typedef {{ by: "value"; name: string; cases: [Json, number[]][]; other: number[]; absent: number[] }
+ * @typedef {{ by: "value"; name: string; cases: [Scalar, number[]][]; other: number[]; absent: number[] }
  *   | { by: "key"; cases: [string, number[]][]; absent: number[] }} Tag
  */
 
@@ -533,7 +552,7 @@ const bestTag = (facts) => {
     const allowed = allowing(name);
     /** @type Values[] */
     const values = facts.map(({ values }) => values.get(name) ?? new Set());
-    /** @type [Json, number[]][] */
+    /** @type [Scalar, number[]][] */
     const cases = [...union(values)].map((value) => [value, allowed.filter((index) => !facts[index].values.has(name) || values[index].has(value))]);
     /** @type Tag */
     const tag = {
@@ -576,9 +595,6 @@ const indexesOf = (items, predicate) => items.flatMap((item, index) => predicate
 /** @type ObjectFacts */
 const noFacts = Object.freeze({ required: new Set(), values: new Map(), allowed: null });
 
-/** @type Expression */
-const isObject = { op: "typeIs", types: ["object"] };
-
 /**
  * Passes an object that has the property, if its value was parsed
  *
@@ -586,7 +602,7 @@ const isObject = { op: "typeIs", types: ["object"] };
  */
 const isParsedProperty = (name) => ({ op: "not", of: { op: "property", name, of: { op: "fail" } } });
 
-/** @type (value: Json) => boolean */
+/** @type (value: Json) => value is Scalar */
 const isScalar = (value) => value === null || typeof value !== "object";
 
 /** @type (a: Values, b: Values) => Values */

@@ -74,6 +74,20 @@ export const normalForm = (expression) => {
         cases: expression.cases.map(([condition, then]) => [normalForm(condition), then && normalForm(then)]),
         otherwise: expression.otherwise && normalForm(expression.otherwise)
       };
+    case "typeSwitch":
+      return {
+        ...expression,
+        cases: Object.fromEntries(Object.entries(expression.cases).map(([type, then]) => [type, normalForm(then)])),
+        otherwise: normalForm(expression.otherwise)
+      };
+    case "propertySwitch":
+      return {
+        ...expression,
+        cases: expression.cases.map(([value, then]) => [value, normalForm(then)]),
+        other: normalForm(expression.other),
+        absent: normalForm(expression.absent),
+        unparsed: normalForm(expression.unparsed)
+      };
     case "itemSequence":
       return { ...expression, pattern: normalPattern(expression.pattern) };
     case "opaque":

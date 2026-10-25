@@ -3,7 +3,7 @@ import { keywordDefinitionUri } from "../keywords/unknown.js";
 import { codePointLength, instanceEqual } from "../keywords/utilities.js";
 import { jsInstance } from "./instance.js";
 import { conditionsOf, explainsFailure, readsMarks } from "./kernel.js";
-import { addDynamicAnchors, addReachable, branchesByType, isClose, itemSequenceStates, keywordEvaluate, selector, typeIndexes } from "./fast.js";
+import { addDynamicAnchors, addReachable, isClose, itemSequenceStates, keywordEvaluate, selector, typeIndexes } from "./fast.js";
 
 /**
  * @import { Data, Node } from "unist"
@@ -453,6 +453,25 @@ export const instrumented = (jsonSchema, kernel, options) => {
     };
   };
 
+  /**
+   * Builds each branch of a switch once, where branches are the same
+   * expression, like a `oneOf` schema that can pass more than one type
+   *
+   * @type (info: KeywordInfo) => (expression: Expression) => Evaluator<I>
+   */
+  const branchBuilder = (info) => {
+    /** @type Map<Expression, Evaluator<I>> */
+    const built = new Map();
+    return (expression) => {
+      let evaluator = built.get(expression);
+      if (evaluator === undefined) {
+        evaluator = build(expression, info);
+        built.set(expression, evaluator);
+      }
+      return evaluator;
+    };
+  };
+
   /** @type (expression: Expression, info: KeywordInfo) => Evaluator<I> */
   const build = (expression, info) => {
     switch (expression.op) {
@@ -499,32 +518,46 @@ export const instrumented = (jsonSchema, kernel, options) => {
         const of = build(expression.of, info);
         return (instance) => !of(instance, undefined);
       }
-      case "cases": {
-        // Conditions that are only `typeIs` are looked up by type. A value
-        // that couldn't be parsed passes every `typeIs`, so it gets the
-        // first case.
-        const byType = branchesByType(expression);
-        if (byType !== undefined) {
-          /** @type Map<Expression | null, Evaluator<I>> */
-          const branches = new Map();
-          /** @type (then: Expression | null) => Evaluator<I> */
-          const branch = (then) => {
-            let evaluator = branches.get(then);
-            if (evaluator === undefined) {
-              evaluator = then === null ? () => true : build(then, info);
-              branches.set(then, evaluator);
-            }
-            return evaluator;
-          };
-          /** @type Record<string, Evaluator<I>> */
-          const evaluators = Object.fromEntries(typeIndexes.map((type, index) => [type, branch(byType[index])]));
-          const unparsed = branch(expression.cases.length === 0 ? expression.otherwise : expression.cases[0][1]);
-          return (instance, marks) => {
-            const type = ops.typeOf(instance);
-            return (type === undefined ? unparsed : evaluators[type])(instance, marks);
-          };
+      // An instance that couldn't be parsed passes
+      case "typeSwitch": {
+        const branch = branchBuilder(info);
+        /** @type Record<string, Evaluator<I>> */
+        const branches = Object.fromEntries(typeIndexes.map((type) => [type, branch(expression.cases[type] ?? expression.otherwise)]));
+        return (instance, marks) => {
+          const type = ops.typeOf(instance);
+          return type === undefined || branches[type](instance, marks);
+        };
+      }
+      case "propertySwitch": {
+        const { name } = expression;
+        const branch = branchBuilder(info);
+        /** @type Map<Json, Evaluator<I>> */
+        const branches = new Map();
+        for (const [value, then] of expression.cases) {
+          if (!branches.has(value)) {
+            branches.set(value, branch(then));
+          }
         }
-
+        const other = branch(expression.other);
+        const absent = branch(expression.absent);
+        const unparsed = branch(expression.unparsed);
+        return (instance, marks) => {
+          if (ops.typeOf(instance) !== "object") {
+            return true;
+          }
+          const property = ops.get(instance, name);
+          if (property === undefined) {
+            return absent(instance, marks);
+          }
+          const type = ops.typeOf(property);
+          if (type === undefined) {
+            return unparsed(instance, marks);
+          }
+          const evaluate = type === "object" || type === "array" ? undefined : branches.get(ops.value(property));
+          return (evaluate ?? other)(instance, marks);
+        };
+      }
+      case "cases": {
         const cases = expression.cases.map(([condition, then]) => /** @type const */ ([build(condition, info), then && build(then, info)]));
         const otherwise = expression.otherwise && build(expression.otherwise, info);
         return (instance, marks) => {
