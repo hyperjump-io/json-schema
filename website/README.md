@@ -1,6 +1,8 @@
 # Hyperjump - JSON Schema
 
-User documentation. It will become a website. For now, it's markdown.
+A JSON Schema validator and linter built on
+[`@hyperjump/browser`](https://github.com/hyperjump-io/browser/blob/v2/website/README.md)
+and [unified](https://unifiedjs.com/).
 
 - [Getting started](getting-started.md): install, and a first validation
 - Usage
