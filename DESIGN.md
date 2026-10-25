@@ -1829,7 +1829,15 @@ lint, and type-check, and is reviewed before the next.
    from that sibling, and the rest from the keyword. A rule asks which
    keyword nodes an operation, or one of its fields, came from, so
    `contradictory-limits` doesn't build its labels from `sourceNodes` or
-   rely on the order a keyword declares its siblings.
+   rely on the order a keyword declares its siblings. Done:
+   `src/lint/provenance.js`, and `cameFrom` on each lowered keyword.
+   Nothing comes from a sibling with its default value, so for
+   `minContains: 1` with `maxContains: 0`, `contradictory-limits` says
+   `contains` requires at least 1 matching item, as it does without
+   `minContains` (which it didn't report before).
+   `keyword-without-effect` will report the `minContains`.
+   `required-properties.js` still credits a schema to the keyword whose
+   value it's in, by location, which is about the document.
 3. **No `Keyword.default`.** `keyword-with-default-value` is replaced:
    - `keyword-without-effect` reports a keyword whose group always passes
      and doesn't annotate or mark anything, following what it applies, so

@@ -1,6 +1,7 @@
 import { pointerGet } from "@hyperjump/browser/json";
 import { toAbsoluteIri } from "@hyperjump/uri";
 import { lowerKeywords } from "../kernel/lower.js";
+import { provenance } from "./provenance.js";
 import { visitSchemas } from "./utilities.js";
 
 /**
@@ -92,7 +93,13 @@ const lowerDocument = async (session, tree) => {
 
     const resolved = await dialect;
     if (resolved !== undefined) {
-      const lowered = await lowerKeywords(session.jsonSchema, schemaNode, resolved, inputs, true);
+      const lowered = (await lowerKeywords(session.jsonSchema, schemaNode, resolved, inputs, true))
+        .map((keyword) => /** @type API.LoweredKeyword */ ({
+          group: keyword.group,
+          keywordNode: keyword.keywordNode,
+          sourceNodes: keyword.sourceNodes,
+          cameFrom: provenance(keyword)
+        }));
       const order = new Map(schemaNode.children.map((keywordNode, index) => [keywordNode, index]));
       lowered.sort((a, b) => /** @type number */ (order.get(a.keywordNode)) - /** @type number */ (order.get(b.keywordNode)));
       schemas.set(schemaNode, lowered);

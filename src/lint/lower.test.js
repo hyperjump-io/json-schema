@@ -16,6 +16,7 @@ import { lowerForLint } from "./lower.js";
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode } from "../schema/schema-ast.d.ts"
  * @import { JsonSchemaSession } from "../session.d.ts"
  * @import { LoweredKeyword } from "./lower.d.ts"
+ * @import { Expression } from "../kernel/kernel.d.ts"
  */
 
 const draft04 = "http://json-schema.org/draft-04/schema#";
@@ -159,6 +160,51 @@ describe("lowerForLint", () => {
     const [maximum] = at("");
     expect(maximum.sourceNodes).to.eql([keyword("", "exclusiveMaximum")]);
     expect(maximum.group.sources).to.eql(["file:///schemas/a.schema.json#/exclusiveMaximum"]);
+  });
+
+  test("a field that's different without a sibling came from it", async () => {
+    const { at, keyword } = await lower(JSON.stringify({ $schema: draft04, maximum: 5, exclusiveMaximum: true }));
+    const [{ group, cameFrom }] = at("");
+    expect(cameFrom(group.expression)).to.eql([keyword("", "maximum")]);
+    expect(cameFrom(group.expression, "max")).to.eql([keyword("", "maximum")]);
+    expect(cameFrom(group.expression, "exclusiveMax")).to.eql([keyword("", "exclusiveMaximum")]);
+  });
+
+  test("each sibling's field, whatever order they're in", async () => {
+    const { at, keyword } = await lower(JSON.stringify({ $schema: draft2020, maxContains: 2, contains: {}, minContains: 3 }));
+    const [{ group, cameFrom }] = at("");
+    expect(cameFrom(group.expression, "min")).to.eql([keyword("", "minContains")]);
+    expect(cameFrom(group.expression, "max")).to.eql([keyword("", "maxContains")]);
+    expect(cameFrom(group.expression, "of")).to.eql([keyword("", "contains")]);
+  });
+
+  test("nothing came from a sibling with its default value", async () => {
+    const { at, keyword } = await lower(JSON.stringify({ $schema: draft2020, contains: {}, minContains: 1 }));
+    const [{ group, cameFrom }] = at("");
+    expect(cameFrom(group.expression, "min")).to.eql([keyword("", "contains")]);
+  });
+
+  test("an operation that isn't there without a sibling came from both", async () => {
+    const { at, keyword } = await lower(JSON.stringify({ $schema: draft2019, items: [{}], additionalItems: false }));
+    const { group, cameFrom } = at("")[1];
+    expect(cameFrom(group.expression)).to.eql([keyword("", "items"), keyword("", "additionalItems")]);
+  });
+
+  test("a nested operation", async () => {
+    const { at, keyword } = await lower(JSON.stringify({ $schema: draft2020, if: {}, then: {}, else: {} }));
+    const [{ group, cameFrom }] = at("");
+    const cases = /** @type {{ cases: [Expression, Expression][]; otherwise: Expression }} */ (/** @type unknown */ (group.expression));
+    const [[condition, then]] = cases.cases;
+    expect(cameFrom(condition)).to.eql([keyword("", "if")]);
+    expect(cameFrom(then)).to.eql([keyword("", "if"), keyword("", "then")]);
+    expect(cameFrom(cases.otherwise)).to.eql([keyword("", "if"), keyword("", "else")]);
+  });
+
+  test("a sibling that changes what's selected", async () => {
+    const { at, keyword } = await lower(JSON.stringify({ $schema: draft2020, patternProperties: { "^a": {} }, additionalProperties: false, properties: { b: {} } }));
+    const { group, cameFrom } = at("")[1];
+    expect(cameFrom(group.expression, "select")).to.eql([keyword("", "patternProperties"), keyword("", "properties")]);
+    expect(cameFrom(group.expression, "of")).to.eql([keyword("", "additionalProperties")]);
   });
 
   test("a document is lowered once for each session", async () => {

@@ -547,6 +547,17 @@ normal form, without compiling or retrieving anything (`lowerForLint` in
   `lower`, so the references in `definitions` are found too.
 - Each group keeps its keyword's node and its sources' nodes, for where
   messages go.
+- **Where each operation came from.** A keyword is lowered again without
+  each sibling it read that's in the schema, and the expressions are
+  compared. A field that's different without a sibling came from the
+  sibling (draft-04's `exclusiveMaximum` for `range`'s `exclusiveMax`,
+  `minContains` for `contains`' `min`). An operation that isn't there
+  without it came from the keyword and the sibling (`if` and `then` for
+  the `apply` of `then`'s schema), and so did everything if the keyword
+  can't be lowered without it. The rest came from the keyword. A sibling
+  with its default value lowers the same as without it, so nothing came
+  from it. Rules ask with `cameFrom(operation, field?)`, so they don't
+  depend on the order a keyword declares its siblings.
 
 What lint knows from the expressions (`src/lint/analysis.js`: `appliesTo`,
 `keywordAppliesTo`, `canPass`, `assertsOnItsOwn`):

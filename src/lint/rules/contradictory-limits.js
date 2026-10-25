@@ -23,6 +23,9 @@ const counts = /** @type const */ ({ stringLength: "string", itemCount: "array",
 /** @type (keywordNode: JsonSchemaKeywordNode) => string */
 const nameOf = (keywordNode) => `'${keywordNode.children[0].value}'`;
 
+/** @type (keywordNodes: JsonSchemaKeywordNode[]) => string */
+const namesOf = (keywordNodes) => keywordNodes.map(nameOf).join(" and ");
+
 /**
  * A group's operations, from its top-level `all`
  *
@@ -69,8 +72,8 @@ const second = (a, b) => {
  * Limits are what `range`, `stringLength`, `itemCount`, `propertyCount`, and
  * `contains` say, from whichever keywords lowered to them, and required
  * properties are `hasProperty`, so no keyword is named. A limit's label is
- * its keyword's name, with the siblings it read when they made it exclusive
- * (draft-04's `exclusiveMinimum`).
+ * the keywords it came from, with the ones that made it exclusive when
+ * they're others (draft-04's `exclusiveMinimum`).
  *
  * @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void>
  */
@@ -94,34 +97,54 @@ const contradictoryLimits = lintRule({ origin: "jsonschema-lint:contradictory-li
     /** @type [string, JsonSchemaKeywordNode][] */
     const containsMessages = [];
 
-    for (const lowered of keywords) {
-      const { keywordNode, sourceNodes } = lowered;
-      for (const operation of operations(lowered.group.expression)) {
+    for (const { group, keywordNode, cameFrom } of keywords) {
+      /**
+       * A limit, from the keywords its field came from
+       *
+       * @type (operation: Expression, field: string, value: number, exclusiveField?: string) => Bound
+       */
+      const bound = (operation, field, value, exclusiveField) => {
+        const limitNodes = cameFrom(operation, field);
+        const exclusiveNodes = (exclusiveField === undefined ? [] : cameFrom(operation, exclusiveField))
+          .filter((exclusiveNode) => !limitNodes.includes(exclusiveNode));
+        return {
+          value,
+          exclusive: exclusiveField !== undefined,
+          label: exclusiveNodes.length > 0 ? `${namesOf(limitNodes)} with ${namesOf(exclusiveNodes)}` : namesOf(limitNodes),
+          keywordNode: /** @type JsonSchemaKeywordNode */ (limitNodes.at(-1))
+        };
+      };
+
+      for (const operation of operations(group.expression)) {
         if (operation.op === "range") {
-          /** @type (exclusive: boolean) => string */
-          const label = (exclusive) => exclusive && sourceNodes.length > 0
-            ? `${nameOf(keywordNode)} with ${sourceNodes.map(nameOf).join(" and ")}`
-            : nameOf(keywordNode);
           if (operation.min !== undefined) {
-            const exclusive = operation.exclusiveMin ?? false;
-            lower.push({ value: operation.min, exclusive, label: label(exclusive), keywordNode });
+            lower.push(bound(operation, "min", operation.min, operation.exclusiveMin ? "exclusiveMin" : undefined));
           }
           if (operation.max !== undefined) {
-            const exclusive = operation.exclusiveMax ?? false;
-            upper.push({ value: operation.max, exclusive, label: label(exclusive), keywordNode });
+            upper.push(bound(operation, "max", operation.max, operation.exclusiveMax ? "exclusiveMax" : undefined));
           }
         } else if (operation.op === "stringLength" || operation.op === "itemCount" || operation.op === "propertyCount") {
           const type = counts[operation.op];
           if (operation.min !== undefined) {
-            mins[type].push({ value: operation.min, exclusive: false, label: nameOf(keywordNode), keywordNode });
+            mins[type].push(bound(operation, "min", operation.min));
           }
           if (operation.max !== undefined) {
-            maxes[type].push({ value: operation.max, exclusive: false, label: nameOf(keywordNode), keywordNode });
+            maxes[type].push(bound(operation, "max", operation.max));
           }
-        } else if (operation.op === "contains" && operation.max !== null && operation.min > operation.max && sourceNodes.length === 2) {
-          // The limits are from its siblings, in the order it declares them
-          const [minNode, maxNode] = sourceNodes;
-          containsMessages.push([`${nameOf(minNode)} is greater than ${nameOf(maxNode)}, so no array is valid`, second(minNode, maxNode)]);
+        } else if (operation.op === "contains" && operation.max !== null && operation.min > operation.max) {
+          // A limit that came from `contains` alone is what it has without
+          // one (`min: 1`), so it's said as what `contains` requires
+          const minNodes = cameFrom(operation, "min");
+          const maxNodes = cameFrom(operation, "max");
+          const maxNode = /** @type JsonSchemaKeywordNode */ (maxNodes.at(-1));
+          if (!minNodes.includes(keywordNode) && !maxNodes.includes(keywordNode)) {
+            const place = second(/** @type JsonSchemaKeywordNode */ (minNodes.at(-1)), maxNode);
+            containsMessages.push([`${namesOf(minNodes)} is greater than ${namesOf(maxNodes)}, so no array is valid`, place]);
+          } else if (!maxNodes.includes(keywordNode)) {
+            const items = operation.min === 1 ? "item" : "items";
+            const requires = `${namesOf(minNodes)} requires at least ${operation.min} matching ${items}`;
+            containsMessages.push([`${namesOf(maxNodes)} is ${operation.max}, but ${requires}, so no array is valid`, maxNode]);
+          }
         }
       }
     }

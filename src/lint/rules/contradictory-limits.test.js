@@ -88,6 +88,19 @@ describe("contradictory-limits", () => {
     ]);
   });
 
+  test("contains limits in any order", async () => {
+    expect(await reasons(`{ "$schema": "${v1}", "maxContains": 2, "contains": {}, "minContains": 3 }`))
+      .to.eql(["'minContains' is greater than 'maxContains', so no array is valid"]);
+  });
+
+  test("maxContains less than what contains requires without minContains", async () => {
+    expect(await reasons(`{ "$schema": "${v1}", "contains": {}, "maxContains": 0 }`))
+      .to.eql(["'maxContains' is 0, but 'contains' requires at least 1 matching item, so no array is valid"]);
+    expect(await reasons(`{ "$schema": "${v1}", "contains": {}, "minContains": 1, "maxContains": 0 }`))
+      .to.eql(["'maxContains' is 0, but 'contains' requires at least 1 matching item, so no array is valid"]);
+    expect(await reasons(`{ "$schema": "${v1}", "contains": {}, "minContains": 0, "maxContains": 0 }`)).to.eql([]);
+  });
+
   test("equal counts", async () => {
     expect(await reasons(`{ "$schema": "${v1}", "minLength": 2, "maxLength": 2 }`)).to.eql([]);
   });
