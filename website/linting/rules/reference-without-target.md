@@ -28,7 +28,7 @@ otherwise does nothing. It has no options.
 }
 ```
 
-> The reference doesn't find a schema. Property 'bar' doesn't exist at file:///home/jdesrosiers/Projects/hyperjump-io/json-schema/.reference-without-target-test-g8xhqg/a.schema.json#/$defs/bar
+> The reference doesn't find a schema. Property 'bar' doesn't exist at https://example.com/schema.json#/$defs/bar
 
 #### An anchor that isn't in the document
 
@@ -36,7 +36,7 @@ otherwise does nothing. It has no options.
 { "$schema": "https://json-schema.org/v1", "$ref": "#foo" }
 ```
 
-> The reference doesn't find a schema. There's no 'foo' anchor in 'file:///home/jdesrosiers/Projects/hyperjump-io/json-schema/.reference-without-target-test-g8xhqg/a.schema.json'
+> The reference doesn't find a schema. There's no 'foo' anchor in 'https://example.com/schema.json'
 
 #### A dynamic reference that finds nothing
 
@@ -47,7 +47,7 @@ otherwise does nothing. It has no options.
 }
 ```
 
-> The reference doesn't find a schema. There's no 'meta' anchor in 'file:///home/jdesrosiers/Projects/hyperjump-io/json-schema/.reference-without-target-test-g8xhqg/a.schema.json'
+> The reference doesn't find a schema. There's no 'meta' anchor in 'https://example.com/schema.json'
 
 ### Not reported
 
