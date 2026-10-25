@@ -6,7 +6,7 @@ import { readsDynamicScope, readsMarks } from "./kernel.js";
  * @import { Json } from "@hyperjump/browser/json"
  * @import { JsonSchema } from "../json-schema.d.ts"
  * @import { EvaluateContext, Keyword } from "../keyword.d.ts"
- * @import { CompiledSchema, Expression, Handle, ItemPattern, Kernel, Selector } from "./kernel.d.ts"
+ * @import { CompiledSchema, Expression, Handle, ItemPattern, Kernel, Selector, TypeName } from "./kernel.d.ts"
  */
 
 /**
@@ -111,22 +111,7 @@ export const fast = (jsonSchema, kernel) => {
     const expressions = compiled.keywords.map(({ expression }) => expression).filter((expression) => !isInert(expression));
     const groups = mergeProperties(expressions);
 
-    /** @type Evaluator */
-    let evaluator;
-    if (groups.length === 0) {
-      evaluator = () => true;
-    } else if (groups.length === 1) {
-      evaluator = groups[0];
-    } else {
-      evaluator = (instance, marks) => {
-        for (let index = 0; index < groups.length; index++) {
-          if (!groups[index](instance, marks)) {
-            return false;
-          }
-        }
-        return true;
-      };
-    }
+    let evaluator = every(groups);
 
     if (expressions.some(readsMarks)) {
       const body = evaluator;
@@ -183,17 +168,8 @@ export const fast = (jsonSchema, kernel) => {
         return () => true;
       case "fail":
         return () => false;
-      case "all": {
-        const of = expression.of.map(build);
-        return (instance, marks) => {
-          for (let index = 0; index < of.length; index++) {
-            if (!of[index](instance, marks)) {
-              return false;
-            }
-          }
-          return true;
-        };
-      }
+      case "all":
+        return every(expression.of.map(build));
       case "any": {
         const of = expression.of.map(build);
         return (instance, marks) => {
@@ -244,6 +220,11 @@ export const fast = (jsonSchema, kernel) => {
         return (instance) => !of(instance, undefined);
       }
       case "cases": {
+        const byType = casesByType(expression);
+        if (byType !== undefined) {
+          return (instance, marks) => byType[typeIndex(instance)](instance, marks);
+        }
+
         const cases = expression.cases.map(([condition, then]) => /** @type const */ ([build(condition), then && build(then)]));
         const otherwise = expression.otherwise && build(expression.otherwise);
         return (instance, marks) => {
@@ -293,10 +274,17 @@ export const fast = (jsonSchema, kernel) => {
           return (instance) => typeof instance === only;
         }
 
-        return (instance) => {
-          const type = /** @type string */ (jsInstance.typeOf(instance));
-          return types.has(type) || (integer && type === "number" && Number.isInteger(instance));
-        };
+        // A bit for each type in `typeIndexes`
+        let mask = 0;
+        for (const [index, type] of typeIndexes.entries()) {
+          if (types.has(type)) {
+            mask |= 1 << index;
+          }
+        }
+        if (!integer || types.has("number")) {
+          return (instance) => (mask & (1 << typeIndex(instance))) !== 0;
+        }
+        return (instance) => (mask & (1 << typeIndex(instance))) !== 0 || Number.isInteger(instance);
       }
       case "equals": {
         const { value } = expression;
@@ -513,6 +501,38 @@ export const fast = (jsonSchema, kernel) => {
       case "opaque":
         return buildOpaque(expression);
     }
+  };
+
+  /**
+   * A `cases` whose conditions are only `typeIs` (what `type-dispatch` makes
+   * of `oneOf` with a different `type` in each schema), as the branch for
+   * each instance type, so it's one lookup instead of a test for each case.
+   * A condition that's `typeIs` marks nothing.
+   *
+   * @type (expression: Extract<Expression, { op: "cases" }>) => Evaluator[] | undefined
+   */
+  const casesByType = ({ cases, otherwise }) => {
+    /** @type TypeName[][] */
+    const types = [];
+    for (const [condition] of cases) {
+      if (condition.op !== "typeIs" || condition.types.includes("integer")) {
+        return undefined;
+      }
+      types.push(condition.types);
+    }
+
+    /** @type Map<Expression | null, Evaluator> */
+    const branches = new Map();
+    return typeIndexes.map((type) => {
+      const index = types.findIndex((caseTypes) => caseTypes.includes(type));
+      const then = index === -1 ? otherwise : cases[index][1];
+      let evaluator = branches.get(then);
+      if (evaluator === undefined) {
+        evaluator = then === null ? () => true : build(then);
+        branches.set(then, evaluator);
+      }
+      return evaluator;
+    });
   };
 
   /**
@@ -791,6 +811,52 @@ export const keywordEvaluate = (jsonSchema, uri) => {
   }
 
   return evaluate;
+};
+
+/** @type TypeName[] */
+const typeIndexes = ["null", "boolean", "number", "string", "array", "object"];
+
+/** @type (instance: Json) => number */
+const typeIndex = (instance) => {
+  switch (typeof instance) {
+    case "boolean":
+      return 1;
+    case "number":
+      return 2;
+    case "string":
+      return 3;
+    default:
+      return instance === null ? 0 : Array.isArray(instance) ? 4 : 5;
+  }
+};
+
+/**
+ * Passes when every one passes. Two or three are called directly, without a
+ * loop, which was faster: most schemas have that many keyword groups.
+ *
+ * @type (of: Evaluator[]) => Evaluator
+ */
+const every = (of) => {
+  if (of.length === 0) {
+    return () => true;
+  } else if (of.length === 1) {
+    return of[0];
+  } else if (of.length === 2) {
+    const [a, b] = of;
+    return (instance, marks) => a(instance, marks) && b(instance, marks);
+  } else if (of.length === 3) {
+    const [a, b, c] = of;
+    return (instance, marks) => a(instance, marks) && b(instance, marks) && c(instance, marks);
+  }
+
+  return (instance, marks) => {
+    for (let index = 0; index < of.length; index++) {
+      if (!of[index](instance, marks)) {
+        return false;
+      }
+    }
+    return true;
+  };
 };
 
 /** @type (a: number, b: number) => boolean */
