@@ -530,7 +530,7 @@ describe("Validator", () => {
     test("BASIC drops errors from subschemas that don't matter", async () => {
       const validator = await jsonSchema.compile(await schemaFile({
         $id: "https://example.com/any-of",
-        anyOf: [{ type: "number" }, { type: "string" }],
+        anyOf: [{ type: "number", minimum: 0 }, { type: "string", minLength: 1 }],
         properties: { foo: false }
       }));
 

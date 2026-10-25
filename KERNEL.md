@@ -354,8 +354,10 @@ The optimizer rewrites expressions for evaluation. Without plugins,
 anything that keeps the result and the marks is allowed, like inlining
 `apply` or `not` of `not`. What's implemented is merging a schema's
 property operations into one loop, resolving `unevaluated` selectors that
-don't depend on the instance, folding schemas that always pass, and
-leaving out groups with no effect (DESIGN.md, "Optimizations").
+don't depend on the instance, folding schemas that always pass,
+evaluating only the expressions of an `any` or `one` that can pass the
+instance's type or tag, and leaving out groups with no effect (DESIGN.md,
+"Optimizations").
 
 With plugins, what plugins see can depend on the optimizations: which
 schemas are evaluated as schemas of their own, how DETAILED nests, the
@@ -372,7 +374,14 @@ plugins see can't be wrong, though:
   loses that.
 - **Nothing stops early** when a plugin needs every error. `any` stopping
   at the first that passes, `one` at the second, and a schema at its first
-  failure are only without plugins.
+  failure are only without plugins. Leaving out what can't pass the
+  instance's type or tag isn't stopping early: it's decided before
+  anything is evaluated, and plugins get the errors of what's evaluated.
+  An `anyOf` or `oneOf` that fails has its own error and the errors of the
+  schemas for the instance's type or tag, without the type or tag errors
+  of every other schema. For a schema that applies itself through every
+  branch, like a syntax tree, reporting those took time exponential in the
+  instance's depth.
 
 An optimization keeps this with a **source map**: each part of an
 optimized expression says which keyword group it came from, so the

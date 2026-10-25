@@ -26,6 +26,9 @@ import { readsMarks } from "./kernel.js";
 /** @type (instance: Json) => instance is JsonObject */
 const isObject = (instance) => typeof instance === "object" && instance !== null && !Array.isArray(instance);
 
+/** @type (value: Json) => boolean */
+const isScalar = (value) => value === null || typeof value !== "object";
+
 /** @type (a: Json, b: Json) => boolean */
 const equal = (a, b) => instanceEqual(jsInstance, a, jsInstance, b, true);
 
@@ -219,6 +222,10 @@ export const fast = (jsonSchema, kernel) => {
         const byType = casesByType(expression);
         if (byType !== undefined) {
           return (instance, marks) => byType[typeIndex(instance)](instance, marks);
+        }
+        const byValue = casesByValue(expression);
+        if (byValue !== undefined) {
+          return byValue;
         }
 
         const cases = expression.cases.map(([condition, then]) => /** @type const */ ([build(condition), then && build(then)]));
@@ -500,7 +507,7 @@ export const fast = (jsonSchema, kernel) => {
   };
 
   /**
-   * A `cases` whose conditions are only `typeIs` (what `type-dispatch` makes
+   * A `cases` whose conditions are only `typeIs` (what `dispatch` makes
    * of `oneOf` with a different `type` in each schema), as the branch for
    * each instance type, so it's one lookup instead of a test for each case.
    * A condition that's `typeIs` marks nothing.
@@ -523,6 +530,58 @@ export const fast = (jsonSchema, kernel) => {
       }
       return evaluator;
     });
+  };
+
+  /**
+   * A `cases` whose conditions are only `propertyEquals` of one property
+   * with scalar values (what `dispatch` makes of a `oneOf` with a different
+   * `const` for a property in each schema), as a lookup by the property's
+   * value instead of a test for each case. A condition that's
+   * `propertyEquals` passes what isn't an object and marks nothing.
+   *
+   * @type (expression: Extract<Expression, { op: "cases" }>) => Evaluator | undefined
+   */
+  const casesByValue = ({ cases, otherwise }) => {
+    const [first] = cases;
+    if (first?.[0].op !== "propertyEquals") {
+      return undefined;
+    }
+    const { name } = first[0];
+
+    /** @type Map<Expression | null, Evaluator> */
+    const evaluators = new Map();
+    /** @type (then: Expression | null) => Evaluator */
+    const branch = (then) => {
+      let evaluator = evaluators.get(then);
+      if (evaluator === undefined) {
+        evaluator = then === null ? () => true : build(then);
+        evaluators.set(then, evaluator);
+      }
+      return evaluator;
+    };
+
+    // A Map compares scalars as JSON does: `1` is `1.0`, but not `"1"`
+    /** @type Map<Json, Evaluator> */
+    const byValue = new Map();
+    for (const [condition, then] of cases) {
+      if (condition.op !== "propertyEquals" || condition.name !== name || !isScalar(condition.value)) {
+        return undefined;
+      }
+      if (!byValue.has(condition.value)) {
+        byValue.set(condition.value, branch(then));
+      }
+    }
+    const firstBranch = branch(first[1]);
+    const otherwiseBranch = branch(otherwise);
+
+    return (instance, marks) => {
+      if (!isObject(instance)) {
+        return firstBranch(instance, marks);
+      }
+      const value = Object.hasOwn(instance, name) ? instance[name] : undefined;
+      const evaluate = value !== undefined && isScalar(value) ? byValue.get(value) : undefined;
+      return (evaluate ?? otherwiseBranch)(instance, marks);
+    };
   };
 
   /**

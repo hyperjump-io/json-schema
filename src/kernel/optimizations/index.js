@@ -1,6 +1,6 @@
 import staticUnevaluated from "./static-unevaluated.js";
 import foldPassing from "./fold-passing.js";
-import typeDispatch from "./type-dispatch.js";
+import dispatch from "./dispatch.js";
 import dropGroups from "./drop-groups.js";
 
 /**
@@ -18,6 +18,6 @@ import dropGroups from "./drop-groups.js";
 export const optimizations = [
   staticUnevaluated,
   foldPassing,
-  typeDispatch,
+  dispatch,
   dropGroups
 ];

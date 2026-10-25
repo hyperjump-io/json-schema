@@ -193,7 +193,7 @@ describe("applicator errors", () => {
 
     test("of more schemas, they're errors too", async () => {
       const validator = await jsonSchema.compile(await schemaFile({
-        anyOf: [{ type: "string" }, { type: "boolean" }],
+        anyOf: [{ type: "string", minLength: 1 }, { type: "boolean" }],
         oneOf: [{ minimum: 10 }, { maximum: 0 }]
       }));
 

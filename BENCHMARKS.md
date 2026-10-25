@@ -961,3 +961,45 @@ they see its nodes). `ab.ts`, B/A:
 - Evaluating got cheaper, but finding the node of nearly every annotation
   and making a location for every value evaluated cost more. It isn't
   used.
+
+### Dispatching by tag
+
+tree-sitter's grammar schema has a `oneOf` of 14 rule types, each with a
+`const` for `type`, and most rules contain rules, so evaluating every
+schema of the `oneOf` (with plugins, or `validateJson`, which evaluates an
+AST) is exponential in a grammar's depth. `dispatch` evaluates only the
+schema for the tag. Its corpus is 10 grammars from tree-sitter's
+repositories, and GeoJSON, CQL2, and cmake-presets from
+`jsonschema-benchmark` (100, 109, and 967 instances). `time-corpora.ts`,
+before and after (separate runs, so differences under 10–15% are drift):
+
+| | FLAG | Hooks that do nothing | BASIC | `validateJson` |
+| --- | --- | --- | --- | --- |
+| tree-sitter | 9.7 → 5.3 ms | 18.5 s → 8.4 ms | 2.9 s → 6.7 ms | 22 s → 42 ms |
+| CQL2 | 0.42 → 0.28 ms | 159 → 2.5 ms | 0.45 → 0.28 ms | 119 → 3.1 ms |
+| GeoJSON | 3.7 → 3.2 ms | 38 → 14 ms | – | 121 → 106 ms |
+| cmake-presets | – | 261 → 237 ms | – | 328 → 285 ms |
+
+`fast.js` then looked a `cases` of `propertyEquals` up by the property's
+value, `ab.ts` FLAG, B/A, against the pass without it:
+
+| | tree-sitter | GeoJSON | CQL2 | cmake-presets |
+| --- | --- | --- | --- | --- |
+| Keyed by a string of the type and value | 0.954 | 1.078 | 0.935 | 1.026 |
+| Keyed by the value (a `Map` compares scalars as JSON does) | 0.481 | 0.890 | 0.731 | 0.997 |
+
+- Against HEAD, `ab.ts` FLAG on the usual corpora was 0.98–1.01, except
+  OpenAPI 3.0 at 1.02–1.03 when it ran after `package.json` in the same
+  process. On its own it was 0.993, and with tags turned off 1.001, so
+  that's the JIT's feedback from the other corpora, not the pass, which
+  only changes OpenAPI 3.0's `SecurityScheme` `oneOf`.
+- With hooks, `package.json` and `tsconfig.json` got about 10% faster
+  (0.904, 0.908), because dispatching by type now applies with plugins.
+- On 23,620 mutants of the corpus's instances (a string swapped for
+  another, like a tag, a property removed, a value replaced, and JSON text
+  with a value that can't be parsed), results were the same as before, and
+  every BASIC error was one reported before. Reporting only the schemas
+  for the tag cut BASIC errors from 1,428,154 to 1,130 on the grammars and
+  from 1,537,883 to 53,582 on CQL2.
+- The pass takes 3.9 ms on `package.json`, 0.3 ms on `tsconfig.json`, and
+  0.4 ms on OpenAPI 3.0, as it did by type alone.
