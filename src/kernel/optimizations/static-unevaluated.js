@@ -48,7 +48,8 @@ export default {
       items: new Analysis(kernel.schemas, "items")
     };
 
-    for (const handle in kernel.schemas) {
+    // Only the schemas that read marks can have a selector to replace
+    for (const handle of kernel.reads.evaluated) {
       const schema = kernel.schemas[handle];
       if (typeof schema === "boolean" || !schema.keywords.some(({ expression }) => readerKind(expression) !== undefined)) {
         continue;

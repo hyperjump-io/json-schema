@@ -6,7 +6,7 @@ import { addedRegistriesOf } from "./registry/session-registries.js";
 import schemaKeyword from "./keywords/schema.js";
 import unknownKeyword, { keywordDefinitionUri } from "./keywords/unknown.js";
 import { Validator } from "./kernel/validator.js";
-import { subexpressions } from "./kernel/kernel.js";
+import { schemaReads, subexpressions } from "./kernel/kernel.js";
 import { keywordEvaluate } from "./kernel/fast.js";
 import { basicOutputFormat } from "./output/basic.js";
 import { detailedOutputFormat } from "./output/detailed.js";
@@ -250,6 +250,10 @@ export class JsonSchema extends Hyperjump {
       subexpressions(expression).forEach(checkDefinitions);
     };
 
+    // What's read is worked out again rather than trusted, because an
+    // evaluator that doesn't track what an expression reads fails
+    /** @type Kernel["reads"] */
+    const reads = { evaluated: [], dynamicScope: [] };
     for (const handle in kernel.schemas) {
       const schema = kernel.schemas[handle];
       if (typeof schema !== "boolean") {
@@ -258,9 +262,12 @@ export class JsonSchema extends Hyperjump {
           checkDefinitions(expression);
         }
       }
+      for (const state of schemaReads(schema)) {
+        reads[state].push(handle);
+      }
     }
 
-    return new Validator(this, kernel);
+    return new Validator(this, { ...kernel, reads });
   }
 
   /** @type API.JsonSchema["validate"] */

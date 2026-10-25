@@ -2,7 +2,7 @@ import * as JsonPointer from "@hyperjump/json-pointer";
 import { keywordDefinitionUri } from "../keywords/unknown.js";
 import { codePointLength, instanceEqual } from "../keywords/utilities.js";
 import { jsInstance } from "./instance.js";
-import { conditionsOf, explainsFailure, readsDynamicScope, readsMarks } from "./kernel.js";
+import { conditionsOf, explainsFailure, readsMarks } from "./kernel.js";
 import { addDynamicAnchors, addReachable, isClose, itemSequenceStates, keywordEvaluate, selector } from "./fast.js";
 
 /**
@@ -172,9 +172,7 @@ const hasType = (types, type, isInteger) => {
 export const instrumented = (jsonSchema, kernel, options) => {
   const { instance: ops, isAst, annotating, instrumented: tracking } = options;
 
-  const tracksDynamicScope = Object.values(kernel.schemas).some((schema) => {
-    return typeof schema !== "boolean" && schema.keywords.some(({ expression }) => readsDynamicScope(expression));
-  });
+  const tracksDynamicScope = kernel.reads.dynamicScope.length > 0;
 
   /** @typedef {Parameters<typeof ops.typeOf>[0]} I */
 

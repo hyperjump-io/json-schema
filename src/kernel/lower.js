@@ -4,7 +4,7 @@ import { appendToLocation, jsonValue, pointerGet } from "@hyperjump/browser/json
 import { isErrorNode } from "../keywords/checks.js";
 import { keywordDefinitionUri } from "../keywords/unknown.js";
 import { siblingValues } from "../keywords/utilities.js";
-import { readsMarks } from "./kernel.js";
+import { readsMarks, schemaReads } from "./kernel.js";
 import { normalForm } from "./normalize.js";
 
 /**
@@ -45,6 +45,9 @@ class Lowerer {
   /** @type Kernel["resources"] */
   #resources;
 
+  /** @type Kernel["reads"] */
+  #reads;
+
   /** @type Inputs */
   #inputs;
 
@@ -68,6 +71,7 @@ class Lowerer {
     this.#session = session;
     this.#schemas = {};
     this.#resources = {};
+    this.#reads = { evaluated: [], dynamicScope: [] };
     this.#absoluteIris = new Map();
     this.#dialects = new Map();
     this.#nodes = new Map();
@@ -85,7 +89,7 @@ class Lowerer {
   /** @type (uri: string) => Promise<Kernel> */
   async lower(uri) {
     const handle = await this.#compileUri(uri);
-    return { kernel: 1, uri: handle, schemas: this.#schemas, resources: this.#resources };
+    return { kernel: 1, uri: handle, schemas: this.#schemas, resources: this.#resources, reads: this.#reads };
   }
 
   /** @type (uri: string, referencedFrom?: string) => Promise<Handle> */
@@ -155,7 +159,11 @@ class Lowerer {
 
     const dialect = await this.#dialect(node.dialectUri);
     const lowered = await lowerKeywords(this.#session.jsonSchema, /** @type ObjectSchemaNode */ (node), dialect, this.#inputs, false);
-    this.#schemas[handle] = { resource, keywords: lowered.map(({ group }) => group) };
+    const schema = { resource, keywords: lowered.map(({ group }) => group) };
+    this.#schemas[handle] = schema;
+    for (const state of schemaReads(schema)) {
+      this.#reads[state].push(handle);
+    }
     return handle;
   }
 

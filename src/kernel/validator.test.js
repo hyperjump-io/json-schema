@@ -1260,6 +1260,28 @@ describe("Validator", () => {
       expect(() => other.restoreValidator(serialized)).to.throw("needs 'evaluate'");
     });
 
+    test("a restored validator works out what its schemas read", async () => {
+      const uri = await schemaFile({
+        $id: "https://example.com/strict-node",
+        $dynamicAnchor: "node",
+        $ref: "node",
+        unevaluatedProperties: false,
+        $defs: {
+          node: {
+            $id: "https://example.com/node",
+            $dynamicAnchor: "node",
+            anyOf: [{ type: "null" }, { properties: { child: { $dynamicRef: "#node" } } }]
+          }
+        }
+      });
+      const validator = await jsonSchema.compile(uri);
+      const serialized = /** @type Record<string, Json> */ (validator.serialize());
+
+      const restored = jsonSchema.restoreValidator({ ...serialized, reads: { evaluated: [], dynamicScope: [] } });
+      expect(restored.validate({ child: { child: null } })).to.equal(true);
+      expect(restored.validate({ child: { extra: 1 } })).to.equal(false);
+    });
+
     test("a compiled schema is in kernel version 1", async () => {
       const validator = await jsonSchema.compile(await schemaFile({ type: "number" }));
       const serialized = /** @type Record<string, Json> */ (validator.serialize());

@@ -1,4 +1,3 @@
-import { readsMarks } from "../kernel.js";
 import { normalForm } from "../normalize.js";
 import { isInert } from "../optimize.js";
 
@@ -23,9 +22,7 @@ import { isInert } from "../optimize.js";
  */
 export default {
   optimize(kernel, mode) {
-    const marksAreRead = Object.values(kernel.schemas).some((schema) => {
-      return typeof schema !== "boolean" && schema.keywords.some(({ expression }) => readsMarks(expression));
-    });
+    const marksAreRead = kernel.reads.evaluated.length > 0;
 
     // A table of every schema is faster in an object than in a `Map`
     /** @type Record<Handle, CompiledSchema> */

@@ -861,6 +861,13 @@ them, and `src/kernel/optimize.js` runs them.
   `serialize`. `optimize` puts what each pass replaces in one copy of the
   kernel's schemas, made the first time a pass replaces anything, and
   later passes get that copy. A kernel that no pass changes isn't copied.
+- The kernel's `reads` lists the schemas with a keyword group that reads
+  marks (`evaluated`) or the dynamic scope (`dynamicScope`). Lowering
+  records it, `optimize` keeps it right for the schemas passes replace,
+  and `restoreValidator` works it out again rather than trusting it. So
+  "does anything read marks?" isn't a walk over every expression, which
+  took 1.7–2 ms on `package.json` each time a pass or evaluator asked, and
+  `static-unevaluated` only looks at the schemas that read marks.
 - Passes run when an evaluator is built, for its mode, so a serialized
   kernel isn't optimized for any one mode.
 - Passes run in the order `index.js` lists them, because one can leave work

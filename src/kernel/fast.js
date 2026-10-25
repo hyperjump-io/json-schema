@@ -1,6 +1,6 @@
 import { jsInstance } from "./instance.js";
 import { codePointLength, instanceEqual } from "../keywords/utilities.js";
-import { readsDynamicScope, readsMarks } from "./kernel.js";
+import { readsMarks } from "./kernel.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
@@ -64,14 +64,10 @@ const isInert = (expression) => expression.op === "pass" || expression.op === "a
  * @type (jsonSchema: JsonSchema, kernel: Kernel) => (instance: Json) => boolean
  */
 export const fast = (jsonSchema, kernel) => {
-  const tracksDynamicScope = Object.values(kernel.schemas).some((schema) => {
-    return typeof schema !== "boolean" && schema.keywords.some(({ expression }) => readsDynamicScope(expression));
-  });
+  const tracksDynamicScope = kernel.reads.dynamicScope.length > 0;
 
   // An `opaque` operation can't stop early if it might get marks
-  const marksAreRead = Object.values(kernel.schemas).some((schema) => {
-    return typeof schema !== "boolean" && schema.keywords.some(({ expression }) => readsMarks(expression));
-  });
+  const marksAreRead = kernel.reads.evaluated.length > 0;
 
   /** @type string | undefined */
   let currentResource;

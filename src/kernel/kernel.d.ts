@@ -154,6 +154,13 @@ export type Kernel = {
    * to, mapped to the schemas they identify
    */
   resources: Record<string, { dynamicAnchors: Record<string, Handle> }>;
+
+  /**
+   * The schemas with a keyword group that reads each kind of evaluation
+   * state, so evaluators and optimizations know what to track without
+   * reading every expression. `restoreValidator` works it out again.
+   */
+  reads: Record<EvaluationState, Handle[]>;
 };
 
 /** The expressions directly in an expression, not through `apply` */
@@ -164,6 +171,9 @@ export const subexpressions: (expression: Expression) => Expression[];
  * `opaque` operation that reads it), so evaluators have to track it
  */
 export const readsDynamicScope: (expression: Expression) => boolean;
+
+/** The kinds of evaluation state a schema's keyword groups read */
+export const schemaReads: (schema: CompiledSchema) => EvaluationState[];
 
 /** The item expressions in an item pattern */
 export const patternItems: (pattern: ItemPattern) => Expression[];

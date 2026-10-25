@@ -77,6 +77,21 @@ export const readsMarks = (expression) => {
   }
 };
 
+/** @type API.schemaReads */
+export const schemaReads = (schema) => {
+  /** @type API.EvaluationState[] */
+  const reads = [];
+  if (typeof schema !== "boolean") {
+    if (schema.keywords.some(({ expression }) => readsMarks(expression))) {
+      reads.push("evaluated");
+    }
+    if (schema.keywords.some(({ expression }) => readsDynamicScope(expression))) {
+      reads.push("dynamicScope");
+    }
+  }
+  return reads;
+};
+
 /** @type API.readsDynamicScope */
 export const readsDynamicScope = (expression) => {
   if (expression.op === "dynamicApply") {
