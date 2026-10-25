@@ -909,6 +909,24 @@ The passes:
   BASIC and DETAILED, that was worth 5–15%, more than merging. Without
   plugins, the evaluators leave out `pass` and `annotate` groups that have
   no effect as they build them, so there's nothing for it to do.
+- `type-dispatch.js` (not with plugins): `any` and `one` evaluate only
+  what can pass the instance's type. An `any` of schemas that only have a
+  `type` (tsconfig's `anyOf` of `boolean` and `null`) is a `typeIs` with
+  all their types. A `one` whose expressions can't pass the same type
+  (662 of `package.json`'s 697 `oneOf`s) is a `cases` with a `typeIs`
+  condition for each, otherwise `fail`, so it doesn't evaluate every
+  schema to find out none of the others passes. The types an expression
+  can pass come from `typeIs`, `equals`, and `oneOfValues`, through
+  `all`, `any`, `one`, and `apply`, and anything else, or a schema that
+  applies itself, counts as every type, so a schema is only left out if
+  it can't pass. Plugins see every error, so it's not for them. It takes
+  about 4 ms on `package.json`.
+
+The evaluators also choose how to evaluate an operation, which isn't a
+pass, because it doesn't change the expression. `fast.js` checks more than
+one type with a bit mask, calls two or three keyword groups (or an `all`
+of two or three) without a loop, and looks up a `cases` whose conditions
+are only `typeIs` by the instance's type.
 
 Optimizations that were tried and aren't used:
 
@@ -920,6 +938,10 @@ Optimizations that were tried and aren't used:
   would take about 65,000 validations to make that back.
 - Finding the instance's type once per schema and only evaluating the
   operations for that type was up to 18% slower.
+- Choosing by type in an `any` whose schemas aren't only a `type` was
+  slower: it already stops at the first that passes. So was choosing in a
+  `one` where a type still has more than one schema, or looking the type
+  up by name instead of by index.
 
 ### Evaluation state
 
