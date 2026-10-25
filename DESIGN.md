@@ -1380,7 +1380,12 @@ catalogue doesn't cover. Done so far: `empty-type`,
 `required-dependent-property`, and `invalid-default-or-example` checking
 values against the schemas that apply theirs.
 `keyword-implied-by-const-or-enum` also covers the catalogue's
-`enum_validation_keywords_default`. There are no candidates left.
+`enum_validation_keywords_default`. Candidates:
+
+- `unevaluated-without-effect`: an `unevaluatedProperties` or
+  `unevaluatedItems` that can't see anything unevaluated, because a keyword
+  in its group marks every property or item, like `additionalProperties:
+  true` next to `unevaluatedProperties: false`.
 
 ### Configuration comments
 
@@ -1637,11 +1642,15 @@ What this relies on from browser's `v2` branch:
 3. Linting from code (see "Linting from code"): every schema problem in
    one `SchemaError`, then `lint(uri)`. In stages ("Linting from code, in
    stages").
-4. A style lint preset. It's opinionated about how a schema is organized,
+4. Lint knows keywords only by what they lower to: where each operation
+   came from, and no facts on keyword definitions that only lint reads,
+   like `Keyword.default`. In stages ("Lint without keyword facts, in
+   stages").
+5. A style lint preset. It's opinionated about how a schema is organized,
    with rules for things like whether `$defs` comes first or last.
-5. A bundle command in the CLI.
-6. A documentation website.
-7. Later: OpenAPI and migrating dependent projects.
+6. A bundle command in the CLI.
+7. A documentation website.
+8. Later: OpenAPI and migrating dependent projects.
 
 ### Moving the kernel into `src/`
 
@@ -1795,6 +1804,47 @@ lint, and type-check, and is reviewed before the next.
    because there's nothing to lint. `toSchemaMessage` in
    `src/schema/resolve-text.js` converts a file's messages for both
    `SchemaError` and `lint`.
+
+### Lint without keyword facts, in stages
+
+Plan item 4. Rules are built on kernel operations, not on a summary of
+what a schema allows derived from them, because users write rules too, and
+because rules built on operations lint custom keywords the same as built-in
+ones. What a rule needs to know about a keyword comes from what it lowers
+to, or the kernel is missing an operation. Each stage passes `npm test`,
+lint, and type-check, and is reviewed before the next.
+
+1. **One form for each meaning.** Normal form drops limits that always
+   pass: a count's `min: 0` and `exclusiveMin` or `exclusiveMax` that's
+   `false`, and a count without limits is `pass`. `readOnly`,
+   `writeOnly`, and `deprecated` lower to `pass` when they're `false`,
+   because the specs say leaving them out is the same, so that
+   annotation isn't collected anymore. A keyword then has the same
+   expression with its default value as without it.
+2. **Where each operation came from.** Lint lowers a keyword again
+   without each sibling it read that's in the schema. What differs came
+   from that sibling, and the rest from the keyword. A rule asks which
+   keyword nodes an operation, or one of its fields, came from, so
+   `contradictory-limits` doesn't build its labels from `sourceNodes` or
+   rely on the order a keyword declares its siblings.
+3. **No `Keyword.default`.** `keyword-with-default-value` is replaced:
+   - `keyword-without-effect` reports a keyword whose group always passes
+     and doesn't annotate or mark anything, following what it applies, so
+     a schema with no effect counts as `true`. It also reports a sibling
+     its reader lowers the same without (`minContains: 1`). A keyword that
+     only marks particular properties or items (`properties: {"a": true}`,
+     or a pattern) is reported only if nothing in its schema group reads
+     marks and the group isn't open. In an open group, an `unevaluated*`
+     that applies the schema from another document can read them, and
+     there are good reasons to write it. Any subschema could be referenced
+     from another document, but the rule assumes only the root and
+     definitions are, which is what `open` says.
+   - `empty-catch-all-schema` reports a keyword that applies a schema with
+     no effect to every property or item that others don't
+     (`additionalProperties: true`, `items: {}`, `unevaluatedProperties:
+     true`): `eachProperty` with an `except` or `unevaluated` selector, or
+     `eachItem`. It's reported even when an `unevaluated*` could read its
+     marks, because writing it is a mistake.
 
 ## Known limitations
 
