@@ -205,6 +205,11 @@ export class JsonSchema extends Hyperjump {
     return this.session(options).bundle(uri, options);
   }
 
+  /** @type API.JsonSchema["lint"] */
+  async lint(uri, options) {
+    return this.session(options).lint(uri, options);
+  }
+
   /** @type API.JsonSchema["addOutputFormat"] */
   addOutputFormat(name, definition) {
     if (name === "FLAG") {

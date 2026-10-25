@@ -1,6 +1,8 @@
 import type { DocumentNode, GetOptions, Session } from "@hyperjump/browser";
 import type { Json } from "@hyperjump/browser/json";
 import type { Data } from "unist";
+import type { PluggableList } from "unified";
+import type { SchemaMessage } from "./schema/schema-error.d.ts";
 import type { JsonSchemaNode } from "./schema/schema-ast.d.ts";
 import type { Dialect } from "./dialect.d.ts";
 import type { SchemaRegistry } from "./registry/schema-registry.d.ts";
@@ -46,6 +48,15 @@ export type BundleOptions = {
 };
 
 export type DefinitionNamingStrategy = "uri" | "uuid";
+
+export type LintOptions = {
+  /**
+   * The lint plugins, in the shape of `.hyperjumprc`'s: rules and presets,
+   * each optionally with its config (`[recommended, [rule, ["error"]]]`).
+   * The default is `lint/recommended`.
+   */
+  plugins?: PluggableList;
+};
 
 /**
  * Retrieves, browses, and compiles schemas. Everything resolved belongs to
@@ -127,6 +138,23 @@ export class JsonSchemaSession extends Session<JsonSchemaNode> {
    * found.
    */
   bundle(uri: string, options?: BundleOptions): Promise<Json>;
+
+  /**
+   * Lint the whole document `uri` is in: every schema in it, including
+   * definitions nothing references, as a file is linted in a unified
+   * pipeline. The documents it references aren't linted, but rules can look
+   * at them, through this session.
+   *
+   * It returns each message as plain data, with its `severity`: `"error"`
+   * if the rule is configured as an error, and `"warn"` otherwise. A
+   * document with schema problems can't be linted, so its problems are
+   * returned instead of thrown.
+   *
+   * @throws Error if `uri` isn't a schema.
+   * @throws RetrievalError from `@hyperjump/browser` if the document can't
+   * be retrieved.
+   */
+  lint(uri: string, options?: LintOptions): Promise<SchemaMessage[]>;
 
   /**
    * The values a keyword annotated a node with, one for every schema

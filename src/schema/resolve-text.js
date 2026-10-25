@@ -5,6 +5,7 @@ import { jsonSchemaResolve } from "./resolve.js";
 import { SchemaError } from "./schema-error.js";
 
 /**
+ * @import { VFileMessage } from "vfile-message"
  * @import { JsonSchemaSession } from "../session.d.ts"
  * @import { JsonSchemaDocumentNode } from "./schema-ast.d.ts"
  * @import { SchemaMessage } from "./schema-error.d.ts"
@@ -51,19 +52,26 @@ export const resolveSchemaText = async (text, session, uri, dialectUri) => {
  * @type (file: VFile, uri: string) => SchemaError
  */
 const schemaError = (file, uri) => {
-  return new SchemaError(file.messages.map((message) => {
-    /** @type SchemaMessage */
-    const schemaMessage = {
-      source: message.source ?? "json-schema",
-      ruleId: message.ruleId ?? "",
-      severity: "error",
-      uri: uri,
-      place: message.place,
-      message: message.reason
-    };
-    if (message.cause !== undefined) {
-      schemaMessage.cause = message.cause;
-    }
-    return schemaMessage;
-  }));
+  return new SchemaError(file.messages.map((message) => toSchemaMessage(message, uri, "error")));
+};
+
+/**
+ * A message on a file as plain data
+ *
+ * @type (message: VFileMessage, uri: string, severity: SchemaMessage["severity"]) => SchemaMessage
+ */
+export const toSchemaMessage = (message, uri, severity) => {
+  /** @type SchemaMessage */
+  const schemaMessage = {
+    source: message.source ?? "json-schema",
+    ruleId: message.ruleId ?? "",
+    severity: severity,
+    uri: uri,
+    place: message.place,
+    message: message.reason
+  };
+  if (message.cause !== undefined) {
+    schemaMessage.cause = message.cause;
+  }
+  return schemaMessage;
 };

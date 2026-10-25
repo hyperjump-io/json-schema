@@ -681,8 +681,8 @@ Implemented in `src/kernel/validator.js`.
   which is an `Error`, but each problem in it is plain data
   (`SchemaMessage`), with a message, because only the resolver or keyword
   that found it can say what's wrong. They're collected, not thrown one at
-  a time, and lint results are the same type (see "Linting while
-  resolving").
+  a time, and `lint(uri)`'s results are the same type (see "Linting from
+  code").
 - Errors are converted to `VFileMessage`s where they're reported, with
   `toVFileMessage`, which gives them a generic message. A validation error
   says it fails the constraint at its absolute keyword location, which
@@ -1484,47 +1484,39 @@ document finds something. They can see what's in registries and what
   unrestricted `JsonSchema`. Nothing can stop code that sets out to do that.
   The restriction keeps a schema from making rules retrieve what it names.
 
-### Linting while resolving (planned)
+### Linting from code
 
-Linting needs a unified pipeline today, outside of hjlint. Users who
-compile schemas should get lint results from the schemas they already
-use, without building one.
+Linting needs a unified pipeline today, outside of hjlint. `lint(uri)` on
+`JsonSchema` and `JsonSchemaSession` lints a schema document without one.
 
-- Lint is configured on the session: `SessionOptions.lint`, a list of
-  plugins in the same shape as `.hyperjumprc`'s (`[recommended, [rule,
-  ["warn"]]]`), or `true` for `lint/recommended`. It applies to
-  every document the session resolves, for `compile`, `bundle`,
-  `getDocument`, and browsing. `compile(uri, { lint })` works because
-  `compile` already takes `SessionOptions`. Different parts of an
-  application can have different rules, as with `allowRetrieval`, and
-  there's no lint state on `JsonSchema`.
+- It lints the whole document `uri` is in, the way `bundle` takes the
+  whole document, including definitions nothing in it references. A rule
+  sees every schema in the document, as in a unified pipeline. Rules that
+  check one schema from an entry point, like `compile` lowers, were tried
+  and dropped: a file of shared definitions would get almost nothing
+  linted, and what's linted would depend on what can be lowered, so a
+  schema with an unknown dialect or a keyword value that doesn't fit its
+  shape would stop lint quietly.
+- It doesn't lint the documents `uri` references. Each document is linted
+  on its own, as a file is in hjlint.
+- `compile` doesn't lint. A compiled schema is the entry point and what it
+  reaches, which isn't the unit lint works on, so linting the documents it
+  used would report on schemas it doesn't use.
+- The plugins are `options.plugins`, in the shape of `.hyperjumprc`'s
+  (`[recommended, [rule, ["warn"]]]`), and `lint/recommended` without them.
+  It's loaded when it's needed, so code that never lints never loads the
+  rules.
+- It returns plain `SchemaMessage`s (see "Validation API"), with each
+  message's `severity` (`"error"` if the rule made it fatal, `"warn"`
+  otherwise), and the document's URI. A document with problems has no
+  tree, so its problems are what's returned, not thrown. A rule's message
+  is specific, so it's kept. Rules still report with `file.message`, so
+  results are converted from `VFileMessage`s when the pass finishes.
 - Rules don't run in the media type plugin's `parse`. A resolved document
   from a registry is cached once per `JsonSchema` and shared by sessions
   (see "Making sessions cheap"), so it would keep the results of the
-  first session's rules. Lint is a separate pass over a resolved document
-  the first time a session uses it, and its results belong to the session.
-- Results are plain objects until they're reported, like validation
-  errors (see "Validation API"), and convert with `toVFileMessage`. A lint
-  result has `source`, `ruleId`, `severity`, `place`, the document's URI,
-  and its message, because a rule's message is specific and only the rule
-  can write it. Rules still report with `file.message`, so results are
-  converted from `VFileMessage`s when the pass finishes.
-- A session collects results by document URI. A `Validator` has the
-  results for every document its compile resolved. They aren't part of
-  `serialize`, so a restored validator has none.
-- A lint result at `error` makes `compile` fail, as an `error` fails a
-  file in unified. `warn` results stay on the validator.
-- Compiling doesn't stop at a schema's first problem. What's thrown is a
-  `SchemaError` with every schema problem and every lint error, as plain
-  objects. The schema problems part is done: the `SchemaError` has every
-  problem in the first document found to have any.
-- `lint(uri)` on `JsonSchema` and `JsonSchemaSession` lints a schema and
-  everything it references, the graph `bundle` walks, without compiling.
-  It returns results by document URI and doesn't throw for schema
-  problems, which are results too. It's for CI, editors, and schemas that
-  can't be compiled yet. hjlint can use it for a schema and what it
-  references.
-- No callback for results (`onLint`). Collected results cover it.
+  first session's rules. Lint is a separate pass over a resolved document,
+  in a `VFile` with the session on `file.data.jsonSchemaSession`.
 - No rule sets for each dialect. A document can embed resources in other
   dialects, so a document's rules can't come from one dialect. Rules
   already do nothing where their keywords aren't loaded (see "Rules"), so
@@ -1642,9 +1634,8 @@ What this relies on from browser's `v2` branch:
    `src/`" for the steps after it).
 2. Port lint rules from the catalogue (see "The rule catalogue"). Done so
    far: everything in `src/lint/rules/`.
-3. Lint while resolving (see "Linting while resolving"): plain lint
-   results, every schema problem in one `SchemaError`, lint on the
-   session, then `lint(uri)`. In stages ("Linting while resolving, in
+3. Linting from code (see "Linting from code"): every schema problem in
+   one `SchemaError`, then `lint(uri)`. In stages ("Linting from code, in
    stages").
 4. A style lint preset. It's opinionated about how a schema is organized,
    with rules for things like whether `$defs` comes first or last.
@@ -1768,16 +1759,16 @@ Before the old code is gone for good (the end of stage 2), FLAG and BASIC
 can't be slower than v2 on the real-world schemas, and the first
 `validate` of a schema can't take more than about 1.5 times as long.
 
-### Linting while resolving, in stages
+### Linting from code, in stages
 
-Plan item 3 (see "Linting while resolving"). Each stage passes `npm test`,
+Plan item 3 (see "Linting from code"). Each stage passes `npm test`,
 lint, and type-check, and is reviewed before the next.
 
 1. **Every schema problem in one `SchemaError`.** A schema problem is a
    plain object, `SchemaMessage`: `source`, `ruleId`, `severity`
    (`"error"` or `"warn"`, like lint rules' severities), the document's
-   `uri`, `place`, `message`, and `cause`. Lint results in stage 2 are the same type, so a
-   `SchemaError` can hold both. `toVFileMessage` converts one. The media
+   `uri`, `place`, `message`, and `cause`. Lint results in stage 2 are
+   the same type. `toVFileMessage` converts one. The media
    type plugin and a registry entry's resolution throw a `SchemaError`
    with every problem in the document, including every syntax error. The
    document is parsed with `accept: "recovered"`, as the CLI does, so a
@@ -1793,18 +1784,17 @@ lint, and type-check, and is reviewed before the next.
    be identified is resolved when it's found by its `retrievalUri`, which
    finds the problem again with any others, so `RegistryIndex.lookup`
    returns the entry with its problem instead of throwing it.
-2. **Lint on the session.** `SessionOptions.lint`, a processor the session
-   builds once. A document is linted the first time the session gets it,
-   in a `VFile` with the session on `file.data.jsonSchemaSession`.
-   `getDocument` doesn't wait for it, because a rule that finds a schema in
-   another document would wait for that document's lint, which could be
-   waiting for this one. `compile` waits for the lint of every document it
-   lowered, puts their results on the `Validator`, and throws a
-   `SchemaError` with every result at `error`.
-3. **`lint(uri)`** on `JsonSchema` and `JsonSchemaSession`: the graph
-   `bundle` walks, results by document URI, schema problems included and
-   not thrown. A document with problems has no tree, so what it
-   references isn't linted.
+2. **`lint(uri)`** on `JsonSchema` and `JsonSchemaSession`, for the whole
+   document `uri` is in, with `options.plugins` or `lint/recommended`. It
+   returns `SchemaMessage`s, and a document's schema problems are returned,
+   not thrown. Linting while compiling (`SessionOptions.lint`) and rules
+   that check one schema from an entry point were tried and dropped (see
+   "Linting from code").
+   Done. `lint` is on `JsonSchemaSession` and `JsonSchema`, with
+   `LintOptions.plugins`. A document that isn't a schema is an error,
+   because there's nothing to lint. `toSchemaMessage` in
+   `src/schema/resolve-text.js` converts a file's messages for both
+   `SchemaError` and `lint`.
 
 ## Known limitations
 

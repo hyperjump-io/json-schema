@@ -1,3 +1,5 @@
+import { unified } from "unified";
+import { VFile } from "vfile";
 import { RetrievalError, Session } from "@hyperjump/browser";
 import { encodeIriFragment, toAbsoluteIri } from "@hyperjump/uri";
 import { SessionRegistries } from "./registry/session-registries.js";
@@ -5,6 +7,7 @@ import { lower } from "./kernel/lower.js";
 import { Validator } from "./kernel/validator.js";
 import { bundle } from "./bundle/bundle.js";
 import { SchemaError } from "./schema/schema-error.js";
+import { toSchemaMessage } from "./schema/resolve-text.js";
 import unknownKeyword, { keywordDefinitionUri } from "./keywords/unknown.js";
 
 /**
@@ -234,6 +237,35 @@ export class JsonSchemaSession extends Session {
   /** @type API.JsonSchemaSession["bundle"] */
   async bundle(uri, options) {
     return bundle(this, uri, options);
+  }
+
+  /** @type API.JsonSchemaSession["lint"] */
+  async lint(uri, options = {}) {
+    let document;
+    try {
+      document = await this.getDocument(uri);
+    } catch (error) {
+      // A document with problems has no tree to lint
+      if (error instanceof SchemaError) {
+        return error.messages;
+      }
+      throw error;
+    }
+
+    if (document.type !== "json-schema-document") {
+      throw Error(`'${uri}' isn't a schema. It's ${document.mediaType}.`);
+    }
+
+    // Loaded when it's needed, so code that never lints never loads the rules
+    const plugins = options.plugins ?? [(await import("./lint/recommended.js")).default];
+    const linter = unified()
+      .use(plugins)
+      .freeze();
+    const tree = /** @type JsonSchemaDocumentNode */ (/** @type unknown */ (document));
+    const file = new VFile({ data: { jsonSchemaSession: this } });
+    await linter.run(/** @type any */ (tree), file);
+
+    return file.messages.map((message) => toSchemaMessage(message, tree.uri, message.fatal ? "error" : "warn"));
   }
 
   /** @type API.JsonSchemaSession["annotation"] */

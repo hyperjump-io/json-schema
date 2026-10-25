@@ -11,7 +11,8 @@ import type { Dialect, DialectExtension } from "./dialect.d.ts";
 import type { Format } from "./format.d.ts";
 import type { EvaluationPlugin } from "./kernel/evaluation-plugin.d.ts";
 import type { SchemaRegistry } from "./registry/schema-registry.d.ts";
-import type { BundleOptions, JsonSchemaSession, SessionOptions } from "./session.d.ts";
+import type { BundleOptions, JsonSchemaSession, LintOptions, SessionOptions } from "./session.d.ts";
+import type { SchemaMessage } from "./schema/schema-error.d.ts";
 import type { OutputFormat, OutputFormatDefinition, ValidationResult } from "./output/output-format.d.ts";
 
 export { outputErrorMessage, toVFileMessage } from "./output/validation-error.js";
@@ -140,6 +141,13 @@ export class JsonSchema extends Hyperjump<JsonSchemaNode> {
    * registries and `allowRetrieval` decide what can be bundled.
    */
   bundle(uri: string, options?: SessionOptions & BundleOptions): Promise<Json>;
+
+  /**
+   * Lint a schema document, in a new session. See
+   * {@link JsonSchemaSession.lint}. The session's registries and
+   * `allowRetrieval` decide what rules can see in other documents.
+   */
+  lint(uri: string, options?: SessionOptions & LintOptions): Promise<SchemaMessage[]>;
 
   /**
    * Restore a validator from {@link Validator.serialize}. It doesn't
