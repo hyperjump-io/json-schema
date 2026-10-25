@@ -67,6 +67,7 @@ export type Expression = { op: "pass" }
   | { op: "cases"; cases: [Expression, Expression | null][]; otherwise: Expression | null }
   | { op: "typeSwitch"; cases: Partial<Record<JsonTypeName, Expression>>; otherwise: Expression }
   | { op: "propertySwitch"; name: string; cases: [Scalar, Expression][]; other: Expression; absent: Expression; unparsed: Expression }
+  | { op: "keySwitch"; cases: [string, Expression][]; none: Expression; unparsed: Expression }
   | { op: "apply"; schema: Handle }
   | { op: "dynamicApply"; anchor: string; fallback: Handle | null }
 

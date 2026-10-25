@@ -163,12 +163,14 @@ doesn't explain its failure.
 | `{ op: "cases", cases: [Expression, Expression \| null][], otherwise: Expression \| null }` | everything | see below | the condition's and branch's that applied |
 | `{ op: "typeSwitch", cases: { [type: JsonTypeName]?: Expression }, otherwise: Expression }` | everything | the branch for the instance's type passes | the branch's that applied |
 | `{ op: "propertySwitch", name: string, cases: [Scalar, Expression][], other: Expression, absent: Expression, unparsed: Expression }` | object | see below | the branch's that applied |
+| `{ op: "keySwitch", cases: [string, Expression][], none: Expression, unparsed: Expression }` | object | see below | the branch's that applied |
 | `{ op: "apply", schema: Handle }` | everything | the schema passes | the schema's |
 | `{ op: "dynamicApply", anchor: string, fallback: Handle \| null }` | everything | see below | the applied schema's |
 
 - `apply` and `dynamicApply` explain their failures. `all` does if every
   one of its expressions does (`required` lowers to an `all` that doesn't),
-  and `cases`, `typeSwitch`, and `propertySwitch` do if every branch does.
+  and `cases`, `typeSwitch`, `propertySwitch`, and `keySwitch` do if every
+  branch does.
   `any` and `one` of one expression do, because "none passed" is then just
   "it failed", so `any` of one can be the one in normal form.
 - **`typeSwitch`** applies the branch for the instance's JSON type (an
@@ -178,13 +180,17 @@ doesn't explain its failure.
   `other` if none does, `absent` if the object doesn't have the property,
   or `unparsed` if its value couldn't be parsed. Values are scalars, so an
   object or array value is `other`. If two cases have the same value, the
-  first applies. They're `cases` that an evaluator can look up instead of
+  first applies. **`keySwitch`** applies, to an object, the branch of the
+  first case whose property it has with a value that was parsed, `none` if
+  it has none of the properties, or `unparsed` if the ones it has all have
+  values that couldn't be parsed.
+  The switches are `cases` that an evaluator can look up instead of
   testing each condition, so they aren't lowered from keywords: the
   optimizer makes them (see "Optimizer"). `typeSwitch` passes an instance
   that couldn't be parsed, as every schema does. A property's value that
-  couldn't be parsed would equal every value, so it gets a branch of its
-  own: the optimizer makes it what the switch replaced, so the result is
-  the same as before, errors included.
+  couldn't be parsed would equal every value and pass every schema, so it
+  gets a branch of its own: the optimizer makes it what the switch
+  replaced, so the result is the same as before, errors included.
 - **`cases`**: the first case whose condition passes applies its branch
   (`null` passes). If no condition passes, `otherwise` applies (`null`
   passes). A condition that fails is a condition, not an error: the output
@@ -372,7 +378,8 @@ anything that keeps the result and the marks is allowed, like inlining
 property operations into one loop, resolving `unevaluated` selectors that
 don't depend on the instance, folding schemas that always pass,
 evaluating only the expressions of an `any` or `one` that can pass the
-instance's type or tag (as a `typeSwitch` or `propertySwitch`), and leaving
+instance's type or tag (as a `typeSwitch`, `propertySwitch`, or
+`keySwitch`), and leaving
 out groups with no effect (DESIGN.md, "Optimizations").
 
 With plugins, what plugins see can depend on the optimizations: which

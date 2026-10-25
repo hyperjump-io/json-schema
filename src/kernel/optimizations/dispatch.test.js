@@ -123,9 +123,6 @@ describe("dispatch", () => {
       ...more
     });
 
-    /** @type (name: string) => Json */
-    const isParsed = (name) => ({ op: "not", of: { op: "property", name, of: { op: "fail" } } });
-
     /** @type (forObjects: Json, otherwise?: Json) => Json */
     const objects = (forObjects, otherwise = { op: "fail" }) => ({ op: "typeSwitch", cases: { object: forObjects }, otherwise });
 
@@ -190,7 +187,7 @@ describe("dispatch", () => {
       expect(expression.otherwise).to.eql({ op: "one", of: [{ op: "apply", schema: "/oneOf/0" }, { op: "apply", schema: "/oneOf/1" }] });
     });
 
-    test("closed objects that require different properties are cases by the property they have", async () => {
+    test("closed objects that require different properties are a keySwitch", async () => {
       const expression = await optimized({
         oneOf: [
           { type: "object", required: ["eq"], properties: { eq: true }, additionalProperties: false },
@@ -198,16 +195,10 @@ describe("dispatch", () => {
         ]
       }, "oneOf");
       expect(expression).to.eql(objects({
-        op: "cases",
-        cases: [
-          [isParsed("eq"), { op: "apply", schema: "/oneOf/0" }],
-          [isParsed("gt"), { op: "apply", schema: "/oneOf/1" }],
-          [{ op: "any", of: [{ op: "hasProperty", name: "eq" }, { op: "hasProperty", name: "gt" }] }, {
-            op: "one",
-            of: [{ op: "apply", schema: "/oneOf/0" }, { op: "apply", schema: "/oneOf/1" }]
-          }]
-        ],
-        otherwise: { op: "fail" }
+        op: "keySwitch",
+        cases: [["eq", { op: "apply", schema: "/oneOf/0" }], ["gt", { op: "apply", schema: "/oneOf/1" }]],
+        none: { op: "fail" },
+        unparsed: { op: "one", of: [{ op: "apply", schema: "/oneOf/0" }, { op: "apply", schema: "/oneOf/1" }] }
       }));
     });
 
@@ -334,6 +325,18 @@ describe("dispatch", () => {
       const expected = [false, true, true, false, true, false, true, true, false, true];
       const parsed = expected.slice(0, -2);
       expect(results(propertySwitch, jsons)).to.eql([parsed, expected, parsed]);
+
+      /** @type Expression */
+      const keySwitch = {
+        op: "keySwitch",
+        cases: [["a", { op: "propertyCount", max: 1 }], ["b", { op: "pass" }]],
+        none: { op: "fail" },
+        unparsed: { op: "propertyCount", min: 3 }
+      };
+      const keyJsons = [`{ "a": 1 }`, `{ "a": 1, "b": 1 }`, `{ "b": 1, "c": 1 }`, `{ "c": 1 }`, `"a"`, `{ "a": , "b": 1, "c": 1 }`, `{ "a": , "b": , "c": 1 }`, `{ "a": }`];
+      const keyExpected = [true, false, true, false, true, true, true, false];
+      const keyParsed = keyExpected.slice(0, -3);
+      expect(results(keySwitch, keyJsons)).to.eql([keyParsed, keyExpected, keyParsed]);
 
       /** @type Expression */
       const typeSwitch = { op: "typeSwitch", cases: { string: { op: "fail" }, number: { op: "pass" } }, otherwise: { op: "typeIs", types: ["null"] } };

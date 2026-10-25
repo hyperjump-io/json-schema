@@ -384,6 +384,22 @@ const buildEvaluator = async (session, tree) => {
         const branch = expression.cases.find(([caseValue]) => caseValue === scalar)?.[1] ?? expression.other;
         return evaluate(branch, instance, marks);
       }
+      case "keySwitch": {
+        if (type !== "object") {
+          return pass;
+        }
+        let has = false;
+        for (const [name, then] of expression.cases) {
+          const value = /** @type InstanceNode | undefined */ (astInstance.get(instance, name));
+          if (value !== undefined) {
+            if (astInstance.typeOf(value) !== undefined) {
+              return evaluate(then, instance, marks);
+            }
+            has = true;
+          }
+        }
+        return evaluate(has ? expression.unparsed : expression.none, instance, marks);
+      }
       case "apply":
         return evaluateSchema(handles.get(expression.schema), instance, marks);
       case "dynamicApply":

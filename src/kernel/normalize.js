@@ -88,6 +88,13 @@ export const normalForm = (expression) => {
         absent: normalForm(expression.absent),
         unparsed: normalForm(expression.unparsed)
       };
+    case "keySwitch":
+      return {
+        ...expression,
+        cases: expression.cases.map(([name, then]) => [name, normalForm(then)]),
+        none: normalForm(expression.none),
+        unparsed: normalForm(expression.unparsed)
+      };
     case "itemSequence":
       return { ...expression, pattern: normalPattern(expression.pattern) };
     case "opaque":

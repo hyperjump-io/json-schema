@@ -222,6 +222,8 @@ export const fast = (jsonSchema, kernel) => {
         return buildTypeSwitch(expression);
       case "propertySwitch":
         return buildPropertySwitch(expression);
+      case "keySwitch":
+        return buildKeySwitch(expression);
       case "cases": {
         const cases = expression.cases.map(([condition, then]) => /** @type const */ ([build(condition), then && build(then)]));
         const otherwise = expression.otherwise && build(expression.otherwise);
@@ -559,6 +561,31 @@ export const fast = (jsonSchema, kernel) => {
       const value = instance[name];
       const evaluate = isScalar(value) ? branches.get(value) : undefined;
       return (evaluate ?? otherBranch)(instance, marks);
+    };
+  };
+
+  /**
+   * A `keySwitch`, testing whether the object has each case's property in
+   * turn. A JS value is always parsed.
+   *
+   * @type (expression: Extract<Expression, { op: "keySwitch" }>) => Evaluator
+   */
+  const buildKeySwitch = ({ cases, none }) => {
+    const branch = branchBuilder();
+    const names = cases.map(([name]) => name);
+    const branches = cases.map(([, then]) => branch(then));
+    const noneBranch = branch(none);
+
+    return (instance, marks) => {
+      if (!isObject(instance)) {
+        return true;
+      }
+      for (let index = 0; index < names.length; index++) {
+        if (Object.hasOwn(instance, names[index])) {
+          return branches[index](instance, marks);
+        }
+      }
+      return noneBranch(instance, marks);
     };
   };
 

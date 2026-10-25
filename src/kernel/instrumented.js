@@ -557,6 +557,29 @@ export const instrumented = (jsonSchema, kernel, options) => {
           return (evaluate ?? other)(instance, marks);
         };
       }
+      case "keySwitch": {
+        const branch = branchBuilder(info);
+        const names = expression.cases.map(([name]) => name);
+        const branches = expression.cases.map(([, then]) => branch(then));
+        const none = branch(expression.none);
+        const unparsed = branch(expression.unparsed);
+        return (instance, marks) => {
+          if (ops.typeOf(instance) !== "object") {
+            return true;
+          }
+          let has = false;
+          for (let index = 0; index < names.length; index++) {
+            const property = ops.get(instance, names[index]);
+            if (property !== undefined) {
+              if (ops.typeOf(property) !== undefined) {
+                return branches[index](instance, marks);
+              }
+              has = true;
+            }
+          }
+          return (has ? unparsed : none)(instance, marks);
+        };
+      }
       case "cases": {
         const cases = expression.cases.map(([condition, then]) => /** @type const */ ([build(condition, info), then && build(then, info)]));
         const otherwise = expression.otherwise && build(expression.otherwise, info);

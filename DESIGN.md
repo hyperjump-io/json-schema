@@ -947,13 +947,13 @@ The passes:
     couldn't be parsed, which equals every value, the expression as it was,
     so its result and errors are the same as before. Letting it pass
     instead hid errors that don't depend on the tag, and could make an
-    enclosing `oneOf` or `not` fail. Which property an object has is a `cases`
-    whose conditions are cheap, so it isn't an operation. A property only
-    decides where it was parsed, `not(property(name, fail))`, because one
-    that couldn't be parsed passes the `eachProperty` that doesn't allow
-    it, and otherwise the expression is evaluated as it was. Partial tags
-    count: a schema that doesn't constrain the tag is in every case that
-    has it. Of
+    enclosing `oneOf` or `not` fail. Which property an object has is a
+    `keySwitch`: for each property some of the expressions don't allow, the
+    ones that do, then the ones that don't require any of them. A property
+    only decides where it was parsed, because one that couldn't be parsed
+    passes the `eachProperty` that doesn't allow it, so where the object
+    has only those, it's the expression as it was. Partial tags count: a
+    schema that doesn't constrain the tag is in every case that has it. Of
     SchemaStore's 886 schemas that compile, about 790 `oneOf`s and `anyOf`s
     can be dispatched by a tag that can't be by type, in about 230 schemas,
     100 of them recursive. Unions of `const`s (300 more) could be dispatched
@@ -965,8 +965,8 @@ The evaluators also choose how to evaluate an operation, which isn't a
 pass, because it doesn't change the expression. `fast.js` checks more than
 one type with a bit mask, calls two or three keyword groups (or an `all`
 of two or three) without a loop, and builds `typeSwitch` as an array by
-type and `propertySwitch` as a `Map` by value (which compares scalars as
-JSON does). `instrumented.js` does the same, except that it evaluates every
+type, `propertySwitch` as a `Map` by value (which compares scalars as JSON
+does), and `keySwitch` as a test for each property. `instrumented.js` does the same, except that it evaluates every
 expression of an `all`, and an `apply` is the schema's evaluator without a
 closure around it. The switches are operations, rather than `cases` the
 evaluators recognize, so every evaluator gets the lookup, and lint can read

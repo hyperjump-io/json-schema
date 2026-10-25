@@ -1007,6 +1007,16 @@ that now had two passing schemas. With the expression as it was for that
 tag (`unparsed`), all 33,226 mutants of both corpora had the same results
 and the same BASIC errors as the `cases` the pass made before.
 
+Dispatching by which property an object has became `keySwitch` too. None
+of the corpora above has a union like that, so its corpus is the 30
+SchemaStore schemas that get one, with SchemaStore's test instances (455,
+20 mutants each). Against the `cases` with `not(property(name, fail))`
+conditions, all 8,600 mutants had the same results and BASIC errors, and
+the corpora above stayed the same too. `ab.ts`, B/A, on the six with the
+most instances, each on its own when it was close: FLAG 0.95–0.99, hooks
+0.95–0.99, `validateJson` 0.98–1.00. Specmatic with hooks was 1.106 after
+the other five in the same process and 0.975–0.983 on its own.
+
 - Against HEAD, `ab.ts` FLAG on the usual corpora was 0.98–1.01, except
   OpenAPI 3.0 at 1.02–1.03 when it ran after `package.json` in the same
   process. On its own it was 0.993, and with tags turned off 1.001, so

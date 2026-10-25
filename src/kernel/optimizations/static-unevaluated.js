@@ -251,6 +251,7 @@ class Analysis {
         ]);
       case "typeSwitch":
       case "propertySwitch":
+      case "keySwitch":
         return this.#conditionalMarks(subexpressions(expression));
       case "apply":
         return this.#schemaMarks(expression.schema);

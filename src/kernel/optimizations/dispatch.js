@@ -39,7 +39,7 @@ import { isInert } from "../optimize.js";
  *   schema of a `oneOf` (a discriminator), which is a `propertySwitch`, or
  *   by which property an object has, where they're closed and require
  *   different properties, like `{ "eq": … }` or `{ "gt": … }`, which is a
- *   `cases`. Each tag is a case that evaluates only the expressions that
+ *   `keySwitch`. Each tag is a case that evaluates only the expressions that
  *   can pass it, which can be type dispatched or tagged again. For a schema
  *   that applies itself through every branch, like a syntax tree,
  *   evaluating every branch takes time exponential in the instance's
@@ -50,9 +50,7 @@ import { isInert } from "../optimize.js";
  * so a `oneOf` gets errors from the schema for its tag, not from every
  * schema. A value that couldn't be parsed equals every value and passes
  * every schema, so where a tag couldn't be parsed, the expression is
- * evaluated as it was: it's a `propertySwitch`'s `unparsed`, and for a tag
- * by which property an object has, a property only decides where
- * `not(property(name, fail))` passes, which is when it was parsed.
+ * evaluated as it was: it's the switch's `unparsed`.
  *
  * @type Optimization
  */
@@ -376,13 +374,11 @@ export default {
             unparsed: expression
           }
         : {
-            op: "cases",
-            cases: [
-              ...tag.cases.map(([name, indexes]) => /** @type [Expression, Expression] */ ([isParsedProperty(name), unionAt(indexes)])),
-              // A property that couldn't be parsed doesn't fail what doesn't allow it
-              [{ op: "any", of: tag.cases.map(([name]) => ({ op: "hasProperty", name })) }, expression]
-            ],
-            otherwise: unionAt(tag.absent)
+            op: "keySwitch",
+            cases: tag.cases.map(([name, indexes]) => [name, unionAt(indexes)]),
+            none: unionAt(tag.absent),
+            // A property that couldn't be parsed passes what doesn't allow it
+            unparsed: expression
           };
 
       // What's left isn't an object, so it has no tag
@@ -473,6 +469,15 @@ export default {
           const same = other === expression.other && absent === expression.absent && unparsed === expression.unparsed
             && cases.every(([, then], index) => then === expression.cases[index][1]);
           return same ? expression : { ...expression, cases, other, absent, unparsed };
+        }
+        case "keySwitch": {
+          /** @type [string, Expression][] */
+          const cases = expression.cases.map(([name, then]) => [name, rewrite(then)]);
+          const none = rewrite(expression.none);
+          const unparsed = rewrite(expression.unparsed);
+          const same = none === expression.none && unparsed === expression.unparsed
+            && cases.every(([, then], index) => then === expression.cases[index][1]);
+          return same ? expression : { ...expression, cases, none, unparsed };
         }
         default:
           return expression;
@@ -594,13 +599,6 @@ const indexesOf = (items, predicate) => items.flatMap((item, index) => predicate
 
 /** @type ObjectFacts */
 const noFacts = Object.freeze({ required: new Set(), values: new Map(), allowed: null });
-
-/**
- * Passes an object that has the property, if its value was parsed
- *
- * @type (name: string) => Expression
- */
-const isParsedProperty = (name) => ({ op: "not", of: { op: "property", name, of: { op: "fail" } } });
 
 /** @type (value: Json) => value is Scalar */
 const isScalar = (value) => value === null || typeof value !== "object";
