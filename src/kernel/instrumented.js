@@ -75,9 +75,23 @@ const noPlugin = {};
  * than a closure, so a location is one allocation. It's one class for every
  * evaluator, so hooks always see the same shape.
  *
+ * `instanceLocation` is worked out from the parent's the first time it's
+ * read, because building a JSON Pointer for every schema evaluated on a
+ * child was 13–25% of evaluating with plugins, and most plugins only read it
+ * for a few hook calls, like the ones for an error.
+ *
  * @implements EvaluationLocation
  */
 class Location {
+  /** @type Location | undefined */
+  #parent;
+
+  /** @type string | number | undefined */
+  #segment;
+
+  /** @type string | undefined */
+  #instanceLocation;
+
   /** @type unknown */
   #instance;
 
@@ -85,16 +99,33 @@ class Location {
   #ops;
 
   /**
-   * @param {string} instanceLocation
+   * @param {Location | undefined} parent
+   * @param {string | number | undefined} segment
    * @param {EvaluationLocation["node"]} node
    * @param {unknown} instance
    * @param {InstanceOps<any>} ops
    */
-  constructor(instanceLocation, node, instance, ops) {
-    this.instanceLocation = instanceLocation;
+  constructor(parent, segment, node, instance, ops) {
+    this.#parent = parent;
+    this.#segment = segment;
     this.node = node;
     this.#instance = instance;
     this.#ops = ops;
+  }
+
+  /** @returns {string} */
+  get instanceLocation() {
+    if (this.#instanceLocation === undefined) {
+      const parent = this.#parent?.instanceLocation ?? "";
+      const segment = this.#segment;
+      // Indexes don't need to be escaped
+      if (segment === undefined) {
+        this.#instanceLocation = parent;
+      } else {
+        this.#instanceLocation = typeof segment === "number" ? `${parent}/${segment}` : JsonPointer.append(segment, parent);
+      }
+    }
+    return this.#instanceLocation;
   }
 
   value() {
@@ -190,8 +221,7 @@ export const instrumented = (jsonSchema, kernel, options) => {
   let keywordState;
   /** @type I | undefined */
   let currentInstance;
-  let instanceLocation = "";
-  /** @type EvaluationLocation | undefined */
+  /** @type Location | undefined */
   let currentAt;
   /** @type string | undefined */
   let currentResource;
@@ -209,33 +239,23 @@ export const instrumented = (jsonSchema, kernel, options) => {
    * Move evaluation to a child of the instance, like a schema evaluator
    * does, and return what to restore, for an expression that isn't a schema
    *
-   * @type (instance: I, segment: string | number | undefined) => [I | undefined, string, EvaluationLocation | undefined]
+   * @type (instance: I, segment: string | number | undefined) => [I | undefined, Location | undefined]
    */
   const enter = (instance, segment) => {
-    const outer = /** @type [I | undefined, string, EvaluationLocation | undefined] */ ([currentInstance, instanceLocation, currentAt]);
+    const outer = /** @type [I | undefined, Location | undefined] */ ([currentInstance, currentAt]);
     const outerInstance = currentInstance;
     currentInstance = instance;
-    if (tracking) {
-      if (segment !== undefined) {
-        // Indexes don't need to be escaped
-        instanceLocation = typeof segment === "number"
-          ? `${instanceLocation}/${segment}`
-          : JsonPointer.append(segment, instanceLocation);
-      }
-
-      // A schema evaluated on the same instance, like through `allOf` or
-      // `$ref`, shares its location
-      if (segment !== undefined || outerInstance !== instance || currentAt === undefined) {
-        currentAt = new Location(instanceLocation, isAst ? /** @type EvaluationLocation["node"] */ (instance) : undefined, instance, ops);
-      }
+    // A schema evaluated on the same instance, like through `allOf` or
+    // `$ref`, shares its location
+    if (tracking && (segment !== undefined || outerInstance !== instance || currentAt === undefined)) {
+      currentAt = new Location(currentAt, segment, isAst ? /** @type EvaluationLocation["node"] */ (instance) : undefined, instance, ops);
     }
     return outer;
   };
 
-  /** @type (outer: [I | undefined, string, EvaluationLocation | undefined]) => void */
-  const leave = ([outerInstance, outerInstanceLocation, outerAt]) => {
+  /** @type (outer: [I | undefined, Location | undefined]) => void */
+  const leave = ([outerInstance, outerAt]) => {
     currentInstance = outerInstance;
-    instanceLocation = outerInstanceLocation;
     currentAt = outerAt;
   };
 
@@ -324,22 +344,12 @@ export const instrumented = (jsonSchema, kernel, options) => {
       }
 
       const outerInstance = currentInstance;
-      const outerInstanceLocation = instanceLocation;
       const outerAt = currentAt;
       currentInstance = instance;
-      if (tracking) {
-        if (segment !== undefined) {
-          // Indexes don't need to be escaped
-          instanceLocation = typeof segment === "number"
-            ? `${instanceLocation}/${segment}`
-            : JsonPointer.append(segment, instanceLocation);
-        }
-
-        // A schema evaluated on the same instance, like through `allOf` or
-        // `$ref`, shares its location
-        if (segment !== undefined || outerInstance !== instance || currentAt === undefined) {
-          currentAt = new Location(instanceLocation, isAst ? /** @type EvaluationLocation["node"] */ (instance) : undefined, instance, ops);
-        }
+      // A schema evaluated on the same instance, like through `allOf` or
+      // `$ref`, shares its location
+      if (tracking && (segment !== undefined || outerInstance !== instance || currentAt === undefined)) {
+        currentAt = new Location(currentAt, segment, isAst ? /** @type EvaluationLocation["node"] */ (instance) : undefined, instance, ops);
       }
 
       const outerResource = currentResource;
@@ -408,7 +418,6 @@ export const instrumented = (jsonSchema, kernel, options) => {
       plugin.afterSchema?.(info, schemaAt, valid, schemaState, parentState);
 
       currentInstance = outerInstance;
-      instanceLocation = outerInstanceLocation;
       currentAt = outerAt;
       currentResource = outerResource;
       dynamicAnchors = outerAnchors;
@@ -1157,7 +1166,6 @@ export const instrumented = (jsonSchema, kernel, options) => {
     const outerPlugin = plugin;
     const outerKeywordState = keywordState;
     const outerInstance = currentInstance;
-    const outerInstanceLocation = instanceLocation;
     const outerAt = currentAt;
     const outerResource = currentResource;
     const outerAnchors = dynamicAnchors;
@@ -1168,7 +1176,6 @@ export const instrumented = (jsonSchema, kernel, options) => {
     plugin = callPlugins.length === 0 ? noPlugin : callPlugins.length === 1 ? callPlugins[0] : combinePlugins(callPlugins);
     keywordState = undefined;
     currentInstance = undefined;
-    instanceLocation = "";
     currentAt = undefined;
     currentResource = undefined;
     dynamicAnchors = undefined;
@@ -1185,7 +1192,6 @@ export const instrumented = (jsonSchema, kernel, options) => {
       plugin = outerPlugin;
       keywordState = outerKeywordState;
       currentInstance = outerInstance;
-      instanceLocation = outerInstanceLocation;
       currentAt = outerAt;
       currentResource = outerResource;
       dynamicAnchors = outerAnchors;

@@ -1049,7 +1049,11 @@ objects the caller reads results from afterwards.
     schema and keyword evaluated on the same instance (through `allOf`,
     `$ref`, …) shares one. It's created when evaluation moves to a property
     or item, not for every hook call, and it doesn't change, so a plugin
-    can keep it.
+    can keep it. Its `instanceLocation` is built from its parent's the
+    first time it's read, because building a JSON Pointer for every schema
+    evaluated on a child was 13–25% of evaluating with plugins, and most
+    plugins only read it for a few hook calls, like an error's. A plugin
+    that reads it in every hook is no slower (−1% to +2%).
   - It's an instance of one class shared by every evaluator, with
     `value()` as a method, so it's one allocation and hooks always see the
     same shape.

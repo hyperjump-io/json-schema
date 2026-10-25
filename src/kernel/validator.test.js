@@ -48,6 +48,13 @@ const propertiesKeyword = {
   lower: (pairs) => ({ op: "all", of: pairs.map(([name, schema]) => ({ op: "property", name, of: schema })) })
 };
 
+/** @type Keyword<Expression> */
+const itemsKeyword = {
+  uri: "https://example.com/keyword/items",
+  shape: "schema",
+  lower: (schema) => ({ op: "eachItem", from: 0, of: schema })
+};
+
 /** @type Keyword<Expression[]> */
 const allOfKeyword = {
   uri: "https://example.com/keyword/allOf",
@@ -257,7 +264,7 @@ const dynamicPropertiesKeyword = {
 
 /** @type Keyword[] */
 const keywords = [
-  idKeyword, anchorKeyword, dynamicAnchorKeyword, typeKeyword, minimumKeyword, titleKeyword, propertiesKeyword,
+  idKeyword, anchorKeyword, dynamicAnchorKeyword, typeKeyword, minimumKeyword, titleKeyword, propertiesKeyword, itemsKeyword,
   allOfKeyword, anyOfKeyword, refKeyword, dynamicRefKeyword, unevaluatedPropertiesKeyword, ifKeyword,
   sortedKeyword, propertiesByTypeKeyword, firstOfKeyword, firstOfPropertiesKeyword, sameAsKeyword, maxUnevaluatedKeyword, dynamicPropertiesKeyword,
   { uri: "https://example.com/keyword/defs", shape: { map: "schema" } },
@@ -283,6 +290,7 @@ const addTestDialect = (jsonSchema) => {
       minimum: minimumKeyword.uri,
       title: titleKeyword.uri,
       properties: propertiesKeyword.uri,
+      items: itemsKeyword.uri,
       allOf: allOfKeyword.uri,
       anyOf: anyOfKeyword.uri,
       if: ifKeyword.uri,
@@ -584,6 +592,17 @@ describe("Validator", () => {
     test("an unknown output format", async () => {
       const validator = await jsonSchema.compile(await schemaFile({}));
       expect(() => validator.validate(1, { output: /** @type any */ ("NOPE") })).to.throw("isn't supported");
+    });
+  });
+
+  describe("instance locations", () => {
+    test("are escaped and built from every child on the way, through schemas on the same instance", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({
+        properties: { "a/b": { items: { allOf: [{ properties: { "c~d": { type: "number" } } }] } } }
+      }));
+
+      const result = validator.validate({ "a/b": [{ "c~d": 1 }, { "c~d": "x" }] }, { output: "BASIC" });
+      expect(result.errors.map((error) => /** @type ValidationError */ (error).instanceLocation)).to.eql(["/a~1b/1/c~0d"]);
     });
   });
 
