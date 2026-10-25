@@ -51,8 +51,6 @@ hand and have JSDoc explaining the details. Documentation for users is in
     [draft-04, draft-06, and draft-07](components/presets/draft-04-06-07.md)
 - [Schema validation](components/schema-validation.md)
 - [Sessions](components/sessions/README.md)
-  - [HTTP cache](components/sessions/http-cache.md)
-  - [Request headers](components/sessions/request-headers.md)
   - [What can be retrieved](components/sessions/allow-retrieval.md)
   - [The language server](components/sessions/language-server.md)
 - [Registries](components/registries/README.md)

@@ -11,7 +11,8 @@ registry.
 - A schema that wasn't retrieved from a `file:` URI can't be identified by
   one (see [Schema validation](../components/schema-validation.md)).
 - Request headers are a function of the URL, so credentials only go where
-  they belong (see [Request headers](../components/sessions/request-headers.md)).
+  they belong (see browser's
+  [Request headers](https://github.com/hyperjump-io/browser/blob/v2/design/components/request-headers.md)).
 - Lint rules use the session they're given, so a schema can't make a rule
   retrieve what it names (see [Other schemas](../components/lint/other-schemas.md)).
 - Plugins are code, so nothing stops a plugin that sets out to get around

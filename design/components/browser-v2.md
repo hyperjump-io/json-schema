@@ -1,6 +1,7 @@
 # Browser v2
 
-What this relies on from browser's `v2` branch:
+What this relies on from browser's `v2` branch. How each works, and why, is
+in browser's [design docs](https://github.com/hyperjump-io/browser/blob/v2/design/README.md).
 
 - A type parameter for property node annotations, JSON AST utilities that
   are generic over the node type, and a generic `DocumentNode<T>`.

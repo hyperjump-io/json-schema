@@ -37,8 +37,8 @@
     by source, and this only controls rules made with `lintRule`.
 - A rule made with `unified-lint-rule` directly ignores configuration
   comments, and naming it in a directive is an `unknown-rule` warning.
-- Configuration comments from JSONC comments are deferred (see hjlint's
-  "Plan"). They
+- Configuration comments from JSONC comments are deferred, until the CLI
+  reads JSONC. They
   would cover from the comment on, as in remark, and need JSONC support,
   which browser's parser has (`allowComments`) and the CLI doesn't, because
   it also decides which files are schemas.

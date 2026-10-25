@@ -8,7 +8,10 @@ depended on it. So state is separated by how long it lives.
 ## Two levels
 
 Both libraries have a long-lived object and sessions created from it, and
-`JsonSchema` extends each level:
+`JsonSchema` extends each level. Browser's side is in its
+[design docs](https://github.com/hyperjump-io/browser/blob/v2/design/components/sessions.md), including its
+[HTTP cache](https://github.com/hyperjump-io/browser/blob/v2/design/components/http-cache.md) and
+[request headers](https://github.com/hyperjump-io/browser/blob/v2/design/components/request-headers.md).
 
 | Level | Browser | JSON Schema adds |
 | --- | --- | --- |
@@ -43,8 +46,6 @@ Both libraries have a long-lived object and sessions created from it, and
 
 ## Contents
 
-- [HTTP cache](http-cache.md)
-- [Request headers](request-headers.md)
 - [What can be retrieved](allow-retrieval.md)
 - [The language server](language-server.md)
 - [Registries](../registries/README.md)
