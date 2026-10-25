@@ -5,11 +5,12 @@
  * @import { CameFrom } from "./lower.d.ts"
  */
 
-/** The fields of an operation that hold expressions, or patterns of them */
-const structural = new Set(["of", "cases", "otherwise", "pattern", "schemas"]);
-
-/** The fields of an item pattern that hold expressions or patterns */
-const patternFields = ["item", "repeat", "sequence", "either"];
+/**
+ * The fields of an operation that hold expressions, or what holds them: item
+ * patterns, and a `typeSwitch`'s branches by type, whose fields are all
+ * followed
+ */
+const structural = new Set(["of", "cases", "otherwise", "other", "absent", "none", "unparsed", "pattern", "schemas"]);
 
 /**
  * Where each operation of a keyword's group, and each of its fields, came
@@ -56,7 +57,7 @@ export const provenance = ({ group, keywordNode, sourceNodes, withoutSiblings = 
         }
       }
     } else if (value !== null && typeof value === "object") {
-      for (const field of patternFields) {
+      for (const field in value) {
         added(/** @type Record<string, unknown> */ (value)[field], nodes);
       }
     }
@@ -96,9 +97,10 @@ export const provenance = ({ group, keywordNode, sourceNodes, withoutSiblings = 
         }
       }
     } else if (a !== null && typeof a === "object") {
+      const aFields = /** @type Record<string, unknown> */ (a);
       const bFields = b !== null && typeof b === "object" ? /** @type Record<string, unknown> */ (b) : {};
-      for (const field of patternFields) {
-        compare(/** @type Record<string, unknown> */ (a)[field], bFields[field], sourceNode);
+      for (const field of new Set([...Object.keys(aFields), ...Object.keys(bFields)])) {
+        compare(aFields[field], bFields[field], sourceNode);
       }
     }
   };

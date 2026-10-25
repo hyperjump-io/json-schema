@@ -1,3 +1,4 @@
+import { subexpressions } from "../kernel/kernel.js";
 import { findSchema } from "./find-schema.js";
 import { lowerForLint } from "./lower.js";
 
@@ -144,6 +145,10 @@ export const effectOf = async (session, tree, keyword) => {
         case "cases":
           return await everyAsync(expression.cases, async ([condition, then]) => await isPure(condition) && (then === null || await isPure(then)))
             && (expression.otherwise === null || await isPure(expression.otherwise));
+        case "typeSwitch":
+        case "propertySwitch":
+        case "keySwitch":
+          return everyAsync(subexpressions(expression), isPure);
         case "apply":
           return await ofApplied(expression.schema) === "none";
         default:
@@ -176,6 +181,11 @@ export const effectOf = async (session, tree, keyword) => {
           const conditionsArePure = await everyAsync(expression.cases, ([condition]) => isPure(condition));
           return conditionsArePure && await everyAsync(branches, async (branch) => branch === null || await isNone(branch)) ? "none" : "some";
         }
+        // The branch for the instance applies, without a condition
+        case "typeSwitch":
+        case "propertySwitch":
+        case "keySwitch":
+          return await everyAsync(subexpressions(expression), isNone) ? "none" : "some";
         case "apply": {
           // What a schema applied in place marks everywhere is still only
           // some of what this keyword's schema marks

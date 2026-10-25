@@ -18,8 +18,8 @@ const operations = (expression) => expression.op === "all" ? expression.of : [ex
 
 /**
  * The properties a keyword is about without requiring them: ones it applies
- * a schema to (`properties`) and ones it makes something depend on
- * (`dependentRequired`, `dependencies`)
+ * a schema to (`properties`), ones it makes something depend on
+ * (`dependentRequired`, `dependencies`), and ones a switch is by
  *
  * @type (expression: Expression) => string[]
  */
@@ -29,6 +29,12 @@ const namesOf = (expression) => operations(expression).flatMap((operation) => {
   } else if (operation.op === "cases") {
     return operation.cases.flatMap(([condition]) => operations(condition))
       .flatMap((condition) => condition.op === "hasProperty" ? [condition.name] : []);
+  } else if (operation.op === "typeSwitch") {
+    return namesOf(operation.cases.object ?? operation.otherwise);
+  } else if (operation.op === "propertySwitch") {
+    return [operation.name];
+  } else if (operation.op === "keySwitch") {
+    return operation.cases.map(([name]) => name);
   }
 
   return [];

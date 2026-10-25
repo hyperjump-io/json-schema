@@ -95,8 +95,10 @@ const unguarded = (condition) => (condition.op === "all" ? condition.of : [condi
  * A condition that fails says the property isn't there if it's
  * `hasProperty`, which is how a dependency (`dependentRequired`) only
  * requires something of an object with the property it depends on. Nothing
- * else is known about a failed condition. Everything else allows any
- * properties.
+ * else is known about a failed condition. In the switches, each branch can
+ * pass with what the object has to be for it: with the property or without
+ * it (`propertySwitch`), or with the case's property and none of the ones
+ * before (`keySwitch`). Everything else allows any properties.
  *
  * Only alternatives that are possible are included, so if there are none,
  * no object passes. `present` are properties the object is known to have.
@@ -168,6 +170,32 @@ export const propertyAlternatives = (schemaNode, keywords, schemas, present = []
           earlierFailed = both(earlierFailed, [fails]);
         }
         alternatives.push(...expression.otherwise === null ? earlierFailed : both(earlierFailed, ofExpression(expression.otherwise, credit)));
+        return bounded(alternatives);
+      }
+      case "typeSwitch":
+        return ofExpression(expression.cases.object ?? expression.otherwise, credit);
+      case "propertySwitch": {
+        // Every branch but `absent` is for an object that has the property
+        const has = [{ names: new Set([expression.name]), absent: new Set(), keywordNodes: new Set([credit()]) }];
+        const hasNot = [{ names: new Set(), absent: new Set([expression.name]), keywordNodes: new Set() }];
+        return bounded([
+          ...[...expression.cases.map(([, then]) => then), expression.other, expression.unparsed].flatMap((branch) => both(has, ofExpression(branch, credit))),
+          ...both(hasNot, ofExpression(expression.absent, credit))
+        ]);
+      }
+      case "keySwitch": {
+        // A case is for an object that has its property and none of the ones
+        // before it, as far as properties that were parsed go
+        /** @type Alternative[] */
+        const alternatives = [];
+        /** @type Set<string> */
+        const before = new Set();
+        for (const [name, then] of expression.cases) {
+          alternatives.push(...both([{ names: new Set([name]), absent: new Set(before), keywordNodes: new Set([credit()]) }], ofExpression(then, credit)));
+          before.add(name);
+        }
+        alternatives.push(...both([{ names: new Set(), absent: before, keywordNodes: new Set() }], ofExpression(expression.none, credit)));
+        alternatives.push(...ofExpression(expression.unparsed, credit));
         return bounded(alternatives);
       }
       default:

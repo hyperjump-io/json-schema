@@ -82,6 +82,12 @@ export const appliesTo = (jsonSchema, expression) => {
       const otherwise = expression.otherwise === null ? new Set() : appliesTo(jsonSchema, expression.otherwise);
       return union([...cases, /** @type Set<JsonType> */ (otherwise)]);
     }
+    // A branch applies only to the instances it's for
+    case "typeSwitch":
+      return union(jsonTypes.map((type) => intersection([new Set([type]), appliesTo(jsonSchema, expression.cases[type] ?? expression.otherwise)])));
+    case "propertySwitch":
+    case "keySwitch":
+      return intersection([new Set(["object"]), union(subexpressions(expression).map((branch) => appliesTo(jsonSchema, branch)))]);
     case "annotate":
       return expression.types === undefined ? all() : jsonTypesOf(expression.types);
     case "format": {
@@ -127,6 +133,14 @@ export const canPass = (expression) => {
     case "any":
     case "one":
       return union(expression.of.map(canPass));
+    case "typeSwitch":
+      return union(jsonTypes.map((type) => intersection([new Set([type]), canPass(expression.cases[type] ?? expression.otherwise)])));
+    case "propertySwitch":
+    case "keySwitch": {
+      // What isn't an object passes
+      const objects = union(subexpressions(expression).map(canPass)).has("object");
+      return new Set(jsonTypes.filter((type) => type !== "object" || objects));
+    }
     default:
       return all();
   }

@@ -970,7 +970,11 @@ does), and `keySwitch` as a test for each property. `instrumented.js` does the s
 expression of an `all`, and an `apply` is the schema's evaluator without a
 closure around it. The switches are operations, rather than `cases` the
 evaluators recognize, so every evaluator gets the lookup, and lint can read
-them. Both look property
+them. Lint only sees what keywords lower to, which the built-in keywords
+never lower to a switch, but a keyword can, so lint's analyses know them:
+what a switch applies to and can pass (a `typeSwitch`'s branch only for its
+type, the others' only for objects), its effect, and the properties each
+branch implies an object has or doesn't have. Both look property
 names up in an object without a prototype rather than a `Map`, which was
 faster, and no name is inherited, not even `__proto__`.
 
