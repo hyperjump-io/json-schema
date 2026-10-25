@@ -3,15 +3,6 @@ import { VFile } from "vfile";
 import { linter } from "../test-linter.js";
 import thenElseWithoutIf from "./then-else-without-if.js";
 
-/** @type (json: string) => Promise<VFile> */
-const lint = async (json) => {
-  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
-  await linter()
-    .use(thenElseWithoutIf)
-    .process(file);
-  return file;
-};
-
 describe("then-else-without-if", () => {
   test("then without if", async () => {
     const file = await lint(`{ "$schema": "https://json-schema.org/v1", "then": { "minLength": 1 } }`);
@@ -50,3 +41,12 @@ describe("then-else-without-if", () => {
     expect(file.messages).to.eql([]);
   });
 });
+
+/** @type (json: string) => Promise<VFile> */
+const lint = async (json) => {
+  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
+  await linter()
+    .use(thenElseWithoutIf)
+    .process(file);
+  return file;
+};

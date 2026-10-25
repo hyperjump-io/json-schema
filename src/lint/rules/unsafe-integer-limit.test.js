@@ -5,21 +5,6 @@ import unsafeIntegerLimit from "./unsafe-integer-limit.js";
 
 const draft2020 = "https://json-schema.org/draft/2020-12/schema";
 
-/** @type (json: string) => Promise<VFile> */
-const lint = async (json) => {
-  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
-  await linter()
-    .use(unsafeIntegerLimit)
-    .process(file);
-  return file;
-};
-
-/** @type (json: string) => Promise<string[]> */
-const reasons = async (json) => (await lint(json)).messages.map((message) => message.reason);
-
-/** @type (name: string) => string */
-const message = (name) => `'${name}' is beyond the integers a double can represent exactly, so implementations that use doubles may compare it inexactly`;
-
 describe("unsafe-integer-limit", () => {
   test("limits beyond the safe range", async () => {
     const json = `{ "$schema": "${draft2020}", "type": "integer", "maximum": 90071992547409980, "minimum": -90071992547409980 }`;
@@ -57,3 +42,18 @@ describe("unsafe-integer-limit", () => {
     expect(await reasons(`{ "$schema": "http://json-schema.org/draft-04/schema#", "type": "integer", "maximum": 9223372036854775807 }`)).to.have.length(1);
   });
 });
+
+/** @type (json: string) => Promise<VFile> */
+const lint = async (json) => {
+  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
+  await linter()
+    .use(unsafeIntegerLimit)
+    .process(file);
+  return file;
+};
+
+/** @type (json: string) => Promise<string[]> */
+const reasons = async (json) => (await lint(json)).messages.map((message) => message.reason);
+
+/** @type (name: string) => string */
+const message = (name) => `'${name}' is beyond the integers a double can represent exactly, so implementations that use doubles may compare it inexactly`;

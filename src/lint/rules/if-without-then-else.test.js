@@ -3,15 +3,6 @@ import { VFile } from "vfile";
 import { linter } from "../test-linter.js";
 import ifWithoutThenElse from "./if-without-then-else.js";
 
-/** @type (json: string) => Promise<VFile> */
-const lint = async (json) => {
-  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
-  await linter()
-    .use(ifWithoutThenElse)
-    .process(file);
-  return file;
-};
-
 describe("if-without-then-else", () => {
   test("if without then or else", async () => {
     const file = await lint(`{ "$schema": "https://json-schema.org/v1", "if": { "minLength": 1 } }`);
@@ -50,3 +41,12 @@ describe("if-without-then-else", () => {
     expect(file.messages).to.eql([]);
   });
 });
+
+/** @type (json: string) => Promise<VFile> */
+const lint = async (json) => {
+  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
+  await linter()
+    .use(ifWithoutThenElse)
+    .process(file);
+  return file;
+};

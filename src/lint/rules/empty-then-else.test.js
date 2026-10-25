@@ -5,18 +5,6 @@ import emptyThenElse from "./empty-then-else.js";
 
 const draft2020 = "https://json-schema.org/draft/2020-12/schema";
 
-/** @type (json: string) => Promise<VFile> */
-const lint = async (json) => {
-  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
-  await linter()
-    .use(emptyThenElse)
-    .process(file);
-  return file;
-};
-
-/** @type (json: string) => Promise<string[]> */
-const reasons = async (json) => (await lint(json)).messages.map((message) => message.reason);
-
 describe("empty-then-else", () => {
   test("an empty then", async () => {
     const json = `{ "$schema": "${draft2020}", "if": { "required": ["a"] }, "then": {} }`;
@@ -68,3 +56,15 @@ describe("empty-then-else", () => {
     expect(await reasons(`{ "$schema": "http://json-schema.org/draft-06/schema#", "if": true, "then": {} }`)).to.eql([]);
   });
 });
+
+/** @type (json: string) => Promise<VFile> */
+const lint = async (json) => {
+  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
+  await linter()
+    .use(emptyThenElse)
+    .process(file);
+  return file;
+};
+
+/** @type (json: string) => Promise<string[]> */
+const reasons = async (json) => (await lint(json)).messages.map((message) => message.reason);

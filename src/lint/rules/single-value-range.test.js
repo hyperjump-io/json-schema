@@ -6,18 +6,6 @@ import singleValueRange from "./single-value-range.js";
 const draft04 = "http://json-schema.org/draft-04/schema#";
 const draft202012 = "https://json-schema.org/draft/2020-12/schema";
 
-/** @type (json: string) => Promise<VFile> */
-const lint = async (json) => {
-  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
-  await linter()
-    .use(singleValueRange)
-    .process(file);
-  return file;
-};
-
-/** @type (json: string) => Promise<string[]> */
-const reasons = async (json) => (await lint(json)).messages.map((message) => message.reason);
-
 const useConst = "'minimum' and 'maximum' are both 5, so it's the only valid value. Use 'const': 5 instead.";
 
 describe("single-value-range", () => {
@@ -89,3 +77,15 @@ describe("single-value-range", () => {
     }`)).to.eql([]);
   });
 });
+
+/** @type (json: string) => Promise<VFile> */
+const lint = async (json) => {
+  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
+  await linter()
+    .use(singleValueRange)
+    .process(file);
+  return file;
+};
+
+/** @type (json: string) => Promise<string[]> */
+const reasons = async (json) => (await lint(json)).messages.map((message) => message.reason);

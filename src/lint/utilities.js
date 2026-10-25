@@ -6,19 +6,6 @@
  * @typedef {{ type: string; children?: TreeNode[] }} TreeNode
  */
 
-/** @type (tree: JsonSchemaDocumentNode, visitor: (node: TreeNode) => void) => void */
-const visitNodes = (tree, visitor) => {
-  /** @type (node: TreeNode) => void */
-  const visit = (node) => {
-    visitor(node);
-    for (const child of node.children ?? []) {
-      visit(child);
-    }
-  };
-
-  visit(/** @type TreeNode */ (tree));
-};
-
 /**
  * Call `visitor` with every schema in the document, including embedded
  * resources, which stay in the tree. Schemas inside values that couldn't be
@@ -250,26 +237,6 @@ const patterns = new Map();
  */
 
 /**
- * A `patternProperties` pattern as the keyword compiles it, with the `u`
- * flag. It's null if the pattern isn't valid.
- *
- * @type (pattern: string) => RegExp | null
- */
-const compilePattern = (pattern) => {
-  let regExp = patterns.get(pattern);
-  if (regExp === undefined) {
-    try {
-      regExp = new RegExp(pattern, "u");
-    } catch {
-      regExp = null;
-    }
-    patterns.set(pattern, regExp);
-  }
-
-  return regExp;
-};
-
-/**
  * The schemas in a schema's `properties`, `patternProperties`, and
  * `additionalProperties` that apply to a property with the given name, each
  * with the keyword it's in. `additionalProperties` applies only if the
@@ -311,4 +278,37 @@ export const propertySchemas = (schemaNode, name) => {
   }
 
   return result;
+};
+
+/** @type (tree: JsonSchemaDocumentNode, visitor: (node: TreeNode) => void) => void */
+const visitNodes = (tree, visitor) => {
+  /** @type (node: TreeNode) => void */
+  const visit = (node) => {
+    visitor(node);
+    for (const child of node.children ?? []) {
+      visit(child);
+    }
+  };
+
+  visit(/** @type TreeNode */ (tree));
+};
+
+/**
+ * A `patternProperties` pattern as the keyword compiles it, with the `u`
+ * flag. It's null if the pattern isn't valid.
+ *
+ * @type (pattern: string) => RegExp | null
+ */
+const compilePattern = (pattern) => {
+  let regExp = patterns.get(pattern);
+  if (regExp === undefined) {
+    try {
+      regExp = new RegExp(pattern, "u");
+    } catch {
+      regExp = null;
+    }
+    patterns.set(pattern, regExp);
+  }
+
+  return regExp;
 };

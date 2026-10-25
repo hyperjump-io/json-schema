@@ -7,18 +7,6 @@ const draft04 = "http://json-schema.org/draft-04/schema#";
 const draft07 = "http://json-schema.org/draft-07/schema#";
 const draft202012 = "https://json-schema.org/draft/2020-12/schema";
 
-/** @type (json: string) => Promise<VFile> */
-const lint = async (json) => {
-  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
-  await linter()
-    .use(keywordWithoutEffect)
-    .process(file);
-  return file;
-};
-
-/** @type (json: string) => Promise<string[]> */
-const reasons = async (json) => (await lint(json)).messages.map((message) => message.reason);
-
 describe("keyword-without-effect", () => {
   test("properties: {}", async () => {
     const file = await lint(`{ "$schema": "${draft202012}", "properties": {} }`);
@@ -207,3 +195,15 @@ describe("keyword-without-effect", () => {
     expect(await reasons(`{ "$schema": "${draft202012}", "properties": { "properties": {}, "minLength": { "type": "number" } } }`)).to.eql([]);
   });
 });
+
+/** @type (json: string) => Promise<VFile> */
+const lint = async (json) => {
+  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
+  await linter()
+    .use(keywordWithoutEffect)
+    .process(file);
+  return file;
+};
+
+/** @type (json: string) => Promise<string[]> */
+const reasons = async (json) => (await lint(json)).messages.map((message) => message.reason);

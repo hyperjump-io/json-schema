@@ -61,6 +61,53 @@ const knownRuleIds = new WeakMap();
  */
 const checkedFiles = new WeakSet();
 
+/**
+ * @template [Option=unknown]
+ * @param {Meta | string} meta
+ * @param {Rule<JsonSchemaDocumentNode, Option>} rule
+ * @returns {Plugin<JsonSchemaDocumentNode, Option>}
+ */
+export const lintRule = (meta, rule) => {
+  const origin = typeof meta === "string" ? meta : meta.origin;
+  const ruleId = origin.split(":")[1] ?? origin;
+  const plugin = unifiedLintRule(meta, rule);
+
+  /**
+   * @this {Processor}
+   * @param {Parameters<Plugin<JsonSchemaDocumentNode, Option>>[0]} config
+   */
+  function attacher(config) {
+    const known = knownRuleIds.get(this) ?? new Set();
+    knownRuleIds.set(this, known);
+    known.add(ruleId);
+
+    const transform = plugin.call(this, config);
+    if (transform === undefined) {
+      return;
+    }
+
+    /** @type ReturnType<Plugin<JsonSchemaDocumentNode, Option>> */
+    const transformer = (tree, file, next) => {
+      // Before the rule runs, because `unified-lint-rule` gives every
+      // message added while the rule runs the rule's ID
+      checkDirectives(tree, file, known);
+
+      const from = file.messages.length;
+      transform(tree, file, (error, ...rest) => {
+        if (error === undefined) {
+          removeDisabled(tree, file, from, ruleId);
+        }
+        next(error, ...rest);
+      });
+    };
+
+    return transformer;
+  }
+
+  Object.defineProperty(attacher, "name", { value: origin });
+  return attacher;
+};
+
 /** @type (tree: JsonSchemaDocumentNode) => Directive[] */
 const directives = (tree) => {
   let result = directivesByTree.get(tree);
@@ -168,51 +215,4 @@ const removeDisabled = (tree, file, from, ruleId) => {
       file.messages.splice(index, 1);
     }
   }
-};
-
-/**
- * @template [Option=unknown]
- * @param {Meta | string} meta
- * @param {Rule<JsonSchemaDocumentNode, Option>} rule
- * @returns {Plugin<JsonSchemaDocumentNode, Option>}
- */
-export const lintRule = (meta, rule) => {
-  const origin = typeof meta === "string" ? meta : meta.origin;
-  const ruleId = origin.split(":")[1] ?? origin;
-  const plugin = unifiedLintRule(meta, rule);
-
-  /**
-   * @this {Processor}
-   * @param {Parameters<Plugin<JsonSchemaDocumentNode, Option>>[0]} config
-   */
-  function attacher(config) {
-    const known = knownRuleIds.get(this) ?? new Set();
-    knownRuleIds.set(this, known);
-    known.add(ruleId);
-
-    const transform = plugin.call(this, config);
-    if (transform === undefined) {
-      return;
-    }
-
-    /** @type ReturnType<Plugin<JsonSchemaDocumentNode, Option>> */
-    const transformer = (tree, file, next) => {
-      // Before the rule runs, because `unified-lint-rule` gives every
-      // message added while the rule runs the rule's ID
-      checkDirectives(tree, file, known);
-
-      const from = file.messages.length;
-      transform(tree, file, (error, ...rest) => {
-        if (error === undefined) {
-          removeDisabled(tree, file, from, ruleId);
-        }
-        next(error, ...rest);
-      });
-    };
-
-    return transformer;
-  }
-
-  Object.defineProperty(attacher, "name", { value: origin });
-  return attacher;
 };

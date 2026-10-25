@@ -8,12 +8,6 @@ import { findKeyword, visitKeywords } from "../utilities.js";
 const readOnlyUri = "https://json-schema.org/keyword/readOnly";
 const writeOnlyUri = "https://json-schema.org/keyword/writeOnly";
 
-/** @type (keywordNode: JsonSchemaKeywordNode) => boolean */
-const isTrue = (keywordNode) => {
-  const valueNode = keywordNode.children[1];
-  return valueNode.jsonType === "boolean" && valueNode.value;
-};
-
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
 const readOnlyAndWriteOnly = lintRule({ origin: "jsonschema-lint:read-only-and-write-only" }, (tree, file) => {
   visitKeywords(tree, readOnlyUri, (readOnlyNode, schemaNode) => {
@@ -33,3 +27,9 @@ const readOnlyAndWriteOnly = lintRule({ origin: "jsonschema-lint:read-only-and-w
 });
 
 export default readOnlyAndWriteOnly;
+
+/** @type (keywordNode: JsonSchemaKeywordNode) => boolean */
+const isTrue = (keywordNode) => {
+  const valueNode = keywordNode.children[1];
+  return valueNode.jsonType === "boolean" && valueNode.value;
+};

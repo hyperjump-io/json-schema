@@ -20,24 +20,6 @@ import { addDraft202012, draft202012DialectUri } from "../dialects/draft-2020-12
 
 const baseUri = "https://example.com/schema";
 
-/**
- * Each message's reason, rule, and the text it's placed on
- *
- * @type (jsonSchema: JsonSchema, json: string, accept?: JsonParseStatus) => Promise<{ reason: string; ruleId?: string; at: string }[]>
- */
-const check = async (jsonSchema, json, accept) => {
-  const file = new VFile(json);
-  const processor = unified()
-    .use(rejsonParse, { accept })
-    .use(jsonSchemaResolve, { session: jsonSchema.session(), uri: baseUri });
-  await processor.run(processor.parse(file), file);
-
-  return file.messages.map(({ reason, ruleId, place }) => {
-    const { start, end } = /** @type any */ (place);
-    return { reason, ruleId, at: json.slice(start.offset, end.offset) };
-  });
-};
-
 describe("keyword checks", () => {
   /** @type JsonSchema */
   let jsonSchema;
@@ -290,3 +272,21 @@ describe("a schema with an invalid keyword value", () => {
     });
   });
 });
+
+/**
+ * Each message's reason, rule, and the text it's placed on
+ *
+ * @type (jsonSchema: JsonSchema, json: string, accept?: JsonParseStatus) => Promise<{ reason: string; ruleId?: string; at: string }[]>
+ */
+const check = async (jsonSchema, json, accept) => {
+  const file = new VFile(json);
+  const processor = unified()
+    .use(rejsonParse, { accept })
+    .use(jsonSchemaResolve, { session: jsonSchema.session(), uri: baseUri });
+  await processor.run(processor.parse(file), file);
+
+  return file.messages.map(({ reason, ruleId, place }) => {
+    const { start, end } = /** @type any */ (place);
+    return { reason, ruleId, at: json.slice(start.offset, end.offset) };
+  });
+};

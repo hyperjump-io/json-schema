@@ -12,21 +12,6 @@ import implicitDialect from "./implicit-dialect.js";
 const draft07 = "http://json-schema.org/draft-07/schema";
 const draft202012 = "https://json-schema.org/draft/2020-12/schema";
 
-/** @type (json: string, options: { dialectUri?: string; defaultDialectUri?: string }) => Promise<VFile> */
-const lint = async (json, { dialectUri, defaultDialectUri }) => {
-  const jsonSchema = new JsonSchema({ defaultDialectUri });
-  addDraft07(jsonSchema);
-  addDraft202012(jsonSchema);
-
-  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
-  const processor = unified()
-    .use(rejsonParse)
-    .use(jsonSchemaResolve, { session: jsonSchema.session(), dialectUri })
-    .use(implicitDialect);
-  await processor.run(processor.parse(file), file);
-  return file;
-};
-
 describe("implicit-dialect", () => {
   test("a dialect from the default", async () => {
     const file = await lint(`{ "type": "string" }`, { defaultDialectUri: draft202012 });
@@ -88,3 +73,18 @@ describe("implicit-dialect", () => {
     expect(file.messages.map((message) => message.ruleId)).to.eql(["missing-dialect"]);
   });
 });
+
+/** @type (json: string, options: { dialectUri?: string; defaultDialectUri?: string }) => Promise<VFile> */
+const lint = async (json, { dialectUri, defaultDialectUri }) => {
+  const jsonSchema = new JsonSchema({ defaultDialectUri });
+  addDraft07(jsonSchema);
+  addDraft202012(jsonSchema);
+
+  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
+  const processor = unified()
+    .use(rejsonParse)
+    .use(jsonSchemaResolve, { session: jsonSchema.session(), dialectUri })
+    .use(implicitDialect);
+  await processor.run(processor.parse(file), file);
+  return file;
+};

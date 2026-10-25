@@ -6,15 +6,6 @@ import nonCanonicalDialectUri from "./non-canonical-dialect-uri.js";
 const draft07 = "http://json-schema.org/draft-07/schema";
 const draft202012 = "https://json-schema.org/draft/2020-12/schema";
 
-/** @type (json: string) => Promise<VFile> */
-const lint = async (json) => {
-  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
-  await linter()
-    .use(nonCanonicalDialectUri)
-    .process(file);
-  return file;
-};
-
 describe("non-canonical-dialect-uri", () => {
   test("draft-07 without the empty fragment", async () => {
     const file = await lint(`{ "$schema": "${draft07}", "type": "string" }`);
@@ -112,3 +103,12 @@ describe("non-canonical-dialect-uri", () => {
     expect(file.messages.filter((message) => message.ruleId === "non-canonical-dialect-uri")).to.eql([]);
   });
 });
+
+/** @type (json: string) => Promise<VFile> */
+const lint = async (json) => {
+  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
+  await linter()
+    .use(nonCanonicalDialectUri)
+    .process(file);
+  return file;
+};

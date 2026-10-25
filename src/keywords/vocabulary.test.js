@@ -13,24 +13,6 @@ const otherMetaDialectUri = "https://example.com/other-meta-dialect";
 const fooVocabularyUri = "https://example.com/vocab/foo";
 const barVocabularyUri = "https://example.com/vocab/bar";
 
-/** @type (jsonSchema: JsonSchema) => JsonSchema */
-const addMetaDialects = (jsonSchema) => {
-  jsonSchema.addKeyword(idKeyword);
-  jsonSchema.addKeyword(vocabularyKeyword);
-  for (const uri of [metaDialectUri, otherMetaDialectUri]) {
-    jsonSchema.addDialect({
-      uri: uri,
-      keywords: { $id: idKeyword.uri, $vocabulary: vocabularyKeyword.uri },
-      unknownKeywords: "annotation"
-    });
-  }
-
-  return jsonSchema;
-};
-
-/** @type (dialectUri: string, $schema: string, vocabularies: Record<string, boolean>) => Json */
-const metaSchema = (dialectUri, $schema, vocabularies) => ({ $schema, $id: dialectUri, $vocabulary: vocabularies });
-
 describe("addVocabulary", () => {
   /** @type JsonSchema */
   let jsonSchema;
@@ -119,3 +101,21 @@ describe("addVocabulary", () => {
     expect(() => addVocabulary(jsonSchema, fooVocabularyUri, { keywords: {} })).to.throw("doesn't support vocabularies");
   });
 });
+
+/** @type (jsonSchema: JsonSchema) => JsonSchema */
+const addMetaDialects = (jsonSchema) => {
+  jsonSchema.addKeyword(idKeyword);
+  jsonSchema.addKeyword(vocabularyKeyword);
+  for (const uri of [metaDialectUri, otherMetaDialectUri]) {
+    jsonSchema.addDialect({
+      uri: uri,
+      keywords: { $id: idKeyword.uri, $vocabulary: vocabularyKeyword.uri },
+      unknownKeywords: "annotation"
+    });
+  }
+
+  return jsonSchema;
+};
+
+/** @type (dialectUri: string, $schema: string, vocabularies: Record<string, boolean>) => Json */
+const metaSchema = (dialectUri, $schema, vocabularies) => ({ $schema, $id: dialectUri, $vocabulary: vocabularies });

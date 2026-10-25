@@ -5,18 +5,6 @@ import typeImpliedByConstOrEnum from "./type-implied-by-const-or-enum.js";
 
 const draft2020 = "https://json-schema.org/draft/2020-12/schema";
 
-/** @type (json: string) => Promise<VFile> */
-const lint = async (json) => {
-  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
-  await linter()
-    .use(typeImpliedByConstOrEnum)
-    .process(file);
-  return file;
-};
-
-/** @type (json: string) => Promise<string[]> */
-const reasons = async (json) => (await lint(json)).messages.map((message) => message.reason);
-
 const enumMessage = "'type' has no effect, because it allows every value in 'enum'";
 const constMessage = "'type' has no effect, because it allows the 'const' value";
 
@@ -74,3 +62,15 @@ describe("type-implied-by-const-or-enum", () => {
     expect(await reasons(`{ "$schema": "http://json-schema.org/draft-04/schema#", "type": "string", "enum": ["a"] }`)).to.eql([enumMessage]);
   });
 });
+
+/** @type (json: string) => Promise<VFile> */
+const lint = async (json) => {
+  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
+  await linter()
+    .use(typeImpliedByConstOrEnum)
+    .process(file);
+  return file;
+};
+
+/** @type (json: string) => Promise<string[]> */
+const reasons = async (json) => (await lint(json)).messages.map((message) => message.reason);

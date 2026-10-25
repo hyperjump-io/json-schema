@@ -20,30 +20,6 @@ const fast = { fast: true, plugins: false, annotations: false };
 
 let count = 0;
 
-/** @type (schema: Record<string, Json>) => Promise<import("../../json-schema.d.ts").Validator> */
-const compile = async (schema) => {
-  const uri = `https://example.com/schema-${count++}`;
-  const registry = new SchemaRegistry([{ schema, retrievalUri: uri, dialectUri: v1DialectUri }]);
-  return jsonSchema.compile(uri, { registries: [registry] });
-};
-
-/**
- * The expression of a keyword of the root schema after the pass, with each
- * schema it applies as the JSON pointer of the schema
- *
- * @type (schema: Record<string, Json>, keyword: string, mode?: Mode) => Promise<Json>
- */
-const optimized = async (schema, keyword, mode = fast) => {
-  const kernel = /** @type Kernel */ ((await compile(schema)).serialize());
-  const root = dispatch.optimize(kernel, mode).get(kernel.uri) ?? kernel.schemas[kernel.uri];
-  if (typeof root === "boolean") {
-    throw Error("Expected an object schema");
-  }
-
-  const group = root.keywords.find(({ keywordUri }) => keywordUri.endsWith(`/${keyword}`));
-  return JSON.parse(JSON.stringify(group?.expression), (key, value) => key === "schema" ? value.replace(/.*#/, "") : value);
-};
-
 describe("dispatch", () => {
   describe("any", () => {
     test("of schemas that only have a type is a typeIs with all their types", async () => {
@@ -374,3 +350,27 @@ describe("dispatch", () => {
     });
   });
 });
+
+/** @type (schema: Record<string, Json>) => Promise<import("../../json-schema.d.ts").Validator> */
+const compile = async (schema) => {
+  const uri = `https://example.com/schema-${count++}`;
+  const registry = new SchemaRegistry([{ schema, retrievalUri: uri, dialectUri: v1DialectUri }]);
+  return jsonSchema.compile(uri, { registries: [registry] });
+};
+
+/**
+ * The expression of a keyword of the root schema after the pass, with each
+ * schema it applies as the JSON pointer of the schema
+ *
+ * @type (schema: Record<string, Json>, keyword: string, mode?: Mode) => Promise<Json>
+ */
+const optimized = async (schema, keyword, mode = fast) => {
+  const kernel = /** @type Kernel */ ((await compile(schema)).serialize());
+  const root = dispatch.optimize(kernel, mode).get(kernel.uri) ?? kernel.schemas[kernel.uri];
+  if (typeof root === "boolean") {
+    throw Error("Expected an object schema");
+  }
+
+  const group = root.keywords.find(({ keywordUri }) => keywordUri.endsWith(`/${keyword}`));
+  return JSON.parse(JSON.stringify(group?.expression), (key, value) => key === "schema" ? value.replace(/.*#/, "") : value);
+};

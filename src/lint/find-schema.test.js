@@ -12,27 +12,6 @@ import { findSchema } from "./find-schema.js";
  * @import { JsonSchemaDocumentNode } from "../schema/schema-ast.d.ts"
  */
 
-/**
- * `test:/` URIs stand in for a server. The path is the response: a status
- * code, `json` for a plain JSON document, or `invalid` for a schema with a
- * problem.
- *
- * @type (uri: string) => Promise<Response>
- */
-const respond = async (uri) => {
-  const path = uri.slice("test:/".length);
-  if (/^\d+$/.test(path)) {
-    throw new HttpError(new Response(null, { status: Number(path) }));
-  }
-
-  const [body, contentType] = path === "json"
-    ? [`{ "type": "string" }`, "application/json"]
-    : [`{ "$schema": "${v1DialectUri}", "minLength": -1 }`, "application/schema+json"];
-  const response = new Response(body, { headers: { "Content-Type": contentType } });
-  Object.defineProperty(response, "url", { value: uri });
-  return response;
-};
-
 describe("findSchema", () => {
   /** @type JsonSchemaSession */
   let session;
@@ -199,3 +178,24 @@ describe("findSchema", () => {
     });
   });
 });
+
+/**
+ * `test:/` URIs stand in for a server. The path is the response: a status
+ * code, `json` for a plain JSON document, or `invalid` for a schema with a
+ * problem.
+ *
+ * @type (uri: string) => Promise<Response>
+ */
+const respond = async (uri) => {
+  const path = uri.slice("test:/".length);
+  if (/^\d+$/.test(path)) {
+    throw new HttpError(new Response(null, { status: Number(path) }));
+  }
+
+  const [body, contentType] = path === "json"
+    ? [`{ "type": "string" }`, "application/json"]
+    : [`{ "$schema": "${v1DialectUri}", "minLength": -1 }`, "application/schema+json"];
+  const response = new Response(body, { headers: { "Content-Type": contentType } });
+  Object.defineProperty(response, "url", { value: uri });
+  return response;
+};

@@ -12,18 +12,6 @@ const draft04 = "http://json-schema.org/draft-04/schema#";
 const draft07 = "http://json-schema.org/draft-07/schema#";
 const draft202012 = "https://json-schema.org/draft/2020-12/schema";
 
-/** @type (json: string, options?: UnknownKeywordOptions) => Promise<VFile> */
-const lint = async (json, options) => {
-  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
-  await linter()
-    .use(unknownKeyword, options && ["warn", options])
-    .process(file);
-  return file;
-};
-
-/** @type (json: string, options?: UnknownKeywordOptions) => Promise<string[]> */
-const reasons = async (json, options) => (await lint(json, options)).messages.map((message) => message.reason);
-
 describe("unknown-keyword", () => {
   test("a misspelled keyword", async () => {
     const file = await lint(`{ "$schema": "${draft202012}", "properites": {} }`);
@@ -92,3 +80,15 @@ describe("unknown-keyword", () => {
     expect(await reasons(`{ "$schema": "${draft07}", "properties": { "a": { "$ref": "#", "foo": 1 } } }`)).to.eql([]);
   });
 });
+
+/** @type (json: string, options?: UnknownKeywordOptions) => Promise<VFile> */
+const lint = async (json, options) => {
+  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
+  await linter()
+    .use(unknownKeyword, options && ["warn", options])
+    .process(file);
+  return file;
+};
+
+/** @type (json: string, options?: UnknownKeywordOptions) => Promise<string[]> */
+const reasons = async (json, options) => (await lint(json, options)).messages.map((message) => message.reason);

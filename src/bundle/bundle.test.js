@@ -30,18 +30,6 @@ import { addDraft04, draft04DialectUri } from "../dialects/draft-04/index.js";
  * }} BundleTestCase
  */
 
-/** @type (config?: JsonSchemaConfig) => JsonSchema */
-const allDialects = (config) => {
-  const jsonSchema = new JsonSchema(config);
-  addV1(jsonSchema);
-  addDraft202012(jsonSchema);
-  addDraft201909(jsonSchema);
-  addDraft07(jsonSchema);
-  addDraft06(jsonSchema);
-  addDraft04(jsonSchema);
-  return jsonSchema;
-};
-
 const testDomain = "https://bundler.hyperjump.io";
 const mainUri = `${testDomain}/main`;
 
@@ -49,45 +37,6 @@ const mainUri = `${testDomain}/main`;
 const fixtures = {
   [`${testDomain}/string`]: { title: "String", type: "string" },
   [`${testDomain}/number`]: { title: "Number", type: "number" }
-};
-
-/**
- * A registry of schemas by retrieval URI. A schema under `""` doesn't have
- * one, so it's only identified by its `$id`.
- *
- * @type (schemas: Record<string, Json>, dialectUri: string) => SchemaRegistry
- */
-const registryOf = (schemas, dialectUri) => new SchemaRegistry(Object.entries(schemas)
-  .map(([retrievalUri, schema]) => ({ schema, retrievalUri: retrievalUri || undefined, dialectUri })));
-
-/**
- * What a validator says about an instance: its DETAILED errors and the
- * annotations of every node, in document order
- *
- * @type (validator: Validator, instance: Json) => Json
- */
-const outputOf = (validator, instance) => {
-  const { output } = validator.annotate(instance, { output: "DETAILED" });
-
-  /** @type Json[] */
-  const annotations = [];
-  /** @type (node: Node & { children?: Node[] }) => void */
-  const visit = (node) => {
-    annotations.push([...node.data?.annotations ?? []]);
-    node.children?.forEach(visit);
-  };
-  visit(validator.annotate(instance).node);
-
-  // Only JSON text has syntax errors
-  /** @type (error: DetailedValidationError) => Json */
-  const errorOf = (error) => ({
-    ruleId: error.ruleId,
-    absoluteKeywordLocation: error.absoluteKeywordLocation,
-    instanceLocation: error.instanceLocation,
-    errors: error.errors?.map(errorOf) ?? []
-  });
-
-  return { valid: output.valid, errors: output.errors.map((error) => errorOf(/** @type DetailedValidationError */ (error))), annotations };
 };
 
 const testsPath = join(import.meta.dirname, "tests");
@@ -353,3 +302,54 @@ describe("bundle", () => {
     });
   });
 });
+
+/** @type (config?: JsonSchemaConfig) => JsonSchema */
+const allDialects = (config) => {
+  const jsonSchema = new JsonSchema(config);
+  addV1(jsonSchema);
+  addDraft202012(jsonSchema);
+  addDraft201909(jsonSchema);
+  addDraft07(jsonSchema);
+  addDraft06(jsonSchema);
+  addDraft04(jsonSchema);
+  return jsonSchema;
+};
+
+/**
+ * A registry of schemas by retrieval URI. A schema under `""` doesn't have
+ * one, so it's only identified by its `$id`.
+ *
+ * @type (schemas: Record<string, Json>, dialectUri: string) => SchemaRegistry
+ */
+const registryOf = (schemas, dialectUri) => new SchemaRegistry(Object.entries(schemas)
+  .map(([retrievalUri, schema]) => ({ schema, retrievalUri: retrievalUri || undefined, dialectUri })));
+
+/**
+ * What a validator says about an instance: its DETAILED errors and the
+ * annotations of every node, in document order
+ *
+ * @type (validator: Validator, instance: Json) => Json
+ */
+const outputOf = (validator, instance) => {
+  const { output } = validator.annotate(instance, { output: "DETAILED" });
+
+  /** @type Json[] */
+  const annotations = [];
+  /** @type (node: Node & { children?: Node[] }) => void */
+  const visit = (node) => {
+    annotations.push([...node.data?.annotations ?? []]);
+    node.children?.forEach(visit);
+  };
+  visit(validator.annotate(instance).node);
+
+  // Only JSON text has syntax errors
+  /** @type (error: DetailedValidationError) => Json */
+  const errorOf = (error) => ({
+    ruleId: error.ruleId,
+    absoluteKeywordLocation: error.absoluteKeywordLocation,
+    instanceLocation: error.instanceLocation,
+    errors: error.errors?.map(errorOf) ?? []
+  });
+
+  return { valid: output.valid, errors: output.errors.map((error) => errorOf(/** @type DetailedValidationError */ (error))), annotations };
+};

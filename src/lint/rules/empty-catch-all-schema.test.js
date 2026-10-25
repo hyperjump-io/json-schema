@@ -7,21 +7,6 @@ const draft07 = "http://json-schema.org/draft-07/schema#";
 const draft201909 = "https://json-schema.org/draft/2019-09/schema";
 const draft202012 = "https://json-schema.org/draft/2020-12/schema";
 
-/** @type (json: string) => Promise<VFile> */
-const lint = async (json) => {
-  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
-  await linter()
-    .use(emptyCatchAllSchema)
-    .process(file);
-  return file;
-};
-
-/** @type (json: string) => Promise<string[]> */
-const reasons = async (json) => (await lint(json)).messages.map((message) => message.reason);
-
-/** @type (name: string) => string */
-const reason = (name) => `'${name}' has a schema that allows everything, which is the same as leaving it out`;
-
 describe("empty-catch-all-schema", () => {
   test("additionalProperties: true", async () => {
     const file = await lint(`{ "$schema": "${draft202012}", "additionalProperties": true }`);
@@ -83,3 +68,18 @@ describe("empty-catch-all-schema", () => {
     expect(await reasons(`{ "$schema": "${draft202012}", "patternProperties": { "^a": true }, "properties": { "b": {} } }`)).to.eql([]);
   });
 });
+
+/** @type (json: string) => Promise<VFile> */
+const lint = async (json) => {
+  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
+  await linter()
+    .use(emptyCatchAllSchema)
+    .process(file);
+  return file;
+};
+
+/** @type (json: string) => Promise<string[]> */
+const reasons = async (json) => (await lint(json)).messages.map((message) => message.reason);
+
+/** @type (name: string) => string */
+const reason = (name) => `'${name}' has a schema that allows everything, which is the same as leaving it out`;

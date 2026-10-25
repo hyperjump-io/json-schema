@@ -10,39 +10,6 @@ import keywordForDisallowedType from "./keyword-for-disallowed-type.js";
 
 const draft2020 = "https://json-schema.org/draft/2020-12/schema";
 
-/** @type (json: string) => Promise<VFile> */
-const lint = async (json) => {
-  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
-  await linter()
-    .use(keywordForDisallowedType)
-    .process(file);
-  return file;
-};
-
-/** @type (json: string) => Promise<string[]> */
-const reasons = async (json) => (await lint(json)).messages.map((message) => message.reason);
-
-/**
- * Lint with a custom format. The CLI's formats can't be changed, so the
- * schema is resolved in a session of a `JsonSchema` that has it.
- *
- * @type (json: string, types?: import("@hyperjump/browser/json").JsonType[]) => Promise<string[]>
- */
-const reasonsWithCustomFormat = async (json, types) => {
-  const jsonSchema = new JsonSchema();
-  addDraft202012(jsonSchema);
-  jsonSchema.addFormat({ uri: "https://example.com/format/custom", types, validate: () => true });
-  jsonSchema.extendDialect(draft2020, { formats: { custom: "https://example.com/format/custom" } });
-
-  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
-  const processor = unified()
-    .use(rejsonParse)
-    .use(jsonSchemaResolve, { session: jsonSchema.session() })
-    .use(keywordForDisallowedType);
-  await processor.run(processor.parse(file), file);
-  return file.messages.map((message) => message.reason);
-};
-
 describe("keyword-for-disallowed-type", () => {
   test("a number keyword with a string type", async () => {
     const json = `{ "$schema": "${draft2020}", "type": "string", "minimum": 1 }`;
@@ -183,3 +150,36 @@ describe("keyword-for-disallowed-type", () => {
     expect(await reasons(`{ "$schema": "http://json-schema.org/draft-07/schema#", "type": "number", "additionalItems": false }`)).to.eql([]);
   });
 });
+
+/** @type (json: string) => Promise<VFile> */
+const lint = async (json) => {
+  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
+  await linter()
+    .use(keywordForDisallowedType)
+    .process(file);
+  return file;
+};
+
+/** @type (json: string) => Promise<string[]> */
+const reasons = async (json) => (await lint(json)).messages.map((message) => message.reason);
+
+/**
+ * Lint with a custom format. The CLI's formats can't be changed, so the
+ * schema is resolved in a session of a `JsonSchema` that has it.
+ *
+ * @type (json: string, types?: import("@hyperjump/browser/json").JsonType[]) => Promise<string[]>
+ */
+const reasonsWithCustomFormat = async (json, types) => {
+  const jsonSchema = new JsonSchema();
+  addDraft202012(jsonSchema);
+  jsonSchema.addFormat({ uri: "https://example.com/format/custom", types, validate: () => true });
+  jsonSchema.extendDialect(draft2020, { formats: { custom: "https://example.com/format/custom" } });
+
+  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
+  const processor = unified()
+    .use(rejsonParse)
+    .use(jsonSchemaResolve, { session: jsonSchema.session() })
+    .use(keywordForDisallowedType);
+  await processor.run(processor.parse(file), file);
+  return file.messages.map((message) => message.reason);
+};

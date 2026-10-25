@@ -46,16 +46,6 @@ export const resolveSchemaText = async (text, session, uri, dialectUri) => {
 };
 
 /**
- * Every message on a file that was resolved as a schema, as a SchemaError. A
- * schema with any problem can't be used, so they're all errors.
- *
- * @type (file: VFile, uri: string) => SchemaError
- */
-const schemaError = (file, uri) => {
-  return new SchemaError(file.messages.map((message) => toSchemaMessage(message, uri, "error")));
-};
-
-/**
  * A message on a file as plain data
  *
  * @type (message: VFileMessage, uri: string, severity: SchemaMessage["severity"]) => SchemaMessage
@@ -74,4 +64,14 @@ export const toSchemaMessage = (message, uri, severity) => {
     schemaMessage.cause = message.cause;
   }
   return schemaMessage;
+};
+
+/**
+ * Every message on a file that was resolved as a schema, as a SchemaError. A
+ * schema with any problem can't be used, so they're all errors.
+ *
+ * @type (file: VFile, uri: string) => SchemaError
+ */
+const schemaError = (file, uri) => {
+  return new SchemaError(file.messages.map((message) => toSchemaMessage(message, uri, "error")));
 };

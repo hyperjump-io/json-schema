@@ -8,20 +8,6 @@ const draft07 = "http://json-schema.org/draft-07/schema#";
 const draft201909 = "https://json-schema.org/draft/2019-09/schema";
 const draft202012 = "https://json-schema.org/draft/2020-12/schema";
 
-/** @type (json: string) => Promise<VFile> */
-const lint = async (json) => {
-  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
-  await linter()
-    .use(misnamedDefinitions)
-    .process(file);
-  return file;
-};
-
-/** @type (json: string) => Promise<string[]> */
-const reasons = async (json) => (await lint(json)).messages
-  .filter((message) => message.ruleId === "misnamed-definitions")
-  .map((message) => message.reason);
-
 const useDefs = "'definitions' isn't a keyword in this dialect, so what's in it isn't a schema, and references to it don't find one. Use '$defs'.";
 const useDefinitions = "'$defs' isn't a keyword in this dialect, so what's in it isn't a schema, and references to it don't find one. Use 'definitions'.";
 
@@ -89,3 +75,17 @@ describe("misnamed-definitions", () => {
     expect(file.messages.map((message) => message.ruleId)).to.eql(["unknown-keyword"]);
   });
 });
+
+/** @type (json: string) => Promise<VFile> */
+const lint = async (json) => {
+  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
+  await linter()
+    .use(misnamedDefinitions)
+    .process(file);
+  return file;
+};
+
+/** @type (json: string) => Promise<string[]> */
+const reasons = async (json) => (await lint(json)).messages
+  .filter((message) => message.ruleId === "misnamed-definitions")
+  .map((message) => message.reason);

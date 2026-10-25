@@ -28,6 +28,43 @@ import { addDraft202012, draft202012DialectUri } from "../dialects/draft-2020-12
  * @typedef {{ value: Json; pointer: string; reportedBy: "schema" | "shape" | "keyword" }} Case
  */
 
+const jsonSchema = new JsonSchema();
+addV1(jsonSchema);
+addDraft04(jsonSchema);
+addDraft06(jsonSchema);
+addDraft07(jsonSchema);
+addDraft201909(jsonSchema);
+addDraft202012(jsonSchema);
+
+/** @type Map<string, { name: string; dialectUri: string; shape: Shape }> */
+const keywords = new Map();
+for (const dialectUri of [v1DialectUri, draft202012DialectUri, draft201909DialectUri, draft07DialectUri, draft06DialectUri, draft04DialectUri]) {
+  for (const [name, keywordUri] of Object.entries(jsonSchema.getDialect(dialectUri).keywords)) {
+    if (!keywords.has(keywordUri)) {
+      keywords.set(keywordUri, { name, dialectUri, shape: jsonSchema.getKeyword(keywordUri).shape });
+    }
+  }
+}
+
+describe("A keyword's value that doesn't fit its shape is reported once", () => {
+  for (const [keywordUri, { name, dialectUri, shape }] of keywords) {
+    for (const { value, pointer, reportedBy } of misfits(shape)) {
+      test(`${name} (${keywordUri}): ${JSON.stringify(value)}`, async () => {
+        const file = new VFile(JSON.stringify({ $schema: dialectUri, [name]: value }));
+        const processor = unified()
+          .use(rejsonParse)
+          .use(jsonSchemaResolve, { session: jsonSchema.session(), uri: "https://example.com/schema" });
+        const document = await processor.run(processor.parse(file), file);
+
+        const root = /** @type any */ (document.children[0]);
+        const misfit = pointerGet(`/${name}${pointer}`, root).position;
+        const ruleId = reportedBy === "schema" ? "invalid-schema" : keywordUri;
+        expect(file.messages.map((message) => [message.ruleId, message.place])).to.eql([[ruleId, misfit]]);
+      });
+    }
+  }
+});
+
 /**
  * `1` is never a schema, a map, or an array, so it doesn't fit anywhere a
  * shape describes. Shapes can refer to themselves (`itemPattern`), so this
@@ -70,40 +107,3 @@ const misfits = (shape, depth = 0) => {
     ];
   }
 };
-
-const jsonSchema = new JsonSchema();
-addV1(jsonSchema);
-addDraft04(jsonSchema);
-addDraft06(jsonSchema);
-addDraft07(jsonSchema);
-addDraft201909(jsonSchema);
-addDraft202012(jsonSchema);
-
-/** @type Map<string, { name: string; dialectUri: string; shape: Shape }> */
-const keywords = new Map();
-for (const dialectUri of [v1DialectUri, draft202012DialectUri, draft201909DialectUri, draft07DialectUri, draft06DialectUri, draft04DialectUri]) {
-  for (const [name, keywordUri] of Object.entries(jsonSchema.getDialect(dialectUri).keywords)) {
-    if (!keywords.has(keywordUri)) {
-      keywords.set(keywordUri, { name, dialectUri, shape: jsonSchema.getKeyword(keywordUri).shape });
-    }
-  }
-}
-
-describe("A keyword's value that doesn't fit its shape is reported once", () => {
-  for (const [keywordUri, { name, dialectUri, shape }] of keywords) {
-    for (const { value, pointer, reportedBy } of misfits(shape)) {
-      test(`${name} (${keywordUri}): ${JSON.stringify(value)}`, async () => {
-        const file = new VFile(JSON.stringify({ $schema: dialectUri, [name]: value }));
-        const processor = unified()
-          .use(rejsonParse)
-          .use(jsonSchemaResolve, { session: jsonSchema.session(), uri: "https://example.com/schema" });
-        const document = await processor.run(processor.parse(file), file);
-
-        const root = /** @type any */ (document.children[0]);
-        const misfit = pointerGet(`/${name}${pointer}`, root).position;
-        const ruleId = reportedBy === "schema" ? "invalid-schema" : keywordUri;
-        expect(file.messages.map((message) => [message.ruleId, message.place])).to.eql([[ruleId, misfit]]);
-      });
-    }
-  }
-});

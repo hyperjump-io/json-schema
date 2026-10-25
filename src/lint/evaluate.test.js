@@ -48,34 +48,6 @@ const wrapKeyword = {
   }
 };
 
-/**
- * Evaluate a schema in a document, found by its JSON pointer, on a value
- *
- * @type (schema: object, pointer?: string) => Promise<(value: Json) => LintEvaluation>
- */
-const evaluatorAt = async (schema, pointer = "") => {
-  const jsonSchema = new JsonSchema();
-  addDraft202012(jsonSchema);
-  addV1(jsonSchema);
-  jsonSchema.addKeyword(lowercaseKeyword);
-  jsonSchema.addKeyword(wrapKeyword);
-  jsonSchema.extendDialect(draft2020, { keywords: { lowercase: lowercaseKeyword.uri, wrap: wrapKeyword.uri } });
-  const session = jsonSchema.session();
-
-  const file = new VFile({ path: "/schemas/a.schema.json", value: JSON.stringify(schema) });
-  const processor = unified()
-    .use(rejsonParse)
-    .use(jsonSchemaResolve, { session });
-  const tree = /** @type JsonSchemaDocumentNode */ (/** @type unknown */ (await processor.run(processor.parse(file), file)));
-  const schemaNode = /** @type JsonSchemaNode */ (pointerGet(pointer, /** @type JsonSchemaNode */ (tree.children[0])));
-  const evaluator = await evaluatorForLint(session, tree);
-
-  return (value) => evaluator.schema(schemaNode, /** @type JsonSchemaTolerantNode */ (/** @type unknown */ (fromJs(value))));
-};
-
-/** @type (schema: object, value: Json, pointer?: string) => Promise<boolean | undefined> */
-const valid = async (schema, value, pointer) => (await evaluatorAt(schema, pointer))(value).valid;
-
 describe("evaluatorForLint", () => {
   test("assertions", async () => {
     const evaluate = await evaluatorAt({ $schema: draft2020, type: "integer", minimum: 2, multipleOf: 2 });
@@ -205,3 +177,31 @@ describe("evaluatorForLint", () => {
     expect(await valid({ $schema: draft2020, properties: { a: { type: "string" } } }, 1, "/properties/a")).to.equal(false);
   });
 });
+
+/**
+ * Evaluate a schema in a document, found by its JSON pointer, on a value
+ *
+ * @type (schema: object, pointer?: string) => Promise<(value: Json) => LintEvaluation>
+ */
+const evaluatorAt = async (schema, pointer = "") => {
+  const jsonSchema = new JsonSchema();
+  addDraft202012(jsonSchema);
+  addV1(jsonSchema);
+  jsonSchema.addKeyword(lowercaseKeyword);
+  jsonSchema.addKeyword(wrapKeyword);
+  jsonSchema.extendDialect(draft2020, { keywords: { lowercase: lowercaseKeyword.uri, wrap: wrapKeyword.uri } });
+  const session = jsonSchema.session();
+
+  const file = new VFile({ path: "/schemas/a.schema.json", value: JSON.stringify(schema) });
+  const processor = unified()
+    .use(rejsonParse)
+    .use(jsonSchemaResolve, { session });
+  const tree = /** @type JsonSchemaDocumentNode */ (/** @type unknown */ (await processor.run(processor.parse(file), file)));
+  const schemaNode = /** @type JsonSchemaNode */ (pointerGet(pointer, /** @type JsonSchemaNode */ (tree.children[0])));
+  const evaluator = await evaluatorForLint(session, tree);
+
+  return (value) => evaluator.schema(schemaNode, /** @type JsonSchemaTolerantNode */ (/** @type unknown */ (fromJs(value))));
+};
+
+/** @type (schema: object, value: Json, pointer?: string) => Promise<boolean | undefined> */
+const valid = async (schema, value, pointer) => (await evaluatorAt(schema, pointer))(value).valid;

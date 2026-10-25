@@ -5,18 +5,6 @@ import fractionalLimitForInteger from "./fractional-limit-for-integer.js";
 
 const draft2020 = "https://json-schema.org/draft/2020-12/schema";
 
-/** @type (json: string) => Promise<VFile> */
-const lint = async (json) => {
-  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
-  await linter()
-    .use(fractionalLimitForInteger)
-    .process(file);
-  return file;
-};
-
-/** @type (json: string) => Promise<string[]> */
-const reasons = async (json) => (await lint(json)).messages.map((message) => message.reason);
-
 describe("fractional-limit-for-integer", () => {
   test("a fractional maximum", async () => {
     const json = `{ "$schema": "${draft2020}", "type": "integer", "maximum": 7.8 }`;
@@ -81,3 +69,15 @@ describe("fractional-limit-for-integer", () => {
     expect(await reasons(`{ "$schema": "http://json-schema.org/draft-04/schema#", "type": "integer", "maximum": 7.8 }`)).to.eql([]);
   });
 });
+
+/** @type (json: string) => Promise<VFile> */
+const lint = async (json) => {
+  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
+  await linter()
+    .use(fractionalLimitForInteger)
+    .process(file);
+  return file;
+};
+
+/** @type (json: string) => Promise<string[]> */
+const reasons = async (json) => (await lint(json)).messages.map((message) => message.reason);

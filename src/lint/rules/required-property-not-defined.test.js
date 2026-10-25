@@ -11,48 +11,6 @@ import requiredPropertyNotDefined from "./required-property-not-defined.js";
 
 const draft2020 = "https://json-schema.org/draft/2020-12/schema";
 
-/** @type (json: string) => Promise<VFile> */
-const lint = async (json) => {
-  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
-  await linter()
-    .use(requiredPropertyNotDefined)
-    .process(file);
-  return file;
-};
-
-/** @type (json: string) => Promise<string[]> */
-const reasons = async (json) => (await lint(json)).messages.map((message) => message.reason);
-
-/**
- * Lint with another document available in the session, as the CLI makes
- * every schema in the working directory available
- *
- * @type (json: string) => Promise<string[]>
- */
-const reasonsWithBase = async (json) => {
-  const jsonSchema = new JsonSchema();
-  addDraft202012(jsonSchema);
-  const registry = new SchemaRegistry().with({
-    $schema: draft2020,
-    $id: "https://example.com/base",
-    properties: { id: {} },
-    allOf: [{ $ref: "#/$defs/named" }],
-    $defs: {
-      named: { properties: { name: {} } }
-    }
-  });
-
-  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
-  const processor = unified()
-    .use(rejsonParse)
-    .use(jsonSchemaResolve, { session: jsonSchema.session({ registries: [registry] }) })
-    .use(requiredPropertyNotDefined);
-  await processor.run(processor.parse(file), file);
-  return file.messages.map((message) => message.reason);
-};
-
-const message = (/** @type string */ name) => `'${name}' is required, but no 'properties' or 'patternProperties' defines it, so any value is allowed`;
-
 describe("required-property-not-defined", () => {
   test("not in properties", async () => {
     const json = `{ "$schema": "${draft2020}", "properties": { "name": true }, "required": ["nmae"] }`;
@@ -161,3 +119,45 @@ describe("required-property-not-defined", () => {
     expect(await reasons(`{ "$schema": "http://json-schema.org/draft-04/schema#", "properties": { "a": {} }, "required": ["b"] }`)).to.eql([message("b")]);
   });
 });
+
+/** @type (json: string) => Promise<VFile> */
+const lint = async (json) => {
+  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
+  await linter()
+    .use(requiredPropertyNotDefined)
+    .process(file);
+  return file;
+};
+
+/** @type (json: string) => Promise<string[]> */
+const reasons = async (json) => (await lint(json)).messages.map((message) => message.reason);
+
+/**
+ * Lint with another document available in the session, as the CLI makes
+ * every schema in the working directory available
+ *
+ * @type (json: string) => Promise<string[]>
+ */
+const reasonsWithBase = async (json) => {
+  const jsonSchema = new JsonSchema();
+  addDraft202012(jsonSchema);
+  const registry = new SchemaRegistry().with({
+    $schema: draft2020,
+    $id: "https://example.com/base",
+    properties: { id: {} },
+    allOf: [{ $ref: "#/$defs/named" }],
+    $defs: {
+      named: { properties: { name: {} } }
+    }
+  });
+
+  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
+  const processor = unified()
+    .use(rejsonParse)
+    .use(jsonSchemaResolve, { session: jsonSchema.session({ registries: [registry] }) })
+    .use(requiredPropertyNotDefined);
+  await processor.run(processor.parse(file), file);
+  return file.messages.map((message) => message.reason);
+};
+
+const message = (/** @type string */ name) => `'${name}' is required, but no 'properties' or 'patternProperties' defines it, so any value is allowed`;

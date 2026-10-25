@@ -6,18 +6,6 @@ import keywordImpliedByConstOrEnum from "./keyword-implied-by-const-or-enum.js";
 const draft04 = "http://json-schema.org/draft-04/schema#";
 const draft202012 = "https://json-schema.org/draft/2020-12/schema";
 
-/** @type (json: string) => Promise<VFile> */
-const lint = async (json) => {
-  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
-  await linter()
-    .use(keywordImpliedByConstOrEnum)
-    .process(file);
-  return file;
-};
-
-/** @type (json: string) => Promise<string[]> */
-const reasons = async (json) => (await lint(json)).messages.map((message) => message.reason);
-
 describe("keyword-implied-by-const-or-enum", () => {
   test("an assertion every enum value passes", async () => {
     const file = await lint(`{ "$schema": "${draft202012}", "enum": ["one", "two"], "minLength": 3 }`);
@@ -125,3 +113,15 @@ describe("keyword-implied-by-const-or-enum", () => {
     expect(await reasons(`{ "$schema": "${draft202012}", "enum": [1], "$ref": "https://example.com/nope" }`)).to.eql([]);
   });
 });
+
+/** @type (json: string) => Promise<VFile> */
+const lint = async (json) => {
+  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
+  await linter()
+    .use(keywordImpliedByConstOrEnum)
+    .process(file);
+  return file;
+};
+
+/** @type (json: string) => Promise<string[]> */
+const reasons = async (json) => (await lint(json)).messages.map((message) => message.reason);

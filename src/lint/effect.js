@@ -31,26 +31,9 @@ const assertions = new Set(/** @type Op[] */ ([
 /** @type Effect[] */
 const order = ["none", "marks", "marksAll", "some"];
 
-/** @type (effects: Effect[]) => Effect */
-const combine = (effects) => effects.reduce((a, b) => order.indexOf(a) > order.indexOf(b) ? a : b, /** @type Effect */ ("none"));
-
 /**
  * @typedef {{ type: string; children?: TreeNode[] }} TreeNode
  */
-
-/**
- * The schemas in a keyword's value, not including their subschemas
- *
- * @type (node: TreeNode) => JsonSchemaNode[]
- */
-const schemasIn = (node) => {
-  if (node.type === "json-schema" || node.type === "reference") {
-    const schemaNode = /** @type JsonSchemaNode */ (node);
-    return [schemaNode];
-  }
-
-  return (node.children ?? []).flatMap(schemasIn);
-};
 
 /**
  * What a keyword's group does, following the schemas it applies, so a
@@ -215,6 +198,32 @@ export const effectOf = async (session, tree, keyword) => {
 };
 
 /**
+ * Whether a keyword that reads this one as a sibling lowers differently
+ * without it, so it has an effect there
+ *
+ * @type (keywords: LoweredKeyword[], keywordNode: JsonSchemaKeywordNode) => boolean
+ */
+export const affectsAReader = (keywords, keywordNode) => keywords
+  .some(({ sourceNodes, sourcesWithoutEffect }) => sourceNodes.includes(keywordNode) && !sourcesWithoutEffect.includes(keywordNode));
+
+/** @type (effects: Effect[]) => Effect */
+const combine = (effects) => effects.reduce((a, b) => order.indexOf(a) > order.indexOf(b) ? a : b, /** @type Effect */ ("none"));
+
+/**
+ * The schemas in a keyword's value, not including their subschemas
+ *
+ * @type (node: TreeNode) => JsonSchemaNode[]
+ */
+const schemasIn = (node) => {
+  if (node.type === "json-schema" || node.type === "reference") {
+    const schemaNode = /** @type JsonSchemaNode */ (node);
+    return [schemaNode];
+  }
+
+  return (node.children ?? []).flatMap(schemasIn);
+};
+
+/**
  * @template T
  * @param {T[]} items
  * @param {(item: T) => Promise<boolean>} predicate
@@ -228,12 +237,3 @@ const everyAsync = async (items, predicate) => {
   }
   return true;
 };
-
-/**
- * Whether a keyword that reads this one as a sibling lowers differently
- * without it, so it has an effect there
- *
- * @type (keywords: LoweredKeyword[], keywordNode: JsonSchemaKeywordNode) => boolean
- */
-export const affectsAReader = (keywords, keywordNode) => keywords
-  .some(({ sourceNodes, sourcesWithoutEffect }) => sourceNodes.includes(keywordNode) && !sourcesWithoutEffect.includes(keywordNode));

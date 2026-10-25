@@ -5,18 +5,6 @@ import falseThenElse from "./false-then-else.js";
 
 const draft2020 = "https://json-schema.org/draft/2020-12/schema";
 
-/** @type (json: string) => Promise<VFile> */
-const lint = async (json) => {
-  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
-  await linter()
-    .use(falseThenElse)
-    .process(file);
-  return file;
-};
-
-/** @type (json: string) => Promise<string[]> */
-const reasons = async (json) => (await lint(json)).messages.map((message) => message.reason);
-
 describe("false-then-else", () => {
   test("then false", async () => {
     const json = `{ "$schema": "${draft2020}", "if": { "required": ["a"] }, "then": false }`;
@@ -67,3 +55,15 @@ describe("false-then-else", () => {
     expect(await reasons(`{ "$schema": "http://json-schema.org/draft-07/schema#", "if": true, "else": false }`)).to.have.length(1);
   });
 });
+
+/** @type (json: string) => Promise<VFile> */
+const lint = async (json) => {
+  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
+  await linter()
+    .use(falseThenElse)
+    .process(file);
+  return file;
+};
+
+/** @type (json: string) => Promise<string[]> */
+const reasons = async (json) => (await lint(json)).messages.map((message) => message.reason);

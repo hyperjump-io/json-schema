@@ -24,15 +24,6 @@ addDraft202012(jsonSchema);
 addFullFormats(jsonSchema);
 
 /**
- * Each processor resolves in a new session
- *
- * @this {Processor}
- */
-function resolveInNewSession() {
-  return /** @type Function */ (jsonSchemaResolve).call(this, { session: jsonSchema.session() });
-}
-
-/**
  * For testing lint rules: resolves a schema with every preset's dialect, as
  * the CLI does. Syntax errors are reported without failing the file.
  */
@@ -41,3 +32,12 @@ export const linter = unified()
   .use(resolveInNewSession)
   .use(rejsonStringify)
   .freeze();
+
+/**
+ * Each processor resolves in a new session
+ *
+ * @this {Processor}
+ */
+function resolveInNewSession() {
+  return /** @type Function */ (jsonSchemaResolve).call(this, { session: jsonSchema.session() });
+}

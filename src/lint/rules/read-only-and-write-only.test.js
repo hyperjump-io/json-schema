@@ -3,15 +3,6 @@ import { VFile } from "vfile";
 import { linter } from "../test-linter.js";
 import readOnlyAndWriteOnly from "./read-only-and-write-only.js";
 
-/** @type (json: string) => Promise<VFile> */
-const lint = async (json) => {
-  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
-  await linter()
-    .use(readOnlyAndWriteOnly)
-    .process(file);
-  return file;
-};
-
 describe("read-only-and-write-only", () => {
   test("readOnly and writeOnly both true", async () => {
     const file = await lint(`{ "$schema": "https://json-schema.org/v1", "readOnly": true, "writeOnly": true }`);
@@ -60,3 +51,12 @@ describe("read-only-and-write-only", () => {
     expect(file.messages).to.eql([]);
   });
 });
+
+/** @type (json: string) => Promise<VFile> */
+const lint = async (json) => {
+  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
+  await linter()
+    .use(readOnlyAndWriteOnly)
+    .process(file);
+  return file;
+};

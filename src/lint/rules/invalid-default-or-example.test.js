@@ -13,30 +13,6 @@ import invalidDefaultOrExample from "./invalid-default-or-example.js";
 const draft2020 = "https://json-schema.org/draft/2020-12/schema";
 const uri = "file:///schemas/a.schema.json";
 
-/**
- * Lint with the schema in the session's registry, as the CLI has every
- * schema in the working directory
- *
- * @type (json: string) => Promise<VFile>
- */
-const lint = async (json) => {
-  const jsonSchema = new JsonSchema();
-  addDraft04(jsonSchema);
-  addDraft202012(jsonSchema);
-  const session = jsonSchema.session({ registries: [new SchemaRegistry([{ schema: json, retrievalUri: uri }])] });
-
-  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
-  const processor = unified()
-    .use(rejsonParse)
-    .use(jsonSchemaResolve, { session, uri })
-    .use(invalidDefaultOrExample);
-  await processor.run(processor.parse(file), file);
-  return file;
-};
-
-/** @type (json: string) => Promise<string[]> */
-const reasons = async (json) => (await lint(json)).messages.map((message) => message.reason);
-
 const invalidDefault = "The 'default' value isn't valid against the schema it's in";
 const invalidExample = "This example isn't valid against the schema it's in";
 
@@ -164,3 +140,27 @@ describe("invalid-default-or-example", () => {
     expect(file.messages.map((message) => message.reason)).to.eql([invalidDefault]);
   });
 });
+
+/**
+ * Lint with the schema in the session's registry, as the CLI has every
+ * schema in the working directory
+ *
+ * @type (json: string) => Promise<VFile>
+ */
+const lint = async (json) => {
+  const jsonSchema = new JsonSchema();
+  addDraft04(jsonSchema);
+  addDraft202012(jsonSchema);
+  const session = jsonSchema.session({ registries: [new SchemaRegistry([{ schema: json, retrievalUri: uri }])] });
+
+  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
+  const processor = unified()
+    .use(rejsonParse)
+    .use(jsonSchemaResolve, { session, uri })
+    .use(invalidDefaultOrExample);
+  await processor.run(processor.parse(file), file);
+  return file;
+};
+
+/** @type (json: string) => Promise<string[]> */
+const reasons = async (json) => (await lint(json)).messages.map((message) => message.reason);

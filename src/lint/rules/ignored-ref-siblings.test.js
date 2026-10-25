@@ -5,18 +5,6 @@ import ignoredRefSiblings from "./ignored-ref-siblings.js";
 
 const draft07 = "http://json-schema.org/draft-07/schema#";
 
-/** @type (json: string) => Promise<VFile> */
-const lint = async (json) => {
-  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
-  await linter()
-    .use(ignoredRefSiblings)
-    .process(file);
-  return file;
-};
-
-/** @type (json: string) => Promise<string[]> */
-const reasons = async (json) => (await lint(json)).messages.map((message) => message.reason);
-
 describe("ignored-ref-siblings", () => {
   test("a keyword next to $ref", async () => {
     const json = `{ "$schema": "${draft07}", "definitions": { "a": {} }, "properties": { "foo": { "$ref": "#/definitions/a", "minimum": 0 } } }`;
@@ -66,3 +54,15 @@ describe("ignored-ref-siblings", () => {
     expect(await reasons(`{ "$schema": "https://json-schema.org/draft/2019-09/schema", "$defs": { "a": {} }, "$ref": "#/$defs/a", "type": "string" }`)).to.eql([]);
   });
 });
+
+/** @type (json: string) => Promise<VFile> */
+const lint = async (json) => {
+  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
+  await linter()
+    .use(ignoredRefSiblings)
+    .process(file);
+  return file;
+};
+
+/** @type (json: string) => Promise<string[]> */
+const reasons = async (json) => (await lint(json)).messages.map((message) => message.reason);

@@ -20,42 +20,6 @@ const mode = { fast: true, plugins: false, annotations: false };
 
 let count = 0;
 
-/** @type (schema: Record<string, Json>, dialect?: { jsonSchema: JsonSchema; dialectUri: string }) => Promise<Kernel> */
-const compile = async (schema, dialect = { jsonSchema, dialectUri: v1DialectUri }) => {
-  const uri = `https://example.com/schema-${count++}`;
-  const registry = new SchemaRegistry([{ schema, retrievalUri: uri, dialectUri: dialect.dialectUri }]);
-  const validator = await dialect.jsonSchema.compile(uri, { registries: [registry] });
-  return /** @type Kernel */ (validator.serialize());
-};
-
-/**
- * The root schema's keyword groups after the pass, by the last segment of
- * their keyword URIs, with what the groups that read marks became. What
- * they apply is left out, because it doesn't change.
- *
- * @type (schema: Record<string, Json>, dialect?: { jsonSchema: JsonSchema; dialectUri: string }) => Promise<[string, Json][]>
- */
-const optimizedGroups = async (schema, dialect) => {
-  const kernel = await compile(schema, dialect);
-  const root = staticUnevaluated.optimize(kernel, mode).get(kernel.uri) ?? kernel.schemas[kernel.uri];
-  if (typeof root === "boolean") {
-    throw Error("Expected an object schema");
-  }
-
-  return root.keywords.map(({ keywordUri, expression }) => {
-    const name = keywordUri.replace(/.*\/keyword\//, "");
-    return [name, withoutOf(expression)];
-  });
-};
-
-/** @type (expression: Expression) => Json */
-const withoutOf = (expression) => {
-  if (expression.op === "eachProperty" || expression.op === "eachItem") {
-    return Object.fromEntries(Object.entries(expression).filter(([key]) => key !== "of"));
-  }
-  return expression.op;
-};
-
 describe("staticUnevaluated", () => {
   describe("unevaluatedProperties", () => {
     test("selects what its siblings' properties and patterns don't", async () => {
@@ -192,3 +156,39 @@ describe("staticUnevaluated", () => {
     expect(staticUnevaluated.optimize(kernel, { fast: false, plugins: false, annotations: true }).size).to.equal(0);
   });
 });
+
+/** @type (schema: Record<string, Json>, dialect?: { jsonSchema: JsonSchema; dialectUri: string }) => Promise<Kernel> */
+const compile = async (schema, dialect = { jsonSchema, dialectUri: v1DialectUri }) => {
+  const uri = `https://example.com/schema-${count++}`;
+  const registry = new SchemaRegistry([{ schema, retrievalUri: uri, dialectUri: dialect.dialectUri }]);
+  const validator = await dialect.jsonSchema.compile(uri, { registries: [registry] });
+  return /** @type Kernel */ (validator.serialize());
+};
+
+/**
+ * The root schema's keyword groups after the pass, by the last segment of
+ * their keyword URIs, with what the groups that read marks became. What
+ * they apply is left out, because it doesn't change.
+ *
+ * @type (schema: Record<string, Json>, dialect?: { jsonSchema: JsonSchema; dialectUri: string }) => Promise<[string, Json][]>
+ */
+const optimizedGroups = async (schema, dialect) => {
+  const kernel = await compile(schema, dialect);
+  const root = staticUnevaluated.optimize(kernel, mode).get(kernel.uri) ?? kernel.schemas[kernel.uri];
+  if (typeof root === "boolean") {
+    throw Error("Expected an object schema");
+  }
+
+  return root.keywords.map(({ keywordUri, expression }) => {
+    const name = keywordUri.replace(/.*\/keyword\//, "");
+    return [name, withoutOf(expression)];
+  });
+};
+
+/** @type (expression: Expression) => Json */
+const withoutOf = (expression) => {
+  if (expression.op === "eachProperty" || expression.op === "eachItem") {
+    return Object.fromEntries(Object.entries(expression).filter(([key]) => key !== "of"));
+  }
+  return expression.op;
+};

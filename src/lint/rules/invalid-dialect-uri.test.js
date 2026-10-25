@@ -5,15 +5,6 @@ import invalidDialectUri from "./invalid-dialect-uri.js";
 
 const v1 = "https://json-schema.org/v1";
 
-/** @type (json: string) => Promise<VFile> */
-const lint = async (json) => {
-  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
-  await linter()
-    .use(invalidDialectUri)
-    .process(file);
-  return file;
-};
-
 describe("invalid-dialect-uri", () => {
   test("v1 with an empty fragment", async () => {
     const file = await lint(`{ "$schema": "${v1}#", "type": "string" }`);
@@ -63,3 +54,12 @@ describe("invalid-dialect-uri", () => {
     expect(file.messages).to.eql([]);
   });
 });
+
+/** @type (json: string) => Promise<VFile> */
+const lint = async (json) => {
+  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
+  await linter()
+    .use(invalidDialectUri)
+    .process(file);
+  return file;
+};

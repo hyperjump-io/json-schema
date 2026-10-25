@@ -6,18 +6,6 @@ import singleTypeArray from "./single-type-array.js";
 const draft04 = "http://json-schema.org/draft-04/schema#";
 const draft202012 = "https://json-schema.org/draft/2020-12/schema";
 
-/** @type (json: string) => Promise<VFile> */
-const lint = async (json) => {
-  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
-  await linter()
-    .use(singleTypeArray)
-    .process(file);
-  return file;
-};
-
-/** @type (json: string) => Promise<string[]> */
-const reasons = async (json) => (await lint(json)).messages.map((message) => message.reason);
-
 describe("single-type-array", () => {
   test("an array of one type", async () => {
     const file = await lint(`{ "$schema": "${draft202012}", "type": ["string"] }`);
@@ -61,3 +49,15 @@ describe("single-type-array", () => {
     expect(await reasons(`{ "$schema": "${draft202012}", "properties": { "type": { "enum": ["a"] } } }`)).to.eql([]);
   });
 });
+
+/** @type (json: string) => Promise<VFile> */
+const lint = async (json) => {
+  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
+  await linter()
+    .use(singleTypeArray)
+    .process(file);
+  return file;
+};
+
+/** @type (json: string) => Promise<string[]> */
+const reasons = async (json) => (await lint(json)).messages.map((message) => message.reason);

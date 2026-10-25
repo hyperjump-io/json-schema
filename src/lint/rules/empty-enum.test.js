@@ -3,15 +3,6 @@ import { VFile } from "vfile";
 import { linter } from "../test-linter.js";
 import emptyEnum from "./empty-enum.js";
 
-/** @type (json: string) => Promise<VFile> */
-const lint = async (json) => {
-  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
-  await linter()
-    .use(emptyEnum)
-    .process(file);
-  return file;
-};
-
 describe("empty-enum", () => {
   test("an empty enum", async () => {
     const file = await lint(`{ "$schema": "https://json-schema.org/v1", "enum": [] }`);
@@ -45,3 +36,12 @@ describe("empty-enum", () => {
     expect(file.messages.map((message) => message.ruleId)).to.eql(["https://json-schema.org/keyword/draft-04/enum"]);
   });
 });
+
+/** @type (json: string) => Promise<VFile> */
+const lint = async (json) => {
+  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
+  await linter()
+    .use(emptyEnum)
+    .process(file);
+  return file;
+};

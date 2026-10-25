@@ -16,15 +16,6 @@ const limitPairs = [
   [`${keyword}/draft-04/minimum`, `${keyword}/draft-04/maximum`, `${keyword}/draft-04/exclusiveMinimum`, `${keyword}/draft-04/exclusiveMaximum`]
 ];
 
-/** @type (schemaNode: JsonSchemaNode, uri: string | undefined) => boolean */
-const isTrue = (schemaNode, uri) => {
-  const valueNode = uri === undefined ? undefined : findKeyword(schemaNode, uri)?.children[1];
-  return valueNode?.jsonType === "boolean" && valueNode.value;
-};
-
-/** @type (dialect: Dialect, uris: string[]) => string | undefined */
-const nameOf = ({ keywords }, uris) => Object.keys(keywords).find((name) => uris.includes(keywords[name]));
-
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
 const singleValueRange = lintRule({ origin: "jsonschema-lint:single-value-range" }, async (tree, file) => {
   const session = file.data.jsonSchemaSession;
@@ -90,3 +81,12 @@ const singleValueRange = lintRule({ origin: "jsonschema-lint:single-value-range"
 });
 
 export default singleValueRange;
+
+/** @type (schemaNode: JsonSchemaNode, uri: string | undefined) => boolean */
+const isTrue = (schemaNode, uri) => {
+  const valueNode = uri === undefined ? undefined : findKeyword(schemaNode, uri)?.children[1];
+  return valueNode?.jsonType === "boolean" && valueNode.value;
+};
+
+/** @type (dialect: Dialect, uris: string[]) => string | undefined */
+const nameOf = ({ keywords }, uris) => Object.keys(keywords).find((name) => uris.includes(keywords[name]));

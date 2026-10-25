@@ -14,6 +14,22 @@ const formatUris = new Set(["https://json-schema.org/keyword/format", "https://j
  */
 const dialectFormats = new WeakMap();
 
+/** @type API.formatTypes */
+export const formatTypes = async (session, schemaNode, keywordNode) => {
+  const valueNode = keywordNode.children[1];
+  if (session === undefined || schemaNode.type !== "json-schema" || !formatUris.has(keywordNode.keywordUri) || valueNode.jsonType !== "string") {
+    return;
+  }
+
+  const formats = await formatsOf(session, schemaNode.dialectUri);
+  if (formats === undefined || !Object.hasOwn(formats, valueNode.value)) {
+    return;
+  }
+
+  const uri = formats[valueNode.value];
+  return session.jsonSchema.hasFormat(uri) ? /** @type JsonType[] | undefined */ (session.jsonSchema.getFormat(uri).types) : undefined;
+};
+
 /** @type (session: JsonSchemaSession, dialectUri: string) => Promise<Record<string, string> | undefined> */
 const formatsOf = (session, dialectUri) => {
   let byDialect = dialectFormats.get(session);
@@ -33,20 +49,4 @@ const formatsOf = (session, dialectUri) => {
   }
 
   return formats;
-};
-
-/** @type API.formatTypes */
-export const formatTypes = async (session, schemaNode, keywordNode) => {
-  const valueNode = keywordNode.children[1];
-  if (session === undefined || schemaNode.type !== "json-schema" || !formatUris.has(keywordNode.keywordUri) || valueNode.jsonType !== "string") {
-    return;
-  }
-
-  const formats = await formatsOf(session, schemaNode.dialectUri);
-  if (formats === undefined || !Object.hasOwn(formats, valueNode.value)) {
-    return;
-  }
-
-  const uri = formats[valueNode.value];
-  return session.jsonSchema.hasFormat(uri) ? /** @type JsonType[] | undefined */ (session.jsonSchema.getFormat(uri).types) : undefined;
 };

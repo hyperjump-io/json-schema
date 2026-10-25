@@ -100,14 +100,6 @@ const unevaluatedPropertiesKeyword = {
   lower: (schema) => ({ op: "eachProperty", select: { unevaluated: true }, of: schema })
 };
 
-/** @type <I>(context: EvaluateContext<I>) => OpaqueContext<I> */
-const opaqueContext = (context) => {
-  if (context.op !== "opaque") {
-    throw Error("Expected an opaque operation");
-  }
-  return context;
-};
-
 // Whether an array's numbers are in order. The kernel can't say it, so it's
 // a predicate.
 /** @type Keyword<"ascending" | "descending"> */
@@ -270,55 +262,6 @@ const keywords = [
   { uri: "https://example.com/keyword/defs", shape: { map: "schema" } },
   { uri: "https://example.com/keyword/then", shape: "schema" }
 ];
-
-/** @type (jsonSchema: JsonSchema) => void */
-const addTestDialect = (jsonSchema) => {
-  for (const keyword of keywords) {
-    jsonSchema.addKeyword(keyword);
-  }
-
-  jsonSchema.addDialect({
-    uri: dialectUri,
-    keywords: {
-      $id: idKeyword.uri,
-      $anchor: anchorKeyword.uri,
-      $dynamicAnchor: dynamicAnchorKeyword.uri,
-      $defs: "https://example.com/keyword/defs",
-      $ref: refKeyword.uri,
-      $dynamicRef: dynamicRefKeyword.uri,
-      type: typeKeyword.uri,
-      minimum: minimumKeyword.uri,
-      title: titleKeyword.uri,
-      properties: propertiesKeyword.uri,
-      items: itemsKeyword.uri,
-      allOf: allOfKeyword.uri,
-      anyOf: anyOfKeyword.uri,
-      if: ifKeyword.uri,
-      then: "https://example.com/keyword/then",
-      unevaluatedProperties: unevaluatedPropertiesKeyword.uri,
-      sorted: sortedKeyword.uri,
-      propertiesByType: propertiesByTypeKeyword.uri,
-      firstOf: firstOfKeyword.uri,
-      firstOfProperties: firstOfPropertiesKeyword.uri,
-      sameAs: sameAsKeyword.uri,
-      maxUnevaluated: maxUnevaluatedKeyword.uri,
-      dynamicProperties: dynamicPropertiesKeyword.uri
-    },
-    unknownKeywords: "annotation"
-  });
-};
-
-/** @type (error: ValidationError) => Record<string, string> */
-const locations = (error) => ({
-  ruleId: error.ruleId,
-  absoluteKeywordLocation: error.absoluteKeywordLocation,
-  instanceLocation: error.instanceLocation
-});
-
-/** @type (error: DetailedValidationError) => unknown */
-const detailedLocations = (error) => error.errors
-  ? { ...locations(error), errors: error.errors.map(detailedLocations) }
-  : locations(error);
 
 describe("Validator", () => {
   /** @type JsonSchema */
@@ -1327,3 +1270,60 @@ describe("Validator", () => {
     });
   });
 });
+
+/** @type <I>(context: EvaluateContext<I>) => OpaqueContext<I> */
+const opaqueContext = (context) => {
+  if (context.op !== "opaque") {
+    throw Error("Expected an opaque operation");
+  }
+  return context;
+};
+
+/** @type (jsonSchema: JsonSchema) => void */
+const addTestDialect = (jsonSchema) => {
+  for (const keyword of keywords) {
+    jsonSchema.addKeyword(keyword);
+  }
+
+  jsonSchema.addDialect({
+    uri: dialectUri,
+    keywords: {
+      $id: idKeyword.uri,
+      $anchor: anchorKeyword.uri,
+      $dynamicAnchor: dynamicAnchorKeyword.uri,
+      $defs: "https://example.com/keyword/defs",
+      $ref: refKeyword.uri,
+      $dynamicRef: dynamicRefKeyword.uri,
+      type: typeKeyword.uri,
+      minimum: minimumKeyword.uri,
+      title: titleKeyword.uri,
+      properties: propertiesKeyword.uri,
+      items: itemsKeyword.uri,
+      allOf: allOfKeyword.uri,
+      anyOf: anyOfKeyword.uri,
+      if: ifKeyword.uri,
+      then: "https://example.com/keyword/then",
+      unevaluatedProperties: unevaluatedPropertiesKeyword.uri,
+      sorted: sortedKeyword.uri,
+      propertiesByType: propertiesByTypeKeyword.uri,
+      firstOf: firstOfKeyword.uri,
+      firstOfProperties: firstOfPropertiesKeyword.uri,
+      sameAs: sameAsKeyword.uri,
+      maxUnevaluated: maxUnevaluatedKeyword.uri,
+      dynamicProperties: dynamicPropertiesKeyword.uri
+    },
+    unknownKeywords: "annotation"
+  });
+};
+
+/** @type (error: ValidationError) => Record<string, string> */
+const locations = (error) => ({
+  ruleId: error.ruleId,
+  absoluteKeywordLocation: error.absoluteKeywordLocation,
+  instanceLocation: error.instanceLocation
+});
+
+/** @type (error: DetailedValidationError) => unknown */
+const detailedLocations = (error) => error.errors
+  ? { ...locations(error), errors: error.errors.map(detailedLocations) }
+  : locations(error);

@@ -5,18 +5,6 @@ import additionalItemsWithoutItemsArray from "./additional-items-without-items-a
 
 const draft07 = "http://json-schema.org/draft-07/schema#";
 
-/** @type (json: string) => Promise<VFile> */
-const lint = async (json) => {
-  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
-  await linter()
-    .use(additionalItemsWithoutItemsArray)
-    .process(file);
-  return file;
-};
-
-/** @type (json: string) => Promise<string[]> */
-const reasons = async (json) => (await lint(json)).messages.map((message) => message.reason);
-
 describe("additional-items-without-items-array", () => {
   test("items is a schema", async () => {
     const json = `{ "$schema": "${draft07}", "items": { "type": "number" }, "additionalItems": false }`;
@@ -65,3 +53,15 @@ describe("additional-items-without-items-array", () => {
     expect(await reasons(`{ "$schema": "https://json-schema.org/draft/2020-12/schema", "items": {}, "additionalItems": false }`)).to.eql([]);
   });
 });
+
+/** @type (json: string) => Promise<VFile> */
+const lint = async (json) => {
+  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
+  await linter()
+    .use(additionalItemsWithoutItemsArray)
+    .process(file);
+  return file;
+};
+
+/** @type (json: string) => Promise<string[]> */
+const reasons = async (json) => (await lint(json)).messages.map((message) => message.reason);

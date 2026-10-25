@@ -23,31 +23,6 @@ import { readsMarks } from "./kernel.js";
  * @typedef {Record<string, Json>} JsonObject
  */
 
-/** @type (instance: Json) => instance is JsonObject */
-const isObject = (instance) => typeof instance === "object" && instance !== null && !Array.isArray(instance);
-
-/** @type (value: Json) => boolean */
-const isScalar = (value) => value === null || typeof value !== "object";
-
-/** @type (a: Json, b: Json) => boolean */
-const equal = (a, b) => instanceEqual(jsInstance, a, jsInstance, b, true);
-
-/** @type (marks: Marks, more: Set<string | number>) => void */
-const addAll = (marks, more) => {
-  if (marks !== undefined) {
-    for (const key of more) {
-      marks.add(key);
-    }
-  }
-};
-
-/**
- * Whether an expression does nothing without annotations or plugins
- *
- * @type (expression: Expression) => boolean
- */
-const isInert = (expression) => expression.op === "pass" || expression.op === "annotate";
-
 /**
  * Evaluation of plain values without plugins (FLAG). It's written for plain
  * values, which is faster than evaluating through instance operations.
@@ -873,49 +848,6 @@ export const keywordEvaluate = (jsonSchema, uri) => {
 /** @type JsonTypeName[] */
 export const typeIndexes = ["null", "boolean", "number", "string", "array", "object"];
 
-/** @type (instance: Json) => number */
-const typeIndex = (instance) => {
-  switch (typeof instance) {
-    case "boolean":
-      return 1;
-    case "number":
-      return 2;
-    case "string":
-      return 3;
-    default:
-      return instance === null ? 0 : Array.isArray(instance) ? 4 : 5;
-  }
-};
-
-/**
- * Passes when every one passes. Two or three are called directly, without a
- * loop, which was faster: most schemas have that many keyword groups.
- *
- * @type (of: Evaluator[]) => Evaluator
- */
-const every = (of) => {
-  if (of.length === 0) {
-    return () => true;
-  } else if (of.length === 1) {
-    return of[0];
-  } else if (of.length === 2) {
-    const [a, b] = of;
-    return (instance, marks) => a(instance, marks) && b(instance, marks);
-  } else if (of.length === 3) {
-    const [a, b, c] = of;
-    return (instance, marks) => a(instance, marks) && b(instance, marks) && c(instance, marks);
-  }
-
-  return (instance, marks) => {
-    for (let index = 0; index < of.length; index++) {
-      if (!of[index](instance, marks)) {
-        return false;
-      }
-    }
-    return true;
-  };
-};
-
 /** @type (a: number, b: number) => boolean */
 export const isClose = (a, b) => Math.abs(a - b) < 1.19209290e-7;
 
@@ -1040,4 +972,72 @@ export const addReachable = (states, state, reached) => {
   for (const next of states[state].epsilon) {
     addReachable(states, next, reached);
   }
+};
+
+/** @type (instance: Json) => instance is JsonObject */
+const isObject = (instance) => typeof instance === "object" && instance !== null && !Array.isArray(instance);
+
+/** @type (value: Json) => boolean */
+const isScalar = (value) => value === null || typeof value !== "object";
+
+/** @type (a: Json, b: Json) => boolean */
+const equal = (a, b) => instanceEqual(jsInstance, a, jsInstance, b, true);
+
+/** @type (marks: Marks, more: Set<string | number>) => void */
+const addAll = (marks, more) => {
+  if (marks !== undefined) {
+    for (const key of more) {
+      marks.add(key);
+    }
+  }
+};
+
+/**
+ * Whether an expression does nothing without annotations or plugins
+ *
+ * @type (expression: Expression) => boolean
+ */
+const isInert = (expression) => expression.op === "pass" || expression.op === "annotate";
+
+/** @type (instance: Json) => number */
+const typeIndex = (instance) => {
+  switch (typeof instance) {
+    case "boolean":
+      return 1;
+    case "number":
+      return 2;
+    case "string":
+      return 3;
+    default:
+      return instance === null ? 0 : Array.isArray(instance) ? 4 : 5;
+  }
+};
+
+/**
+ * Passes when every one passes. Two or three are called directly, without a
+ * loop, which was faster: most schemas have that many keyword groups.
+ *
+ * @type (of: Evaluator[]) => Evaluator
+ */
+const every = (of) => {
+  if (of.length === 0) {
+    return () => true;
+  } else if (of.length === 1) {
+    return of[0];
+  } else if (of.length === 2) {
+    const [a, b] = of;
+    return (instance, marks) => a(instance, marks) && b(instance, marks);
+  } else if (of.length === 3) {
+    const [a, b, c] = of;
+    return (instance, marks) => a(instance, marks) && b(instance, marks) && c(instance, marks);
+  }
+
+  return (instance, marks) => {
+    for (let index = 0; index < of.length; index++) {
+      if (!of[index](instance, marks)) {
+        return false;
+      }
+    }
+    return true;
+  };
 };

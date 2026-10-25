@@ -13,13 +13,6 @@ import { SchemaRegistry } from "./registry/schema-registry.js";
  * @import { JsonSchemaConfig } from "./json-schema.d.ts"
  */
 
-/** @type (config?: JsonSchemaConfig) => JsonSchema */
-const v1 = (config) => {
-  const jsonSchema = new JsonSchema(config);
-  addV1(jsonSchema);
-  return jsonSchema;
-};
-
 const schema = JSON.stringify({ $schema: v1DialectUri, type: "string" });
 
 // browser's `allowRetrieval` tests cover matching. These are what schemas
@@ -85,3 +78,10 @@ describe("allowRetrieval", () => {
     expect(validator.validate("foo")).to.equal(true);
   });
 });
+
+/** @type (config?: JsonSchemaConfig) => JsonSchema */
+const v1 = (config) => {
+  const jsonSchema = new JsonSchema(config);
+  addV1(jsonSchema);
+  return jsonSchema;
+};

@@ -20,54 +20,6 @@ import { fewestProperties, propertyAlternatives } from "../required-properties.j
 /** The operations that limit a count, and what they count */
 const counts = /** @type const */ ({ stringLength: "string", itemCount: "array", propertyCount: "object" });
 
-/** @type (keywordNode: JsonSchemaKeywordNode) => string */
-const nameOf = (keywordNode) => `'${keywordNode.children[0].value}'`;
-
-/** @type (keywordNodes: JsonSchemaKeywordNode[]) => string */
-const namesOf = (keywordNodes) => keywordNodes.map(nameOf).join(" and ");
-
-/**
- * A group's operations, from its top-level `all`
- *
- * @type (expression: Expression) => Expression[]
- */
-const operations = (expression) => expression.op === "all" ? expression.of : [expression];
-
-/**
- * Names, like "'a', 'b', and 'c'"
- *
- * @type (names: string[]) => string
- */
-const list = (names) => names.length < 3
-  ? names.join(" and ")
-  : `${names.slice(0, -1).join(", ")}, and ${names.at(-1)}`;
-
-/**
- * The bound that allows the least. On a tie, an exclusive bound allows less.
- *
- * @type (bounds: Bound[], isTighter: (a: number, b: number) => boolean) => Bound | undefined
- */
-const tightest = (bounds, isTighter) => {
-  let result;
-  for (const candidate of bounds) {
-    if (result === undefined || isTighter(candidate.value, result.value) || (candidate.value === result.value && candidate.exclusive)) {
-      result = candidate;
-    }
-  }
-
-  return result;
-};
-
-/**
- * The second of two keywords in the document. The message goes on it,
- * because it's the one that contradicts the other.
- *
- * @type (a: JsonSchemaKeywordNode, b: JsonSchemaKeywordNode) => JsonSchemaKeywordNode
- */
-const second = (a, b) => {
-  return /** @type number */ (a.position?.start.offset) < /** @type number */ (b.position?.start.offset) ? b : a;
-};
-
 /**
  * Limits are what `range`, `stringLength`, `itemCount`, `propertyCount`, and
  * `contains` say, from whichever keywords lowered to them, and required
@@ -198,3 +150,51 @@ const contradictoryLimits = lintRule({ origin: "jsonschema-lint:contradictory-li
 });
 
 export default contradictoryLimits;
+
+/** @type (keywordNode: JsonSchemaKeywordNode) => string */
+const nameOf = (keywordNode) => `'${keywordNode.children[0].value}'`;
+
+/** @type (keywordNodes: JsonSchemaKeywordNode[]) => string */
+const namesOf = (keywordNodes) => keywordNodes.map(nameOf).join(" and ");
+
+/**
+ * A group's operations, from its top-level `all`
+ *
+ * @type (expression: Expression) => Expression[]
+ */
+const operations = (expression) => expression.op === "all" ? expression.of : [expression];
+
+/**
+ * Names, like "'a', 'b', and 'c'"
+ *
+ * @type (names: string[]) => string
+ */
+const list = (names) => names.length < 3
+  ? names.join(" and ")
+  : `${names.slice(0, -1).join(", ")}, and ${names.at(-1)}`;
+
+/**
+ * The bound that allows the least. On a tie, an exclusive bound allows less.
+ *
+ * @type (bounds: Bound[], isTighter: (a: number, b: number) => boolean) => Bound | undefined
+ */
+const tightest = (bounds, isTighter) => {
+  let result;
+  for (const candidate of bounds) {
+    if (result === undefined || isTighter(candidate.value, result.value) || (candidate.value === result.value && candidate.exclusive)) {
+      result = candidate;
+    }
+  }
+
+  return result;
+};
+
+/**
+ * The second of two keywords in the document. The message goes on it,
+ * because it's the one that contradicts the other.
+ *
+ * @type (a: JsonSchemaKeywordNode, b: JsonSchemaKeywordNode) => JsonSchemaKeywordNode
+ */
+const second = (a, b) => {
+  return /** @type number */ (a.position?.start.offset) < /** @type number */ (b.position?.start.offset) ? b : a;
+};

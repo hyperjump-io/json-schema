@@ -6,18 +6,6 @@ import propertyNamesType from "./property-names-type.js";
 const draft06 = "http://json-schema.org/draft-06/schema#";
 const draft202012 = "https://json-schema.org/draft/2020-12/schema";
 
-/** @type (json: string) => Promise<VFile> */
-const lint = async (json) => {
-  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
-  await linter()
-    .use(propertyNamesType)
-    .process(file);
-  return file;
-};
-
-/** @type (json: string) => Promise<string[]> */
-const reasons = async (json) => (await lint(json)).messages.map((message) => message.reason);
-
 const noEffect = "'type' has no effect in 'propertyNames', because property names are always strings";
 const nothingValid = "'type' doesn't allow strings, so no property name is valid, and only objects without properties are";
 
@@ -70,3 +58,15 @@ describe("property-names-type", () => {
     expect(await reasons(`{ "$schema": "${draft202012}", "properties": { "propertyNames": { "type": "string" } } }`)).to.eql([]);
   });
 });
+
+/** @type (json: string) => Promise<VFile> */
+const lint = async (json) => {
+  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
+  await linter()
+    .use(propertyNamesType)
+    .process(file);
+  return file;
+};
+
+/** @type (json: string) => Promise<string[]> */
+const reasons = async (json) => (await lint(json)).messages.map((message) => message.reason);

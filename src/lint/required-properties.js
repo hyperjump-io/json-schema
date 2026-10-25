@@ -20,71 +20,10 @@
  */
 
 /**
- * Whether a location is at or under another
- *
- * @type (location: string, parent: string) => boolean
- */
-const isIn = (location, parent) => location === parent || location.startsWith(`${parent}/`);
-
-/**
  * More alternatives than this are combined into one, which only has what
  * they all have in common, so the number doesn't grow with every `anyOf`
  */
 const limit = 64;
-
-/** @type () => Alternative */
-const empty = () => ({ names: new Set(), absent: new Set(), keywordNodes: new Set() });
-
-/** @type (alternative: Alternative) => boolean */
-const isPossible = ({ names, absent }) => [...names].every((name) => !absent.has(name));
-
-/** @type <T>(sets: Set<T>[]) => Set<T> */
-const intersection = (sets) => sets.reduce((result, set) => new Set([...result].filter((item) => set.has(item))));
-
-/** @type (alternatives: Alternative[]) => Alternative[] */
-const bounded = (alternatives) => {
-  if (alternatives.length <= limit) {
-    return alternatives;
-  }
-
-  return [{
-    names: intersection(alternatives.map(({ names }) => names)),
-    absent: intersection(alternatives.map(({ absent }) => absent)),
-    keywordNodes: new Set(alternatives.flatMap(({ keywordNodes }) => [...keywordNodes]))
-  }];
-};
-
-/**
- * The ways to pass both of two expressions
- *
- * @type (a: Alternative[], b: Alternative[]) => Alternative[]
- */
-const both = (a, b) => {
-  /** @type Alternative[] */
-  const alternatives = [];
-  for (const x of a) {
-    for (const y of b) {
-      const alternative = {
-        names: new Set([...x.names, ...y.names]),
-        absent: new Set([...x.absent, ...y.absent]),
-        keywordNodes: new Set([...x.keywordNodes, ...y.keywordNodes])
-      };
-      if (isPossible(alternative)) {
-        alternatives.push(alternative);
-      }
-    }
-  }
-  return bounded(alternatives);
-};
-
-/**
- * A condition's operations, without the type guard conditions about
- * properties have
- *
- * @type (condition: Expression) => Expression[]
- */
-const unguarded = (condition) => (condition.op === "all" ? condition.of : [condition])
-  .filter((operation) => operation.op !== "typeIs" || !operation.types.includes("object"));
 
 /**
  * The ways for an object to pass a schema, given its keywords, from what they
@@ -218,3 +157,64 @@ export const fewestProperties = (alternatives) => {
   const fewest = alternatives.filter(({ names }) => names.size === count).map(({ names }) => [...names].sort().join("\0"));
   return { count, exact: new Set(fewest).size === 1 };
 };
+
+/**
+ * Whether a location is at or under another
+ *
+ * @type (location: string, parent: string) => boolean
+ */
+const isIn = (location, parent) => location === parent || location.startsWith(`${parent}/`);
+
+/** @type () => Alternative */
+const empty = () => ({ names: new Set(), absent: new Set(), keywordNodes: new Set() });
+
+/** @type (alternative: Alternative) => boolean */
+const isPossible = ({ names, absent }) => [...names].every((name) => !absent.has(name));
+
+/** @type <T>(sets: Set<T>[]) => Set<T> */
+const intersection = (sets) => sets.reduce((result, set) => new Set([...result].filter((item) => set.has(item))));
+
+/** @type (alternatives: Alternative[]) => Alternative[] */
+const bounded = (alternatives) => {
+  if (alternatives.length <= limit) {
+    return alternatives;
+  }
+
+  return [{
+    names: intersection(alternatives.map(({ names }) => names)),
+    absent: intersection(alternatives.map(({ absent }) => absent)),
+    keywordNodes: new Set(alternatives.flatMap(({ keywordNodes }) => [...keywordNodes]))
+  }];
+};
+
+/**
+ * The ways to pass both of two expressions
+ *
+ * @type (a: Alternative[], b: Alternative[]) => Alternative[]
+ */
+const both = (a, b) => {
+  /** @type Alternative[] */
+  const alternatives = [];
+  for (const x of a) {
+    for (const y of b) {
+      const alternative = {
+        names: new Set([...x.names, ...y.names]),
+        absent: new Set([...x.absent, ...y.absent]),
+        keywordNodes: new Set([...x.keywordNodes, ...y.keywordNodes])
+      };
+      if (isPossible(alternative)) {
+        alternatives.push(alternative);
+      }
+    }
+  }
+  return bounded(alternatives);
+};
+
+/**
+ * A condition's operations, without the type guard conditions about
+ * properties have
+ *
+ * @type (condition: Expression) => Expression[]
+ */
+const unguarded = (condition) => (condition.op === "all" ? condition.of : [condition])
+  .filter((operation) => operation.op !== "typeIs" || !operation.types.includes("object"));

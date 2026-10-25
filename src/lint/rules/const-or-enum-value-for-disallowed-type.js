@@ -18,17 +18,6 @@ const typeDescriptions = {
   object: "an object"
 };
 
-/**
- * What a value's type is. It says a number isn't an integer if `type`
- * allows integers, since that's why it isn't allowed.
- *
- * @type (names: Set<string>, valueNode: JsonSchemaTolerantNode) => string
- */
-const describe = (names, valueNode) => {
-  const jsonType = /** @type string */ (/** @type any */ (valueNode).jsonType);
-  return jsonType === "number" && names.has("integer") ? "a number that isn't an integer" : typeDescriptions[jsonType];
-};
-
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
 const constOrEnumValueForDisallowedType = lintRule({ origin: "jsonschema-lint:const-or-enum-value-for-disallowed-type" }, (tree, file) => {
   visitSchemas(tree, (schemaNode) => {
@@ -64,3 +53,14 @@ const constOrEnumValueForDisallowedType = lintRule({ origin: "jsonschema-lint:co
 });
 
 export default constOrEnumValueForDisallowedType;
+
+/**
+ * What a value's type is. It says a number isn't an integer if `type`
+ * allows integers, since that's why it isn't allowed.
+ *
+ * @type (names: Set<string>, valueNode: JsonSchemaTolerantNode) => string
+ */
+const describe = (names, valueNode) => {
+  const jsonType = /** @type string */ (/** @type any */ (valueNode).jsonType);
+  return jsonType === "number" && names.has("integer") ? "a number that isn't an integer" : typeDescriptions[jsonType];
+};

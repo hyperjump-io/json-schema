@@ -4,13 +4,6 @@ import { SchemaRegistry } from "./schema-registry.js";
 import { RegistryIndex } from "./registry-index.js";
 import { addV1, v1DialectUri } from "../dialects/v1/index.js";
 
-/** @type () => JsonSchema */
-const v1 = () => {
-  const jsonSchema = new JsonSchema();
-  addV1(jsonSchema);
-  return jsonSchema;
-};
-
 describe("RegistryIndex", () => {
   const uri = "https://example.com/a";
 
@@ -80,3 +73,10 @@ describe("RegistryIndex", () => {
     expect(identified).to.be.greaterThan(0);
   });
 });
+
+/** @type () => JsonSchema */
+const v1 = () => {
+  const jsonSchema = new JsonSchema();
+  addV1(jsonSchema);
+  return jsonSchema;
+};

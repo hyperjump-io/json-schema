@@ -7,12 +7,6 @@ import { findKeyword, visitKeywords } from "../utilities.js";
 
 const keyword = "https://json-schema.org/keyword";
 
-/** @type (keywordNode: JsonSchemaKeywordNode | undefined) => boolean */
-const isFalse = (keywordNode) => {
-  const valueNode = keywordNode?.children[1];
-  return valueNode?.jsonType === "boolean" && !valueNode.value;
-};
-
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
 const falseThenElse = lintRule({ origin: "jsonschema-lint:false-then-else" }, (tree, file) => {
   visitKeywords(tree, `${keyword}/if`, (ifNode, schemaNode) => {
@@ -33,3 +27,9 @@ const falseThenElse = lintRule({ origin: "jsonschema-lint:false-then-else" }, (t
 });
 
 export default falseThenElse;
+
+/** @type (keywordNode: JsonSchemaKeywordNode | undefined) => boolean */
+const isFalse = (keywordNode) => {
+  const valueNode = keywordNode?.children[1];
+  return valueNode?.jsonType === "boolean" && !valueNode.value;
+};

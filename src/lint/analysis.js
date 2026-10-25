@@ -11,29 +11,6 @@ import { subexpressions } from "../kernel/kernel.js";
 /** @type JsonType[] */
 const jsonTypes = ["null", "boolean", "number", "string", "array", "object"];
 
-/** @type () => Set<JsonType> */
-const all = () => new Set(jsonTypes);
-
-/** @type (sets: Set<JsonType>[]) => Set<JsonType> */
-const union = (sets) => new Set(sets.flatMap((set) => [...set]));
-
-/** @type (sets: Set<JsonType>[]) => Set<JsonType> */
-const intersection = (sets) => sets.reduce((result, set) => new Set([...result].filter((type) => set.has(type))), all());
-
-/** @type (types: TypeName[]) => Set<JsonType> */
-const jsonTypesOf = (types) => new Set(types.map((type) => type === "integer" ? "number" : type));
-
-/** @type (value: Json) => JsonType */
-const typeOfValue = (value) => {
-  if (value === null) {
-    return "null";
-  } else if (Array.isArray(value)) {
-    return "array";
-  }
-
-  return /** @type JsonType */ (typeof value);
-};
-
 /**
  * The one type an operation is about
  *
@@ -174,4 +151,27 @@ export const assertsOnItsOwn = (expression) => {
   visit(expression);
 
   return asserts && !applies;
+};
+
+/** @type () => Set<JsonType> */
+const all = () => new Set(jsonTypes);
+
+/** @type (sets: Set<JsonType>[]) => Set<JsonType> */
+const union = (sets) => new Set(sets.flatMap((set) => [...set]));
+
+/** @type (sets: Set<JsonType>[]) => Set<JsonType> */
+const intersection = (sets) => sets.reduce((result, set) => new Set([...result].filter((type) => set.has(type))), all());
+
+/** @type (types: TypeName[]) => Set<JsonType> */
+const jsonTypesOf = (types) => new Set(types.map((type) => type === "integer" ? "number" : type));
+
+/** @type (value: Json) => JsonType */
+const typeOfValue = (value) => {
+  if (value === null) {
+    return "null";
+  } else if (Array.isArray(value)) {
+    return "array";
+  }
+
+  return /** @type JsonType */ (typeof value);
 };

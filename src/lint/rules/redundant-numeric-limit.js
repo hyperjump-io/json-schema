@@ -13,12 +13,6 @@ const pairs = /** @type const */ ([
   [`${keyword}/minimum`, `${keyword}/exclusiveMinimum`, "higher"]
 ]);
 
-/** @type (keywordNode: JsonSchemaKeywordNode | undefined) => number | undefined */
-const numberOf = (keywordNode) => {
-  const valueNode = keywordNode?.children[1];
-  return valueNode?.jsonType === "number" ? valueNode.value : undefined;
-};
-
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
 const redundantNumericLimit = lintRule({ origin: "jsonschema-lint:redundant-numeric-limit" }, (tree, file) => {
   visitSchemas(tree, (schemaNode) => {
@@ -47,3 +41,9 @@ const redundantNumericLimit = lintRule({ origin: "jsonschema-lint:redundant-nume
 });
 
 export default redundantNumericLimit;
+
+/** @type (keywordNode: JsonSchemaKeywordNode | undefined) => number | undefined */
+const numberOf = (keywordNode) => {
+  const valueNode = keywordNode?.children[1];
+  return valueNode?.jsonType === "number" ? valueNode.value : undefined;
+};

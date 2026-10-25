@@ -3,15 +3,6 @@ import { VFile } from "vfile";
 import { linter } from "../test-linter.js";
 import duplicateOneOfSchemas from "./duplicate-one-of-schemas.js";
 
-/** @type (json: string) => Promise<VFile> */
-const lint = async (json) => {
-  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
-  await linter()
-    .use(duplicateOneOfSchemas)
-    .process(file);
-  return file;
-};
-
 describe("duplicate-one-of-schemas", () => {
   test("a duplicate schema", async () => {
     const json = `{ "$schema": "https://json-schema.org/v1", "oneOf": [{ "type": "string" }, { "type": "number" }, { "type": "string" }] }`;
@@ -63,3 +54,12 @@ describe("duplicate-one-of-schemas", () => {
     expect(file.messages).to.have.length(1);
   });
 });
+
+/** @type (json: string) => Promise<VFile> */
+const lint = async (json) => {
+  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
+  await linter()
+    .use(duplicateOneOfSchemas)
+    .process(file);
+  return file;
+};

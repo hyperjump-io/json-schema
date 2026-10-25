@@ -7,15 +7,6 @@ const draft04 = "http://json-schema.org/draft-04/schema#";
 const draft07 = "http://json-schema.org/draft-07/schema#";
 const draft202012 = "https://json-schema.org/draft/2020-12/schema";
 
-/** @type (json: string) => Promise<VFile> */
-const lint = async (json) => {
-  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
-  await linter()
-    .use(relativeRootId)
-    .process(file);
-  return file;
-};
-
 describe("relative-root-id", () => {
   test("a relative root $id", async () => {
     const file = await lint(`{ "$schema": "${draft202012}", "$id": "/user" }`);
@@ -84,3 +75,12 @@ describe("relative-root-id", () => {
     expect(file.messages.filter((message) => message.ruleId === "relative-root-id")).to.eql([]);
   });
 });
+
+/** @type (json: string) => Promise<VFile> */
+const lint = async (json) => {
+  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
+  await linter()
+    .use(relativeRootId)
+    .process(file);
+  return file;
+};

@@ -9,6 +9,61 @@ import { fewestProperties, propertyAlternatives } from "../required-properties.j
  * @import { LoweredKeyword } from "../lower.d.ts"
  */
 
+/** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
+const impossibleProperty = lintRule({ origin: "jsonschema-lint:impossible-property" }, async (tree, file) => {
+  const session = file.data.jsonSchemaSession;
+  if (session === undefined) {
+    return;
+  }
+
+  const lowered = await lowerForLint(session, tree);
+  const schemas = new Map([...lowered].map(([schemaNode, keywords]) => [schemaNode.location, keywords]));
+  for (const [schemaNode, keywords] of lowered) {
+    const max = mostProperties(keywords);
+    if (max === undefined) {
+      continue;
+    }
+
+    // If no object is valid, `contradictory-limits` reports it
+    const alternatives = propertyAlternatives(schemaNode, keywords, schemas);
+    if (alternatives.length === 0 || fewestProperties(alternatives).count > max.value) {
+      continue;
+    }
+
+    /** @type Map<string, JsonSchemaKeywordNode[]> */
+    const mentions = new Map();
+    for (const { group, keywordNode } of keywords) {
+      for (const name of namesOf(group.expression)) {
+        mentions.set(name, [...mentions.get(name) ?? [], keywordNode]);
+      }
+    }
+
+    for (const [name, keywordNodes] of mentions) {
+      // A property every valid object has can't be impossible here
+      if (alternatives.every(({ names }) => names.has(name))) {
+        continue;
+      }
+
+      // An object with it that can pass at all has too many properties
+      const withName = propertyAlternatives(schemaNode, keywords, schemas, [name]);
+      const fewest = withName.length > 0 ? fewestProperties(withName) : undefined;
+      if (fewest === undefined || fewest.count <= max.value) {
+        continue;
+      }
+
+      const count = fewest.exact ? `${fewest.count}` : `at least ${fewest.count}`;
+      const maxName = `'${max.keywordNode.children[0].value}'`;
+      const reason = `An object with '${name}' needs ${count} properties, but ${maxName} allows at most ${max.value}, so no valid object has '${name}'`;
+      file.message(reason, { place: max.keywordNode.position });
+      for (const keywordNode of new Set(keywordNodes)) {
+        file.message(reason, { place: placeFor(keywordNode, name) });
+      }
+    }
+  }
+});
+
+export default impossibleProperty;
+
 /**
  * A group's operations, from its top-level `all`
  *
@@ -69,58 +124,3 @@ const mostProperties = (keywords) => {
 
   return result;
 };
-
-/** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
-const impossibleProperty = lintRule({ origin: "jsonschema-lint:impossible-property" }, async (tree, file) => {
-  const session = file.data.jsonSchemaSession;
-  if (session === undefined) {
-    return;
-  }
-
-  const lowered = await lowerForLint(session, tree);
-  const schemas = new Map([...lowered].map(([schemaNode, keywords]) => [schemaNode.location, keywords]));
-  for (const [schemaNode, keywords] of lowered) {
-    const max = mostProperties(keywords);
-    if (max === undefined) {
-      continue;
-    }
-
-    // If no object is valid, `contradictory-limits` reports it
-    const alternatives = propertyAlternatives(schemaNode, keywords, schemas);
-    if (alternatives.length === 0 || fewestProperties(alternatives).count > max.value) {
-      continue;
-    }
-
-    /** @type Map<string, JsonSchemaKeywordNode[]> */
-    const mentions = new Map();
-    for (const { group, keywordNode } of keywords) {
-      for (const name of namesOf(group.expression)) {
-        mentions.set(name, [...mentions.get(name) ?? [], keywordNode]);
-      }
-    }
-
-    for (const [name, keywordNodes] of mentions) {
-      // A property every valid object has can't be impossible here
-      if (alternatives.every(({ names }) => names.has(name))) {
-        continue;
-      }
-
-      // An object with it that can pass at all has too many properties
-      const withName = propertyAlternatives(schemaNode, keywords, schemas, [name]);
-      const fewest = withName.length > 0 ? fewestProperties(withName) : undefined;
-      if (fewest === undefined || fewest.count <= max.value) {
-        continue;
-      }
-
-      const count = fewest.exact ? `${fewest.count}` : `at least ${fewest.count}`;
-      const maxName = `'${max.keywordNode.children[0].value}'`;
-      const reason = `An object with '${name}' needs ${count} properties, but ${maxName} allows at most ${max.value}, so no valid object has '${name}'`;
-      file.message(reason, { place: max.keywordNode.position });
-      for (const keywordNode of new Set(keywordNodes)) {
-        file.message(reason, { place: placeFor(keywordNode, name) });
-      }
-    }
-  }
-});
-
-export default impossibleProperty;

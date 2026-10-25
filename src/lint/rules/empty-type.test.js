@@ -5,15 +5,6 @@ import emptyType from "./empty-type.js";
 
 const draft202012 = "https://json-schema.org/draft/2020-12/schema";
 
-/** @type (json: string) => Promise<VFile> */
-const lint = async (json) => {
-  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
-  await linter()
-    .use(emptyType)
-    .process(file);
-  return file;
-};
-
 describe("empty-type", () => {
   test("an empty type", async () => {
     const file = await lint(`{ "$schema": "${draft202012}", "type": [] }`);
@@ -57,3 +48,12 @@ describe("empty-type", () => {
     expect(file.messages.map((message) => message.ruleId)).to.eql(["https://json-schema.org/keyword/type"]);
   });
 });
+
+/** @type (json: string) => Promise<VFile> */
+const lint = async (json) => {
+  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
+  await linter()
+    .use(emptyType)
+    .process(file);
+  return file;
+};

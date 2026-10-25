@@ -5,18 +5,6 @@ import constAndEnum from "./const-and-enum.js";
 
 const draft2020 = "https://json-schema.org/draft/2020-12/schema";
 
-/** @type (json: string) => Promise<VFile> */
-const lint = async (json) => {
-  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
-  await linter()
-    .use(constAndEnum)
-    .process(file);
-  return file;
-};
-
-/** @type (json: string) => Promise<string[]> */
-const reasons = async (json) => (await lint(json)).messages.map((message) => message.reason);
-
 const redundant = "'enum' has no effect, because 'const' allows only one value, which is in it";
 const contradiction = "The 'const' value isn't in 'enum', so nothing is valid";
 
@@ -73,3 +61,15 @@ describe("const-and-enum", () => {
     expect(await reasons(`{ "$schema": "http://json-schema.org/draft-04/schema#", "const": 5, "enum": [6] }`)).to.eql([]);
   });
 });
+
+/** @type (json: string) => Promise<VFile> */
+const lint = async (json) => {
+  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
+  await linter()
+    .use(constAndEnum)
+    .process(file);
+  return file;
+};
+
+/** @type (json: string) => Promise<string[]> */
+const reasons = async (json) => (await lint(json)).messages.map((message) => message.reason);

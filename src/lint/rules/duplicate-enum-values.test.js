@@ -3,15 +3,6 @@ import { VFile } from "vfile";
 import { linter } from "../test-linter.js";
 import duplicateEnumValues from "./duplicate-enum-values.js";
 
-/** @type (json: string) => Promise<VFile> */
-const lint = async (json) => {
-  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
-  await linter()
-    .use(duplicateEnumValues)
-    .process(file);
-  return file;
-};
-
 describe("duplicate-enum-values", () => {
   test("a duplicate string", async () => {
     const file = await lint(`{ "$schema": "https://json-schema.org/v1", "enum": ["a", "b", "a"] }`);
@@ -63,3 +54,12 @@ describe("duplicate-enum-values", () => {
     expect(file.messages.map((message) => message.ruleId)).to.eql(["https://json-schema.org/keyword/draft-04/enum"]);
   });
 });
+
+/** @type (json: string) => Promise<VFile> */
+const lint = async (json) => {
+  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
+  await linter()
+    .use(duplicateEnumValues)
+    .process(file);
+  return file;
+};

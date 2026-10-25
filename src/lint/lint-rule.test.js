@@ -5,20 +5,6 @@ import recommended from "./recommended.js";
 import thenElseWithoutIf from "./rules/then-else-without-if.js";
 import keywordWithoutType from "./rules/keyword-without-type.js";
 
-/** @type (json: string) => Promise<VFile> */
-const lint = async (json) => {
-  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
-  // The schemas leave out `type` to stay short
-  await linter()
-    .use(recommended)
-    .use(keywordWithoutType, ["off"])
-    .process(file);
-  return file;
-};
-
-/** @type (file: VFile) => (string | undefined)[] */
-const ruleIds = (file) => file.messages.map((message) => message.ruleId);
-
 describe("configuration comments", () => {
   test("a rule is off in the schema with the directive", async () => {
     const file = await lint(`{
@@ -203,3 +189,17 @@ describe("configuration comments", () => {
     expect(ruleIds(file)).to.eql(["unknown-rule"]);
   });
 });
+
+/** @type (json: string) => Promise<VFile> */
+const lint = async (json) => {
+  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
+  // The schemas leave out `type` to stay short
+  await linter()
+    .use(recommended)
+    .use(keywordWithoutType, ["off"])
+    .process(file);
+  return file;
+};
+
+/** @type (file: VFile) => (string | undefined)[] */
+const ruleIds = (file) => file.messages.map((message) => message.ruleId);

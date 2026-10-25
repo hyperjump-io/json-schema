@@ -20,68 +20,6 @@ const draft2020 = "https://json-schema.org/draft/2020-12/schema";
 const keyword = "https://json-schema.org/keyword";
 const opaqueDialect = "https://example.com/opaque-dialect";
 
-/** @type (schema: Record<string, Json>) => Promise<{ session: JsonSchemaSession; tree: JsonSchemaDocumentNode; at: (pointer: string) => JsonSchemaNode }> */
-const resolve = async (schema) => {
-  const jsonSchema = new JsonSchema();
-  addDraft07(jsonSchema);
-  addDraft202012(jsonSchema);
-
-  // Applies schemas, in order, until one passes. It's `opaque`, so where
-  // its schemas apply isn't known.
-  jsonSchema.addKeyword({
-    uri: "https://example.com/keyword/firstOf",
-    shape: { array: "schema" },
-    lower: (schemas) => ({ op: "opaque", keyword: "https://example.com/keyword/firstOf", value: null, schemas }),
-    evaluate: () => () => true
-  });
-  jsonSchema.addKeyword({
-    uri: "https://example.com/keyword/opaqueRef",
-    shape: "reference",
-    lower: (reference) => ({ op: "opaque", keyword: "https://example.com/keyword/opaqueRef", value: null, schemas: [reference.schema] }),
-    evaluate: () => () => true
-  });
-  jsonSchema.addDialect({
-    uri: opaqueDialect,
-    keywords: {
-      $defs: `${keyword}/definitions`,
-      $ref: `${keyword}/ref`,
-      allOf: `${keyword}/allOf`,
-      firstOf: "https://example.com/keyword/firstOf",
-      opaqueRef: "https://example.com/keyword/opaqueRef"
-    },
-    unknownKeywords: "annotation"
-  });
-
-  const registry = new SchemaRegistry().with({
-    $schema: draft2020,
-    $id: "https://example.com/other",
-    allOf: [{ properties: { a: {} } }],
-    $defs: { b: { properties: { b: {} } } }
-  });
-  const session = jsonSchema.session({ registries: [registry] });
-
-  const file = new VFile({ path: "/schemas/a.schema.json", value: JSON.stringify(schema) });
-  const processor = unified()
-    .use(rejsonParse)
-    .use(jsonSchemaResolve, { session });
-  const tree = /** @type JsonSchemaDocumentNode */ (/** @type unknown */ (await processor.run(processor.parse(file), file)));
-  const root = /** @type JsonSchemaNode */ (tree.children[0]);
-  return { session, tree, at: (pointer) => /** @type JsonSchemaNode */ (pointerGet(pointer, root)) };
-};
-
-/** @type (group: SchemaGroup) => string[] */
-const locations = (group) => group.schemas.map((schemaNode) => schemaNode.location.replace(/^.*#/, "#")).sort();
-
-/** @type (group: SchemaGroup) => string[] */
-const links = (group) => group.links
-  .map(({ from, to, keywordUri, reference, negated, condition }) => {
-    const flags = [reference && "reference", negated && "negated", condition && "condition"].filter(Boolean);
-    /** @type (node: JsonSchemaNode) => string */
-    const name = (node) => node.location.replace(/^.*\/(.*#)?/, "") || "#";
-    return [name(from), keywordUri.replace(`${keyword}/`, ""), name(to), ...flags].join(" ");
-  })
-  .sort();
-
 describe("schemaGroup", () => {
   test("schemas applied in place, in both directions", async () => {
     const { session, tree, at } = await resolve({
@@ -282,3 +220,65 @@ describe("schemaGroup", () => {
     expect(isNegated(group, at("/$defs/a"))).to.equal(false);
   });
 });
+
+/** @type (schema: Record<string, Json>) => Promise<{ session: JsonSchemaSession; tree: JsonSchemaDocumentNode; at: (pointer: string) => JsonSchemaNode }> */
+const resolve = async (schema) => {
+  const jsonSchema = new JsonSchema();
+  addDraft07(jsonSchema);
+  addDraft202012(jsonSchema);
+
+  // Applies schemas, in order, until one passes. It's `opaque`, so where
+  // its schemas apply isn't known.
+  jsonSchema.addKeyword({
+    uri: "https://example.com/keyword/firstOf",
+    shape: { array: "schema" },
+    lower: (schemas) => ({ op: "opaque", keyword: "https://example.com/keyword/firstOf", value: null, schemas }),
+    evaluate: () => () => true
+  });
+  jsonSchema.addKeyword({
+    uri: "https://example.com/keyword/opaqueRef",
+    shape: "reference",
+    lower: (reference) => ({ op: "opaque", keyword: "https://example.com/keyword/opaqueRef", value: null, schemas: [reference.schema] }),
+    evaluate: () => () => true
+  });
+  jsonSchema.addDialect({
+    uri: opaqueDialect,
+    keywords: {
+      $defs: `${keyword}/definitions`,
+      $ref: `${keyword}/ref`,
+      allOf: `${keyword}/allOf`,
+      firstOf: "https://example.com/keyword/firstOf",
+      opaqueRef: "https://example.com/keyword/opaqueRef"
+    },
+    unknownKeywords: "annotation"
+  });
+
+  const registry = new SchemaRegistry().with({
+    $schema: draft2020,
+    $id: "https://example.com/other",
+    allOf: [{ properties: { a: {} } }],
+    $defs: { b: { properties: { b: {} } } }
+  });
+  const session = jsonSchema.session({ registries: [registry] });
+
+  const file = new VFile({ path: "/schemas/a.schema.json", value: JSON.stringify(schema) });
+  const processor = unified()
+    .use(rejsonParse)
+    .use(jsonSchemaResolve, { session });
+  const tree = /** @type JsonSchemaDocumentNode */ (/** @type unknown */ (await processor.run(processor.parse(file), file)));
+  const root = /** @type JsonSchemaNode */ (tree.children[0]);
+  return { session, tree, at: (pointer) => /** @type JsonSchemaNode */ (pointerGet(pointer, root)) };
+};
+
+/** @type (group: SchemaGroup) => string[] */
+const locations = (group) => group.schemas.map((schemaNode) => schemaNode.location.replace(/^.*#/, "#")).sort();
+
+/** @type (group: SchemaGroup) => string[] */
+const links = (group) => group.links
+  .map(({ from, to, keywordUri, reference, negated, condition }) => {
+    const flags = [reference && "reference", negated && "negated", condition && "condition"].filter(Boolean);
+    /** @type (node: JsonSchemaNode) => string */
+    const name = (node) => node.location.replace(/^.*\/(.*#)?/, "") || "#";
+    return [name(from), keywordUri.replace(`${keyword}/`, ""), name(to), ...flags].join(" ");
+  })
+  .sort();

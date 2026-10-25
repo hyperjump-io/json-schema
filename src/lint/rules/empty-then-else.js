@@ -8,6 +8,21 @@ import { siblingKeyword, visitKeywords } from "../utilities.js";
 const ifUri = "https://json-schema.org/keyword/if";
 const commentUri = "https://json-schema.org/keyword/comment";
 
+/** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
+const emptyThenElse = lintRule({ origin: "jsonschema-lint:empty-then-else" }, (tree, file) => {
+  for (const keywordUri of ["https://json-schema.org/keyword/then", "https://json-schema.org/keyword/else"]) {
+    visitKeywords(tree, keywordUri, (keywordNode, schemaNode) => {
+      // Without `if`, then-else-without-if reports it
+      if (siblingKeyword(schemaNode, ifUri) !== undefined && isEmpty(keywordNode.children[1])) {
+        const name = keywordNode.children[0].value;
+        file.message(`'${name}' has no effect, because every value is valid against it`, { place: keywordNode.position });
+      }
+    });
+  }
+});
+
+export default emptyThenElse;
+
 /**
  * A schema that every value passes and that has no annotations: `true`, or an
  * object with nothing but `$comment`
@@ -23,18 +38,3 @@ const isEmpty = (schemaNode) => {
     return false;
   }
 };
-
-/** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
-const emptyThenElse = lintRule({ origin: "jsonschema-lint:empty-then-else" }, (tree, file) => {
-  for (const keywordUri of ["https://json-schema.org/keyword/then", "https://json-schema.org/keyword/else"]) {
-    visitKeywords(tree, keywordUri, (keywordNode, schemaNode) => {
-      // Without `if`, then-else-without-if reports it
-      if (siblingKeyword(schemaNode, ifUri) !== undefined && isEmpty(keywordNode.children[1])) {
-        const name = keywordNode.children[0].value;
-        file.message(`'${name}' has no effect, because every value is valid against it`, { place: keywordNode.position });
-      }
-    });
-  }
-});
-
-export default emptyThenElse;

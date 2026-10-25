@@ -5,18 +5,6 @@ import constOrEnumValueForDisallowedType from "./const-or-enum-value-for-disallo
 
 const draft2020 = "https://json-schema.org/draft/2020-12/schema";
 
-/** @type (json: string) => Promise<VFile> */
-const lint = async (json) => {
-  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
-  await linter()
-    .use(constOrEnumValueForDisallowedType)
-    .process(file);
-  return file;
-};
-
-/** @type (json: string) => Promise<string[]> */
-const reasons = async (json) => (await lint(json)).messages.map((message) => message.reason);
-
 describe("const-or-enum-value-for-disallowed-type", () => {
   test("an enum value type doesn't allow", async () => {
     const json = `{ "$schema": "${draft2020}", "type": "string", "enum": ["a", null] }`;
@@ -76,3 +64,15 @@ describe("const-or-enum-value-for-disallowed-type", () => {
     expect(await reasons(`{ "$schema": "http://json-schema.org/draft-04/schema#", "type": "number", "enum": ["1"] }`)).to.have.length(1);
   });
 });
+
+/** @type (json: string) => Promise<VFile> */
+const lint = async (json) => {
+  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
+  await linter()
+    .use(constOrEnumValueForDisallowedType)
+    .process(file);
+  return file;
+};
+
+/** @type (json: string) => Promise<string[]> */
+const reasons = async (json) => (await lint(json)).messages.map((message) => message.reason);

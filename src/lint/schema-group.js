@@ -41,6 +41,65 @@ const childOps = new Set(["item", "eachItem", "contains", "property", "eachPrope
  */
 
 /**
+ * Where each schema in a document is, and which schemas in it refer to it.
+ * It's found once for each tree, so rules share it.
+ *
+ * @type WeakMap<JsonSchemaDocumentNode, Promise<Context>>
+ */
+const contexts = new WeakMap();
+
+/** @type API.schemaGroup */
+export const schemaGroup = async (session, tree, schemaNode) => {
+  if (session === undefined) {
+    // Without a session, nothing can be lowered, so what the schema applies
+    // isn't known
+    return { schemas: [schemaNode], links: [], open: true, applied: false, unknown: true };
+  }
+
+  let context = contexts.get(tree);
+  if (context === undefined) {
+    context = buildContext(session, tree);
+    contexts.set(tree, context);
+  }
+  const resolved = await context;
+
+  let group = resolved.groups.get(schemaNode);
+  if (group === undefined) {
+    group = buildGroup(schemaNode, resolved);
+    resolved.groups.set(schemaNode, group);
+    for (const member of (await group).schemas) {
+      resolved.groups.set(member, group);
+    }
+  }
+
+  return group;
+};
+
+/** @type API.isNegated */
+export const isNegated = (group, schemaNode) => {
+  let negated = false;
+  for (let node = schemaNode; ;) {
+    const link = group.links.find(({ to, reference }) => to === node && !reference);
+    if (link === undefined) {
+      return negated;
+    }
+    negated = negated !== link.negated;
+    node = link.from;
+  }
+};
+
+/** @type API.marksAreRead */
+export const marksAreRead = async (session, tree, group) => {
+  const lowered = await lowerForLint(session, tree);
+  return group.unknown || group.schemas.some((node) => {
+    const keywords = lowered.get(node);
+    return keywords === undefined
+      ? node.type === "json-schema" && node.jsonType === "object"
+      : keywords.some(({ group }) => readsMarks(group.expression));
+  });
+};
+
+/**
  * The schemas in a keyword's value, not including their subschemas
  *
  * @type (node: TreeNode) => JsonSchemaNode[]
@@ -132,14 +191,6 @@ const applicationsOf = (schemaNode, lowered) => {
 
   return applications;
 };
-
-/**
- * Where each schema in a document is, and which schemas in it refer to it.
- * It's found once for each tree, so rules share it.
- *
- * @type WeakMap<JsonSchemaDocumentNode, Promise<Context>>
- */
-const contexts = new WeakMap();
 
 /** @type (session: JsonSchemaSession, tree: JsonSchemaDocumentNode) => Promise<Context> */
 const buildContext = async (session, tree) => {
@@ -294,55 +345,4 @@ const buildGroup = async (start, { positions, referrers, applications, find }) =
   }
 
   return group;
-};
-
-/** @type API.schemaGroup */
-export const schemaGroup = async (session, tree, schemaNode) => {
-  if (session === undefined) {
-    // Without a session, nothing can be lowered, so what the schema applies
-    // isn't known
-    return { schemas: [schemaNode], links: [], open: true, applied: false, unknown: true };
-  }
-
-  let context = contexts.get(tree);
-  if (context === undefined) {
-    context = buildContext(session, tree);
-    contexts.set(tree, context);
-  }
-  const resolved = await context;
-
-  let group = resolved.groups.get(schemaNode);
-  if (group === undefined) {
-    group = buildGroup(schemaNode, resolved);
-    resolved.groups.set(schemaNode, group);
-    for (const member of (await group).schemas) {
-      resolved.groups.set(member, group);
-    }
-  }
-
-  return group;
-};
-
-/** @type API.isNegated */
-export const isNegated = (group, schemaNode) => {
-  let negated = false;
-  for (let node = schemaNode; ;) {
-    const link = group.links.find(({ to, reference }) => to === node && !reference);
-    if (link === undefined) {
-      return negated;
-    }
-    negated = negated !== link.negated;
-    node = link.from;
-  }
-};
-
-/** @type API.marksAreRead */
-export const marksAreRead = async (session, tree, group) => {
-  const lowered = await lowerForLint(session, tree);
-  return group.unknown || group.schemas.some((node) => {
-    const keywords = lowered.get(node);
-    return keywords === undefined
-      ? node.type === "json-schema" && node.jsonType === "object"
-      : keywords.some(({ group }) => readsMarks(group.expression));
-  });
 };

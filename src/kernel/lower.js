@@ -35,6 +35,127 @@ export const lower = async (session, uri) => {
   return new Lowerer(session).lower(uri);
 };
 
+/**
+ * How the schemas and references in a keyword's value become its inputs.
+ * Compiling compiles them and retrieves what references refer to. Lint
+ * doesn't.
+ *
+ * @typedef {{
+ *   schema: (node: JsonSchemaNode) => Promise<Handle>;
+ *   reference: (node: JsonSchemaNode) => Promise<Reference>;
+ * }} Inputs
+ */
+
+/**
+ * A keyword group and the nodes it came from, for lint messages. When
+ * lowering for lint, `withoutSiblings` has what the keyword lowers to without
+ * each sibling it read, in the order of `sourceNodes`, or `undefined` if it
+ * can't be lowered without it.
+ *
+ * @typedef {{
+ *   group: KeywordGroup;
+ *   keywordNode: JsonSchemaKeywordNode;
+ *   sourceNodes: JsonSchemaKeywordNode[];
+ *   withoutSiblings?: (Expression | undefined)[];
+ * }} LoweredKeyword
+ */
+
+/**
+ * An object schema's keyword groups, in the order they're evaluated: a group
+ * that reads marks comes after the groups that don't, so it sees what they
+ * marked, in document order otherwise. A keyword without `lower` has no
+ * group, and its value isn't parsed, like `$defs`. The expressions are in
+ * the normal form.
+ *
+ * The resolver reports values that don't fit their shape or that their
+ * keyword's `check` rejects, and a schema with a problem isn't compiled, so
+ * when compiling, every value fits. Lint lowers broken documents, so if
+ * `tolerant`, a keyword whose value doesn't fit or is rejected, or whose
+ * `lower` throws, has no group, and a sibling whose value doesn't fit or is
+ * rejected is left out. Each keyword is also lowered without each sibling
+ * it read, so lint knows where each operation came from.
+ *
+ * @type (jsonSchema: JsonSchema, node: ObjectSchemaNode, dialect: Dialect, inputs: Inputs, tolerant: boolean) => Promise<LoweredKeyword[]>
+ */
+export const lowerKeywords = async (jsonSchema, node, dialect, inputs, tolerant) => {
+  const properties = node.children;
+
+  /** @type LoweredKeyword[] */
+  const lowered = [];
+  /** @type LoweredKeyword[] */
+  const readingMarks = [];
+  for (const keywordNode of properties) {
+    const [nameNode, valueNode] = keywordNode.children;
+    const keywordUri = keywordNode.keywordUri;
+    const keyword = jsonSchema.getKeyword(keywordDefinitionUri(keywordUri));
+    if (keyword.lower === undefined || (tolerant && !accepts(keyword, valueNode, node))) {
+      continue;
+    }
+
+    try {
+      const value = await parse(valueNode, keyword.shape, inputs);
+
+      /** @type Record<string, LowerInput | undefined> */
+      const siblings = {};
+      /** @type JsonSchemaKeywordNode[] */
+      const sourceNodes = [];
+      /** @type string[] */
+      const sourceNames = [];
+      for (const [name, siblingUri] of Object.entries(keyword.siblings ?? {})) {
+        siblings[name] = undefined;
+        const sibling = properties.find((property) => property.keywordUri === siblingUri);
+        if (sibling === undefined) {
+          continue;
+        }
+
+        const siblingKeyword = jsonSchema.getKeyword(keywordDefinitionUri(siblingUri));
+        if (tolerant && !accepts(siblingKeyword, sibling.children[1], node)) {
+          continue;
+        }
+
+        try {
+          siblings[name] = await parse(sibling.children[1], siblingKeyword.shape, inputs);
+          sourceNodes.push(sibling);
+          sourceNames.push(name);
+        } catch (error) {
+          if (!tolerant || !(error instanceof Misfit)) {
+            throw error;
+          }
+        }
+      }
+
+      const lowerKeyword = keyword.lower;
+      const context = { jsonSchema, dialect, keywordName: nameNode.value };
+      const expression = normalForm(lowerKeyword(value, siblings, context));
+      const group = {
+        keywordUri,
+        location: appendToLocation(nameNode.value, node.location),
+        sources: sourceNodes.map((sourceNode) => appendToLocation(sourceNode.children[0].value, node.location)),
+        expression
+      };
+
+      /** @type LoweredKeyword */
+      const loweredKeyword = { group, keywordNode, sourceNodes };
+      if (tolerant) {
+        loweredKeyword.withoutSiblings = sourceNames.map((name) => {
+          try {
+            return normalForm(lowerKeyword(value, { ...siblings, [name]: undefined }, context));
+          } catch {
+            return undefined;
+          }
+        });
+      }
+      (readsMarks(expression) ? readingMarks : lowered).push(loweredKeyword);
+    } catch (error) {
+      if (!tolerant) {
+        throw error;
+      }
+    }
+  }
+
+  return [...lowered, ...readingMarks];
+};
+
 class Lowerer {
   /** @type JsonSchemaSession */
   #session;
@@ -208,129 +329,8 @@ class Lowerer {
   }
 }
 
-/**
- * How the schemas and references in a keyword's value become its inputs.
- * Compiling compiles them and retrieves what references refer to. Lint
- * doesn't.
- *
- * @typedef {{
- *   schema: (node: JsonSchemaNode) => Promise<Handle>;
- *   reference: (node: JsonSchemaNode) => Promise<Reference>;
- * }} Inputs
- */
-
-/**
- * A keyword group and the nodes it came from, for lint messages. When
- * lowering for lint, `withoutSiblings` has what the keyword lowers to without
- * each sibling it read, in the order of `sourceNodes`, or `undefined` if it
- * can't be lowered without it.
- *
- * @typedef {{
- *   group: KeywordGroup;
- *   keywordNode: JsonSchemaKeywordNode;
- *   sourceNodes: JsonSchemaKeywordNode[];
- *   withoutSiblings?: (Expression | undefined)[];
- * }} LoweredKeyword
- */
-
 /** A value that doesn't fit its keyword's shape */
 class Misfit extends Error {}
-
-/**
- * An object schema's keyword groups, in the order they're evaluated: a group
- * that reads marks comes after the groups that don't, so it sees what they
- * marked, in document order otherwise. A keyword without `lower` has no
- * group, and its value isn't parsed, like `$defs`. The expressions are in
- * the normal form.
- *
- * The resolver reports values that don't fit their shape or that their
- * keyword's `check` rejects, and a schema with a problem isn't compiled, so
- * when compiling, every value fits. Lint lowers broken documents, so if
- * `tolerant`, a keyword whose value doesn't fit or is rejected, or whose
- * `lower` throws, has no group, and a sibling whose value doesn't fit or is
- * rejected is left out. Each keyword is also lowered without each sibling
- * it read, so lint knows where each operation came from.
- *
- * @type (jsonSchema: JsonSchema, node: ObjectSchemaNode, dialect: Dialect, inputs: Inputs, tolerant: boolean) => Promise<LoweredKeyword[]>
- */
-export const lowerKeywords = async (jsonSchema, node, dialect, inputs, tolerant) => {
-  const properties = node.children;
-
-  /** @type LoweredKeyword[] */
-  const lowered = [];
-  /** @type LoweredKeyword[] */
-  const readingMarks = [];
-  for (const keywordNode of properties) {
-    const [nameNode, valueNode] = keywordNode.children;
-    const keywordUri = keywordNode.keywordUri;
-    const keyword = jsonSchema.getKeyword(keywordDefinitionUri(keywordUri));
-    if (keyword.lower === undefined || (tolerant && !accepts(keyword, valueNode, node))) {
-      continue;
-    }
-
-    try {
-      const value = await parse(valueNode, keyword.shape, inputs);
-
-      /** @type Record<string, LowerInput | undefined> */
-      const siblings = {};
-      /** @type JsonSchemaKeywordNode[] */
-      const sourceNodes = [];
-      /** @type string[] */
-      const sourceNames = [];
-      for (const [name, siblingUri] of Object.entries(keyword.siblings ?? {})) {
-        siblings[name] = undefined;
-        const sibling = properties.find((property) => property.keywordUri === siblingUri);
-        if (sibling === undefined) {
-          continue;
-        }
-
-        const siblingKeyword = jsonSchema.getKeyword(keywordDefinitionUri(siblingUri));
-        if (tolerant && !accepts(siblingKeyword, sibling.children[1], node)) {
-          continue;
-        }
-
-        try {
-          siblings[name] = await parse(sibling.children[1], siblingKeyword.shape, inputs);
-          sourceNodes.push(sibling);
-          sourceNames.push(name);
-        } catch (error) {
-          if (!tolerant || !(error instanceof Misfit)) {
-            throw error;
-          }
-        }
-      }
-
-      const lowerKeyword = keyword.lower;
-      const context = { jsonSchema, dialect, keywordName: nameNode.value };
-      const expression = normalForm(lowerKeyword(value, siblings, context));
-      const group = {
-        keywordUri,
-        location: appendToLocation(nameNode.value, node.location),
-        sources: sourceNodes.map((sourceNode) => appendToLocation(sourceNode.children[0].value, node.location)),
-        expression
-      };
-
-      /** @type LoweredKeyword */
-      const loweredKeyword = { group, keywordNode, sourceNodes };
-      if (tolerant) {
-        loweredKeyword.withoutSiblings = sourceNames.map((name) => {
-          try {
-            return normalForm(lowerKeyword(value, { ...siblings, [name]: undefined }, context));
-          } catch {
-            return undefined;
-          }
-        });
-      }
-      (readsMarks(expression) ? readingMarks : lowered).push(loweredKeyword);
-    } catch (error) {
-      if (!tolerant) {
-        throw error;
-      }
-    }
-  }
-
-  return [...lowered, ...readingMarks];
-};
 
 /**
  * Whether a keyword's `check` accepts its value, as the resolver checks it

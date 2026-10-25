@@ -14,14 +14,6 @@ addV1(jsonSchema);
 
 let count = 0;
 
-/** @type (schema: Record<string, Json>) => Promise<Kernel> */
-const compile = async (schema) => {
-  const uri = `https://example.com/schema-${count++}`;
-  const registry = new SchemaRegistry([{ schema, retrievalUri: uri, dialectUri: v1DialectUri }]);
-  const validator = await jsonSchema.compile(uri, { registries: [registry] });
-  return /** @type Kernel */ (validator.serialize());
-};
-
 describe("optimize", () => {
   test("keeps what the schemas read up to date with the schemas passes replace", async () => {
     const kernel = await compile({ properties: { foo: true }, unevaluatedProperties: false });
@@ -37,3 +29,11 @@ describe("optimize", () => {
     expect(optimize(kernel, { fast: false, plugins: true, annotations: false })).to.equal(kernel);
   });
 });
+
+/** @type (schema: Record<string, Json>) => Promise<Kernel> */
+const compile = async (schema) => {
+  const uri = `https://example.com/schema-${count++}`;
+  const registry = new SchemaRegistry([{ schema, retrievalUri: uri, dialectUri: v1DialectUri }]);
+  const validator = await jsonSchema.compile(uri, { registries: [registry] });
+  return /** @type Kernel */ (validator.serialize());
+};

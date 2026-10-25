@@ -27,99 +27,6 @@ const legacyDialectUri = "https://example.com/legacy";
 const strictDialectUri = "https://example.com/strict";
 const baseUri = "https://example.com/schema";
 
-/** @type (jsonSchema: JsonSchema) => void */
-const addTestDialects = (jsonSchema) => {
-  for (const keyword of [idKeyword, anchorKeyword, dynamicAnchorKeyword, legacyIdKeyword, legacyRefKeyword, recursiveAnchorKeyword]) {
-    jsonSchema.addKeyword(keyword);
-  }
-  addVocabulary(jsonSchema, "https://example.com/vocab/core", { keywords: { $id: idKeyword.uri, $defs: "https://example.com/keyword/defs" } });
-  jsonSchema.addKeyword({ uri: "https://example.com/keyword/defs", shape: { map: "schema" } });
-  jsonSchema.addKeyword({ uri: "https://example.com/keyword/properties", shape: { map: "schema" } });
-  jsonSchema.addKeyword({ uri: "https://example.com/keyword/allOf", shape: { array: "schema" } });
-  jsonSchema.addKeyword({ uri: "https://example.com/keyword/items", shape: ["schema", { array: "schema" }] });
-  jsonSchema.addKeyword({ uri: "https://example.com/keyword/type", shape: "data" });
-  jsonSchema.addKeyword({ uri: "https://example.com/keyword/const", shape: "data" });
-  jsonSchema.addKeyword({ uri: "https://example.com/keyword/ref", shape: "reference" });
-  jsonSchema.addKeyword({ uri: "https://example.com/keyword/contentSchema", shape: "unappliedSchema" });
-
-  jsonSchema.addDialect({
-    uri: dialectUri,
-    keywords: {
-      $id: idKeyword.uri,
-      $anchor: anchorKeyword.uri,
-      $dynamicAnchor: dynamicAnchorKeyword.uri,
-      $recursiveAnchor: recursiveAnchorKeyword.uri,
-      $vocabulary: vocabularyKeyword.uri,
-      $defs: "https://example.com/keyword/defs",
-      properties: "https://example.com/keyword/properties",
-      allOf: "https://example.com/keyword/allOf",
-      items: "https://example.com/keyword/items",
-      type: "https://example.com/keyword/type",
-      const: "https://example.com/keyword/const",
-      $ref: "https://example.com/keyword/ref",
-      contentSchema: "https://example.com/keyword/contentSchema",
-      notSupported: "https://example.com/keyword/not-supported"
-    },
-    unknownKeywords: "annotation"
-  });
-
-  jsonSchema.addDialect({
-    uri: legacyDialectUri,
-    keywords: {
-      $id: legacyIdKeyword.uri,
-      $ref: legacyRefKeyword.uri,
-      definitions: "https://example.com/keyword/defs",
-      properties: "https://example.com/keyword/properties",
-      type: "https://example.com/keyword/type"
-    },
-    unknownKeywords: "ignore"
-  });
-
-  jsonSchema.addDialect({
-    uri: strictDialectUri,
-    keywords: {
-      $id: idKeyword.uri,
-      $defs: "https://example.com/keyword/defs",
-      type: "https://example.com/keyword/type"
-    },
-    unknownKeywords: "error"
-  });
-};
-
-/**
- * @param {JsonSchema} jsonSchema
- * @param {string} json
- * @param {Partial<JsonSchemaResolveOptions> & { accept?: JsonParseStatus, path?: string }} [options]
- */
-const resolve = async (jsonSchema, json, options = {}) => {
-  const { accept, path, ...resolveOptions } = options;
-  const file = new VFile({ value: json, path });
-  const processor = unified()
-    .use(rejsonParse, { accept })
-    .use(jsonSchemaResolve, { session: jsonSchema.session(), uri: path ? undefined : baseUri, ...resolveOptions });
-  const document = await processor.run(processor.parse(file), file);
-
-  return { document, file, root: /** @type JsonSchemaTolerantNode */ (document.children[0]) };
-};
-
-/** @type (pointer: string, node: JsonSchemaTolerantNode) => any */
-const at = (pointer, node) => pointerGet(pointer, node);
-
-/** @type (node: JsonSchemaTolerantNode, name: string) => JsonSchemaKeywordNode<any> */
-const keywordNode = (node, name) => {
-  if (node.jsonType !== "object") {
-    throw Error("Not an object");
-  }
-  const property = node.children.find((property) => property.children[0].value === name);
-  if (!property) {
-    throw Error(`No '${name}' property`);
-  }
-  return /** @type JsonSchemaKeywordNode<any> */ (property);
-};
-
-/** @type (file: VFile) => (string | undefined)[] */
-const ruleIds = (file) => file.messages.map((message) => message.ruleId);
-
 describe("jsonSchemaResolve", () => {
   /** @type JsonSchema */
   let jsonSchema;
@@ -980,3 +887,96 @@ describe("jsonSchemaResolve", () => {
     });
   });
 });
+
+/** @type (jsonSchema: JsonSchema) => void */
+const addTestDialects = (jsonSchema) => {
+  for (const keyword of [idKeyword, anchorKeyword, dynamicAnchorKeyword, legacyIdKeyword, legacyRefKeyword, recursiveAnchorKeyword]) {
+    jsonSchema.addKeyword(keyword);
+  }
+  addVocabulary(jsonSchema, "https://example.com/vocab/core", { keywords: { $id: idKeyword.uri, $defs: "https://example.com/keyword/defs" } });
+  jsonSchema.addKeyword({ uri: "https://example.com/keyword/defs", shape: { map: "schema" } });
+  jsonSchema.addKeyword({ uri: "https://example.com/keyword/properties", shape: { map: "schema" } });
+  jsonSchema.addKeyword({ uri: "https://example.com/keyword/allOf", shape: { array: "schema" } });
+  jsonSchema.addKeyword({ uri: "https://example.com/keyword/items", shape: ["schema", { array: "schema" }] });
+  jsonSchema.addKeyword({ uri: "https://example.com/keyword/type", shape: "data" });
+  jsonSchema.addKeyword({ uri: "https://example.com/keyword/const", shape: "data" });
+  jsonSchema.addKeyword({ uri: "https://example.com/keyword/ref", shape: "reference" });
+  jsonSchema.addKeyword({ uri: "https://example.com/keyword/contentSchema", shape: "unappliedSchema" });
+
+  jsonSchema.addDialect({
+    uri: dialectUri,
+    keywords: {
+      $id: idKeyword.uri,
+      $anchor: anchorKeyword.uri,
+      $dynamicAnchor: dynamicAnchorKeyword.uri,
+      $recursiveAnchor: recursiveAnchorKeyword.uri,
+      $vocabulary: vocabularyKeyword.uri,
+      $defs: "https://example.com/keyword/defs",
+      properties: "https://example.com/keyword/properties",
+      allOf: "https://example.com/keyword/allOf",
+      items: "https://example.com/keyword/items",
+      type: "https://example.com/keyword/type",
+      const: "https://example.com/keyword/const",
+      $ref: "https://example.com/keyword/ref",
+      contentSchema: "https://example.com/keyword/contentSchema",
+      notSupported: "https://example.com/keyword/not-supported"
+    },
+    unknownKeywords: "annotation"
+  });
+
+  jsonSchema.addDialect({
+    uri: legacyDialectUri,
+    keywords: {
+      $id: legacyIdKeyword.uri,
+      $ref: legacyRefKeyword.uri,
+      definitions: "https://example.com/keyword/defs",
+      properties: "https://example.com/keyword/properties",
+      type: "https://example.com/keyword/type"
+    },
+    unknownKeywords: "ignore"
+  });
+
+  jsonSchema.addDialect({
+    uri: strictDialectUri,
+    keywords: {
+      $id: idKeyword.uri,
+      $defs: "https://example.com/keyword/defs",
+      type: "https://example.com/keyword/type"
+    },
+    unknownKeywords: "error"
+  });
+};
+
+/**
+ * @param {JsonSchema} jsonSchema
+ * @param {string} json
+ * @param {Partial<JsonSchemaResolveOptions> & { accept?: JsonParseStatus, path?: string }} [options]
+ */
+const resolve = async (jsonSchema, json, options = {}) => {
+  const { accept, path, ...resolveOptions } = options;
+  const file = new VFile({ value: json, path });
+  const processor = unified()
+    .use(rejsonParse, { accept })
+    .use(jsonSchemaResolve, { session: jsonSchema.session(), uri: path ? undefined : baseUri, ...resolveOptions });
+  const document = await processor.run(processor.parse(file), file);
+
+  return { document, file, root: /** @type JsonSchemaTolerantNode */ (document.children[0]) };
+};
+
+/** @type (pointer: string, node: JsonSchemaTolerantNode) => any */
+const at = (pointer, node) => pointerGet(pointer, node);
+
+/** @type (node: JsonSchemaTolerantNode, name: string) => JsonSchemaKeywordNode<any> */
+const keywordNode = (node, name) => {
+  if (node.jsonType !== "object") {
+    throw Error("Not an object");
+  }
+  const property = node.children.find((property) => property.children[0].value === name);
+  if (!property) {
+    throw Error(`No '${name}' property`);
+  }
+  return /** @type JsonSchemaKeywordNode<any> */ (property);
+};
+
+/** @type (file: VFile) => (string | undefined)[] */
+const ruleIds = (file) => file.messages.map((message) => message.ruleId);

@@ -34,15 +34,6 @@ const combinable = new Map(/** @type [string, "names" | "disjoint"][] */ ([
     .map((name) => [name, "disjoint"])
 ]).map(([name, how]) => [`${keyword}/${name}`, how]));
 
-/** @type (keywordNode: JsonSchemaKeywordNode) => string[] */
-const namesOf = (keywordNode) => {
-  const valueNode = keywordNode.children[1];
-  return valueNode.jsonType === "object" ? valueNode.children.map((property) => property.children[0].value) : [];
-};
-
-/** @type (jsonSchema: JsonSchema | undefined, uri: string) => Keyword | undefined */
-const definitionOf = (jsonSchema, uri) => jsonSchema?.hasKeyword(uri) ? jsonSchema.getKeyword(uri) : undefined;
-
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
 const mergeableAllOfSchema = lintRule({ origin: "jsonschema-lint:mergeable-all-of-schema" }, async (tree, file) => {
   const session = file.data.jsonSchemaSession;
@@ -132,3 +123,12 @@ const mergeableAllOfSchema = lintRule({ origin: "jsonschema-lint:mergeable-all-o
 });
 
 export default mergeableAllOfSchema;
+
+/** @type (keywordNode: JsonSchemaKeywordNode) => string[] */
+const namesOf = (keywordNode) => {
+  const valueNode = keywordNode.children[1];
+  return valueNode.jsonType === "object" ? valueNode.children.map((property) => property.children[0].value) : [];
+};
+
+/** @type (jsonSchema: JsonSchema | undefined, uri: string) => Keyword | undefined */
+const definitionOf = (jsonSchema, uri) => jsonSchema?.hasKeyword(uri) ? jsonSchema.getKeyword(uri) : undefined;

@@ -69,117 +69,12 @@ import { addDynamicAnchors, addReachable, isClose, itemSequenceStates, keywordEv
 const noPlugin = {};
 
 /**
- * Where in the instance a hook is called. Every schema and keyword evaluated
- * on the same instance gets the same location, so one is created for each
- * value evaluated rather than for each hook call. `value` is a method rather
- * than a closure, so a location is one allocation. It's one class for every
- * evaluator, so hooks always see the same shape.
- *
- * `instanceLocation` is worked out from the parent's the first time it's
- * read, because building a JSON Pointer for every schema evaluated on a
- * child was 13–25% of evaluating with plugins, and most plugins only read it
- * for a few hook calls, like the ones for an error.
- *
- * @implements EvaluationLocation
- */
-class Location {
-  /** @type Location | undefined */
-  #parent;
-
-  /** @type string | number | undefined */
-  #segment;
-
-  /** @type string | undefined */
-  #instanceLocation;
-
-  /** @type unknown */
-  #instance;
-
-  /** @type InstanceOps<any> */
-  #ops;
-
-  /**
-   * @param {Location | undefined} parent
-   * @param {string | number | undefined} segment
-   * @param {EvaluationLocation["node"]} node
-   * @param {unknown} instance
-   * @param {InstanceOps<any>} ops
-   */
-  constructor(parent, segment, node, instance, ops) {
-    this.#parent = parent;
-    this.#segment = segment;
-    this.node = node;
-    this.#instance = instance;
-    this.#ops = ops;
-  }
-
-  /** @returns {string} */
-  get instanceLocation() {
-    if (this.#instanceLocation === undefined) {
-      const parent = this.#parent?.instanceLocation ?? "";
-      const segment = this.#segment;
-      // Indexes don't need to be escaped
-      if (segment === undefined) {
-        this.#instanceLocation = parent;
-      } else {
-        this.#instanceLocation = typeof segment === "number" ? `${parent}/${segment}` : JsonPointer.append(segment, parent);
-      }
-    }
-    return this.#instanceLocation;
-  }
-
-  value() {
-    return this.#ops.typeOf(this.#instance) === undefined ? undefined : this.#ops.value(this.#instance);
-  }
-}
-
-/**
- * Plugins that act as one. Each hook's state is an array of the plugins'
- * states.
- *
- * @type (plugins: EvaluationPlugin[]) => EvaluationPlugin<unknown[], unknown[]>
- */
-const combinePlugins = (plugins) => ({
-  beforeSchema: (schema, at, parent) => plugins.map((plugin, index) => plugin.beforeSchema?.(schema, at, parent?.[index])),
-  afterSchema: (schema, at, valid, state, parent) => {
-    for (let index = 0; index < plugins.length; index++) {
-      plugins[index].afterSchema?.(schema, at, valid, state[index], parent?.[index]);
-    }
-  },
-  beforeKeyword: (keyword, at, schema) => plugins.map((plugin, index) => plugin.beforeKeyword?.(keyword, at, schema[index])),
-  afterKeyword: (keyword, at, valid, state, schema) => {
-    for (let index = 0; index < plugins.length; index++) {
-      plugins[index].afterKeyword?.(keyword, at, valid, state[index], schema[index]);
-    }
-  },
-  annotation: (keyword, at, value, state) => {
-    for (let index = 0; index < plugins.length; index++) {
-      plugins[index].annotation?.(keyword, at, value, state[index]);
-    }
-  }
-});
-
-/** @type (marks: Marks, more: Marks) => void */
-const addAll = (marks, more) => {
-  if (marks !== undefined && more !== undefined) {
-    for (const key of more) {
-      marks.add(key);
-    }
-  }
-};
-
-/**
  * A bit for each instance type, so a `typeIs` of more than one type is one
  * test
  *
  * @type Record<string, number>
  */
 const typeBits = { null: 1, boolean: 2, number: 4, string: 8, array: 16, object: 32 };
-
-/** @type (types: ReadonlySet<string>, type: string | undefined, isInteger: () => boolean) => boolean */
-const hasType = (types, type, isInteger) => {
-  return type !== undefined && (types.has(type) || (type === "number" && types.has("integer") && isInteger()));
-};
 
 /**
  * Evaluation with plugins, of plain values or JSON AST nodes, and of ASTs
@@ -1258,6 +1153,111 @@ export const instrumented = (jsonSchema, kernel, options) => {
       keywordAnnotations = outerKeywordAnnotations;
     }
   };
+};
+
+/**
+ * Where in the instance a hook is called. Every schema and keyword evaluated
+ * on the same instance gets the same location, so one is created for each
+ * value evaluated rather than for each hook call. `value` is a method rather
+ * than a closure, so a location is one allocation. It's one class for every
+ * evaluator, so hooks always see the same shape.
+ *
+ * `instanceLocation` is worked out from the parent's the first time it's
+ * read, because building a JSON Pointer for every schema evaluated on a
+ * child was 13–25% of evaluating with plugins, and most plugins only read it
+ * for a few hook calls, like the ones for an error.
+ *
+ * @implements EvaluationLocation
+ */
+class Location {
+  /** @type Location | undefined */
+  #parent;
+
+  /** @type string | number | undefined */
+  #segment;
+
+  /** @type string | undefined */
+  #instanceLocation;
+
+  /** @type unknown */
+  #instance;
+
+  /** @type InstanceOps<any> */
+  #ops;
+
+  /**
+   * @param {Location | undefined} parent
+   * @param {string | number | undefined} segment
+   * @param {EvaluationLocation["node"]} node
+   * @param {unknown} instance
+   * @param {InstanceOps<any>} ops
+   */
+  constructor(parent, segment, node, instance, ops) {
+    this.#parent = parent;
+    this.#segment = segment;
+    this.node = node;
+    this.#instance = instance;
+    this.#ops = ops;
+  }
+
+  /** @returns {string} */
+  get instanceLocation() {
+    if (this.#instanceLocation === undefined) {
+      const parent = this.#parent?.instanceLocation ?? "";
+      const segment = this.#segment;
+      // Indexes don't need to be escaped
+      if (segment === undefined) {
+        this.#instanceLocation = parent;
+      } else {
+        this.#instanceLocation = typeof segment === "number" ? `${parent}/${segment}` : JsonPointer.append(segment, parent);
+      }
+    }
+    return this.#instanceLocation;
+  }
+
+  value() {
+    return this.#ops.typeOf(this.#instance) === undefined ? undefined : this.#ops.value(this.#instance);
+  }
+}
+
+/**
+ * Plugins that act as one. Each hook's state is an array of the plugins'
+ * states.
+ *
+ * @type (plugins: EvaluationPlugin[]) => EvaluationPlugin<unknown[], unknown[]>
+ */
+const combinePlugins = (plugins) => ({
+  beforeSchema: (schema, at, parent) => plugins.map((plugin, index) => plugin.beforeSchema?.(schema, at, parent?.[index])),
+  afterSchema: (schema, at, valid, state, parent) => {
+    for (let index = 0; index < plugins.length; index++) {
+      plugins[index].afterSchema?.(schema, at, valid, state[index], parent?.[index]);
+    }
+  },
+  beforeKeyword: (keyword, at, schema) => plugins.map((plugin, index) => plugin.beforeKeyword?.(keyword, at, schema[index])),
+  afterKeyword: (keyword, at, valid, state, schema) => {
+    for (let index = 0; index < plugins.length; index++) {
+      plugins[index].afterKeyword?.(keyword, at, valid, state[index], schema[index]);
+    }
+  },
+  annotation: (keyword, at, value, state) => {
+    for (let index = 0; index < plugins.length; index++) {
+      plugins[index].annotation?.(keyword, at, value, state[index]);
+    }
+  }
+});
+
+/** @type (marks: Marks, more: Marks) => void */
+const addAll = (marks, more) => {
+  if (marks !== undefined && more !== undefined) {
+    for (const key of more) {
+      marks.add(key);
+    }
+  }
+};
+
+/** @type (types: ReadonlySet<string>, type: string | undefined, isInteger: () => boolean) => boolean */
+const hasType = (types, type, isInteger) => {
+  return type !== undefined && (types.has(type) || (type === "number" && types.has("integer") && isInteger()));
 };
 
 /**

@@ -10,14 +10,6 @@ import recommended from "./recommended.js";
 import thenElseWithoutIf from "./rules/then-else-without-if.js";
 import referenceWithoutTarget from "./rules/reference-without-target.js";
 
-/** @type (...schemas: string[]) => JsonSchema */
-const jsonSchemaWith = (...schemas) => {
-  const jsonSchema = new JsonSchema();
-  addV1(jsonSchema);
-  jsonSchema.addRegistry(new SchemaRegistry(schemas.map((schema) => ({ schema }))));
-  return jsonSchema;
-};
-
 const a = `{
   "$schema": "${v1DialectUri}",
   "$id": "https://example.com/a",
@@ -152,3 +144,11 @@ describe("lint", () => {
     });
   });
 });
+
+/** @type (...schemas: string[]) => JsonSchema */
+const jsonSchemaWith = (...schemas) => {
+  const jsonSchema = new JsonSchema();
+  addV1(jsonSchema);
+  jsonSchema.addRegistry(new SchemaRegistry(schemas.map((schema) => ({ schema }))));
+  return jsonSchema;
+};

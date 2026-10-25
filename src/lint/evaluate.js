@@ -40,6 +40,30 @@ const fail = { valid: false, annotates: false };
 /** @type Outcome */
 const unknown = { valid: undefined, annotates: true };
 
+/**
+ * Evaluators, by session and document
+ *
+ * @type WeakMap<JsonSchemaSession, WeakMap<JsonSchemaDocumentNode, Promise<API.LintEvaluator>>>
+ */
+const cache = new WeakMap();
+
+/** @type API.evaluatorForLint */
+export const evaluatorForLint = (session, tree) => {
+  let bySession = cache.get(session);
+  if (bySession === undefined) {
+    bySession = new WeakMap();
+    cache.set(session, bySession);
+  }
+
+  let evaluator = bySession.get(tree);
+  if (evaluator === undefined) {
+    evaluator = buildEvaluator(session, tree);
+    bySession.set(tree, evaluator);
+  }
+
+  return evaluator;
+};
+
 /** @type (valid: boolean | undefined, annotates: boolean) => Outcome */
 const outcome = (valid, annotates) => ({ valid, annotates: annotates && valid !== false });
 
@@ -119,30 +143,6 @@ const evaluationOrder = (keywords) => [
   ...keywords.filter(({ group }) => !readsMarks(group.expression)),
   ...keywords.filter(({ group }) => readsMarks(group.expression))
 ];
-
-/**
- * Evaluators, by session and document
- *
- * @type WeakMap<JsonSchemaSession, WeakMap<JsonSchemaDocumentNode, Promise<API.LintEvaluator>>>
- */
-const cache = new WeakMap();
-
-/** @type API.evaluatorForLint */
-export const evaluatorForLint = (session, tree) => {
-  let bySession = cache.get(session);
-  if (bySession === undefined) {
-    bySession = new WeakMap();
-    cache.set(session, bySession);
-  }
-
-  let evaluator = bySession.get(tree);
-  if (evaluator === undefined) {
-    evaluator = buildEvaluator(session, tree);
-    bySession.set(tree, evaluator);
-  }
-
-  return evaluator;
-};
 
 /** @type (session: JsonSchemaSession, tree: JsonSchemaDocumentNode) => Promise<API.LintEvaluator> */
 const buildEvaluator = async (session, tree) => {

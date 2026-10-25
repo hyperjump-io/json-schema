@@ -3,15 +3,6 @@ import { VFile } from "vfile";
 import { linter } from "../test-linter.js";
 import minMaxContainsWithoutContains from "./min-max-contains-without-contains.js";
 
-/** @type (json: string) => Promise<VFile> */
-const lint = async (json) => {
-  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
-  await linter()
-    .use(minMaxContainsWithoutContains)
-    .process(file);
-  return file;
-};
-
 describe("min-max-contains-without-contains", () => {
   test("minContains without contains", async () => {
     const file = await lint(`{ "$schema": "https://json-schema.org/v1", "minContains": 1 }`);
@@ -49,3 +40,12 @@ describe("min-max-contains-without-contains", () => {
     expect(file.messages).to.eql([]);
   });
 });
+
+/** @type (json: string) => Promise<VFile> */
+const lint = async (json) => {
+  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
+  await linter()
+    .use(minMaxContainsWithoutContains)
+    .process(file);
+  return file;
+};

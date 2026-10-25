@@ -5,18 +5,6 @@ import redundantNumericLimit from "./redundant-numeric-limit.js";
 
 const draft2020 = "https://json-schema.org/draft/2020-12/schema";
 
-/** @type (json: string) => Promise<VFile> */
-const lint = async (json) => {
-  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
-  await linter()
-    .use(redundantNumericLimit)
-    .process(file);
-  return file;
-};
-
-/** @type (json: string) => Promise<string[]> */
-const reasons = async (json) => (await lint(json)).messages.map((message) => message.reason);
-
 describe("redundant-numeric-limit", () => {
   test("a maximum above exclusiveMaximum", async () => {
     const json = `{ "$schema": "${draft2020}", "type": "number", "exclusiveMaximum": 5, "maximum": 6 }`;
@@ -77,3 +65,15 @@ describe("redundant-numeric-limit", () => {
     expect(await reasons(`{ "$schema": "http://json-schema.org/draft-04/schema#", "maximum": 5, "exclusiveMaximum": true }`)).to.eql([]);
   });
 });
+
+/** @type (json: string) => Promise<VFile> */
+const lint = async (json) => {
+  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
+  await linter()
+    .use(redundantNumericLimit)
+    .process(file);
+  return file;
+};
+
+/** @type (json: string) => Promise<string[]> */
+const reasons = async (json) => (await lint(json)).messages.map((message) => message.reason);

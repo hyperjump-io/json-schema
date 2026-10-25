@@ -10,21 +10,6 @@ import vocabularyKeyword, { addVocabulary } from "../keywords/vocabulary.js";
  * @import { JsonSchemaConfig } from "../json-schema.d.ts"
  */
 
-/**
- * Nothing in these tests is retrieved, so a lookup that should find a
- * registry schema and doesn't is refused right away.
- *
- * @type (config?: JsonSchemaConfig) => JsonSchema
- */
-const offline = (config) => {
-  const jsonSchema = new JsonSchema({ allowRetrieval: [], ...config });
-  addV1(jsonSchema);
-  return jsonSchema;
-};
-
-/** @type (properties: Record<string, Json>) => Json */
-const v1 = (properties) => ({ $schema: v1DialectUri, ...properties });
-
 describe("SchemaRegistry", () => {
   /** @type JsonSchema */
   let jsonSchema;
@@ -371,3 +356,18 @@ describe("SchemaRegistry", () => {
     });
   });
 });
+
+/**
+ * Nothing in these tests is retrieved, so a lookup that should find a
+ * registry schema and doesn't is refused right away.
+ *
+ * @type (config?: JsonSchemaConfig) => JsonSchema
+ */
+const offline = (config) => {
+  const jsonSchema = new JsonSchema({ allowRetrieval: [], ...config });
+  addV1(jsonSchema);
+  return jsonSchema;
+};
+
+/** @type (properties: Record<string, Json>) => Json */
+const v1 = (properties) => ({ $schema: v1DialectUri, ...properties });

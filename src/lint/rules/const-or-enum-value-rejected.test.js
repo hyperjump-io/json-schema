@@ -6,18 +6,6 @@ import constOrEnumValueRejected from "./const-or-enum-value-rejected.js";
 const draft04 = "http://json-schema.org/draft-04/schema#";
 const draft202012 = "https://json-schema.org/draft/2020-12/schema";
 
-/** @type (json: string) => Promise<VFile> */
-const lint = async (json) => {
-  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
-  await linter()
-    .use(constOrEnumValueRejected)
-    .process(file);
-  return file;
-};
-
-/** @type (json: string) => Promise<string[]> */
-const reasons = async (json) => (await lint(json)).messages.map((message) => message.reason);
-
 describe("const-or-enum-value-rejected", () => {
   test("an enum value an assertion rejects", async () => {
     const file = await lint(`{ "$schema": "${draft202012}", "enum": [10, 5], "multipleOf": 2 }`);
@@ -101,3 +89,15 @@ describe("const-or-enum-value-rejected", () => {
     expect(await reasons(`{ "$schema": "${draft202012}", "enum": [1], "$ref": "https://example.com/nope" }`)).to.eql([]);
   });
 });
+
+/** @type (json: string) => Promise<VFile> */
+const lint = async (json) => {
+  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
+  await linter()
+    .use(constOrEnumValueRejected)
+    .process(file);
+  return file;
+};
+
+/** @type (json: string) => Promise<string[]> */
+const reasons = async (json) => (await lint(json)).messages.map((message) => message.reason);

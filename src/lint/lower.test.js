@@ -24,46 +24,6 @@ const draft07 = "http://json-schema.org/draft-07/schema#";
 const draft2019 = "https://json-schema.org/draft/2019-09/schema";
 const draft2020 = "https://json-schema.org/draft/2020-12/schema";
 
-/**
- * @type (json: string) => Promise<{
- *   session: JsonSchemaSession;
- *   tree: JsonSchemaDocumentNode;
- *   at: (pointer: string) => LoweredKeyword[];
- *   keyword: (pointer: string, name: string) => JsonSchemaKeywordNode;
- * }>
- */
-const lower = async (json) => {
-  const jsonSchema = new JsonSchema();
-  addDraft04(jsonSchema);
-  addDraft07(jsonSchema);
-  addDraft201909(jsonSchema);
-  addDraft202012(jsonSchema);
-  const session = jsonSchema.session();
-
-  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
-  const processor = unified()
-    .use(rejsonParse)
-    .use(jsonSchemaResolve, { session });
-  const tree = /** @type JsonSchemaDocumentNode */ (/** @type unknown */ (await processor.run(processor.parse(file), file)));
-  const root = /** @type JsonSchemaNode */ (tree.children[0]);
-  const schemas = await lowerForLint(session, tree);
-
-  /** @type (pointer: string) => JsonSchemaNode */
-  const schemaAt = (pointer) => /** @type JsonSchemaNode */ (pointerGet(pointer, root));
-  return {
-    session,
-    tree,
-    at: (pointer) => schemas.get(schemaAt(pointer)) ?? [],
-    keyword: (pointer, name) => {
-      const schemaNode = /** @type JsonSchemaNode & { children: JsonSchemaKeywordNode[] } */ (schemaAt(pointer));
-      return /** @type JsonSchemaKeywordNode */ (schemaNode.children.find((keywordNode) => keywordNode.children[0].value === name));
-    }
-  };
-};
-
-/** @type (keywords: LoweredKeyword[]) => [string, Json][] */
-const expressions = (keywords) => keywords.map(({ keywordNode, group }) => [keywordNode.children[0].value, /** @type Json */ (group.expression)]);
-
 describe("lowerForLint", () => {
   test("keywords are in the order they're in the schema", async () => {
     const { at } = await lower(JSON.stringify({ $schema: draft2020, unevaluatedProperties: false, properties: { a: true } }));
@@ -296,3 +256,43 @@ describe("assertsOnItsOwn", () => {
     });
   });
 });
+
+/**
+ * @type (json: string) => Promise<{
+ *   session: JsonSchemaSession;
+ *   tree: JsonSchemaDocumentNode;
+ *   at: (pointer: string) => LoweredKeyword[];
+ *   keyword: (pointer: string, name: string) => JsonSchemaKeywordNode;
+ * }>
+ */
+const lower = async (json) => {
+  const jsonSchema = new JsonSchema();
+  addDraft04(jsonSchema);
+  addDraft07(jsonSchema);
+  addDraft201909(jsonSchema);
+  addDraft202012(jsonSchema);
+  const session = jsonSchema.session();
+
+  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
+  const processor = unified()
+    .use(rejsonParse)
+    .use(jsonSchemaResolve, { session });
+  const tree = /** @type JsonSchemaDocumentNode */ (/** @type unknown */ (await processor.run(processor.parse(file), file)));
+  const root = /** @type JsonSchemaNode */ (tree.children[0]);
+  const schemas = await lowerForLint(session, tree);
+
+  /** @type (pointer: string) => JsonSchemaNode */
+  const schemaAt = (pointer) => /** @type JsonSchemaNode */ (pointerGet(pointer, root));
+  return {
+    session,
+    tree,
+    at: (pointer) => schemas.get(schemaAt(pointer)) ?? [],
+    keyword: (pointer, name) => {
+      const schemaNode = /** @type JsonSchemaNode & { children: JsonSchemaKeywordNode[] } */ (schemaAt(pointer));
+      return /** @type JsonSchemaKeywordNode */ (schemaNode.children.find((keywordNode) => keywordNode.children[0].value === name));
+    }
+  };
+};
+
+/** @type (keywords: LoweredKeyword[]) => [string, Json][] */
+const expressions = (keywords) => keywords.map(({ keywordNode, group }) => [keywordNode.children[0].value, /** @type Json */ (group.expression)]);

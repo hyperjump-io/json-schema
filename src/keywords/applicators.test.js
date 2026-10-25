@@ -13,28 +13,6 @@ import { addV1, v1DialectUri } from "../dialects/v1/index.js";
  */
 
 /**
- * The JSON Pointer in a location's fragment. The schemas these tests use are
- * single documents, so it identifies the keyword.
- *
- * @type (uri: string) => string
- */
-const pointer = (uri) => decodeURIComponent(uri.replace(/.*#/, ""));
-
-/** @type (error: OutputError) => unknown */
-const locations = (error) => {
-  const { absoluteKeywordLocation, instanceLocation } = /** @type DetailedValidationError */ (error);
-  return { absoluteKeywordLocation: absoluteKeywordLocation.replace(/.*#/, "#"), instanceLocation };
-};
-
-/** @type (error: OutputError) => unknown */
-const keywordPointers = (error) => {
-  const { absoluteKeywordLocation, errors } = /** @type DetailedValidationError */ (error);
-  return errors === undefined
-    ? pointer(absoluteKeywordLocation)
-    : { [pointer(absoluteKeywordLocation)]: errors.map(keywordPointers) };
-};
-
-/**
  * The JSON-Schema-Test-Suite only checks whether an instance is valid. These
  * check the errors that are reported.
  */
@@ -274,3 +252,25 @@ describe("applicator errors", () => {
     });
   });
 });
+
+/**
+ * The JSON Pointer in a location's fragment. The schemas these tests use are
+ * single documents, so it identifies the keyword.
+ *
+ * @type (uri: string) => string
+ */
+const pointer = (uri) => decodeURIComponent(uri.replace(/.*#/, ""));
+
+/** @type (error: OutputError) => unknown */
+const locations = (error) => {
+  const { absoluteKeywordLocation, instanceLocation } = /** @type DetailedValidationError */ (error);
+  return { absoluteKeywordLocation: absoluteKeywordLocation.replace(/.*#/, "#"), instanceLocation };
+};
+
+/** @type (error: OutputError) => unknown */
+const keywordPointers = (error) => {
+  const { absoluteKeywordLocation, errors } = /** @type DetailedValidationError */ (error);
+  return errors === undefined
+    ? pointer(absoluteKeywordLocation)
+    : { [pointer(absoluteKeywordLocation)]: errors.map(keywordPointers) };
+};

@@ -11,21 +11,6 @@ import { SchemaError } from "../schema/schema-error.js";
  * @import * as API from "./find-schema.d.ts"
  */
 
-/**
- * Why there's nothing at a URI, if a retrieval failed because there's
- * nothing there, rather than because it couldn't be told
- *
- * @type (uri: string, error: unknown) => Error | undefined
- */
-const absence = (uri, error) => {
-  const code = /** @type {{ code?: unknown }} */ (error).code;
-  if (code === "ENOENT" || code === "ENOTDIR") {
-    return Error(`There's no file at '${uri}'`, { cause: error });
-  } else if (error instanceof HttpError && (error.response.status === 404 || error.response.status === 410)) {
-    return Error(`There's nothing at '${uri}' (${error.response.status})`, { cause: error });
-  }
-};
-
 /** @type API.findSchema */
 export const findSchema = async (session, uri, options = {}) => {
   const { document: referencingDocument, ...getOptions } = options;
@@ -68,4 +53,19 @@ export const findSchema = async (session, uri, options = {}) => {
   }
 
   return { status: "found", node, document: /** @type JsonSchemaDocumentNode */ (/** @type unknown */ (document)) };
+};
+
+/**
+ * Why there's nothing at a URI, if a retrieval failed because there's
+ * nothing there, rather than because it couldn't be told
+ *
+ * @type (uri: string, error: unknown) => Error | undefined
+ */
+const absence = (uri, error) => {
+  const code = /** @type {{ code?: unknown }} */ (error).code;
+  if (code === "ENOENT" || code === "ENOTDIR") {
+    return Error(`There's no file at '${uri}'`, { cause: error });
+  } else if (error instanceof HttpError && (error.response.status === 404 || error.response.status === 410)) {
+    return Error(`There's nothing at '${uri}' (${error.response.status})`, { cause: error });
+  }
 };

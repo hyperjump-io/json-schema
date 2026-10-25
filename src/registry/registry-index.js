@@ -284,6 +284,11 @@ export const identify = (jsonSchema, entry, registryDialect) => {
   return identifyRoot(jsonSchema, entry, registryDialect, nodeRoot(result.node));
 };
 
+/** @type (entry: RegistryEntry) => string */
+export const entryText = (entry) => {
+  return typeof entry.schema === "string" ? entry.schema : JSON.stringify(entry.schema, null, "  ");
+};
+
 /**
  * The root of an entry from `JSON.parse`. Its nodes don't have positions.
  * It's undefined if the entry isn't valid JSON.
@@ -373,11 +378,6 @@ const identifyRoot = (jsonSchema, entry, registryDialect, root) => {
   } catch (error) {
     return { error: /** @type Error */ (error), fromRegistry };
   }
-};
-
-/** @type (entry: RegistryEntry) => string */
-export const entryText = (entry) => {
-  return typeof entry.schema === "string" ? entry.schema : JSON.stringify(entry.schema, null, "  ");
 };
 
 /**

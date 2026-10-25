@@ -3,23 +3,6 @@ import { JsonSchema, SchemaError, toVFileMessage } from "../json-schema.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
 import { addV1, v1DialectUri } from "../dialects/v1/index.js";
 
-/** @type (schema: string) => Promise<SchemaError> */
-const schemaError = async (schema) => {
-  const jsonSchema = new JsonSchema();
-  addV1(jsonSchema);
-  jsonSchema.addRegistry(new SchemaRegistry().with(schema));
-
-  try {
-    await jsonSchema.compile("https://example.com/bad");
-  } catch (error) {
-    if (error instanceof SchemaError) {
-      return error;
-    }
-    throw error;
-  }
-  throw Error("Expected a SchemaError");
-};
-
 describe("SchemaError", () => {
   test("its message describes the first problem", async () => {
     const error = await schemaError(`{ "$schema": "${v1DialectUri}", "$id": "https://example.com/bad", "minLength": -1 }`);
@@ -51,3 +34,20 @@ describe("SchemaError", () => {
     });
   });
 });
+
+/** @type (schema: string) => Promise<SchemaError> */
+const schemaError = async (schema) => {
+  const jsonSchema = new JsonSchema();
+  addV1(jsonSchema);
+  jsonSchema.addRegistry(new SchemaRegistry().with(schema));
+
+  try {
+    await jsonSchema.compile("https://example.com/bad");
+  } catch (error) {
+    if (error instanceof SchemaError) {
+      return error;
+    }
+    throw error;
+  }
+  throw Error("Expected a SchemaError");
+};

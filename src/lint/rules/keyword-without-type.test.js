@@ -5,18 +5,6 @@ import keywordWithoutType from "./keyword-without-type.js";
 
 const draft2020 = "https://json-schema.org/draft/2020-12/schema";
 
-/** @type (json: string) => Promise<VFile> */
-const lint = async (json) => {
-  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
-  await linter()
-    .use(keywordWithoutType)
-    .process(file);
-  return file;
-};
-
-/** @type (json: string) => Promise<string[]> */
-const reasons = async (json) => (await lint(json)).messages.map((message) => message.reason);
-
 const objects = "'properties' applies only to objects, but there's no 'type', so values of other types are valid";
 
 describe("keyword-without-type", () => {
@@ -134,3 +122,15 @@ describe("keyword-without-type", () => {
     expect(await reasons(`{ "$schema": "http://json-schema.org/draft-04/schema#", "maximum": 5 }`)).to.have.length(1);
   });
 });
+
+/** @type (json: string) => Promise<VFile> */
+const lint = async (json) => {
+  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
+  await linter()
+    .use(keywordWithoutType)
+    .process(file);
+  return file;
+};
+
+/** @type (json: string) => Promise<string[]> */
+const reasons = async (json) => (await lint(json)).messages.map((message) => message.reason);

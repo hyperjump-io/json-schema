@@ -26,9 +26,6 @@ import keywordWithoutEffect from "./rules/keyword-without-effect.js";
 
 const draft2020 = "https://json-schema.org/draft/2020-12/schema";
 
-/** @type (pairs: [string, Expression][]) => Expression */
-const anyOf = (pairs) => ({ op: "any", of: pairs.map(([, schema]) => schema) });
-
 /** @type Keyword<[string, Expression][]> */
 const byKindKeyword = {
   uri: "https://example.com/keyword/byKind",
@@ -65,39 +62,6 @@ for (const keyword of [byKindKeyword, byTypeKeyword, byKeyKeyword]) {
 jsonSchema.extendDialect(draft2020, {
   keywords: { byKind: byKindKeyword.uri, byType: byTypeKeyword.uri, byKey: byKeyKeyword.uri }
 });
-
-/** @type (schema: object) => Promise<{ session: ReturnType<JsonSchema["session"]>; tree: JsonSchemaDocumentNode }> */
-const resolve = async (schema) => {
-  const session = jsonSchema.session();
-  const file = new VFile({ path: "/schemas/a.schema.json", value: JSON.stringify({ $schema: draft2020, ...schema }) });
-  const processor = unified()
-    .use(rejsonParse)
-    .use(jsonSchemaResolve, { session });
-  const tree = /** @type JsonSchemaDocumentNode */ (/** @type unknown */ (await processor.run(processor.parse(file), file)));
-  return { session, tree };
-};
-
-/** @type (schema: object) => Promise<(value: Json) => boolean | undefined> */
-const evaluatorFor = async (schema) => {
-  const { session, tree } = await resolve(schema);
-  const evaluator = await evaluatorForLint(session, tree);
-  const schemaNode = /** @type JsonSchemaNode */ (tree.children[0]);
-  return (value) => evaluator.schema(schemaNode, /** @type JsonSchemaTolerantNode */ (/** @type unknown */ (fromJs(value)))).valid;
-};
-
-/** @type (rule: any, json: string) => Promise<string[]> */
-const reasons = async (rule, json) => {
-  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
-  await unified()
-    .use(rejsonParse)
-    .use(function () {
-      return /** @type Function */ (jsonSchemaResolve).call(this, { session: jsonSchema.session() });
-    })
-    .use(rule)
-    .use(rejsonStringify)
-    .process(file);
-  return file.messages.map((message) => message.reason);
-};
 
 describe("the switches in lint", () => {
   describe("evaluated", () => {
@@ -179,6 +143,42 @@ describe("the switches in lint", () => {
     }
   });
 });
+
+/** @type (pairs: [string, Expression][]) => Expression */
+const anyOf = (pairs) => ({ op: "any", of: pairs.map(([, schema]) => schema) });
+
+/** @type (schema: object) => Promise<{ session: ReturnType<JsonSchema["session"]>; tree: JsonSchemaDocumentNode }> */
+const resolve = async (schema) => {
+  const session = jsonSchema.session();
+  const file = new VFile({ path: "/schemas/a.schema.json", value: JSON.stringify({ $schema: draft2020, ...schema }) });
+  const processor = unified()
+    .use(rejsonParse)
+    .use(jsonSchemaResolve, { session });
+  const tree = /** @type JsonSchemaDocumentNode */ (/** @type unknown */ (await processor.run(processor.parse(file), file)));
+  return { session, tree };
+};
+
+/** @type (schema: object) => Promise<(value: Json) => boolean | undefined> */
+const evaluatorFor = async (schema) => {
+  const { session, tree } = await resolve(schema);
+  const evaluator = await evaluatorForLint(session, tree);
+  const schemaNode = /** @type JsonSchemaNode */ (tree.children[0]);
+  return (value) => evaluator.schema(schemaNode, /** @type JsonSchemaTolerantNode */ (/** @type unknown */ (fromJs(value)))).valid;
+};
+
+/** @type (rule: any, json: string) => Promise<string[]> */
+const reasons = async (rule, json) => {
+  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
+  await unified()
+    .use(rejsonParse)
+    .use(function () {
+      return /** @type Function */ (jsonSchemaResolve).call(this, { session: jsonSchema.session() });
+    })
+    .use(rule)
+    .use(rejsonStringify)
+    .process(file);
+  return file.messages.map((message) => message.reason);
+};
 
 /** @type () => Expression */
 const isStringOp = () => ({ op: "typeIs", types: ["string"] });

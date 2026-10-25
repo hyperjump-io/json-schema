@@ -6,18 +6,6 @@ import multipleOfOne from "./multiple-of-one.js";
 const draft04 = "http://json-schema.org/draft-04/schema#";
 const draft202012 = "https://json-schema.org/draft/2020-12/schema";
 
-/** @type (json: string) => Promise<VFile> */
-const lint = async (json) => {
-  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
-  await linter()
-    .use(multipleOfOne)
-    .process(file);
-  return file;
-};
-
-/** @type (json: string) => Promise<string[]> */
-const reasons = async (json) => (await lint(json)).messages.map((message) => message.reason);
-
 const useInteger = "'multipleOf': 1 only allows integers. Remove it, and replace 'number' with 'integer' in 'type'.";
 const removeNumber = "'multipleOf': 1 only allows integers. Remove it, and 'number' from 'type', which also allows 'integer'.";
 const noEffect = "'multipleOf': 1 has no effect, because 'type' only allows integers";
@@ -76,3 +64,15 @@ describe("multiple-of-one", () => {
     expect(await reasons(`{ "$schema": "${draft202012}", "type": "object", "properties": { "multipleOf": { "const": 1 } } }`)).to.eql([]);
   });
 });
+
+/** @type (json: string) => Promise<VFile> */
+const lint = async (json) => {
+  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
+  await linter()
+    .use(multipleOfOne)
+    .process(file);
+  return file;
+};
+
+/** @type (json: string) => Promise<string[]> */
+const reasons = async (json) => (await lint(json)).messages.map((message) => message.reason);
