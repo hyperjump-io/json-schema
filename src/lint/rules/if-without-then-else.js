@@ -10,7 +10,7 @@ const thenUri = "https://json-schema.org/keyword/then";
 const elseUri = "https://json-schema.org/keyword/else";
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
-const ifWithoutThenElse = lintRule({ origin: "jsonschema-lint:if-without-then-else" }, (tree, file) => {
+const ifWithoutThenElse = lintRule({ origin: "jsonschema-lint:if-without-then-else", url: "https://hyperjump.io/json-schema/linting/rules/if-without-then-else/" }, (tree, file) => {
   visitKeywords(tree, ifUri, (keywordNode, schemaNode) => {
     if (siblingKeyword(schemaNode, thenUri) === undefined && siblingKeyword(schemaNode, elseUri) === undefined) {
       const name = keywordNode.children[0].value;

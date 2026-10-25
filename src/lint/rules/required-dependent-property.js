@@ -12,7 +12,7 @@ const dependencyUris = [
 ];
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
-const requiredDependentProperty = lintRule({ origin: "jsonschema-lint:required-dependent-property" }, (tree, file) => {
+const requiredDependentProperty = lintRule({ origin: "jsonschema-lint:required-dependent-property", url: "https://hyperjump.io/json-schema/linting/rules/required-dependent-property/" }, (tree, file) => {
   for (const dependencyUri of dependencyUris) {
     visitKeywords(tree, dependencyUri, (keywordNode, schemaNode) => {
       const valueNode = keywordNode.children[1];

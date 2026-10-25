@@ -19,7 +19,7 @@ const typeDescriptions = {
 };
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
-const constOrEnumValueForDisallowedType = lintRule({ origin: "jsonschema-lint:const-or-enum-value-for-disallowed-type" }, (tree, file) => {
+const constOrEnumValueForDisallowedType = lintRule({ origin: "jsonschema-lint:const-or-enum-value-for-disallowed-type", url: "https://hyperjump.io/json-schema/linting/rules/const-or-enum-value-for-disallowed-type/" }, (tree, file) => {
   visitSchemas(tree, (schemaNode) => {
     const type = typeNames(schemaNode);
     if (type === undefined) {

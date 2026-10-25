@@ -9,7 +9,7 @@ import { canonicalDialectUri, visitDialectUris } from "../utilities.js";
 const v1Uri = "https://json-schema.org/v1";
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
-const nonCanonicalDialectUri = lintRule({ origin: "jsonschema-lint:non-canonical-dialect-uri" }, (tree, file) => {
+const nonCanonicalDialectUri = lintRule({ origin: "jsonschema-lint:non-canonical-dialect-uri", url: "https://hyperjump.io/json-schema/linting/rules/non-canonical-dialect-uri/" }, (tree, file) => {
   visitDialectUris(tree, (valueNode) => {
     let normalized;
     try {

@@ -17,7 +17,7 @@ const definingUris = ["properties", "patternProperties", "additionalProperties",
  */
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
-const requiredPropertyNotDefined = lintRule({ origin: "jsonschema-lint:required-property-not-defined" }, async (tree, file) => {
+const requiredPropertyNotDefined = lintRule({ origin: "jsonschema-lint:required-property-not-defined", url: "https://hyperjump.io/json-schema/linting/rules/required-property-not-defined/" }, async (tree, file) => {
   /** @type Required[] */
   const requireds = [];
   visitSchemas(tree, (schemaNode) => {

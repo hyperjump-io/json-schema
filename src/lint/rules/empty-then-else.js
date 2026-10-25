@@ -9,7 +9,7 @@ const ifUri = "https://json-schema.org/keyword/if";
 const commentUri = "https://json-schema.org/keyword/comment";
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
-const emptyThenElse = lintRule({ origin: "jsonschema-lint:empty-then-else" }, (tree, file) => {
+const emptyThenElse = lintRule({ origin: "jsonschema-lint:empty-then-else", url: "https://hyperjump.io/json-schema/linting/rules/empty-then-else/" }, (tree, file) => {
   for (const keywordUri of ["https://json-schema.org/keyword/then", "https://json-schema.org/keyword/else"]) {
     visitKeywords(tree, keywordUri, (keywordNode, schemaNode) => {
       // Without `if`, then-else-without-if reports it

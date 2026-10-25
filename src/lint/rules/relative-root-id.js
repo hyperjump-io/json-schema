@@ -12,7 +12,7 @@ const idUris = [
 ];
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
-const relativeRootId = lintRule({ origin: "jsonschema-lint:relative-root-id" }, (tree, file) => {
+const relativeRootId = lintRule({ origin: "jsonschema-lint:relative-root-id", url: "https://hyperjump.io/json-schema/linting/rules/relative-root-id/" }, (tree, file) => {
   for (const child of tree.children) {
     const schemaNode = /** @type JsonSchemaNode */ (child);
     for (const uri of idUris) {

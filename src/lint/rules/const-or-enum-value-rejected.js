@@ -6,7 +6,7 @@ import { lintRule } from "../lint-rule.js";
  */
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
-const constOrEnumValueRejected = lintRule({ origin: "jsonschema-lint:const-or-enum-value-rejected" }, async (tree, file) => {
+const constOrEnumValueRejected = lintRule({ origin: "jsonschema-lint:const-or-enum-value-rejected", url: "https://hyperjump.io/json-schema/linting/rules/const-or-enum-value-rejected/" }, async (tree, file) => {
   const session = file.data.jsonSchemaSession;
   if (session === undefined) {
     return;

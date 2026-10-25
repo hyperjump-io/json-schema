@@ -4,6 +4,7 @@ A lint rule is a unified plugin made with `lintRule` from
 `@hyperjump/json-schema/lint`. It's
 [`unified-lint-rule`](https://github.com/remarkjs/remark-lint/tree/main/packages/unified-lint-rule)'s
 `lintRule`, and it also applies `$comment` directives to the rule's messages.
+A `url` next to `origin` is put on every message, for a page about the rule.
 A rule runs on a schema AST, after every schema and keyword has been
 identified. Find keywords by keyword URI, not by name, so the rule works in
 every dialect with the keyword. The same module has utilities to find schemas

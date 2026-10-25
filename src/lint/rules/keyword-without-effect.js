@@ -16,7 +16,7 @@ const unknownUri = "https://json-schema.org/keyword/unknown";
  *
  * @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void>
  */
-const keywordWithoutEffect = lintRule({ origin: "jsonschema-lint:keyword-without-effect" }, async (tree, file) => {
+const keywordWithoutEffect = lintRule({ origin: "jsonschema-lint:keyword-without-effect", url: "https://hyperjump.io/json-schema/linting/rules/keyword-without-effect/" }, async (tree, file) => {
   const session = file.data.jsonSchemaSession;
   if (session === undefined) {
     return;

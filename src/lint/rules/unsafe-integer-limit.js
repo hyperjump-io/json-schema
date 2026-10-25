@@ -10,7 +10,7 @@ const limitUris = [
 ].map((name) => `https://json-schema.org/keyword/${name}`);
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
-const unsafeIntegerLimit = lintRule({ origin: "jsonschema-lint:unsafe-integer-limit" }, (tree, file) => {
+const unsafeIntegerLimit = lintRule({ origin: "jsonschema-lint:unsafe-integer-limit", url: "https://hyperjump.io/json-schema/linting/rules/unsafe-integer-limit/" }, (tree, file) => {
   visitSchemas(tree, (schemaNode) => {
     // Only numbers that are integers are valid
     const type = typeNames(schemaNode);

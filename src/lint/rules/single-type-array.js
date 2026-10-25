@@ -11,7 +11,7 @@ const typeUris = [
 ];
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
-const singleTypeArray = lintRule({ origin: "jsonschema-lint:single-type-array" }, (tree, file) => {
+const singleTypeArray = lintRule({ origin: "jsonschema-lint:single-type-array", url: "https://hyperjump.io/json-schema/linting/rules/single-type-array/" }, (tree, file) => {
   for (const typeUri of typeUris) {
     visitKeywords(tree, typeUri, (keywordNode) => {
       const valueNode = keywordNode.children[1];

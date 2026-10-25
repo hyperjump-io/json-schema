@@ -9,7 +9,7 @@ import { visitKeywords } from "../utilities.js";
 const oneOfUri = "https://json-schema.org/keyword/oneOf";
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
-const duplicateOneOfSchemas = lintRule({ origin: "jsonschema-lint:duplicate-one-of-schemas" }, (tree, file) => {
+const duplicateOneOfSchemas = lintRule({ origin: "jsonschema-lint:duplicate-one-of-schemas", url: "https://hyperjump.io/json-schema/linting/rules/duplicate-one-of-schemas/" }, (tree, file) => {
   visitKeywords(tree, oneOfUri, (keywordNode) => {
     const valueNode = keywordNode.children[1];
     if (valueNode.jsonType !== "array") {

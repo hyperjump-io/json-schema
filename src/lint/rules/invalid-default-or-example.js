@@ -16,7 +16,7 @@ const examplesUri = "https://json-schema.org/keyword/examples";
  */
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
-const invalidDefaultOrExample = lintRule({ origin: "jsonschema-lint:invalid-default-or-example" }, async (tree, file) => {
+const invalidDefaultOrExample = lintRule({ origin: "jsonschema-lint:invalid-default-or-example", url: "https://hyperjump.io/json-schema/linting/rules/invalid-default-or-example/" }, async (tree, file) => {
   const session = file.data.jsonSchemaSession;
   if (session === undefined) {
     // The schema wasn't resolved, so it can't be evaluated

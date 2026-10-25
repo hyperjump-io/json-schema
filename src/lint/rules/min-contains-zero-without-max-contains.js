@@ -9,7 +9,7 @@ const containsUri = "https://json-schema.org/keyword/contains";
 const maxContainsUri = "https://json-schema.org/keyword/maxContains";
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
-const minContainsZeroWithoutMaxContains = lintRule({ origin: "jsonschema-lint:min-contains-zero-without-max-contains" }, (tree, file) => {
+const minContainsZeroWithoutMaxContains = lintRule({ origin: "jsonschema-lint:min-contains-zero-without-max-contains", url: "https://hyperjump.io/json-schema/linting/rules/min-contains-zero-without-max-contains/" }, (tree, file) => {
   visitKeywords(tree, "https://json-schema.org/keyword/minContains", (keywordNode, schemaNode) => {
     const valueNode = keywordNode.children[1];
     // Without `contains`, min-max-contains-without-contains reports it

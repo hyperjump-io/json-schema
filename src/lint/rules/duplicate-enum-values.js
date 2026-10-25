@@ -9,7 +9,7 @@ import { visitKeywords } from "../utilities.js";
 const enumUri = "https://json-schema.org/keyword/enum";
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
-const duplicateEnumValues = lintRule({ origin: "jsonschema-lint:duplicate-enum-values" }, (tree, file) => {
+const duplicateEnumValues = lintRule({ origin: "jsonschema-lint:duplicate-enum-values", url: "https://hyperjump.io/json-schema/linting/rules/duplicate-enum-values/" }, (tree, file) => {
   visitKeywords(tree, enumUri, (keywordNode) => {
     const valueNode = keywordNode.children[1];
     if (valueNode.jsonType !== "array") {

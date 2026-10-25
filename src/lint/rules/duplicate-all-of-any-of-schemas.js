@@ -7,7 +7,7 @@ import { visitKeywords } from "../utilities.js";
  */
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
-const duplicateAllOfAnyOfSchemas = lintRule({ origin: "jsonschema-lint:duplicate-all-of-any-of-schemas" }, (tree, file) => {
+const duplicateAllOfAnyOfSchemas = lintRule({ origin: "jsonschema-lint:duplicate-all-of-any-of-schemas", url: "https://hyperjump.io/json-schema/linting/rules/duplicate-all-of-any-of-schemas/" }, (tree, file) => {
   for (const keywordUri of ["https://json-schema.org/keyword/allOf", "https://json-schema.org/keyword/anyOf"]) {
     visitKeywords(tree, keywordUri, (keywordNode) => {
       const valueNode = keywordNode.children[1];

@@ -9,7 +9,7 @@ const constUri = "https://json-schema.org/keyword/const";
 const enumUris = ["https://json-schema.org/keyword/enum", "https://json-schema.org/keyword/draft-04/enum"];
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
-const typeImpliedByConstOrEnum = lintRule({ origin: "jsonschema-lint:type-implied-by-const-or-enum" }, (tree, file) => {
+const typeImpliedByConstOrEnum = lintRule({ origin: "jsonschema-lint:type-implied-by-const-or-enum", url: "https://hyperjump.io/json-schema/linting/rules/type-implied-by-const-or-enum/" }, (tree, file) => {
   visitSchemas(tree, (schemaNode) => {
     const type = typeNames(schemaNode);
     if (type === undefined) {

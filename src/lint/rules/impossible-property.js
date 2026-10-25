@@ -10,7 +10,7 @@ import { fewestProperties, propertyAlternatives } from "../required-properties.j
  */
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
-const impossibleProperty = lintRule({ origin: "jsonschema-lint:impossible-property" }, async (tree, file) => {
+const impossibleProperty = lintRule({ origin: "jsonschema-lint:impossible-property", url: "https://hyperjump.io/json-schema/linting/rules/impossible-property/" }, async (tree, file) => {
   const session = file.data.jsonSchemaSession;
   if (session === undefined) {
     return;

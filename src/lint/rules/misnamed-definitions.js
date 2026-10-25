@@ -11,7 +11,7 @@ const definitionsUri = "https://json-schema.org/keyword/definitions";
 const unknownUris = new Set(["definitions", "$defs"].map((name) => `https://json-schema.org/keyword/unknown#${encodeIriFragment(name)}`));
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
-const misnamedDefinitions = lintRule({ origin: "jsonschema-lint:misnamed-definitions" }, async (tree, file) => {
+const misnamedDefinitions = lintRule({ origin: "jsonschema-lint:misnamed-definitions", url: "https://hyperjump.io/json-schema/linting/rules/misnamed-definitions/" }, async (tree, file) => {
   const session = file.data.jsonSchemaSession;
   if (session === undefined) {
     return;

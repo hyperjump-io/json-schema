@@ -8,7 +8,7 @@ import { canonicalDialectUri, findKeyword } from "../utilities.js";
 const schemaUri = "https://json-schema.org/keyword/schema";
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
-const implicitDialect = lintRule({ origin: "jsonschema-lint:implicit-dialect" }, (tree, file) => {
+const implicitDialect = lintRule({ origin: "jsonschema-lint:implicit-dialect", url: "https://hyperjump.io/json-schema/linting/rules/implicit-dialect/" }, (tree, file) => {
   const schemaNode = /** @type JsonSchemaNode | undefined */ (tree.children[0]);
   // Without a dialect, the resolver reports it, and a boolean schema can't
   // have `$schema`

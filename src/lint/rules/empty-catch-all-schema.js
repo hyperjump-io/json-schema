@@ -11,7 +11,7 @@ import { lowerForLint } from "../lower.js";
  *
  * @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void>
  */
-const emptyCatchAllSchema = lintRule({ origin: "jsonschema-lint:empty-catch-all-schema" }, async (tree, file) => {
+const emptyCatchAllSchema = lintRule({ origin: "jsonschema-lint:empty-catch-all-schema", url: "https://hyperjump.io/json-schema/linting/rules/empty-catch-all-schema/" }, async (tree, file) => {
   const session = file.data.jsonSchemaSession;
   if (session === undefined) {
     return;

@@ -6,7 +6,7 @@ import { typeNames, visitKeywords } from "../utilities.js";
  */
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
-const propertyNamesType = lintRule({ origin: "jsonschema-lint:property-names-type" }, (tree, file) => {
+const propertyNamesType = lintRule({ origin: "jsonschema-lint:property-names-type", url: "https://hyperjump.io/json-schema/linting/rules/property-names-type/" }, (tree, file) => {
   visitKeywords(tree, "https://json-schema.org/keyword/propertyNames", (keywordNode) => {
     const schemaNode = /** @type JsonSchemaNode */ (keywordNode.children[1]);
     const type = schemaNode.type === "json-schema" ? typeNames(schemaNode) : undefined;

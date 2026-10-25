@@ -12,7 +12,7 @@ const constUri = "https://json-schema.org/keyword/const";
 const enumUri = "https://json-schema.org/keyword/enum";
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
-const constAndEnum = lintRule({ origin: "jsonschema-lint:const-and-enum" }, (tree, file) => {
+const constAndEnum = lintRule({ origin: "jsonschema-lint:const-and-enum", url: "https://hyperjump.io/json-schema/linting/rules/const-and-enum/" }, (tree, file) => {
   visitKeywords(tree, constUri, (constNode, schemaNode) => {
     const enumNode = findKeyword(schemaNode, enumUri);
     const constValue = /** @type InstanceNode */ (constNode.children[1]);

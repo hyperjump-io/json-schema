@@ -18,7 +18,7 @@ const plurals = {
 };
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
-const keywordForDisallowedType = lintRule({ origin: "jsonschema-lint:keyword-for-disallowed-type" }, async (tree, file) => {
+const keywordForDisallowedType = lintRule({ origin: "jsonschema-lint:keyword-for-disallowed-type", url: "https://hyperjump.io/json-schema/linting/rules/keyword-for-disallowed-type/" }, async (tree, file) => {
   const session = file.data.jsonSchemaSession;
   if (session === undefined) {
     return;

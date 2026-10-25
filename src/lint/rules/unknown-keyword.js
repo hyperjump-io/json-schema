@@ -19,7 +19,7 @@ const definitionsNames = new Set(["definitions", "$defs"]);
  *
  * @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, UnknownKeywordOptions | void>
  */
-const unknownKeywordRule = lintRule({ origin: "jsonschema-lint:unknown-keyword" }, async (tree, file, options) => {
+const unknownKeywordRule = lintRule({ origin: "jsonschema-lint:unknown-keyword", url: "https://hyperjump.io/json-schema/linting/rules/unknown-keyword/" }, async (tree, file, options) => {
   const session = file.data.jsonSchemaSession;
   if (session === undefined) {
     return;
