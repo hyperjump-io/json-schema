@@ -260,6 +260,7 @@ export const instrumented = (jsonSchema, kernel, options) => {
       evaluators.set(handle, evaluator);
       built = buildSchema(handle);
       evaluators.set(handle, built);
+      evaluator = built;
     }
 
     return evaluator;

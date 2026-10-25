@@ -96,6 +96,7 @@ export const fast = (jsonSchema, kernel) => {
       evaluators.set(handle, evaluator);
       built = buildSchema(kernel.schemas[handle]);
       evaluators.set(handle, built);
+      evaluator = built;
     }
 
     return evaluator;
