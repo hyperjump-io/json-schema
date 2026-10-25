@@ -507,21 +507,15 @@ export const fast = (jsonSchema, kernel) => {
    *
    * @type (expression: Extract<Expression, { op: "cases" }>) => Evaluator[] | undefined
    */
-  const casesByType = ({ cases, otherwise }) => {
-    /** @type TypeName[][] */
-    const types = [];
-    for (const [condition] of cases) {
-      if (condition.op !== "typeIs" || condition.types.includes("integer")) {
-        return undefined;
-      }
-      types.push(condition.types);
+  const casesByType = (expression) => {
+    const byType = branchesByType(expression);
+    if (byType === undefined) {
+      return undefined;
     }
 
     /** @type Map<Expression | null, Evaluator> */
     const branches = new Map();
-    return typeIndexes.map((type) => {
-      const index = types.findIndex((caseTypes) => caseTypes.includes(type));
-      const then = index === -1 ? otherwise : cases[index][1];
+    return byType.map((then) => {
       let evaluator = branches.get(then);
       if (evaluator === undefined) {
         evaluator = then === null ? () => true : build(then);
@@ -810,7 +804,31 @@ export const keywordEvaluate = (jsonSchema, uri) => {
 };
 
 /** @type TypeName[] */
-const typeIndexes = ["null", "boolean", "number", "string", "array", "object"];
+export const typeIndexes = ["null", "boolean", "number", "string", "array", "object"];
+
+/**
+ * The branch a `cases` whose conditions are only `typeIs` applies for each
+ * instance type, in the order of `typeIndexes`, or `undefined` if it isn't
+ * one. A branch can be `null`, which passes. An `integer` condition depends
+ * on more than the type, so it isn't one.
+ *
+ * @type (expression: Extract<Expression, { op: "cases" }>) => (Expression | null)[] | undefined
+ */
+export const branchesByType = ({ cases, otherwise }) => {
+  /** @type TypeName[][] */
+  const types = [];
+  for (const [condition] of cases) {
+    if (condition.op !== "typeIs" || condition.types.includes("integer")) {
+      return undefined;
+    }
+    types.push(condition.types);
+  }
+
+  return typeIndexes.map((type) => {
+    const index = types.findIndex((caseTypes) => caseTypes.includes(type));
+    return index === -1 ? otherwise : cases[index][1];
+  });
+};
 
 /** @type (instance: Json) => number */
 const typeIndex = (instance) => {

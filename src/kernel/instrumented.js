@@ -3,7 +3,7 @@ import { keywordDefinitionUri } from "../keywords/unknown.js";
 import { codePointLength, instanceEqual } from "../keywords/utilities.js";
 import { jsInstance } from "./instance.js";
 import { conditionsOf, explainsFailure, readsMarks } from "./kernel.js";
-import { addDynamicAnchors, addReachable, isClose, itemSequenceStates, keywordEvaluate, selector } from "./fast.js";
+import { addDynamicAnchors, addReachable, branchesByType, isClose, itemSequenceStates, keywordEvaluate, selector, typeIndexes } from "./fast.js";
 
 /**
  * @import { Data, Node } from "unist"
@@ -136,6 +136,14 @@ const addAll = (marks, more) => {
     }
   }
 };
+
+/**
+ * A bit for each instance type, so a `typeIs` of more than one type is one
+ * test
+ *
+ * @type Record<string, number>
+ */
+const typeBits = { null: 1, boolean: 2, number: 4, string: 8, array: 16, object: 32 };
 
 /** @type (types: ReadonlySet<string>, type: string | undefined, isInteger: () => boolean) => boolean */
 const hasType = (types, type, isInteger) => {
@@ -483,6 +491,31 @@ export const instrumented = (jsonSchema, kernel, options) => {
         return (instance) => !of(instance, undefined);
       }
       case "cases": {
+        // Conditions that are only `typeIs` are looked up by type. A value
+        // that couldn't be parsed passes every `typeIs`, so it gets the
+        // first case.
+        const byType = branchesByType(expression);
+        if (byType !== undefined) {
+          /** @type Map<Expression | null, Evaluator<I>> */
+          const branches = new Map();
+          /** @type (then: Expression | null) => Evaluator<I> */
+          const branch = (then) => {
+            let evaluator = branches.get(then);
+            if (evaluator === undefined) {
+              evaluator = then === null ? () => true : build(then, info);
+              branches.set(then, evaluator);
+            }
+            return evaluator;
+          };
+          /** @type Record<string, Evaluator<I>> */
+          const evaluators = Object.fromEntries(typeIndexes.map((type, index) => [type, branch(byType[index])]));
+          const unparsed = branch(expression.cases.length === 0 ? expression.otherwise : expression.cases[0][1]);
+          return (instance, marks) => {
+            const type = ops.typeOf(instance);
+            return (type === undefined ? unparsed : evaluators[type])(instance, marks);
+          };
+        }
+
         const cases = expression.cases.map(([condition, then]) => /** @type const */ ([build(condition, info), then && build(then, info)]));
         const otherwise = expression.otherwise && build(expression.otherwise, info);
         return (instance, marks) => {
@@ -496,10 +529,8 @@ export const instrumented = (jsonSchema, kernel, options) => {
           return otherwise === null || otherwise(instance, marks);
         };
       }
-      case "apply": {
-        const evaluate = schema(expression.schema);
-        return (instance, marks) => evaluate(instance, marks);
-      }
+      case "apply":
+        return schema(expression.schema);
       case "dynamicApply": {
         const { anchor, fallback } = expression;
         return (instance, marks) => {
@@ -521,9 +552,19 @@ export const instrumented = (jsonSchema, kernel, options) => {
             return type === undefined || type === only;
           };
         }
+        let mask = 0;
+        for (const type of types) {
+          mask |= typeBits[type] ?? 0;
+        }
+        if (!types.has("integer") || types.has("number")) {
+          return (instance) => {
+            const type = ops.typeOf(instance);
+            return type === undefined || (mask & typeBits[type]) !== 0;
+          };
+        }
         return (instance) => {
           const type = ops.typeOf(instance);
-          return type === undefined || hasType(types, type, () => Number.isInteger(ops.value(instance)));
+          return type === undefined || (mask & typeBits[type]) !== 0 || (type === "number" && Number.isInteger(ops.value(instance)));
         };
       }
       case "equals": {
@@ -845,6 +886,13 @@ export const instrumented = (jsonSchema, kernel, options) => {
       evaluateRest = () => true;
     } else if (rest.length === 1) {
       evaluateRest = rest[0];
+    } else if (rest.length === 2) {
+      // Called directly, without a loop, which was faster
+      const [a, b] = rest;
+      evaluateRest = (instance, marks) => {
+        const valid = a(instance, marks);
+        return b(instance, marks) && valid;
+      };
     } else {
       evaluateRest = (instance, marks) => {
         let valid = true;
