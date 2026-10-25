@@ -1,0 +1,18 @@
+name: Docs Changed
+
+# Rebuilds hyperjump.io, which is built from website/ on this branch.
+on:
+  push:
+    branches:
+      - "v2"
+    paths:
+      - "website/**"
+
+jobs:
+  dispatch:
+    if: github.repository_owner == 'hyperjump-io'
+    runs-on: ubuntu-latest
+    steps:
+      - run: gh api repos/hyperjump-io/hyperjump.io/dispatches -f event_type=docs-changed
+        env:
+          GH_TOKEN: ${{ secrets.SITE_DISPATCH_TOKEN }}
