@@ -31,6 +31,9 @@ export type SchemaMessage = {
   /** A description of the problem for people */
   message: string;
 
+  /** A page about the problem, like a lint rule's documentation */
+  url?: string;
+
   /** What caused it, such as why a dialect couldn't be found */
   cause?: unknown;
 };

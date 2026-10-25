@@ -60,6 +60,9 @@ export const toSchemaMessage = (message, uri, severity) => {
     place: message.place,
     message: message.reason
   };
+  if (message.url !== undefined) {
+    schemaMessage.url = message.url;
+  }
   if (message.cause !== undefined) {
     schemaMessage.cause = message.cause;
   }

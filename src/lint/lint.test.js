@@ -24,7 +24,8 @@ describe("lint", () => {
       severity: "warn",
       uri: "https://example.com/a",
       place: { start: { line: 4, column: 3, offset: 81 }, end: { line: 4, column: 15, offset: 93 } },
-      message: "'then' has no effect without 'if'"
+      message: "'then' has no effect without 'if'",
+      url: "https://hyperjump.io/json-schema/linting/rules/then-else-without-if/"
     }]);
   });
 

@@ -22,7 +22,10 @@ Linting needs a unified pipeline today, outside of hjlint. `lint(uri)` on
   rules.
 - It returns plain `SchemaMessage`s (see [Validation API](../validation-api/README.md)), with each
   message's `severity` (`"error"` if the rule made it fatal, `"warn"`
-  otherwise), and the document's URI. A document with problems has no
+  otherwise), the document's URI, and the rule's `url`. Each built-in rule's
+  `url` is its page on hyperjump.io (`/json-schema/linting/rules/<rule>/`),
+  set in its own meta, since `lintRule` is public and a custom rule's page
+  is elsewhere. A document with problems has no
   tree, so its problems are what's returned, not thrown. A rule's message
   is specific, so it's kept. Rules still report with `file.message`, so
   results are converted from `VFileMessage`s when the pass finishes.

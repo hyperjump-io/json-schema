@@ -5,8 +5,9 @@ lints the whole document the URI is in, including definitions nothing
 references, and not the documents it references. The rules are the
 recommended preset, or `plugins` in the same shape as `.hyperjumprc`'s. The
 results are plain objects, like the problems in a `SchemaError`, with a
-`severity` of `"error"` or `"warn"`. A schema with problems can't be linted,
-so its problems are returned instead of thrown.
+`severity` of `"error"` or `"warn"`, and a `url` to the rule's page. A schema
+with problems can't be linted, so its problems are returned instead of
+thrown.
 
 ```javascript
 import recommended from "@hyperjump/json-schema/lint/recommended";
