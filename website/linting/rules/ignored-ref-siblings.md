@@ -35,12 +35,12 @@ comment never has an effect. It has no options.
   "$schema": "http://json-schema.org/draft-07/schema#",
   "definitions": { "a": {} },
   "properties": {
-                  "foo": {
-                           "description": "a foo",
-                           "$ref": "#/definitions/a",
-                           "type": "integer"
-                         }
-                }
+    "foo": {
+      "description": "a foo",
+      "$ref": "#/definitions/a",
+      "type": "integer"
+    }
+  }
 }
 ```
 
