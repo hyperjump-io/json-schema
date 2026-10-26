@@ -67,7 +67,6 @@
     "lint": "oxlint",
     "test": "vitest run",
     "type-check": "tsc --noEmit",
-    "docs": "typedoc",
     "version": "node scripts/version-docs.js && git add website"
   },
   "devDependencies": {
@@ -77,7 +76,6 @@
     "json-schema-test-suite": "github:json-schema-org/JSON-Schema-Test-Suite#unify",
     "oxlint": "*",
     "oxlint-tsgolint": "*",
-    "typedoc": "*",
     "typescript": "*",
     "vitest": "*"
   },
