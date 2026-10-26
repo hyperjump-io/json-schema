@@ -55,7 +55,8 @@ Rules are unified plugins. Each takes its setting the way it's configured
 anywhere else (see [Choosing rules](../linting/choosing-rules.md)):
 
 ```javascript
-import thenElseWithoutIf from "@hyperjump/json-schema/lint/rules/then-else-without-if";
+import thenElseWithoutIf from
+  "@hyperjump/json-schema/lint/rules/then-else-without-if";
 
 unified()
   .use(rejsonParse, { accept: "recovered" })

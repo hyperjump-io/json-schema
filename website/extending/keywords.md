@@ -113,7 +113,9 @@ or `undefined` if it isn't there.
 siblings: { properties: "https://json-schema.org/keyword/properties" },
 lower: (schema, { properties = [] }) => ({
   op: "eachProperty",
-  select: { except: { names: properties.map(([name]) => name), patterns: [] } },
+  select: {
+    except: { names: properties.map(([name]) => name), patterns: [] }
+  },
   of: schema
 })
 ```
@@ -145,9 +147,16 @@ jsonSchema.addKeyword({
   uri: "https://example.com/keyword/prime",
   shape: "data",
   lower: (prime) => prime
-    ? { op: "predicate", keyword: "https://example.com/keyword/prime", value: true, types: ["integer"] }
+    ? {
+      op: "predicate",
+      keyword: "https://example.com/keyword/prime",
+      value: true,
+      types: ["integer"]
+    }
     : { op: "pass" },
-  evaluate: (_value, { instance }) => (node) => isPrime(instance.value(node))
+  evaluate: (_value, { instance }) => (node) => {
+    return isPrime(instance.value(node));
+  }
 });
 ```
 

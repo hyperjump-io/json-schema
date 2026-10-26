@@ -48,7 +48,8 @@ it, such as a file you read yourself. Then a problem with the schema is
 reported with its line and column.
 
 ```javascript
-const registry = new SchemaRegistry().with(await readFile("./person.schema.json", "utf8"));
+const text = await readFile("./person.schema.json", "utf8");
+const registry = new SchemaRegistry().with(text);
 ```
 
 ### Schemas without `$id`
@@ -121,7 +122,8 @@ const jsonSchema = new JsonSchema({
 });
 addV1(jsonSchema);
 
-const validator = await jsonSchema.compile("https://schemas.example.com/person");
+const uri = "https://schemas.example.com/person";
+const validator = await jsonSchema.compile(uri);
 ```
 
 The response must be `application/schema+json`. Responses are cached by

@@ -44,11 +44,12 @@ which aren't kept in the result. A language server can use it to show a
 `description` in a document that has errors.
 
 ```javascript
+const description = "https://json-schema.org/keyword/description";
 const descriptions = new Map();
 validator.validateJson(json, {
   plugins: [{
     annotation(keyword, at, value) {
-      if (keyword.keywordUri === "https://json-schema.org/keyword/description") {
+      if (keyword.keywordUri === description) {
         descriptions.set(at.instanceLocation, value);
       }
     }

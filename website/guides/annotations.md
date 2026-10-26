@@ -62,7 +62,8 @@ each have a `title`. A node without the annotation gets an empty list.
 For a schema in another dialect, pass the dialect URI too:
 
 ```javascript
-session.annotation(node, "title", "https://json-schema.org/draft/2020-12/schema");
+const draft202012 = "https://json-schema.org/draft/2020-12/schema";
+session.annotation(node, "title", draft202012);
 ```
 
 ## Which annotations are kept

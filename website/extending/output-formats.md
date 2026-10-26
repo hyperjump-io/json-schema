@@ -13,13 +13,18 @@ import { jsonSyntaxErrorMessage } from "@hyperjump/browser/json";
 
 const messages = {
   "https://json-schema.org/keyword/minimum": "is too small",
-  "https://json-schema.org/keyword/required": "is missing a required property",
+  "https://json-schema.org/keyword/required": "is missing a property",
   "https://json-schema.org/keyword/type": "is the wrong type"
 };
 
-const describe = (error) => error.source === "json"
-  ? jsonSyntaxErrorMessage(error)
-  : `${error.instanceLocation || "The value"} ${messages[error.ruleId] ?? "is invalid"}`;
+const describe = (error) => {
+  if (error.source === "json") {
+    return jsonSyntaxErrorMessage(error);
+  }
+
+  const where = error.instanceLocation || "The value";
+  return `${where} ${messages[error.ruleId] ?? "is invalid"}`;
+};
 
 jsonSchema.addOutputFormat("MESSAGES", () => {
   const basic = jsonSchema.getOutputFormat("BASIC")();
@@ -33,7 +38,13 @@ jsonSchema.addOutputFormat("MESSAGES", () => {
 });
 
 validator.validate({ age: -1 }, { output: "MESSAGES" });
-// { valid: false, messages: ["/age is too small", "The value is missing a required property"] }
+```
+
+```json
+{
+  "valid": false,
+  "messages": ["/age is too small", "The value is missing a property"]
+}
 ```
 
 ## How it works

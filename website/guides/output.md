@@ -46,7 +46,7 @@ A list of every keyword that failed, in document order.
 const result = validator.validate({ age: -1 }, { output: "BASIC" });
 ```
 
-```json
+```json wrap
 {
   "valid": false,
   "errors": [
@@ -75,7 +75,7 @@ The same errors, nested under the keywords that applied them. Here,
 const result = validator.validate({ age: -1 }, { output: "DETAILED" });
 ```
 
-```json
+```json wrap
 {
   "valid": false,
   "errors": [

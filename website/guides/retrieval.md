@@ -34,7 +34,7 @@ nothing, so only registries are used.
 
 Anything else throws a `RetrievalNotAllowedError`:
 
-```
+```text
 Retrieving 'https://example.com/other' isn't allowed. Use the 'allowRetrieval' config to allow it.
 ```
 
@@ -57,7 +57,9 @@ A session can have its own list. It replaces the config instead of adding
 to it, so a session can allow less.
 
 ```javascript
-const validator = await jsonSchema.compile(uri, { allowRetrieval: ["./schemas/"] });
+const validator = await jsonSchema.compile(uri, {
+  allowRetrieval: ["./schemas/"]
+});
 
 const session = jsonSchema.session({ allowRetrieval: ["./schemas/"] });
 ```
@@ -73,7 +75,10 @@ To send headers with `http:` and `https:` requests, such as an
 credentials only to the origins they're for. Any schema can name any URL.
 
 ```javascript
-import { HttpUriSchemePlugin, MemoryHttpCacheStore } from "@hyperjump/browser";
+import {
+  HttpUriSchemePlugin,
+  MemoryHttpCacheStore
+} from "@hyperjump/browser";
 
 jsonSchema.addUriSchemePlugin(new HttpUriSchemePlugin(jsonSchema, {
   cache: new MemoryHttpCacheStore(),

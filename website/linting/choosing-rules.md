@@ -10,7 +10,10 @@ and in the `plugins` option of [`lint`](from-code.md).
   "plugins": [
     "@hyperjump/json-schema/lint/recommended",
     ["@hyperjump/json-schema/lint/rules/then-else-without-if", ["error"]],
-    ["@hyperjump/json-schema/lint/rules/type-implied-by-const-or-enum", ["off"]]
+    [
+      "@hyperjump/json-schema/lint/rules/type-implied-by-const-or-enum",
+      ["off"]
+    ]
   ]
 }
 ```
@@ -37,7 +40,10 @@ A rule with options takes them after the severity. Each rule's page lists
 its options.
 
 ```json
-["@hyperjump/json-schema/lint/rules/unknown-keyword", ["warn", { "ignore": ["x-internal"] }]]
+[
+  "@hyperjump/json-schema/lint/rules/unknown-keyword",
+  ["warn", { "ignore": ["x-internal"] }]
+]
 ```
 
 ## Turning a rule off in one place

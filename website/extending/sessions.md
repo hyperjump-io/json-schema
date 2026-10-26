@@ -21,7 +21,9 @@ const session = jsonSchema.session({ registries: [registry] });
 const person = await session.compile("https://example.com/person");
 const address = await session.compile("https://example.com/address");
 
-const name = await session.get("https://example.com/person#/properties/name");
+const name = await session.get(
+  "https://example.com/person#/properties/name"
+);
 ```
 
 A session takes the same `registries` and `allowRetrieval` options as

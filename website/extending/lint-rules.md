@@ -9,12 +9,24 @@ schema AST and reports what it finds. Make one with `lintRule` from
 This rule reports a `minimum` without a `maximum`:
 
 ```javascript
-import { lintRule, siblingKeyword, visitKeywords } from "@hyperjump/json-schema/lint";
+import {
+  lintRule,
+  siblingKeyword,
+  visitKeywords
+} from "@hyperjump/json-schema/lint";
 
-export default lintRule({ origin: "my-rules:min-without-max", url: "https://example.com/rules/min-without-max" }, (tree, file) => {
-  visitKeywords(tree, "https://json-schema.org/keyword/minimum", (keywordNode, schemaNode) => {
-    if (siblingKeyword(schemaNode, "https://json-schema.org/keyword/maximum") === undefined) {
-      file.message("'minimum' without 'maximum'", { place: keywordNode.position });
+const minimum = "https://json-schema.org/keyword/minimum";
+const maximum = "https://json-schema.org/keyword/maximum";
+
+export default lintRule({
+  origin: "my-rules:min-without-max",
+  url: "https://example.com/rules/min-without-max"
+}, (tree, file) => {
+  visitKeywords(tree, minimum, (keywordNode, schemaNode) => {
+    if (siblingKeyword(schemaNode, maximum) === undefined) {
+      file.message("'minimum' without 'maximum'", {
+        place: keywordNode.position
+      });
     }
   });
 });
@@ -37,7 +49,9 @@ Use it like a built-in rule:
 ```javascript
 import minWithoutMax from "./min-without-max.js";
 
-const results = await jsonSchema.lint(uri, { plugins: [recommended, [minWithoutMax, ["warn"]]] });
+const results = await jsonSchema.lint(uri, {
+  plugins: [recommended, [minWithoutMax, ["warn"]]]
+});
 ```
 
 ## Finding keywords
@@ -66,8 +80,9 @@ import { findSchema, visitReferences } from "@hyperjump/json-schema/lint";
 
 const references = [];
 visitReferences(tree, (uri, node) => references.push([uri, node]));
+const session = file.data.jsonSchemaSession;
 for (const [uri, node] of references) {
-  const result = await findSchema(file.data.jsonSchemaSession, uri, { document: tree });
+  const result = await findSchema(session, uri, { document: tree });
   if (result.status === "missing") {
     file.message(result.reason.message, { place: node.position });
   }
@@ -88,7 +103,8 @@ past the schema a keyword is in, such as to find the `properties` next to
 the `anyOf` that a `required` is in.
 
 ```javascript
-const group = await schemaGroup(file.data.jsonSchemaSession, tree, schemaNode);
+const session = file.data.jsonSchemaSession;
+const group = await schemaGroup(session, tree, schemaNode);
 ```
 
 Which keywords connect schemas is worked out from what they lower to, so a
@@ -118,8 +134,12 @@ const session = file.data.jsonSchemaSession;
 const schemas = await lowerForLint(session, tree);
 for (const keywords of schemas.values()) {
   for (const { keywordNode } of keywords) {
-    if (keywordAppliesTo(session.jsonSchema, keywords, keywordNode).length === 0) {
-      file.message("This keyword has no effect", { place: keywordNode.position });
+    const { jsonSchema } = session;
+    const types = keywordAppliesTo(jsonSchema, keywords, keywordNode);
+    if (types.length === 0) {
+      file.message("This keyword has no effect", {
+        place: keywordNode.position
+      });
     }
   }
 }

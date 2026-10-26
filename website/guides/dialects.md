@@ -48,7 +48,9 @@ it gets its dialect from somewhere else:
   doesn't have one.
 
 ```javascript
-const jsonSchema = new JsonSchema({ defaultDialectUri: "https://json-schema.org/v1" });
+const jsonSchema = new JsonSchema({
+  defaultDialectUri: "https://json-schema.org/v1"
+});
 ```
 
 A default makes your schemas depend on your configuration, so other tools

@@ -23,7 +23,10 @@ const file = await unified()
   .use(rejsonParse, { accept: "recovered" })
   .use(jsonSchemaValidate, { validator })
   .use(rejsonStringify)
-  .process(new VFile({ path: "alice.json", value: await readFile("alice.json", "utf8") }));
+  .process(new VFile({
+    path: "alice.json",
+    value: await readFile("alice.json", "utf8")
+  }));
 
 console.log(reporter(file));
 ```

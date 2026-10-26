@@ -10,7 +10,10 @@ const results = await jsonSchema.lint("https://example.com/person");
 for (const result of results) {
   console.log(`${result.severity}: ${result.message} (${result.url})`);
 }
-// warn: 'then' has no effect without 'if' (https://hyperjump.io/json-schema/linting/rules/then-else-without-if/)
+```
+
+```text
+warn: 'then' has no effect without 'if' (https://hyperjump.io/json-schema/linting/rules/then-else-without-if/)
 ```
 
 It finds the schema the way `compile` does, so the URI can be in a registry,
@@ -58,11 +61,11 @@ modules imported instead of named.
 
 ```javascript
 import recommended from "@hyperjump/json-schema/lint/recommended";
-import thenElseWithoutIf from "@hyperjump/json-schema/lint/rules/then-else-without-if";
+import thenElseWithoutIf from
+  "@hyperjump/json-schema/lint/rules/then-else-without-if";
 
 const results = await jsonSchema.lint("https://example.com/person", {
   plugins: [recommended, [thenElseWithoutIf, ["error"]]]
 });
-results[0];
-// { ruleId: "then-else-without-if", severity: "error", message: "'then' has no effect without 'if'", ... }
+results[0].severity; // "error"
 ```

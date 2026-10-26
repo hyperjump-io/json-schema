@@ -7,11 +7,13 @@ anything.
 
 ```javascript
 const validator = await jsonSchema.compile("https://example.com/person");
-await writeFile("./person.compiled.json", JSON.stringify(validator.serialize()));
+const compiled = validator.serialize();
+await writeFile("./person.compiled.json", JSON.stringify(compiled));
 ```
 
 ```javascript
-const compiled = JSON.parse(await readFile("./person.compiled.json", "utf8"));
+const text = await readFile("./person.compiled.json", "utf8");
+const compiled = JSON.parse(text);
 const validator = jsonSchema.restoreValidator(compiled);
 
 validator.validate({ name: "Jason" }); // true

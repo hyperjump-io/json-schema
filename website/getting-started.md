@@ -125,7 +125,8 @@ at once.
 ```javascript
 import { toVFileMessage } from "@hyperjump/json-schema";
 
-const result = validator.validateJson(`{ "name": "Jason", "age": -1, }`, { output: "BASIC" });
+const json = `{ "name": "Jason", "age": -1, }`;
+const result = validator.validateJson(json, { output: "BASIC" });
 
 for (const error of result.errors) {
   console.log(String(toVFileMessage(error)));
@@ -184,10 +185,16 @@ jsonSchema.addRegistry(new SchemaRegistry().with(`{
 }`));
 
 const results = await jsonSchema.lint("https://example.com/user");
-results[0].message;
-// "'nmae' is required, but no 'properties' or 'patternProperties' defines it, so any value is allowed"
-results[0].url;
-// "https://hyperjump.io/json-schema/linting/rules/required-property-not-defined/"
+
+for (const result of results) {
+  console.log(result.message);
+  console.log(result.url);
+}
+```
+
+```text
+'nmae' is required, but no 'properties' or 'patternProperties' defines it, so any value is allowed
+https://hyperjump.io/json-schema/linting/rules/required-property-not-defined/
 ```
 
 Every message links to its rule's page, which explains the problem and how

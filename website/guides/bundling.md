@@ -7,7 +7,8 @@ give one to a tool that can't follow references between documents.
 ```javascript
 import { pathToFileURL } from "node:url";
 
-const bundled = await jsonSchema.bundle(pathToFileURL("./schemas/person.schema.json").href);
+const uri = pathToFileURL("./schemas/person.schema.json").href;
+const bundled = await jsonSchema.bundle(uri);
 ```
 
 Each referenced document is embedded in the main schema's `$defs`

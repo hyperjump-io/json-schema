@@ -38,7 +38,8 @@ are reported along with validation errors. The parser recovers from them
 where it can, so the rest of the text is still validated.
 
 ```javascript
-const result = validator.validateJson(`{ "name": "Jason", "age": -1, }`, { output: "BASIC" });
+const json = `{ "name": "Jason", "age": -1, }`;
+const result = validator.validateJson(json, { output: "BASIC" });
 ```
 
 `result.errors` has a validation error and a syntax error, in the order
@@ -95,5 +96,6 @@ it.
 every time, so use them for one-off checks, not in a loop.
 
 ```javascript
-await jsonSchema.validate("https://example.com/person", { name: "Jason" }); // true
+const uri = "https://example.com/person";
+await jsonSchema.validate(uri, { name: "Jason" }); // true
 ```

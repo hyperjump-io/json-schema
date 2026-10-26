@@ -17,7 +17,7 @@ can.
 }
 ```
 
-```
+```text
 7:16-7:22 warning 'nmae' is required, but no 'properties' or 'patternProperties' defines it, so any value is allowed  required-property-not-defined  jsonschema-lint
 ```
 

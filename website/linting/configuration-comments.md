@@ -32,7 +32,10 @@ everywhere else.
   "$comment": "jsonschema-lint-disable then-else-without-if",
   "then": true,
   "properties": {
-    "foo": { "$comment": "jsonschema-lint-enable then-else-without-if", "then": true }
+    "foo": {
+      "$comment": "jsonschema-lint-enable then-else-without-if",
+      "then": true
+    }
   }
 }
 ```

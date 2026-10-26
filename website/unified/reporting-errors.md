@@ -13,8 +13,11 @@ const result = validator.validateJson(json, { output: "BASIC" });
 for (const error of result.errors) {
   console.log(String(toVFileMessage(error)));
 }
-// 1:27-1:29: Fails the constraint at 'https://example.com/person#/properties/age/minimum'
-// 1:29-1:30: Trailing commas are not allowed
+```
+
+```text
+1:27-1:29: Fails the constraint at 'https://example.com/person#/properties/age/minimum'
+1:29-1:30: Trailing commas are not allowed
 ```
 
 Use it to report errors from `validateJson`, from a `SchemaError`'s
@@ -30,5 +33,9 @@ To add an error to a `VFile`, use `file.message` with those, instead of
 adding the `VFileMessage`:
 
 ```javascript
-file.message(myMessage(error), { place: error.place, ruleId: error.ruleId, source: error.source });
+file.message(myMessage(error), {
+  place: error.place,
+  ruleId: error.ruleId,
+  source: error.source
+});
 ```
