@@ -14,7 +14,7 @@ describe("dependency-on-required-property", () => {
     const file = await lint(json);
     expect(file.messages.map((message) => message.reason)).to.eql([message]);
     expect(file.messages[0].ruleId).to.equal("dependency-on-required-property");
-    expect(file.messages[0].source).to.equal("jsonschema-lint");
+    expect(file.messages[0].source).to.equal("json-schema-lint");
     expect(file.messages[0].fatal).to.equal(false);
     const entry = `"meta": ["data"]`;
     const offset = json.indexOf(entry);

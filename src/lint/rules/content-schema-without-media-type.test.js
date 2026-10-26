@@ -13,7 +13,7 @@ describe("content-schema-without-media-type", () => {
     const file = await lint(json);
     expect(file.messages.map((message) => message.reason)).to.eql([message]);
     expect(file.messages[0].ruleId).to.equal("content-schema-without-media-type");
-    expect(file.messages[0].source).to.equal("jsonschema-lint");
+    expect(file.messages[0].source).to.equal("json-schema-lint");
     expect(file.messages[0].fatal).to.equal(false);
     const keyword = `"contentSchema": { "type": "object" }`;
     const offset = json.indexOf(keyword);

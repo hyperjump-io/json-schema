@@ -13,7 +13,7 @@ describe("keyword-without-type", () => {
     const file = await lint(json);
     expect(file.messages.map((message) => message.reason)).to.eql([objects]);
     expect(file.messages[0].ruleId).to.equal("keyword-without-type");
-    expect(file.messages[0].source).to.equal("jsonschema-lint");
+    expect(file.messages[0].source).to.equal("json-schema-lint");
     expect(file.messages[0].fatal).to.equal(false);
     const keyword = `"properties": { "a": {} }`;
     const offset = json.indexOf(keyword);

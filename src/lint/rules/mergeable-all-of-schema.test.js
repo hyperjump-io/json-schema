@@ -19,7 +19,7 @@ describe("mergeable-all-of-schema", () => {
     const file = await lint(json);
     expect(file.messages.map((message) => message.reason)).to.eql([mergeable]);
     expect(file.messages[0].ruleId).to.equal("mergeable-all-of-schema");
-    expect(file.messages[0].source).to.equal("jsonschema-lint");
+    expect(file.messages[0].source).to.equal("json-schema-lint");
     expect(file.messages[0].fatal).to.equal(false);
     const branch = `{ "type": "string", "minLength": 5 }`;
     const offset = json.indexOf(branch);

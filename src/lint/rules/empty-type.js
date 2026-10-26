@@ -8,7 +8,7 @@ import { visitKeywords } from "../utilities.js";
 const typeUri = "https://json-schema.org/keyword/draft-2020-12/type";
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
-const emptyType = lintRule({ origin: "jsonschema-lint:empty-type", url: "https://hyperjump.io/json-schema/linting/rules/empty-type/" }, (tree, file) => {
+const emptyType = lintRule({ origin: "json-schema-lint:empty-type", url: "https://hyperjump.io/json-schema/linting/rules/empty-type/" }, (tree, file) => {
   visitKeywords(tree, typeUri, (keywordNode) => {
     const valueNode = keywordNode.children[1];
     if (valueNode.jsonType === "array" && valueNode.children.length === 0) {

@@ -13,7 +13,7 @@ describe("required-property-not-allowed", () => {
       "'b' is required, but 'additionalProperties' doesn't allow it, so no object is valid"
     ]);
     expect(file.messages[0].ruleId).to.equal("required-property-not-allowed");
-    expect(file.messages[0].source).to.equal("jsonschema-lint");
+    expect(file.messages[0].source).to.equal("json-schema-lint");
     expect(file.messages[0].fatal).to.equal(false);
     const offset = json.indexOf(`"b"`);
     expect(file.messages[0].place).to.eql({

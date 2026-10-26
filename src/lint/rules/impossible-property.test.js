@@ -14,7 +14,7 @@ describe("impossible-property", () => {
     const reason = "An object with 'a' needs 3 properties, but 'maxProperties' allows at most 2, so no valid object has 'a'";
     expect(file.messages.map((message) => message.reason)).to.eql([reason, reason]);
     expect(file.messages[0].ruleId).to.equal("impossible-property");
-    expect(file.messages[0].source).to.equal("jsonschema-lint");
+    expect(file.messages[0].source).to.equal("json-schema-lint");
     expect(file.messages[0].column).to.equal(json.indexOf(`"maxProperties"`) + 1);
     expect(file.messages[1].column).to.equal(json.indexOf(`"a"`) + 1);
   });

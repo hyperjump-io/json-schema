@@ -8,7 +8,7 @@ import { visitKeywords } from "../utilities.js";
 const enumUri = "https://json-schema.org/keyword/enum";
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
-const emptyEnum = lintRule({ origin: "jsonschema-lint:empty-enum", url: "https://hyperjump.io/json-schema/linting/rules/empty-enum/" }, (tree, file) => {
+const emptyEnum = lintRule({ origin: "json-schema-lint:empty-enum", url: "https://hyperjump.io/json-schema/linting/rules/empty-enum/" }, (tree, file) => {
   visitKeywords(tree, enumUri, (keywordNode) => {
     const valueNode = keywordNode.children[1];
     if (valueNode.jsonType === "array" && valueNode.children.length === 0) {

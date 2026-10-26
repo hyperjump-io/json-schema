@@ -32,7 +32,7 @@ const plurals = {
 };
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
-const keywordWithoutType = lintRule({ origin: "jsonschema-lint:keyword-without-type", url: "https://hyperjump.io/json-schema/linting/rules/keyword-without-type/" }, async (tree, file) => {
+const keywordWithoutType = lintRule({ origin: "json-schema-lint:keyword-without-type", url: "https://hyperjump.io/json-schema/linting/rules/keyword-without-type/" }, async (tree, file) => {
   const session = file.data.jsonSchemaSession;
   if (session === undefined) {
     return;

@@ -14,7 +14,7 @@ describe("contradictory-limits", () => {
     const file = await lint(json);
     expect(file.messages.map((message) => message.reason)).to.eql(["'minimum' is greater than 'maximum', so no number is valid"]);
     expect(file.messages[0].ruleId).to.equal("contradictory-limits");
-    expect(file.messages[0].source).to.equal("jsonschema-lint");
+    expect(file.messages[0].source).to.equal("json-schema-lint");
     expect(file.messages[0].fatal).to.equal(false);
     const offset = json.indexOf(`"maximum"`);
     expect(file.messages[0].place).to.eql({

@@ -8,7 +8,7 @@ import { requiredNames, visitKeywords } from "../utilities.js";
 const minPropertiesUri = "https://json-schema.org/keyword/minProperties";
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
-const minPropertiesCoveredByRequired = lintRule({ origin: "jsonschema-lint:min-properties-covered-by-required", url: "https://hyperjump.io/json-schema/linting/rules/min-properties-covered-by-required/" }, (tree, file) => {
+const minPropertiesCoveredByRequired = lintRule({ origin: "json-schema-lint:min-properties-covered-by-required", url: "https://hyperjump.io/json-schema/linting/rules/min-properties-covered-by-required/" }, (tree, file) => {
   visitKeywords(tree, minPropertiesUri, (keywordNode, schemaNode) => {
     const valueNode = keywordNode.children[1];
     const required = requiredNames(schemaNode);

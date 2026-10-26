@@ -10,7 +10,7 @@ const enumUris = new Set(["enum", "draft-04/enum"].map((name) => `https://json-s
 const constUri = "https://json-schema.org/keyword/const";
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
-const singleValueEnum = lintRule({ origin: "jsonschema-lint:single-value-enum", url: "https://hyperjump.io/json-schema/linting/rules/single-value-enum/" }, async (tree, file) => {
+const singleValueEnum = lintRule({ origin: "json-schema-lint:single-value-enum", url: "https://hyperjump.io/json-schema/linting/rules/single-value-enum/" }, async (tree, file) => {
   const session = file.data.jsonSchemaSession;
   if (session === undefined) {
     return;

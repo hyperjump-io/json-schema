@@ -14,7 +14,7 @@ describe("type-implied-by-const-or-enum", () => {
     const file = await lint(json);
     expect(file.messages.map((message) => message.reason)).to.eql([enumMessage]);
     expect(file.messages[0].ruleId).to.equal("type-implied-by-const-or-enum");
-    expect(file.messages[0].source).to.equal("jsonschema-lint");
+    expect(file.messages[0].source).to.equal("json-schema-lint");
     expect(file.messages[0].fatal).to.equal(false);
     const keyword = `"type": "integer"`;
     const offset = json.indexOf(keyword);

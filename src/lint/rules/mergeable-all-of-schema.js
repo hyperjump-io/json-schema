@@ -35,7 +35,7 @@ const combinable = new Map(/** @type [string, "names" | "disjoint"][] */ ([
 ]).map(([name, how]) => [`${keyword}/${name}`, how]));
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
-const mergeableAllOfSchema = lintRule({ origin: "jsonschema-lint:mergeable-all-of-schema", url: "https://hyperjump.io/json-schema/linting/rules/mergeable-all-of-schema/" }, async (tree, file) => {
+const mergeableAllOfSchema = lintRule({ origin: "json-schema-lint:mergeable-all-of-schema", url: "https://hyperjump.io/json-schema/linting/rules/mergeable-all-of-schema/" }, async (tree, file) => {
   const session = file.data.jsonSchemaSession;
   const jsonSchema = session?.jsonSchema;
 

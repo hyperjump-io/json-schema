@@ -39,7 +39,7 @@ Each result is a plain object:
 | `url` | The rule's page, for built-in rules |
 | `uri` | The URI of the document |
 | `place` | The position in the document, if it was JSON text |
-| `source` | `"jsonschema-lint"` for lint rules, `"json-schema"` for schema problems |
+| `source` | `"json-schema-lint"` for lint rules, `"json-schema"` for schema problems |
 
 `toVFileMessage` makes one a
 [`VFileMessage`](https://github.com/vfile/vfile-message), which prints with

@@ -14,7 +14,7 @@ const pairs = /** @type const */ ([
 ]);
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
-const redundantNumericLimit = lintRule({ origin: "jsonschema-lint:redundant-numeric-limit", url: "https://hyperjump.io/json-schema/linting/rules/redundant-numeric-limit/" }, (tree, file) => {
+const redundantNumericLimit = lintRule({ origin: "json-schema-lint:redundant-numeric-limit", url: "https://hyperjump.io/json-schema/linting/rules/redundant-numeric-limit/" }, (tree, file) => {
   visitSchemas(tree, (schemaNode) => {
     for (const [inclusiveUri, exclusiveUri, tighter] of pairs) {
       const inclusiveNode = findKeyword(schemaNode, inclusiveUri);

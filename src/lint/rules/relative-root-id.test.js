@@ -14,7 +14,7 @@ describe("relative-root-id", () => {
       "'/user' is relative, so the schema is identified by resolving it against wherever the schema was retrieved from. Give the root '$id' an absolute URI so the schema has the same identifier wherever it is."
     ]);
     expect(file.messages[0].ruleId).to.equal("relative-root-id");
-    expect(file.messages[0].source).to.equal("jsonschema-lint");
+    expect(file.messages[0].source).to.equal("json-schema-lint");
     expect(file.messages[0].fatal).to.equal(false);
     expect(file.messages[0].place).to.eql({
       start: { line: 1, column: 69, offset: 68 },

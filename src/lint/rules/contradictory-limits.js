@@ -29,7 +29,7 @@ const counts = /** @type const */ ({ stringLength: "string", itemCount: "array",
  *
  * @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void>
  */
-const contradictoryLimits = lintRule({ origin: "jsonschema-lint:contradictory-limits", url: "https://hyperjump.io/json-schema/linting/rules/contradictory-limits/" }, async (tree, file) => {
+const contradictoryLimits = lintRule({ origin: "json-schema-lint:contradictory-limits", url: "https://hyperjump.io/json-schema/linting/rules/contradictory-limits/" }, async (tree, file) => {
   const session = file.data.jsonSchemaSession;
   if (session === undefined) {
     return;

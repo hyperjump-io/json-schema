@@ -10,7 +10,7 @@ describe("empty-type", () => {
     const file = await lint(`{ "$schema": "${draft202012}", "type": [] }`);
     expect(file.messages.map((message) => message.reason)).to.eql(["'type' is empty, so nothing is valid against it"]);
     expect(file.messages[0].ruleId).to.equal("empty-type");
-    expect(file.messages[0].source).to.equal("jsonschema-lint");
+    expect(file.messages[0].source).to.equal("json-schema-lint");
     expect(file.messages[0].fatal).to.equal(false);
     expect(file.messages[0].place).to.eql({
       start: { line: 1, column: 62, offset: 61 },

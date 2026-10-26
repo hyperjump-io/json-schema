@@ -11,7 +11,7 @@ describe("duplicate-one-of-schemas", () => {
       "This schema is already in 'oneOf', so a value it matches always fails 'oneOf'"
     ]);
     expect(file.messages[0].ruleId).to.equal("duplicate-one-of-schemas");
-    expect(file.messages[0].source).to.equal("jsonschema-lint");
+    expect(file.messages[0].source).to.equal("json-schema-lint");
     expect(file.messages[0].fatal).to.equal(false);
     const offset = json.lastIndexOf(`{ "type": "string" }`);
     expect(file.messages[0].place).to.eql({

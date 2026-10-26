@@ -22,7 +22,7 @@ describe("invalid-default-or-example", () => {
     const file = await lint(json);
     expect(file.messages.map((message) => message.reason)).to.eql([invalidDefault]);
     expect(file.messages[0].ruleId).to.equal("invalid-default-or-example");
-    expect(file.messages[0].source).to.equal("jsonschema-lint");
+    expect(file.messages[0].source).to.equal("json-schema-lint");
     expect(file.messages[0].fatal).to.equal(false);
     const value = `"not-an-integer"`;
     const offset = json.indexOf(value);

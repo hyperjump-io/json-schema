@@ -14,7 +14,7 @@ describe("const-and-enum", () => {
     const file = await lint(json);
     expect(file.messages.map((message) => message.reason)).to.eql([redundant]);
     expect(file.messages[0].ruleId).to.equal("const-and-enum");
-    expect(file.messages[0].source).to.equal("jsonschema-lint");
+    expect(file.messages[0].source).to.equal("json-schema-lint");
     expect(file.messages[0].fatal).to.equal(false);
     const offset = json.indexOf(`"enum"`);
     expect(file.messages[0].place).to.eql({

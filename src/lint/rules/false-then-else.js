@@ -8,7 +8,7 @@ import { findKeyword, visitKeywords } from "../utilities.js";
 const keyword = "https://json-schema.org/keyword";
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
-const falseThenElse = lintRule({ origin: "jsonschema-lint:false-then-else", url: "https://hyperjump.io/json-schema/linting/rules/false-then-else/" }, (tree, file) => {
+const falseThenElse = lintRule({ origin: "json-schema-lint:false-then-else", url: "https://hyperjump.io/json-schema/linting/rules/false-then-else/" }, (tree, file) => {
   visitKeywords(tree, `${keyword}/if`, (ifNode, schemaNode) => {
     const thenNode = findKeyword(schemaNode, `${keyword}/then`);
     const elseNode = findKeyword(schemaNode, `${keyword}/else`);

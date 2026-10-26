@@ -11,7 +11,7 @@ describe("min-properties-covered-by-required", () => {
     const file = await lint(json);
     expect(file.messages.map((message) => message.reason)).to.eql(["'minProperties' has no effect, because 'required' already requires 2 properties"]);
     expect(file.messages[0].ruleId).to.equal("min-properties-covered-by-required");
-    expect(file.messages[0].source).to.equal("jsonschema-lint");
+    expect(file.messages[0].source).to.equal("json-schema-lint");
     expect(file.messages[0].fatal).to.equal(false);
     const keyword = `"minProperties": 2`;
     const offset = json.indexOf(keyword);

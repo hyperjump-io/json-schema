@@ -17,7 +17,7 @@ const limitPairs = [
 ];
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
-const singleValueRange = lintRule({ origin: "jsonschema-lint:single-value-range", url: "https://hyperjump.io/json-schema/linting/rules/single-value-range/" }, async (tree, file) => {
+const singleValueRange = lintRule({ origin: "json-schema-lint:single-value-range", url: "https://hyperjump.io/json-schema/linting/rules/single-value-range/" }, async (tree, file) => {
   const session = file.data.jsonSchemaSession;
   if (session === undefined) {
     return;

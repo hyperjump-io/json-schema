@@ -8,7 +8,7 @@ describe("min-max-contains-without-contains", () => {
     const file = await lint(`{ "$schema": "https://json-schema.org/v1", "minContains": 1 }`);
     expect(file.messages.map((message) => message.reason)).to.eql(["'minContains' has no effect without 'contains'"]);
     expect(file.messages[0].ruleId).to.equal("min-max-contains-without-contains");
-    expect(file.messages[0].source).to.equal("jsonschema-lint");
+    expect(file.messages[0].source).to.equal("json-schema-lint");
     expect(file.messages[0].place).to.eql({
       start: { line: 1, column: 44, offset: 43 },
       end: { line: 1, column: 60, offset: 59 }

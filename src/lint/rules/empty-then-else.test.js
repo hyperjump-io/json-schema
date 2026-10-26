@@ -11,7 +11,7 @@ describe("empty-then-else", () => {
     const file = await lint(json);
     expect(file.messages.map((message) => message.reason)).to.eql(["'then' has no effect, because every value is valid against it"]);
     expect(file.messages[0].ruleId).to.equal("empty-then-else");
-    expect(file.messages[0].source).to.equal("jsonschema-lint");
+    expect(file.messages[0].source).to.equal("json-schema-lint");
     expect(file.messages[0].fatal).to.equal(false);
     const keyword = `"then": {}`;
     const offset = json.indexOf(keyword);

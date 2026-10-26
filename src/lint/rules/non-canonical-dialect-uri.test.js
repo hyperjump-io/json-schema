@@ -13,7 +13,7 @@ describe("non-canonical-dialect-uri", () => {
       `'${draft07}' should be '${draft07}#', the URI its meta-schema identifies itself with. Implementations that compare dialect URIs as strings won't recognize it.`
     ]);
     expect(file.messages[0].ruleId).to.equal("non-canonical-dialect-uri");
-    expect(file.messages[0].source).to.equal("jsonschema-lint");
+    expect(file.messages[0].source).to.equal("json-schema-lint");
     expect(file.messages[0].fatal).to.equal(false);
     expect(file.messages[0].place).to.eql({
       start: { line: 1, column: 14, offset: 13 },

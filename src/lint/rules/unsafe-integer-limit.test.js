@@ -11,7 +11,7 @@ describe("unsafe-integer-limit", () => {
     const file = await lint(json);
     expect(file.messages.map((message) => message.reason)).to.eql([message("maximum"), message("minimum")]);
     expect(file.messages[0].ruleId).to.equal("unsafe-integer-limit");
-    expect(file.messages[0].source).to.equal("jsonschema-lint");
+    expect(file.messages[0].source).to.equal("json-schema-lint");
     expect(file.messages[0].fatal).to.equal(false);
     const keyword = `"maximum": 90071992547409980`;
     const offset = json.indexOf(keyword);

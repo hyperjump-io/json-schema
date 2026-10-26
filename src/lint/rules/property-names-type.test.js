@@ -14,7 +14,7 @@ describe("property-names-type", () => {
     const file = await lint(`{ "$schema": "${draft202012}", "propertyNames": { "type": "string", "pattern": "^a" } }`);
     expect(file.messages.map((message) => message.reason)).to.eql([noEffect]);
     expect(file.messages[0].ruleId).to.equal("property-names-type");
-    expect(file.messages[0].source).to.equal("jsonschema-lint");
+    expect(file.messages[0].source).to.equal("json-schema-lint");
     expect(file.messages[0].fatal).to.equal(false);
     expect(file.messages[0].place).to.eql({
       start: { line: 1, column: 81, offset: 80 },

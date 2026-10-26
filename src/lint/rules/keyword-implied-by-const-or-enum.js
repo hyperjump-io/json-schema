@@ -6,7 +6,7 @@ import { lintRule } from "../lint-rule.js";
  */
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
-const keywordImpliedByConstOrEnum = lintRule({ origin: "jsonschema-lint:keyword-implied-by-const-or-enum", url: "https://hyperjump.io/json-schema/linting/rules/keyword-implied-by-const-or-enum/" }, async (tree, file) => {
+const keywordImpliedByConstOrEnum = lintRule({ origin: "json-schema-lint:keyword-implied-by-const-or-enum", url: "https://hyperjump.io/json-schema/linting/rules/keyword-implied-by-const-or-enum/" }, async (tree, file) => {
   const session = file.data.jsonSchemaSession;
   if (session === undefined) {
     return;

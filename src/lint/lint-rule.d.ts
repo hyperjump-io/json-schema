@@ -7,19 +7,19 @@ import type { JsonSchemaDocumentNode } from "../schema/schema-ast.d.ts";
  * (`<source>:<ruleId>`) identifies its messages.
  *
  * It also applies configuration comments. A `$comment` that starts with
- * `jsonschema-lint-disable` turns rules off for the schema it's in,
+ * `json-schema-lint-disable` turns rules off for the schema it's in,
  * including its subschemas, and one that starts with
- * `jsonschema-lint-enable` turns them back on. Rule IDs after it, separated
+ * `json-schema-lint-enable` turns them back on. Rule IDs after it, separated
  * by spaces, are the rules it covers. Without any, it covers every rule. A
  * rule is named by its rule ID, without its source. The innermost schema
  * with a directive that covers a rule decides whether it's on.
  *
  * ```json
  * {
- *   "$comment": "jsonschema-lint-disable then-else-without-if",
+ *   "$comment": "json-schema-lint-disable then-else-without-if",
  *   "then": true,
  *   "properties": {
- *     "foo": { "$comment": "jsonschema-lint-enable then-else-without-if", "then": true }
+ *     "foo": { "$comment": "json-schema-lint-enable then-else-without-if", "then": true }
  *   }
  * }
  * ```
@@ -29,7 +29,7 @@ import type { JsonSchemaDocumentNode } from "../schema/schema-ast.d.ts";
  *
  * A directive that names a rule that isn't used is a warning
  * (`unknown-rule`), and so is a `$comment` that starts with
- * `jsonschema-lint-` but isn't a directive (`unknown-directive`). A rule is
+ * `json-schema-lint-` but isn't a directive (`unknown-directive`). A rule is
  * used if it's made with this function and added to the processor, even if
  * it's off.
  *

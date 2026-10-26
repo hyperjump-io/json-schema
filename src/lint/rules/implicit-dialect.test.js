@@ -19,7 +19,7 @@ describe("implicit-dialect", () => {
       `The schema doesn't declare its dialect, so it's '${draft202012}' only because of how it was loaded. Add '"$schema": "${draft202012}"' so other tools read it the same way.`
     ]);
     expect(file.messages[0].ruleId).to.equal("implicit-dialect");
-    expect(file.messages[0].source).to.equal("jsonschema-lint");
+    expect(file.messages[0].source).to.equal("json-schema-lint");
     expect(file.messages[0].fatal).to.equal(false);
     expect(file.messages[0].place).to.eql({
       start: { line: 1, column: 1, offset: 0 },

@@ -8,7 +8,7 @@ describe("empty-enum", () => {
     const file = await lint(`{ "$schema": "https://json-schema.org/v1", "enum": [] }`);
     expect(file.messages.map((message) => message.reason)).to.eql(["'enum' is empty, so nothing is valid against it"]);
     expect(file.messages[0].ruleId).to.equal("empty-enum");
-    expect(file.messages[0].source).to.equal("jsonschema-lint");
+    expect(file.messages[0].source).to.equal("json-schema-lint");
     expect(file.messages[0].fatal).to.equal(false);
     expect(file.messages[0].place).to.eql({
       start: { line: 1, column: 44, offset: 43 },

@@ -8,7 +8,7 @@ describe("then-else-without-if", () => {
     const file = await lint(`{ "$schema": "https://json-schema.org/v1", "then": { "minLength": 1 } }`);
     expect(file.messages.map((message) => message.reason)).to.eql(["'then' has no effect without 'if'"]);
     expect(file.messages[0].ruleId).to.equal("then-else-without-if");
-    expect(file.messages[0].source).to.equal("jsonschema-lint");
+    expect(file.messages[0].source).to.equal("json-schema-lint");
     expect(file.messages[0].fatal).to.equal(false);
     expect(file.messages[0].place).to.eql({
       start: { line: 1, column: 44, offset: 43 },

@@ -8,7 +8,7 @@ import { siblingKeyword, visitKeywords } from "../utilities.js";
 const ifUri = "https://json-schema.org/keyword/if";
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
-const thenElseWithoutIf = lintRule({ origin: "jsonschema-lint:then-else-without-if", url: "https://hyperjump.io/json-schema/linting/rules/then-else-without-if/" }, (tree, file) => {
+const thenElseWithoutIf = lintRule({ origin: "json-schema-lint:then-else-without-if", url: "https://hyperjump.io/json-schema/linting/rules/then-else-without-if/" }, (tree, file) => {
   for (const keywordUri of ["https://json-schema.org/keyword/then", "https://json-schema.org/keyword/else"]) {
     visitKeywords(tree, keywordUri, (keywordNode, schemaNode) => {
       if (siblingKeyword(schemaNode, ifUri) === undefined) {

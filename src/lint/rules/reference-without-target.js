@@ -7,7 +7,7 @@ import { visitReferences } from "../utilities.js";
  */
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
-const referenceWithoutTarget = lintRule({ origin: "jsonschema-lint:reference-without-target", url: "https://hyperjump.io/json-schema/linting/rules/reference-without-target/" }, async (tree, file) => {
+const referenceWithoutTarget = lintRule({ origin: "json-schema-lint:reference-without-target", url: "https://hyperjump.io/json-schema/linting/rules/reference-without-target/" }, async (tree, file) => {
   const session = file.data.jsonSchemaSession;
   if (session === undefined) {
     // The schema wasn't resolved, so there's nothing to find references in

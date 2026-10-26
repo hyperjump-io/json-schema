@@ -10,7 +10,7 @@ describe("read-only-and-write-only", () => {
       "'readOnly' and 'writeOnly' are both true, so the value is never retrieved and can't be changed"
     ]);
     expect(file.messages[0].ruleId).to.equal("read-only-and-write-only");
-    expect(file.messages[0].source).to.equal("jsonschema-lint");
+    expect(file.messages[0].source).to.equal("json-schema-lint");
     expect(file.messages[0].fatal).to.equal(false);
     expect(file.messages[0].place).to.eql({
       start: { line: 1, column: 62, offset: 61 },

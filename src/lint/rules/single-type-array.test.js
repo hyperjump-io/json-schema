@@ -13,7 +13,7 @@ describe("single-type-array", () => {
       `'type' has only one type, so it can be "string" instead of an array`
     ]);
     expect(file.messages[0].ruleId).to.equal("single-type-array");
-    expect(file.messages[0].source).to.equal("jsonschema-lint");
+    expect(file.messages[0].source).to.equal("json-schema-lint");
     expect(file.messages[0].fatal).to.equal(false);
     expect(file.messages[0].place).to.eql({
       start: { line: 1, column: 70, offset: 69 },

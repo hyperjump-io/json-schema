@@ -13,7 +13,7 @@ describe("keyword-implied-by-const-or-enum", () => {
       "'minLength' has no effect, because it allows every value in 'enum'"
     ]);
     expect(file.messages[0].ruleId).to.equal("keyword-implied-by-const-or-enum");
-    expect(file.messages[0].source).to.equal("jsonschema-lint");
+    expect(file.messages[0].source).to.equal("json-schema-lint");
     expect(file.messages[0].fatal).to.equal(false);
     expect(file.messages[0].place).to.eql({
       start: { line: 1, column: 86, offset: 85 },

@@ -9,7 +9,7 @@ const readOnlyUri = "https://json-schema.org/keyword/readOnly";
 const writeOnlyUri = "https://json-schema.org/keyword/writeOnly";
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
-const readOnlyAndWriteOnly = lintRule({ origin: "jsonschema-lint:read-only-and-write-only", url: "https://hyperjump.io/json-schema/linting/rules/read-only-and-write-only/" }, (tree, file) => {
+const readOnlyAndWriteOnly = lintRule({ origin: "json-schema-lint:read-only-and-write-only", url: "https://hyperjump.io/json-schema/linting/rules/read-only-and-write-only/" }, (tree, file) => {
   visitKeywords(tree, readOnlyUri, (readOnlyNode, schemaNode) => {
     const writeOnlyNode = findKeyword(schemaNode, writeOnlyUri);
     if (writeOnlyNode === undefined || !isTrue(readOnlyNode) || !isTrue(writeOnlyNode)) {

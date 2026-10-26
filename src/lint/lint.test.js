@@ -19,7 +19,7 @@ const a = `{
 describe("lint", () => {
   test("results are plain data", async () => {
     expect(await jsonSchemaWith(a).lint("https://example.com/a", { plugins: [thenElseWithoutIf] })).to.eql([{
-      source: "jsonschema-lint",
+      source: "json-schema-lint",
       ruleId: "then-else-without-if",
       severity: "warn",
       uri: "https://example.com/a",
@@ -95,7 +95,7 @@ describe("lint", () => {
     const results = await jsonSchemaWith(`{
       "$schema": "${v1DialectUri}",
       "$id": "https://example.com/main",
-      "$comment": "jsonschema-lint-disable then-else-without-if",
+      "$comment": "json-schema-lint-disable then-else-without-if",
       "then": true
     }`).lint("https://example.com/main", { plugins: [thenElseWithoutIf] });
 

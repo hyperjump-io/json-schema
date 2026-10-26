@@ -13,7 +13,7 @@ describe("min-contains-zero-without-max-contains", () => {
     const file = await lint(json);
     expect(file.messages.map((message) => message.reason)).to.eql([message]);
     expect(file.messages[0].ruleId).to.equal("min-contains-zero-without-max-contains");
-    expect(file.messages[0].source).to.equal("jsonschema-lint");
+    expect(file.messages[0].source).to.equal("json-schema-lint");
     expect(file.messages[0].fatal).to.equal(false);
     const keyword = `"minContains": 0`;
     const offset = json.indexOf(keyword);

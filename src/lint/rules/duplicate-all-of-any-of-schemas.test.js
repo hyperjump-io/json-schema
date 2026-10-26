@@ -11,7 +11,7 @@ describe("duplicate-all-of-any-of-schemas", () => {
     const file = await lint(json);
     expect(file.messages.map((message) => message.reason)).to.eql(["This schema is already in 'allOf', so it has no effect"]);
     expect(file.messages[0].ruleId).to.equal("duplicate-all-of-any-of-schemas");
-    expect(file.messages[0].source).to.equal("jsonschema-lint");
+    expect(file.messages[0].source).to.equal("json-schema-lint");
     expect(file.messages[0].fatal).to.equal(false);
     const offset = json.lastIndexOf(`{ "type": "string" }`);
     expect(file.messages[0].place).to.eql({

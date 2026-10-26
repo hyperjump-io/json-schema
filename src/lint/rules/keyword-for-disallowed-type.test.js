@@ -16,7 +16,7 @@ describe("keyword-for-disallowed-type", () => {
     const file = await lint(json);
     expect(file.messages.map((message) => message.reason)).to.eql(["'minimum' applies only to numbers, which 'type' doesn't allow"]);
     expect(file.messages[0].ruleId).to.equal("keyword-for-disallowed-type");
-    expect(file.messages[0].source).to.equal("jsonschema-lint");
+    expect(file.messages[0].source).to.equal("json-schema-lint");
     expect(file.messages[0].fatal).to.equal(false);
     const keyword = `"minimum": 1`;
     const offset = json.indexOf(keyword);

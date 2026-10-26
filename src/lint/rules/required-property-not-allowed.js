@@ -6,7 +6,7 @@ import { propertySchemas, requiredNames, visitSchemas } from "../utilities.js";
  */
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
-const requiredPropertyNotAllowed = lintRule({ origin: "jsonschema-lint:required-property-not-allowed", url: "https://hyperjump.io/json-schema/linting/rules/required-property-not-allowed/" }, (tree, file) => {
+const requiredPropertyNotAllowed = lintRule({ origin: "json-schema-lint:required-property-not-allowed", url: "https://hyperjump.io/json-schema/linting/rules/required-property-not-allowed/" }, (tree, file) => {
   visitSchemas(tree, (schemaNode) => {
     const required = requiredNames(schemaNode);
     const requiredValue = required?.keywordNode.children[1];

@@ -4,7 +4,7 @@
 - A rule is made with `lintRule` from `src/lint/`, which wraps
   `unified-lint-rule`'s (see [Configuration comments](configuration-comments.md)), so its config is a severity
   (`"off"`, `"warn"`, `"error"`, or 0–2) and its own options. Its origin is
-  `jsonschema-lint:<name>`. The severity has to be in an array
+  `json-schema-lint:<name>`. The severity has to be in an array
   (`[rule, ["error"]]`, `[rule, [2, options]]`). A bare `"error"` is taken as
   the rule's options, at the default severity, which is a warning.
 - Rules are exported as `lint/rules/<name>`, the preset as

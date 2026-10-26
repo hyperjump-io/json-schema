@@ -41,7 +41,7 @@ describe("reference-without-target", () => {
     expect(reasons(file)).toEqual([expect.stringMatching(/^The reference doesn't find a schema\. Property 'bar' doesn't exist/)]);
     expect(file.messages[0]).toMatchObject({
       ruleId: "reference-without-target",
-      source: "jsonschema-lint",
+      source: "json-schema-lint",
       fatal: false,
       place: { start: { line: 1, column: 52 }, end: { line: 1, column: 65 } }
     });
@@ -143,7 +143,7 @@ describe("reference-without-target", () => {
   });
 
   test("it can be turned off with a configuration comment", async () => {
-    const file = await lint(`{ "$schema": "${v1}", "$comment": "jsonschema-lint-disable reference-without-target", "$ref": "#/$defs/bar" }`);
+    const file = await lint(`{ "$schema": "${v1}", "$comment": "json-schema-lint-disable reference-without-target", "$ref": "#/$defs/bar" }`);
     expect(file.messages).to.eql([]);
   });
 });

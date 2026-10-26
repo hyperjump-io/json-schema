@@ -11,7 +11,7 @@ describe("redundant-numeric-limit", () => {
     const file = await lint(json);
     expect(file.messages.map((message) => message.reason)).to.eql(["'maximum' has no effect, because 'exclusiveMaximum' is lower"]);
     expect(file.messages[0].ruleId).to.equal("redundant-numeric-limit");
-    expect(file.messages[0].source).to.equal("jsonschema-lint");
+    expect(file.messages[0].source).to.equal("json-schema-lint");
     expect(file.messages[0].fatal).to.equal(false);
     const keyword = `"maximum": 6`;
     const offset = json.indexOf(keyword);

@@ -11,7 +11,7 @@ describe("const-or-enum-value-for-disallowed-type", () => {
     const file = await lint(json);
     expect(file.messages.map((message) => message.reason)).to.eql(["This value is null, which 'type' doesn't allow, so it's never valid"]);
     expect(file.messages[0].ruleId).to.equal("const-or-enum-value-for-disallowed-type");
-    expect(file.messages[0].source).to.equal("jsonschema-lint");
+    expect(file.messages[0].source).to.equal("json-schema-lint");
     expect(file.messages[0].fatal).to.equal(false);
     const offset = json.indexOf("null");
     expect(file.messages[0].place).to.eql({

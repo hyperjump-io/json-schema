@@ -23,7 +23,7 @@ console.log(reporter(file));
 
 ```text
 person.schema.json
-10:3-10:34 warning 'then' has no effect without 'if' then-else-without-if jsonschema-lint
+10:3-10:34 warning 'then' has no effect without 'if' then-else-without-if json-schema-lint
 
 ⚠ 1 warning
 ```

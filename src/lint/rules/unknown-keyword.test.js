@@ -19,7 +19,7 @@ describe("unknown-keyword", () => {
       "'properites' isn't a keyword in this dialect. Did you mean 'properties'?"
     ]);
     expect(file.messages[0].ruleId).to.equal("unknown-keyword");
-    expect(file.messages[0].source).to.equal("jsonschema-lint");
+    expect(file.messages[0].source).to.equal("json-schema-lint");
     expect(file.messages[0].fatal).to.equal(false);
     expect(file.messages[0].place).to.eql({
       start: { line: 1, column: 62, offset: 61 },

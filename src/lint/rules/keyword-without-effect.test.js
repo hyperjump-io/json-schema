@@ -12,7 +12,7 @@ describe("keyword-without-effect", () => {
     const file = await lint(`{ "$schema": "${draft202012}", "properties": {} }`);
     expect(file.messages.map((message) => message.reason)).to.eql(["'properties' has no effect"]);
     expect(file.messages[0].ruleId).to.equal("keyword-without-effect");
-    expect(file.messages[0].source).to.equal("jsonschema-lint");
+    expect(file.messages[0].source).to.equal("json-schema-lint");
     expect(file.messages[0].fatal).to.equal(false);
     expect(file.messages[0].place).to.eql({
       start: { line: 1, column: 62, offset: 61 },

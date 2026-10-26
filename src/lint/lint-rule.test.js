@@ -9,7 +9,7 @@ describe("configuration comments", () => {
   test("a rule is off in the schema with the directive", async () => {
     const file = await lint(`{
       "$schema": "https://json-schema.org/v1",
-      "$comment": "jsonschema-lint-disable then-else-without-if",
+      "$comment": "json-schema-lint-disable then-else-without-if",
       "then": true
     }`);
     expect(file.messages).to.eql([]);
@@ -18,7 +18,7 @@ describe("configuration comments", () => {
   test("a rule is off in subschemas", async () => {
     const file = await lint(`{
       "$schema": "https://json-schema.org/v1",
-      "$comment": "jsonschema-lint-disable then-else-without-if",
+      "$comment": "json-schema-lint-disable then-else-without-if",
       "properties": { "foo": { "then": true } }
     }`);
     expect(file.messages).to.eql([]);
@@ -28,7 +28,7 @@ describe("configuration comments", () => {
     const file = await lint(`{
       "$schema": "https://json-schema.org/v1",
       "properties": {
-        "foo": { "$comment": "jsonschema-lint-disable then-else-without-if", "then": true },
+        "foo": { "$comment": "json-schema-lint-disable then-else-without-if", "then": true },
         "bar": { "then": true }
       },
       "else": true
@@ -42,7 +42,7 @@ describe("configuration comments", () => {
   test("only the rules it names are off", async () => {
     const file = await lint(`{
       "$schema": "https://json-schema.org/v1",
-      "$comment": "jsonschema-lint-disable min-max-contains-without-contains",
+      "$comment": "json-schema-lint-disable min-max-contains-without-contains",
       "then": true,
       "minContains": 2
     }`);
@@ -52,7 +52,7 @@ describe("configuration comments", () => {
   test("it can name more than one rule", async () => {
     const file = await lint(`{
       "$schema": "https://json-schema.org/v1",
-      "$comment": "jsonschema-lint-disable then-else-without-if min-max-contains-without-contains",
+      "$comment": "json-schema-lint-disable then-else-without-if min-max-contains-without-contains",
       "then": true,
       "minContains": 2
     }`);
@@ -62,7 +62,7 @@ describe("configuration comments", () => {
   test("every rule is off if it names none", async () => {
     const file = await lint(`{
       "$schema": "https://json-schema.org/v1",
-      "$comment": "jsonschema-lint-disable",
+      "$comment": "json-schema-lint-disable",
       "then": true,
       "minContains": 2
     }`);
@@ -72,9 +72,9 @@ describe("configuration comments", () => {
   test("a directive inside a schema where the rule is already off doesn't turn it back on", async () => {
     const file = await lint(`{
       "$schema": "https://json-schema.org/v1",
-      "$comment": "jsonschema-lint-disable then-else-without-if",
+      "$comment": "json-schema-lint-disable then-else-without-if",
       "properties": {
-        "foo": { "$comment": "jsonschema-lint-disable then-else-without-if" }
+        "foo": { "$comment": "json-schema-lint-disable then-else-without-if" }
       },
       "then": true
     }`);
@@ -84,7 +84,7 @@ describe("configuration comments", () => {
   test("a comment that doesn't start with the directive is just a comment", async () => {
     const file = await lint(`{
       "$schema": "https://json-schema.org/v1",
-      "$comment": "Don't use jsonschema-lint-disable here",
+      "$comment": "Don't use json-schema-lint-disable here",
       "then": true
     }`);
     expect(ruleIds(file)).to.eql(["then-else-without-if"]);
@@ -93,7 +93,7 @@ describe("configuration comments", () => {
   test("schema problems can't be turned off", async () => {
     const file = await lint(`{
       "$schema": "https://json-schema.org/v1",
-      "$comment": "jsonschema-lint-disable",
+      "$comment": "json-schema-lint-disable",
       "minLength": -1
     }`);
     expect(ruleIds(file)).to.eql(["https://json-schema.org/keyword/minLength"]);
@@ -102,7 +102,7 @@ describe("configuration comments", () => {
   test("$comment is a comment in a dialect without it", async () => {
     const file = await lint(`{
       "$schema": "http://json-schema.org/draft-04/schema#",
-      "$comment": "jsonschema-lint-disable",
+      "$comment": "json-schema-lint-disable",
       "properties": { "foo": { "$ref": "#/definitions/missing" } }
     }`);
     expect(file.messages).to.eql([]);
@@ -111,10 +111,10 @@ describe("configuration comments", () => {
   test("a rule is turned back on in a subschema", async () => {
     const file = await lint(`{
       "$schema": "https://json-schema.org/v1",
-      "$comment": "jsonschema-lint-disable then-else-without-if",
+      "$comment": "json-schema-lint-disable then-else-without-if",
       "then": true,
       "properties": {
-        "foo": { "$comment": "jsonschema-lint-enable then-else-without-if", "then": true },
+        "foo": { "$comment": "json-schema-lint-enable then-else-without-if", "then": true },
         "bar": { "then": true }
       }
     }`);
@@ -124,9 +124,9 @@ describe("configuration comments", () => {
   test("every rule is turned back on if it names none", async () => {
     const file = await lint(`{
       "$schema": "https://json-schema.org/v1",
-      "$comment": "jsonschema-lint-disable",
+      "$comment": "json-schema-lint-disable",
       "properties": {
-        "foo": { "$comment": "jsonschema-lint-enable", "then": true, "minContains": 2 }
+        "foo": { "$comment": "json-schema-lint-enable", "then": true, "minContains": 2 }
       }
     }`);
     expect(ruleIds(file)).to.eql(["then-else-without-if", "min-max-contains-without-contains"]);
@@ -135,12 +135,12 @@ describe("configuration comments", () => {
   test("turning a rule off in a subschema of one that turned it on", async () => {
     const file = await lint(`{
       "$schema": "https://json-schema.org/v1",
-      "$comment": "jsonschema-lint-disable",
+      "$comment": "json-schema-lint-disable",
       "properties": {
         "foo": {
-          "$comment": "jsonschema-lint-enable then-else-without-if",
+          "$comment": "json-schema-lint-enable then-else-without-if",
           "properties": {
-            "bar": { "$comment": "jsonschema-lint-disable then-else-without-if", "then": true }
+            "bar": { "$comment": "json-schema-lint-disable then-else-without-if", "then": true }
           },
           "else": true
         }
@@ -152,22 +152,22 @@ describe("configuration comments", () => {
   test("an unknown rule is a warning", async () => {
     const file = await lint(`{
       "$schema": "https://json-schema.org/v1",
-      "$comment": "jsonschema-lint-disable then-else-without-if not-a-rule"
+      "$comment": "json-schema-lint-disable then-else-without-if not-a-rule"
     }`);
     expect(file.messages.map((message) => [message.source, message.ruleId, message.reason, message.fatal, message.line])).to.eql([
-      ["jsonschema-lint", "unknown-rule", "Unknown rule 'not-a-rule' in 'jsonschema-lint-disable'", false, 3]
+      ["json-schema-lint", "unknown-rule", "Unknown rule 'not-a-rule' in 'json-schema-lint-disable'", false, 3]
     ]);
   });
 
   test("an unknown rule in an enable directive is a warning", async () => {
-    const file = await lint(`{ "$schema": "https://json-schema.org/v1", "$comment": "jsonschema-lint-enable not-a-rule" }`);
+    const file = await lint(`{ "$schema": "https://json-schema.org/v1", "$comment": "json-schema-lint-enable not-a-rule" }`);
     expect(ruleIds(file)).to.eql(["unknown-rule"]);
   });
 
   test("a rule that's off is known", async () => {
     const file = new VFile({
       path: "/schemas/a.schema.json",
-      value: `{ "$schema": "https://json-schema.org/v1", "$comment": "jsonschema-lint-disable then-else-without-if" }`
+      value: `{ "$schema": "https://json-schema.org/v1", "$comment": "json-schema-lint-disable then-else-without-if" }`
     });
     await linter()
       .use(recommended)
@@ -177,15 +177,15 @@ describe("configuration comments", () => {
   });
 
   test("an unknown directive is a warning", async () => {
-    const file = await lint(`{ "$schema": "https://json-schema.org/v1", "$comment": "jsonschema-lint-ignore then-else-without-if", "then": true }`);
+    const file = await lint(`{ "$schema": "https://json-schema.org/v1", "$comment": "json-schema-lint-ignore then-else-without-if", "then": true }`);
     expect(file.messages.map((message) => [message.ruleId, message.reason])).to.eql([
-      ["unknown-directive", "Unknown directive 'jsonschema-lint-ignore'. Expected 'jsonschema-lint-disable' or 'jsonschema-lint-enable'."],
+      ["unknown-directive", "Unknown directive 'json-schema-lint-ignore'. Expected 'json-schema-lint-disable' or 'json-schema-lint-enable'."],
       ["then-else-without-if", "'then' has no effect without 'if'"]
     ]);
   });
 
   test("warnings about directives can't be turned off", async () => {
-    const file = await lint(`{ "$schema": "https://json-schema.org/v1", "$comment": "jsonschema-lint-disable not-a-rule", "properties": { "foo": { "$comment": "jsonschema-lint-disable" } } }`);
+    const file = await lint(`{ "$schema": "https://json-schema.org/v1", "$comment": "json-schema-lint-disable not-a-rule", "properties": { "foo": { "$comment": "json-schema-lint-disable" } } }`);
     expect(ruleIds(file)).to.eql(["unknown-rule"]);
   });
 });

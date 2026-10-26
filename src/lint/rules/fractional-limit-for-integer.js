@@ -23,7 +23,7 @@ const limits = [
 ];
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
-const fractionalLimitForInteger = lintRule({ origin: "jsonschema-lint:fractional-limit-for-integer", url: "https://hyperjump.io/json-schema/linting/rules/fractional-limit-for-integer/" }, (tree, file) => {
+const fractionalLimitForInteger = lintRule({ origin: "json-schema-lint:fractional-limit-for-integer", url: "https://hyperjump.io/json-schema/linting/rules/fractional-limit-for-integer/" }, (tree, file) => {
   visitSchemas(tree, (schemaNode) => {
     // Only numbers that are integers are valid
     const type = typeNames(schemaNode);

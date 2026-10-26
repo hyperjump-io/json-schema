@@ -6,7 +6,7 @@ import { typeNames, visitKeywords } from "../utilities.js";
  */
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
-const multipleOfOne = lintRule({ origin: "jsonschema-lint:multiple-of-one", url: "https://hyperjump.io/json-schema/linting/rules/multiple-of-one/" }, (tree, file) => {
+const multipleOfOne = lintRule({ origin: "json-schema-lint:multiple-of-one", url: "https://hyperjump.io/json-schema/linting/rules/multiple-of-one/" }, (tree, file) => {
   visitKeywords(tree, "https://json-schema.org/keyword/multipleOf", (keywordNode, schemaNode) => {
     const valueNode = keywordNode.children[1];
     // Without `type`, other types are valid, so it can't be replaced

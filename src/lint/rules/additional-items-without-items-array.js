@@ -9,7 +9,7 @@ const additionalItemsUri = "https://json-schema.org/keyword/draft-2019-09/additi
 const itemsUri = "https://json-schema.org/keyword/draft-2019-09/items";
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
-const additionalItemsWithoutItemsArray = lintRule({ origin: "jsonschema-lint:additional-items-without-items-array", url: "https://hyperjump.io/json-schema/linting/rules/additional-items-without-items-array/" }, (tree, file) => {
+const additionalItemsWithoutItemsArray = lintRule({ origin: "json-schema-lint:additional-items-without-items-array", url: "https://hyperjump.io/json-schema/linting/rules/additional-items-without-items-array/" }, (tree, file) => {
   visitKeywords(tree, additionalItemsUri, (keywordNode, schemaNode) => {
     const name = keywordNode.children[0].value;
     const itemsNode = findKeyword(schemaNode, itemsUri);

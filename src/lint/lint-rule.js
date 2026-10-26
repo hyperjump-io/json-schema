@@ -13,7 +13,7 @@ import { visitKeywords } from "./utilities.js";
 /**
  * A `$comment` directive. It covers the schema it's in, from `start` to
  * `end`. `enabled` is undefined for a directive that isn't
- * `jsonschema-lint-disable` or `jsonschema-lint-enable`, which is only
+ * `json-schema-lint-disable` or `json-schema-lint-enable`, which is only
  * reported. `ruleIds` is undefined if it covers every rule.
  *
  * @typedef {{
@@ -30,12 +30,12 @@ import { visitKeywords } from "./utilities.js";
 // unknown keyword
 const commentUris = ["https://json-schema.org/keyword/comment", `${unknownKeyword.uri}#$comment`];
 
-const directivePrefix = "jsonschema-lint-";
+const directivePrefix = "json-schema-lint-";
 
 /** @type Record<string, boolean> */
 const directiveStates = {
-  "jsonschema-lint-disable": false,
-  "jsonschema-lint-enable": true
+  "json-schema-lint-disable": false,
+  "json-schema-lint-enable": true
 };
 
 /**
@@ -153,10 +153,10 @@ const checkDirectives = (tree, file, known) => {
   for (const directive of directives(tree)) {
     const place = directive.node.position;
     if (directive.enabled === undefined) {
-      file.message(`Unknown directive '${directive.name}'. Expected 'jsonschema-lint-disable' or 'jsonschema-lint-enable'.`, {
+      file.message(`Unknown directive '${directive.name}'. Expected 'json-schema-lint-disable' or 'json-schema-lint-enable'.`, {
         place: place,
         ruleId: "unknown-directive",
-        source: "jsonschema-lint"
+        source: "json-schema-lint"
       });
       continue;
     }
@@ -166,7 +166,7 @@ const checkDirectives = (tree, file, known) => {
         file.message(`Unknown rule '${ruleId}' in '${directive.name}'`, {
           place: place,
           ruleId: "unknown-rule",
-          source: "jsonschema-lint"
+          source: "json-schema-lint"
         });
       }
     }

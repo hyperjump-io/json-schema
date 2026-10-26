@@ -13,7 +13,7 @@ describe("fractional-limit-for-integer", () => {
       "'maximum' isn't an integer, but 'type' only allows integers, so it's the same as 7"
     ]);
     expect(file.messages[0].ruleId).to.equal("fractional-limit-for-integer");
-    expect(file.messages[0].source).to.equal("jsonschema-lint");
+    expect(file.messages[0].source).to.equal("json-schema-lint");
     expect(file.messages[0].fatal).to.equal(false);
     const keyword = `"maximum": 7.8`;
     const offset = json.indexOf(keyword);

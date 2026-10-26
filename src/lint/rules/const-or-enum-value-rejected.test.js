@@ -13,7 +13,7 @@ describe("const-or-enum-value-rejected", () => {
       "'multipleOf' rejects this value, so it's never valid"
     ]);
     expect(file.messages[0].ruleId).to.equal("const-or-enum-value-rejected");
-    expect(file.messages[0].source).to.equal("jsonschema-lint");
+    expect(file.messages[0].source).to.equal("json-schema-lint");
     expect(file.messages[0].fatal).to.equal(false);
     expect(file.messages[0].place).to.eql({
       start: { line: 1, column: 75, offset: 74 },

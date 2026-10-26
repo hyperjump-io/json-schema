@@ -1,8 +1,8 @@
 # Configuration comments
 
-- A `$comment` that starts with `jsonschema-lint-disable` turns rules off
+- A `$comment` that starts with `json-schema-lint-disable` turns rules off
   for the schema it's in, including its subschemas, and one that starts
-  with `jsonschema-lint-enable` turns them back on. The rule IDs after it
+  with `json-schema-lint-enable` turns them back on. The rule IDs after it
   are the rules it covers, and without any, it covers every rule. A rule is
   named by its rule ID, without its source.
 - Scopes nest. The innermost schema with a directive that covers a rule
@@ -13,9 +13,13 @@
   without `$comment` (draft-04, draft-06) too.
 - A directive that names a rule the processor doesn't use is a warning
   (`unknown-rule`), and so is a `$comment` that starts with
-  `jsonschema-lint-` but isn't a directive (`unknown-directive`). Both have
-  the source `jsonschema-lint` and can't be turned off. A rule is used if
+  `json-schema-lint-` but isn't a directive (`unknown-directive`). Both have
+  the source `json-schema-lint` and can't be turned off. A rule is used if
   it's made with `lintRule` and added to the processor, even if it's off.
+- The prefix is the lint rules' source, `json-schema-lint`, spelled like
+  `json-schema`, the source of schema and validation errors. It was
+  `jsonschema-lint` while v2 was in development, which looked like a
+  misspelling next to it.
 - Rules are made with this package's `lintRule`, which wraps
   `unified-lint-rule`'s. When a rule's transformer finishes, it removes the
   messages the rule just added where a directive turns the rule off. The

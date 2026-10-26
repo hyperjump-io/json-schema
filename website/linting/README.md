@@ -18,7 +18,7 @@ can.
 ```
 
 ```text
-7:16-7:22 warning 'nmae' is required, but no 'properties' or 'patternProperties' defines it, so any value is allowed  required-property-not-defined  jsonschema-lint
+7:16-7:22 warning 'nmae' is required, but no 'properties' or 'patternProperties' defines it, so any value is allowed  required-property-not-defined  json-schema-lint
 ```
 
 Every rule has a page that explains what it reports, why it matters, and
