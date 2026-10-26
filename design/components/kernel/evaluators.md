@@ -26,6 +26,15 @@
   them again. Merging is part of the evaluators, not a pass, because a
   merged loop isn't an expression. With plugins, only matching is merged
   (see [Plugins](plugins.md)).
+- Arrays are evaluated the same way in `fast.js`. A schema's `typeIs` of
+  only `array`, `itemCount`, and `eachItem` are one evaluator that tests
+  whether the instance is an array once, and an `eachItem` whose item
+  schema only checks the type checks it in the loop instead of calling
+  it for each item. A call costs about as much as the check, so on arrays
+  of numbers, like GeoJSON's coordinates, calls were most of the time
+  ([Item loops](../../benchmarks/kernel-in-src/item-loops.md)). They aren't passes: the expression is the
+  same, and only how `fast.js` runs it changes. `instrumented.js` can't
+  merge them, because each group has its own hook calls.
 - Evaluators depend on the instance representation, whether it's
   annotating, whether there are plugins, and whether one has an
   `annotation` hook, because that's what the optimizations depend on. Not

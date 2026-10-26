@@ -83,7 +83,8 @@ export const fast = (jsonSchema, kernel) => {
     }
 
     const expressions = compiled.keywords.map(({ expression }) => expression).filter((expression) => !isInert(expression));
-    const groups = mergeProperties(expressions);
+    const { merged, rest } = mergeItems(expressions);
+    const groups = merged === undefined ? mergeProperties(expressions) : [merged, ...mergeProperties(rest)];
 
     let evaluator = every(groups);
 
@@ -249,13 +250,7 @@ export const fast = (jsonSchema, kernel) => {
           return (instance) => typeof instance === only;
         }
 
-        // A bit for each type in `typeIndexes`
-        let mask = 0;
-        for (const [index, type] of typeIndexes.entries()) {
-          if (types.has(type)) {
-            mask |= 1 << index;
-          }
-        }
+        const mask = typeMask(expression.types);
         if (!integer || types.has("number")) {
           return (instance) => (mask & (1 << typeIndex(instance))) !== 0;
         }
@@ -359,8 +354,13 @@ export const fast = (jsonSchema, kernel) => {
         };
       }
       case "eachItem": {
-        const of = child(expression.of);
         const unevaluated = "unevaluated" in expression;
+        if (!unevaluated && onlyTypes(expression.of) !== undefined) {
+          const items = eachItemLoop(expression);
+          return (instance, marks) => !Array.isArray(instance) || items(instance, marks);
+        }
+
+        const of = child(expression.of);
         const from = "from" in expression ? expression.from : 0;
         return (instance, marks) => {
           if (!Array.isArray(instance)) {
@@ -669,6 +669,115 @@ export const fast = (jsonSchema, kernel) => {
       }
       return true;
     };
+  };
+
+  /**
+   * A schema's `typeIs` of only `array`, `itemCount`, and `eachItem` (not
+   * `unevaluated`), merged into one evaluator if it has two of them, which
+   * tests whether the instance is an array once. Each is a call of its own
+   * otherwise, and arrays of arrays, like GeoJSON's coordinates, made that
+   * many calls for every array. The rest are evaluated after it, which
+   * doesn't change the result, and `eachItem` marks before anything that
+   * reads marks.
+   *
+   * @type (expressions: Expression[]) => { merged: Evaluator | undefined; rest: Expression[] }
+   */
+  const mergeItems = (expressions) => {
+    const type = expressions.find((expression) => expression.op === "typeIs" && expression.types.length === 1 && expression.types[0] === "array");
+    const count = expressions.find((expression) => expression.op === "itemCount");
+    const each = expressions.find((expression) => expression.op === "eachItem" && !("unevaluated" in expression));
+    if (Number(type !== undefined) + Number(count !== undefined) + Number(each !== undefined) < 2) {
+      return { merged: undefined, rest: expressions };
+    }
+
+    const isArray = type !== undefined;
+    const { min = 0, max = Infinity } = count?.op === "itemCount" ? count : {};
+    const items = each?.op === "eachItem" && !("unevaluated" in each) ? eachItemLoop(each) : undefined;
+    const rest = expressions.filter((expression) => expression !== type && expression !== count && expression !== each);
+    return {
+      merged: (instance, marks) => {
+        if (!Array.isArray(instance)) {
+          return !isArray;
+        }
+        return instance.length >= min && instance.length <= max && (items === undefined || items(instance, marks));
+      },
+      rest
+    };
+  };
+
+  /**
+   * `eachItem` (not `unevaluated`) on an array. An item schema that only
+   * checks the type is checked in the loop instead of being called for each
+   * item, which was most of the time on arrays of numbers.
+   *
+   * @type (expression: { from: number; of: Expression }) => (instance: Json[], marks: Marks) => boolean
+   */
+  const eachItemLoop = ({ from, of }) => {
+    const types = onlyTypes(of);
+    if (types === undefined) {
+      const evaluate = child(of);
+      return (instance, marks) => {
+        for (let index = from; index < instance.length; index++) {
+          if (!evaluate(instance[index], undefined)) {
+            return false;
+          }
+          marks?.add(index);
+        }
+        return true;
+      };
+    }
+
+    // Arrays of numbers and of strings are the most common, and `typeof`
+    // with a literal type was faster than the mask
+    if (types.length === 1 && types[0] === "number") {
+      return (instance, marks) => {
+        for (let index = from; index < instance.length; index++) {
+          if (typeof instance[index] !== "number") {
+            return false;
+          }
+          marks?.add(index);
+        }
+        return true;
+      };
+    } else if (types.length === 1 && types[0] === "string") {
+      return (instance, marks) => {
+        for (let index = from; index < instance.length; index++) {
+          if (typeof instance[index] !== "string") {
+            return false;
+          }
+          marks?.add(index);
+        }
+        return true;
+      };
+    }
+
+    const mask = typeMask(types);
+    const integer = types.includes("integer") && !types.includes("number");
+    return (instance, marks) => {
+      for (let index = from; index < instance.length; index++) {
+        const item = instance[index];
+        if ((mask & (1 << typeIndex(item))) === 0 && !(integer && Number.isInteger(item))) {
+          return false;
+        }
+        marks?.add(index);
+      }
+      return true;
+    };
+  };
+
+  /**
+   * The types an expression checks, if that's all it does, including
+   * through applying a schema that only checks the type
+   *
+   * @type (expression: Expression) => TypeName[] | undefined
+   */
+  const onlyTypes = (expression) => {
+    if (expression.op === "apply" && typeof kernel.schemas[expression.schema] === "object") {
+      const compiled = /** @type Exclude<CompiledSchema, boolean> */ (kernel.schemas[expression.schema]);
+      const expressions = compiled.keywords.map((group) => group.expression).filter((subexpression) => !isInert(subexpression));
+      return expressions.length === 1 && expressions[0].op === "typeIs" ? expressions[0].types : undefined;
+    }
+    return expression.op === "typeIs" ? expression.types : undefined;
   };
 
   /**
@@ -998,6 +1107,22 @@ const addAll = (marks, more) => {
  * @type (expression: Expression) => boolean
  */
 const isInert = (expression) => expression.op === "pass" || expression.op === "annotate";
+
+/**
+ * A bit for each of `types` in `typeIndexes`. An integer's index is
+ * `number`'s, so `integer` without `number` has to be checked too.
+ *
+ * @type (types: TypeName[]) => number
+ */
+const typeMask = (types) => {
+  let mask = 0;
+  for (const [index, type] of typeIndexes.entries()) {
+    if (types.includes(type)) {
+      mask |= 1 << index;
+    }
+  }
+  return mask;
+};
 
 /** @type (instance: Json) => number */
 const typeIndex = (instance) => {

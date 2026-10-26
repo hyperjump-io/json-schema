@@ -20,11 +20,11 @@ import dynamicAnchorKeyword from "../keywords/dynamicAnchor.js";
 
 const dialectUri = "https://example.com/dialect";
 
-/** @type Keyword<TypeName> */
+/** @type Keyword<TypeName | TypeName[]> */
 const typeKeyword = {
   uri: "https://example.com/keyword/type",
   shape: "data",
-  lower: (type) => ({ op: "typeIs", types: [type] })
+  lower: (type) => ({ op: "typeIs", types: Array.isArray(type) ? type : [type] })
 };
 
 /** @type Keyword<number> */
@@ -53,6 +53,13 @@ const itemsKeyword = {
   uri: "https://example.com/keyword/items",
   shape: "schema",
   lower: (schema) => ({ op: "eachItem", from: 0, of: schema })
+};
+
+/** @type Keyword<number> */
+const minItemsKeyword = {
+  uri: "https://example.com/keyword/minItems",
+  shape: "data",
+  lower: (min) => ({ op: "itemCount", min })
 };
 
 /** @type Keyword<Expression[]> */
@@ -98,6 +105,13 @@ const unevaluatedPropertiesKeyword = {
   uri: "https://example.com/keyword/unevaluatedProperties",
   shape: "schema",
   lower: (schema) => ({ op: "eachProperty", select: { unevaluated: true }, of: schema })
+};
+
+/** @type Keyword<Expression> */
+const unevaluatedItemsKeyword = {
+  uri: "https://example.com/keyword/unevaluatedItems",
+  shape: "schema",
+  lower: (schema) => ({ op: "eachItem", unevaluated: true, of: schema })
 };
 
 // Whether an array's numbers are in order. The kernel can't say it, so it's
@@ -257,7 +271,7 @@ const dynamicPropertiesKeyword = {
 /** @type Keyword[] */
 const keywords = [
   idKeyword, anchorKeyword, dynamicAnchorKeyword, typeKeyword, minimumKeyword, titleKeyword, propertiesKeyword, itemsKeyword,
-  allOfKeyword, anyOfKeyword, refKeyword, dynamicRefKeyword, unevaluatedPropertiesKeyword, ifKeyword,
+  minItemsKeyword, allOfKeyword, anyOfKeyword, refKeyword, dynamicRefKeyword, unevaluatedPropertiesKeyword, unevaluatedItemsKeyword, ifKeyword,
   sortedKeyword, propertiesByTypeKeyword, firstOfKeyword, firstOfPropertiesKeyword, sameAsKeyword, maxUnevaluatedKeyword, dynamicPropertiesKeyword,
   { uri: "https://example.com/keyword/defs", shape: { map: "schema" } },
   { uri: "https://example.com/keyword/then", shape: "schema" }
@@ -355,6 +369,34 @@ describe("Validator", () => {
     test("the shortcut", async () => {
       const uri = await schemaFile({ type: "string" });
       expect(await jsonSchema.validate(uri, "foo")).to.equal(true);
+    });
+
+    test("arrays", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({
+        type: "array",
+        minItems: 1,
+        items: { type: "array", items: { type: "number" } }
+      }));
+
+      expect(validator.validate([[1, 2], []])).to.equal(true);
+      expect(validator.validate([])).to.equal(false);
+      expect(validator.validate({})).to.equal(false);
+      expect(validator.validate([[1, "2"]])).to.equal(false);
+      expect(validator.validate([1])).to.equal(false);
+    });
+
+    test("items of a type", async () => {
+      for (const [items, valid, invalid] of /** @type [Json, Json, Json][] */ ([
+        [{ type: "number" }, 1.5, "1"],
+        [{ type: "integer" }, 1, 1.5],
+        [{ type: ["integer", "string"] }, "1", 1.5],
+        [{ type: "number", minimum: 0 }, 1, -1]
+      ])) {
+        const validator = await jsonSchema.compile(await schemaFile({ items }));
+        expect(validator.validate([valid, valid])).to.equal(true);
+        expect(validator.validate([valid, invalid])).to.equal(false);
+        expect(validator.validate("not an array")).to.equal(true);
+      }
     });
   });
 
@@ -750,6 +792,22 @@ describe("Validator", () => {
 
       expect(validator.validate({ foo: { bar: 1 } })).to.equal(true);
       expect(validator.validate({ foo: {}, bar: 1 })).to.equal(false);
+    });
+  });
+
+  describe("unevaluatedItems", () => {
+    test("items evaluated by subschemas, whatever the items are checked for", async () => {
+      for (const items of /** @type Json[] */ ([{ type: "number" }, { type: "integer" }, { type: ["number", "string"] }, { type: "number", minimum: 0 }])) {
+        for (const subschema of /** @type Json[] */ ([{ items }, { type: "array", minItems: 1, items }])) {
+          const validator = await jsonSchema.compile(await schemaFile({
+            anyOf: [subschema, { type: "object" }],
+            unevaluatedItems: false
+          }));
+
+          expect(validator.validate([1, 2])).to.equal(true);
+          expect(validator.validate([1, true])).to.equal(false);
+        }
+      }
     });
   });
 
@@ -1299,11 +1357,13 @@ const addTestDialect = (jsonSchema) => {
       title: titleKeyword.uri,
       properties: propertiesKeyword.uri,
       items: itemsKeyword.uri,
+      minItems: minItemsKeyword.uri,
       allOf: allOfKeyword.uri,
       anyOf: anyOfKeyword.uri,
       if: ifKeyword.uri,
       then: "https://example.com/keyword/then",
       unevaluatedProperties: unevaluatedPropertiesKeyword.uri,
+      unevaluatedItems: unevaluatedItemsKeyword.uri,
       sorted: sortedKeyword.uri,
       propertiesByType: propertiesByTypeKeyword.uri,
       firstOf: firstOfKeyword.uri,

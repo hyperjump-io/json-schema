@@ -26,3 +26,4 @@ were written for one-off investigations.
   - [Property names in an object instead of a `Map`](kernel-in-src/property-names-in-an-object.md)
   - [Annotating the JS value instead of its AST](kernel-in-src/annotating-the-js-value.md)
   - [Dispatching by tag](kernel-in-src/dispatching-by-tag.md)
+  - [Item loops](kernel-in-src/item-loops.md)
