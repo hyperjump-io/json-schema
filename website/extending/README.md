@@ -47,8 +47,8 @@ keyword evaluates values with its own code. See
 
 ## The API
 
-Every part of the API has a reference page, generated from the type
-declarations: see the [API reference](https://hyperjump.io/json-schema/api/).
+Every part of the API has TypeScript declarations, so your editor shows
+each method and type as you use it.
 
 - [Custom keywords](keywords.md)
 - [Custom formats](formats.md)

@@ -98,8 +98,8 @@ The kernel has operations for types (`typeIs`), values (`equals`,
 `uniqueItems`), objects (`propertyCount`, `hasProperty`, `property`,
 `eachProperty`, `eachPropertyName`), and combining expressions (`all`,
 `any`, `one`, `not`, `cases`, `typeSwitch`), along with `annotate`. They're
-listed in the [`Expression`](https://hyperjump.io/json-schema/api/type-aliases/expression/)
-type. The built-in keywords in [`src/keywords/`](https://github.com/hyperjump-io/json-schema/tree/v2/src/keywords) are
+listed in the `Expression` type, in
+[`src/kernel/kernel.d.ts`](https://github.com/hyperjump-io/json-schema/blob/v2/src/kernel/kernel.d.ts). The built-in keywords in [`src/keywords/`](https://github.com/hyperjump-io/json-schema/tree/v2/src/keywords) are
 examples of each.
 
 ### `siblings`

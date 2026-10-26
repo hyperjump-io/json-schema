@@ -62,9 +62,9 @@ dialect that has the keyword, under whatever name it has there.
 
 `@hyperjump/json-schema/lint` has utilities to find what a rule needs, like
 `visitKeywords`, which visits every keyword with a URI, and
-`siblingKeyword`, which finds another keyword in the same schema. See the
-[API reference](https://hyperjump.io/json-schema/api/lint/) for the
-others, and the built-in rules in [`src/lint/rules/`](https://github.com/hyperjump-io/json-schema/tree/v2/src/lint/rules) for how
+`siblingKeyword`, which finds another keyword in the same schema. See
+[`src/lint/index.d.ts`](https://github.com/hyperjump-io/json-schema/blob/v2/src/lint/index.d.ts)
+for the others, and the built-in rules in [`src/lint/rules/`](https://github.com/hyperjump-io/json-schema/tree/v2/src/lint/rules) for how
 they're used.
 
 ## Looking at other schemas

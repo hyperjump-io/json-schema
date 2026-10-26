@@ -48,8 +48,6 @@ Using version 1.x? Its docs are in the
   [hjlint](https://github.com/hyperjump-io/hjlint/blob/main/website/README.md).
 - Looking for a lint rule? Every rule has a page in
   [Rules](linting/rules/README.md).
-- Looking up a method or a type? See the
-  [API reference](https://hyperjump.io/json-schema/api/).
 
 ## Contents
 
