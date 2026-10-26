@@ -232,7 +232,7 @@ export class JsonSchema extends Hyperjump {
   /** @type API.JsonSchema["restoreValidator"] */
   restoreValidator(compiled) {
     const kernel = /** @type Kernel */ (compiled);
-    const version = typeof compiled === "object" && compiled !== null && !Array.isArray(compiled) ? compiled.kernel : undefined;
+    const version = typeof compiled === "object" && compiled !== null && !Array.isArray(compiled) ? kernel.kernel : undefined;
     if (version !== 1) {
       throw Error(`Can't restore a compiled schema in kernel version ${JSON.stringify(version)}. This version of the library only supports version 1.`);
     }

@@ -68,7 +68,9 @@ export class Validator {
   }
 
   /** @type API.Validator["validate"] */
-  validate(instance, options) {
+  validate(readonlyInstance, options) {
+    // Evaluating only reads the instance
+    const instance = /** @type Json */ (readonlyInstance);
     if (options === undefined) {
       this.#jsFlag ??= fast(this.#jsonSchema, optimize(this.#kernel, { fast: true, plugins: false, annotations: false }));
       return /** @type ValidationResult<any> */ (this.#jsFlag(instance));

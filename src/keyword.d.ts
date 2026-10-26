@@ -1,6 +1,6 @@
 import type { Node } from "unist";
 import type { VFileMessage } from "vfile-message";
-import type { Json, JsonErrorNode, JsonNode, JsonType } from "@hyperjump/browser/json";
+import type { Json, JsonErrorNode, JsonNode, JsonType, ReadonlyJson } from "@hyperjump/browser/json";
 import type { JsonSchemaNode, JsonSchemaTolerantNode } from "./schema/schema-ast.d.ts";
 import type { Dialect, DialectDefinition } from "./dialect.d.ts";
 import type { Expression, Handle } from "./kernel/kernel.d.ts";
@@ -228,8 +228,11 @@ export type InstanceOps<I> = {
   /** Undefined for a value that couldn't be parsed */
   typeOf: (instance: I) => JsonType | undefined;
 
-  /** The instance as a JS value. This is a copy for an array or object node. */
-  value: (instance: I) => Json;
+  /**
+   * The instance as a JS value. This is a copy for an array or object node.
+   * For a JS value, it's the value being evaluated, so don't change it.
+   */
+  value: (instance: I) => ReadonlyJson;
 
   /** The number of items in an array or properties in an object */
   length: (instance: I) => number;
@@ -333,8 +336,6 @@ type DeepReadonly<T>
   = Json extends T ? ReadonlyJson
     : T extends object ? { readonly [K in keyof T]: DeepReadonly<T[K]> }
       : T;
-
-type ReadonlyJson = null | boolean | number | string | readonly ReadonlyJson[] | { readonly [property: string]: ReadonlyJson };
 
 export type CheckContext = {
   /**

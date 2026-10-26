@@ -1,4 +1,4 @@
-import type { Json, JsonErrorNode, JsonNode } from "@hyperjump/browser/json";
+import type { Json, JsonErrorNode, JsonNode, ReadonlyJson } from "@hyperjump/browser/json";
 import type { Keyword } from "../keyword.d.ts";
 import type { Expression, Handle } from "./kernel.d.ts";
 
@@ -111,7 +111,7 @@ export type EvaluationLocation = {
   /**
    * The instance as a JS value. It's computed when it's asked for, because
    * that's a copy for an AST node. It's undefined for a value that couldn't
-   * be parsed.
+   * be parsed. Don't change it. It can be the instance being evaluated.
    */
-  value: () => Json | undefined;
+  value: () => ReadonlyJson | undefined;
 };

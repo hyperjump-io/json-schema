@@ -2,7 +2,7 @@ import { toAbsoluteIri } from "@hyperjump/uri";
 import { entriesOf, setEntries } from "./registry-entries.js";
 
 /**
- * @import { Json } from "@hyperjump/browser/json"
+ * @import { ReadonlyJson } from "@hyperjump/browser/json"
  * @import { RegistryEntry } from "./registry-entries.js"
  * @import * as API from "./schema-registry.d.ts"
  */
@@ -56,7 +56,7 @@ export class SchemaRegistry {
  * doesn't change the registry. A value is made into text when the schema is
  * resolved anyway.
  *
- * @type (schema: Json | string, options: API.SchemaRegistryAddOptions) => RegistryEntry
+ * @type (schema: ReadonlyJson | string, options: API.SchemaRegistryAddOptions) => RegistryEntry
  */
 const createEntry = (schema, options) => Object.freeze({
   schema: typeof schema === "string" ? schema : JSON.stringify(schema, null, "  "),

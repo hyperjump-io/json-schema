@@ -3,7 +3,8 @@ import type {
   Json,
   JsonErrorNode,
   JsonNode,
-  JsonParseStatus
+  JsonParseStatus,
+  ReadonlyJson
 } from "@hyperjump/browser/json";
 import type { JsonSchemaNode } from "./schema/schema-ast.d.ts";
 import type { Keyword } from "./keyword.d.ts";
@@ -157,7 +158,7 @@ export class JsonSchema extends Hyperjump<JsonSchemaNode> {
    * this library's (`kernel: 1`), or if a keyword or asserting format in it
    * hasn't been added.
    */
-  restoreValidator(compiled: Json): Validator;
+  restoreValidator(compiled: ReadonlyJson): Validator;
 
   /**
    * Add an output format. BASIC and DETAILED are added by default and can be
@@ -176,13 +177,13 @@ export class JsonSchema extends Hyperjump<JsonSchemaNode> {
   getOutputFormat<F extends OutputFormat>(name: F): OutputFormatDefinition<F>;
 
   /** A shortcut for `(await compile(uri)).validate(instance, options)` */
-  validate<F extends OutputFormat = "FLAG">(uri: string, instance: Json, options?: ValidationOptions<F>): Promise<ValidationResult<F>>;
+  validate<F extends OutputFormat = "FLAG">(uri: string, instance: ReadonlyJson, options?: ValidationOptions<F>): Promise<ValidationResult<F>>;
 
   /** A shortcut for `(await compile(uri)).validateJson(json, options)` */
   validateJson<F extends OutputFormat = "FLAG">(uri: string, json: string, options?: ValidationOptions<F>): Promise<ValidationResult<F>>;
 
   /** A shortcut for `(await compile(uri)).annotate(instance, options)` */
-  annotate<F extends OutputFormat = "FLAG">(uri: string, instance: Json, options?: ValidationOptions<F>): Promise<AnnotationResult<F>>;
+  annotate<F extends OutputFormat = "FLAG">(uri: string, instance: ReadonlyJson, options?: ValidationOptions<F>): Promise<AnnotationResult<F>>;
 
   /** A shortcut for `(await compile(uri)).annotateJson(json, options)` */
   annotateJson<F extends OutputFormat = "FLAG">(uri: string, json: string, options?: ValidationOptions<F>): Promise<AnnotationResult<F>>;
@@ -206,7 +207,7 @@ export type Validator = {
   /** The URI of the compiled schema */
   uri: string;
 
-  validate<F extends OutputFormat = "FLAG">(instance: Json, options?: ValidationOptions<F>): ValidationResult<F>;
+  validate<F extends OutputFormat = "FLAG">(instance: ReadonlyJson, options?: ValidationOptions<F>): ValidationResult<F>;
 
   /**
    * Parse and validate JSON text. Any syntax error makes the instance
@@ -223,7 +224,7 @@ export type Validator = {
    */
   validateNode<F extends OutputFormat = "FLAG">(node: JsonNode<unknown, JsonErrorNode> | JsonErrorNode, options?: ValidationOptions<F>): ValidationResult<F>;
 
-  annotate<F extends OutputFormat = "FLAG">(instance: Json, options?: ValidationOptions<F>): AnnotationResult<F>;
+  annotate<F extends OutputFormat = "FLAG">(instance: ReadonlyJson, options?: ValidationOptions<F>): AnnotationResult<F>;
 
   /**
    * Parse, validate, and annotate JSON text. The parse is error-tolerant, so

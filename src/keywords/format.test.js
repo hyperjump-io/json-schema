@@ -8,7 +8,7 @@ import { addV1, v1DialectUri } from "../dialects/v1/index.js";
 import { addFullFormats } from "../formats/full.js";
 
 /**
- * @import { Json } from "@hyperjump/browser/json"
+ * @import { Json, ReadonlyJson } from "@hyperjump/browser/json"
  * @import { JsonSchemaConfig } from "../json-schema.d.ts"
  */
 
@@ -97,7 +97,7 @@ describe("format", () => {
 
   test("a value of a type the format doesn't apply to is valid without calling validate", async () => {
     const jsonSchema = v1();
-    /** @type Json[] */
+    /** @type ReadonlyJson[] */
     const validated = [];
     jsonSchema.addFormat({
       uri: "https://example.com/format/never",

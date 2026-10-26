@@ -34,13 +34,22 @@ written. Custom keywords are part of the type.
   schemas that should and shouldn't fit do. tsc checks it. Vitest doesn't
   run it.
 - **A registry has the type of the schemas it takes.**
-  `SchemaRegistry<S = Json>` checks what `with` and the constructor are
+  `SchemaRegistry<S = ReadonlyJson>` checks what `with` and the constructor are
   given, and the registries `with` and `without` return keep `S`. A union
   takes more than one dialect. The constructor's entries don't infer `S`
   (`NoInfer`), or a registry made from entries would only take schemas
   like them. Where a registry is used (`addRegistry`, `registries`), it's
   `SchemaRegistry<any>`, because a `SchemaRegistry<V1Schema>` isn't a
   `SchemaRegistry<Json>`: neither schema type is assignable to the other.
+- **What's only read is `ReadonlyJson`** (from `@hyperjump/browser/json`):
+  a registry's schemas, the instance `validate` and `annotate` get, and
+  `restoreValidator`'s compiled schema. So is what a format, a keyword's
+  `InstanceOps.value`, and a plugin's `value()` get, because for a JS
+  value that's the caller's instance. `Json` is assignable to it, so
+  nothing that worked stops working. What's returned, like `serialize()`
+  and `bundle()`, stays `Json`, because it's a new value the caller owns.
+  The validator casts the instance to `Json` where it comes in, because
+  evaluation only reads it.
 - **Keyword definitions are annotated with their shapes**
   (`@type Keyword<number, "data">`), so their types can be checked against
   the preset's list. That's also how a custom keyword gets its type:

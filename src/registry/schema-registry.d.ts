@@ -1,4 +1,4 @@
-import type { Json } from "@hyperjump/browser/json";
+import type { ReadonlyJson } from "@hyperjump/browser/json";
 
 /**
  * Schemas that aren't retrieved from a URI. A schema is identified the way
@@ -30,7 +30,7 @@ import type { Json } from "@hyperjump/browser/json";
  * });
  * ```
  */
-export class SchemaRegistry<S = Json> {
+export class SchemaRegistry<S = ReadonlyJson> {
   /**
    * @throws Error if two entries have the same `retrievalUri`
    * @throws TypeError if a schema can't be made into JSON text, like one
@@ -67,7 +67,7 @@ export type SchemaRegistryAddOptions = {
   dialectUri?: string;
 };
 
-export type SchemaRegistryEntry<S = Json> = SchemaRegistryAddOptions & {
+export type SchemaRegistryEntry<S = ReadonlyJson> = SchemaRegistryAddOptions & {
   /** JSON text keeps its positions in messages. */
   schema: S | string;
 };

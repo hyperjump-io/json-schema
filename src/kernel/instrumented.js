@@ -7,7 +7,7 @@ import { addDynamicAnchors, addReachable, isClose, itemSequenceStates, keywordEv
 
 /**
  * @import { Data, Node } from "unist"
- * @import { Json } from "@hyperjump/browser/json"
+ * @import { Json, ReadonlyJson } from "@hyperjump/browser/json"
  * @import { JsonSchema } from "../json-schema.d.ts"
  * @import { EvaluateContext, InstanceOps } from "../keyword.d.ts"
  * @import { EvaluationLocation, EvaluationPlugin, KeywordInfo, SchemaInfo } from "./evaluation-plugin.d.ts"
@@ -426,7 +426,7 @@ export const instrumented = (jsonSchema, kernel, options) => {
       case "propertySwitch": {
         const { name } = expression;
         const branch = branchBuilder(info);
-        /** @type Map<Json, Evaluator<I>> */
+        /** @type Map<ReadonlyJson, Evaluator<I>> */
         const branches = new Map();
         for (const [value, then] of expression.cases) {
           if (!branches.has(value)) {

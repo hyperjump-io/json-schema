@@ -49,6 +49,10 @@ const registry = new SchemaRegistry<V1Schema>().with({
 
 A registry without a type takes any JSON.
 
+Values that are only read can be readonly, so a schema or an instance
+declared `as const` can be passed to a registry, `validate`, and
+`annotate`.
+
 ## What isn't checked
 
 - **What a keyword checks itself.** A negative `minLength`, a `pattern`

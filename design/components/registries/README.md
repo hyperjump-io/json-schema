@@ -6,7 +6,7 @@ sessions. A registry never changes. `with` and `without` return a new one,
 so a session's registries are its snapshot of them.
 
 ```ts
-class SchemaRegistry<S = Json> {
+class SchemaRegistry<S = ReadonlyJson> {
   constructor(entries?: Iterable<{ schema: S | string; retrievalUri?: string; dialectUri?: string }>);
   with(schema: S | string, options?: { retrievalUri?: string; dialectUri?: string }): SchemaRegistry<S>;
   without(retrievalUri: string): SchemaRegistry<S>;

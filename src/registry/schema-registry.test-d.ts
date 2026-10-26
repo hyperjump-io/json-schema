@@ -22,6 +22,7 @@ registry.with(`{ "minLenght": 1 }`);
 
 // Without a type, schemas are JSON, and the entries don't give the type
 new SchemaRegistry([{ schema: { type: "string" } }]).with({ anything: [1] });
+new SchemaRegistry().with({ required: ["name"] } as const);
 
 // A registry of any type can be used
 const jsonSchema = new JsonSchema();

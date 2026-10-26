@@ -1,4 +1,4 @@
-import type { Json, JsonType } from "@hyperjump/browser/json";
+import type { JsonType, ReadonlyJson } from "@hyperjump/browser/json";
 
 /**
  * The definition of a format for the `format` keyword. A dialect maps format
@@ -23,7 +23,8 @@ export type Format = {
 
   /**
    * Whether a value is valid. It's only called for a value whose type is in
-   * `types`.
+   * `types`. The value can be the instance being validated, so don't change
+   * it.
    */
-  validate: (value: Json) => boolean;
+  validate: (value: ReadonlyJson) => boolean;
 };
