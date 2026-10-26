@@ -17,26 +17,37 @@ import type { Json } from "@hyperjump/browser/json";
  * without a `retrievalUri` is reported when a lookup doesn't find anything.
  * Two schemas found by the same URI are an error when that URI is looked
  * up.
+ *
+ * `S` is the type of the schemas it takes, for checking schemas written in
+ * TypeScript, such as `V1Schema`. A union takes schemas in more than one
+ * dialect. JSON text isn't checked.
+ *
+ * ```ts
+ * const registry = new SchemaRegistry<V1Schema>().with({
+ *   $schema: "https://json-schema.org/v1",
+ *   type: "string"
+ * });
+ * ```
  */
-export class SchemaRegistry {
+export class SchemaRegistry<S = Json> {
   /**
    * @throws Error if two entries have the same `retrievalUri`
    */
-  constructor(entries?: Iterable<SchemaRegistryEntry>);
+  constructor(entries?: Iterable<NoInfer<SchemaRegistryEntry<S>>>);
 
   /**
    * A registry that also has this schema
    *
    * @throws Error if the `retrievalUri` is already in the registry
    */
-  with(schema: Json | string, options?: SchemaRegistryAddOptions): SchemaRegistry;
+  with(schema: S | string, options?: SchemaRegistryAddOptions): SchemaRegistry<S>;
 
   /**
    * A registry without the schema added with this `retrievalUri`. A schema
    * added without one can't be removed. If the registry doesn't have the
    * `retrievalUri`, it's returned unchanged.
    */
-  without(retrievalUri: string): SchemaRegistry;
+  without(retrievalUri: string): SchemaRegistry<S>;
 }
 
 export type SchemaRegistryAddOptions = {
@@ -51,7 +62,7 @@ export type SchemaRegistryAddOptions = {
   dialectUri?: string;
 };
 
-export type SchemaRegistryEntry = SchemaRegistryAddOptions & {
+export type SchemaRegistryEntry<S = Json> = SchemaRegistryAddOptions & {
   /** JSON text keeps its positions in messages. */
-  schema: Json | string;
+  schema: S | string;
 };

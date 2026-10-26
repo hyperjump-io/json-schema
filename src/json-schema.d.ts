@@ -56,10 +56,10 @@ export class JsonSchema extends Hyperjump<JsonSchemaNode> {
    *
    * @throws Error if the registry was already added
    */
-  addRegistry(registry: SchemaRegistry): void;
+  addRegistry(registry: SchemaRegistry<any>): void;
 
   /** Sessions that already exist still see the registry. */
-  removeRegistry(registry: SchemaRegistry): void;
+  removeRegistry(registry: SchemaRegistry<any>): void;
 
   /** Add or replace a keyword definition */
   addKeyword(keyword: Keyword): void;

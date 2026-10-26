@@ -6,12 +6,15 @@ sessions. A registry never changes. `with` and `without` return a new one,
 so a session's registries are its snapshot of them.
 
 ```ts
-class SchemaRegistry {
-  constructor(entries?: Iterable<{ schema: Json | string; retrievalUri?: string; dialectUri?: string }>);
-  with(schema: Json | string, options?: { retrievalUri?: string; dialectUri?: string }): SchemaRegistry;
-  without(retrievalUri: string): SchemaRegistry;
+class SchemaRegistry<S = Json> {
+  constructor(entries?: Iterable<{ schema: S | string; retrievalUri?: string; dialectUri?: string }>);
+  with(schema: S | string, options?: { retrievalUri?: string; dialectUri?: string }): SchemaRegistry<S>;
+  without(retrievalUri: string): SchemaRegistry<S>;
 }
 ```
+
+`S` is the type of the schemas it takes, like `V1Schema`, so schemas written
+in TypeScript are checked (see [Schema types](../schema-types.md)).
 
 Implemented in `src/registry/schema-registry.js`, with each `JsonSchema`'s
 index of a registry in `src/registry/registry-index.js`. A registry's

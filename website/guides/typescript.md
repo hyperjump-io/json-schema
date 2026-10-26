@@ -29,6 +29,26 @@ dialect has, and ones starting with `x-`, which can have any value. It
 includes `conditional`, `itemPattern`, and `requireAllExcept`, which
 `addV1` adds.
 
+## In a registry
+
+Give a registry the type of the schemas it takes, and every schema added
+to it is checked, including by the registries `with` returns. A union
+takes schemas in more than one dialect. JSON text isn't checked.
+
+```typescript
+import { SchemaRegistry } from "@hyperjump/json-schema";
+import type { V1Schema } from "@hyperjump/json-schema/v1";
+
+const registry = new SchemaRegistry<V1Schema>().with({
+  $schema: "https://json-schema.org/v1",
+  $id: "https://example.com/person",
+  type: "object",
+  properties: { name: { type: "string" } }
+});
+```
+
+A registry without a type takes any JSON.
+
 ## What isn't checked
 
 - **What a keyword checks itself.** A negative `minLength`, a `pattern`

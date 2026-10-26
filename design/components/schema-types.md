@@ -33,6 +33,14 @@ written. Custom keywords are part of the type.
   `schema-type.test-d.ts` checks that it matches the definitions, and that
   schemas that should and shouldn't fit do. tsc checks it. Vitest doesn't
   run it.
+- **A registry has the type of the schemas it takes.**
+  `SchemaRegistry<S = Json>` checks what `with` and the constructor are
+  given, and the registries `with` and `without` return keep `S`. A union
+  takes more than one dialect. The constructor's entries don't infer `S`
+  (`NoInfer`), or a registry made from entries would only take schemas
+  like them. Where a registry is used (`addRegistry`, `registries`), it's
+  `SchemaRegistry<any>`, because a `SchemaRegistry<V1Schema>` isn't a
+  `SchemaRegistry<Json>`: neither schema type is assignable to the other.
 - **Keyword definitions are annotated with their shapes**
   (`@type Keyword<number, "data">`), so their types can be checked against
   the preset's list. That's also how a custom keyword gets its type:
@@ -50,6 +58,11 @@ written. Custom keywords are part of the type.
 - **A type-only description of each keyword** (`{ shape, data }`). It's
   simpler, but every custom keyword would have to declare it as well as its
   definition, and nothing would check that they agree.
+- **Choosing a registry schema's type by its `$schema`.** It would need
+  the dialect URIs mapped to types, globally, and a v1 schema with a custom
+  keyword would be an error unless the map knew it.
+- **A type argument on each `with`.** `satisfies` already does that, and a
+  registry usually holds one dialect.
 - **v1's approach**, a hand-written schema type per dialect. Custom
   keywords couldn't be added, and nothing checked it against the keywords.
 

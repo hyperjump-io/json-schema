@@ -14,7 +14,7 @@ export type SessionOptions = {
    * Registries only this session sees, in addition to the
    * {@link JsonSchema}'s. They're checked first.
    */
-  registries?: SchemaRegistry[];
+  registries?: SchemaRegistry<any>[];
 
   /**
    * What this session can retrieve, instead of the {@link JsonSchema}'s
