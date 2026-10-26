@@ -35,6 +35,16 @@
   ([Item loops](../../benchmarks/kernel-in-src/item-loops.md)). They aren't passes: the expression is the
   same, and only how `fast.js` runs it changes. `instrumented.js` can't
   merge them, because each group has its own hook calls.
+- `fast.js` compares plain values with its own `equal` instead of
+  `instanceEqual`, which reads them through `InstanceOps`. `uniqueItems`
+  compares every pair of a short array, and in a longer one only the
+  items that could be equal: scalars are looked up in a set, arrays are
+  compared with arrays of the same length, and objects with the objects
+  with the same value of one property, the first object's first. Arrays
+  of objects with names, like a project's plugins, were most of the time
+  of SchemaStore's Unreal Engine `.uproject` schema
+  ([Unique items](../../benchmarks/kernel-in-src/unique-items.md)). `instrumented.js` still compares
+  every pair with `instanceEqual`.
 - Evaluators depend on the instance representation, whether it's
   annotating, whether there are plugins, and whether one has an
   `annotation` hook, because that's what the optimizations depend on. Not

@@ -1,5 +1,5 @@
 import { jsInstance } from "./instance.js";
-import { codePointLength, instanceEqual } from "../keywords/utilities.js";
+import { codePointLength } from "../keywords/utilities.js";
 import { readsMarks } from "./kernel.js";
 
 /**
@@ -262,7 +262,7 @@ export const fast = (jsonSchema, kernel) => {
       }
       case "oneOfValues": {
         // Primitives are compared with a lookup. Only arrays and objects
-        // need instanceEqual.
+        // need `equal`.
         /** @type Set<Json> */
         const primitives = new Set();
         /** @type Json[] */
@@ -327,19 +327,7 @@ export const fast = (jsonSchema, kernel) => {
         return (instance) => !Array.isArray(instance) || (instance.length >= min && instance.length <= max);
       }
       case "uniqueItems":
-        return (instance) => {
-          if (!Array.isArray(instance)) {
-            return true;
-          }
-          for (let i = 1; i < instance.length; i++) {
-            for (let j = 0; j < i; j++) {
-              if (instanceEqual(jsInstance, instance[j], jsInstance, instance[i], false)) {
-                return false;
-              }
-            }
-          }
-          return true;
-        };
+        return (instance) => !Array.isArray(instance) || unique(instance);
       case "item": {
         const { index } = expression;
         const of = child(expression.of);
@@ -1089,8 +1077,117 @@ const isObject = (instance) => typeof instance === "object" && instance !== null
 /** @type (value: Json) => boolean */
 const isScalar = (value) => value === null || typeof value !== "object";
 
-/** @type (a: Json, b: Json) => boolean */
-const equal = (a, b) => instanceEqual(jsInstance, a, jsInstance, b, true);
+/**
+ * Whether two values are equal as JSON. It's `instanceEqual` for plain
+ * values, without reading them through instance operations, which made
+ * `uniqueItems` on arrays of objects about twice as slow.
+ *
+ * @type (a: Json, b: Json) => boolean
+ */
+const equal = (a, b) => {
+  if (a === b) {
+    return true;
+  } else if (typeof a !== "object" || typeof b !== "object" || a === null || b === null) {
+    return false;
+  } else if (Array.isArray(a)) {
+    if (!Array.isArray(b) || a.length !== b.length) {
+      return false;
+    }
+    for (let index = 0; index < a.length; index++) {
+      if (!equal(a[index], b[index])) {
+        return false;
+      }
+    }
+    return true;
+  } else if (Array.isArray(b)) {
+    return false;
+  }
+
+  // Every name of `a` is in `b` with an equal value, and `b` has no others
+  for (const name in a) {
+    if (!Object.hasOwn(b, name) || !equal(a[name], b[name])) {
+      return false;
+    }
+  }
+  for (const name in b) {
+    if (!Object.hasOwn(a, name)) {
+      return false;
+    }
+  }
+  return true;
+};
+
+/**
+ * Whether an array's items are unique. Short arrays compare every pair.
+ * In longer ones, scalars are looked up in a set, arrays are compared with
+ * the arrays of the same length, and objects with the objects with the
+ * same value of one property (the first object's first), which equal
+ * objects have. That's arrays of objects with names, like plugins or
+ * dependencies, compared with almost none of the others.
+ *
+ * @type (array: Json[]) => boolean
+ */
+const unique = (array) => {
+  if (array.length < 8) {
+    for (let i = 1; i < array.length; i++) {
+      for (let j = 0; j < i; j++) {
+        if (equal(array[j], array[i])) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  /** @type Set<Json> */
+  const scalars = new Set();
+  /** @type Map<number, Json[]> */
+  const arrays = new Map();
+  /** @type Map<unknown, Json[]> */
+  const objects = new Map();
+  /** @type string | undefined */
+  let probe;
+  for (const item of array) {
+    /** @type Json[] | undefined */
+    let bucket;
+    if (typeof item !== "object" || item === null) {
+      if (scalars.has(item)) {
+        return false;
+      }
+      scalars.add(item);
+      continue;
+    } else if (Array.isArray(item)) {
+      bucket = arrays.get(item.length);
+      if (bucket === undefined) {
+        bucket = [];
+        arrays.set(item.length, bucket);
+      }
+    } else {
+      if (probe === undefined) {
+        for (const name in item) {
+          probe = name;
+          break;
+        }
+      }
+      // Objects whose value is an array or object share a bucket
+      const value = probe === undefined ? undefined : item[probe];
+      const key = typeof value === "object" && value !== null ? objects : value;
+      bucket = objects.get(key);
+      if (bucket === undefined) {
+        bucket = [];
+        objects.set(key, bucket);
+      }
+    }
+
+    for (let index = 0; index < bucket.length; index++) {
+      if (equal(bucket[index], item)) {
+        return false;
+      }
+    }
+    bucket.push(item);
+  }
+  return true;
+};
 
 /** @type (marks: Marks, more: Set<string | number>) => void */
 const addAll = (marks, more) => {

@@ -62,6 +62,13 @@ const minItemsKeyword = {
   lower: (min) => ({ op: "itemCount", min })
 };
 
+/** @type Keyword<boolean> */
+const uniqueItemsKeyword = {
+  uri: "https://example.com/keyword/uniqueItems",
+  shape: "data",
+  lower: (unique) => unique ? { op: "uniqueItems" } : { op: "pass" }
+};
+
 /** @type Keyword<Expression[]> */
 const allOfKeyword = {
   uri: "https://example.com/keyword/allOf",
@@ -271,7 +278,7 @@ const dynamicPropertiesKeyword = {
 /** @type Keyword[] */
 const keywords = [
   idKeyword, anchorKeyword, dynamicAnchorKeyword, typeKeyword, minimumKeyword, titleKeyword, propertiesKeyword, itemsKeyword,
-  minItemsKeyword, allOfKeyword, anyOfKeyword, refKeyword, dynamicRefKeyword, unevaluatedPropertiesKeyword, unevaluatedItemsKeyword, ifKeyword,
+  minItemsKeyword, uniqueItemsKeyword, allOfKeyword, anyOfKeyword, refKeyword, dynamicRefKeyword, unevaluatedPropertiesKeyword, unevaluatedItemsKeyword, ifKeyword,
   sortedKeyword, propertiesByTypeKeyword, firstOfKeyword, firstOfPropertiesKeyword, sameAsKeyword, maxUnevaluatedKeyword, dynamicPropertiesKeyword,
   { uri: "https://example.com/keyword/defs", shape: { map: "schema" } },
   { uri: "https://example.com/keyword/then", shape: "schema" }
@@ -383,6 +390,31 @@ describe("Validator", () => {
       expect(validator.validate({})).to.equal(false);
       expect(validator.validate([[1, "2"]])).to.equal(false);
       expect(validator.validate([1])).to.equal(false);
+    });
+
+    test("unique items", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({ uniqueItems: true }));
+      /** @type (count: number) => Json[] */
+      const plugins = (count) => Array.from({ length: count }, (_, index) => ({ name: `plugin${index}`, enabled: index % 2 === 0 }));
+
+      // Short arrays compare every pair, and longer ones look them up
+      for (const length of [3, 20]) {
+        const items = plugins(length);
+        expect(validator.validate(items)).to.equal(true);
+        expect(validator.validate([...items, { enabled: true, name: "plugin0" }])).to.equal(false);
+        expect(validator.validate([...items, { name: "plugin0" }])).to.equal(true);
+        expect(validator.validate([...items, { name: "plugin0", enabled: true, more: 1 }])).to.equal(true);
+        expect(validator.validate([...items, 1, "1", 1.0])).to.equal(false);
+        expect(validator.validate([...items, 1, "1", true, null])).to.equal(true);
+        expect(validator.validate([...items, [1, { a: [2] }], [1, { a: [2] }]])).to.equal(false);
+        expect(validator.validate([...items, [1, { a: [2] }], [1, { a: [3] }]])).to.equal(true);
+        expect(validator.validate([...items, [1, 2], [2, 1]])).to.equal(true);
+        expect(validator.validate([...items, [1, 2], [1, 2, 3]])).to.equal(true);
+        expect(validator.validate([{}, ...items, {}])).to.equal(false);
+        expect(validator.validate([...items, { name: { first: "a" } }, { name: { first: "b" } }])).to.equal(true);
+        expect(validator.validate([...items, { name: { first: "a" } }, { name: { first: "a" } }])).to.equal(false);
+        expect(validator.validate([...items, {}, []])).to.equal(true);
+      }
     });
 
     test("items of a type", async () => {
@@ -1358,6 +1390,7 @@ const addTestDialect = (jsonSchema) => {
       properties: propertiesKeyword.uri,
       items: itemsKeyword.uri,
       minItems: minItemsKeyword.uri,
+      uniqueItems: uniqueItemsKeyword.uri,
       allOf: allOfKeyword.uri,
       anyOf: anyOfKeyword.uri,
       if: ifKeyword.uri,
