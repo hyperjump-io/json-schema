@@ -7,7 +7,7 @@ import { number } from "./checks.js";
 /**
  * `maximum`
  *
- * @type Keyword<number>
+ * @type Keyword<number, "data">
  */
 export default {
   uri: "https://json-schema.org/keyword/maximum",

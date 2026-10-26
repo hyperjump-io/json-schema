@@ -8,7 +8,7 @@
  * evaluated, including ones evaluated by subschemas that apply to the same
  * instance (`allOf`, `$ref`, …) and passed.
  *
- * @type Keyword<Expression>
+ * @type Keyword<Expression, "schema">
  */
 export default {
   uri: "https://json-schema.org/keyword/unevaluatedItems",

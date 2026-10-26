@@ -7,7 +7,7 @@ import { string } from "./checks.js";
 /**
  * `contentMediaType`. The media type of a string instance's content. It's an annotation, so the content isn't parsed.
  *
- * @type Keyword<string>
+ * @type Keyword<string, "data">
  */
 export default {
   uri: "https://json-schema.org/keyword/contentMediaType",

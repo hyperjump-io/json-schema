@@ -9,7 +9,7 @@ import { string } from "./checks.js";
  * `$id` since 2019-09. It identifies a schema resource. It can't have a
  * fragment, except an empty one.
  *
- * @type Keyword
+ * @type Keyword<string, "data">
  */
 export default {
   uri: "https://json-schema.org/keyword/id",

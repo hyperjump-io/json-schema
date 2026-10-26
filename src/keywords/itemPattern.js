@@ -1,16 +1,21 @@
 import { isErrorNode } from "./checks.js";
 
 /**
- * @import { Keyword, Shape } from "../keyword.d.ts"
+ * @import { Keyword } from "../keyword.d.ts"
  * @import { Expression, ItemPattern } from "../kernel/kernel.d.ts"
+ */
+
+/**
+ * @typedef {{ array: ("schema" | "data" | ItemPatternShape)[] }} ItemPatternShape
+ * @typedef {Expression | "*" | "+" | "?" | "|" | any[]} Rule
  */
 
 // Groups are arrays, and they can be nested. Operators are strings, which a
 // shape can't describe, so the shape leaves everything that isn't a schema or
 // a group to the check.
-/** @type Shape[] */
+/** @type ItemPatternShape["array"] */
 const ruleShapes = ["schema"];
-/** @type Shape */
+/** @type ItemPatternShape */
 const shape = { array: ruleShapes };
 ruleShapes.push(shape, "data");
 
@@ -43,7 +48,7 @@ const checkPattern = (node, context) => {
  * operators. An operator applies to what's before it, and `|` separates
  * alternatives.
  *
- * @type (rules: (Expression | string | any[])[]) => ItemPattern
+ * @type (rules: Rule[]) => ItemPattern
  */
 const itemPattern = (rules) => {
   /** @type ItemPattern[][] */
@@ -73,7 +78,7 @@ const itemPattern = (rules) => {
  * sequence. Arrays group. `"*"`, `"+"`, and `"?"` repeat what's before them,
  * and `"|"` separates alternatives.
  *
- * @type Keyword<(Expression | string | any[])[]>
+ * @type Keyword<Rule[], ItemPatternShape>
  */
 export default {
   uri: "https://json-schema.org/keyword/itemPattern",

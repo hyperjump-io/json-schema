@@ -7,7 +7,7 @@ import { string } from "./checks.js";
 /**
  * `contentEncoding`. The encoding of a string instance, such as `base64`. It's an annotation, so the instance isn't decoded.
  *
- * @type Keyword<string>
+ * @type Keyword<string, "data">
  */
 export default {
   uri: "https://json-schema.org/keyword/contentEncoding",

@@ -10,7 +10,7 @@ import { all } from "./utilities.js";
  * `patternProperties`. Patterns are ECMA-262 regular expressions with the
  * `u` flag. A property is evaluated against every pattern it matches.
  *
- * @type Keyword<[string, Expression][]>
+ * @type Keyword<[string, Expression][], { map: "schema" }>
  */
 export default {
   uri: "https://json-schema.org/keyword/patternProperties",

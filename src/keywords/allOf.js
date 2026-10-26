@@ -9,7 +9,7 @@ import { nonEmpty } from "./checks.js";
 /**
  * `allOf`
  *
- * @type Keyword<Expression[]>
+ * @type Keyword<Expression[], { array: "schema" }>
  */
 export default {
   uri: "https://json-schema.org/keyword/allOf",

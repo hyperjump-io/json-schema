@@ -1,6 +1,7 @@
 import { astInstance } from "../kernel/instance.js";
 
 /**
+ * @import { Json } from "@hyperjump/browser/json"
  * @import { InstanceOps, Keyword } from "../keyword.d.ts"
  * @import { Expression } from "../kernel/kernel.d.ts"
  * @import { JsonSchemaKeywordNode, JsonSchemaNode, JsonSchemaTolerantNode } from "../schema/schema-ast.d.ts"
@@ -11,7 +12,7 @@ import { astInstance } from "../kernel/instance.js";
  * A keyword whose value is an annotation for every instance it applies to,
  * like `title`. It never fails.
  *
- * @type (uri: string, check?: Keyword["check"]) => Keyword
+ * @type <V extends Json>(uri: string, check?: Keyword["check"]) => Keyword<V, "data">
  */
 export const annotationKeyword = (uri, check) => ({
   uri: uri,

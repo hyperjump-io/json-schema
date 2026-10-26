@@ -8,7 +8,7 @@
  * if it doesn't, so `if` is only evaluated once. Errors from `then` and
  * `else` have their own keyword locations.
  *
- * @type Keyword<Expression>
+ * @type Keyword<Expression, "schema">
  */
 export default {
   uri: "https://json-schema.org/keyword/if",

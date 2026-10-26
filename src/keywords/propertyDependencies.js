@@ -9,7 +9,7 @@ import { all, whenProperty } from "./utilities.js";
  * `propertyDependencies`. If the instance has the property and its value is
  * a string with a schema, the schema applies to the whole instance.
  *
- * @type Keyword<[string, [string, Expression][]][]>
+ * @type Keyword<[string, [string, Expression][]][], { map: { map: "schema" } }>
  */
 export default {
   uri: "https://json-schema.org/keyword/propertyDependencies",

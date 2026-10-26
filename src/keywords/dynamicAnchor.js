@@ -8,7 +8,7 @@ import { anchorName } from "./checks.js";
  * `$dynamicAnchor` since 2020-12. It identifies a schema for `$dynamicRef`. It
  * also works like `$anchor`.
  *
- * @type Keyword
+ * @type Keyword<string, "data">
  */
 export default {
   uri: "https://json-schema.org/keyword/dynamicAnchor",

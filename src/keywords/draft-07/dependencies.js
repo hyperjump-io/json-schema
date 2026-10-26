@@ -12,7 +12,7 @@ import { isErrorNode, uniqueStrings } from "../checks.js";
  * `dependentRequired`, and a schema applies to the whole instance, like
  * `dependentSchemas`. An array's names must be unique.
  *
- * @type Keyword<[string, Expression | string[]][]>
+ * @type Keyword<[string, Expression | string[]][], { map: ["schema", { array: "data" }] }>
  */
 export default {
   uri: "https://json-schema.org/keyword/draft-07/dependencies",

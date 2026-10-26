@@ -10,7 +10,7 @@ import { string } from "./checks.js";
  * the format has to be one the dialect supports, and its definition has to
  * have been added, or the schema can't be compiled.
  *
- * @type Keyword<string>
+ * @type Keyword<string, "data">
  */
 export default {
   uri: "https://json-schema.org/keyword/format",

@@ -75,6 +75,8 @@ Using version 1.x? Its docs are in the
     in one document
   - [Caching compiled schemas](guides/caching.md): skipping compilation when
     your application starts
+  - [Schemas in TypeScript](guides/typescript.md): checking schemas as
+    you write them
   - [Configuration](guides/configuration.md): every option, in one place
 - [Linting schemas](linting/README.md)
   - [Rules](linting/rules/README.md): every rule, with examples

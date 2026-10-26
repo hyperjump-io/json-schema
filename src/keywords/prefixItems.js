@@ -9,7 +9,7 @@ import { nonEmpty } from "./checks.js";
 /**
  * `prefixItems`. Each schema applies to the item at the same index.
  *
- * @type Keyword<Expression[]>
+ * @type Keyword<Expression[], { array: "schema" }>
  */
 export default {
   uri: "https://json-schema.org/keyword/prefixItems",

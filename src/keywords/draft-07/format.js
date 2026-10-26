@@ -10,7 +10,7 @@ import { string } from "../checks.js";
  * 2019-09, except that a format the dialect doesn't support is only an
  * annotation, even when formats are validated, as these drafts say.
  *
- * @type Keyword<string>
+ * @type Keyword<string, "data">
  */
 export default {
   ...formatKeyword,

@@ -7,7 +7,7 @@ import { nonNegativeInteger } from "./checks.js";
 /**
  * `minLength`. Length is in code points.
  *
- * @type Keyword<number>
+ * @type Keyword<number, "data">
  */
 export default {
   uri: "https://json-schema.org/keyword/minLength",

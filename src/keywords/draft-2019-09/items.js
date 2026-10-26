@@ -11,7 +11,7 @@ import { nonEmpty } from "../checks.js";
  * items at the same index, like `prefixItems`. A schema applies to every
  * item, like `items` without `prefixItems`.
  *
- * @type Keyword<Expression | Expression[]>
+ * @type Keyword<Expression | Expression[], ["schema", { array: "schema" }]>
  */
 export default {
   uri: "https://json-schema.org/keyword/draft-2019-09/items",

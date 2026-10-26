@@ -7,7 +7,7 @@
  * `additionalProperties`. It applies to the properties that aren't in the
  * sibling `properties` and don't match the sibling `patternProperties`.
  *
- * @type Keyword<Expression, { properties?: [string, Expression][]; patternProperties?: [string, Expression][] }>
+ * @type Keyword<Expression, "schema", { properties?: [string, Expression][]; patternProperties?: [string, Expression][] }>
  */
 export default {
   uri: "https://json-schema.org/keyword/additionalProperties",

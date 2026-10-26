@@ -8,7 +8,7 @@
  * `""`. Then the outermost schema in the dynamic scope with
  * `$recursiveAnchor: true` applies instead.
  *
- * @type Keyword<Reference>
+ * @type Keyword<Reference, "reference">
  */
 export default {
   uri: "https://json-schema.org/keyword/draft-2019-09/recursiveRef",

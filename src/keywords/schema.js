@@ -10,7 +10,7 @@
  * default. The resolver checks its value, because it's needed to find the
  * dialect.
  *
- * @type Keyword
+ * @type Keyword<string, "data">
  */
 export default {
   uri: "https://json-schema.org/keyword/schema",

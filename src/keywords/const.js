@@ -1,11 +1,12 @@
 /**
+ * @import { Json } from "@hyperjump/browser/json"
  * @import { Keyword } from "../keyword.d.ts"
  */
 
 /**
  * `const`
  *
- * @type Keyword
+ * @type Keyword<Json, "data">
  */
 export default {
   uri: "https://json-schema.org/keyword/const",

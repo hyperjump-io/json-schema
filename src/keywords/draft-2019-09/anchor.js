@@ -9,7 +9,7 @@ import { expected } from "../checks.js";
  * `$anchor` in 2019-09. It's the same as since 2020-12, except for which
  * names are allowed: they can contain `:` but can't start with `_`.
  *
- * @type Keyword
+ * @type Keyword<string, "data">
  */
 export default {
   ...anchorKeyword,

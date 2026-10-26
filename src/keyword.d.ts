@@ -14,10 +14,12 @@ import type { JsonSchema } from "./json-schema.d.ts";
  * lowering its value to a kernel expression (`lower`). Evaluating,
  * optimizing, and output formats only work with expressions.
  *
- * `V` is the type of the value `lower` gets, and `S` the type of its
- * siblings' values.
+ * `V` is the type of the value `lower` gets, `Sh` the type of its
+ * {@link shape}, and `S` the type of its siblings' values. Together, `V` and
+ * a literal `Sh` give the type of the keyword's value in a schema (see
+ * {@link KeywordValue}).
  */
-export type Keyword<V = any, S extends Record<string, any> = Record<string, any>> = {
+export type Keyword<V = any, Sh extends Shape = Shape, S extends Record<string, any> = Record<string, any>> = {
   /**
    * Identifies the keyword independent of its name in any dialect. Use a
    * domain you control to avoid conflicts.
@@ -25,7 +27,7 @@ export type Keyword<V = any, S extends Record<string, any> = Record<string, any>
   uri: string;
 
   /** Where the keyword's value contains schemas */
-  shape: Shape;
+  shape: Sh;
 
   /**
    * The keywords in the same schema whose values this keyword reads, like
@@ -288,6 +290,51 @@ export type InstanceOps<I> = {
  * | `const`, `enum`, `default` | `"data"`                                      |
  */
 export type Shape = "schema" | "unappliedSchema" | "reference" | "data" | { array: Shape } | { map: Shape } | Shape[];
+
+/**
+ * The type of a keyword's value as it's written in a schema whose type is
+ * `S`. It comes from the keyword's shape and the value `lower` gets: a schema
+ * is an `S`, a reference is a string, a map is an object, and data is what
+ * `lower` gets for it, readonly. A keyword whose shape isn't a literal type
+ * can have any value.
+ *
+ * ```ts
+ * KeywordValue<Keyword<[string, Expression][], { map: "schema" }>, S>
+ * // { readonly [name: string]: S }
+ * ```
+ */
+export type KeywordValue<K extends Keyword<any, any, any>, S> = K extends Keyword<infer V, infer Sh, any> ? ShapeValue<Sh, V, S> : never;
+
+// Alternatives come before `map`, because arrays have a `map` method
+type ShapeValue<Sh, V, S>
+  = [Shape] extends [Sh] ? unknown
+    : Sh extends readonly (infer A)[] ? AlternativeValue<A, A, V, S>
+      : Sh extends { array: infer I } ? readonly ShapeValue<I, V extends readonly (infer E)[] ? E : never, S>[]
+        : Sh extends { map: infer I } ? { readonly [name: string]: ShapeValue<I, V extends readonly [string, infer E][] ? E : never, S> }
+          : LeafValue<Sh, V, S>;
+
+type LeafValue<Sh, V, S>
+  = Sh extends "schema" | "unappliedSchema" ? S
+    : Sh extends "reference" ? string
+      : Sh extends "data" ? DataValue<V>
+        : never;
+
+// An alternative only gets values of JSON types the others don't match, so
+// a `"data"` alternative isn't an array if an array or map alternative is
+type AlternativeValue<A, All, V, S>
+  = A extends "data" ? ([Extract<All, { array: any } | { map: any }>] extends [never] ? DataValue<V> : DataValue<Exclude<V, readonly any[]>>)
+    : ShapeValue<A, V, S>;
+
+// The parts of `V` that aren't schemas or references
+type DataValue<V> = unknown extends V ? Json : DeepReadonly<Exclude<V, Expression | Reference>>;
+
+// `Json` is recursive, so it isn't expanded
+type DeepReadonly<T>
+  = Json extends T ? ReadonlyJson
+    : T extends object ? { readonly [K in keyof T]: DeepReadonly<T[K]> }
+      : T;
+
+type ReadonlyJson = null | boolean | number | string | readonly ReadonlyJson[] | { readonly [property: string]: ReadonlyJson };
 
 export type CheckContext = {
   /**

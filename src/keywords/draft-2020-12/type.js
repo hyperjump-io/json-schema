@@ -10,7 +10,7 @@ import typeKeyword from "../type.js";
  * an array can be empty, which these drafts allow. Nothing is valid against
  * it.
  *
- * @type Keyword<SchemaType | SchemaType[]>
+ * @type Keyword<SchemaType | SchemaType[], "data">
  */
 export default {
   ...typeKeyword,

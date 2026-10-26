@@ -8,7 +8,7 @@ import { number } from "../checks.js";
  * `maximum` in draft-04. It's exclusive if the sibling `exclusiveMaximum`
  * is `true`.
  *
- * @type Keyword<number>
+ * @type Keyword<number, "data">
  */
 export default {
   uri: "https://json-schema.org/keyword/draft-04/maximum",

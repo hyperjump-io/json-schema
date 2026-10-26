@@ -85,7 +85,7 @@ const dynamicRefKeyword = {
   lower: ({ uri, handle }) => ({ op: "dynamicApply", anchor: uri.slice(uri.indexOf("#") + 1), fallback: handle })
 };
 
-/** @type Keyword<Expression, { then?: Expression }> */
+/** @type Keyword<Expression, "schema", { then?: Expression }> */
 const ifKeyword = {
   uri: "https://example.com/keyword/if",
   shape: "schema",

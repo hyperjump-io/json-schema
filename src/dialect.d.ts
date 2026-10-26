@@ -1,3 +1,5 @@
+import type { Keyword, KeywordValue } from "./keyword.d.ts";
+
 /**
  * The keywords that are available in a schema. A schema's dialect is
  * identified by its `$schema`, which is also the URI of the dialect's
@@ -44,7 +46,6 @@ export type Dialect = {
   assertFormats?: boolean;
 };
 
-/** Keywords and formats to add to a dialect with `extendDialect` */
 /**
  * A dialect without its URI, as a meta-schema defines it (see
  * `ResolveContext.defineDialect`). The dialect is identified by any URI the
@@ -52,6 +53,7 @@ export type Dialect = {
  */
 export type DialectDefinition = Omit<Dialect, "uri">;
 
+/** Keywords and formats to add to a dialect with `extendDialect` */
 export type DialectExtension = {
   /** Keyword names mapped to {@link Keyword} URIs */
   keywords?: Record<string, string>;
@@ -61,3 +63,26 @@ export type DialectExtension = {
 };
 
 export type UnknownKeywords = "error" | "annotation" | "ignore";
+
+/**
+ * The type of a schema in a dialect, for checking schemas written in
+ * TypeScript. `K` maps the dialect's keyword names to their definitions'
+ * types, `Uri` is the dialect's URI, and `U` is what an unknown keyword
+ * means. If it's an error, only keywords starting with `x-` are allowed. The
+ * type of each keyword's value is its {@link KeywordValue}. The presets
+ * export the types of their dialects, such as `V1Schema`.
+ *
+ * ```ts
+ * type MySchema = SchemaOf<V1Keywords & { myKeyword: typeof myKeyword }, typeof v1DialectUri, "error">;
+ * ```
+ *
+ * The type is the same everywhere in the schema, so an embedded schema
+ * resource with a different `$schema` doesn't fit it. What a keyword's
+ * {@link Keyword.check} reports, like a negative `minLength`, isn't part of
+ * the type.
+ */
+export type SchemaOf<K extends Record<string, Keyword<any, any, any>>, Uri extends string, U extends UnknownKeywords> = boolean | (
+  { $schema?: Uri }
+  & { [Name in keyof K]?: KeywordValue<K[Name], SchemaOf<K, Uri, U>> }
+  & (U extends "error" ? { [name: `x-${string}`]: unknown } : { [name: string]: unknown })
+);

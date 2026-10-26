@@ -7,7 +7,7 @@ import { string } from "./checks.js";
 /**
  * `$comment`. It's for schema authors and has no effect.
  *
- * @type Keyword
+ * @type Keyword<string, "data">
  */
 export default {
   uri: "https://json-schema.org/keyword/comment",

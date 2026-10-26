@@ -8,7 +8,7 @@
  * `minContains` (default 1) and `maxContains` (default unlimited), which
  * have no effect on their own. The items that pass are evaluated.
  *
- * @type Keyword<Expression>
+ * @type Keyword<Expression, "schema">
  */
 export default {
   uri: "https://json-schema.org/keyword/contains",

@@ -6,7 +6,7 @@
 /**
  * `not`
  *
- * @type Keyword<Expression>
+ * @type Keyword<Expression, "schema">
  */
 export default {
   uri: "https://json-schema.org/keyword/not",

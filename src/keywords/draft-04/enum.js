@@ -12,7 +12,7 @@ import { array, nonEmpty } from "../checks.js";
  * and its values must be unique, as draft-04 says. Later drafts only say
  * they should be.
  *
- * @type Keyword<Json[]>
+ * @type Keyword<Json[], "data">
  */
 export default {
   ...enumKeyword,

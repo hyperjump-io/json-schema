@@ -21,6 +21,9 @@ type Shape = "schema" | "unappliedSchema" | "reference" | "data" | { array: Shap
 
 - `uri` identifies the keyword independent of its name in any dialect.
 - [`shape`](shape.md) says where the value contains schemas and references.
+  Its type is a parameter of `Keyword`, so a literal shape and the type of
+  `lower`'s value give the type of the keyword's value in a schema (see
+  [Schema types](../../components/schema-types.md)).
 - [`siblings`](siblings.md) declares the sibling keywords it reads.
 - [`check`](check.md) reports what the shape can't say about the value.
 - [`resolve`](resolve.md) identifies schemas and defines dialects.

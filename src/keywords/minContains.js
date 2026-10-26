@@ -7,7 +7,7 @@ import { nonNegativeInteger } from "./checks.js";
 /**
  * `minContains`. The minimum number of items that pass the sibling `contains`. It has no effect on its own. `contains` reads it.
  *
- * @type Keyword
+ * @type Keyword<number, "data">
  */
 export default {
   uri: "https://json-schema.org/keyword/minContains",

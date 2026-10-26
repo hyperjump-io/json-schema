@@ -7,7 +7,7 @@ import { nonNegativeInteger } from "./checks.js";
 /**
  * `maxProperties`
  *
- * @type Keyword<number>
+ * @type Keyword<number, "data">
  */
 export default {
   uri: "https://json-schema.org/keyword/maxProperties",

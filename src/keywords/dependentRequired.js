@@ -8,7 +8,7 @@ import { mapOf, uniqueStrings } from "./checks.js";
 /**
  * `dependentRequired`
  *
- * @type Keyword<Record<string, string[]>>
+ * @type Keyword<Record<string, string[]>, "data">
  */
 export default {
   uri: "https://json-schema.org/keyword/dependentRequired",

@@ -9,7 +9,7 @@ import { anchorName } from "./checks.js";
  * outermost schema in the dynamic scope with that anchor applies to the
  * instance.
  *
- * @type Keyword<string>
+ * @type Keyword<string, "data">
  */
 export default {
   uri: "https://json-schema.org/keyword/dynamicRef",

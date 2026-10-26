@@ -8,7 +8,7 @@ import { boolean } from "./checks.js";
  * `uniqueItems`. Items are compared like `const` compares, so objects are
  * equal regardless of property order.
  *
- * @type Keyword<boolean>
+ * @type Keyword<boolean, "data">
  */
 export default {
   uri: "https://json-schema.org/keyword/uniqueItems",

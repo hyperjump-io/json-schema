@@ -9,7 +9,7 @@ import { uniqueStrings } from "./checks.js";
  * `required` since draft-04. A property whose value couldn't be parsed is
  * present.
  *
- * @type Keyword<string[]>
+ * @type Keyword<string[], "data">
  */
 export default {
   uri: "https://json-schema.org/keyword/required",

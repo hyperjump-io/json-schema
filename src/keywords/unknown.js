@@ -17,7 +17,7 @@
  * starting with `x-` are allowed, and they're annotations (v1). Otherwise,
  * they have no effect.
  *
- * @type Keyword<Json>
+ * @type Keyword<Json, "data">
  */
 export default {
   uri: "https://json-schema.org/keyword/unknown",

@@ -11,7 +11,7 @@ import { nonEmpty } from "./checks.js";
  * at the end without a condition applies if none pass. Conditions and their
  * schemas can be grouped in arrays, which are flattened.
  *
- * @type Keyword<(Expression | Expression[])[]>
+ * @type Keyword<(Expression | Expression[])[], { array: ["schema", { array: "schema" }] }>
  */
 export default {
   uri: "https://json-schema.org/keyword/conditional",

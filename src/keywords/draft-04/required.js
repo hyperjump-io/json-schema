@@ -9,7 +9,7 @@ import { nonEmpty, uniqueStrings } from "../checks.js";
  * `required` in draft-04. It's the same as `required`, except that it can't
  * be empty, as draft-04 says.
  *
- * @type Keyword<string[]>
+ * @type Keyword<string[], "data">
  */
 export default {
   ...requiredKeyword,

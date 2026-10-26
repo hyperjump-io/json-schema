@@ -8,7 +8,7 @@ import { positiveNumber } from "./checks.js";
  * `multipleOf`. Floating point division is inexact, so a remainder that's
  * close enough to zero, or to `multipleOf`, counts as none.
  *
- * @type Keyword<number>
+ * @type Keyword<number, "data">
  */
 export default {
   uri: "https://json-schema.org/keyword/multipleOf",

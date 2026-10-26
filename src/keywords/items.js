@@ -7,7 +7,7 @@
  * `items` since 2020-12. It applies to the items after the ones the sibling
  * `prefixItems` applies to.
  *
- * @type Keyword<Expression>
+ * @type Keyword<Expression, "schema">
  */
 export default {
   uri: "https://json-schema.org/keyword/items",

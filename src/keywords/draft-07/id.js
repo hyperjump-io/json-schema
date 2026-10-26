@@ -10,7 +10,7 @@ import { string } from "../checks.js";
  * (`#foo`) is a plain-name anchor. Otherwise, it identifies a schema resource,
  * and a fragment in it is also an anchor.
  *
- * @type Keyword
+ * @type Keyword<string, "data">
  */
 export default {
   uri: "https://json-schema.org/keyword/draft-07/id",

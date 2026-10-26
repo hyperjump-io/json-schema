@@ -7,7 +7,7 @@ import { number } from "./checks.js";
 /**
  * `minimum`
  *
- * @type Keyword<number>
+ * @type Keyword<number, "data">
  */
 export default {
   uri: "https://json-schema.org/keyword/minimum",

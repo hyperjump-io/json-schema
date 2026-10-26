@@ -8,7 +8,7 @@
  * after the ones the sibling `items` applies to when that's an array of
  * schemas. Otherwise, it has no effect.
  *
- * @type Keyword<Expression>
+ * @type Keyword<Expression, "schema">
  */
 export default {
   uri: "https://json-schema.org/keyword/draft-2019-09/additionalItems",

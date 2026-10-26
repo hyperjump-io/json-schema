@@ -8,7 +8,7 @@ import { regex } from "./checks.js";
  * `pattern`. It's an ECMA-262 regular expression with the `u` flag. It isn't
  * anchored.
  *
- * @type Keyword<string>
+ * @type Keyword<string, "data">
  */
 export default {
   uri: "https://json-schema.org/keyword/pattern",

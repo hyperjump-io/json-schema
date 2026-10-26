@@ -8,7 +8,7 @@ import { array } from "./checks.js";
 /**
  * `enum`
  *
- * @type Keyword<Json[]>
+ * @type Keyword<Json[], "data">
  */
 export default {
   uri: "https://json-schema.org/keyword/enum",

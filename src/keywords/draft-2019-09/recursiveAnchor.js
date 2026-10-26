@@ -8,7 +8,7 @@ import { boolean } from "../checks.js";
  * `$recursiveAnchor` in 2019-09. `true` works like a dynamic anchor with an
  * empty name.
  *
- * @type Keyword
+ * @type Keyword<boolean, "data">
  */
 export default {
   uri: "https://json-schema.org/keyword/draft-2019-09/recursiveAnchor",

@@ -11,7 +11,7 @@ import { parseIri } from "@hyperjump/uri";
  * that anchor applies instead, if there is one. `fragment` is the
  * reference's plain-name fragment, if it has one.
  *
- * @type Keyword<Reference>
+ * @type Keyword<Reference, "reference">
  */
 export default {
   uri: "https://json-schema.org/keyword/draft-2020-12/dynamicRef",

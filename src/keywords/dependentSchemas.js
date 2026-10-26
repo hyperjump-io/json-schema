@@ -9,7 +9,7 @@ import { all, hasProperty, whenProperty } from "./utilities.js";
  * `dependentSchemas`. Each schema applies to the whole instance if it has
  * the property.
  *
- * @type Keyword<[string, Expression][]>
+ * @type Keyword<[string, Expression][], { map: "schema" }>
  */
 export default {
   uri: "https://json-schema.org/keyword/dependentSchemas",

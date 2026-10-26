@@ -16,7 +16,7 @@ const expectedType = `Expected one of ${types.map((type) => `'${type}'`).join(",
  * `type`. A number with no fractional part is an `integer`, including one
  * written like `1.0`.
  *
- * @type Keyword<SchemaType | SchemaType[]>
+ * @type Keyword<SchemaType | SchemaType[], "data">
  */
 export default {
   uri: "https://json-schema.org/keyword/type",

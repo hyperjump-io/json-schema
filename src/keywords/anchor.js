@@ -7,7 +7,7 @@ import { anchorName } from "./checks.js";
 /**
  * `$anchor` since 2019-09. It identifies a schema with a plain-name fragment.
  *
- * @type Keyword
+ * @type Keyword<string, "data">
  */
 export default {
   uri: "https://json-schema.org/keyword/anchor",

@@ -8,7 +8,7 @@ import { all } from "./utilities.js";
 /**
  * `properties`
  *
- * @type Keyword<[string, Expression][]>
+ * @type Keyword<[string, Expression][], { map: "schema" }>
  */
 export default {
   uri: "https://json-schema.org/keyword/properties",

@@ -50,6 +50,8 @@ hand and have JSDoc explaining the details. Documentation for users is in
     [2019-09](components/presets/draft-2019-09.md), and
     [draft-04, draft-06, and draft-07](components/presets/draft-04-06-07.md)
 - [Schema validation](components/schema-validation.md)
+- [Schema types](components/schema-types.md): checking schemas written in
+  TypeScript
 - [Sessions](components/sessions/README.md)
   - [What can be retrieved](components/sessions/allow-retrieval.md)
   - [The language server](components/sessions/language-server.md)

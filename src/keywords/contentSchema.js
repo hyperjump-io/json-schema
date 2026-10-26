@@ -9,7 +9,7 @@
  * isn't validated. Its value is a schema so anything in it that identifies a
  * schema works, but it isn't compiled.
  *
- * @type Keyword<Json>
+ * @type Keyword<Json, "unappliedSchema">
  */
 export default {
   uri: "https://json-schema.org/keyword/contentSchema",

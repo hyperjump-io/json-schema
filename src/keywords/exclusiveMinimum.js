@@ -7,7 +7,7 @@ import { number } from "./checks.js";
 /**
  * `exclusiveMinimum` since draft-06. It's a number, not a boolean.
  *
- * @type Keyword<number>
+ * @type Keyword<number, "data">
  */
 export default {
   uri: "https://json-schema.org/keyword/exclusiveMinimum",

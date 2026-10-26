@@ -10,7 +10,7 @@ import { uniqueStrings } from "./checks.js";
  * `requireAllExcept`. Every property in the sibling `properties` is required
  * except the ones it lists. It compiles to the names that are required.
  *
- * @type Keyword<string[], { properties?: [string, Expression][] }>
+ * @type Keyword<string[], "data", { properties?: [string, Expression][] }>
  */
 export default {
   uri: "https://json-schema.org/keyword/requireAllExcept",

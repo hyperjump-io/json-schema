@@ -7,7 +7,7 @@
  * `propertyNames`. Each property name is evaluated as a string instance.
  * It doesn't count as evaluating the properties.
  *
- * @type Keyword<Expression>
+ * @type Keyword<Expression, "schema">
  */
 export default {
   uri: "https://json-schema.org/keyword/propertyNames",

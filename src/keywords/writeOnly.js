@@ -9,7 +9,7 @@ import { boolean } from "./checks.js";
  * `writeOnly`. `false` is the same as leaving it out, so it isn't an
  * annotation.
  *
- * @type Keyword<boolean>
+ * @type Keyword<boolean, "data">
  */
 export default {
   ...annotationKeyword("https://json-schema.org/keyword/writeOnly", boolean),

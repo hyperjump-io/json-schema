@@ -8,7 +8,7 @@ import { string } from "../checks.js";
  * `$ref` in draft-04 through draft-07. The schema is a reference, and every
  * other keyword in it is ignored.
  *
- * @type Keyword
+ * @type Keyword<string, "data">
  */
 export default {
   uri: "https://json-schema.org/keyword/draft-07/ref",
