@@ -39,23 +39,20 @@ where it can, so the rest of the text is still validated.
 
 ```javascript
 const result = validator.validateJson(`{ "name": "Jason", "age": -1, }`, { output: "BASIC" });
-// {
-//   valid: false,
-//   errors: [
-//     {
-//       source: "json-schema",
-//       ruleId: "https://json-schema.org/keyword/minimum",
-//       absoluteKeywordLocation: "https://example.com/person#/properties/age/minimum",
-//       instanceLocation: "/age",
-//       place: { start: { line: 1, column: 27, offset: 26 }, end: { line: 1, column: 29, offset: 28 } }
-//     },
-//     {
-//       source: "json",
-//       ruleId: "trailing-comma",
-//       place: { start: { line: 1, column: 29, offset: 28 }, end: { line: 1, column: 30, offset: 29 } }
-//     }
-//   ]
-// }
+```
+
+`result.errors` has a validation error and a syntax error:
+
+| `source` | `ruleId` | `place` |
+| --- | --- | --- |
+| `"json-schema"` | `"https://json-schema.org/keyword/minimum"` | 1:27 to 1:29, the `-1` |
+| `"json"` | `"trailing-comma"` | 1:29 to 1:30, the `,` |
+
+A `place` is a [unist position](https://github.com/syntax-tree/unist#position),
+with the `line`, `column`, and `offset` of its `start` and `end`:
+
+```javascript
+result.errors[0].place.start; // { line: 1, column: 27, offset: 26 }
 ```
 
 Any syntax error makes the value invalid, even one the parser could recover

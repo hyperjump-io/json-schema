@@ -79,31 +79,21 @@ By default, `validate` only says whether a value is valid. Ask for the
 
 ```javascript
 const result = validator.validate({ age: -1 }, { output: "BASIC" });
-// {
-//   valid: false,
-//   errors: [
-//     {
-//       source: "json-schema",
-//       ruleId: "https://json-schema.org/keyword/minimum",
-//       absoluteKeywordLocation: "https://example.com/person#/properties/age/minimum",
-//       instanceLocation: "/age",
-//       place: undefined
-//     },
-//     {
-//       source: "json-schema",
-//       ruleId: "https://json-schema.org/keyword/required",
-//       absoluteKeywordLocation: "https://example.com/person#/required",
-//       instanceLocation: "",
-//       place: undefined
-//     }
-//   ]
-// }
+
+result.valid; // false
+result.errors.length; // 2
 ```
 
-Each error says which keyword failed (`absoluteKeywordLocation`) and where in
-the value (`instanceLocation`, a JSON Pointer). Here, `/age` is less than the
-`minimum`, and the object as a whole (`""`) is missing a `required`
-property.
+Each error says where in the value it is (`instanceLocation`, a JSON
+Pointer) and which keyword failed (`absoluteKeywordLocation`):
+
+| `instanceLocation` | `absoluteKeywordLocation` |
+| --- | --- |
+| `"/age"` | `"https://example.com/person#/properties/age/minimum"` |
+| `""` | `"https://example.com/person#/required"` |
+
+`/age` is less than the `minimum`, and the object as a whole (`""`) is
+missing a `required` property.
 
 Errors are data, not sentences. `outputErrorMessage` gives one a generic
 message:
@@ -111,11 +101,14 @@ message:
 ```javascript
 import { outputErrorMessage } from "@hyperjump/json-schema";
 
-result.errors.map(outputErrorMessage);
-// [
-//   "'/age' fails the constraint at 'https://example.com/person#/properties/age/minimum'",
-//   "The instance fails the constraint at 'https://example.com/person#/required'"
-// ]
+for (const error of result.errors) {
+  console.log(outputErrorMessage(error));
+}
+```
+
+```text
+'/age' fails the constraint at 'https://example.com/person#/properties/age/minimum'
+The instance fails the constraint at 'https://example.com/person#/required'
 ```
 
 [Output and errors](guides/output.md) has the other output format and
@@ -134,11 +127,14 @@ import { toVFileMessage } from "@hyperjump/json-schema";
 
 const result = validator.validateJson(`{ "name": "Jason", "age": -1, }`, { output: "BASIC" });
 
-result.errors.map((error) => String(toVFileMessage(error)));
-// [
-//   "1:27-1:29: Fails the constraint at 'https://example.com/person#/properties/age/minimum'",
-//   "1:29-1:30: Trailing commas are not allowed"
-// ]
+for (const error of result.errors) {
+  console.log(String(toVFileMessage(error)));
+}
+```
+
+```text
+1:27-1:29: Fails the constraint at 'https://example.com/person#/properties/age/minimum'
+1:29-1:30: Trailing commas are not allowed
 ```
 
 ## Load schemas from files

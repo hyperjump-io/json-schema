@@ -21,15 +21,21 @@ try {
     throw error;
   }
 
-  error.message;
-  // "The schema at 'https://example.com/bad' is invalid: 'tpye' isn't a keyword in the 'https://json-schema.org/v1' dialect (and 1 more problem)"
-
-  error.messages.map((message) => String(toVFileMessage(message)));
-  // [
-  //   "5:3-5:19: 'tpye' isn't a keyword in the 'https://json-schema.org/v1' dialect",
-  //   "4:16-4:18: Expected a non-negative integer"
-  // ]
+  for (const message of error.messages) {
+    console.log(String(toVFileMessage(message)));
+  }
 }
+```
+
+```text
+5:3-5:19: 'tpye' isn't a keyword in the 'https://json-schema.org/v1' dialect
+4:16-4:18: Expected a non-negative integer
+```
+
+The error's own `message` sums them up:
+
+```text
+The schema at 'https://example.com/bad' is invalid: 'tpye' isn't a keyword in the 'https://json-schema.org/v1' dialect (and 1 more problem)
 ```
 
 `messages` are plain objects:

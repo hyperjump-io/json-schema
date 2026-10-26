@@ -3,6 +3,12 @@
 `jsonSchemaValidate` validates a JSON file against a compiled schema. You
 compile the schema, so you decide where schemas come from.
 
+For this `alice.json`:
+
+```json
+{ "name": "Alice", "age": -1, }
+```
+
 ```javascript
 import { readFile } from "node:fs/promises";
 import { unified } from "unified";
@@ -20,17 +26,14 @@ const file = await unified()
   .process(new VFile({ path: "alice.json", value: await readFile("alice.json", "utf8") }));
 
 console.log(reporter(file));
-// alice.json
-// 1:27-1:29 error   Fails the constraint at 'https://example.com/person#/properties/age/minimum' https://json-schema.org/keyword/minimum json-schema
-// 1:29-1:30 warning Trailing commas are not allowed                                              trailing-comma                          json
-//
-// 2 messages (✖ 1 error, ⚠ 1 warning)
 ```
 
-For `alice.json`:
+```text
+alice.json
+1:27-1:29 error   Fails the constraint at 'https://example.com/person#/properties/age/minimum' https://json-schema.org/keyword/minimum json-schema
+1:29-1:30 warning Trailing commas are not allowed                                              trailing-comma                          json
 
-```json
-{ "name": "Alice", "age": -1, }
+2 messages (✖ 1 error, ⚠ 1 warning)
 ```
 
 Validation errors are added as errors (`fatal: true`), with the position of

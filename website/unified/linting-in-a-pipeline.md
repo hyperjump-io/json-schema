@@ -19,10 +19,13 @@ const file = await unified()
   .process(new VFile({ path: "person.schema.json", value: schemaText }));
 
 console.log(reporter(file));
-// person.schema.json
-// 10:3-10:34 warning 'then' has no effect without 'if' then-else-without-if jsonschema-lint
-//
-// ⚠ 1 warning
+```
+
+```text
+person.schema.json
+10:3-10:34 warning 'then' has no effect without 'if' then-else-without-if jsonschema-lint
+
+⚠ 1 warning
 ```
 
 Here, `schemaText` is a schema with a `then` but no `if`.

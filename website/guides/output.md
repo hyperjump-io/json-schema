@@ -16,31 +16,50 @@ const result = validator.validate({ age: -1 }, { output: "BASIC" });
 Asking for errors doesn't slow down valid values. A value is checked the
 fast way first, and its errors are only worked out if it's invalid.
 
+## The examples
+
+The examples on this page validate `{ "age": -1 }` against this schema,
+which has two problems: `age` is below the `minimum`, and `name` is
+missing.
+
+```json
+{
+  "$schema": "https://json-schema.org/v1",
+  "$id": "https://example.com/person",
+  "type": "object",
+  "properties": {
+    "name": { "type": "string" },
+    "age": { "type": "integer", "minimum": 0 }
+  },
+  "required": ["name"]
+}
+```
+
+The results below show only each error's `absoluteKeywordLocation` and
+`instanceLocation`. [What's in an error](#whats-in-an-error) has the rest.
+
 ## BASIC
 
 A list of every keyword that failed, in document order.
 
 ```javascript
-validator.validate({ age: -1 }, { output: "BASIC" });
-// {
-//   valid: false,
-//   errors: [
-//     {
-//       source: "json-schema",
-//       ruleId: "https://json-schema.org/keyword/minimum",
-//       absoluteKeywordLocation: "https://example.com/person#/properties/age/minimum",
-//       instanceLocation: "/age",
-//       place: undefined
-//     },
-//     {
-//       source: "json-schema",
-//       ruleId: "https://json-schema.org/keyword/required",
-//       absoluteKeywordLocation: "https://example.com/person#/required",
-//       instanceLocation: "",
-//       place: undefined
-//     }
-//   ]
-// }
+const result = validator.validate({ age: -1 }, { output: "BASIC" });
+```
+
+```json
+{
+  "valid": false,
+  "errors": [
+    {
+      "absoluteKeywordLocation": "https://example.com/person#/properties/age/minimum",
+      "instanceLocation": "/age"
+    },
+    {
+      "absoluteKeywordLocation": "https://example.com/person#/required",
+      "instanceLocation": ""
+    }
+  ]
+}
 ```
 
 A keyword whose failure is explained by its subschemas, like `properties`
@@ -53,35 +72,29 @@ The same errors, nested under the keywords that applied them. Here,
 `minimum` is under the `properties` that applied its schema to `/age`.
 
 ```javascript
-validator.validate({ age: -1 }, { output: "DETAILED" });
-// {
-//   valid: false,
-//   errors: [
-//     {
-//       source: "json-schema",
-//       ruleId: "https://json-schema.org/keyword/properties",
-//       absoluteKeywordLocation: "https://example.com/person#/properties",
-//       instanceLocation: "",
-//       place: undefined,
-//       errors: [
-//         {
-//           source: "json-schema",
-//           ruleId: "https://json-schema.org/keyword/minimum",
-//           absoluteKeywordLocation: "https://example.com/person#/properties/age/minimum",
-//           instanceLocation: "/age",
-//           place: undefined
-//         }
-//       ]
-//     },
-//     {
-//       source: "json-schema",
-//       ruleId: "https://json-schema.org/keyword/required",
-//       absoluteKeywordLocation: "https://example.com/person#/required",
-//       instanceLocation: "",
-//       place: undefined
-//     }
-//   ]
-// }
+const result = validator.validate({ age: -1 }, { output: "DETAILED" });
+```
+
+```json
+{
+  "valid": false,
+  "errors": [
+    {
+      "absoluteKeywordLocation": "https://example.com/person#/properties",
+      "instanceLocation": "",
+      "errors": [
+        {
+          "absoluteKeywordLocation": "https://example.com/person#/properties/age/minimum",
+          "instanceLocation": "/age"
+        }
+      ]
+    },
+    {
+      "absoluteKeywordLocation": "https://example.com/person#/required",
+      "instanceLocation": ""
+    }
+  ]
+}
 ```
 
 ## What's in an error
@@ -112,8 +125,14 @@ logs and for developers:
 ```javascript
 import { outputErrorMessage } from "@hyperjump/json-schema";
 
-outputErrorMessage(result.errors[0]);
-// "'/age' fails the constraint at 'https://example.com/person#/properties/age/minimum'"
+for (const error of result.errors) {
+  console.log(outputErrorMessage(error));
+}
+```
+
+```text
+'/age' fails the constraint at 'https://example.com/person#/properties/age/minimum'
+The instance fails the constraint at 'https://example.com/person#/required'
 ```
 
 To write your own, switch on `ruleId` and use `instanceLocation`. For the
