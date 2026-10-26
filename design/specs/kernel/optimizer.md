@@ -50,8 +50,10 @@ the *matching* of a merged property loop can be merged with plugins. One
 pass over the properties finds which groups' operations each one is for,
 testing each pattern once and taking `additionalProperties` as "nothing
 else matched". Each group then evaluates its matches between its own
-hooks. The list of matches, by group, is the source map. Without plugins,
-the evaluation is merged too.
+hooks. The list of matches, by group, is the source map. The same pass
+finds which required names the instance has, so a `required` group's
+result comes from the matching too. Without plugins, the evaluation is
+merged too.
 
 Optimizations can depend on which hooks the plugins have. Without an
 `annotation` hook (BASIC, DETAILED), `annotate` has no effect, so a group

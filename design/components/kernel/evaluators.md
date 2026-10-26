@@ -26,6 +26,21 @@
   them again. Merging is part of the evaluators, not a pass, because a
   merged loop isn't an expression. With plugins, only matching is merged
   (see [Plugins](plugins.md)).
+- In `fast.js`, a schema with a loop (two or more property operations;
+  one is looked up by its name, which was faster than a loop over every
+  property) also puts its `hasProperty`s and a `typeIs` of only `object`
+  in it. A required name is counted when the loop gets to it, and the
+  type is the loop's test of whether the instance is an object, so an
+  object schema is one call instead of one for each group. Each name is
+  looked up once, in a table of entries with the same shape, and a
+  property schema that only checks the type is checked in the loop. An
+  `except` that applies `false` (`additionalProperties: false`) fails any
+  other name without a call. In `instrumented.js`, the matcher sets a bit
+  for each required name the instance has (up to 30), and a `required`
+  group, with its own hooks, reads its result from them instead of
+  looking each name up again, which on an AST is a search of the object's
+  properties. Bits count a name the JSON text has twice once
+  ([Object loops](../../benchmarks/kernel-in-src/object-loops.md)).
 - Arrays are evaluated the same way in `fast.js`. A schema's `typeIs` of
   only `array`, `itemCount`, and `eachItem` are one evaluator that tests
   whether the instance is an array once, and an `eachItem` whose item

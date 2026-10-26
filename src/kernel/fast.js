@@ -771,10 +771,13 @@ export const fast = (jsonSchema, kernel) => {
   /**
    * A schema's property operations (`property`, and `eachProperty` with a
    * pattern or an `except`) in its groups' top-level `all`s, merged into one
-   * loop over the properties. The rest are evaluated as they are, before
-   * the loop. Evaluating them in a different order doesn't change the
-   * result, and only operations that read marks, which aren't merged, can
-   * see what's marked.
+   * loop over the properties, with its `hasProperty`s and a `typeIs` of only
+   * `object`. A required name is counted when the loop gets to it, and the
+   * type is the loop's test of whether the instance is an object, instead
+   * of a call each with their own lookup. The rest are evaluated as they
+   * are, before the loop. Evaluating them in a different order doesn't
+   * change the result, and only operations that read marks, which aren't
+   * merged, can see what's marked.
    *
    * @type (expressions: Expression[]) => Evaluator[]
    */
@@ -785,6 +788,9 @@ export const fast = (jsonSchema, kernel) => {
     const patterns = [];
     /** @type [{ except: { names: string[]; patterns: string[] } }, Expression][] */
     const excepts = [];
+    /** @type Set<string> */
+    const required = new Set();
+    let isObjectType = false;
     /** @type Expression[] */
     const rest = [];
     /** @type Expression[] */
@@ -803,35 +809,59 @@ export const fast = (jsonSchema, kernel) => {
           patterns.push([operation.select.pattern, operation.of]);
         } else if (operation.op === "eachProperty" && "except" in operation.select) {
           excepts.push([operation.select, operation.of]);
+        } else if (operation.op === "hasProperty") {
+          required.add(operation.name);
+        } else if (operation.op === "typeIs" && operation.types.length === 1 && operation.types[0] === "object") {
+          isObjectType = true;
         } else {
           rest.push(operation);
         }
       }
     }
 
+    // With one property operation, looking its name up is faster than a
+    // loop over every property, which is most of an object's properties
     if (named.size + patterns.length + excepts.length < 2) {
       return expressions.map(build);
     }
 
-    return [...rest.map(build), propertyLoop(named, patterns, excepts), ...readingMarks.map(build)];
+    return [...rest.map(build), propertyLoop(named, patterns, excepts, required, isObjectType), ...readingMarks.map(build)];
   };
+
+  /**
+   * Each name the loop looks up: what it's checked with, if anything, and
+   * whether it's required. A property schema that only checks the type is
+   * a mask, like an item schema in `eachItemLoop`. They all have the same shape, so reading
+   * one is fast whichever it is.
+   *
+   * @typedef {{ property: boolean; of: Evaluator | undefined; mask: number; required: boolean }} NameEntry
+   */
 
   /**
    * @type (
    *   namedExpressions: Map<string, Expression[]>,
    *   patternExpressions: [string, Expression][],
-   *   exceptExpressions: [{ except: { names: string[]; patterns: string[] } }, Expression][]
+   *   exceptExpressions: [{ except: { names: string[]; patterns: string[] } }, Expression][],
+   *   required: Set<string>,
+   *   isObjectType: boolean
    * ) => Evaluator
    */
-  const propertyLoop = (namedExpressions, patternExpressions, exceptExpressions) => {
+  const propertyLoop = (namedExpressions, patternExpressions, exceptExpressions, required, isObjectType) => {
     // Names are looked up in an object without a prototype, which was
     // faster than a `Map` (FLAG 11–23% on real schemas). No name is
     // inherited, not even `__proto__` or `constructor`.
-    /** @type Record<string, Evaluator | undefined> */
-    const named = Object.create(null);
+    /** @type Record<string, NameEntry | undefined> */
+    const entries = Object.create(null);
     for (const [name, of] of namedExpressions) {
-      named[name] = child(of.length === 1 ? of[0] : { op: "all", of });
+      const types = of.length === 1 ? onlyTypes(of[0]) : undefined;
+      entries[name] = types !== undefined && (!types.includes("integer") || types.includes("number"))
+        ? { property: true, of: undefined, mask: typeMask(types), required: required.has(name) }
+        : { property: true, of: child(of.length === 1 ? of[0] : { op: "all", of }), mask: 0, required: required.has(name) };
     }
+    for (const name of required) {
+      entries[name] ??= { property: false, of: undefined, mask: 0, required: true };
+    }
+    const requiredCount = required.size;
     const patterns = patternExpressions.map(([pattern, of]) => /** @type const */ ([new RegExp(pattern, "u"), child(of)]));
 
     // An `except` that's exactly the names and patterns in the loop (usually
@@ -843,13 +873,21 @@ export const fast = (jsonSchema, kernel) => {
       return except.names.length === namedExpressions.size && except.names.every((name) => namedExpressions.has(name))
         && except.patterns.length === patternExpressions.length && except.patterns.every((pattern, index) => pattern === patternExpressions[index][0]);
     };
-    const unmatched = exceptExpressions.filter(([select]) => isOwn(select)).map(([, of]) => child(of));
+    const unmatchedExpressions = exceptExpressions.filter(([select]) => isOwn(select)).map(([, of]) => of);
     const others = exceptExpressions.filter(([select]) => !isOwn(select)).map(([select, of]) => /** @type const */ ([selector(select), child(of)]));
 
-    if (patterns.length === 0 && unmatched.length === 0 && others.length === 0) {
+    // Without anything else to do for a name, each name's evaluator is
+    // looked up and called, without an entry to read it from
+    if (patterns.length === 0 && others.length === 0 && unmatchedExpressions.length === 0 && requiredCount === 0
+      && Object.values(entries).every((entry) => entry?.of !== undefined)) {
+      /** @type Record<string, Evaluator | undefined> */
+      const named = Object.create(null);
+      for (const name in entries) {
+        named[name] = /** @type NameEntry */ (entries[name]).of;
+      }
       return (instance, marks) => {
         if (!isObject(instance)) {
-          return true;
+          return !isObjectType;
         }
         for (const name in instance) {
           const of = named[name];
@@ -864,19 +902,59 @@ export const fast = (jsonSchema, kernel) => {
       };
     }
 
+    if (patterns.length === 0 && others.length === 0 && unmatchedExpressions.length <= 1) {
+      // `additionalProperties: false` fails any other name without a call
+      const [unmatchedExpression] = unmatchedExpressions;
+      const unmatchedFails = unmatchedExpression !== undefined && fails(unmatchedExpression);
+      const unmatched = unmatchedExpression === undefined || unmatchedFails ? undefined : child(unmatchedExpression);
+      return (instance, marks) => {
+        if (!isObject(instance)) {
+          return !isObjectType;
+        }
+        let found = 0;
+        for (const name in instance) {
+          const entry = entries[name];
+          if (entry !== undefined && entry.property) {
+            if (entry.of === undefined ? (entry.mask & (1 << typeIndex(instance[name]))) === 0 : !entry.of(instance[name], undefined)) {
+              return false;
+            }
+            marks?.add(name);
+          } else if (unmatchedFails) {
+            return false;
+          } else if (unmatched !== undefined) {
+            if (!unmatched(instance[name], undefined)) {
+              return false;
+            }
+            marks?.add(name);
+          }
+          if (entry !== undefined && entry.required) {
+            found++;
+          }
+        }
+        return found === requiredCount;
+      };
+    }
+
+    const unmatched = unmatchedExpressions.map(child);
     return (instance, marks) => {
       if (!isObject(instance)) {
-        return true;
+        return !isObjectType;
       }
+      let found = 0;
       for (const name in instance) {
         const value = instance[name];
         let matched = false;
-        const of = named[name];
-        if (of !== undefined) {
-          if (!of(value, undefined)) {
-            return false;
+        const entry = entries[name];
+        if (entry !== undefined) {
+          if (entry.property) {
+            if (entry.of === undefined ? (entry.mask & (1 << typeIndex(value))) === 0 : !entry.of(value, undefined)) {
+              return false;
+            }
+            matched = true;
           }
-          matched = true;
+          if (entry.required) {
+            found++;
+          }
         }
         for (let index = 0; index < patterns.length; index++) {
           if (patterns[index][0].test(name)) {
@@ -907,9 +985,17 @@ export const fast = (jsonSchema, kernel) => {
           marks?.add(name);
         }
       }
-      return true;
+      return found === requiredCount;
     };
   };
+
+  /**
+   * Whether an expression fails every instance, including through applying
+   * the `false` schema
+   *
+   * @type (expression: Expression) => boolean
+   */
+  const fails = (expression) => expression.op === "fail" || (expression.op === "apply" && kernel.schemas[expression.schema] === false);
 
   const root = schema(kernel.uri);
   return (instance) => {

@@ -28,3 +28,4 @@ were written for one-off investigations.
   - [Dispatching by tag](kernel-in-src/dispatching-by-tag.md)
   - [Item loops](kernel-in-src/item-loops.md)
   - [Unique items](kernel-in-src/unique-items.md)
+  - [Object loops](kernel-in-src/object-loops.md)

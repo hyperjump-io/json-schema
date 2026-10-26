@@ -35,7 +35,8 @@ import { addDynamicAnchors, addReachable, isClose, itemSequenceStates, keywordEv
 
 /**
  * Each property match of a merged loop, flat so it's one allocation: the
- * group's slot, the name, the value, and the evaluator
+ * group's slot, the name, the value, and the evaluator. The first item is
+ * a bit for each required name the instance has (see `requiredBits`).
  *
  * @template I
  * @typedef {(number | string | I | SchemaEvaluator<I>)[]} Matches
@@ -219,16 +220,19 @@ export const instrumented = (jsonSchema, kernel, options) => {
     }
     const infos = new Map(keywordGroups.map((group) => [group, keywordInfo(group)]));
     const merged = mergeable(keywordGroups);
+    const bits = merged.length > 1 ? requiredBits(keywordGroups) : new Map();
     const matcher = merged.length > 1
-      ? buildMatcher(merged.map((group) => /** @type const */ ([group.expression, /** @type KeywordInfo */ (infos.get(group))])))
+      ? buildMatcher(merged.map((group) => /** @type const */ ([group.expression, /** @type KeywordInfo */ (infos.get(group))])), bits)
       : undefined;
     const groups = keywordGroups.map((group) => {
       const groupInfo = /** @type KeywordInfo */ (infos.get(group));
       const slot = matcher === undefined ? -1 : merged.indexOf(group);
+      const required = slot === -1 ? requiredMask(group.expression, bits) : 0;
       return {
         info: groupInfo,
-        evaluate: slot === -1 ? build(group.expression, groupInfo) : undefined,
-        slot
+        evaluate: slot === -1 && required === 0 ? build(group.expression, groupInfo) : undefined,
+        slot,
+        required
       };
     });
     const ownMarks = keywordGroups.some(({ expression }) => readsMarks(expression));
@@ -280,6 +284,9 @@ export const instrumented = (jsonSchema, kernel, options) => {
         let isGroupValid;
         if (group.evaluate !== undefined) {
           isGroupValid = group.evaluate(instance, groupMarks);
+        } else if (group.required !== 0) {
+          matches ??= /** @type NonNullable<typeof matcher> */ (matcher)(instance);
+          isGroupValid = ops.typeOf(instance) !== "object" || ((/** @type number */ (matches[0]) & group.required) === group.required);
         } else {
           matches ??= /** @type NonNullable<typeof matcher> */ (matcher)(instance);
           isGroupValid = evaluateMatches(matches, group.slot, groupMarks);
@@ -955,10 +962,12 @@ export const instrumented = (jsonSchema, kernel, options) => {
    * loops would evaluate them: by property, then by operation. A pattern is
    * tested once, even if several groups have it, and an `except` that's
    * exactly the other groups' names and patterns is "nothing else matched".
+   * It also finds which required names the instance has, with a bit for
+   * each, so `required` doesn't look each one up again.
    *
-   * @type (groups: (readonly [Expression, KeywordInfo])[]) => (instance: I) => Matches<I>
+   * @type (groups: (readonly [Expression, KeywordInfo])[], bits: Map<string, number>) => (instance: I) => Matches<I>
    */
-  const buildMatcher = (groups) => {
+  const buildMatcher = (groups, bits) => {
     /** @typedef {{ slot: number; evaluate: SchemaEvaluator<I> }} Operation */
 
     /** @type Map<string, Operation[]> */
@@ -1001,25 +1010,40 @@ export const instrumented = (jsonSchema, kernel, options) => {
       }
     });
 
-    const namedTable = nameTable(named);
+    // Each name has its operations and its required bit in one entry, so
+    // it's looked up once
+    /** @type Map<string, { operations: Operation[]; bit: number }> */
+    const entries = new Map();
+    for (const [name, operations] of named) {
+      entries.set(name, { operations, bit: bits.get(name) ?? 0 });
+    }
+    for (const [name, bit] of bits) {
+      if (!entries.has(name)) {
+        entries.set(name, { operations: [], bit });
+      }
+    }
+    const namedTable = nameTable(entries);
 
     return (instance) => {
       /** @type Matches<I> */
-      const matches = [];
+      const matches = [0];
       if (ops.typeOf(instance) !== "object") {
         return matches;
       }
 
+      let found = 0;
       /** @type boolean[] */
       const tested = [];
       for (const [name, value] of ops.entries(instance)) {
         let matched = false;
-        const byName = namedTable[name];
-        if (byName !== undefined) {
+        const entry = namedTable[name];
+        if (entry !== undefined) {
+          const byName = entry.operations;
           for (let index = 0; index < byName.length; index++) {
             matches.push(byName[index].slot, name, value, byName[index].evaluate);
           }
-          matched = true;
+          matched = byName.length > 0;
+          found |= entry.bit;
         }
         for (let test = 0; test < regExps.length; test++) {
           tested[test] = regExps[test].test(name);
@@ -1038,6 +1062,7 @@ export const instrumented = (jsonSchema, kernel, options) => {
           }
         }
       }
+      matches[0] = found;
       return matches;
     };
   };
@@ -1051,7 +1076,7 @@ export const instrumented = (jsonSchema, kernel, options) => {
     let valid = true;
     /** @type Set<string> | undefined */
     let failed;
-    for (let index = 0; index < matches.length; index += 4) {
+    for (let index = 1; index < matches.length; index += 4) {
       if (matches[index] !== slot) {
         continue;
       }
@@ -1258,6 +1283,58 @@ const addAll = (marks, more) => {
 /** @type (types: ReadonlySet<string>, type: string | undefined, isInteger: () => boolean) => boolean */
 const hasType = (types, type, isInteger) => {
   return type !== undefined && (types.has(type) || (type === "number" && types.has("integer") && isInteger()));
+};
+
+/**
+ * The names a group of only `hasProperty`s requires, or undefined if it's
+ * something else
+ *
+ * @type (expression: Expression) => string[] | undefined
+ */
+const requiredNames = (expression) => {
+  const operations = expression.op === "all" ? expression.of : [expression];
+  return operations.length > 0 && operations.every((operation) => operation.op === "hasProperty")
+    ? operations.map((operation) => /** @type {{ name: string }} */ (operation).name)
+    : undefined;
+};
+
+/**
+ * A bit for each name that a schema's groups of only `hasProperty`s
+ * (`required`) require, for the property matcher to set when the instance
+ * has it. There are bits for up to 30 names, so a 31st and later aren't
+ * looked up this way.
+ *
+ * @type (groups: KeywordGroup[]) => Map<string, number>
+ */
+const requiredBits = (groups) => {
+  /** @type Map<string, number> */
+  const bits = new Map();
+  for (const { expression } of groups) {
+    for (const name of requiredNames(expression) ?? []) {
+      if (!bits.has(name) && bits.size < 30) {
+        bits.set(name, 1 << bits.size);
+      }
+    }
+  }
+  return bits;
+};
+
+/**
+ * The bits of a group's required names, or 0 if it's not only
+ * `hasProperty`s or one of its names doesn't have a bit
+ *
+ * @type (expression: Expression, bits: Map<string, number>) => number
+ */
+const requiredMask = (expression, bits) => {
+  let mask = 0;
+  for (const name of requiredNames(expression) ?? []) {
+    const bit = bits.get(name);
+    if (bit === undefined) {
+      return 0;
+    }
+    mask |= bit;
+  }
+  return mask;
 };
 
 /**

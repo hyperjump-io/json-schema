@@ -48,6 +48,32 @@ const propertiesKeyword = {
   lower: (pairs) => ({ op: "all", of: pairs.map(([name, schema]) => ({ op: "property", name, of: schema })) })
 };
 
+/** @type Keyword<[string, Expression][]> */
+const patternPropertiesKeyword = {
+  uri: "https://example.com/keyword/patternProperties",
+  shape: { map: "schema" },
+  lower: (pairs) => ({ op: "all", of: pairs.map(([pattern, schema]) => ({ op: "eachProperty", select: { pattern }, of: schema })) })
+};
+
+/** @type Keyword<Expression, "schema", { properties?: [string, Expression][]; patternProperties?: [string, Expression][] }> */
+const additionalPropertiesKeyword = {
+  uri: "https://example.com/keyword/additionalProperties",
+  siblings: { properties: "https://example.com/keyword/properties", patternProperties: "https://example.com/keyword/patternProperties" },
+  shape: "schema",
+  lower: (schema, { properties = [], patternProperties = [] }) => ({
+    op: "eachProperty",
+    select: { except: { names: properties.map(([name]) => name), patterns: patternProperties.map(([pattern]) => pattern) } },
+    of: schema
+  })
+};
+
+/** @type Keyword<string[]> */
+const requiredKeyword = {
+  uri: "https://example.com/keyword/required",
+  shape: "data",
+  lower: (names) => ({ op: "all", of: names.map((name) => ({ op: "hasProperty", name })) })
+};
+
 /** @type Keyword<Expression> */
 const itemsKeyword = {
   uri: "https://example.com/keyword/items",
@@ -277,7 +303,7 @@ const dynamicPropertiesKeyword = {
 
 /** @type Keyword[] */
 const keywords = [
-  idKeyword, anchorKeyword, dynamicAnchorKeyword, typeKeyword, minimumKeyword, titleKeyword, propertiesKeyword, itemsKeyword,
+  idKeyword, anchorKeyword, dynamicAnchorKeyword, typeKeyword, minimumKeyword, titleKeyword, propertiesKeyword, patternPropertiesKeyword, additionalPropertiesKeyword, requiredKeyword, itemsKeyword,
   minItemsKeyword, uniqueItemsKeyword, allOfKeyword, anyOfKeyword, refKeyword, dynamicRefKeyword, unevaluatedPropertiesKeyword, unevaluatedItemsKeyword, ifKeyword,
   sortedKeyword, propertiesByTypeKeyword, firstOfKeyword, firstOfPropertiesKeyword, sameAsKeyword, maxUnevaluatedKeyword, dynamicPropertiesKeyword,
   { uri: "https://example.com/keyword/defs", shape: { map: "schema" } },
@@ -376,6 +402,105 @@ describe("Validator", () => {
     test("the shortcut", async () => {
       const uri = await schemaFile({ type: "string" });
       expect(await jsonSchema.validate(uri, "foo")).to.equal(true);
+    });
+
+    test("objects", async () => {
+      for (const additionalProperties of /** @type Json[] */ ([false, { type: "boolean" }])) {
+        const validator = await jsonSchema.compile(await schemaFile({
+          type: "object",
+          properties: { name: { type: "string" }, count: { type: "integer" }, size: { type: "number", minimum: 0 } },
+          required: ["name", "other"],
+          additionalProperties
+        }));
+
+        expect(validator.validate({ name: "a", other: true })).to.equal(additionalProperties !== false);
+        expect(validator.validate({ name: "a", count: 1, other: true, more: true })).to.equal(additionalProperties !== false);
+        expect(validator.validate({ name: "a", count: 1, size: 2, other: 1 })).to.equal(false);
+        expect(validator.validate({ name: "a", count: 1.5, other: true })).to.equal(false);
+        expect(validator.validate({ name: "a", size: -1, other: true })).to.equal(false);
+        expect(validator.validate({ name: 1, other: true })).to.equal(false);
+        expect(validator.validate({ name: "a" })).to.equal(false);
+        expect(validator.validate({ other: true })).to.equal(false);
+        expect(validator.validate([])).to.equal(false);
+      }
+    });
+
+    test("objects with plugins and ASTs", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({
+        properties: { name: { type: "string" } },
+        required: ["name", "other"],
+        additionalProperties: { type: "boolean" }
+      }));
+      /** @type EvaluationPlugin */
+      const plugin = {};
+
+      for (const options of [undefined, { plugins: [plugin] }]) {
+        expect(validator.validate({ name: "a", other: true }, options)).to.equal(true);
+        expect(validator.validate({ name: "a" }, options)).to.equal(false);
+        expect(validator.validate({ other: true }, options)).to.equal(false);
+        expect(validator.validate("not an object", options)).to.equal(true);
+        expect(validator.validateJson(`{ "name": "a", "other": true }`, options)).to.equal(true);
+        expect(validator.validateJson(`{ "name": "a", "name": "b" }`, options)).to.equal(false);
+        expect(validator.validateJson(`{ "name": "a", "name": "b", "name": "c" }`, options)).to.equal(false);
+        expect(validator.validate({ name: "a", other: 1 }, options)).to.equal(false);
+        expect(validator.validateJson(`{ "other": true }`, options)).to.equal(false);
+      }
+
+      const result = validator.validate({ name: "a" }, { output: "BASIC" });
+      expect(result.valid).to.equal(false);
+      expect(result.errors.map((error) => locations(/** @type ValidationError */ (error)).ruleId)).to.eql([requiredKeyword.uri]);
+    });
+
+    test("objects with only properties", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({
+        type: "object",
+        properties: { size: { type: "number", minimum: 0 }, count: { type: "integer" } }
+      }));
+
+      expect(validator.validate({ size: 1, count: 1, more: "x" })).to.equal(true);
+      expect(validator.validate({ size: -1 })).to.equal(false);
+      expect(validator.validate({ count: 1.5 })).to.equal(false);
+      expect(validator.validate([])).to.equal(false);
+    });
+
+    test("objects without other properties", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({
+        properties: { name: { type: "string" }, size: { type: "number" } },
+        required: ["name"],
+        additionalProperties: false
+      }));
+
+      expect(validator.validate({ name: "a", size: 1 })).to.equal(true);
+      expect(validator.validate({ name: "a", more: 1 })).to.equal(false);
+    });
+
+    test("objects without a type", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({
+        properties: { name: { type: "string" }, size: { type: "number" } },
+        required: ["name"]
+      }));
+
+      expect(validator.validate({ name: "a", more: 1 })).to.equal(true);
+      expect(validator.validate({ more: 1 })).to.equal(false);
+      expect(validator.validate({ name: 1 })).to.equal(false);
+      expect(validator.validate("not an object")).to.equal(true);
+    });
+
+    test("objects with patterns", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({
+        type: "object",
+        properties: { name: { type: "string" } },
+        patternProperties: { "^x-": { type: "number" } },
+        required: ["name", "x-count"],
+        additionalProperties: false
+      }));
+
+      expect(validator.validate({ "name": "a", "x-count": 1 })).to.equal(true);
+      expect(validator.validate({ "name": "a", "x-count": "1" })).to.equal(false);
+      expect(validator.validate({ name: "a" })).to.equal(false);
+      expect(validator.validate({ "name": "a", "x-count": 1, "more": 1 })).to.equal(false);
+      expect(validator.validate({ "name": 1, "x-count": 1 })).to.equal(false);
+      expect(validator.validate(1)).to.equal(false);
     });
 
     test("arrays", async () => {
@@ -1388,6 +1513,9 @@ const addTestDialect = (jsonSchema) => {
       minimum: minimumKeyword.uri,
       title: titleKeyword.uri,
       properties: propertiesKeyword.uri,
+      patternProperties: patternPropertiesKeyword.uri,
+      additionalProperties: additionalPropertiesKeyword.uri,
+      required: requiredKeyword.uri,
       items: itemsKeyword.uri,
       minItems: minItemsKeyword.uri,
       uniqueItems: uniqueItemsKeyword.uri,
