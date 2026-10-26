@@ -19,7 +19,7 @@ addDraft202012(jsonSchema);
 addDraft07(jsonSchema);
 ```
 
-| Dialect | Module | Function | `$schema` |
+| Dialect | Module | Function | Dialect URI |
 | --- | --- | --- | --- |
 | v1 | `@hyperjump/json-schema/v1` | `addV1` | `https://json-schema.org/v1` |
 | 2020-12 | `@hyperjump/json-schema/draft-2020-12` | `addDraft202012` | `https://json-schema.org/draft/2020-12/schema` |

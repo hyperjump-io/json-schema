@@ -41,14 +41,15 @@ where it can, so the rest of the text is still validated.
 const result = validator.validateJson(`{ "name": "Jason", "age": -1, }`, { output: "BASIC" });
 ```
 
-`result.errors` has a validation error and a syntax error:
+`result.errors` has a validation error and a syntax error, in the order
+they appear in the text:
 
-| `source` | `ruleId` | `place` |
-| --- | --- | --- |
-| `"json-schema"` | `"https://json-schema.org/keyword/minimum"` | 1:27 to 1:29, the `-1` |
-| `"json"` | `"trailing-comma"` | 1:29 to 1:30, the `,` |
+| Error | Source | Rule ID | Position |
+| --- | --- | --- | --- |
+| -1 is less than the minimum | json-schema | `https://json-schema.org/keyword/minimum` | 1:27-1:29 |
+| A trailing comma | json | trailing-comma | 1:29-1:30 |
 
-A `place` is a [unist position](https://github.com/syntax-tree/unist#position),
+The position is the error's `place`. A `place` is a [unist position](https://github.com/syntax-tree/unist#position),
 with the `line`, `column`, and `offset` of its `start` and `end`:
 
 ```javascript

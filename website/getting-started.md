@@ -84,16 +84,16 @@ result.valid; // false
 result.errors.length; // 2
 ```
 
-Each error says where in the value it is (`instanceLocation`, a JSON
-Pointer) and which keyword failed (`absoluteKeywordLocation`):
+Each error says where in the value the problem is (`instanceLocation`, a
+JSON Pointer) and which keyword failed (`absoluteKeywordLocation`):
 
-| `instanceLocation` | `absoluteKeywordLocation` |
+| Instance location | Absolute keyword location |
 | --- | --- |
-| `"/age"` | `"https://example.com/person#/properties/age/minimum"` |
-| `""` | `"https://example.com/person#/required"` |
+| /age | `https://example.com/person#/properties/age/minimum` |
+| (empty, the whole object) | `https://example.com/person#/required` |
 
-`/age` is less than the `minimum`, and the object as a whole (`""`) is
-missing a `required` property.
+`/age` is less than the `minimum`, and the object as a whole is missing a
+`required` property.
 
 Errors are data, not sentences. `outputErrorMessage` gives one a generic
 message:

@@ -3,10 +3,10 @@
 `format` says what kind of string a value is, like `"email"` or
 `"date-time"`. Whether it's checked depends on the dialect.
 
-| Dialect | `format` is |
+| Dialect | What format does |
 | --- | --- |
-| v1, draft-04 to draft-07 | Validated |
-| 2019-09, 2020-12 | Only an annotation. A value that isn't an email is still valid. |
+| v1, draft-04 to draft-07 | Validates |
+| 2019-09, 2020-12 | Only annotates. A value that isn't an email is still valid. |
 
 The `validateFormats` config overrides the dialect, for every schema:
 
