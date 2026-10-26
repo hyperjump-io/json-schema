@@ -9,7 +9,8 @@ import type { Json } from "@hyperjump/browser/json";
  * document.
  *
  * A registry never changes. `with` and `without` return a new registry, and
- * a session sees the registries it was created with. A registry isn't tied
+ * a session sees the registries it was created with. A schema is copied when
+ * it's added, so changing the value afterward doesn't change the registry. A registry isn't tied
  * to a {@link JsonSchema}. One registry can be used by any number of them
  * and their sessions, which each identify its schemas with their own
  * dialects when they look one up. A schema that can't be identified is
@@ -32,6 +33,8 @@ import type { Json } from "@hyperjump/browser/json";
 export class SchemaRegistry<S = Json> {
   /**
    * @throws Error if two entries have the same `retrievalUri`
+   * @throws TypeError if a schema can't be made into JSON text, like one
+   * with a cycle
    */
   constructor(entries?: Iterable<NoInfer<SchemaRegistryEntry<S>>>);
 
@@ -39,6 +42,8 @@ export class SchemaRegistry<S = Json> {
    * A registry that also has this schema
    *
    * @throws Error if the `retrievalUri` is already in the registry
+   * @throws TypeError if the schema can't be made into JSON text, like one
+   * with a cycle
    */
   with(schema: S | string, options?: SchemaRegistryAddOptions): SchemaRegistry<S>;
 

@@ -51,9 +51,15 @@ export class SchemaRegistry {
   }
 }
 
-/** @type (schema: Json | string, options: API.SchemaRegistryAddOptions) => RegistryEntry */
+/**
+ * A schema is kept as JSON text, so changing the value after it's added
+ * doesn't change the registry. A value is made into text when the schema is
+ * resolved anyway.
+ *
+ * @type (schema: Json | string, options: API.SchemaRegistryAddOptions) => RegistryEntry
+ */
 const createEntry = (schema, options) => Object.freeze({
-  schema: schema,
+  schema: typeof schema === "string" ? schema : JSON.stringify(schema, null, "  "),
   retrievalUri: options.retrievalUri === undefined ? undefined : toAbsoluteIri(options.retrievalUri),
   dialectUri: options.dialectUri === undefined ? undefined : toAbsoluteIri(options.dialectUri)
 });

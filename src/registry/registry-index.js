@@ -276,17 +276,12 @@ export const identify = (jsonSchema, entry, registryDialect) => {
   }
 
   const { retrievalUri } = entry;
-  const result = fromJson(entryText(entry));
+  const result = fromJson(entry.schema);
   if (result.status !== "success" || result.node === undefined) {
     return { error: Error(`The schema${retrievalUri ? ` at '${retrievalUri}'` : ""} isn't valid JSON`, { cause: toVFileMessage(result.errors[0]) }) };
   }
 
   return identifyRoot(jsonSchema, entry, registryDialect, nodeRoot(result.node));
-};
-
-/** @type (entry: RegistryEntry) => string */
-export const entryText = (entry) => {
-  return typeof entry.schema === "string" ? entry.schema : JSON.stringify(entry.schema, null, "  ");
 };
 
 /**
@@ -298,7 +293,7 @@ export const entryText = (entry) => {
 const parsedRoot = (entry) => {
   let value;
   try {
-    value = typeof entry.schema === "string" ? JSON.parse(entry.schema) : entry.schema;
+    value = JSON.parse(entry.schema);
   } catch {
     return;
   }

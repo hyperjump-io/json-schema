@@ -1,5 +1,4 @@
 /**
- * @import { Json } from "@hyperjump/browser/json"
  * @import { SchemaRegistry } from "./schema-registry.d.ts"
  */
 
@@ -7,11 +6,11 @@
 // They aren't part of the API.
 
 /**
- * A schema as it was added. It never changes, so everything derived from it
- * can be cached.
+ * A schema as it was added, as JSON text. It never changes, so everything
+ * derived from it can be cached.
  *
  * @typedef {{
- *   schema: Json | string;
+ *   schema: string;
  *   retrievalUri?: string;
  *   dialectUri?: string;
  * }} RegistryEntry

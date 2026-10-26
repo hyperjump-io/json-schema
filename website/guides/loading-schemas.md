@@ -47,6 +47,10 @@ A schema can be a JavaScript value or JSON text. Pass the text when you have
 it, such as a file you read yourself. Then a problem with the schema is
 reported with its line and column.
 
+A value is copied when it's added, so changing it afterward doesn't change
+the registry. A value that can't be JSON, like one with a cycle, throws a
+`TypeError` when it's added.
+
 ```javascript
 const text = await readFile("./person.schema.json", "utf8");
 const registry = new SchemaRegistry().with(text);

@@ -140,6 +140,22 @@ describe("SchemaRegistry", () => {
       await expect(compile(removed, "https://example.com/a")).rejects.toThrow(RetrievalNotAllowedError);
     });
 
+    test("changing a schema after it's added doesn't change the registry", async () => {
+      const schema = { $schema: v1DialectUri, type: "string" };
+      const registry = new SchemaRegistry().with(schema, { retrievalUri: "https://example.com/a" });
+      schema.type = "number";
+
+      expect((await compile(registry, "https://example.com/a")).validate("foo")).to.equal(true);
+    });
+
+    test("a schema that isn't JSON is an error when it's added", () => {
+      /** @type Record<string, any> */
+      const schema = { $schema: v1DialectUri };
+      schema.self = schema;
+
+      expect(() => new SchemaRegistry().with(schema)).to.throw(TypeError);
+    });
+
     test("an edit is without and then with", async () => {
       const registry = new SchemaRegistry()
         .with(v1({ type: "string" }), { retrievalUri: "https://example.com/a" })
