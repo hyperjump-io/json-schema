@@ -356,7 +356,10 @@ export default {
         const key = indexes.join();
         let union = unions.get(key);
         if (union === undefined) {
-          union = unionOf(op, indexes.map((index) => objects[index]));
+          // All of them, without the tag, which would pick the same tag again
+          union = indexes.length === objects.length
+            ? { op, of: objects }
+            : unionOf(op, indexes.map((index) => objects[index]));
           unions.set(key, union);
         }
         return union;
@@ -530,7 +533,11 @@ const constrainsTypes = new Set(["fail", "typeIs", "equals", "oneOfValues", "all
 /**
  * The tag that leaves the fewest expressions to evaluate for an object, in
  * the case that leaves the most, by the indexes of the expressions each case
- * leaves. It has to leave fewer than all of them.
+ * leaves. It has to leave fewer than all of them. If none does, it's the
+ * tag by value that leaves the fewest when an object has the property, where
+ * none of them require it, like `"name": { "const": "Ubuntu" }` in each
+ * schema of an `anyOf` without `required`. An object without it evaluates
+ * all of them, as it did without the tag.
  *
  * - By value: for each value of the property, the expressions that allow the
  *   property and that value; for any other value, those that allow the
@@ -551,6 +558,11 @@ const bestTag = (facts) => {
   let best;
   let fewest = facts.length;
 
+  // A tag none of them requires, which leaves fewer when an object has it
+  /** @type Tag | undefined */
+  let present;
+  let fewestPresent = facts.length;
+
   /** @type Set<string> */
   const constrained = new Set(facts.flatMap(({ values }) => [...values.keys()]));
   for (const name of constrained) {
@@ -567,10 +579,14 @@ const bestTag = (facts) => {
       other: allowed.filter((index) => !facts[index].values.has(name)),
       absent: indexesOf(facts, ({ required }) => !required.has(name))
     };
-    const most = Math.max(tag.other.length, tag.absent.length, ...cases.map(([, indexes]) => indexes.length));
+    const mostPresent = Math.max(tag.other.length, ...cases.map(([, indexes]) => indexes.length));
+    const most = Math.max(mostPresent, tag.absent.length);
     if (most < fewest) {
       best = tag;
       fewest = most;
+    } else if (tag.absent.length === facts.length && mostPresent < fewestPresent) {
+      present = tag;
+      fewestPresent = mostPresent;
     }
   }
 
@@ -591,7 +607,7 @@ const bestTag = (facts) => {
     }
   }
 
-  return best;
+  return best ?? present;
 };
 
 /** @type <T>(items: T[], predicate: (item: T) => boolean) => number[] */

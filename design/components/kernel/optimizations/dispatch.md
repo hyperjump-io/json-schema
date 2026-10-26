@@ -37,7 +37,13 @@ errors of what's evaluated ([Optimizer](../../../specs/kernel/optimizer.md)).
   only decides where it was parsed, because one that couldn't be parsed
   passes the `eachProperty` that doesn't allow it, so where the object
   has only those, it's the expression as it was. Partial tags count: a
-  schema that doesn't constrain the tag is in every case that has it. Of
+  schema that doesn't constrain the tag is in every case that has it.
+  When no tag leaves fewer than all of them in every case, it's the tag by
+  value that leaves the fewest when an object has the property, where
+  none of them requires it (ansible-lint's 45 platforms, each with a
+  `const` `name` and no `required`), and without the property, the union
+  as it was, not dispatched again. An object without it costs one more
+  lookup ([Tags none of them require](../../../benchmarks/kernel-in-src/tags-none-require.md)). Of
   SchemaStore's 886 schemas that compile, about 790 `oneOf`s and `anyOf`s
   can be dispatched by a tag that can't be by type, in about 230 schemas,
   100 of them recursive. Unions of `const`s (300 more) could be dispatched

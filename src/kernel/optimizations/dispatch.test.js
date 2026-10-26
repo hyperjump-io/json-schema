@@ -143,6 +143,17 @@ describe("dispatch", () => {
       expect(expression.cases.object.absent).to.eql({ op: "apply", schema: "/oneOf/2" });
     });
 
+    test("a property none of them requires is a tag, and without it, they're all evaluated", async () => {
+      /** @type (kind: string) => Record<string, Json> */
+      const optional = (kind) => ({ type: "object", properties: { kind: { const: kind } } });
+      const expression = /** @type any */ (await optimized({ anyOf: [optional("a"), optional("b"), optional("c")] }, "anyOf"));
+      const all = { op: "any", of: [{ op: "apply", schema: "/anyOf/0" }, { op: "apply", schema: "/anyOf/1" }, { op: "apply", schema: "/anyOf/2" }] };
+      expect(expression.cases.object).to.include({ op: "propertySwitch", name: "kind" });
+      expect(expression.cases.object.cases[1]).to.eql(["b", { op: "apply", schema: "/anyOf/1" }]);
+      expect(expression.cases.object.other).to.eql({ op: "fail" });
+      expect(expression.cases.object.absent).to.eql(all);
+    });
+
     test("a schema that can pass other types than objects is what's left", async () => {
       const expression = /** @type any */ (await optimized({ oneOf: [tagged("a"), tagged("b"), { type: "string" }] }, "oneOf"));
       expect(expression.otherwise).to.eql({ op: "apply", schema: "/oneOf/2" });
