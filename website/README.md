@@ -1,4 +1,4 @@
-# Hyperjump - JSON Schema
+# JSON Schema
 
 A JSON Schema validator and linter for JavaScript, for Node.js and browsers.
 
