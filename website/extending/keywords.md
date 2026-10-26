@@ -169,3 +169,34 @@ A keyword that applies schemas in a way the kernel can't express lowers to
 an `opaque` operation instead, and gets evaluators for its schemas. Prefer
 the kernel's operations wherever you can. Tools can see inside them, and
 can't see inside a predicate or an opaque operation.
+
+## In TypeScript
+
+Declare a keyword with `satisfies Keyword`, giving the type of the value
+`lower` gets. That keeps its `shape` as written, so the keyword's type
+says what its value is in a schema, and schemas that use it can be checked
+with your dialect's type:
+
+```typescript
+import type { Keyword } from "@hyperjump/json-schema";
+import type { V1Schema } from "@hyperjump/json-schema/v1";
+
+const evenKeyword = {
+  uri: "https://example.com/keyword/even",
+  shape: "data",
+  lower: (even: boolean) => even
+    ? { op: "multipleOf", divisor: 2 }
+    : { op: "pass" }
+} satisfies Keyword<boolean>;
+
+type MySchema = V1Schema<{ even: typeof evenKeyword }>;
+
+const schema = { type: "integer", even: 2 } satisfies MySchema;
+```
+
+```text
+Type 'number' is not assignable to type 'boolean | undefined'.
+```
+
+See [Schemas in TypeScript](../guides/typescript.md#custom-keywords) for
+how each shape is typed.
