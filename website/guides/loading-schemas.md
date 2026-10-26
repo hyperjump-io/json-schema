@@ -38,6 +38,10 @@ const registry = new SchemaRegistry()
 jsonSchema.addRegistry(registry);
 ```
 
+In TypeScript, a registry can check the schemas added to it, like
+`new SchemaRegistry<V1Schema>()`. See
+[Schemas in TypeScript](typescript.md#in-a-registry).
+
 References between schemas in a registry work like references anywhere:
 `/address` is resolved against `https://example.com/person`.
 

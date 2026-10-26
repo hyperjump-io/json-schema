@@ -29,6 +29,9 @@ jsonSchema.extendDialect(v1DialectUri, {
 other type is valid, and `validate` isn't called for it, as the spec says.
 Without `types`, a format applies to every type.
 
+`validate` can get the instance being validated itself, not a copy, so it
+shouldn't change the value. In TypeScript, it's readonly.
+
 There's no `integer` type for formats, because formats apply to the types in
 JSON's data model. A format for integers applies to numbers, and checks
 that they're integers in `validate`.

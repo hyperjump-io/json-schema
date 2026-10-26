@@ -163,7 +163,9 @@ jsonSchema.addKeyword({
 `evaluate` is called once, with the predicate's `value`, and returns the
 function that evaluates each instance. Read the instance with
 `context.instance`, because the instance can be a JavaScript value or an
-AST node, depending on how it's validated.
+AST node, depending on how it's validated. For a JavaScript value,
+`instance.value` returns the instance itself, not a copy, so don't change
+it. In TypeScript, it's readonly.
 
 A keyword that applies schemas in a way the kernel can't express lowers to
 an `opaque` operation instead, and gets evaluators for its schemas. Prefer
@@ -175,7 +177,8 @@ can't see inside a predicate or an opaque operation.
 Declare a keyword with `satisfies Keyword`, giving the type of the value
 `lower` gets. That keeps its `shape` as written, so the keyword's type
 says what its value is in a schema, and schemas that use it can be checked
-with your dialect's type:
+with your dialect's type (see
+[Schemas in TypeScript](../guides/typescript.md#custom-keywords)):
 
 ```typescript
 import type { Keyword } from "@hyperjump/json-schema";
@@ -198,5 +201,22 @@ const schema = { type: "integer", even: 2 } satisfies MySchema;
 Type 'number' is not assignable to type 'boolean | undefined'.
 ```
 
-See [Schemas in TypeScript](../guides/typescript.md#custom-keywords) for
-how each shape is typed.
+The type of the keyword's value comes from its shape. A schema in the value
+has the type of the schema it's in, so it can use the dialect's other
+keywords, including yours. Data is the type `lower` gets, readonly:
+`boolean`, above.
+
+| Shape | Like | In a schema |
+| --- | --- | --- |
+| `"data"` | `minLength` | What `lower` gets |
+| `"schema"` | `not` | A schema |
+| `"unappliedSchema"` | `contentSchema` | A schema |
+| `"reference"` | `$ref` | A string |
+| `{ array: "schema" }` | `allOf` | An array of schemas |
+| `{ map: "schema" }` | `properties` | An object of schemas |
+| `["schema", { array: "schema" }]` | `items` in 2019-09 | A schema or an array of schemas |
+| `{ map: ["schema", { array: "data" }] }` | `dependencies` in draft-07 | An object of schemas or arrays of strings |
+
+A keyword whose `lower` doesn't give its value a type can have any JSON
+there. One declared with a type annotation (`const evenKeyword: Keyword`)
+loses its shape, and can have any value at all.

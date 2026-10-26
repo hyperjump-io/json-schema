@@ -62,3 +62,34 @@ A dialect's URI should be the URI of its meta-schema, so tools that
 retrieve `$schema` find one.
 
 To replace a dialect, remove it first with `removeDialect`.
+
+## In TypeScript
+
+`SchemaOf` makes the type of a schema in your dialect, for checking
+schemas as they're written (see
+[Schemas in TypeScript](../guides/typescript.md)). Give it the types of its
+keywords by name, its URI, and what unknown keywords mean. The built-in
+dialects' keyword types are exported, like `V1Keywords`, and a custom
+keyword's type comes from its definition (see
+[Custom keywords](keywords.md#in-typescript)).
+
+```typescript
+import type { SchemaOf } from "@hyperjump/json-schema";
+import type { V1Keywords } from "@hyperjump/json-schema/v1";
+
+type MySchema = SchemaOf<
+  Pick<V1Keywords, "$id" | "$ref" | "$defs" | "type" | "properties">
+    & { even: typeof evenKeyword },
+  "https://example.com/dialect",
+  "error"
+>;
+
+const count = { type: "integer", minimum: 0 } satisfies MySchema;
+```
+
+```text
+Object literal may only specify known properties, and 'minimum' does not exist in type ...
+```
+
+With `"error"`, only the dialect's keywords and names starting with `x-`
+are allowed. With `"annotation"` or `"ignore"`, any property is.

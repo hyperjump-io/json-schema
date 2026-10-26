@@ -56,6 +56,10 @@ jsonSchema.addRegistry(new SchemaRegistry().with({
 `$schema` says which dialect the schema is written in. Every schema needs
 one.
 
+In TypeScript, `new SchemaRegistry<V1Schema>()` checks each schema you add
+as you write it, so a misspelled keyword is a type error. See
+[Schemas in TypeScript](guides/typescript.md).
+
 ## Validate
 
 Compile the schema once, then use the validator for as many values as you

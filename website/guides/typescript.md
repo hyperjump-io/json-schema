@@ -1,8 +1,9 @@
 # Schemas in TypeScript
 
-A schema written in TypeScript can be checked as it's written. `V1Schema` is
-the type of a JSON Schema v1 schema, so a misspelled keyword or a value of
-the wrong type is a type error, anywhere in the schema.
+A schema written in TypeScript can be checked as it's written. Each dialect
+has a type, so a misspelled keyword or a value of the wrong type is a type
+error, anywhere in the schema. Nothing changes at runtime: the types only
+check what you write.
 
 ```typescript
 import type { V1Schema } from "@hyperjump/json-schema/v1";
@@ -17,21 +18,15 @@ const person = {
 ```
 
 ```text
-Object literal may only specify known properties, but 'minLenght' does not
-exist in type ... Did you mean to write 'minLength'?
+Object literal may only specify known properties, but 'minLenght' does not exist in type ... Did you mean to write 'minLength'?
 ```
 
 Use `satisfies` rather than a type annotation, so `person` keeps its own
 type. A schema declared `as const` fits too.
 
-Unknown keywords are errors in v1, so the type only allows the keywords the
-dialect has, and ones starting with `x-`, which can have any value. It
-includes `conditional`, `itemPattern`, and `requireAllExcept`, which
-`addV1` adds.
+## The dialects' types
 
-## Other dialects
-
-Each dialect has a type, from the module that adds it:
+Each dialect's type is in the module that adds it:
 
 | Dialect | Type | Module |
 | --- | --- | --- |
@@ -42,13 +37,20 @@ Each dialect has a type, from the module that adds it:
 | draft-06 | `Draft06Schema` | `@hyperjump/json-schema/draft-06` |
 | draft-04 | `Draft04Schema` | `@hyperjump/json-schema/draft-04` |
 
-In 2020-12 and earlier, an unknown keyword is allowed, so the type allows
-any keyword, and a misspelled one isn't an error. The values of the
-dialect's keywords are still checked. In draft-04 through draft-07, the
-type doesn't know that `$ref` makes its siblings ignored.
+How strict a type is follows what its dialect says about unknown keywords:
+
+- **v1** makes an unknown keyword an error, so its type only allows the
+  keywords v1 has, and names starting with `x-`, which can have any
+  value. It includes `conditional`, `itemPattern`, and `requireAllExcept`,
+  which `addV1` adds.
+- **2020-12 and earlier** allow an unknown keyword, so their types allow
+  any property, and a misspelled keyword isn't an error. The values of the
+  dialect's keywords are still checked.
 
 ```typescript
-import type { Draft202012Schema } from "@hyperjump/json-schema/draft-2020-12";
+import type {
+  Draft202012Schema
+} from "@hyperjump/json-schema/draft-2020-12";
 
 const person = {
   $schema: "https://json-schema.org/draft/2020-12/schema",
@@ -69,13 +71,9 @@ do.
 ## In a registry
 
 Give a registry the type of the schemas it takes, and every schema added
-to it is checked, including by the registries `with` returns. JSON text
-isn't checked.
-
-A union takes schemas in more than one dialect, and `$schema` says which
-type a schema has to fit. A schema without `$schema` only has to fit one,
-so in `SchemaRegistry<V1Schema | Draft202012Schema>`, a misspelled keyword
-fits 2020-12.
+to it is checked, by the constructor, `with`, and the registries `with`
+returns. A registry without a type takes any JSON. JSON text isn't
+checked, because its type is `string`.
 
 ```typescript
 import { SchemaRegistry } from "@hyperjump/json-schema";
@@ -89,73 +87,77 @@ const registry = new SchemaRegistry<V1Schema>().with({
 });
 ```
 
-A registry without a type takes any JSON.
+For schemas in more than one dialect, give it a union. A schema's
+`$schema` says which type in the union it has to fit. A schema without
+`$schema` only has to fit one of them, so with 2020-12 in the union, a
+misspelled keyword fits.
 
-Values that are only read can be readonly, so a schema or an instance
-declared `as const` can be passed to a registry, `validate`, and
-`annotate`.
+```typescript
+const registry = new SchemaRegistry<V1Schema | Draft202012Schema>()
+  .with({
+    $schema: "https://json-schema.org/v1",
+    type: "string",
+    minLenght: 1 // An error: v1 doesn't have minLenght
+  })
+  .with({
+    $schema: "https://json-schema.org/draft/2020-12/schema",
+    type: "string",
+    minLenght: 1 // Not an error: 2020-12 allows unknown keywords
+  });
+```
+
+## Readonly values
+
+Schemas and instances are only read, so they can be readonly. A schema
+declared `as const` can be added to a registry, and an instance declared
+`as const` can be passed to `validate` and `annotate`.
+
+```typescript
+const person = {
+  $schema: "https://json-schema.org/v1",
+  $id: "https://example.com/person",
+  type: "object",
+  properties: { name: { type: "string" } }
+} as const satisfies V1Schema;
+
+jsonSchema.addRegistry(new SchemaRegistry<V1Schema>().with(person));
+
+const jason = { name: "Jason" } as const;
+await jsonSchema.validate("https://example.com/person", jason); // true
+```
+
+## Custom keywords
+
+A dialect's type can be given the types of your keywords, by the names
+they have in the dialect. Their subschemas are the same type, so they can
+use your keywords too.
+
+```typescript
+type MySchema = V1Schema<{ even: typeof evenKeyword }>;
+
+const count = {
+  type: "integer",
+  even: true,
+  not: { even: true, minimum: 10 }
+} satisfies MySchema;
+```
+
+Where `evenKeyword` comes from, and how a keyword's definition gives the
+type of its value, is in
+[Custom keywords](../extending/keywords.md#in-typescript). A dialect of
+your own, made with `addDialect`, has a type made with `SchemaOf`. See
+[Custom dialects](../extending/dialects.md#in-typescript).
 
 ## What isn't checked
 
 - **What a keyword checks itself.** A negative `minLength`, a `pattern`
   that isn't a regular expression, and a duplicate in `type` fit the type.
   They're still reported when the schema is used.
-- **Formats.** `format` can be any string, because it only validates when
-  formats are validated.
+- **Formats.** `format` can be any string, because whether it validates is
+  configuration.
 - **Embedded schemas in other dialects.** The whole schema is one dialect,
   so an embedded schema with a different `$schema` doesn't fit the type.
-
-## Custom keywords
-
-Give a dialect's type the types of your keywords, by the names you give
-them in the dialect. A keyword's type comes from its definition's type, so declare
-the keyword with `satisfies Keyword`, which keeps its `shape` as written.
-
-```typescript
-import type { Keyword } from "@hyperjump/json-schema";
-import type { V1Schema } from "@hyperjump/json-schema/v1";
-
-const evenKeyword = {
-  uri: "https://example.com/keyword/even",
-  shape: "data",
-  lower: (even: boolean) => even
-    ? { op: "multipleOf", divisor: 2 }
-    : { op: "pass" }
-} satisfies Keyword<boolean>;
-
-type MySchema = V1Schema<{ even: typeof evenKeyword }>;
-
-const schema = {
-  type: "integer",
-  even: true
-} satisfies MySchema;
-```
-
-The type of a keyword's value comes from its shape. A `"schema"` is a
-schema of the same type, so the subschemas of your keyword can use your
-keyword too. A `"reference"` is a string, and `{ array: ... }` and
-`{ map: ... }` are arrays and objects. `"data"` is the type `lower` gets
-(`boolean`, above). A keyword without a type for `lower` can have any JSON
-value there.
-
-| Shape | Type of `lower`'s value | Type in a schema |
-| --- | --- | --- |
-| `"data"` | `number` | `number` |
-| `"schema"` | `Expression` | A schema |
-| `{ array: "schema" }` | `Expression[]` | An array of schemas |
-| `{ map: "schema" }` | `[string, Expression][]` | An object of schemas |
-| `["schema", { array: "data" }]` | `Expression \| string[]` | A schema or an array of strings |
-
-For a dialect of your own, `SchemaOf` builds the type from the types of its
-keywords, its URI, and what an unknown keyword means:
-
-```typescript
-import type { SchemaOf } from "@hyperjump/json-schema";
-import type { V1Keywords } from "@hyperjump/json-schema/v1";
-
-type StrictSchema = SchemaOf<
-  Omit<V1Keywords, "$dynamicRef" | "$dynamicAnchor">,
-  "https://example.com/strict",
-  "error"
->;
-```
+- **Ignored siblings of `$ref`.** In draft-04 through draft-07, `$ref`
+  makes its siblings ignored, but the type still checks them.
+- **Dialects from a meta-schema.** A dialect defined by a meta-schema's
+  `$vocabulary` doesn't have a type unless you write one with `SchemaOf`.
