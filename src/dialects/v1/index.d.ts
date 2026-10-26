@@ -2,7 +2,7 @@ import type { Json } from "@hyperjump/browser/json";
 import type { JsonSchema } from "../../json-schema.d.ts";
 import type { Dialect, SchemaOf } from "../../dialect.d.ts";
 import type { Keyword, Reference } from "../../keyword.d.ts";
-import type { Expression } from "../../kernel/kernel.d.ts";
+import type { Expression, TypeName } from "../../kernel/kernel.d.ts";
 
 /** The URI of the JSON Schema v1 dialect */
 export const v1DialectUri: "https://json-schema.org/v1";
@@ -104,7 +104,7 @@ export type V1Keywords = {
   multipleOf: Keyword<number, "data">;
   pattern: Keyword<string, "data">;
   required: Keyword<string[], "data">;
-  type: Keyword<V1Type | V1Type[], "data">;
+  type: Keyword<TypeName | TypeName[], "data">;
   uniqueItems: Keyword<boolean, "data">;
 
   // Meta-data
@@ -133,8 +133,6 @@ export type V1Keywords = {
   itemPattern: Keyword<ItemPatternRule[], ItemPatternShape>;
   requireAllExcept: Keyword<string[], "data">;
 };
-
-type V1Type = "null" | "boolean" | "object" | "array" | "number" | "string" | "integer";
 
 type ItemPatternShape = { array: ("schema" | "data" | ItemPatternShape)[] };
 type ItemPatternRule = Expression | "*" | "+" | "?" | "|" | ItemPatternRule[];

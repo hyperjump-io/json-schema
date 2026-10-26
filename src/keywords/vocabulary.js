@@ -21,7 +21,7 @@ import { boolean } from "./checks.js";
 /**
  * The `$vocabulary` keyword with the vocabularies it knows, by URI
  *
- * @typedef {Keyword & { vocabularies: Readonly<Record<string, Vocabulary>> }} VocabularyKeyword
+ * @typedef {Keyword<Record<string, boolean>, "data"> & { vocabularies: Readonly<Record<string, Vocabulary>> }} VocabularyKeyword
  */
 
 const uri = "https://json-schema.org/keyword/vocabulary";

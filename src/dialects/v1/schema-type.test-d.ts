@@ -147,6 +147,9 @@ import requireAllExceptKeyword from "../../keywords/requireAllExcept.js";
 
 true satisfies V1Schema;
 
+// `$schema` can have an empty fragment
+({ $schema: "https://json-schema.org/v1#" }) satisfies V1Schema;
+
 // A schema can be readonly
 const readonlySchema = {
   properties: { name: { type: "string" } },

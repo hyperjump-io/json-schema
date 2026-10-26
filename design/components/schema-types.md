@@ -23,16 +23,25 @@ written. Custom keywords are part of the type.
   `V`. Without that, `itemPattern`'s groups were also data, and the
   recursive type expanded forever.
 - **`SchemaOf<K, Uri, U>`** maps a dialect's keyword names to their
-  definitions' types (`K`). `$schema` is `Uri`, as in every dialect. When
-  unknown keywords are errors (`U` is `"error"`), only `x-` names can be
-  added, with any value. Otherwise, any name can.
+  definitions' types (`K`). `$schema` is `Uri`, as in every dialect, or
+  `Uri` with an empty fragment, which draft-04 through draft-07 schemas
+  usually have. When unknown keywords are errors (`U` is `"error"`), only
+  `x-` names can be added, with any value. Otherwise, any name can, so a
+  misspelled keyword isn't an error, but the dialect's keywords' values
+  are still checked. That's what those dialects say: an unknown keyword is
+  allowed.
 - **Presets declare their dialect's types.** `V1Keywords` lists each
   keyword's type by name, and `V1Schema<Extension>` adds custom keywords by
-  intersection. Keyword definitions aren't public, so the list is written
-  in `v1/index.d.ts`, like the preset's own list of keywords.
-  `schema-type.test-d.ts` checks that it matches the definitions, and that
-  schemas that should and shouldn't fit do. tsc checks it. Vitest doesn't
-  run it.
+  intersection. Every preset has the same pair (`Draft202012Keywords` and
+  `Draft202012Schema`, and so on). Keyword definitions aren't public, so
+  each list is written in the preset's `index.d.ts`, like the preset's own
+  list of keywords. Each preset's `schema-type.test-d.ts` checks that its
+  list matches the definitions, and that schemas that should and shouldn't
+  fit do. tsc checks them. Vitest doesn't run them.
+- **A union of dialects is told apart by `$schema`.** A schema with a
+  dialect's `$schema` only fits that dialect's type. One without `$schema`
+  fits any of them, so with an open dialect in the union, a misspelled
+  keyword fits that one.
 - **A registry has the type of the schemas it takes.**
   `SchemaRegistry<S = ReadonlyJson>` checks what `with` and the constructor are
   given, and the registries `with` and `without` return keep `S`. A union
@@ -83,6 +92,8 @@ written. Custom keywords are part of the type.
   configuration.
 - The whole schema is one dialect, so an embedded schema resource with a
   different `$schema` doesn't fit.
+- In draft-04 through draft-07, `$ref` makes its siblings ignored, but the
+  type still checks them.
 - `"data"` types are only as precise as `V`. A keyword with no `lower` still
   needs one for its value type.
 - JSDoc can't declare a recursive union, so `itemPattern.js` types its rules
@@ -92,8 +103,5 @@ written. Custom keywords are part of the type.
 
 ## Open questions
 
-- Types for the other presets (2020-12, 2019-09, draft-04 through
-  draft-07). Their unknown keywords are annotations, so their types are
-  open.
 - Whether `format` should be a union of the dialect's format names when
   formats validate.

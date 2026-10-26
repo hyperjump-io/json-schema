@@ -29,11 +29,53 @@ dialect has, and ones starting with `x-`, which can have any value. It
 includes `conditional`, `itemPattern`, and `requireAllExcept`, which
 `addV1` adds.
 
+## Other dialects
+
+Each dialect has a type, from the module that adds it:
+
+| Dialect | Type | Module |
+| --- | --- | --- |
+| v1 | `V1Schema` | `@hyperjump/json-schema/v1` |
+| 2020-12 | `Draft202012Schema` | `@hyperjump/json-schema/draft-2020-12` |
+| 2019-09 | `Draft201909Schema` | `@hyperjump/json-schema/draft-2019-09` |
+| draft-07 | `Draft07Schema` | `@hyperjump/json-schema/draft-07` |
+| draft-06 | `Draft06Schema` | `@hyperjump/json-schema/draft-06` |
+| draft-04 | `Draft04Schema` | `@hyperjump/json-schema/draft-04` |
+
+In 2020-12 and earlier, an unknown keyword is allowed, so the type allows
+any keyword, and a misspelled one isn't an error. The values of the
+dialect's keywords are still checked. In draft-04 through draft-07, the
+type doesn't know that `$ref` makes its siblings ignored.
+
+```typescript
+import type { Draft202012Schema } from "@hyperjump/json-schema/draft-2020-12";
+
+const person = {
+  $schema: "https://json-schema.org/draft/2020-12/schema",
+  type: "object",
+  properties: {
+    name: { type: "string", minLength: "1" }
+  }
+} satisfies Draft202012Schema;
+```
+
+```text
+Type 'string' is not assignable to type 'number'.
+```
+
+`$schema` can end with `#`, as draft-04 through draft-07 schemas usually
+do.
+
 ## In a registry
 
 Give a registry the type of the schemas it takes, and every schema added
-to it is checked, including by the registries `with` returns. A union
-takes schemas in more than one dialect. JSON text isn't checked.
+to it is checked, including by the registries `with` returns. JSON text
+isn't checked.
+
+A union takes schemas in more than one dialect, and `$schema` says which
+type a schema has to fit. A schema without `$schema` only has to fit one,
+so in `SchemaRegistry<V1Schema | Draft202012Schema>`, a misspelled keyword
+fits 2020-12.
 
 ```typescript
 import { SchemaRegistry } from "@hyperjump/json-schema";
@@ -60,13 +102,13 @@ declared `as const` can be passed to a registry, `validate`, and
   They're still reported when the schema is used.
 - **Formats.** `format` can be any string, because it only validates when
   formats are validated.
-- **Other dialects.** The whole schema is v1, so an embedded schema with a
-  different `$schema` doesn't fit the type.
+- **Embedded schemas in other dialects.** The whole schema is one dialect,
+  so an embedded schema with a different `$schema` doesn't fit the type.
 
 ## Custom keywords
 
-Give `V1Schema` the types of your keywords, by the names you give them in
-the dialect. A keyword's type comes from its definition's type, so declare
+Give a dialect's type the types of your keywords, by the names you give
+them in the dialect. A keyword's type comes from its definition's type, so declare
 the keyword with `satisfies Keyword`, which keeps its `shape` as written.
 
 ```typescript

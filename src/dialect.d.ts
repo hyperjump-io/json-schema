@@ -68,7 +68,10 @@ export type UnknownKeywords = "error" | "annotation" | "ignore";
  * The type of a schema in a dialect, for checking schemas written in
  * TypeScript. `K` maps the dialect's keyword names to their definitions'
  * types, `Uri` is the dialect's URI, and `U` is what an unknown keyword
- * means. If it's an error, only keywords starting with `x-` are allowed. The
+ * means. If it's an error, only keywords starting with `x-` are allowed.
+ * Otherwise, any keyword is, but the values of the dialect's keywords are
+ * still checked. `$schema` can have an empty fragment, as draft-04 through
+ * draft-07 schemas usually do. The
  * type of each keyword's value is its {@link KeywordValue}. The presets
  * export the types of their dialects, such as `V1Schema`.
  *
@@ -82,7 +85,7 @@ export type UnknownKeywords = "error" | "annotation" | "ignore";
  * the type.
  */
 export type SchemaOf<K extends Record<string, Keyword<any, any, any>>, Uri extends string, U extends UnknownKeywords> = boolean | (
-  { $schema?: Uri }
+  { $schema?: Uri | `${Uri}#` }
   & { [Name in keyof K]?: KeywordValue<K[Name], SchemaOf<K, Uri, U>> }
   & (U extends "error" ? { [name: `x-${string}`]: unknown } : { [name: string]: unknown })
 );

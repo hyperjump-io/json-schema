@@ -1,5 +1,8 @@
+import type { Json } from "@hyperjump/browser/json";
 import type { JsonSchema } from "../../json-schema.d.ts";
-import type { Dialect } from "../../dialect.d.ts";
+import type { Dialect, SchemaOf } from "../../dialect.d.ts";
+import type { Keyword } from "../../keyword.d.ts";
+import type { Expression, TypeName } from "../../kernel/kernel.d.ts";
 
 /**
  * The URI of the JSON Schema draft-07 dialect. `$schema` is usually
@@ -29,3 +32,71 @@ export const draft07Dialect: Dialect;
  * @throws Error if it's already been added
  */
 export function addDraft07(jsonSchema: JsonSchema): void;
+
+/**
+ * The type of a JSON Schema draft-07 schema, for checking schemas written
+ * in TypeScript. Unknown keywords are ignored, so any keyword is allowed,
+ * but the values of the dialect's keywords are checked. `$ref` replaces the
+ * whole schema, but the type doesn't know that, so its siblings are still
+ * checked. Add the types of custom keywords by name.
+ *
+ * ```ts
+ * const schema = {
+ *   type: "object",
+ *   properties: { name: { type: "string" } }
+ * } satisfies Draft07Schema;
+ * ```
+ */
+export type Draft07Schema<Extension extends Record<string, Keyword<any, any, any>> = {}> = SchemaOf<Draft07Keywords & Extension, typeof draft07DialectUri, "ignore">;
+
+/**
+ * The types of the keywords {@link addDraft07} adds to the draft-07
+ * dialect, by name, for {@link SchemaOf}
+ */
+export type Draft07Keywords = {
+  additionalItems: Keyword<Expression, "schema">;
+  additionalProperties: Keyword<Expression, "schema">;
+  allOf: Keyword<Expression[], { array: "schema" }>;
+  anyOf: Keyword<Expression[], { array: "schema" }>;
+  $comment: Keyword<string, "data">;
+  const: Keyword<Json, "data">;
+  contains: Keyword<Expression, "schema">;
+  contentEncoding: Keyword<string, "data">;
+  contentMediaType: Keyword<string, "data">;
+  default: Keyword<Json, "data">;
+  definitions: Keyword<[string, Expression][], { map: "schema" }>;
+  dependencies: Keyword<[string, Expression | string[]][], { map: ["schema", { array: "data" }] }>;
+  description: Keyword<string, "data">;
+  else: Keyword<Expression, "schema">;
+  enum: Keyword<Json[], "data">;
+  examples: Keyword<Json[], "data">;
+  exclusiveMaximum: Keyword<number, "data">;
+  exclusiveMinimum: Keyword<number, "data">;
+  format: Keyword<string, "data">;
+  $id: Keyword<string, "data">;
+  if: Keyword<Expression, "schema">;
+  items: Keyword<Expression | Expression[], ["schema", { array: "schema" }]>;
+  maximum: Keyword<number, "data">;
+  maxItems: Keyword<number, "data">;
+  maxLength: Keyword<number, "data">;
+  maxProperties: Keyword<number, "data">;
+  minimum: Keyword<number, "data">;
+  minItems: Keyword<number, "data">;
+  minLength: Keyword<number, "data">;
+  minProperties: Keyword<number, "data">;
+  multipleOf: Keyword<number, "data">;
+  not: Keyword<Expression, "schema">;
+  oneOf: Keyword<Expression[], { array: "schema" }>;
+  pattern: Keyword<string, "data">;
+  patternProperties: Keyword<[string, Expression][], { map: "schema" }>;
+  properties: Keyword<[string, Expression][], { map: "schema" }>;
+  propertyNames: Keyword<Expression, "schema">;
+  readOnly: Keyword<boolean, "data">;
+  $ref: Keyword<string, "data">;
+  required: Keyword<string[], "data">;
+  then: Keyword<Expression, "schema">;
+  title: Keyword<string, "data">;
+  type: Keyword<TypeName | TypeName[], "data">;
+  uniqueItems: Keyword<boolean, "data">;
+  writeOnly: Keyword<boolean, "data">;
+};
