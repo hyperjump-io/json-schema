@@ -1,11 +1,8 @@
 # Rules
 
-Each rule's page says why what it reports matters, its options, and
-examples of what it reports and what it doesn't.
-
-## In `recommended`
-
-Every rule is in the recommended preset.
+Every rule is in the `recommended` preset. Each rule's page says why what
+it reports matters, its options, and examples of what it reports and what
+it doesn't.
 
 | Rule | Reports |
 | --- | --- |
