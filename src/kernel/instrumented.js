@@ -180,6 +180,40 @@ export const instrumented = (jsonSchema, kernel, options) => {
   /** @type (entry: unknown) => I */
   const propertyValue = isAst ? (entry) => /** @type any */ (entry).children[1] : (entry) => /** @type any */ (entry)[1];
 
+  /**
+   * The bits of the types a schema only checks the type for, or 0 if it does
+   * more, or checks `integer` without `number`, which needs the value
+   *
+   * @type (of: Expression) => number
+   */
+  const typeOnlyMask = (of) => {
+    let expression = of;
+    if (of.op === "apply") {
+      const compiled = kernel.schemas[of.schema];
+      const expressions = typeof compiled === "object"
+        ? compiled.keywords.map((group) => group.expression).filter((subexpression) => subexpression.op !== "pass" && subexpression.op !== "annotate")
+        : [];
+      if (expressions.length !== 1) {
+        return 0;
+      }
+      expression = expressions[0];
+    }
+    if (expression.op !== "typeIs" || (expression.types.includes("integer") && !expression.types.includes("number"))) {
+      return 0;
+    }
+    let mask = 0;
+    for (const type of expression.types) {
+      mask |= typeBits[type === "integer" ? "number" : type];
+    }
+    return mask;
+  };
+
+  /** @type (mask: number, instance: I) => boolean */
+  const isOfType = (mask, instance) => {
+    const type = ops.typeOf(instance);
+    return type === undefined || (mask & typeBits[type]) !== 0;
+  };
+
   /** @type Map<Handle, SchemaEvaluator<I>> */
   const evaluators = new Map();
 
@@ -445,7 +479,16 @@ export const instrumented = (jsonSchema, kernel, options) => {
     } else {
       const expressions = keywordGroups.flatMap(({ expression }) => expression.op === "all" ? expression.of : [expression]);
       // The info is only for hooks and annotations, which there aren't
-      evaluate = keywordGroups.length === 0 ? () => true : buildAll(expressions, keywordInfo(keywordGroups[0]));
+      const info = keywordGroups.length === 0 ? undefined : keywordInfo(keywordGroups[0]);
+      const { merged, rest } = mergeItems(expressions, /** @type KeywordInfo */ (info));
+      const others = rest.length === 0 ? undefined : buildAll(rest, /** @type KeywordInfo */ (info));
+      if (merged === undefined) {
+        evaluate = others ?? (() => true);
+      } else if (others === undefined) {
+        evaluate = merged;
+      } else {
+        evaluate = (instance, marks) => merged(instance, marks) && others(instance, marks);
+      }
     }
 
     if (!tracksDynamicScope) {
@@ -467,6 +510,51 @@ export const instrumented = (jsonSchema, kernel, options) => {
       currentResource = outerResource;
       dynamicAnchors = outerAnchors;
       return valid;
+    };
+  };
+
+  /**
+   * A schema's `typeIs` of only `array`, `itemCount`, and `eachItem` (not
+   * `unevaluated`), if it has two or more of them, as one evaluator that
+   * tests whether the instance is an array once, as in `fast.js`
+   *
+   * @type (expressions: Expression[], info: KeywordInfo) => { merged: Evaluator<I> | undefined; rest: Expression[] }
+   */
+  const mergeItems = (expressions, info) => {
+    const type = expressions.find((expression) => expression.op === "typeIs" && expression.types.length === 1 && expression.types[0] === "array");
+    const count = expressions.find((expression) => expression.op === "itemCount");
+    const each = expressions.find((expression) => expression.op === "eachItem" && !("unevaluated" in expression));
+    if (Number(type !== undefined) + Number(count !== undefined) + Number(each !== undefined) < 2) {
+      return { merged: undefined, rest: expressions };
+    }
+
+    const isArray = type !== undefined;
+    const { min = 0, max = Infinity } = count?.op === "itemCount" ? count : {};
+    const from = each?.op === "eachItem" && "from" in each ? each.from : 0;
+    const of = each?.op === "eachItem" ? applyTo(each.of, info) : undefined;
+    const rest = expressions.filter((expression) => expression !== type && expression !== count && expression !== each);
+    return {
+      merged: (instance, marks) => {
+        if (ops.typeOf(instance) !== "array") {
+          return !isArray;
+        }
+        const length = ops.length(instance);
+        if (length < min || length > max) {
+          return false;
+        } else if (of === undefined) {
+          return true;
+        }
+        // Both kinds of instance have their items in an array
+        const items = /** @type I[] */ (ops.items(instance));
+        for (let index = from; index < items.length; index++) {
+          if (!of(items[index], undefined, index)) {
+            return false;
+          }
+          marks?.add(index);
+        }
+        return true;
+      },
+      rest
     };
   };
 
@@ -982,9 +1070,12 @@ export const instrumented = (jsonSchema, kernel, options) => {
     const unevaluated = [];
     /** @type Evaluator<I>[] */
     const rest = [];
+    /** @type Map<string, Expression[]> */
+    const namedOf = new Map();
     for (const expression of expressions) {
       if (expression.op === "property") {
         namedLists.set(expression.name, [...namedLists.get(expression.name) ?? [], applyTo(expression.of, info)]);
+        namedOf.set(expression.name, [...namedOf.get(expression.name) ?? [], expression.of]);
       } else if (expression.op === "eachProperty") {
         selects.push(selector(expression.select));
         selected.push(applyTo(expression.of, info));
@@ -1070,7 +1161,17 @@ export const instrumented = (jsonSchema, kernel, options) => {
       };
     }
 
-    const namedTable = nameTable(named);
+    // Without plugins or annotating, a property schema that only checks the
+    // type is checked in the loop, with a mask, instead of called, as in
+    // `fast.js`. Each name's entry has the same shape, with a mask of 0 if
+    // it's called.
+    /** @type Map<string, { evaluate: SchemaEvaluator<I>; mask: number }> */
+    const entries = new Map();
+    for (const [name, evaluate] of named) {
+      const of = /** @type Expression[] */ (namedOf.get(name));
+      entries.set(name, { evaluate, mask: stopsEarly && of.length === 1 ? typeOnlyMask(of[0]) : 0 });
+    }
+    const namedTable = nameTable(entries);
 
     /** @type Evaluator<I> */
     let loop;
@@ -1081,9 +1182,9 @@ export const instrumented = (jsonSchema, kernel, options) => {
         for (let index = 0; index < properties.length; index++) {
           const name = propertyName(properties[index]);
           const value = propertyValue(properties[index]);
-          const evaluate = namedTable[name];
-          if (evaluate !== undefined) {
-            if (evaluate(value, undefined, name)) {
+          const entry = namedTable[name];
+          if (entry !== undefined) {
+            if (entry.mask === 0 ? entry.evaluate(value, undefined, name) : isOfType(entry.mask, value)) {
               marks?.add(name);
             } else if (stopsEarly) {
               return false;
@@ -1103,10 +1204,10 @@ export const instrumented = (jsonSchema, kernel, options) => {
           const value = propertyValue(properties[index]);
           let evaluated = false;
           let isValid = true;
-          const evaluate = namedTable[name];
-          if (evaluate !== undefined) {
+          const entry = namedTable[name];
+          if (entry !== undefined) {
             evaluated = true;
-            isValid = evaluate(value, undefined, name);
+            isValid = entry.mask === 0 ? entry.evaluate(value, undefined, name) : isOfType(entry.mask, value);
           }
           for (let select = 0; select < selected.length; select++) {
             if (unevaluated[select] ? !(/** @type Set<string | number> */ (marks).has(name)) : selects[select](name)) {

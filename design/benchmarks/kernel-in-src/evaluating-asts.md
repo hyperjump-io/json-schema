@@ -154,6 +154,8 @@ parsed beforehand, so parsing isn't timed. B/A, median of 15 rounds:
   | --- | --- | --- | --- | --- | --- | --- |
   | One `all` for each schema | 0.773 | 0.589 | 0.668 | | 0.804 | 0.684 |
   | Properties from an AST object's children | 0.885 | 0.970 | 0.918 | | | |
+  | Property type masks, merged array checks | 0.983 | 0.877 | 1.009 | 0.897 | 0.973 | 1.024 |
+  | All of it, against HEAD | 0.693 | 0.535 | 0.617 | 0.664 | 0.682 | 0.630 |
 
   - Reading an AST object's properties from its children instead of
     `entries`, which makes an array of pairs for each object, is also used
@@ -161,8 +163,20 @@ parsed beforehand, so parsing isn't timed. B/A, median of 15 rounds:
     the default corpora. In the matcher that finds each group's
     properties, it was mixed (0.967–1.036 with every hook on ASTs,
     0.980–1.029 on plain values), so the matcher still uses `entries`.
+  - A property schema that only checks the type is checked in the loop
+    with a mask, as in `fast.js`, which gained 7–9% on `tsconfig.json` and
+    nothing on the others. An item schema that only checks the type,
+    checked in `eachItem`'s loop the same way, made GeoJSON 4–5% slower
+    (A/A 1.002), so it isn't done: V8 had already inlined the call. A
+    schema's `typeIs` of `array`, `itemCount`, and `eachItem` as one
+    evaluator, which tests whether the instance is an array once, made
+    GeoJSON 10% faster.
+  - Against HEAD, with every hook: ASTs 0.929–1.012, plain values
+    1.004–1.012, `annotate` 0.933–0.997.
   - `ab-equal.ts` with 10 mutants of each instance found no differences
-    on the default corpora, `.uproject`, and OpenAPI 3.1, and
-    `check-src.ts` found none. The test suites evaluate every case with
-    `validateJson` too. With a property that fails on purpose taken as
-    passing, `ab-equal.ts` found 35 differences.
+    on any of the six corpora, and `check-src.ts` found none. The test
+    suites evaluate every case with `validateJson` too, and caught each of
+    three mistakes made on purpose (6, 38, and 66 failing tests): ignoring
+    `maxItems` in the merged array checks, ignoring the first item's
+    failure, and a type mask that always passes. The corpora's mutants
+    don't change array lengths, so `ab-equal.ts` didn't catch the first.

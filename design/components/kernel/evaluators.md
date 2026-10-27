@@ -27,10 +27,13 @@
   fails. That was 5–29% faster. Nothing happens between one group and the
   next then, so a schema whose groups don't read marks is evaluated like
   `fast.js` evaluates it: as an `all` of its groups' expressions, with
-  every property operation in one loop, stopping at the first failure.
-  That made ASTs without plugins 20–41% faster. The loops read an AST
-  object's properties from its children, without `entries`, with or
-  without plugins
+  every property operation in one loop, a property schema that only checks
+  the type checked in the loop with a mask, and its `typeIs` of `array`,
+  `itemCount`, and `eachItem` as one evaluator. That made ASTs without
+  plugins 31–47% faster. An item schema that only checks the type isn't
+  checked in the loop, as it is in `fast.js`: that was slower on ASTs. The
+  loops read an AST object's properties from its children, without
+  `entries`, with or without plugins
   ([Evaluating ASTs](../../benchmarks/kernel-in-src/evaluating-asts.md)).
 - A schema's property operations are merged into one loop over the
   instance's properties. That's what makes real schemas faster than
