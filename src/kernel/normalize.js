@@ -1,5 +1,7 @@
+import { mapSubexpressions } from "./kernel.js";
+
 /**
- * @import { Expression, ItemPattern, Kernel } from "./kernel.d.ts"
+ * @import { Expression, Kernel } from "./kernel.d.ts"
  */
 
 /**
@@ -58,47 +60,6 @@ export const normalForm = (expression) => {
 
       return of.length === 0 ? { op: identity } : of.length === 1 ? of[0] : { op, of };
     }
-    case "one":
-      return { ...expression, of: expression.of.map(normalForm) };
-    case "not":
-    case "item":
-    case "eachItem":
-    case "contains":
-    case "property":
-    case "eachProperty":
-    case "eachPropertyName":
-      return { ...expression, of: normalForm(expression.of) };
-    case "cases":
-      return {
-        ...expression,
-        cases: expression.cases.map(([condition, then]) => [normalForm(condition), then && normalForm(then)]),
-        otherwise: expression.otherwise && normalForm(expression.otherwise)
-      };
-    case "typeSwitch":
-      return {
-        ...expression,
-        cases: Object.fromEntries(Object.entries(expression.cases).map(([type, then]) => [type, normalForm(then)])),
-        otherwise: normalForm(expression.otherwise)
-      };
-    case "propertySwitch":
-      return {
-        ...expression,
-        cases: expression.cases.map(([value, then]) => [value, normalForm(then)]),
-        other: normalForm(expression.other),
-        absent: normalForm(expression.absent),
-        unparsed: normalForm(expression.unparsed)
-      };
-    case "keySwitch":
-      return {
-        ...expression,
-        cases: expression.cases.map(([name, then]) => [name, normalForm(then)]),
-        none: normalForm(expression.none),
-        unparsed: normalForm(expression.unparsed)
-      };
-    case "itemSequence":
-      return { ...expression, pattern: normalPattern(expression.pattern) };
-    case "opaque":
-      return { ...expression, schemas: expression.schemas.map(normalForm) };
     case "oneOfValues":
       return expression.values.length === 1 ? { op: "equals", value: expression.values[0] } : expression;
     case "typeIs":
@@ -124,19 +85,6 @@ export const normalForm = (expression) => {
       return expression;
     }
     default:
-      return expression;
+      return mapSubexpressions(expression, normalForm);
   }
-};
-
-/** @type (pattern: ItemPattern) => ItemPattern */
-const normalPattern = (pattern) => {
-  if ("item" in pattern) {
-    return { item: normalForm(pattern.item) };
-  } else if ("repeat" in pattern) {
-    return { ...pattern, repeat: normalPattern(pattern.repeat) };
-  } else if ("sequence" in pattern) {
-    return { sequence: pattern.sequence.map(normalPattern) };
-  }
-
-  return { either: pattern.either.map(normalPattern) };
 };

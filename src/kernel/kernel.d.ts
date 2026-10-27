@@ -186,6 +186,12 @@ export type Kernel = {
 export const subexpressions: (expression: Expression) => Expression[];
 
 /**
+ * An expression with `map` applied to each of its `subexpressions`, or the
+ * same expression if `map` returned every one of them unchanged
+ */
+export const mapSubexpressions: (expression: Expression, map: (subexpression: Expression) => Expression) => Expression;
+
+/**
  * Whether an expression reads the dynamic scope (`dynamicApply`, or an
  * `opaque` operation that reads it), so evaluators have to track it
  */

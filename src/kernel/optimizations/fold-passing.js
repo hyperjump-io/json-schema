@@ -1,3 +1,4 @@
+import { mapSubexpressions } from "../kernel.js";
 import { normalForm } from "../normalize.js";
 import { isInert } from "../optimize.js";
 
@@ -75,32 +76,14 @@ export default {
       return compiled === true || (typeof compiled !== "boolean" && compiled.keywords.every(({ expression }) => isInert(expression, mode)));
     };
 
-    /** @type (expression: Expression | null) => Expression | null */
-    const foldNullable = (expression) => expression && fold(expression);
-
     /** @type (expression: Expression) => Expression */
     const fold = (expression) => {
       switch (expression.op) {
         case "apply":
           return alwaysPasses(expression.schema) ? { op: "pass" } : expression;
-        case "all":
-        case "any":
-        case "one": {
-          const of = expression.of.map(fold);
-          return of.every((subexpression, index) => subexpression === expression.of[index]) ? expression : { ...expression, of };
-        }
         case "not": {
           const of = fold(expression.of);
           return of.op === "pass" ? { op: "fail" } : of === expression.of ? expression : { ...expression, of };
-        }
-        case "cases": {
-          /** @type [Expression, Expression | null][] */
-          const cases = expression.cases.map(([condition, then]) => [fold(condition), foldNullable(then)]);
-          const otherwise = foldNullable(expression.otherwise);
-          const same = otherwise === expression.otherwise && cases.every(([condition, then], index) => {
-            return condition === expression.cases[index][0] && then === expression.cases[index][1];
-          });
-          return same ? expression : { ...expression, cases, otherwise };
         }
         case "item":
         case "eachItem":
@@ -113,12 +96,11 @@ export default {
           }
           return of === expression.of ? expression : { ...expression, of };
         }
-        case "contains": {
-          const of = fold(expression.of);
-          return of === expression.of ? expression : { ...expression, of };
-        }
-        default:
+        case "itemSequence":
+        case "opaque":
           return expression;
+        default:
+          return mapSubexpressions(expression, fold);
       }
     };
 

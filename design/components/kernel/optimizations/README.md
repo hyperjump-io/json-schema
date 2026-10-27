@@ -22,6 +22,13 @@ them, and `src/kernel/optimize.js` runs them.
   "does anything read marks?" isn't a walk over every expression, which
   took 1.7–2 ms on `package.json` each time a pass or evaluator asked, and
   `static-unevaluated` only looks at the schemas that read marks.
+- A pass that rewrites expressions handles only the operations it
+  rewrites, and rebuilds the rest with `mapSubexpressions`
+  (`src/kernel/kernel.js`), which returns the same expression when none
+  of its subexpressions changed. So an operation added to the kernel only
+  needs `subexpressions` and `mapSubexpressions` to know about it, not
+  every pass. `dispatch` and `fold-passing` don't go into `itemSequence`
+  or `opaque`, which they didn't before either.
 - Passes run when an evaluator is built, for its mode, so a serialized
   kernel isn't optimized for any one mode.
 - Passes run in the order `index.js` lists them, because one can leave work

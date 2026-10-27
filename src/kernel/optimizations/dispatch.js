@@ -1,9 +1,10 @@
+import { mapSubexpressions } from "../kernel.js";
 import { normalForm } from "../normalize.js";
 import { isInert } from "../optimize.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
- * @import { CompiledSchema, Expression, Handle, JsonTypeName, KeywordGroup, Scalar, TypeName } from "../kernel.d.ts"
+ * @import { CompiledSchema, Expression, Handle, KeywordGroup, Scalar, TypeName } from "../kernel.d.ts"
  * @import { Optimization } from "../optimize.js"
  */
 
@@ -404,86 +405,20 @@ export default {
       return types !== null && [...types].every((type) => type === "object");
     };
 
-    /**
-     * The expressions rewritten, or the same array if none of them changed,
-     * which is almost always
-     *
-     * @type (expressions: Expression[]) => Expression[]
-     */
-    const rewriteAll = (expressions) => {
-      /** @type Expression[] | undefined */
-      let rewritten;
-      for (let index = 0; index < expressions.length; index++) {
-        const expression = rewrite(expressions[index]);
-        if (expression !== expressions[index]) {
-          rewritten ??= expressions.slice();
-          rewritten[index] = expression;
-        }
-      }
-      return rewritten ?? expressions;
-    };
-
-    /** @type (expression: Expression | null) => Expression | null */
-    const rewriteNullable = (expression) => expression && rewrite(expression);
-
     /** @type (expression: Expression) => Expression */
     const rewrite = (expression) => {
       switch (expression.op) {
         case "all":
         case "any":
         case "one": {
-          const of = rewriteAll(expression.of);
-          const rewritten = of === expression.of ? expression : { ...expression, of };
+          const rewritten = /** @type typeof expression */ (mapSubexpressions(expression, rewrite));
           return byType(rewritten) ?? byTag(rewritten) ?? rewritten;
         }
-        case "not":
-        case "item":
-        case "eachItem":
-        case "property":
-        case "eachProperty":
-        case "eachPropertyName":
-        case "contains": {
-          const of = rewrite(expression.of);
-          return of === expression.of ? expression : { ...expression, of };
-        }
-        case "cases": {
-          /** @type [Expression, Expression | null][] */
-          const cases = expression.cases.map(([condition, then]) => [rewrite(condition), rewriteNullable(then)]);
-          const otherwise = rewriteNullable(expression.otherwise);
-          const same = otherwise === expression.otherwise && cases.every(([condition, then], index) => {
-            return condition === expression.cases[index][0] && then === expression.cases[index][1];
-          });
-          return same ? expression : { ...expression, cases, otherwise };
-        }
-        case "typeSwitch": {
-          const cases = Object.fromEntries(Object.entries(expression.cases).map(([type, then]) => [type, rewrite(then)]));
-          const otherwise = rewrite(expression.otherwise);
-          const same = otherwise === expression.otherwise && Object.entries(cases).every(([type, then]) => {
-            return then === expression.cases[/** @type JsonTypeName */ (type)];
-          });
-          return same ? expression : { ...expression, cases, otherwise };
-        }
-        case "propertySwitch": {
-          /** @type [Scalar, Expression][] */
-          const cases = expression.cases.map(([value, then]) => [value, rewrite(then)]);
-          const other = rewrite(expression.other);
-          const absent = rewrite(expression.absent);
-          const unparsed = rewrite(expression.unparsed);
-          const same = other === expression.other && absent === expression.absent && unparsed === expression.unparsed
-            && cases.every(([, then], index) => then === expression.cases[index][1]);
-          return same ? expression : { ...expression, cases, other, absent, unparsed };
-        }
-        case "keySwitch": {
-          /** @type [string, Expression][] */
-          const cases = expression.cases.map(([name, then]) => [name, rewrite(then)]);
-          const none = rewrite(expression.none);
-          const unparsed = rewrite(expression.unparsed);
-          const same = none === expression.none && unparsed === expression.unparsed
-            && cases.every(([, then], index) => then === expression.cases[index][1]);
-          return same ? expression : { ...expression, cases, none, unparsed };
-        }
-        default:
+        case "itemSequence":
+        case "opaque":
           return expression;
+        default:
+          return mapSubexpressions(expression, rewrite);
       }
     };
 

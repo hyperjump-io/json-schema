@@ -1,8 +1,8 @@
 import { addDynamicAnchors } from "../fast.js";
-import { subexpressions } from "../kernel.js";
+import { mapSubexpressions, subexpressions } from "../kernel.js";
 
 /**
- * @import { CompiledSchema, Expression, Handle, ItemPattern, Kernel } from "../kernel.d.ts"
+ * @import { CompiledSchema, Expression, Handle, Kernel } from "../kernel.d.ts"
  * @import { Optimization } from "../optimize.js"
  */
 
@@ -233,11 +233,6 @@ const opaqueReadsDynamicScope = (expression) => {
  * @type (expression: Expression, anchors: Record<string, Handle>, applied: (handle: Handle) => Handle) => Expression
  */
 const resolve = (expression, anchors, applied) => {
-  /** @type (expression: Expression) => Expression */
-  const of = (expression) => resolve(expression, anchors, applied);
-  /** @type (expression: Expression | null) => Expression | null */
-  const ofNullable = (expression) => expression && of(expression);
-
   switch (expression.op) {
     case "apply":
       return { op: "apply", schema: applied(expression.schema) };
@@ -245,65 +240,7 @@ const resolve = (expression, anchors, applied) => {
       const handle = Object.hasOwn(anchors, expression.anchor) ? anchors[expression.anchor] : expression.fallback;
       return handle === null ? expression : { op: "apply", schema: applied(handle) };
     }
-    case "all":
-    case "any":
-    case "one":
-      return { ...expression, of: expression.of.map(of) };
-    case "not":
-    case "item":
-    case "eachItem":
-    case "contains":
-    case "property":
-    case "eachProperty":
-    case "eachPropertyName":
-      return { ...expression, of: of(expression.of) };
-    case "cases":
-      return {
-        ...expression,
-        cases: expression.cases.map(([condition, then]) => [of(condition), ofNullable(then)]),
-        otherwise: ofNullable(expression.otherwise)
-      };
-    case "typeSwitch": {
-      /** @type typeof expression.cases */
-      const cases = {};
-      for (const type of /** @type (keyof typeof expression.cases)[] */ (Object.keys(expression.cases))) {
-        cases[type] = of(/** @type Expression */ (expression.cases[type]));
-      }
-      return { ...expression, cases, otherwise: of(expression.otherwise) };
-    }
-    case "propertySwitch":
-      return {
-        ...expression,
-        cases: expression.cases.map(([value, then]) => [value, of(then)]),
-        other: of(expression.other),
-        absent: of(expression.absent),
-        unparsed: of(expression.unparsed)
-      };
-    case "keySwitch":
-      return {
-        ...expression,
-        cases: expression.cases.map(([name, then]) => [name, of(then)]),
-        none: of(expression.none),
-        unparsed: of(expression.unparsed)
-      };
-    case "itemSequence":
-      return { ...expression, pattern: resolvePattern(expression.pattern, of) };
-    case "opaque":
-      return { ...expression, schemas: expression.schemas.map(of) };
     default:
-      return expression;
-  }
-};
-
-/** @type (pattern: ItemPattern, of: (expression: Expression) => Expression) => ItemPattern */
-const resolvePattern = (pattern, of) => {
-  if ("item" in pattern) {
-    return { item: of(pattern.item) };
-  } else if ("sequence" in pattern) {
-    return { sequence: pattern.sequence.map((each) => resolvePattern(each, of)) };
-  } else if ("either" in pattern) {
-    return { either: pattern.either.map((each) => resolvePattern(each, of)) };
-  } else {
-    return { ...pattern, repeat: resolvePattern(pattern.repeat, of) };
+      return mapSubexpressions(expression, (subexpression) => resolve(subexpression, anchors, applied));
   }
 };
