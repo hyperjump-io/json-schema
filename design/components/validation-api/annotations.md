@@ -13,6 +13,16 @@
   tree, so unist utilities can find annotated nodes. Annotations don't
   record the schema location they came from. The new output format spec's
   flat list of annotations would.
+- Annotations stay plain data on each node, attached when evaluation
+  ends, so they work with the rest of the unified ecosystem. Attaching is
+  most of what annotating costs beyond evaluating (about 0.21 ms of
+  tsconfig's 3,433 annotations, against 0.07 ms to record them), but
+  these were rejected, because annotations wouldn't be on the nodes
+  anymore, or only after `annotation` reads them:
+  - Keeping the flat list of node and annotation id as the result, with
+    an index built when a node is first asked about.
+  - Attaching an array of ids to each node and turning it into the `Map`
+    when `annotation` first reads it.
 - In a broken (error-tolerant) tree, keywords skip `json-missing` and
   `json-invalid` nodes, and `required` counts a property with a missing value
   as present, so the syntax error is the only error for it.
