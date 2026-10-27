@@ -85,6 +85,32 @@ describe("dispatch", () => {
     });
   });
 
+  test("dispatches the schemas of an opaque operation", () => {
+    /** @type Expression */
+    const one = { op: "one", of: [{ op: "typeIs", types: ["string"] }, { op: "typeIs", types: ["object"] }] };
+    /** @type Kernel */
+    const kernel = {
+      kernel: 1,
+      uri: "https://example.com/opaque",
+      schemas: {
+        "https://example.com/opaque": {
+          resource: "https://example.com/opaque",
+          keywords: [{
+            keywordUri: "https://example.com/keyword",
+            location: "https://example.com/opaque#/keyword",
+            sources: [],
+            expression: { op: "opaque", keyword: "https://example.com/keyword", value: null, schemas: [one] }
+          }]
+        }
+      },
+      resources: { "https://example.com/opaque": { dynamicAnchors: {} } },
+      reads: { evaluated: [], dynamicScope: [] }
+    };
+    const root = /** @type Exclude<CompiledSchema, boolean> */ (dispatch.optimize(kernel, fast).get(kernel.uri));
+    const opaque = /** @type Extract<Expression, { op: "opaque" }> */ (root.keywords[0].expression);
+    expect(opaque.schemas[0]).to.include({ op: "typeSwitch" });
+  });
+
   test("dispatches for plugins too, which see only what's evaluated", async () => {
     const schema = { oneOf: [{ type: "string" }, { type: "object" }] };
     expect(await optimized(schema, "oneOf", { fast: false, plugins: true, annotations: false })).to.eql(await optimized(schema, "oneOf"));

@@ -96,9 +96,6 @@ export default {
           }
           return of === expression.of ? expression : { ...expression, of };
         }
-        case "itemSequence":
-        case "opaque":
-          return expression;
         default:
           return mapSubexpressions(expression, fold);
       }

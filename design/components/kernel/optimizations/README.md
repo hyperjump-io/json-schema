@@ -27,8 +27,8 @@ them, and `src/kernel/optimize.js` runs them.
   (`src/kernel/kernel.js`), which returns the same expression when none
   of its subexpressions changed. So an operation added to the kernel only
   needs `subexpressions` and `mapSubexpressions` to know about it, not
-  every pass. `dispatch` and `fold-passing` don't go into `itemSequence`
-  or `opaque`, which they didn't before either.
+  every pass, and every pass goes into every operation, including an item
+  pattern's items and an `opaque` operation's schemas.
 - Passes run when an evaluator is built, for its mode, so a serialized
   kernel isn't optimized for any one mode.
 - Passes run in the order `index.js` lists them, because one can leave work

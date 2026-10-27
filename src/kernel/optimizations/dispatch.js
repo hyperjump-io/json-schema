@@ -414,9 +414,6 @@ export default {
           const rewritten = /** @type typeof expression */ (mapSubexpressions(expression, rewrite));
           return byType(rewritten) ?? byTag(rewritten) ?? rewritten;
         }
-        case "itemSequence":
-        case "opaque":
-          return expression;
         default:
           return mapSubexpressions(expression, rewrite);
       }
