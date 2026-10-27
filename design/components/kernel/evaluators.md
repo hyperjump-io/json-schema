@@ -67,6 +67,11 @@
   of SchemaStore's Unreal Engine `.uproject` schema
   ([Unique items](../../benchmarks/kernel-in-src/unique-items.md)). `instrumented.js` still compares
   every pair with `instanceEqual`.
+- Both evaluators look a scalar up in a set of `oneOfValues`'s scalars
+  (`enum`), and only compare arrays and objects with each value. In
+  `instrumented.js`, it made evaluating `tsconfig.json` files, which have
+  enums of dozens of values, 14–19% faster
+  ([Evaluating ASTs](../../benchmarks/kernel-in-src/evaluating-asts.md)).
 - Evaluators depend on the instance representation, whether it's
   annotating, whether there are plugins, and whether one has an
   `annotation` hook, because that's what the optimizations depend on. Not

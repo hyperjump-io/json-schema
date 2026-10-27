@@ -50,3 +50,16 @@ parsed beforehand, so parsing isn't timed. B/A, median of 15 rounds:
   property loop finds properties for nearly every schema, and the
   required bits cover `required` next to two property groups. It isn't
   used.
+- `oneOfValues` in `instrumented.js` compared the instance with each value
+  through `instanceEqual`. It looks scalars up in a set now, as `fast.js`
+  does. B/A, median of 15 rounds:
+
+  | | `package.json` | `tsconfig.json` | OpenAPI 3.0 |
+  | --- | --- | --- | --- |
+  | AST, every hook | 0.981 | 0.814 | 0.946 |
+  | Annotating an AST | 0.978 | 0.862 | 0.998 |
+  | Plain value, every hook | 0.999 | 0.821 | 0.992 |
+
+  `tsconfig.json` has enums of dozens of values, like `lib` and `target`.
+  A `Set` compares scalars as `===` does except for `NaN`, which JSON
+  doesn't have.

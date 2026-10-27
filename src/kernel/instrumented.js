@@ -585,8 +585,28 @@ export const instrumented = (jsonSchema, kernel, options) => {
         return (instance) => equal(instance, value);
       }
       case "oneOfValues": {
-        const { values } = expression;
-        return (instance) => ops.typeOf(instance) === undefined || values.some((value) => equal(instance, value));
+        // Scalars are compared with a lookup. Only arrays and objects need
+        // `equal`.
+        /** @type Set<ReadonlyJson> */
+        const scalars = new Set();
+        /** @type Json[] */
+        const structured = [];
+        for (const value of expression.values) {
+          if (typeof value === "object" && value !== null) {
+            structured.push(value);
+          } else {
+            scalars.add(value);
+          }
+        }
+        return (instance) => {
+          const type = ops.typeOf(instance);
+          if (type === undefined) {
+            return true;
+          }
+          return type === "object" || type === "array"
+            ? structured.some((value) => equal(instance, value))
+            : scalars.has(ops.value(instance));
+        };
       }
 
       case "range": {
