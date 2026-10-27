@@ -169,6 +169,17 @@ export const instrumented = (jsonSchema, kernel, options) => {
     plugin.annotation?.(info, /** @type EvaluationLocation */ (currentAt), value, keywordState);
   };
 
+  // An AST object's properties are its children, so they're read without
+  // making an array of entries for each object
+  /** @type (instance: I) => unknown[] */
+  const propertiesOf = isAst
+    ? (instance) => /** @type any */ (instance).children
+    : (instance) => /** @type unknown[] */ (ops.entries(instance));
+  /** @type (entry: unknown) => string */
+  const propertyName = isAst ? (entry) => /** @type any */ (entry).children[0].value : (entry) => /** @type any */ (entry)[0];
+  /** @type (entry: unknown) => I */
+  const propertyValue = isAst ? (entry) => /** @type any */ (entry).children[1] : (entry) => /** @type any */ (entry)[1];
+
   /** @type Map<Handle, SchemaEvaluator<I>> */
   const evaluators = new Map();
 
@@ -1066,7 +1077,10 @@ export const instrumented = (jsonSchema, kernel, options) => {
     if (selected.length === 0) {
       loop = (instance, marks) => {
         let valid = true;
-        for (const [name, value] of ops.entries(instance)) {
+        const properties = propertiesOf(instance);
+        for (let index = 0; index < properties.length; index++) {
+          const name = propertyName(properties[index]);
+          const value = propertyValue(properties[index]);
           const evaluate = namedTable[name];
           if (evaluate !== undefined) {
             if (evaluate(value, undefined, name)) {
@@ -1083,7 +1097,10 @@ export const instrumented = (jsonSchema, kernel, options) => {
     } else {
       loop = (instance, marks) => {
         let valid = true;
-        for (const [name, value] of ops.entries(instance)) {
+        const properties = propertiesOf(instance);
+        for (let index = 0; index < properties.length; index++) {
+          const name = propertyName(properties[index]);
+          const value = propertyValue(properties[index]);
           let evaluated = false;
           let isValid = true;
           const evaluate = namedTable[name];
@@ -1091,10 +1108,10 @@ export const instrumented = (jsonSchema, kernel, options) => {
             evaluated = true;
             isValid = evaluate(value, undefined, name);
           }
-          for (let index = 0; index < selected.length; index++) {
-            if (unevaluated[index] ? !(/** @type Set<string | number> */ (marks).has(name)) : selects[index](name)) {
+          for (let select = 0; select < selected.length; select++) {
+            if (unevaluated[select] ? !(/** @type Set<string | number> */ (marks).has(name)) : selects[select](name)) {
               evaluated = true;
-              isValid = selected[index](value, undefined, name) && isValid;
+              isValid = selected[select](value, undefined, name) && isValid;
             }
           }
           if (evaluated && isValid) {

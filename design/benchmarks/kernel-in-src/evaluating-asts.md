@@ -153,7 +153,14 @@ parsed beforehand, so parsing isn't timed. B/A, median of 15 rounds:
   | | `package.json` | `tsconfig.json` | OpenAPI 3.0 | GeoJSON | `.uproject` | OpenAPI 3.1 |
   | --- | --- | --- | --- | --- | --- | --- |
   | One `all` for each schema | 0.773 | 0.589 | 0.668 | | 0.804 | 0.684 |
+  | Properties from an AST object's children | 0.885 | 0.970 | 0.918 | | | |
 
+  - Reading an AST object's properties from its children instead of
+    `entries`, which makes an array of pairs for each object, is also used
+    with plugins in `buildAll`'s loops: with every hook, 0.951–0.991 on
+    the default corpora. In the matcher that finds each group's
+    properties, it was mixed (0.967–1.036 with every hook on ASTs,
+    0.980–1.029 on plain values), so the matcher still uses `entries`.
   - `ab-equal.ts` with 10 mutants of each instance found no differences
     on the default corpora, `.uproject`, and OpenAPI 3.1, and
     `check-src.ts` found none. The test suites evaluate every case with
