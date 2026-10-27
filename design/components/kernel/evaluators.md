@@ -24,7 +24,12 @@
   An AST without plugins or annotating stops early, like `fast.js`: a
   schema at its first failing group, `any` at the first subexpression that
   passes if nothing reads marks, and `eachItem` at the first item that
-  fails. That was 5–29% faster.
+  fails. That was 5–29% faster. Nothing happens between one group and the
+  next then, so a schema whose groups don't read marks is evaluated like
+  `fast.js` evaluates it: as an `all` of its groups' expressions, with
+  every property operation in one loop, stopping at the first failure.
+  That made ASTs without plugins 20–41% faster
+  ([Evaluating ASTs](../../benchmarks/kernel-in-src/evaluating-asts.md)).
 - A schema's property operations are merged into one loop over the
   instance's properties. That's what makes real schemas faster than
   evaluating each operation on its own. Each property is matched once

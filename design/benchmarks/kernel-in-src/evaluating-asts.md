@@ -138,3 +138,24 @@ parsed beforehand, so parsing isn't timed. B/A, median of 15 rounds:
   The default corpora were 0.978–1.008 with every hook. `ab-equal.ts`
   with 20 mutants of each `.uproject` instance found no differences, and
   `check-src.ts` found none.
+- An AST without plugins or annotating took about 4.5 times as long as
+  FLAG on the plain value on `package.json` and 6.5 times on GeoJSON (from
+  `jsonschema-benchmark`, as a `CORPORA` file). A profile put 20% in each
+  schema's evaluator, which saved and restored evaluation state and called
+  hooks on an empty plugin for every schema and group, and about 25% in
+  the property loops. Without hooks, nothing is between one group and the
+  next, so a schema whose groups don't read marks is now one `all` of its
+  groups' expressions, as in `fast.js`, and `all` stops at the first
+  failure. Schemas whose groups read marks evaluate as before, which
+  `static-unevaluated` makes rare without plugins. Then, B/A against the
+  step before, median of 15 or 21 rounds, ASTs without plugins:
+
+  | | `package.json` | `tsconfig.json` | OpenAPI 3.0 | GeoJSON | `.uproject` | OpenAPI 3.1 |
+  | --- | --- | --- | --- | --- | --- | --- |
+  | One `all` for each schema | 0.773 | 0.589 | 0.668 | | 0.804 | 0.684 |
+
+  - `ab-equal.ts` with 10 mutants of each instance found no differences
+    on the default corpora, `.uproject`, and OpenAPI 3.1, and
+    `check-src.ts` found none. The test suites evaluate every case with
+    `validateJson` too. With a property that fails on purpose taken as
+    passing, `ab-equal.ts` found 35 differences.

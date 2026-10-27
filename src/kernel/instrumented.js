@@ -307,6 +307,14 @@ export const instrumented = (jsonSchema, kernel, options) => {
     if (!tracking) {
       keywordGroups = keywordGroups.filter(({ expression }) => expression.op !== "pass" && (annotating || expression.op !== "annotate"));
     }
+    // Without plugins or annotating, nothing happens between one group and
+    // the next, so a schema whose groups don't read marks is an `all` of
+    // their expressions, as in `fast.js`: its property operations are one
+    // loop, and it stops at the first failure
+    if (stopsEarly && !keywordGroups.some(({ expression }) => readsMarks(expression))) {
+      return buildLeanSchema(compiled, keywordGroups, resource, resourceAnchors);
+    }
+
     const infos = new Map(keywordGroups.map((group) => [group, keywordInfo(group)]));
     const merged = mergeable(keywordGroups);
     const bits = merged.length > 1 ? requiredBits(keywordGroups) : new Map();
@@ -409,6 +417,44 @@ export const instrumented = (jsonSchema, kernel, options) => {
       currentResource = outerResource;
       dynamicAnchors = outerAnchors;
 
+      return valid;
+    };
+  };
+
+  /**
+   * A schema without plugins or annotating, whose groups don't read marks
+   *
+   * @type (compiled: Kernel["schemas"][Handle], keywordGroups: KeywordGroup[], resource: string, resourceAnchors: Record<string, Handle>) => SchemaEvaluator<I>
+   */
+  const buildLeanSchema = (compiled, keywordGroups, resource, resourceAnchors) => {
+    /** @type Evaluator<I> */
+    let evaluate;
+    if (typeof compiled === "boolean") {
+      evaluate = () => compiled;
+    } else {
+      const expressions = keywordGroups.flatMap(({ expression }) => expression.op === "all" ? expression.of : [expression]);
+      // The info is only for hooks and annotations, which there aren't
+      evaluate = keywordGroups.length === 0 ? () => true : buildAll(expressions, keywordInfo(keywordGroups[0]));
+    }
+
+    if (!tracksDynamicScope) {
+      return (instance, marks) => (isAst && ops.typeOf(instance) === undefined) || evaluate(instance, marks);
+    }
+
+    return (instance, marks) => {
+      if (isAst && ops.typeOf(instance) === undefined) {
+        return true;
+      } else if (resource === currentResource) {
+        return evaluate(instance, marks);
+      }
+
+      const outerResource = currentResource;
+      const outerAnchors = dynamicAnchors;
+      currentResource = resource;
+      dynamicAnchors = addDynamicAnchors(resourceAnchors, dynamicAnchors);
+      const valid = evaluate(instance, marks);
+      currentResource = outerResource;
+      dynamicAnchors = outerAnchors;
       return valid;
     };
   };
@@ -961,12 +1007,24 @@ export const instrumented = (jsonSchema, kernel, options) => {
       evaluateRest = () => true;
     } else if (rest.length === 1) {
       evaluateRest = rest[0];
-    } else if (rest.length === 2) {
+    } else if (rest.length === 2 && stopsEarly) {
       // Called directly, without a loop, which was faster
+      const [a, b] = rest;
+      evaluateRest = (instance, marks) => a(instance, marks) && b(instance, marks);
+    } else if (rest.length === 2) {
       const [a, b] = rest;
       evaluateRest = (instance, marks) => {
         const valid = a(instance, marks);
         return b(instance, marks) && valid;
+      };
+    } else if (stopsEarly) {
+      evaluateRest = (instance, marks) => {
+        for (let index = 0; index < rest.length; index++) {
+          if (!rest[index](instance, marks)) {
+            return false;
+          }
+        }
+        return true;
       };
     } else {
       evaluateRest = (instance, marks) => {
@@ -1013,6 +1071,8 @@ export const instrumented = (jsonSchema, kernel, options) => {
           if (evaluate !== undefined) {
             if (evaluate(value, undefined, name)) {
               marks?.add(name);
+            } else if (stopsEarly) {
+              return false;
             } else {
               valid = false;
             }
@@ -1039,11 +1099,17 @@ export const instrumented = (jsonSchema, kernel, options) => {
           }
           if (evaluated && isValid) {
             marks?.add(name);
+          } else if (stopsEarly && !isValid) {
+            return false;
           }
           valid &&= isValid;
         }
         return valid;
       };
+    }
+
+    if (stopsEarly) {
+      return (instance, marks) => evaluateRest(instance, marks) && (ops.typeOf(instance) !== "object" || loop(instance, marks));
     }
 
     return (instance, marks) => {
