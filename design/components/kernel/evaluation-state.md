@@ -59,6 +59,9 @@ schema they were evaluated through pass. An invalid instance gets no
 annotations from the failing parts of the schema. The language server has its
 own annotation implementation for that reason. Plugins see every
 annotation, including the ones that aren't kept (see [Plugins](plugins.md)). Annotations
-are collected in nested lists, so a passing schema adds its subschemas'
-annotations to its own without copying them, and they're flattened when
-they're attached to the instance's nodes.
+are collected in one flat list for the evaluation. A schema that fails
+cuts the list back to its length when the schema started, which drops
+what its groups and the schemas they applied added, and a schema fails if
+any of its groups fails. What's left is attached to the instance's nodes
+at the end. That was 14–23% faster than nested lists for each group and
+schema ([Evaluating ASTs](../../benchmarks/kernel-in-src/evaluating-asts.md)).

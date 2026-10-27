@@ -86,3 +86,40 @@ parsed beforehand, so parsing isn't timed. B/A, median of 15 rounds:
   `ab-equal.ts` with 10 mutants of each instance and the annotation
   comparison found no differences, and `check-src.ts` found none. With
   `property` said not to mark on purpose, `ab-equal.ts` found 782.
+- Annotations were collected in nested lists: one for each group that
+  annotated, added to one for its schema if the group passed, added to
+  the caller's if the schema passed, and flattened when they were
+  attached. Each annotation was an object. Now they're one flat list for
+  the evaluation, three items for each annotation, and a schema that
+  fails cuts the list back to its length when it started. A group doesn't
+  have to: a schema fails if any of its groups fails. B/A, median of 21
+  rounds:
+
+  | | `package.json` | `tsconfig.json` | OpenAPI 3.0 | OpenAPI 3.1 |
+  | --- | --- | --- | --- | --- |
+  | `annotate` | 0.862 | 0.861 | 0.818 | |
+  | Annotating an AST | 0.849 | 0.815 | 0.774 | 0.990 |
+  | AST, every hook | 1.001 | 1.024 | 1.006 | |
+
+  - Cutting the list back on every failure, even when it was already
+    that long, made `annotate` on `tsconfig.json` 1.065 and OpenAPI 3.1
+    1.03–1.05: setting an array's length is a call into the runtime, and
+    `tsconfig.json`'s schema has many branches that fail without
+    annotating. It's only set when the list is longer.
+  - Without annotating, the first version still read the list's length
+    for every group and schema, and set it on every failure, which made
+    evaluating with every hook 1.03–1.23. Neither is done without
+    annotating now.
+  - OpenAPI 3.1 has few annotations (1,690 on its 107 instances, against
+    73,870 on `package.json`'s 3,000), so it doesn't change.
+  - Until this change, `ab.ts`'s `annotateNode` annotated the same nodes
+    every round, and annotating a node again adds to its annotations, so
+    their lists grew. It clears them before each run now. Its earlier
+    numbers in this note and in
+    [Unevaluated when annotating](unevaluated-when-annotating.md) are less
+    reliable than `annotate`'s.
+  - The annotations of every corpus and OpenAPI 3.1 were compared on
+    every node (values in order), on the instances and 5 mutants of each:
+    19,854 instances, no differences. Without the cut, the same script
+    found 1,599 differences in 6,618 instances (one mutant each).
+    `check-src.ts` found no differences.

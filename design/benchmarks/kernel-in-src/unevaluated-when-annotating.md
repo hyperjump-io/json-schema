@@ -18,7 +18,10 @@ corpora file for `ab.ts` (`CORPORA`). B/A, median of 15 rounds:
 | `annotateNode` | 0.849 (0.818–0.869) |
 
 `annotate` includes converting the value to an AST, which is why its
-range is wider.
+range is wider. `annotateNode` annotated the same nodes every round then,
+so their annotations added up (see
+[Evaluating ASTs](evaluating-asts.md)), which makes its number less
+reliable than `annotate`'s.
 
 The annotations were compared on every node, with A and B annotating the
 instances and 10 mutants of each (a property removed or a value

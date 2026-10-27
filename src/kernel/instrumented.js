@@ -43,12 +43,13 @@ import { addDynamicAnchors, addReachable, isClose, itemSequenceStates, keywordEv
  */
 
 /**
- * Annotations are collected in nested lists so a passing schema can add its
- * subschemas' annotations to its own without copying them. They're flattened
- * when they're attached to the instance.
+ * Annotations are collected in one list, flat, three items each: the node,
+ * the keyword URI, and the value. A schema that fails, which it does if any
+ * of its groups fails, drops what was added since it started, which is
+ * everything its groups and what they applied added, by cutting the list
+ * back to where it was.
  *
- * @typedef {{ node: Node; keywordUri: string; value: Json }} Annotation
- * @typedef {(Annotation | AnnotationList)[]} AnnotationList
+ * @typedef {(Node | string | Json)[]} Annotations
  */
 
 /**
@@ -129,9 +130,9 @@ export const instrumented = (jsonSchema, kernel, options) => {
   /** @type Record<string, Handle> | undefined */
   let dynamicAnchors;
 
-  // The annotations of the keyword group being evaluated
-  /** @type AnnotationList | undefined */
-  let keywordAnnotations;
+  // The annotations kept so far, if annotating
+  /** @type Annotations */
+  let annotations = [];
 
   /** @type (instance: I, value: Json) => boolean */
   const equal = (instance, value) => instanceEqual(ops, instance, jsInstance, value, true);
@@ -163,8 +164,7 @@ export const instrumented = (jsonSchema, kernel, options) => {
   /** @type (info: KeywordInfo, value: Json) => void */
   const annotate = (info, value) => {
     if (annotating) {
-      keywordAnnotations ??= [];
-      keywordAnnotations.push({ node: /** @type Node */ (currentInstance), keywordUri: info.keywordUri, value });
+      annotations.push(/** @type Node */ (currentInstance), info.keywordUri, value);
     }
     plugin.annotation?.(info, /** @type EvaluationLocation */ (currentAt), value, keywordState);
   };
@@ -348,9 +348,7 @@ export const instrumented = (jsonSchema, kernel, options) => {
         dynamicAnchors = addDynamicAnchors(resourceAnchors, dynamicAnchors);
       }
 
-      const outerKeywordAnnotations = keywordAnnotations;
-      /** @type AnnotationList | undefined */
-      let schemaAnnotations;
+      const schemaStart = annotating ? annotations.length : 0;
 
       const parentState = keywordState;
       const schemaAt = /** @type EvaluationLocation */ (currentAt);
@@ -364,8 +362,6 @@ export const instrumented = (jsonSchema, kernel, options) => {
       /** @type Matches<I> | undefined */
       let matches;
       for (const group of groups) {
-        keywordAnnotations = undefined;
-
         const keywordAt = /** @type EvaluationLocation */ (currentAt);
         const state = plugin.beforeKeyword?.(group.info, keywordAt, schemaState);
         keywordState = state;
@@ -385,13 +381,10 @@ export const instrumented = (jsonSchema, kernel, options) => {
         plugin.afterKeyword?.(group.info, keywordAt, isGroupValid, state, schemaState);
         keywordState = parentState;
 
-        // A group's marks and annotations are only kept if it passes
+        // A group's marks are only kept if it passes. Its annotations are only
+        // kept if the schema passes, which it doesn't if a group fails.
         if (isGroupValid) {
           addAll(schemaMarks, groupMarks);
-          if (keywordAnnotations !== undefined) {
-            schemaAnnotations ??= [];
-            schemaAnnotations.push(keywordAnnotations);
-          }
         } else {
           valid = false;
           if (stopsEarly) {
@@ -401,13 +394,12 @@ export const instrumented = (jsonSchema, kernel, options) => {
       }
 
       // A schema's marks and annotations are only kept if it passes
-      keywordAnnotations = outerKeywordAnnotations;
       if (valid) {
         addAll(marks, schemaMarks);
-        if (schemaAnnotations !== undefined) {
-          keywordAnnotations ??= [];
-          keywordAnnotations.push(schemaAnnotations);
-        }
+      } else if (annotations.length > schemaStart) {
+        // Setting the length is a call into the runtime, even when it
+        // doesn't change, and most schemas that fail didn't annotate
+        annotations.length = schemaStart;
       }
 
       plugin.afterSchema?.(info, schemaAt, valid, schemaState, parentState);
@@ -1275,7 +1267,7 @@ export const instrumented = (jsonSchema, kernel, options) => {
     const outerAt = currentAt;
     const outerResource = currentResource;
     const outerAnchors = dynamicAnchors;
-    const outerKeywordAnnotations = keywordAnnotations;
+    const outerAnnotations = annotations;
 
     // Several plugins are combined into one, so evaluating with one plugin,
     // which is the usual case, doesn't loop or keep arrays of states
@@ -1285,12 +1277,12 @@ export const instrumented = (jsonSchema, kernel, options) => {
     currentAt = undefined;
     currentResource = undefined;
     dynamicAnchors = undefined;
-    keywordAnnotations = undefined;
+    annotations = [];
 
     try {
       const valid = root(instance, undefined);
-      if (valid && keywordAnnotations !== undefined) {
-        attachAnnotations(keywordAnnotations);
+      if (valid) {
+        attachAnnotations(annotations);
       }
 
       return valid;
@@ -1301,7 +1293,7 @@ export const instrumented = (jsonSchema, kernel, options) => {
       currentAt = outerAt;
       currentResource = outerResource;
       dynamicAnchors = outerAnchors;
-      keywordAnnotations = outerKeywordAnnotations;
+      annotations = outerAnnotations;
     }
   };
 };
@@ -1498,21 +1490,19 @@ const nameTable = (map) => {
   return table;
 };
 
-/** @type (annotations: AnnotationList) => void */
+/** @type (annotations: Annotations) => void */
 const attachAnnotations = (annotations) => {
-  for (const annotation of annotations) {
-    if (Array.isArray(annotation)) {
-      attachAnnotations(annotation);
-    } else {
-      /** @type Data */
-      const data = annotation.node.data ??= {};
-      data.annotations ??= new Map();
-      let values = data.annotations.get(annotation.keywordUri);
-      if (values === undefined) {
-        values = [];
-        data.annotations.set(annotation.keywordUri, values);
-      }
-      values.push(annotation.value);
+  for (let index = 0; index < annotations.length; index += 3) {
+    const node = /** @type Node */ (annotations[index]);
+    const keywordUri = /** @type string */ (annotations[index + 1]);
+    /** @type Data */
+    const data = node.data ??= {};
+    data.annotations ??= new Map();
+    let values = data.annotations.get(keywordUri);
+    if (values === undefined) {
+      values = [];
+      data.annotations.set(keywordUri, values);
     }
+    values.push(/** @type Json */ (annotations[index + 2]));
   }
 };
