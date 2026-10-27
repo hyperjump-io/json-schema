@@ -9,7 +9,7 @@ For this `alice.json`:
 { "name": "Alice", "age": -1, }
 ```
 
-```javascript
+```typescript
 import { readFile } from "node:fs/promises";
 import { unified } from "unified";
 import { VFile } from "vfile";

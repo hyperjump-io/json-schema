@@ -2,7 +2,7 @@
 
 ## `new JsonSchema(config)`
 
-```javascript
+```typescript
 const jsonSchema = new JsonSchema({
   allowRetrieval: ["./", "https://schemas.example.com/"],
   defaultDialectUri: "https://json-schema.org/v1",

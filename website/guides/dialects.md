@@ -9,7 +9,7 @@ it's written in with `$schema`.
 A `JsonSchema` starts without any dialects, so your application only loads
 the ones it uses. Add each one from its module.
 
-```javascript
+```typescript
 import { JsonSchema } from "@hyperjump/json-schema";
 import { addDraft202012 } from "@hyperjump/json-schema/draft-2020-12";
 import { addDraft07 } from "@hyperjump/json-schema/draft-07";
@@ -47,7 +47,7 @@ it gets its dialect from somewhere else:
 - The `defaultDialectUri` config is the dialect of every schema that still
   doesn't have one.
 
-```javascript
+```typescript
 const jsonSchema = new JsonSchema({
   defaultDialectUri: "https://json-schema.org/v1"
 });

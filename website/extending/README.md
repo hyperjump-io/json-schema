@@ -15,7 +15,7 @@ name for different keywords.
 So adding a keyword takes two steps: define it with its URI, then give it a
 name in a dialect.
 
-```javascript
+```typescript
 jsonSchema.addKeyword({ uri: "https://example.com/keyword/even", ... });
 jsonSchema.extendDialect(v1DialectUri, {
   keywords: { even: "https://example.com/keyword/even" }

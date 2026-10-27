@@ -23,7 +23,7 @@ The default is `["./"]`: files in the working directory in Node.js, and
 what's in the page's directory in a browser. Nothing else, not even another
 path on the same server.
 
-```javascript
+```typescript
 const jsonSchema = new JsonSchema({
   allowRetrieval: ["./", "https://schemas.example.com/"]
 });
@@ -56,7 +56,7 @@ absolute ones.
 A session can have its own list. It replaces the config instead of adding
 to it, so a session can allow less.
 
-```javascript
+```typescript
 const validator = await jsonSchema.compile(uri, {
   allowRetrieval: ["./schemas/"]
 });
@@ -74,7 +74,7 @@ To send headers with `http:` and `https:` requests, such as an
 `headers` function. It's called with the URL of each request, so send
 credentials only to the origins they're for. Any schema can name any URL.
 
-```javascript
+```typescript
 import {
   HttpUriSchemePlugin,
   MemoryHttpCacheStore

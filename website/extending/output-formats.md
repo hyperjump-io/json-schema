@@ -8,7 +8,7 @@ messages.
 The easiest way to make one is to build on `BASIC`, which already finds
 every error. This one turns them into messages:
 
-```javascript
+```typescript
 import { jsonSyntaxErrorMessage } from "@hyperjump/browser/json";
 
 const messages = {

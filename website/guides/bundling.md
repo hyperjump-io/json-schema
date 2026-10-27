@@ -4,7 +4,7 @@
 document. Use it to publish a schema that works without its files, or to
 give one to a tool that can't follow references between documents.
 
-```javascript
+```typescript
 import { pathToFileURL } from "node:url";
 
 const uri = pathToFileURL("./schemas/person.schema.json").href;
@@ -77,7 +77,7 @@ What's bundled:
 
 ## Options
 
-```javascript
+```typescript
 await jsonSchema.bundle(uri, {
   externalSchemas: ["https://schemas.example.com/common"],
   alwaysIncludeDialect: true,

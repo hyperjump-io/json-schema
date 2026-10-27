@@ -3,7 +3,7 @@
 To lint a schema in a unified pipeline, parse it, turn it into a schema AST
 with `jsonSchemaResolve`, then add the lint rules as plugins.
 
-```javascript
+```typescript
 import { unified } from "unified";
 import { VFile } from "vfile";
 import { reporter } from "vfile-reporter";
@@ -54,7 +54,7 @@ retrieved first.
 Rules are unified plugins. Each takes its setting the way it's configured
 anywhere else (see [Choosing rules](../linting/choosing-rules.md)):
 
-```javascript
+```typescript
 import thenElseWithoutIf from
   "@hyperjump/json-schema/lint/rules/then-else-without-if";
 

@@ -8,7 +8,7 @@ schema AST and reports what it finds. Make one with `lintRule` from
 
 This rule reports a `minimum` without a `maximum`:
 
-```javascript
+```typescript
 import {
   lintRule,
   siblingKeyword,
@@ -46,7 +46,7 @@ applies configuration comments to the rule's messages.
 
 Use it like a built-in rule:
 
-```javascript
+```typescript
 import minWithoutMax from "./min-without-max.js";
 
 const results = await jsonSchema.lint(uri, {
@@ -75,7 +75,7 @@ with `findSchema`. Use the session the schema was resolved in,
 application's registries and `allowRetrieval` allow. Pass the tree as
 `document`, so references into the schema being linted find what's in it.
 
-```javascript
+```typescript
 import { findSchema, visitReferences } from "@hyperjump/json-schema/lint";
 
 const references = [];
@@ -102,7 +102,7 @@ and `if`, and by references, in either direction. A rule uses it to look
 past the schema a keyword is in, such as to find the `properties` next to
 the `anyOf` that a `required` is in.
 
-```javascript
+```typescript
 const session = file.data.jsonSchemaSession;
 const group = await schemaGroup(session, tree, schemaNode);
 ```
@@ -129,7 +129,7 @@ including custom ones.
 - `formatTypes` says which types of value a `format` keyword's format
   applies to, or `undefined` if it could apply to any.
 
-```javascript
+```typescript
 const session = file.data.jsonSchemaSession;
 const schemas = await lowerForLint(session, tree);
 for (const keywords of schemas.values()) {
@@ -153,7 +153,7 @@ like a `default`, without compiling. A value passes, fails, or is unknown
 that can't be followed or a `$dynamicRef`. It also says whether a schema or
 keyword might annotate the value or mark part of it as evaluated.
 
-```javascript
+```typescript
 const evaluator = await evaluatorForLint(file.data.jsonSchemaSession, tree);
 if (evaluator.schema(schemaNode, defaultNode.children[1]).valid === false) {
   file.message("The default isn't valid", { place: defaultNode.position });

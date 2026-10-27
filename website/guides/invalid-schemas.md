@@ -4,7 +4,7 @@ Schemas are validated before they're used. A schema with a mistake, like a
 `minLength` of `-1` or a misspelled keyword in v1, can't be compiled, so
 `compile` throws a `SchemaError` with every problem in the document.
 
-```javascript
+```typescript
 import { SchemaError, toVFileMessage } from "@hyperjump/json-schema";
 
 jsonSchema.addRegistry(new SchemaRegistry().with(`{

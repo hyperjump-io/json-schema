@@ -19,7 +19,7 @@ A JSON Schema validator and linter for JavaScript, for Node.js and browsers.
 - **Safe with untrusted schemas.** A schema can't make your application
   retrieve whatever it references.
 
-```javascript
+```typescript
 import { JsonSchema, SchemaRegistry } from "@hyperjump/json-schema";
 import { addV1 } from "@hyperjump/json-schema/v1";
 

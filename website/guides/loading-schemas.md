@@ -17,7 +17,7 @@ When a schema is needed, it's looked for in this order:
 A `SchemaRegistry` holds schemas you already have, like ones bundled with
 your application or stored in a database. A schema is found by its `$id`.
 
-```javascript
+```typescript
 import { SchemaRegistry } from "@hyperjump/json-schema";
 
 const registry = new SchemaRegistry()
@@ -55,7 +55,7 @@ A value is copied when it's added, so changing it afterward doesn't change
 the registry. A value that can't be JSON, like one with a cycle, throws a
 `TypeError` when it's added.
 
-```javascript
+```typescript
 const text = await readFile("./person.schema.json", "utf8");
 const registry = new SchemaRegistry().with(text);
 ```
@@ -66,7 +66,7 @@ A schema without an `$id` needs a `retrievalUri` to be found by. It's also
 the base URI for a relative `$id`. A schema without `$schema` can be given
 its dialect with `dialectUri`.
 
-```javascript
+```typescript
 const registry = new SchemaRegistry().with({ type: "string" }, {
   retrievalUri: "https://example.com/name",
   dialectUri: "https://json-schema.org/v1"
@@ -79,7 +79,7 @@ A registry never changes. `with` and `without` return a new registry, so a
 session that's already using a registry keeps seeing what it saw when it
 started. To change what a `JsonSchema` sees, replace its registry.
 
-```javascript
+```typescript
 jsonSchema.removeRegistry(registry);
 registry = registry.without("https://example.com/name");
 jsonSchema.addRegistry(registry);
@@ -93,7 +93,7 @@ added without one can't be removed.
 Registries you pass to `compile` are only used for that compilation. They're
 checked before the `JsonSchema`'s.
 
-```javascript
+```typescript
 const validator = await jsonSchema.compile("https://example.com/person", {
   registries: [registry]
 });
@@ -105,7 +105,7 @@ Compile a schema in a file by its `file:` URL. References in it are
 resolved relative to the file, so a `$ref` of `./address.schema.json` finds
 the file next to it.
 
-```javascript
+```typescript
 import { pathToFileURL } from "node:url";
 
 const uri = pathToFileURL("./schemas/person.schema.json").href;
@@ -124,7 +124,7 @@ By default, only files in the working directory can be retrieved. See
 A schema at an `http:` or `https:` URL is retrieved if `allowRetrieval`
 allows it. Nothing on the network is allowed by default.
 
-```javascript
+```typescript
 const jsonSchema = new JsonSchema({
   allowRetrieval: ["./", "https://schemas.example.com/"]
 });

@@ -25,7 +25,7 @@ An annotation belongs to part of a value. In this schema, `"Name"` is the
 `annotate` validates a value and returns it as a JSON AST, a tree of nodes,
 with each node's annotations attached to it.
 
-```javascript
+```typescript
 const { output, node } = validator.annotate({ name: "Jason" });
 
 output; // true
@@ -50,7 +50,7 @@ Annotations are kept by keyword URI, because the same keyword can have
 different names in different dialects. A session's `annotation` method finds
 them by name, in v1 by default:
 
-```javascript
+```typescript
 const session = jsonSchema.session();
 session.annotation(node, "title"); // ["Person"]
 ```
@@ -61,7 +61,7 @@ each have a `title`. A node without the annotation gets an empty list.
 
 For a schema in another dialect, pass the dialect URI too:
 
-```javascript
+```typescript
 const draft202012 = "https://json-schema.org/draft/2020-12/schema";
 session.annotation(node, "title", draft202012);
 ```

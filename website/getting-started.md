@@ -24,7 +24,7 @@ It starts without any dialects, so add the ones your schemas use. This
 tutorial uses JSON Schema v1. [Dialects](guides/dialects.md) lists the
 others.
 
-```javascript
+```typescript
 import { JsonSchema } from "@hyperjump/json-schema";
 import { addV1 } from "@hyperjump/json-schema/v1";
 
@@ -37,7 +37,7 @@ addV1(jsonSchema);
 Schemas are identified by URI. A `SchemaRegistry` holds schemas you give it
 directly, by their `$id`.
 
-```javascript
+```typescript
 import { SchemaRegistry } from "@hyperjump/json-schema";
 
 jsonSchema.addRegistry(new SchemaRegistry().with({
@@ -65,7 +65,7 @@ as you write it, so a misspelled keyword is a type error. See
 Compile the schema once, then use the validator for as many values as you
 like.
 
-```javascript
+```typescript
 const validator = await jsonSchema.compile("https://example.com/person");
 
 validator.validate({ name: "Jason", age: 42 }); // true
@@ -81,7 +81,7 @@ validation. Validating is fast.
 By default, `validate` only says whether a value is valid. Ask for the
 `BASIC` output to get a list of errors.
 
-```javascript
+```typescript
 const result = validator.validate({ age: -1 }, { output: "BASIC" });
 
 result.valid; // false
@@ -102,7 +102,7 @@ JSON Pointer) and which keyword failed (`absoluteKeywordLocation`):
 Errors are data, not sentences. `outputErrorMessage` gives one a generic
 message:
 
-```javascript
+```typescript
 import { outputErrorMessage } from "@hyperjump/json-schema";
 
 for (const error of result.errors) {
@@ -132,7 +132,7 @@ To print them the way unified tools do, add them to a
 (`npm install vfile vfile-reporter`). A failed constraint is an error, and
 a syntax error the parser recovered from is a warning.
 
-```javascript
+```typescript
 import { VFile } from "vfile";
 import { reporter } from "vfile-reporter";
 
@@ -183,7 +183,7 @@ schema if its name ends with `.schema.json`.
 }
 ```
 
-```javascript
+```typescript
 import { pathToFileURL } from "node:url";
 
 const uri = pathToFileURL("./schemas/person.schema.json").href;
@@ -202,7 +202,7 @@ A schema can be valid and still not do what its author meant. Lint rules
 find those mistakes. `lint` runs the recommended rules on a schema document
 and returns what they find.
 
-```javascript
+```typescript
 jsonSchema.addRegistry(new SchemaRegistry().with(`{
   "$schema": "https://json-schema.org/v1",
   "$id": "https://example.com/user",

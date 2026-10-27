@@ -7,7 +7,7 @@ use them to see what applied to each part of a document.
 
 Pass plugins to any validation method:
 
-```javascript
+```typescript
 const keywords = new Set();
 validator.validate(instance, {
   plugins: [{
@@ -43,7 +43,7 @@ to build nested results, like the `DETAILED` output.
 which aren't kept in the result. A language server can use it to show a
 `description` in a document that has errors.
 
-```javascript
+```typescript
 const description = "https://json-schema.org/keyword/description";
 const descriptions = new Map();
 validator.validateJson(json, {

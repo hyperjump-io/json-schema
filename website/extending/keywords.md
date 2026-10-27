@@ -3,7 +3,7 @@
 A keyword is a plain object with a URI. Add it with `addKeyword`, then give
 it a name in a dialect with `extendDialect`.
 
-```javascript
+```typescript
 import { v1DialectUri } from "@hyperjump/json-schema/v1";
 
 jsonSchema.addKeyword({
@@ -80,7 +80,7 @@ is. A keyword that has no effect, like `even: false`, lowers to
 
 This keyword applies a schema only to strings:
 
-```javascript
+```typescript
 jsonSchema.addKeyword({
   uri: "https://example.com/keyword/ifString",
   shape: "schema",
@@ -109,7 +109,7 @@ A keyword that depends on another keyword in the same schema, like
 by a name of its choosing. `lower` and `check` get its value by that name,
 or `undefined` if it isn't there.
 
-```javascript
+```typescript
 siblings: { properties: "https://json-schema.org/keyword/properties" },
 lower: (schema, { properties = [] }) => ({
   op: "eachProperty",
@@ -130,7 +130,7 @@ A keyword that checks something the kernel has no operation for lowers to a
 `predicate` and evaluates values in `evaluate`. A predicate only applies to
 the `types` it lists. Values of other types pass.
 
-```javascript
+```typescript
 const isPrime = (n) => {
   if (n < 2) {
     return false;

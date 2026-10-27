@@ -11,7 +11,7 @@ mean. Most custom dialects don't need code:
 Use `addDialect` for a dialect whose meta-schema doesn't define it, like one
 based on draft-07, or one whose meta-schema describes itself.
 
-```javascript
+```typescript
 addV1(jsonSchema); // Adds the built-in keywords this dialect uses
 
 jsonSchema.addDialect({

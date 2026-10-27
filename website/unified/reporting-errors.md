@@ -5,7 +5,7 @@ problem into a [`VFileMessage`](https://github.com/vfile/vfile-message). It
 has a message, the position if there is one, the `ruleId`, and the
 `source`, so it prints like the messages of other unified tools.
 
-```javascript
+```typescript
 import { toVFileMessage } from "@hyperjump/json-schema";
 
 const result = validator.validateJson(json, { output: "BASIC" });
@@ -32,7 +32,7 @@ write your own messages, make the `VFileMessage` yourself with the error's
 To add an error to a `VFile`, use `file.message` with those, instead of
 adding the `VFileMessage`:
 
-```javascript
+```typescript
 file.message(myMessage(error), {
   place: error.place,
   ruleId: error.ruleId,

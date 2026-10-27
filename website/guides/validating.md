@@ -4,7 +4,7 @@ Compile a schema once with `compile`, then validate as many values as you
 like with the `Validator` it returns. A validator doesn't change, and it
 doesn't retrieve anything, so it's safe to share and reuse.
 
-```javascript
+```typescript
 const validator = await jsonSchema.compile("https://example.com/person");
 
 validator.validate({ name: "Jason" }); // true
@@ -37,7 +37,7 @@ and column of the value it's about, so you can point to it. Syntax errors
 are reported along with validation errors. The parser recovers from them
 where it can, so the rest of the text is still validated.
 
-```javascript
+```typescript
 const json = `{ "name": "Jason", "age": -1, }`;
 const result = validator.validateJson(json, { output: "BASIC" });
 ```
@@ -53,7 +53,7 @@ they appear in the text:
 The position is the error's `place`. A `place` is a [unist position](https://github.com/syntax-tree/unist#position),
 with the `line`, `column`, and `offset` of its `start` and `end`:
 
-```javascript
+```typescript
 result.errors[0].place.start; // { line: 1, column: 27, offset: 26 }
 ```
 
@@ -69,7 +69,7 @@ Use `validateNode` when you already have a parsed JSON AST, from the JSON
 parser in `@hyperjump/browser/json` or from a schema AST, such as a lint rule
 checking a `default` value. Errors have the node's positions.
 
-```javascript
+```typescript
 import { fromJson } from "@hyperjump/browser/json";
 
 const { node } = fromJson(`{ "name": "Jason" }`);
@@ -81,7 +81,7 @@ validator.validateNode(node); // true
 Every method takes an `output` option. The default, `"FLAG"`, is only a
 boolean. `"BASIC"` and `"DETAILED"` return the errors.
 
-```javascript
+```typescript
 validator.validate({ age: -1 }, { output: "BASIC" });
 // { valid: false, errors: [...] }
 ```
@@ -95,7 +95,7 @@ it.
 `annotateJson` compile and validate in one call. They compile the schema
 every time, so use them for one-off checks, not in a loop.
 
-```javascript
+```typescript
 const uri = "https://example.com/person";
 await jsonSchema.validate(uri, { name: "Jason" }); // true
 ```

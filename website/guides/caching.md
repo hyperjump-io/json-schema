@@ -5,13 +5,13 @@ application starts or when a schema is on a slow server. A compiled schema
 can be saved as JSON and restored later, without retrieving or compiling
 anything.
 
-```javascript
+```typescript
 const validator = await jsonSchema.compile("https://example.com/person");
 const compiled = validator.serialize();
 await writeFile("./person.compiled.json", JSON.stringify(compiled));
 ```
 
-```javascript
+```typescript
 const text = await readFile("./person.compiled.json", "utf8");
 const compiled = JSON.parse(text);
 const validator = jsonSchema.restoreValidator(compiled);

@@ -3,7 +3,7 @@
 A format is a plain object with a URI. Add it with `addFormat`, then give
 it a name in a dialect with `extendDialect`.
 
-```javascript
+```typescript
 import { v1DialectUri } from "@hyperjump/json-schema/v1";
 
 jsonSchema.addFormat({

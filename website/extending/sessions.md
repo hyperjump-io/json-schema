@@ -15,7 +15,7 @@ Start one yourself to:
 - **Read annotations** by keyword name, with `annotation` (see
   [Annotations](../guides/annotations.md#reading-an-annotation)).
 
-```javascript
+```typescript
 const session = jsonSchema.session({ registries: [registry] });
 
 const person = await session.compile("https://example.com/person");

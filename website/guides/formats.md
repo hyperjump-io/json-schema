@@ -10,7 +10,7 @@
 
 The `validateFormats` config overrides the dialect, for every schema:
 
-```javascript
+```typescript
 const jsonSchema = new JsonSchema({ validateFormats: true });
 ```
 
@@ -26,7 +26,7 @@ large tables of Unicode data, so they're only loaded if you ask for them.
 draft-04 and draft-06 have a simpler `hostname` of their own, which is
 always loaded.
 
-```javascript
+```typescript
 import { addFullFormats } from "@hyperjump/json-schema/formats/full";
 
 addFullFormats(jsonSchema);

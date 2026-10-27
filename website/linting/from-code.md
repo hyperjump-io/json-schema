@@ -4,7 +4,7 @@
 lint schemas in a tool of your own, or to check schemas your users give you
 before accepting them.
 
-```javascript
+```typescript
 const results = await jsonSchema.lint("https://example.com/person");
 
 for (const result of results) {
@@ -49,7 +49,7 @@ A schema with problems can't be linted, so its problems are returned
 instead, as results with a `severity` of `"error"`. `lint` doesn't throw
 for them, so check for errors before using the schema.
 
-```javascript
+```typescript
 const hasErrors = results.some((result) => result.severity === "error");
 ```
 
@@ -59,7 +59,7 @@ The default is the recommended preset. Pass `plugins` to choose others, in
 the same shape as [hjlint's configuration](choosing-rules.md), with the
 modules imported instead of named.
 
-```javascript
+```typescript
 import recommended from "@hyperjump/json-schema/lint/recommended";
 import thenElseWithoutIf from
   "@hyperjump/json-schema/lint/rules/then-else-without-if";

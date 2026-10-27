@@ -3,7 +3,7 @@
 By default, validation only says whether a value is valid. To find out why
 it isn't, ask for an output format with the `output` option.
 
-```javascript
+```typescript
 const result = validator.validate({ age: -1 }, { output: "BASIC" });
 ```
 
@@ -42,7 +42,7 @@ The results below show only each error's `absoluteKeywordLocation` and
 
 A list of every keyword that failed, in document order.
 
-```javascript
+```typescript
 const result = validator.validate({ age: -1 }, { output: "BASIC" });
 ```
 
@@ -71,7 +71,7 @@ The errors that explain it are enough.
 The same errors, nested under the keywords that applied them. Here,
 `minimum` is under the `properties` that applied its schema to `/age`.
 
-```javascript
+```typescript
 const result = validator.validate({ age: -1 }, { output: "DETAILED" });
 ```
 
@@ -122,7 +122,7 @@ it, so it's left to you or to another output format.
 `outputErrorMessage` gives an error a generic message, which is fine for
 logs and for developers:
 
-```javascript
+```typescript
 import { outputErrorMessage } from "@hyperjump/json-schema";
 
 for (const error of result.errors) {
