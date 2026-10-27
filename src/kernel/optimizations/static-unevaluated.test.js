@@ -150,10 +150,15 @@ describe("staticUnevaluated", () => {
     expect(staticUnevaluated.optimize(kernel, mode).size).to.equal(0);
   });
 
-  test("doesn't change anything for plugins or annotations, which see marks of schemas that fail", async () => {
+  test("doesn't change anything for plugins, which see marks of schemas that fail", async () => {
     const kernel = await compile({ properties: { foo: true }, unevaluatedProperties: false });
     expect(staticUnevaluated.optimize(kernel, { fast: false, plugins: true, annotations: false }).size).to.equal(0);
-    expect(staticUnevaluated.optimize(kernel, { fast: false, plugins: false, annotations: true }).size).to.equal(0);
+    expect(staticUnevaluated.optimize(kernel, { fast: false, plugins: true, annotations: true }).size).to.equal(0);
+  });
+
+  test("changes schemas when annotating without plugins, which only keeps annotations of schemas that pass", async () => {
+    const kernel = await compile({ properties: { foo: true }, unevaluatedProperties: false });
+    expect(staticUnevaluated.optimize(kernel, { fast: false, plugins: false, annotations: true }).size).to.equal(1);
   });
 });
 

@@ -1,6 +1,6 @@
 # `static-unevaluated.js`
 
-Fast mode only. An `unevaluated` selector becomes
+Without plugins. An `unevaluated` selector becomes
 one that doesn't read marks where what the other groups in its schema
 mark is known without the instance. `eachProperty({ unevaluated })`
 selects the names they don't mark (`except`), and
@@ -12,5 +12,9 @@ only if nothing they apply marks anything, and `contains`,
 `dynamicApply`, and `opaque` are never known, but it runs after
 [`static-dynamic-scope`](static-dynamic-scope.md), which usually leaves an
 `apply` for a `dynamicApply`. It only needs the marks of
-a passing schema, because a schema whose sibling fails fails anyway,
-which isn't true with plugins or annotations.
+a passing schema, because a schema whose sibling fails fails anyway.
+That's true when annotating, because a schema's annotations are only kept
+if it passes, and annotating OpenAPI 3.1 documents was 0.79–0.85 times as
+long with it ([Unevaluated when annotating](../../../benchmarks/kernel-in-src/unevaluated-when-annotating.md)).
+It isn't true with plugins, which see the results of schemas and keywords
+that fail, and get `annotation` calls for annotations that aren't kept.

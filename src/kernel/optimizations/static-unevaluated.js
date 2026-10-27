@@ -33,15 +33,16 @@ import { subexpressions } from "../kernel.js";
  * `cases`) only count if nothing they apply marks anything. `contains`,
  * `dynamicApply`, and `opaque` are never known. Only the marks of a passing
  * schema matter, because a schema whose sibling fails fails anyway. That's
- * only true without plugins or annotations, so it's for the fast mode only.
+ * true when annotating too, because a schema's annotations are only kept if
+ * it passes, but not with plugins, which see what fails.
  *
  * @type Optimization
  */
 export default {
-  optimize(kernel, { fast }) {
+  optimize(kernel, { plugins }) {
     /** @type Map<Handle, CompiledSchema> */
     const replaced = new Map();
-    if (!fast) {
+    if (plugins) {
       return replaced;
     }
 
