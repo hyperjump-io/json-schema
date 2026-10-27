@@ -126,21 +126,44 @@ the line and column of the value that failed. Syntax errors are reported
 too, and the rest of the text is still validated, so you see every problem
 at once.
 
-```javascript
-import { toVFileMessage } from "@hyperjump/json-schema";
+To print them the way unified tools do, add them to a
+[`VFile`](https://github.com/vfile/vfile) and use
+[`vfile-reporter`](https://github.com/vfile/vfile-reporter)
+(`npm install vfile vfile-reporter`). A failed constraint is an error, and
+a syntax error the parser recovered from is a warning.
 
-const json = `{ "name": "Jason", "age": -1, }`;
-const result = validator.validateJson(json, { output: "BASIC" });
+```javascript
+import { VFile } from "vfile";
+import { reporter } from "vfile-reporter";
+
+const file = new VFile({
+  path: "person.json",
+  value: `{ "name": "Jason", "age": -1, }`
+});
+const result = validator.validateJson(String(file), { output: "BASIC" });
 
 for (const error of result.errors) {
-  console.log(String(toVFileMessage(error)));
+  const message = file.message(outputErrorMessage(error), {
+    place: error.place,
+    ruleId: error.ruleId,
+    source: error.source
+  });
+  message.fatal = error.source === "json-schema";
 }
+
+console.log(reporter(file));
 ```
 
 ```text
-1:27-1:29: Fails the constraint at 'https://example.com/person#/properties/age/minimum'
-1:29-1:30: Trailing commas are not allowed
+person.json
+1:27-1:29 error   Fails the constraint at 'https://example.com/person#/properties/age/minimum' https://json-schema.org/keyword/minimum json-schema
+1:29-1:30 warning Trailing commas are not allowed                                              trailing-comma                          json
+
+2 messages (✖ 1 error, ⚠ 1 warning)
 ```
+
+[Reporting errors](unified/reporting-errors.md) has more on making messages
+from errors.
 
 ## Load schemas from files
 
