@@ -41,3 +41,12 @@ parsed beforehand, so parsing isn't timed. B/A, median of 15 rounds:
   slower on `package.json` (15.2 to 17.7 ms on medium files, 0.58 to
   2.01 ms on large ones): converting cost about as much as evaluating. It
   isn't used.
+- An index of each AST object's property names, so `has` and `get`
+  aren't searches of its properties, was 1.01–1.09 times as long, built
+  for objects of 8 or more properties or for every object, cached by node
+  in a `WeakMap`. Lookups are rare: in one run on medium `package.json`
+  files, `has` and `get` were about 1,650 lookups that looked at 2.6
+  properties each, against about 15,800 calls of `entries`. The merged
+  property loop finds properties for nearly every schema, and the
+  required bits cover `required` next to two property groups. It isn't
+  used.
