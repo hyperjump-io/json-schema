@@ -65,8 +65,13 @@
   with the same value of one property, the first object's first. Arrays
   of objects with names, like a project's plugins, were most of the time
   of SchemaStore's Unreal Engine `.uproject` schema
-  ([Unique items](../../benchmarks/kernel-in-src/unique-items.md)). `instrumented.js` still compares
-  every pair with `instanceEqual`.
+  ([Unique items](../../benchmarks/kernel-in-src/unique-items.md)). `instrumented.js` buckets them
+  the same way, through `InstanceOps`, and compares with `instanceEqual`.
+  An item that couldn't be parsed isn't in a bucket, because it isn't a
+  duplicate of anything, and objects whose value for the property couldn't
+  be parsed share the bucket for arrays and objects. That made the
+  `.uproject` schema about twice as fast with plugins
+  ([Evaluating ASTs](../../benchmarks/kernel-in-src/evaluating-asts.md)).
 - Both evaluators look a scalar up in a set of `oneOfValues`'s scalars
   (`enum`), and only compare arrays and objects with each value. In
   `instrumented.js`, it made evaluating `tsconfig.json` files, which have

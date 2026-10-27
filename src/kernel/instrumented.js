@@ -718,17 +718,7 @@ export const instrumented = (jsonSchema, kernel, options) => {
             return true;
           }
 
-          // An item that couldn't be parsed, or that has parts that
-          // couldn't be, isn't a duplicate of anything
-          const items = [...ops.items(instance)];
-          for (let i = 1; i < items.length; i++) {
-            for (let j = 0; j < i; j++) {
-              if (instanceEqual(ops, items[j], ops, items[i], false)) {
-                return false;
-              }
-            }
-          }
-          return true;
+          return unique(ops, [...ops.items(instance)]);
         };
       case "item": {
         const { index } = expression;
@@ -1420,6 +1410,92 @@ const addAll = (marks, more) => {
 /** @type (types: ReadonlySet<string>, type: string | undefined, isInteger: () => boolean) => boolean */
 const hasType = (types, type, isInteger) => {
   return type !== undefined && (types.has(type) || (type === "number" && types.has("integer") && isInteger()));
+};
+
+/**
+ * Whether an array's items are unique, as in `fast.js`. Short arrays
+ * compare every pair. In longer ones, scalars are looked up in a set,
+ * arrays are compared with the arrays of the same length, and objects with
+ * the objects with the same value of one property (the first object's
+ * first). An item that couldn't be parsed, or that has parts that couldn't
+ * be, isn't a duplicate of anything.
+ *
+ * @template I
+ * @param {InstanceOps<I>} ops
+ * @param {I[]} items
+ * @returns {boolean}
+ */
+const unique = (ops, items) => {
+  if (items.length < 8) {
+    for (let i = 1; i < items.length; i++) {
+      for (let j = 0; j < i; j++) {
+        if (instanceEqual(ops, items[j], ops, items[i], false)) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  /** @type Set<unknown> */
+  const scalars = new Set();
+  /** @type Map<number, unknown[]> */
+  const arrays = new Map();
+  /** @type Map<unknown, unknown[]> */
+  const objects = new Map();
+  /** @type string | undefined */
+  let probe;
+  for (const item of items) {
+    const type = ops.typeOf(item);
+    /** @type unknown[] | undefined */
+    let bucket;
+    if (type === undefined) {
+      continue;
+    } else if (type === "array") {
+      const length = ops.length(item);
+      bucket = arrays.get(length);
+      if (bucket === undefined) {
+        bucket = [];
+        arrays.set(length, bucket);
+      }
+    } else if (type === "object") {
+      if (probe === undefined) {
+        for (const [name] of ops.entries(item)) {
+          probe = name;
+          break;
+        }
+      }
+      // Objects whose value is an array or object, or couldn't be parsed,
+      // share a bucket
+      const value = probe === undefined ? undefined : ops.get(item, probe);
+      const valueType = value === undefined ? undefined : ops.typeOf(value);
+      /** @type unknown */
+      let key;
+      if (value !== undefined) {
+        key = valueType === undefined || valueType === "array" || valueType === "object" ? objects : ops.value(value);
+      }
+      bucket = objects.get(key);
+      if (bucket === undefined) {
+        bucket = [];
+        objects.set(key, bucket);
+      }
+    } else {
+      const value = ops.value(item);
+      if (scalars.has(value)) {
+        return false;
+      }
+      scalars.add(value);
+      continue;
+    }
+
+    for (let index = 0; index < bucket.length; index++) {
+      if (instanceEqual(ops, /** @type I */ (bucket[index]), ops, item, false)) {
+        return false;
+      }
+    }
+    bucket.push(item);
+  }
+  return true;
 };
 
 /**

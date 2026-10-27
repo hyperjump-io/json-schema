@@ -123,3 +123,18 @@ parsed beforehand, so parsing isn't timed. B/A, median of 15 rounds:
     19,854 instances, no differences. Without the cut, the same script
     found 1,599 differences in 6,618 instances (one mutant each).
     `check-src.ts` found no differences.
+- `uniqueItems` in `instrumented.js` compared every pair of items. It
+  buckets long arrays now, as `fast.js` does
+  ([Unique items](unique-items.md)), through `InstanceOps`. On
+  `jsonschema-benchmark`'s Unreal Engine `.uproject` schema and its 859
+  instances (as a `CORPORA` file), B/A, median of 21 rounds:
+
+  | | `.uproject` |
+  | --- | --- |
+  | Plain value, every hook | 0.450 |
+  | AST, every hook | 0.529 |
+  | Annotating an AST | 0.789 |
+
+  The default corpora were 0.978–1.008 with every hook. `ab-equal.ts`
+  with 20 mutants of each `.uproject` instance found no differences, and
+  `check-src.ts` found none.

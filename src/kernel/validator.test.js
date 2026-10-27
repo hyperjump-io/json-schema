@@ -522,23 +522,57 @@ describe("Validator", () => {
       /** @type (count: number) => Json[] */
       const plugins = (count) => Array.from({ length: count }, (_, index) => ({ name: `plugin${index}`, enabled: index % 2 === 0 }));
 
+      /** @type EvaluationPlugin */
+      const plugin = {};
+      // Plain values, with a plugin, and as an AST, without and with one
+      /** @type ((instance: Json) => boolean)[] */
+      const validates = [
+        (instance) => validator.validate(instance),
+        (instance) => validator.validate(instance, { plugins: [plugin] }),
+        (instance) => validator.validateJson(JSON.stringify(instance)),
+        (instance) => validator.validateJson(JSON.stringify(instance), { plugins: [plugin] })
+      ];
+
       // Short arrays compare every pair, and longer ones look them up
-      for (const length of [3, 20]) {
-        const items = plugins(length);
-        expect(validator.validate(items)).to.equal(true);
-        expect(validator.validate([...items, { enabled: true, name: "plugin0" }])).to.equal(false);
-        expect(validator.validate([...items, { name: "plugin0" }])).to.equal(true);
-        expect(validator.validate([...items, { name: "plugin0", enabled: true, more: 1 }])).to.equal(true);
-        expect(validator.validate([...items, 1, "1", 1.0])).to.equal(false);
-        expect(validator.validate([...items, 1, "1", true, null])).to.equal(true);
-        expect(validator.validate([...items, [1, { a: [2] }], [1, { a: [2] }]])).to.equal(false);
-        expect(validator.validate([...items, [1, { a: [2] }], [1, { a: [3] }]])).to.equal(true);
-        expect(validator.validate([...items, [1, 2], [2, 1]])).to.equal(true);
-        expect(validator.validate([...items, [1, 2], [1, 2, 3]])).to.equal(true);
-        expect(validator.validate([{}, ...items, {}])).to.equal(false);
-        expect(validator.validate([...items, { name: { first: "a" } }, { name: { first: "b" } }])).to.equal(true);
-        expect(validator.validate([...items, { name: { first: "a" } }, { name: { first: "a" } }])).to.equal(false);
-        expect(validator.validate([...items, {}, []])).to.equal(true);
+      for (const validate of validates) {
+        for (const length of [3, 20]) {
+          const items = plugins(length);
+          expect(validate(items)).to.equal(true);
+          expect(validate([...items, { enabled: true, name: "plugin0" }])).to.equal(false);
+          expect(validate([...items, { name: "plugin0" }])).to.equal(true);
+          expect(validate([...items, { name: "plugin0", enabled: true, more: 1 }])).to.equal(true);
+          expect(validate([...items, 1, "1", 1.0])).to.equal(false);
+          expect(validate([...items, 1, "1", true, null])).to.equal(true);
+          expect(validate([...items, [1, { a: [2] }], [1, { a: [2] }]])).to.equal(false);
+          expect(validate([...items, [1, { a: [2] }], [1, { a: [3] }]])).to.equal(true);
+          expect(validate([...items, [1, 2], [2, 1]])).to.equal(true);
+          expect(validate([...items, [1, 2], [1, 2, 3]])).to.equal(true);
+          expect(validate([{}, ...items, {}])).to.equal(false);
+          expect(validate([...items, { name: { first: "a" } }, { name: { first: "b" } }])).to.equal(true);
+          expect(validate([...items, { name: { first: "a" } }, { name: { first: "a" } }])).to.equal(false);
+          expect(validate([...items, {}, []])).to.equal(true);
+        }
+      }
+    });
+
+    test("unique items that couldn't be parsed aren't duplicates", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({ uniqueItems: true }));
+      /** @type EvaluationPlugin */
+      const plugin = {};
+      /** @type (count: number) => string */
+      const plugins = (count) => Array.from({ length: count }, (_, index) => `{ "name": "plugin${index}" }`).join(", ");
+
+      for (const options of [undefined, { plugins: [plugin] }]) {
+        for (const length of [3, 20]) {
+          const items = plugins(length);
+          /** @type (json: string) => boolean */
+          const validate = (json) => /** @type boolean */ (validator.validateNode(fromJson(json).node, options));
+          expect(validate(`[${items}, @, @]`)).to.equal(true);
+          expect(validate(`[${items}, { "name": }, { "name": }]`)).to.equal(true);
+          expect(validate(`[${items}, { "name": "plugin0", "x": }, { "name": "plugin0", "x": }]`)).to.equal(true);
+          expect(validate(`[${items}, [1, @], [1, @]]`)).to.equal(true);
+          expect(validate(`[${items}, { "name": }, { "name": "plugin0" }]`)).to.equal(false);
+        }
       }
     });
 
