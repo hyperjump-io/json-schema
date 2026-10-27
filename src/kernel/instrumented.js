@@ -2,7 +2,7 @@ import * as JsonPointer from "@hyperjump/json-pointer";
 import { keywordDefinitionUri } from "../keywords/unknown.js";
 import { codePointLength, instanceEqual } from "../keywords/utilities.js";
 import { jsInstance } from "./instance.js";
-import { conditionsOf, explainsFailure, readsMarks } from "./kernel.js";
+import { conditionsOf, explainsFailure, readsMarks, subexpressions } from "./kernel.js";
 import { addDynamicAnchors, addReachable, isClose, itemSequenceStates, keywordEvaluate, selector, typeIndexes } from "./fast.js";
 
 /**
@@ -230,6 +230,60 @@ export const instrumented = (jsonSchema, kernel, options) => {
     return info;
   };
 
+  /** @type Map<Handle, boolean> */
+  const schemasThatMark = new Map();
+
+  /**
+   * Whether an expression can mark the instance it's evaluated on. Unknown
+   * is yes: a schema that's still being worked out, because it applies
+   * itself, `dynamicApply`, and `opaque`.
+   *
+   * @type (expression: Expression) => boolean
+   */
+  const canMark = (expression) => {
+    switch (expression.op) {
+      case "property":
+      case "eachProperty":
+      case "item":
+      case "eachItem":
+      case "contains":
+      case "itemSequence":
+      case "dynamicApply":
+      case "opaque":
+        return true;
+      // What `not` applies only passes if `not` fails, so its marks aren't
+      // kept, and `eachPropertyName` doesn't mark the object
+      case "not":
+      case "eachPropertyName":
+        return false;
+      case "apply": {
+        let marks = schemasThatMark.get(expression.schema);
+        if (marks === undefined) {
+          schemasThatMark.set(expression.schema, true);
+          const compiled = kernel.schemas[expression.schema];
+          marks = typeof compiled === "object" && compiled.keywords.some((group) => canMark(group.expression));
+          schemasThatMark.set(expression.schema, marks);
+        }
+        return marks;
+      }
+      default:
+        return subexpressions(expression).some(canMark);
+    }
+  };
+
+  /**
+   * The marks an expression is evaluated with, which are kept only if it
+   * passes (see `startMarks`)
+   *
+   * @type (expression: Expression) => MarksMode
+   */
+  const marksMode = (expression) => {
+    if (readsMarks(expression)) {
+      return COPY;
+    }
+    return canMark(expression) ? EMPTY : NONE;
+  };
+
   /** @type (handle: Handle) => SchemaEvaluator<I> */
   const buildSchema = (handle) => {
     const compiled = kernel.schemas[handle];
@@ -267,7 +321,8 @@ export const instrumented = (jsonSchema, kernel, options) => {
         info: groupInfo,
         evaluate: slot === -1 && required === 0 ? build(group.expression, groupInfo) : undefined,
         slot,
-        required
+        required,
+        marks: marksMode(group.expression)
       };
     });
     const ownMarks = keywordGroups.some(({ expression }) => readsMarks(expression));
@@ -315,7 +370,7 @@ export const instrumented = (jsonSchema, kernel, options) => {
         const state = plugin.beforeKeyword?.(group.info, keywordAt, schemaState);
         keywordState = state;
 
-        const groupMarks = schemaMarks && new Set(schemaMarks);
+        const groupMarks = schemaMarks && startMarks(group.marks, schemaMarks);
         let isGroupValid;
         if (group.evaluate !== undefined) {
           isGroupValid = group.evaluate(instance, groupMarks);
@@ -423,6 +478,7 @@ export const instrumented = (jsonSchema, kernel, options) => {
         return buildAll(expression.of, info);
       case "any": {
         const of = expression.of.map((subexpression) => build(subexpression, info));
+        const modes = expression.of.map(marksMode);
         return (instance, marks) => {
           if (stopsEarly && marks === undefined) {
             for (const evaluate of of) {
@@ -433,9 +489,9 @@ export const instrumented = (jsonSchema, kernel, options) => {
             return false;
           }
           let valid = false;
-          for (const evaluate of of) {
-            const own = marks && new Set(marks);
-            if (evaluate(instance, own)) {
+          for (let index = 0; index < of.length; index++) {
+            const own = marks && startMarks(modes[index], marks);
+            if (of[index](instance, own)) {
               valid = true;
               addAll(marks, own);
             }
@@ -445,13 +501,14 @@ export const instrumented = (jsonSchema, kernel, options) => {
       }
       case "one": {
         const of = expression.of.map((subexpression) => build(subexpression, info));
+        const modes = expression.of.map(marksMode);
         return (instance, marks) => {
           /** @type Marks */
           let passed;
           let count = 0;
-          for (const evaluate of of) {
-            const own = marks && new Set(marks);
-            if (evaluate(instance, own)) {
+          for (let index = 0; index < of.length; index++) {
+            const own = marks && startMarks(modes[index], marks);
+            if (of[index](instance, own)) {
               count++;
               passed = own;
             }
@@ -529,11 +586,11 @@ export const instrumented = (jsonSchema, kernel, options) => {
         };
       }
       case "cases": {
-        const cases = expression.cases.map(([condition, then]) => /** @type const */ ([build(condition, info), then && build(then, info)]));
+        const cases = expression.cases.map(([condition, then]) => /** @type const */ ([build(condition, info), then && build(then, info), marksMode(condition)]));
         const otherwise = expression.otherwise && build(expression.otherwise, info);
         return (instance, marks) => {
-          for (const [condition, then] of cases) {
-            const own = marks && new Set(marks);
+          for (const [condition, then, mode] of cases) {
+            const own = marks && startMarks(mode, marks);
             if (condition(instance, own)) {
               addAll(marks, own);
               return then === null || then(instance, marks);
@@ -1339,6 +1396,25 @@ const combinePlugins = (plugins) => ({
     }
   }
 });
+
+/**
+ * How an expression whose marks are kept only if it passes gets its own:
+ * none if it can't mark anything, an empty set if it marks but doesn't read
+ * marks, and a copy of what's marked so far if it reads them
+ *
+ * @typedef {0 | 1 | 2} MarksMode
+ */
+const NONE = 0;
+const EMPTY = 1;
+const COPY = 2;
+
+/** @type (mode: MarksMode, marks: Set<string | number>) => Marks */
+const startMarks = (mode, marks) => {
+  if (mode === NONE) {
+    return undefined;
+  }
+  return mode === EMPTY ? new Set() : new Set(marks);
+};
 
 /** @type (marks: Marks, more: Marks) => void */
 const addAll = (marks, more) => {

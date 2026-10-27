@@ -39,7 +39,14 @@ to mark in, or nothing if nothing reads what it marks. A schema with a
 group that reads marks starts its own set and adds it to its caller's if it
 passes. An operation whose subexpressions can fail without it failing
 (`any`, `one`, a condition of `cases`) gives each one its own set and keeps
-the ones that pass.
+the ones that pass. In `instrumented.js`, which evaluates a schema's
+groups between their own hooks, each group gets its own set too. An
+expression that can't mark the instance (one without property or item
+operations, or a schema that applies only such expressions) gets no set,
+one that marks gets an empty set, and only one that reads marks gets a
+copy of what's marked so far. Copying for every group was 6–9% of
+evaluating OpenAPI 3.1 documents with plugins
+([Evaluating ASTs](../../benchmarks/kernel-in-src/evaluating-asts.md)).
 
 Because only passing expressions keep marks, an evaluator can always stop
 at a failure. Without plugins or annotations, `any` stops at the first that

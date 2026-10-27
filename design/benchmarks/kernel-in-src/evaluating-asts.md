@@ -63,3 +63,26 @@ parsed beforehand, so parsing isn't timed. B/A, median of 15 rounds:
   `tsconfig.json` has enums of dozens of values, like `lib` and `target`.
   A `Set` compares scalars as `===` does except for `NaN`, which JSON
   doesn't have.
+- When something reads marks, `instrumented.js` copied what was marked so
+  far for every keyword group of a schema and every subexpression of
+  `any`, `one`, and a condition of `cases`. Now one that can't mark the
+  instance gets nothing, one that marks gets an empty set, and only one
+  that reads marks gets a copy. Whether a schema can mark is worked out
+  once for each schema. On OpenAPI 3.1 (see
+  [Unevaluated when annotating](unevaluated-when-annotating.md)), B/A,
+  median of 21 rounds:
+
+  | | OpenAPI 3.1 |
+  | --- | --- |
+  | AST, every hook | 0.917–0.935 |
+  | Plain value, every hook | 0.913 |
+  | Annotating an AST | 0.981 |
+
+  Annotating gains little because `static-unevaluated` already leaves
+  most schemas without anything that reads marks. The corpora that don't
+  read marks were 1.026–1.035 with the new mode looked up on every
+  subexpression of `any` and `one`, and 0.986–1.017 when it's only looked
+  up if there are marks, against 0.950–0.991 for two copies of HEAD.
+  `ab-equal.ts` with 10 mutants of each instance and the annotation
+  comparison found no differences, and `check-src.ts` found none. With
+  `property` said not to mark on purpose, `ab-equal.ts` found 782.
