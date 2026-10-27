@@ -43,3 +43,22 @@ The rules built on it:
 - **`const-or-enum-keywords`** skips a keyword with `none` or `marksAll`.
 
 These replaced `Keyword.default` and `keyword-with-default-value`.
+
+## What's evaluated (`src/lint/evaluated.js`)
+
+`marksEvery` says whether a schema's keywords, other than one, mark every
+property or item whenever they pass, following what they apply in place.
+`additionalProperties` lowers to an `except` selector, which marks
+everything if what it leaves out is marked too, by `property` and pattern
+selectors. It's the same for `eachItem` from an index and the `item`s
+before it. An `unevaluated` selector or `itemSequence` marks everything.
+What every branch of `any`, `one`, `cases`, and the switches marks is
+counted, and anything else isn't. The schema's own keywords are all that
+an `unevaluated*` in it reads, so what's around it doesn't matter, and
+`open` doesn't either.
+
+- **`unevaluated-without-effect`** reports an `unevaluated*` whose schema
+  marks every property or item without it, even one with a schema that
+  allows everything, which `empty-catch-all-schema` reports too.
+
+Both modules follow `apply` with `appliedSchemas` (`src/lint/applied.js`).

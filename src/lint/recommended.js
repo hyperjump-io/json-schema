@@ -34,6 +34,7 @@ import relativeRootId from "./rules/relative-root-id.js";
 import implicitDialect from "./rules/implicit-dialect.js";
 import keywordWithoutEffect from "./rules/keyword-without-effect.js";
 import emptyCatchAllSchema from "./rules/empty-catch-all-schema.js";
+import unevaluatedWithoutEffect from "./rules/unevaluated-without-effect.js";
 import unknownKeyword from "./rules/unknown-keyword.js";
 import multipleOfOne from "./rules/multiple-of-one.js";
 import singleTypeArray from "./rules/single-type-array.js";
@@ -88,6 +89,7 @@ const recommended = {
     [implicitDialect, ["warn"]],
     [keywordWithoutEffect, ["warn"]],
     [emptyCatchAllSchema, ["warn"]],
+    [unevaluatedWithoutEffect, ["warn"]],
     [unknownKeyword, ["warn"]],
     [multipleOfOne, ["warn"]],
     [singleTypeArray, ["warn"]],

@@ -48,6 +48,7 @@ it doesn't.
 | [`min-contains-zero-without-max-contains`](min-contains-zero-without-max-contains.md) | `minContains: 0` next to `contains` without `maxContains`, so `contains` never fails |
 | [`keyword-without-effect`](keyword-without-effect.md) | A keyword that's the same as leaving it out, like `properties: {}`, `minLength: 0`, `uniqueItems: false`, or `minContains: 1`, or that only marks properties or items nothing reads |
 | [`empty-catch-all-schema`](empty-catch-all-schema.md) | A keyword that applies a schema that allows everything to every property or item others don't, like `additionalProperties: true` or `items: {}` |
+| [`unevaluated-without-effect`](unevaluated-without-effect.md) | `unevaluatedProperties` or `unevaluatedItems` where other keywords evaluate every property or item, like `additionalProperties: false`, so it has no effect |
 | [`unknown-keyword`](unknown-keyword.md) | A property of a schema that isn't a keyword in its dialect, usually a misspelling, with a suggestion when a keyword is close. The `ignore` option lists names not to report |
 | [`non-canonical-dialect-uri`](non-canonical-dialect-uri.md) | A `$schema` with a fragment that isn't empty, that isn't normalized, or that doesn't match its official dialect's URI, like draft-07 without `#`, which other implementations may not recognize |
 | [`invalid-dialect-uri`](invalid-dialect-uri.md) | A v1 `$schema` with a fragment or that isn't normalized, which v1 doesn't allow (an error) |
