@@ -46,8 +46,8 @@ describe("type-implied-by-const-or-enum", () => {
     expect(await reasons(`{ "$schema": "${draft2020}", "type": "string" }`)).to.eql([]);
   });
 
-  test("an empty enum is left to empty-enum", async () => {
-    expect(await reasons(`{ "$schema": "${draft2020}", "type": "string", "enum": [] }`)).to.eql([]);
+  test("an empty enum", async () => {
+    expect(await reasons(`{ "$schema": "${draft2020}", "type": "string", "enum": [] }`)).to.eql(["'type' has no effect, because it allows every value in 'enum'"]);
   });
 
   test("in a subschema", async () => {

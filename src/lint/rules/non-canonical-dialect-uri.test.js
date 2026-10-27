@@ -93,9 +93,11 @@ describe("non-canonical-dialect-uri", () => {
     ]);
   });
 
-  test("v1 isn't reported", async () => {
+  test("v1", async () => {
     const file = await lint(`{ "$schema": "https://json-schema.org/v1#", "type": "string" }`);
-    expect(file.messages).to.eql([]);
+    expect(file.messages.map((message) => message.reason)).to.eql([
+      "'https://json-schema.org/v1#' should be 'https://json-schema.org/v1', the URI its meta-schema identifies itself with. Implementations that compare dialect URIs as strings won't recognize it."
+    ]);
   });
 
   test("a $schema that isn't a string", async () => {

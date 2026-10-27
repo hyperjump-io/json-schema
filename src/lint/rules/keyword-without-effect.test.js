@@ -124,18 +124,23 @@ describe("keyword-without-effect", () => {
     expect(await reasons(`{ "$schema": "${draft202012}", "$defs": { "foo": { "properties": { "a": true } } } }`)).to.eql([]);
   });
 
-  test("marks every property is empty-catch-all-schema's", async () => {
-    expect(await reasons(`{ "$schema": "${draft202012}", "properties": { "foo": { "additionalProperties": true } } }`)).to.eql([]);
+  test("marks every property nothing reads", async () => {
+    expect(await reasons(`{ "$schema": "${draft202012}", "properties": { "foo": { "additionalProperties": true } } }`)).to.eql(["'additionalProperties' has no effect"]);
+    expect(await reasons(`{ "$schema": "${draft202012}", "additionalProperties": true }`)).to.eql([]);
   });
 
   test("a keyword without effect because of its siblings", async () => {
     expect(await reasons(`{
       "$schema": "${draft202012}",
-      "if": { "type": "string" },
-      "contentSchema": { "type": "string" },
-      "contains": { "type": "string" },
-      "minContains": 0
-    }`)).to.eql([]);
+      "properties": {
+        "foo": {
+          "if": { "type": "string" },
+          "contentSchema": { "type": "string" },
+          "contains": { "type": "string" },
+          "minContains": 0
+        }
+      }
+    }`)).to.eql(["'contentSchema' has no effect"]);
   });
 
   test("an unknown keyword", async () => {

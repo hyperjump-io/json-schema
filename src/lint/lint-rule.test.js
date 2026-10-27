@@ -10,7 +10,7 @@ describe("configuration comments", () => {
     const file = await lint(`{
       "$schema": "https://json-schema.org/v1",
       "$comment": "json-schema-lint-disable then-else-without-if",
-      "then": true
+      "then": { "type": "string" }
     }`);
     expect(file.messages).to.eql([]);
   });
@@ -19,7 +19,7 @@ describe("configuration comments", () => {
     const file = await lint(`{
       "$schema": "https://json-schema.org/v1",
       "$comment": "json-schema-lint-disable then-else-without-if",
-      "properties": { "foo": { "then": true } }
+      "properties": { "foo": { "then": { "type": "string" } } }
     }`);
     expect(file.messages).to.eql([]);
   });
@@ -28,10 +28,10 @@ describe("configuration comments", () => {
     const file = await lint(`{
       "$schema": "https://json-schema.org/v1",
       "properties": {
-        "foo": { "$comment": "json-schema-lint-disable then-else-without-if", "then": true },
-        "bar": { "then": true }
+        "foo": { "$comment": "json-schema-lint-disable then-else-without-if", "then": { "type": "string" } },
+        "bar": { "then": { "type": "string" } }
       },
-      "else": true
+      "else": { "type": "string" }
     }`);
     expect(file.messages.map((message) => [message.reason, message.line])).to.eql([
       ["'then' has no effect without 'if'", 5],
@@ -43,7 +43,7 @@ describe("configuration comments", () => {
     const file = await lint(`{
       "$schema": "https://json-schema.org/v1",
       "$comment": "json-schema-lint-disable min-max-contains-without-contains",
-      "then": true,
+      "then": { "type": "string" },
       "minContains": 2
     }`);
     expect(ruleIds(file)).to.eql(["then-else-without-if"]);
@@ -53,7 +53,7 @@ describe("configuration comments", () => {
     const file = await lint(`{
       "$schema": "https://json-schema.org/v1",
       "$comment": "json-schema-lint-disable then-else-without-if min-max-contains-without-contains",
-      "then": true,
+      "then": { "type": "string" },
       "minContains": 2
     }`);
     expect(file.messages).to.eql([]);
@@ -63,7 +63,7 @@ describe("configuration comments", () => {
     const file = await lint(`{
       "$schema": "https://json-schema.org/v1",
       "$comment": "json-schema-lint-disable",
-      "then": true,
+      "then": { "type": "string" },
       "minContains": 2
     }`);
     expect(file.messages).to.eql([]);
@@ -76,7 +76,7 @@ describe("configuration comments", () => {
       "properties": {
         "foo": { "$comment": "json-schema-lint-disable then-else-without-if" }
       },
-      "then": true
+      "then": { "type": "string" }
     }`);
     expect(file.messages).to.eql([]);
   });
@@ -85,7 +85,7 @@ describe("configuration comments", () => {
     const file = await lint(`{
       "$schema": "https://json-schema.org/v1",
       "$comment": "Don't use json-schema-lint-disable here",
-      "then": true
+      "then": { "type": "string" }
     }`);
     expect(ruleIds(file)).to.eql(["then-else-without-if"]);
   });
@@ -112,10 +112,10 @@ describe("configuration comments", () => {
     const file = await lint(`{
       "$schema": "https://json-schema.org/v1",
       "$comment": "json-schema-lint-disable then-else-without-if",
-      "then": true,
+      "then": { "type": "string" },
       "properties": {
-        "foo": { "$comment": "json-schema-lint-enable then-else-without-if", "then": true },
-        "bar": { "then": true }
+        "foo": { "$comment": "json-schema-lint-enable then-else-without-if", "then": { "type": "string" } },
+        "bar": { "then": { "type": "string" } }
       }
     }`);
     expect(file.messages.map((message) => [message.ruleId, message.line])).to.eql([["then-else-without-if", 6]]);
@@ -126,7 +126,7 @@ describe("configuration comments", () => {
       "$schema": "https://json-schema.org/v1",
       "$comment": "json-schema-lint-disable",
       "properties": {
-        "foo": { "$comment": "json-schema-lint-enable", "then": true, "minContains": 2 }
+        "foo": { "$comment": "json-schema-lint-enable", "then": { "type": "string" }, "minContains": 2 }
       }
     }`);
     expect(ruleIds(file)).to.eql(["then-else-without-if", "min-max-contains-without-contains"]);
@@ -140,9 +140,9 @@ describe("configuration comments", () => {
         "foo": {
           "$comment": "json-schema-lint-enable then-else-without-if",
           "properties": {
-            "bar": { "$comment": "json-schema-lint-disable then-else-without-if", "then": true }
+            "bar": { "$comment": "json-schema-lint-disable then-else-without-if", "then": { "type": "string" } }
           },
-          "else": true
+          "else": { "type": "string" }
         }
       }
     }`);
@@ -177,7 +177,7 @@ describe("configuration comments", () => {
   });
 
   test("an unknown directive is a warning", async () => {
-    const file = await lint(`{ "$schema": "https://json-schema.org/v1", "$comment": "json-schema-lint-ignore then-else-without-if", "then": true }`);
+    const file = await lint(`{ "$schema": "https://json-schema.org/v1", "$comment": "json-schema-lint-ignore then-else-without-if", "then": { "type": "string" } }`);
     expect(file.messages.map((message) => [message.ruleId, message.reason])).to.eql([
       ["unknown-directive", "Unknown directive 'json-schema-lint-ignore'. Expected 'json-schema-lint-disable' or 'json-schema-lint-enable'."],
       ["then-else-without-if", "'then' has no effect without 'if'"]

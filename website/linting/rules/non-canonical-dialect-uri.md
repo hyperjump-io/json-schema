@@ -10,7 +10,8 @@ and without it for 2019-09 and 2020-12. This implementation recovers, but
 implementations that compare dialect URIs as strings won't recognize the
 dialect. See [Dialects](../../../design/components/dialects/README.md) for why.
 
-v1 is reported by `invalid-dialect-uri` instead. It has no options.
+In v1, where a fragment or a URI that isn't normalized is invalid,
+`invalid-dialect-uri` reports it too, as an error. It has no options.
 
 ## Examples
 

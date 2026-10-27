@@ -6,8 +6,6 @@ import { canonicalDialectUri, visitDialectUris } from "../utilities.js";
  * @import { JsonSchemaDocumentNode } from "../../schema/schema-ast.d.ts"
  */
 
-const v1Uri = "https://json-schema.org/v1";
-
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
 const nonCanonicalDialectUri = lintRule({ origin: "json-schema-lint:non-canonical-dialect-uri", url: "https://hyperjump.io/json-schema/linting/rules/non-canonical-dialect-uri/" }, (tree, file) => {
   visitDialectUris(tree, (valueNode) => {
@@ -20,11 +18,6 @@ const nonCanonicalDialectUri = lintRule({ origin: "json-schema-lint:non-canonica
     }
 
     const absolute = toAbsoluteIri(normalized);
-    if (absolute === v1Uri) {
-      // `invalid-dialect-uri` reports v1
-      return;
-    }
-
     const fragment = parseIri(normalized).fragment;
     const expected = canonicalDialectUri(absolute) ?? (fragment ? absolute : normalized);
     if (fragment) {

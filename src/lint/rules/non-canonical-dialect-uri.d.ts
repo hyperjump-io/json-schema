@@ -10,7 +10,8 @@ import type { JsonSchemaDocumentNode } from "../../schema/schema-ast.d.ts";
  * implementations that compare dialect URIs as strings won't recognize the
  * dialect. See `design/components/dialects/README.md` for why.
  *
- * v1 is reported by `invalid-dialect-uri` instead. It has no options.
+ * In v1, where a fragment or a URI that isn't normalized is invalid,
+ * `invalid-dialect-uri` reports it too, as an error. It has no options.
  */
 declare const nonCanonicalDialectUri: Plugin<JsonSchemaDocumentNode, void>;
 export default nonCanonicalDialectUri;

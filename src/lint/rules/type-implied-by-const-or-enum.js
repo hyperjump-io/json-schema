@@ -30,7 +30,7 @@ const typeImpliedByConstOrEnum = lintRule({ origin: "json-schema-lint:type-impli
     for (const enumUri of enumUris) {
       const enumNode = findKeyword(schemaNode, enumUri);
       const enumValue = enumNode?.children[1];
-      if (enumNode === undefined || enumValue?.jsonType !== "array" || enumValue.children.length === 0) {
+      if (enumNode === undefined || enumValue?.jsonType !== "array") {
         continue;
       }
 

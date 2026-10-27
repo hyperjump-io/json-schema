@@ -5,8 +5,8 @@ In `recommended`, as a warning.
 `enum` with only one value, like `["foo"]`, which `const: "foo"` says
 more directly. Draft-04 doesn't have `const`, so it isn't reported there.
 The dialect's name for `const` is looked up, so custom dialects are
-covered too. `enum` next to `const` is reported by `const-and-enum`
-instead. It has no options.
+covered too. `enum` next to `const` isn't reported, because `const` can't
+replace it. `const-and-enum` reports it. It has no options.
 
 ## Examples
 

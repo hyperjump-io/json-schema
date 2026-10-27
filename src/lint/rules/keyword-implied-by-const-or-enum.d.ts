@@ -12,11 +12,12 @@ import type { JsonSchemaDocumentNode } from "../../schema/schema-ast.d.ts";
  * and `properties`. One that annotates a value has an effect, like an
  * `allOf` with a `title`, so `format` is never reported. So does one that
  * marks a property or an item as evaluated, if `unevaluatedProperties` or
- * `unevaluatedItems` might read it. `type` is reported by
- * `type-implied-by-const-or-enum`, and a keyword with no effect, or that
- * applies a schema that allows everything to every property or item, by
- * `keyword-without-effect` and `empty-catch-all-schema`. A keyword that rejects a value is reported
- * by `const-or-enum-value-rejected`, and one that might isn't reported.
+ * `unevaluatedItems` might read it. A keyword with no effect at all, like
+ * `minLength: 0`, is reported too. `type` is left to
+ * `type-implied-by-const-or-enum`, so that rule can be turned off on its
+ * own. In a schema with both `const` and `enum`, `enum` is a keyword next
+ * to `const`. A keyword that rejects a value is reported by
+ * `const-or-enum-value-rejected`, and one that might isn't reported.
  *
  * It has no options.
  */

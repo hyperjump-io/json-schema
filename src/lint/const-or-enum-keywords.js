@@ -1,5 +1,4 @@
 import { isErrorNode } from "../keywords/checks.js";
-import { effectOf } from "./effect.js";
 import { evaluatorForLint } from "./evaluate.js";
 import { lowerForLint } from "./lower.js";
 import { marksAreRead, schemaGroup } from "./schema-group.js";
@@ -41,10 +40,9 @@ const cache = new WeakMap();
  * each keyword group next to it (`evaluatorForLint`), one at a time, so
  * what a keyword says about the values doesn't depend on the rest of the
  * schema. A group that reads marks gets what the others marked. `type` is
- * left to the rules for it, and so is a keyword with no effect, or that
- * marks every property or item others don't, which `keyword-without-effect`
- * and `empty-catch-all-schema` report. A schema with both `const` and
- * `enum` isn't included, because `const-and-enum` reports it.
+ * left to the rules for it, so a user whose tools need `type` can turn
+ * `type-implied-by-const-or-enum` off without losing the rest. In a schema
+ * with both `const` and `enum`, `enum` is a keyword next to `const`.
  *
  * @type (session: JsonSchemaSession, tree: JsonSchemaDocumentNode) => Promise<KeywordResult[]>
  */
@@ -70,9 +68,9 @@ const evaluate = async (session, tree) => {
 
     const constNode = findKeyword(schemaNode, constUri);
     const enumNodes = enumUris.map((uri) => findKeyword(schemaNode, uri)).filter((node) => node !== undefined);
-    if (constNode !== undefined && enumNodes.length === 0) {
+    if (constNode !== undefined) {
       found.push({ schemaNode, valuesNode: constNode, isConst: true });
-    } else if (constNode === undefined && enumNodes.length === 1 && enumNodes[0].children[1].jsonType === "array") {
+    } else if (enumNodes.length === 1 && enumNodes[0].children[1].jsonType === "array") {
       found.push({ schemaNode, valuesNode: enumNodes[0], isConst: false });
     }
   });
@@ -98,8 +96,7 @@ const evaluate = async (session, tree) => {
 
     for (const [index, keyword] of (lowered.get(schemaNode) ?? []).entries()) {
       const { group, keywordNode } = keyword;
-      const effect = await effectOf(session, tree, keyword);
-      if (keywordNode === valuesNode || group.expression.op === "typeIs" || effect === "none" || effect === "marksAll") {
+      if (keywordNode === valuesNode || group.expression.op === "typeIs") {
         continue;
       }
 

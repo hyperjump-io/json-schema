@@ -13,7 +13,7 @@ import referenceWithoutTarget from "./rules/reference-without-target.js";
 const a = `{
   "$schema": "${v1DialectUri}",
   "$id": "https://example.com/a",
-  "then": true
+  "then": { "type": "string" }
 }`;
 
 describe("lint", () => {
@@ -23,7 +23,7 @@ describe("lint", () => {
       ruleId: "then-else-without-if",
       severity: "warn",
       uri: "https://example.com/a",
-      place: { start: { line: 4, column: 3, offset: 81 }, end: { line: 4, column: 15, offset: 93 } },
+      place: { start: { line: 4, column: 3, offset: 81 }, end: { line: 4, column: 31, offset: 109 } },
       message: "'then' has no effect without 'if'",
       url: "https://hyperjump.io/json-schema/linting/rules/then-else-without-if/"
     }]);
@@ -55,7 +55,7 @@ describe("lint", () => {
     const results = await jsonSchemaWith(`{
       "$schema": "${v1DialectUri}",
       "$id": "https://example.com/main",
-      "$defs": { "unused": { "then": true } }
+      "$defs": { "unused": { "then": { "type": "string" } } }
     }`).lint("https://example.com/main", { plugins: [thenElseWithoutIf] });
 
     expect(results).to.have.length(1);
@@ -65,7 +65,7 @@ describe("lint", () => {
     const results = await jsonSchemaWith(`{
       "$schema": "${v1DialectUri}",
       "$id": "https://example.com/main",
-      "then": true,
+      "then": { "type": "string" },
       "$defs": { "foo": { "else": true } }
     }`).lint("https://example.com/main#/$defs/foo", { plugins: [thenElseWithoutIf] });
 
@@ -83,7 +83,7 @@ describe("lint", () => {
     }`, `{
       "$schema": "${v1DialectUri}",
       "$id": "https://example.com/other",
-      "then": true
+      "then": { "type": "string" }
     }`).lint("https://example.com/main", { plugins: [thenElseWithoutIf, referenceWithoutTarget] });
 
     expect(results.map((result) => [result.uri, result.ruleId])).to.eql([
@@ -96,7 +96,7 @@ describe("lint", () => {
       "$schema": "${v1DialectUri}",
       "$id": "https://example.com/main",
       "$comment": "json-schema-lint-disable then-else-without-if",
-      "then": true
+      "then": { "type": "string" }
     }`).lint("https://example.com/main", { plugins: [thenElseWithoutIf] });
 
     expect(results).to.eql([]);

@@ -60,15 +60,21 @@ describe("keyword-implied-by-const-or-enum", () => {
   });
 
   test("an assertion with its default value", async () => {
-    expect(await reasons(`{ "$schema": "${draft202012}", "enum": ["a"], "minLength": 0 }`)).to.eql([]);
+    expect(await reasons(`{ "$schema": "${draft202012}", "enum": ["a"], "minLength": 0 }`)).to.eql([
+      "'minLength' has no effect, because it allows every value in 'enum'"
+    ]);
   });
 
   test("type isn't checked", async () => {
     expect(await reasons(`{ "$schema": "${draft202012}", "enum": ["a"], "type": "string" }`)).to.eql([]);
   });
 
+  // `enum` is a keyword next to `const`
   test("const and enum together", async () => {
-    expect(await reasons(`{ "$schema": "${draft202012}", "const": "a", "enum": ["a"], "maxLength": 3 }`)).to.eql([]);
+    expect(await reasons(`{ "$schema": "${draft202012}", "const": "a", "enum": ["a", "b"], "maxLength": 3 }`)).to.eql([
+      "'enum' has no effect, because it allows the 'const' value",
+      "'maxLength' has no effect, because it allows the 'const' value"
+    ]);
   });
 
   test("without const or enum", async () => {

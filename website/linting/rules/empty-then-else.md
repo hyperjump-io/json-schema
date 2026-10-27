@@ -8,8 +8,7 @@ never fails and adds nothing, so it's likely unfinished. A schema with
 annotations, like `description`, isn't reported, because the annotations
 apply only when the branch does.
 
-Without `if`, it's reported by `then-else-without-if` instead. It has no
-options.
+Without `if`, `then-else-without-if` reports it too. It has no options.
 
 ## Examples
 

@@ -9,8 +9,9 @@ with less. Some tools, like code generators, read `type` rather than the
 values. Turn this rule off if yours do.
 
 If `type` doesn't allow a value, it does have an effect, and
-`const-or-enum-value-for-disallowed-type` reports the value instead. An
-empty `enum` is reported by `empty-enum`. It has no options.
+`const-or-enum-value-for-disallowed-type` reports the value instead. Next
+to an empty `enum`, which `empty-enum` reports, nothing is valid, so `type`
+has no effect. It has no options.
 
 ## Examples
 

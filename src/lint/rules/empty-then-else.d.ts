@@ -8,8 +8,7 @@ import type { JsonSchemaDocumentNode } from "../../schema/schema-ast.d.ts";
  * annotations, like `description`, isn't reported, because the annotations
  * apply only when the branch does.
  *
- * Without `if`, it's reported by `then-else-without-if` instead. It has no
- * options.
+ * Without `if`, `then-else-without-if` reports it too. It has no options.
  */
 declare const emptyThenElse: Plugin<JsonSchemaDocumentNode, void>;
 export default emptyThenElse;

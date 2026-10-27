@@ -28,3 +28,12 @@
   for lint"). A rule that needs to know whether a value is valid evaluates
   the lowered schemas (`evaluatorForLint` in `evaluate.js`) instead of
   compiling.
+- A rule reports everything it finds, even what another rule reports too,
+  like `unevaluatedProperties: true` next to `additionalProperties: false`,
+  which `empty-catch-all-schema` and `unevaluated-without-effect` both
+  report. Otherwise, turning one rule off would hide what the other finds.
+  A rule leaves something out only so that another rule's own configuration
+  works: `keyword-implied-by-const-or-enum` doesn't check `type`, so
+  `type-implied-by-const-or-enum` can be turned off on its own, and
+  `keyword-without-effect` doesn't report unknown keywords, so
+  `unknown-keyword`'s `ignore` option works.

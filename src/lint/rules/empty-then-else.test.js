@@ -37,7 +37,7 @@ describe("empty-then-else", () => {
   });
 
   test("without if", async () => {
-    expect(await reasons(`{ "$schema": "${draft2020}", "then": {} }`)).to.eql([]);
+    expect(await reasons(`{ "$schema": "${draft2020}", "then": {} }`)).to.eql(["'then' has no effect, because every value is valid against it"]);
   });
 
   test("in a subschema", async () => {

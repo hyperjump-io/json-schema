@@ -27,6 +27,12 @@ describe("const-or-enum-value-rejected", () => {
     ]);
   });
 
+  test("a const value enum rejects", async () => {
+    expect(await reasons(`{ "$schema": "${draft202012}", "const": "c", "enum": ["a", "b"] }`)).to.eql([
+      "'enum' rejects the 'const' value, so nothing is valid"
+    ]);
+  });
+
   test("more than one assertion", async () => {
     expect(await reasons(`{ "$schema": "${draft202012}", "enum": ["a"], "minLength": 2, "maxLength": 0, "pattern": "^b" }`)).to.eql([
       "'minLength', 'maxLength' and 'pattern' reject this value, so it's never valid"

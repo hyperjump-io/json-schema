@@ -19,9 +19,11 @@ another document, but the rule assumes only the root and definitions are
 (see `SchemaGroup`'s `open`).
 
 A keyword that applies a schema with no effect to every property or item
-others don't is `empty-catch-all-schema`'s. One without effect because of
-its siblings, like `if` without `then` or `else`, is left to the rules
-about those siblings, and unknown keywords to `unknown-keyword`.
+others don't, like `additionalProperties: true`, is the same, and
+`empty-catch-all-schema` reports it too. So does a rule about a
+keyword without effect because of its siblings, like `contentSchema`
+without `contentMediaType`. Unknown keywords are left to
+`unknown-keyword`, so its `ignore` option works.
 
 References are followed, into other documents too, so `$ref` to a schema
 with no effect has no effect. One that can't be followed has an effect.

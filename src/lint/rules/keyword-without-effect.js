@@ -29,8 +29,9 @@ const keywordWithoutEffect = lintRule({ origin: "json-schema-lint:keyword-withou
 
     const keywordNodes = /** @type JsonSchemaKeywordNode[] */ (schemaNode.jsonType === "object" ? schemaNode.children : []);
     for (const keywordNode of keywordNodes) {
-      const definitionUri = keywordDefinitionUri(keywordNode.keywordUri);
-      if (definitionUri === unknownUri || affectsAReader(keywords, keywordNode)) {
+      // An unknown keyword is `unknown-keyword`'s, so its `ignore` option
+      // works
+      if (keywordDefinitionUri(keywordNode.keywordUri) === unknownUri || affectsAReader(keywords, keywordNode)) {
         continue;
       }
 
@@ -39,17 +40,14 @@ const keywordWithoutEffect = lintRule({ origin: "json-schema-lint:keyword-withou
       if (keyword === undefined) {
         // A sibling that every keyword that reads it lowers the same without
         withoutEffect = keywords.some(({ sourceNodes }) => sourceNodes.includes(keywordNode));
-      } else if (session.jsonSchema.getKeyword(definitionUri).siblings !== undefined) {
-        // A keyword without effect because of its siblings is left to rules
-        // about them, like `if-without-then-else`
-        withoutEffect = false;
       } else {
         const effect = await effectOf(session, tree, keyword);
-        if (effect === "marks" && marksMightBeRead === undefined) {
+        const marks = effect === "marks" || effect === "marksAll";
+        if (marks && marksMightBeRead === undefined) {
           const group = await schemaGroup(session, tree, schemaNode);
           marksMightBeRead = group.open || await marksAreRead(session, tree, group);
         }
-        withoutEffect = effect === "none" || (effect === "marks" && !marksMightBeRead);
+        withoutEffect = effect === "none" || (marks && !marksMightBeRead);
       }
 
       if (withoutEffect) {

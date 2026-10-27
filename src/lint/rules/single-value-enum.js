@@ -24,7 +24,7 @@ const singleValueEnum = lintRule({ origin: "json-schema-lint:single-value-enum",
     }
 
     const keywordNodes = /** @type JsonSchemaKeywordNode[] */ (schemaNode.children);
-    // `const-and-enum` reports `enum` next to `const`
+    // Next to `const`, using `const` instead isn't possible
     if (keywordNodes.some((keywordNode) => keywordNode.keywordUri === constUri)) {
       return;
     }
