@@ -1,12 +1,11 @@
 import { subexpressions } from "../kernel/kernel.js";
-import { findSchema } from "./find-schema.js";
-import { lowerForLint } from "./lower.js";
+import { appliedSchemas } from "./applied.js";
 
 /**
  * @import { Expression, Op } from "../kernel/kernel.d.ts"
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode } from "../schema/schema-ast.d.ts"
  * @import { JsonSchemaSession } from "../session.d.ts"
- * @import { LintSchemas, LoweredKeyword } from "./lower.d.ts"
+ * @import { LoweredKeyword } from "./lower.d.ts"
  */
 
 /**
@@ -32,10 +31,6 @@ const assertions = new Set(/** @type Op[] */ ([
 const order = ["none", "marks", "marksAll", "some"];
 
 /**
- * @typedef {{ type: string; children?: TreeNode[] }} TreeNode
- */
-
-/**
  * What a keyword's group does, following the schemas it applies, so a
  * schema with no effect is the same as `true`. A reference is followed with
  * `findSchema`, into another document too, and one that can't be followed
@@ -45,28 +40,10 @@ const order = ["none", "marks", "marksAll", "some"];
  * @type (session: JsonSchemaSession, tree: JsonSchemaDocumentNode, keyword: LoweredKeyword) => Promise<Effect>
  */
 export const effectOf = async (session, tree, keyword) => {
-  /** @type LintSchemas */
-  const schemas = new Map(await lowerForLint(session, tree));
+  const { keywordsOf, find, appliedBy } = await appliedSchemas(session, tree);
 
   /** @type Set<JsonSchemaNode> */
   const following = new Set();
-
-  /**
-   * The schema a reference finds, with what its document lowers to
-   *
-   * @type (uri: string) => Promise<JsonSchemaNode | undefined>
-   */
-  const find = async (uri) => {
-    const result = await findSchema(session, uri, { document: tree });
-    if (result.status !== "found") {
-      return undefined;
-    } else if (!schemas.has(result.node)) {
-      for (const [schemaNode, keywords] of await lowerForLint(session, result.document)) {
-        schemas.set(schemaNode, keywords);
-      }
-    }
-    return result.node;
-  };
 
   /** @type (node: JsonSchemaNode | undefined) => Promise<Effect> */
   const ofSchema = async (node) => {
@@ -78,7 +55,7 @@ export const effectOf = async (session, tree, keyword) => {
       return node.value ? "none" : "some";
     }
 
-    const keywords = schemas.get(node);
+    const keywords = keywordsOf(node);
     if (keywords === undefined || following.has(node)) {
       return "some";
     }
@@ -94,19 +71,11 @@ export const effectOf = async (session, tree, keyword) => {
   };
 
   /** @type (keyword: LoweredKeyword) => Promise<Effect> */
-  const ofKeyword = async ({ group, keywordNode, sourceNodes }) => {
-    // A subschema is applied by its location, and anything else is a
-    // reference
-    /** @type Map<string, JsonSchemaNode> */
-    const subschemas = new Map();
-    for (const node of [keywordNode, ...sourceNodes].flatMap((node) => schemasIn(/** @type TreeNode */ (node.children[1])))) {
-      if (node.type === "json-schema") {
-        subschemas.set(node.location, node);
-      }
-    }
+  const ofKeyword = async (keyword) => {
+    const applied = appliedBy(keyword);
 
     /** @type (handle: string) => Promise<Effect> */
-    const ofApplied = async (handle) => ofSchema(subschemas.get(handle) ?? await find(handle));
+    const ofApplied = async (handle) => ofSchema(await applied(handle));
 
     /** @type (expression: Expression) => Promise<Effect> */
     const ofChild = async (expression) => await ofExpression(expression) === "none" ? "none" : "some";
@@ -191,7 +160,7 @@ export const effectOf = async (session, tree, keyword) => {
       }
     };
 
-    return ofExpression(group.expression);
+    return ofExpression(keyword.group.expression);
   };
 
   return ofKeyword(keyword);
@@ -208,20 +177,6 @@ export const affectsAReader = (keywords, keywordNode) => keywords
 
 /** @type (effects: Effect[]) => Effect */
 const combine = (effects) => effects.reduce((a, b) => order.indexOf(a) > order.indexOf(b) ? a : b, /** @type Effect */ ("none"));
-
-/**
- * The schemas in a keyword's value, not including their subschemas
- *
- * @type (node: TreeNode) => JsonSchemaNode[]
- */
-const schemasIn = (node) => {
-  if (node.type === "json-schema" || node.type === "reference") {
-    const schemaNode = /** @type JsonSchemaNode */ (node);
-    return [schemaNode];
-  }
-
-  return (node.children ?? []).flatMap(schemasIn);
-};
 
 /**
  * @template T
