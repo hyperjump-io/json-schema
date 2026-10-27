@@ -79,9 +79,12 @@ const typeBits = { null: 1, boolean: 2, number: 4, string: 8, array: 16, object:
 
 /**
  * Evaluation with plugins, of plain values or JSON AST nodes, and of ASTs
- * without plugins, which includes annotating. Every subexpression is
- * evaluated, so nothing stops early, and a plugin sees every keyword that
- * applies.
+ * without plugins, which includes annotating. With plugins or annotating,
+ * every subexpression is evaluated, so nothing stops early, and a plugin
+ * sees every keyword that applies. Without either, only the result and marks
+ * matter, so a schema stops at its first failing group, `any` at its first
+ * passing subexpression if nothing reads marks, and `eachItem` at its first
+ * failing item.
  *
  * - `isAst`: The instance is a JSON AST. Values that couldn't be parsed pass
  *   every schema.
@@ -108,6 +111,8 @@ export const instrumented = (jsonSchema, kernel, options) => {
   const { instance: ops, isAst, annotating, instrumented: tracking } = options;
 
   const tracksDynamicScope = kernel.reads.dynamicScope.length > 0;
+  // Only the result and marks can be seen
+  const stopsEarly = !annotating && !tracking;
 
   /** @typedef {Parameters<typeof ops.typeOf>[0]} I */
 
@@ -334,6 +339,9 @@ export const instrumented = (jsonSchema, kernel, options) => {
           }
         } else {
           valid = false;
+          if (stopsEarly) {
+            break;
+          }
         }
       }
 
@@ -416,6 +424,14 @@ export const instrumented = (jsonSchema, kernel, options) => {
       case "any": {
         const of = expression.of.map((subexpression) => build(subexpression, info));
         return (instance, marks) => {
+          if (stopsEarly && marks === undefined) {
+            for (const evaluate of of) {
+              if (evaluate(instance, undefined)) {
+                return true;
+              }
+            }
+            return false;
+          }
           let valid = false;
           for (const evaluate of of) {
             const own = marks && new Set(marks);
@@ -674,6 +690,9 @@ export const instrumented = (jsonSchema, kernel, options) => {
                 marks?.add(index);
               } else {
                 valid = false;
+                if (stopsEarly) {
+                  return false;
+                }
               }
             }
             index++;

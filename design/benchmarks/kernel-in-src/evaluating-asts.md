@@ -22,9 +22,22 @@ parsed beforehand, so parsing isn't timed. B/A, median of 15 rounds:
 | --- | --- | --- | --- |
 | `entries` as an array, every hook | 0.896 | 0.963 | 0.789 |
 | `entries` as an array, no plugins | 0.872 | 0.945 | 0.786 |
+| Stopping early, no plugins, after `entries` | 0.950 | 0.710 | 0.846 |
 
 - A CPU profile of `package.json` ASTs with every hook put 12.8% in
   `astInstance.entries`, a generator. It builds an array of the entries
   now. Unlike `jsInstance.entries` (see
   [Evaluating with plugins and annotating](plugins-and-annotating.md)),
   that time was the generator itself.
+- Without plugins or annotating, only the result and marks can be seen,
+  so `instrumented.js` stops early where `fast.js` does: a schema at its
+  first failing group, `any` at its first passing subexpression when
+  nothing reads marks, and `eachItem` at its first failing item. Most of
+  the instances are valid, so most of the gain is `any`. `check-src.ts`
+  found no differences.
+- With both changes, converting an AST without error nodes to its value
+  (`jsonValue`) and evaluating that with `fast.js` was faster on small
+  instances (`tsconfig.json` 0.71 to 0.29 ms, OpenAPI 0.63 to 0.13 ms) but
+  slower on `package.json` (15.2 to 17.7 ms on medium files, 0.58 to
+  2.01 ms on large ones): converting cost about as much as evaluating. It
+  isn't used.
