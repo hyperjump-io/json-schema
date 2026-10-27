@@ -50,8 +50,11 @@ ported, merged into another rule, or not ported for a reason below.
   'then' or 'else' only collects annotations".
 - Each rule gets a `.d.ts` that explains why it matters, tests (including a
   dialect without the keyword and a property with the keyword's name), a
-  row in the README's table, and a place in `recommended`, or in the style
-  preset if it's much more opinionated.
+  page in `website/linting/rules/` with examples, a row in its README's
+  table, and a place in `recommended`, or in the style preset if it's much
+  more opinionated. `src/lint/rule-pages.test.js` lints each page's
+  examples the way the site does and checks them against the messages the
+  page lists, and checks the README row and the severity the page says.
 
 Rules of our own are added too, when porting turns up a mistake the
 catalogue doesn't cover: `empty-type`,
