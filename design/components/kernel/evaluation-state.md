@@ -26,7 +26,10 @@ the kernel reads it:
   lowers that resource's dynamic anchor targets, because evaluation can't
   retrieve anything. They're recorded before they're lowered, so a
   reference lowered meanwhile, like `meta/core`'s `$dynamicRef` to its own
-  `"meta"` anchor, sees every one.
+  `"meta"` anchor, sees every one. Without plugins or annotations,
+  [`static-dynamic-scope`](optimizations/static-dynamic-scope.md) usually
+  resolves every `dynamicApply` from the entry, and the evaluators don't
+  track the dynamic scope.
 
 Marks follow the same rule as annotations: an operation's marks are kept
 only if it passes. A subexpression's marks on the same instance are its

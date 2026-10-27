@@ -9,7 +9,8 @@ them, and `src/kernel/optimize.js` runs them.
   what the evaluation can observe: `fast` (no plugins and no annotations,
   so only the result and the marks matter), `plugins`, and `annotations`
   (annotating, or a plugin with an `annotation` hook). A pass returns the
-  schemas it replaces, by handle, and doesn't change the kernel it's given,
+  schemas it replaces, by handle (or `null` for one it removes, which
+  nothing left in the kernel applies), and doesn't change the kernel it's given,
   because the `Validator` keeps it for its other evaluators and for
   `serialize`. `optimize` puts what each pass replaces in one copy of the
   kernel's schemas, made the first time a pass replaces anything, and
@@ -25,7 +26,8 @@ them, and `src/kernel/optimize.js` runs them.
   kernel isn't optimized for any one mode.
 - Passes run in the order `index.js` lists them, because one can leave work
   for another, like `static-unevaluated` leaving a schema whose marks
-  nothing reads, which folding can then fold. Unlike keywords, they aren't
+  nothing reads, which folding can then fold, or `static-dynamic-scope`
+  leaving an `apply` where `static-unevaluated` can see what's marked. Unlike keywords, they aren't
   independent.
 - Passes only know operations, never keywords, so any keyword that lowers
   to the kernel's operations is optimized like the built-in ones. Before
@@ -48,6 +50,7 @@ them, and `src/kernel/optimize.js` runs them.
 
 In the order they run:
 
+- [`static-dynamic-scope.js`](static-dynamic-scope.md)
 - [`static-unevaluated.js`](static-unevaluated.md)
 - [`fold-passing.js`](fold-passing.md)
 - [`dispatch.js`](dispatch.md)

@@ -28,9 +28,10 @@ import { schemaReads } from "./kernel.js";
  * one copy of the kernel's schemas for every pass, because copying a large
  * kernel's schemas costs about as much as a pass's own work (1 ms for the
  * 4,304 of SchemaStore's `package.json` schema). A pass that has nothing to
- * do for a mode returns an empty map.
+ * do for a mode returns an empty map. `null` removes a schema, which nothing
+ * left in the kernel can apply.
  *
- * @typedef {{ optimize: (kernel: Kernel, mode: Mode) => Map<Handle, CompiledSchema> }} Optimization
+ * @typedef {{ optimize: (kernel: Kernel, mode: Mode) => Map<Handle, CompiledSchema | null> }} Optimization
  */
 
 /**
@@ -67,6 +68,13 @@ export const optimize = (kernel, mode) => {
     schemas ??= { ...kernel.schemas };
     reads ??= { evaluated: new Set(kernel.reads.evaluated), dynamicScope: new Set(kernel.reads.dynamicScope) };
     for (const [handle, schema] of replaced) {
+      if (schema === null) {
+        delete schemas[handle];
+        reads.evaluated.delete(handle);
+        reads.dynamicScope.delete(handle);
+        continue;
+      }
+
       schemas[handle] = schema;
       const schemaRead = schemaReads(schema);
       for (const state of /** @type EvaluationState[] */ (["evaluated", "dynamicScope"])) {

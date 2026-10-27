@@ -9,6 +9,8 @@ mark everything is `pass`. When nothing reads marks, the evaluators don't
 track them. What's marked is known from the operations: operations that
 apply a schema only under some condition (`any`, `one`, `cases`) count
 only if nothing they apply marks anything, and `contains`,
-`dynamicApply`, and `opaque` are never known. It only needs the marks of
+`dynamicApply`, and `opaque` are never known, but it runs after
+[`static-dynamic-scope`](static-dynamic-scope.md), which usually leaves an
+`apply` for a `dynamicApply`. It only needs the marks of
 a passing schema, because a schema whose sibling fails fails anyway,
 which isn't true with plugins or annotations.

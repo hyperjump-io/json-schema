@@ -9,7 +9,7 @@ import dispatch from "./dispatch.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
- * @import { Expression, Kernel } from "../kernel.d.ts"
+ * @import { CompiledSchema, Expression, Handle, Kernel } from "../kernel.d.ts"
  * @import { Mode } from "../optimize.js"
  */
 
@@ -226,7 +226,8 @@ describe("dispatch", () => {
     const both = async (schema, json) => {
       const validator = await compile(schema);
       const kernel = /** @type Kernel */ (validator.serialize());
-      const replaced = dispatch.optimize(kernel, fast);
+      // Dispatching doesn't remove schemas
+      const replaced = /** @type Map<Handle, CompiledSchema> */ (dispatch.optimize(kernel, fast));
       expect(replaced.size).to.be.greaterThan(0);
       const after = { ...kernel, schemas: { ...kernel.schemas, ...Object.fromEntries(replaced) } };
       const options = { instance: astInstance, isAst: true, annotating: false, instrumented: false };
