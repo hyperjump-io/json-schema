@@ -21,16 +21,18 @@ import { subexpressions } from "../kernel.js";
  * are exponentially many copies, so past one for each schema that reads
  * the dynamic scope it gives up, and the evaluators track it as before.
  *
- * Copies have their own handles, and plugins see handles as locations, so
- * it's for the fast mode only.
+ * A copy's handle isn't a location, so it has the handle of the schema it
+ * copies (`copyOf`), which is what plugins see. Evaluation makes the same
+ * hook calls, in the same order, as it would tracking the dynamic scope,
+ * so it's for every mode.
  *
  * @type Optimization
  */
 export default {
-  optimize(kernel, { fast }) {
+  optimize(kernel) {
     /** @type Map<Handle, CompiledSchema | null> */
     const replaced = new Map();
-    if (!fast || kernel.reads.dynamicScope.length === 0) {
+    if (kernel.reads.dynamicScope.length === 0) {
       return replaced;
     }
 
@@ -101,10 +103,8 @@ export default {
       /** @type (handle: Handle) => Handle */
       const applied = (handle) => specialize(handle, anchors);
       const schema = /** @type Exclude<CompiledSchema, boolean> */ (kernel.schemas[handle]);
-      replaced.set(copy, {
-        ...schema,
-        keywords: schema.keywords.map((group) => ({ ...group, expression: resolve(group.expression, anchors, applied) }))
-      });
+      const keywords = schema.keywords.map((group) => ({ ...group, expression: resolve(group.expression, anchors, applied) }));
+      replaced.set(copy, copy === handle ? { ...schema, keywords } : { ...schema, keywords, copyOf: handle });
     }
 
     // Nothing applies a schema that reads the dynamic scope and wasn't

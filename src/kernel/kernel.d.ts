@@ -143,7 +143,17 @@ export type KeywordGroup = {
  * A boolean schema, or an object schema's keyword groups, in the order
  * they're evaluated, and the URI of the schema resource it belongs to
  */
-export type CompiledSchema = boolean | { resource: string; keywords: KeywordGroup[] };
+export type CompiledSchema = boolean | {
+  resource: string;
+  keywords: KeywordGroup[];
+
+  /**
+   * The handle of the schema this is a copy of, for a copy an optimization
+   * made. Its handle isn't a location, so this is where it is. Lowering
+   * doesn't make copies, so a serialized kernel doesn't have any.
+   */
+  copyOf?: Handle;
+};
 
 /**
  * A compiled schema and every schema it applies. It's JSON, so it can be

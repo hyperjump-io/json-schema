@@ -1,6 +1,6 @@
 # `static-dynamic-scope.js`
 
-Fast mode only. Each `dynamicApply` becomes an `apply` of what its anchor
+Each `dynamicApply` becomes an `apply` of what its anchor
 identifies, so the evaluators don't track the dynamic scope. Evaluation
 always starts from the kernel's entry, so the anchors in scope where a
 schema is applied only depend on the path to it. A schema applied with
@@ -21,6 +21,15 @@ made from the entry and only as needed.
   leave the same anchors in scope are one copy. The first copy of a
   schema keeps its handle. Later ones are the handle, a space, and a
   number, which can't be a schema's handle because a URI can't have a space.
+- **It's for every mode.** Evaluation makes the same hook calls, in the
+  same order, as it would tracking the dynamic scope. A copy's handle
+  isn't a location, so a copy has the handle of the schema it copies
+  (`copyOf`), and the instrumented evaluator reports that as its
+  `SchemaInfo`'s location and in `KeywordInfo.conditions`, which BASIC and
+  DETAILED compare. A copy shares the schema's `SchemaInfo` and its groups'
+  `KeywordInfo`s, by location, so each schema and keyword still has one
+  info per evaluator, whichever copy is evaluated. A `KeywordInfo`'s
+  `expression` is the first copy's, and its `apply`s can name copies.
 - **The common case has no copies.** The outermost anchor wins, so an
   anchor the entry's resource defines identifies the same schema
   everywhere. Validating against a meta-schema, every `$dynamicRef` is to
@@ -54,8 +63,8 @@ made from the entry and only as needed.
   `unevaluatedProperties` marks.
 
 On meta-schemas, FLAG `validate` is 37–43% faster, about 30–35% of it from
-not tracking the dynamic scope, and the pass costs about 0.12 ms when the
-evaluator is built
+not tracking the dynamic scope, with plugins 8–13% faster, and BASIC up to
+12%, and the pass costs about 0.12 ms when the evaluator is built
 ([Resolving the dynamic scope](../../../benchmarks/kernel-in-src/static-dynamic-scope.md)).
 
 ## Rejected
@@ -69,6 +78,14 @@ evaluator is built
   can't read, are the same for that schema. The paper's polynomial
   algorithm for a bounded number of dynamic references (section 7)
   memoizes by the same equivalence.
+- **Giving plugins expressions with the copies' `apply`s mapped back** to
+  the schemas they copy. It's a copy of every copied group's expression
+  when the evaluator is built, for a field plugins don't use, and plugins
+  already see expressions the passes rewrote, like `dispatch`'s
+  `typeSwitch`.
+- **Telling a copy's location from its handle**, by dropping what's after
+  the space. Where a copy came from is the pass's to say, not a convention
+  evaluators have to know.
 - **Resolving only the anchors the entry's resource defines.** It covers
   the meta-schemas without copies, but copies cost nothing when they
   aren't needed, and it leaves `tree` and `strict-tree` tracking the
@@ -76,8 +93,5 @@ evaluator is built
 
 ## Open questions and limitations
 
-- **Plugins and annotations.** Copies would need the location of the
-  schema they copy, because plugins see handles as locations. How much
-  it would save with plugins hasn't been measured.
 - **No real schema here needs copies.** The budget is a guess, set by the
   tests' exponential schema and not by measurements.

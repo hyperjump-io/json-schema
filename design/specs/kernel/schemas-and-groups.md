@@ -3,7 +3,7 @@
 A compiled schema is a boolean, or the expressions of its keywords:
 
 ```ts
-type CompiledSchema = boolean | { resource: string; keywords: KeywordGroup[] };
+type CompiledSchema = boolean | { resource: string; keywords: KeywordGroup[]; copyOf?: Handle };
 
 type KeywordGroup = {
   keywordUri: string;
@@ -28,8 +28,9 @@ type KeywordGroup = {
   a group, the order of its subschemas isn't guaranteed, and output formats
   don't sort their errors.
 - **`KeywordInfo`** has the group's `expression`, and what plugins need
-  from it, computed once: `explainsFailure`, and `conditions`, the schemas
-  its `cases` apply as conditions.
+  from it, computed once: `explainsFailure`, and `conditions`, the
+  locations of the schemas its `cases` apply as conditions, which are
+  `SchemaInfo` locations. A copy of a schema shares its infos.
 - **Sources** are the siblings a keyword read (`minContains` and
   `maxContains` for `contains`), so lint messages and tools can point at
   every keyword an expression came from. They're in the order the keyword
@@ -40,7 +41,10 @@ type KeywordGroup = {
   evaluated after the groups that don't, in document order otherwise. This
   replaced `reads: ["evaluated"]` and the ordering in `compile.js`.
 - A schema is referred to by its handle (its canonical URI), so schemas can
-  refer to each other and to themselves.
+  refer to each other and to themselves. An optimization can copy a
+  schema, under a handle that isn't a URI, with `copyOf`, the handle of
+  the schema it copies, which is where it is. Lowering doesn't make
+  copies, so a serialized kernel doesn't have any.
 - **Versioning.** A serialized compiled schema has `kernel: 1`, the version
   of the kernel its expressions are in. `restoreValidator` rejects any other
   version. The version goes up when an operation's meaning changes.

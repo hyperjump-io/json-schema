@@ -37,3 +37,25 @@ copies. `ab.ts`, B/A, against HEAD:
   and so were the BASIC errors. `check-src.ts` reported the same as HEAD.
   `package.json`, `tsconfig.json`, and OpenAPI 3.0 don't read the dynamic
   scope, and were 0.999–1.009.
+
+With plugins and annotating, once copies had the location of what they
+copy (B/A against the commit that only ran it without plugins):
+
+| | Hooks that do nothing | Hooks that read locations | BASIC |
+| --- | --- | --- | --- |
+| 2020-12 meta-schema, test suite schemas | 0.870 | 0.914 | 0.952 |
+| 2020-12 meta-schema, SchemaStore | 0.888 | 0.876 | 0.885 |
+| 2019-09 meta-schema, SchemaStore | 0.883 | 0.880 | 0.990 |
+| strict 2020-12, SchemaStore | 0.909 | 0.895 | 0.926 |
+| strict 2019-09, SchemaStore | 0.919 | 0.906 | 0.963 |
+
+- Plugins get the same hook calls as before, so it saves less than
+  without them.
+- BASIC only evaluates with its plugin when the instance is invalid, and
+  without plugins it already didn't track the dynamic scope.
+- Annotating was 0.93 on the 2020-12 meta-schema and 0.95–1.03 on the
+  others, each corpus in a process of its own, with ranges of ±5%, so no
+  difference was measured.
+- `check-src.ts` reported the same as before, including its comparison of
+  every hook call through `Validator` on the test suites, whose
+  `$dynamicRef` tests make copies.

@@ -188,25 +188,55 @@ export const instrumented = (jsonSchema, kernel, options) => {
     return evaluator;
   };
 
+  /**
+   * Where a schema is. A copy an optimization made has a handle that isn't
+   * a location, so it's where the schema it copies is.
+   *
+   * @type (handle: Handle) => string
+   */
+  const locationOf = (handle) => {
+    const compiled = kernel.schemas[handle];
+    return typeof compiled === "object" && compiled.copyOf !== undefined ? compiled.copyOf : handle;
+  };
+
+  // A copy of a schema has the same infos as the schema, so each schema and
+  // keyword has one, whichever copy is evaluated. Its expression is the
+  // first copy's, and can apply copies.
+  /** @type Map<string, SchemaInfo> */
+  const schemaInfos = new Map();
+  /** @type Map<string, KeywordInfo> */
+  const keywordInfos = new Map();
+
   /** @type (group: KeywordGroup) => KeywordInfo */
-  const keywordInfo = ({ keywordUri, location, sources, expression }) => ({
-    keywordUri,
-    absoluteKeywordLocation: location,
-    keyword: jsonSchema.getKeyword(keywordDefinitionUri(keywordUri)),
-    expression,
-    sources,
-    explainsFailure: explainsFailure(expression),
-    conditions: conditionsOf(expression)
-  });
+  const keywordInfo = ({ keywordUri, location, sources, expression }) => {
+    let info = keywordInfos.get(location);
+    if (info === undefined) {
+      info = {
+        keywordUri,
+        absoluteKeywordLocation: location,
+        keyword: jsonSchema.getKeyword(keywordDefinitionUri(keywordUri)),
+        expression,
+        sources,
+        explainsFailure: explainsFailure(expression),
+        conditions: new Set([...conditionsOf(expression)].map(locationOf))
+      };
+      keywordInfos.set(location, info);
+    }
+    return info;
+  };
 
   /** @type (handle: Handle) => SchemaEvaluator<I> */
   const buildSchema = (handle) => {
     const compiled = kernel.schemas[handle];
 
-    /** @type SchemaInfo */
-    const info = { absoluteKeywordLocation: handle };
-    if (typeof compiled === "boolean") {
-      info.booleanSchema = compiled;
+    const location = locationOf(handle);
+    let info = schemaInfos.get(location);
+    if (info === undefined) {
+      info = { absoluteKeywordLocation: location };
+      if (typeof compiled === "boolean") {
+        info.booleanSchema = compiled;
+      }
+      schemaInfos.set(location, info);
     }
     const resource = typeof compiled === "boolean" ? handle.replace(/#.*$/, "") : compiled.resource;
     const resourceAnchors = kernel.resources[resource]?.dynamicAnchors ?? {};

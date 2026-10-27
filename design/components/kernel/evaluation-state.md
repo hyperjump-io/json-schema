@@ -26,7 +26,7 @@ the kernel reads it:
   lowers that resource's dynamic anchor targets, because evaluation can't
   retrieve anything. They're recorded before they're lowered, so a
   reference lowered meanwhile, like `meta/core`'s `$dynamicRef` to its own
-  `"meta"` anchor, sees every one. Without plugins or annotations,
+  `"meta"` anchor, sees every one.
   [`static-dynamic-scope`](optimizations/static-dynamic-scope.md) usually
   resolves every `dynamicApply` from the entry, and the evaluators don't
   track the dynamic scope.

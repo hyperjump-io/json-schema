@@ -73,7 +73,13 @@ export type KeywordInfo = {
 
   keyword: Keyword;
 
-  /** What the keyword lowered to */
+  /**
+   * What the keyword lowered to, after optimizing. A schema it applies can
+   * be a copy an optimization made, whose handle isn't a location: it's
+   * the handle of the schema it copies, a space, and a number. The same
+   * keyword in copies of a schema has one info, with the first copy's
+   * expression.
+   */
   expression: Expression;
 
   /** The locations of the siblings the keyword read */
@@ -86,10 +92,10 @@ export type KeywordInfo = {
   explainsFailure: boolean;
 
   /**
-   * The schemas the keyword applies as conditions, like `if`'s. A condition
-   * that fails isn't an error.
+   * The schemas the keyword applies as conditions, like `if`'s, by their
+   * {@link SchemaInfo} locations. A condition that fails isn't an error.
    */
-  conditions: ReadonlySet<Handle>;
+  conditions: ReadonlySet<string>;
 };
 
 /**

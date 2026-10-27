@@ -1,4 +1,5 @@
 import { describe, test, expect } from "vitest";
+import { pointerGet } from "@hyperjump/browser/json";
 import { JsonSchema } from "../../json-schema.js";
 import { SchemaRegistry } from "../../registry/schema-registry.js";
 import { addDraft202012, draft202012DialectUri } from "../../dialects/draft-2020-12/index.js";
@@ -10,12 +11,16 @@ import staticDynamicScope from "./static-dynamic-scope.js";
  * @import { Json } from "@hyperjump/browser/json"
  * @import { Kernel } from "../kernel.d.ts"
  * @import { Validator } from "../../json-schema.d.ts"
+ * @import { KeywordInfo, SchemaInfo } from "../evaluation-plugin.d.ts"
+ * @import { ValidationError } from "../../output/validation-error.d.ts"
  */
 
 const jsonSchema = new JsonSchema();
 addDraft202012(jsonSchema);
 
 const fast = { fast: true, plugins: false, annotations: false };
+const plugins = { fast: false, plugins: true, annotations: false };
+const titleKeywordUri = "https://json-schema.org/keyword/title";
 
 let count = 0;
 
@@ -150,13 +155,112 @@ describe("staticDynamicScope", () => {
     expect(staticDynamicScope.optimize(kernel, fast).size).to.equal(0);
   });
 
-  test("is for the fast mode only", async () => {
-    const { tree, strictTree } = trees();
-    const kernel = /** @type Kernel */ ((await compile(strictTree, [tree])).serialize());
-    expect(staticDynamicScope.optimize(kernel, { fast: false, plugins: true, annotations: false }).size).to.equal(0);
-    expect(staticDynamicScope.optimize(kernel, { fast: false, plugins: false, annotations: true }).size).to.equal(0);
+  describe("with plugins", () => {
+    test("they see the location of the schema a copy copies, with its infos", async () => {
+      const validator = await looseAndStrict();
+      const optimized = optimize(/** @type Kernel */ (validator.serialize()), plugins);
+      expect(copies(optimized)).to.be.greaterThan(0);
+      expect(optimized.reads.dynamicScope).to.eql([]);
+
+      // A schema and a keyword can have the same location, like `if`'s
+      /** @type Map<string, Set<SchemaInfo>> */
+      const schemaInfos = new Map();
+      /** @type Map<string, Set<KeywordInfo>> */
+      const keywordInfos = new Map();
+      /** @type <T extends SchemaInfo | KeywordInfo>(infos: Map<string, Set<T>>) => (info: T) => void */
+      const see = (infos) => (info) => {
+        const seen = infos.get(info.absoluteKeywordLocation) ?? new Set();
+        seen.add(info);
+        infos.set(info.absoluteKeywordLocation, seen);
+      };
+      validator.validate({ loose: { kids: { kids: {} } }, strict: { kids: { kids: {} } } }, {
+        plugins: [{ beforeSchema: see(schemaInfos), beforeKeyword: see(keywordInfos) }]
+      });
+
+      for (const infos of [schemaInfos, keywordInfos]) {
+        expect([...infos.keys()].filter((location) => location.includes(" "))).to.eql([]);
+        for (const [location, seen] of infos) {
+          expect(seen.size, location).to.equal(1);
+        }
+      }
+    });
+
+    test("BASIC reports what it would tracking the dynamic scope", async () => {
+      const validator = await looseAndStrict();
+      const { base } = validator;
+      /** @type (instance: Json) => [string, string][] */
+      const errors = (instance) => {
+        const output = validator.validate(instance, { output: "BASIC" });
+        return output.errors.map((error) => {
+          const { absoluteKeywordLocation, instanceLocation } = /** @type ValidationError */ (error);
+          return [absoluteKeywordLocation.replace(base, ""), instanceLocation];
+        });
+      };
+
+      // `if`'s condition fails in both trees, and so does `else`, so `if`
+      // fails, and the condition's errors aren't reported, only the ones
+      // from `properties`
+      expect(errors({ loose: { kids: 5 } })).to.eql([
+        ["tree#/type", "/loose/kids"],
+        ["tree#/else/required", "/loose"]
+      ]);
+      expect(errors({ strict: { kids: 5 } })).to.eql([
+        ["tree#/type", "/strict/kids"],
+        ["tree#/else/required", "/strict"],
+        ["strict-tree#/unevaluatedProperties", "/strict/kids"]
+      ]);
+      expect(errors({ strict: { kids: { extra: 1 } } })).to.eql([
+        ["strict-tree#/unevaluatedProperties", "/strict/kids/extra"],
+        ["tree#/else/required", "/strict"],
+        ["strict-tree#/unevaluatedProperties", "/strict/kids"]
+      ]);
+      expect(errors({ strict: { kids: { forbidden: 1 } } })).to.eql([
+        ["tree#/properties/forbidden", "/strict/kids/forbidden"],
+        ["strict-tree#/unevaluatedProperties", "/strict/kids/forbidden"],
+        ["tree#/else/required", "/strict"],
+        ["strict-tree#/unevaluatedProperties", "/strict/kids"]
+      ]);
+    });
+
+    test("annotating applies the copies", async () => {
+      const validator = await looseAndStrict();
+      expect(copies(optimize(/** @type Kernel */ (validator.serialize()), { fast: false, plugins: false, annotations: true }))).to.be.greaterThan(0);
+
+      // `kids` is applied by `properties` and by `if`'s condition, which passes
+      const { output, node } = validator.annotate({ strict: { data: 1, kids: { data: 1 } } });
+      expect(output).to.equal(true);
+      expect(pointerGet("/strict", /** @type any */ (node)).data.annotations.get(titleKeywordUri)).to.eql(["tree"]);
+      expect(pointerGet("/strict/kids", /** @type any */ (node)).data.annotations.get(titleKeywordUri)).to.eql(["tree", "tree"]);
+      expect(validator.annotate({ strict: { data: 1, kids: { data: 1, extra: 1 } } }).output).to.equal(false);
+    });
   });
 });
+
+/**
+ * A tree whose `kids` is a node, and that's also `if`'s condition, applied
+ * as a tree and as a strict tree, so its schemas are copied. Its `base` is
+ * what its schemas' URIs start with.
+ *
+ * @type () => Promise<Validator & { base: string }>
+ */
+const looseAndStrict = async () => {
+  const base = `https://example.com/loose-and-strict-${count++}/`;
+  const tree = {
+    $id: `${base}tree`,
+    $dynamicAnchor: "node",
+    title: "tree",
+    type: "object",
+    properties: { data: true, forbidden: false, kids: { $dynamicRef: "#node" } },
+    if: { properties: { kids: { $dynamicRef: "#node" } } },
+    else: { required: ["data"] }
+  };
+  const strictTree = { $id: `${base}strict-tree`, $dynamicAnchor: "node", $ref: "tree", unevaluatedProperties: false };
+  const validator = await compile({
+    $id: `${base}root`,
+    properties: { loose: { $ref: "tree" }, strict: { $ref: "strict-tree" } }
+  }, [tree, strictTree]);
+  return Object.assign(validator, { base });
+};
 
 /**
  * The tree schemas from the 2020-12 spec: `strictTree` is `tree` with no
