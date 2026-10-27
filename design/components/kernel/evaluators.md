@@ -18,6 +18,9 @@
   also evaluated ASTs. `typeOf` is undefined for `json-missing` and `json-invalid`
   nodes, which pass every schema, and `has` is true for a property whose
   value is missing, so the syntax error is the only error for it.
+  An AST's `entries` is an array rather than a generator, which was
+  4–21% faster with and without plugins
+  ([Evaluating ASTs](../../benchmarks/kernel-in-src/evaluating-asts.md)).
 - A schema's property operations are merged into one loop over the
   instance's properties. That's what makes real schemas faster than
   evaluating each operation on its own. Each property is matched once

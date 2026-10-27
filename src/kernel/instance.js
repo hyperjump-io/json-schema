@@ -115,12 +115,16 @@ class AstInstance {
     }
   }
 
+  // An array, not a generator, which made evaluating ASTs 4–21% faster
   /** @type InstanceOps<InstanceNode>["entries"] */
-  * entries(instance) {
+  entries(instance) {
     const object = /** @type JsonNode<{ type: "json" }, JsonErrorNode> & { jsonType: "object" } */ (instance);
+    /** @type [string, InstanceNode][] */
+    const entries = [];
     for (const property of object.children) {
-      yield [property.children[0].value, property.children[1]];
+      entries.push([property.children[0].value, property.children[1]]);
     }
+    return entries;
   }
 
   /** @type InstanceOps<InstanceNode>["keys"] */

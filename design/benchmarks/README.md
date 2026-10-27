@@ -31,3 +31,4 @@ were written for one-off investigations.
   - [Object loops](kernel-in-src/object-loops.md)
   - [Tags none of them require](kernel-in-src/tags-none-require.md)
   - [Resolving the dynamic scope](kernel-in-src/static-dynamic-scope.md)
+  - [Evaluating ASTs](kernel-in-src/evaluating-asts.md)
