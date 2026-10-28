@@ -2,13 +2,18 @@
 
 In `recommended`, as a warning.
 
-`then` or `else` that every value is valid against and that has no
-annotations: `true`, `{}`, or a schema with nothing but `$comment`. It
-never fails and adds nothing, so it's likely unfinished. A schema with
-annotations, like `description`, isn't reported, because the annotations
-apply only when the branch does.
+`then` or `else` that every value is valid against and that does nothing
+else: no annotations, and nothing marked as evaluated, like `true`, `{}`,
+a schema with nothing but `$comment`, or one whose keywords do nothing,
+like `properties: {}`. A reference to such a schema is too. It never fails
+and adds nothing, so it's likely unfinished. A schema with annotations,
+like `description`, isn't reported, because the annotations apply only
+when the branch does.
 
-Without `if`, `then-else-without-if` reports it too. It has no options.
+It's the same for any schema that's applied when a condition passes, or
+when none does: v1's `conditional`, and `dependentSchemas`. Those are
+reported as "this schema". Without `if`, `then` and `else` aren't
+branches, and `then-else-without-if` reports them. It has no options.
 
 ## Examples
 
@@ -51,6 +56,30 @@ Without `if`, `then-else-without-if` reports it too. It has no options.
 ```
 
 > 'else' has no effect, because every value is valid against it
+
+#### A reference to an empty schema
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "if": { "required": ["a"] },
+  "then": { "$ref": "#/$defs/a" },
+  "$defs": { "a": {} }
+}
+```
+
+> 'then' has no effect, because every value is valid against it
+
+#### An empty dependent schema
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "dependentSchemas": { "a": {}, "b": { "required": ["c"] } }
+}
+```
+
+> This schema has no effect, because every value is valid against it
 
 ### Not reported
 

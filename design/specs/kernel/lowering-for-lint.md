@@ -52,4 +52,5 @@ more ([Lowering for lint](../../benchmarks/kernel-prototype-from-ast/lowering-fo
 `hasProperty`, without naming a keyword. It also finds v1's
 `requireAllExcept` with too small a `maxProperties`, which the rule before
 the kernel missed. A rule about a particular keyword's syntax
-(`then-else-without-if`) still names it.
+(`then-else-without-if`) still names it. Which rules do is in
+[Rules](../../components/lint/rules.md).

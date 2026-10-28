@@ -9,7 +9,7 @@ describe("false-then-else", () => {
   test("then false", async () => {
     const json = `{ "$schema": "${draft2020}", "if": { "required": ["a"] }, "then": false }`;
     const file = await lint(json);
-    expect(file.messages.map((message) => message.reason)).to.eql(["'if' with a false 'then' is the same as 'not' with the 'if' schema"]);
+    expect(file.messages.map((message) => message.reason)).to.eql(["'if' with a 'then' that allows nothing is the same as 'not' with the 'if' schema"]);
     expect(file.messages[0].ruleId).to.equal("false-then-else");
     expect(file.messages[0].source).to.equal("json-schema-lint");
     expect(file.messages[0].fatal).to.equal(false);
@@ -23,20 +23,26 @@ describe("false-then-else", () => {
 
   test("else false", async () => {
     expect(await reasons(`{ "$schema": "${draft2020}", "if": { "required": ["a"] }, "else": false }`)).to.eql([
-      "'if' with a false 'else' is the same as the 'if' schema on its own"
+      "'if' with an 'else' that allows nothing is the same as the 'if' schema on its own"
     ]);
   });
 
   test("both false", async () => {
     const json = `{ "$schema": "${draft2020}", "if": true, "else": false, "then": false }`;
     const file = await lint(json);
-    expect(file.messages.map((message) => message.reason)).to.eql(["'then' and 'else' are both false, so nothing is valid"]);
+    expect(file.messages.map((message) => message.reason)).to.eql(["'then' and 'else' both allow nothing, so nothing is valid"]);
     expect(file.messages[0].column).to.equal(json.indexOf(`"then"`) + 1);
   });
 
   test("false with the other branch", async () => {
     expect(await reasons(`{ "$schema": "${draft2020}", "if": true, "then": false, "else": { "type": "string" } }`)).to.eql([]);
     expect(await reasons(`{ "$schema": "${draft2020}", "if": true, "then": { "type": "string" }, "else": false }`)).to.eql([]);
+  });
+
+  test("a schema that allows nothing", async () => {
+    expect(await reasons(`{ "$schema": "${draft2020}", "if": { "required": ["a"] }, "then": { "type": "string", "const": 1 } }`)).to.eql([
+      "'if' with a 'then' that allows nothing is the same as 'not' with the 'if' schema"
+    ]);
   });
 
   test("without if", async () => {

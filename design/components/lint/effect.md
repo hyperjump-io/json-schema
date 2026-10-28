@@ -40,6 +40,11 @@ The rules built on it:
   `eachItem`. It's reported even when an `unevaluated*` could read its
   marks, because writing it is a mistake.
 
+- **`empty-then-else`** reports a branch of a `cases` (`then`, `else`, a
+  schema in v1's `conditional` or `dependentSchemas`) whose schema has no
+  effect, with `effectOf`'s `handle`, which says what a schema a keyword
+  applies does.
+
 These replaced `Keyword.default` and `keyword-with-default-value`.
 
 ## What's evaluated (`src/lint/evaluated.js`)

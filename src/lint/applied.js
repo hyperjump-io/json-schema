@@ -2,7 +2,8 @@ import { findSchema } from "./find-schema.js";
 import { lowerForLint } from "./lower.js";
 
 /**
- * @import { JsonSchemaDocumentNode, JsonSchemaNode } from "../schema/schema-ast.d.ts"
+ * @import { Expression } from "../kernel/kernel.d.ts"
+ * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode } from "../schema/schema-ast.d.ts"
  * @import { JsonSchemaSession } from "../session.d.ts"
  * @import { LintSchemas, LoweredKeyword } from "./lower.d.ts"
  */
@@ -68,6 +69,21 @@ export const appliedSchemas = async (session, tree) => {
   };
 
   return { keywordsOf: (node) => schemas.get(node), find, appliedBy, lowered };
+};
+
+/**
+ * The keyword, of a group's keyword and the siblings it reads, whose value
+ * is the schema an expression applies, like `then` for the `apply` of its
+ * schema in `if`'s `cases`. It's undefined if the expression doesn't apply
+ * a schema that's a whole keyword's value.
+ *
+ * @type (keyword: LoweredKeyword, expression: Expression | null) => JsonSchemaKeywordNode | undefined
+ */
+export const keywordApplying = ({ keywordNode, sourceNodes }, expression) => {
+  if (expression?.op !== "apply") {
+    return;
+  }
+  return [keywordNode, ...sourceNodes].find((node) => /** @type JsonSchemaNode */ (node.children[1]).location === expression.schema);
 };
 
 /**

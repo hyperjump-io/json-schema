@@ -35,11 +35,12 @@ const order = ["none", "marks", "marksAll", "some"];
  * schema with no effect is the same as `true`. A reference is followed with
  * `findSchema`, into another document too, and one that can't be followed
  * has `some`. What a schema applied to a property or an item marks is about
- * that property or item, so it's `some` there.
+ * that property or item, so it's `some` there. With `handle`, it's what a
+ * schema the keyword applies (`apply`) does, like `then`'s for `if`.
  *
- * @type (session: JsonSchemaSession, tree: JsonSchemaDocumentNode, keyword: LoweredKeyword) => Promise<Effect>
+ * @type (session: JsonSchemaSession, tree: JsonSchemaDocumentNode, keyword: LoweredKeyword, handle?: string) => Promise<Effect>
  */
-export const effectOf = async (session, tree, keyword) => {
+export const effectOf = async (session, tree, keyword, handle) => {
   const { keywordsOf, find, appliedBy } = await appliedSchemas(session, tree);
 
   /** @type Set<JsonSchemaNode> */
@@ -163,7 +164,7 @@ export const effectOf = async (session, tree, keyword) => {
     return ofExpression(keyword.group.expression);
   };
 
-  return ofKeyword(keyword);
+  return handle === undefined ? ofKeyword(keyword) : ofSchema(await appliedBy(keyword)(handle));
 };
 
 /**

@@ -8,8 +8,8 @@ it doesn't.
 | --- | --- |
 | [`then-else-without-if`](then-else-without-if.md) | `then` or `else` without `if` |
 | [`if-without-then-else`](if-without-then-else.md) | `if` without `then` or `else` |
-| [`empty-then-else`](empty-then-else.md) | `then` or `else` that every value is valid against, like `{}`, so it has no effect |
-| [`false-then-else`](false-then-else.md) | `then` or `else` that's `false`, where `not` or the `if` schema says the same thing, or both `false`, so nothing is valid |
+| [`empty-then-else`](empty-then-else.md) | `then` or `else`, or another branch of a condition, that every value is valid against, like `{}`, so it has no effect |
+| [`false-then-else`](false-then-else.md) | `then` or `else` that allows nothing, where `not` or the `if` schema says the same thing, or both, so nothing is valid |
 | [`duplicate-enum-values`](duplicate-enum-values.md) | A value in `enum` that's equal to one before it |
 | [`empty-enum`](empty-enum.md) | An `enum` with no values, which nothing is valid against |
 | [`empty-type`](empty-type.md) | A `type` that's an empty array, which nothing is valid against |

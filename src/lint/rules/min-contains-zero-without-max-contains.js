@@ -1,25 +1,39 @@
+import { operationsOf } from "../analysis.js";
 import { lintRule } from "../lint-rule.js";
-import { siblingKeyword, visitKeywords } from "../utilities.js";
+import { lowerForLint } from "../lower.js";
 
 /**
  * @import { JsonSchemaDocumentNode } from "../../schema/schema-ast.d.ts"
  */
 
-const containsUri = "https://json-schema.org/keyword/contains";
-const maxContainsUri = "https://json-schema.org/keyword/maxContains";
+/**
+ * It's `contains` with a `min` of 0 that came from a sibling, and no `max`,
+ * so no keyword is named, except the one it suggests, `maxContains`
+ *
+ * @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void>
+ */
+const minContainsZeroWithoutMaxContains = lintRule({ origin: "json-schema-lint:min-contains-zero-without-max-contains", url: "https://hyperjump.io/json-schema/linting/rules/min-contains-zero-without-max-contains/" }, async (tree, file) => {
+  const session = file.data.jsonSchemaSession;
+  if (session === undefined) {
+    return;
+  }
 
-/** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
-const minContainsZeroWithoutMaxContains = lintRule({ origin: "json-schema-lint:min-contains-zero-without-max-contains", url: "https://hyperjump.io/json-schema/linting/rules/min-contains-zero-without-max-contains/" }, (tree, file) => {
-  visitKeywords(tree, "https://json-schema.org/keyword/minContains", (keywordNode, schemaNode) => {
-    const valueNode = keywordNode.children[1];
-    // Without `contains`, min-max-contains-without-contains reports it
-    if (valueNode.jsonType === "number" && valueNode.value === 0
-      && siblingKeyword(schemaNode, containsUri) !== undefined
-      && siblingKeyword(schemaNode, maxContainsUri) === undefined) {
-      const name = keywordNode.children[0].value;
-      file.message(`'${name}' is 0 and there's no 'maxContains', so 'contains' never fails`, { place: keywordNode.position });
+  for (const keywords of (await lowerForLint(session, tree)).values()) {
+    for (const { group, keywordNode, cameFrom } of keywords) {
+      for (const operation of operationsOf(group.expression)) {
+        if (operation.op !== "contains" || operation.min !== 0 || operation.max !== null) {
+          continue;
+        }
+
+        // Without `contains`, min-max-contains-without-contains reports it
+        const minNode = cameFrom(operation, "min").find((node) => node !== keywordNode);
+        if (minNode !== undefined) {
+          const containsName = keywordNode.children[0].value;
+          file.message(`'${minNode.children[0].value}' is 0 and there's no 'maxContains', so '${containsName}' never fails`, { place: minNode.position });
+        }
+      }
     }
-  });
+  }
 });
 
 export default minContainsZeroWithoutMaxContains;

@@ -36,8 +36,32 @@ describe("empty-then-else", () => {
     expect(await reasons(`{ "$schema": "${draft2020}", "if": true, "then": false }`)).to.eql([]);
   });
 
-  test("without if", async () => {
-    expect(await reasons(`{ "$schema": "${draft2020}", "then": {} }`)).to.eql(["'then' has no effect, because every value is valid against it"]);
+  test("without if, it isn't a branch, which then-else-without-if reports", async () => {
+    expect(await reasons(`{ "$schema": "${draft2020}", "then": {} }`)).to.eql([]);
+  });
+
+  test("a schema whose keywords do nothing", async () => {
+    expect(await reasons(`{ "$schema": "${draft2020}", "if": { "required": ["a"] }, "then": { "properties": {} } }`)).to.eql([
+      "'then' has no effect, because every value is valid against it"
+    ]);
+  });
+
+  test("a reference to an empty schema", async () => {
+    expect(await reasons(`{ "$schema": "${draft2020}", "if": { "required": ["a"] }, "then": { "$ref": "#/$defs/a" }, "$defs": { "a": {} } }`)).to.eql([
+      "'then' has no effect, because every value is valid against it"
+    ]);
+  });
+
+  test("an empty dependent schema", async () => {
+    expect(await reasons(`{ "$schema": "${draft2020}", "dependentSchemas": { "a": {}, "b": { "required": ["c"] } } }`)).to.eql([
+      "This schema has no effect, because every value is valid against it"
+    ]);
+  });
+
+  test("v1's conditional", async () => {
+    expect(await reasons(`{ "$schema": "https://json-schema.org/v1", "conditional": [{ "required": ["a"] }, {}, { "required": ["b"] }] }`)).to.eql([
+      "This schema has no effect, because every value is valid against it"
+    ]);
   });
 
   test("in a subschema", async () => {
