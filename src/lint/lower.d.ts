@@ -42,3 +42,13 @@ export type LintSchemas = Map<JsonSchemaNode, LoweredKeyword[]>;
  * session, so rules share it.
  */
 export const lowerForLint: (session: JsonSchemaSession, tree: JsonSchemaDocumentNode) => Promise<LintSchemas>;
+
+/**
+ * The keyword groups of an object schema in a document, in the order
+ * they're evaluated, lowered as {@link lowerForLint} lowers them, without
+ * caching. It's for a schema that isn't in the document as it is, like
+ * one a rule builds from others' keywords, whose subschemas are nodes in
+ * the document. It's undefined if the schema isn't an object or its
+ * dialect isn't known.
+ */
+export const lowerSchemaForLint: (session: JsonSchemaSession, tree: JsonSchemaDocumentNode, schemaNode: JsonSchemaNode) => Promise<KeywordGroup[] | undefined>;

@@ -25,9 +25,10 @@ ported, merged into another rule, or not ported for a reason below.
   `recommended`, if it's usually right. That's what configuration is for.
   `type-implied-by-const-or-enum` reports a `type` that code generators
   may want, and those users turn it off. A rule that's a matter of style
-  is in `recommended` too, like `mergeable-all-of-schema`, which was
-  outside it until 2026-10-25. Rules that are much more opinionated, like
-  whether `$defs` comes first or last, go in a style preset instead.
+  is in `recommended` too, like `mergeable-schemas` (then
+  `mergeable-all-of-schema`), which was outside it until 2026-10-25.
+  Rules that are much more opinionated, like whether `$defs` comes first
+  or last, go in a style preset instead.
   The catalogue's rules that are matters of taste
   (`explicit_additional_properties`, `require_description_title`,
   `unknown_keywords_prefix`) weren't ported.

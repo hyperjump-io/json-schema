@@ -37,6 +37,16 @@
   keyword uses that keyword's URI. A rule about something a draft's own
   keyword already reports, like draft-04's empty `enum`, leaves that
   keyword's URI out.
+- `mergeable-schemas` was `mergeable-all-of-schema` until 2026-10-28, when
+  it started finding schemas from what keywords lower to, which made
+  `anyOf` and `oneOf` with one schema mergeable too. It decides whether a
+  schema can be moved by lowering the schema it would make
+  (`lowerSchemaForLint`) and comparing its operations with the two
+  schemas' own. Deciding from shapes instead, that a keyword whose shape
+  is a map combines if the names differ, was cheaper, but assumed every
+  map's entries are independent, and it still needed `required` by URI.
+  The `siblings` a keyword declares are still checked, because one that
+  doesn't lower can read a sibling that lowering doesn't show.
 - Utilities in `src/lint/` keep rules short: visit every schema, visit every
   keyword by URI, get a sibling keyword, and find what a reference points
   to. They know nothing about particular keywords. A rule that needs to

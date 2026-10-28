@@ -6,19 +6,19 @@ import { linter } from "../test-linter.js";
 import { JsonSchema } from "../../json-schema.js";
 import { jsonSchemaResolve } from "../../schema/resolve.js";
 import { addDraft202012 } from "../../dialects/draft-2020-12/index.js";
-import mergeableAllOfSchema from "./mergeable-all-of-schema.js";
+import mergeableSchemas from "./mergeable-schemas.js";
 
 const draft2020 = "https://json-schema.org/draft/2020-12/schema";
 const draft07 = "http://json-schema.org/draft-07/schema#";
 
 const mergeable = "This schema's keywords can be moved into the schema 'allOf' is in";
 
-describe("mergeable-all-of-schema", () => {
+describe("mergeable-schemas", () => {
   test("a schema that can be moved", async () => {
     const json = `{ "$schema": "${draft2020}", "allOf": [{ "type": "string", "minLength": 5 }] }`;
     const file = await lint(json);
     expect(file.messages.map((message) => message.reason)).to.eql([mergeable]);
-    expect(file.messages[0].ruleId).to.equal("mergeable-all-of-schema");
+    expect(file.messages[0].ruleId).to.equal("mergeable-schemas");
     expect(file.messages[0].source).to.equal("json-schema-lint");
     expect(file.messages[0].fatal).to.equal(false);
     const branch = `{ "type": "string", "minLength": 5 }`;
@@ -33,7 +33,7 @@ describe("mergeable-all-of-schema", () => {
     expect(await reasons(`{ "$schema": "${draft2020}", "$defs": { "a": {} }, "allOf": [{ "$ref": "#/$defs/a" }] }`)).to.eql([mergeable]);
     expect(await reasons(`{ "$schema": "${draft2020}", "$defs": { "a": {} }, "allOf": [{ "$ref": "#/$defs/a" }, { "required": ["b"] }] }`))
       .to.eql([mergeable, mergeable]);
-    expect(await reasons(`{ "$schema": "${draft2020}", "$defs": { "a": {} }, "$ref": "#/$defs/a", "allOf": [{ "$ref": "#/$defs/a" }] }`)).to.eql([]);
+    expect(await reasons(`{ "$schema": "${draft2020}", "$defs": { "a": {}, "b": {} }, "$ref": "#/$defs/a", "allOf": [{ "$ref": "#/$defs/b" }] }`)).to.eql([]);
   });
 
   test("what a $ref refers to doesn't matter", async () => {
@@ -70,7 +70,38 @@ describe("mergeable-all-of-schema", () => {
   });
 
   test("a keyword that's already there", async () => {
-    expect(await reasons(`{ "$schema": "${draft2020}", "type": "object", "allOf": [{ "type": "object", "required": ["a"] }] }`)).to.eql([]);
+    expect(await reasons(`{ "$schema": "${draft2020}", "type": "object", "allOf": [{ "type": "array", "required": ["a"] }] }`)).to.eql([]);
+  });
+
+  test("a keyword that's already there with the same value", async () => {
+    expect(await reasons(`{ "$schema": "${draft2020}", "type": "object", "allOf": [{ "type": "object", "required": ["a"] }] }`)).to.eql([mergeable]);
+    expect(await reasons(`{ "$schema": "${draft2020}", "$defs": { "a": {} }, "$ref": "#/$defs/a", "allOf": [{ "$ref": "#/$defs/a" }] }`)).to.eql([mergeable]);
+  });
+
+  test("v1's propertyDependencies are combined", async () => {
+    expect(await reasons(`{
+      "$schema": "https://json-schema.org/v1",
+      "propertyDependencies": { "a": { "x": { "required": ["b"] } } },
+      "allOf": [{ "propertyDependencies": { "c": { "y": { "required": ["d"] } } } }]
+    }`)).to.eql([mergeable]);
+  });
+
+  test("keywords that apply schemas together aren't combined", async () => {
+    expect(await reasons(`{
+      "$schema": "${draft2020}",
+      "anyOf": [{ "type": "string" }, { "type": "null" }],
+      "allOf": [{ "anyOf": [{ "type": "number" }, { "type": "null" }] }]
+    }`)).to.eql([]);
+  });
+
+  test("anyOf or oneOf with one schema", async () => {
+    expect(await reasons(`{ "$schema": "${draft2020}", "anyOf": [{ "type": "string" }] }`)).to.eql([
+      "This schema's keywords can be moved into the schema 'anyOf' is in"
+    ]);
+    expect(await reasons(`{ "$schema": "${draft2020}", "oneOf": [{ "type": "string" }] }`)).to.eql([
+      "This schema's keywords can be moved into the schema 'oneOf' is in"
+    ]);
+    expect(await reasons(`{ "$schema": "${draft2020}", "oneOf": [{ "type": "string" }, { "type": "number" }] }`)).to.eql([]);
   });
 
   test("a keyword from a schema before it", async () => {
@@ -86,7 +117,7 @@ describe("mergeable-all-of-schema", () => {
 
   test("identifiers, definitions, and unevaluated keywords", async () => {
     expect(await reasons(`{ "$schema": "${draft2020}", "allOf": [{ "$anchor": "a", "type": "string" }] }`)).to.eql([]);
-    expect(await reasons(`{ "$schema": "${draft2020}", "allOf": [{ "$defs": {}, "type": "string" }] }`)).to.eql([]);
+    expect(await reasons(`{ "$schema": "${draft2020}", "allOf": [{ "$defs": { "a": {} }, "type": "string" }] }`)).to.eql([]);
     expect(await reasons(`{ "$schema": "${draft2020}", "allOf": [{ "unevaluatedProperties": false }] }`)).to.eql([]);
   });
 
@@ -139,7 +170,7 @@ describe("mergeable-all-of-schema", () => {
       const processor = unified()
         .use(rejsonParse)
         .use(jsonSchemaResolve, { session: jsonSchema.session() })
-        .use(mergeableAllOfSchema);
+        .use(mergeableSchemas);
       await processor.run(processor.parse(file), file);
       return file.messages.map((message) => message.reason);
     };
@@ -161,7 +192,7 @@ describe("mergeable-all-of-schema", () => {
 const lint = async (json) => {
   const file = new VFile({ path: "/schemas/a.schema.json", value: json });
   await linter()
-    .use(mergeableAllOfSchema)
+    .use(mergeableSchemas)
     .process(file);
   return file;
 };

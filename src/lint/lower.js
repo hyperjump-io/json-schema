@@ -40,34 +40,24 @@ export const lowerForLint = (session, tree) => {
   return schemas;
 };
 
+/** @type API.lowerSchemaForLint */
+export const lowerSchemaForLint = async (session, tree, schemaNode) => {
+  if (schemaNode.type !== "json-schema" || schemaNode.jsonType !== "object") {
+    return;
+  }
+
+  const dialect = await session.getDialect(schemaNode.dialectUri).catch(() => undefined);
+  if (dialect === undefined) {
+    return;
+  }
+
+  const lowered = await lowerKeywords(session.jsonSchema, /** @type ObjectSchemaNode */ (schemaNode), dialect, inputsFor(tree), true);
+  return lowered.map(({ group }) => group);
+};
+
 /** @type (session: JsonSchemaSession, tree: JsonSchemaDocumentNode) => Promise<API.LintSchemas> */
 const lowerDocument = async (session, tree) => {
-  /** @type Inputs */
-  const inputs = {
-    // A subschema is `apply` of its location, and a schema that's a
-    // reference, of the URI it resolves to
-    schema: async (node) => node.type === "reference" ? node.href : node.location,
-
-    // The dynamic anchors are known for a resource in the document
-    reference: async (node) => {
-      const uri = /** @type {{ href: string }} */ (node).href;
-      const resource = tree.embedded[toAbsoluteIri(uri)];
-
-      /** @type Reference["dynamicAnchors"] */
-      let dynamicAnchors;
-      if (resource !== undefined) {
-        dynamicAnchors = {};
-        const root = /** @type JsonSchemaNode */ (resource.children[0]);
-        for (const name in resource.dynamicAnchors) {
-          /** @type Handle */
-          const handle = /** @type JsonSchemaNode */ (pointerGet(resource.dynamicAnchors[name], root)).location;
-          dynamicAnchors[name] = handle;
-        }
-      }
-
-      return { uri, schema: { op: "apply", schema: uri }, handle: uri, dynamicAnchors };
-    }
-  };
+  const inputs = inputsFor(tree);
 
   /** @type ObjectSchemaNode[] */
   const schemaNodes = [];
@@ -109,3 +99,35 @@ const lowerDocument = async (session, tree) => {
 
   return schemas;
 };
+
+/**
+ * What lowering a schema in a document gets for its subschemas and
+ * references
+ *
+ * @type (tree: JsonSchemaDocumentNode) => Inputs
+ */
+const inputsFor = (tree) => ({
+  // A subschema is `apply` of its location, and a schema that's a
+  // reference, of the URI it resolves to
+  schema: async (node) => node.type === "reference" ? node.href : node.location,
+
+  // The dynamic anchors are known for a resource in the document
+  reference: async (node) => {
+    const uri = /** @type {{ href: string }} */ (node).href;
+    const resource = tree.embedded[toAbsoluteIri(uri)];
+
+    /** @type Reference["dynamicAnchors"] */
+    let dynamicAnchors;
+    if (resource !== undefined) {
+      dynamicAnchors = {};
+      const root = /** @type JsonSchemaNode */ (resource.children[0]);
+      for (const name in resource.dynamicAnchors) {
+        /** @type Handle */
+        const handle = /** @type JsonSchemaNode */ (pointerGet(resource.dynamicAnchors[name], root)).location;
+        dynamicAnchors[name] = handle;
+      }
+    }
+
+    return { uri, schema: { op: "apply", schema: uri }, handle: uri, dynamicAnchors };
+  }
+});

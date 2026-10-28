@@ -16,7 +16,7 @@ what it applies in place, through `allOf`, `$ref`, and so on. Rules like
   (`then` without `if`) is open and not applied, like one in `$defs`.
 - Dynamic references are found by `dynamicApply`, so a `$dynamicRef` that
   doesn't use the dynamic scope is followed like `$ref`.
-- `mergeable-all-of-schema` reads `readsMarks`.
+- `mergeable-schemas` reads `readsMarks`.
 
 ## Required properties (`src/lint/required-properties.js`)
 

@@ -121,7 +121,7 @@ lower: (schema, { properties = [] }) => ({
 ```
 
 Declaring them also tells lint rules that move keywords between schemas,
-like [`mergeable-all-of-schema`](../linting/rules/mergeable-all-of-schema.md),
+like [`mergeable-schemas`](../linting/rules/mergeable-schemas.md),
 what can't be separated.
 
 ## When the kernel can't say it
