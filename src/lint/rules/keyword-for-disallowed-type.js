@@ -1,11 +1,10 @@
-import { keywordAppliesTo } from "../analysis.js";
+import { keywordAppliesTo, typeIsOf } from "../analysis.js";
 import { formatTypes } from "../format-types.js";
 import { lintRule } from "../lint-rule.js";
 import { lowerForLint } from "../lower.js";
-import { typeNames, visitSchemas } from "../utilities.js";
 
 /**
- * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode } from "../../schema/schema-ast.d.ts"
+ * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode } from "../../schema/schema-ast.d.ts"
  */
 
 const plurals = {
@@ -24,27 +23,19 @@ const keywordForDisallowedType = lintRule({ origin: "json-schema-lint:keyword-fo
     return;
   }
 
-  const lowered = await lowerForLint(session, tree);
-
-  /** @type JsonSchemaNode[] */
-  const schemas = [];
-  visitSchemas(tree, (schemaNode) => {
-    schemas.push(schemaNode);
-  });
-
-  for (const schemaNode of schemas) {
-    const type = typeNames(schemaNode);
+  for (const [schemaNode, keywords] of await lowerForLint(session, tree)) {
+    const type = typeIsOf(keywords);
     if (type === undefined || schemaNode.jsonType !== "object") {
       continue;
     }
 
-    const allowed = new Set(type.names);
+    /** @type Set<string> */
+    const allowed = new Set(type.types);
     if (allowed.has("integer")) {
       allowed.add("number");
     }
 
     const typeName = type.keywordNode.children[0].value;
-    const keywords = lowered.get(schemaNode) ?? [];
     for (const keywordNode of /** @type JsonSchemaKeywordNode[] */ (schemaNode.children)) {
       // A format that could apply to any type isn't reported
       const types = await formatTypes(session, schemaNode, keywordNode);

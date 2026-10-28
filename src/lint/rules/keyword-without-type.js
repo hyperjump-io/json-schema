@@ -1,9 +1,10 @@
-import { keywordAppliesTo } from "../analysis.js";
+import { canPass, keywordAppliesTo, operationsOf } from "../analysis.js";
+import { appliedSchemas } from "../applied.js";
 import { formatTypes } from "../format-types.js";
 import { lintRule } from "../lint-rule.js";
 import { lowerForLint } from "../lower.js";
 import { isNegated, schemaGroup } from "../schema-group.js";
-import { findKeyword, visitKeywords, visitSchemas } from "../utilities.js";
+import { visitSchemas } from "../utilities.js";
 
 /**
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode } from "../../schema/schema-ast.d.ts"
@@ -15,11 +16,6 @@ import { findKeyword, visitKeywords, visitSchemas } from "../utilities.js";
  *
  * @typedef {{ keywordNode: JsonSchemaKeywordNode; label: string; types: string[] }} TypedKeyword
  */
-
-const keyword = "https://json-schema.org/keyword";
-
-/** Keywords that say what type a value is */
-const typingUris = ["type", "draft-2020-12/type", "const", "enum", "draft-04/enum"].map((name) => `${keyword}/${name}`);
 
 /** @type Record<string, string> */
 const plurals = {
@@ -47,11 +43,17 @@ const keywordWithoutType = lintRule({ origin: "json-schema-lint:keyword-without-
   });
 
   // Property names are always strings, so there are no other types to allow
-  /** @type Set<JsonSchemaNode> */
+  /** @type Set<string> */
   const propertyNamesSchemas = new Set();
-  visitKeywords(tree, `${keyword}/propertyNames`, (keywordNode) => {
-    propertyNamesSchemas.add(/** @type JsonSchemaNode */ (keywordNode.children[1]));
-  });
+  for (const keywords of lowered.values()) {
+    for (const { group } of keywords) {
+      for (const operation of operationsOf(group.expression)) {
+        if (operation.op === "eachPropertyName" && operation.of.op === "apply") {
+          propertyNamesSchemas.add(operation.of.schema);
+        }
+      }
+    }
+  }
 
   // The first keyword for some types in each group, which is reported once
   /** @type Map<SchemaGroup, TypedKeyword> */
@@ -90,7 +92,7 @@ const keywordWithoutType = lintRule({ origin: "json-schema-lint:keyword-without-
     // may say what type it is. A keyword in a `not` rejects the type it's for,
     // so other types are already valid. A schema for property names only
     // sees strings.
-    if (group.unknown || !group.applied || isNegated(group, schemaNode) || group.schemas.some((member) => propertyNamesSchemas.has(member))) {
+    if (group.unknown || !group.applied || isNegated(group, schemaNode) || group.schemas.some((member) => propertyNamesSchemas.has(member.location))) {
       continue;
     }
 
@@ -101,12 +103,18 @@ const keywordWithoutType = lintRule({ origin: "json-schema-lint:keyword-without-
     }
   }
 
+  // A schema in the group can be in another document
+  const applied = await appliedSchemas(session, tree);
+
   for (const [group, { keywordNode, label, types }] of firsts) {
-    // A schema that's a reference (draft-04 through draft-07) ignores what's
-    // next to it
-    const typed = group.schemas.some((member) => {
-      return member.type === "json-schema" && typingUris.some((uri) => findKeyword(member, uri) !== undefined);
-    });
+    // A keyword says what type a value is if it can't pass every type, like
+    // `type`, `const`, and `enum`. A schema that's a reference (draft-04
+    // through draft-07) ignores what's next to it.
+    let typed = false;
+    for (const member of group.schemas) {
+      const keywords = member.type === "json-schema" ? await applied.lowered(member) ?? [] : [];
+      typed ||= keywords.some(({ group }) => canPass(group.expression).size < Object.keys(plurals).length);
+    }
     if (!typed) {
       const typeList = types.map((type) => plurals[type]).join(" or ");
       file.message(`${label} applies only to ${typeList}, but there's no 'type', so values of other types are valid`, { place: keywordNode.position });

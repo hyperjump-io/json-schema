@@ -1,32 +1,31 @@
+import { jsonValue } from "@hyperjump/browser/json";
 import { isErrorNode } from "../keywords/checks.js";
 import { evaluatorForLint } from "./evaluate.js";
 import { lowerForLint } from "./lower.js";
 import { marksAreRead, schemaGroup } from "./schema-group.js";
-import { findKeyword, visitSchemas } from "./utilities.js";
 
 /**
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode, JsonSchemaTolerantNode } from "../schema/schema-ast.d.ts"
  * @import { JsonSchemaSession } from "../session.d.ts"
  * @import { LintEvaluation } from "./evaluate.d.ts"
+ * @import { LoweredKeyword } from "./lower.d.ts"
  */
 
 /**
  * A `const` or `enum` and a keyword next to it, with what evaluating each
- * value against the keyword found. `marksAreRead` is whether something
- * that applies to the same instance might read what the keyword marks.
+ * value against the keyword found. `isType` is whether the keyword lowers
+ * to `typeIs`. `marksAreRead` is whether something that applies to the same
+ * instance might read what the keyword marks.
  *
  * @typedef {{
  *   valuesNode: JsonSchemaKeywordNode;
  *   isConst: boolean;
  *   keywordNode: JsonSchemaKeywordNode;
+ *   isType: boolean;
  *   results: [JsonSchemaTolerantNode, LintEvaluation][];
  *   marksAreRead: boolean;
  * }} KeywordResult
  */
-
-const keyword = "https://json-schema.org/keyword";
-const constUri = `${keyword}/const`;
-const enumUris = [`${keyword}/enum`, `${keyword}/draft-04/enum`];
 
 /**
  * Results are found once for each tree, so rules share them
@@ -39,9 +38,11 @@ const cache = new WeakMap();
  * Each value of every `const` and `enum` in the document, evaluated against
  * each keyword group next to it (`evaluatorForLint`), one at a time, so
  * what a keyword says about the values doesn't depend on the rest of the
- * schema. A group that reads marks gets what the others marked. `type` is
- * left to the rules for it, so a user whose tools need `type` can turn
- * `type-implied-by-const-or-enum` off without losing the rest. In a schema
+ * schema. A group that reads marks gets what the others marked. Values are
+ * what `equals` and `oneOfValues` allow, from whichever keyword lowered to
+ * them, so no keyword is named. A schema's first keyword that allows one
+ * value (`const`) is its values, or else its first that allows a list of
+ * them (`enum`), and the others are keywords next to it, so in a schema
  * with both `const` and `enum`, `enum` is a keyword next to `const`.
  *
  * @type (session: JsonSchemaSession, tree: JsonSchemaDocumentNode) => Promise<KeywordResult[]>
@@ -59,21 +60,15 @@ export const constOrEnumKeywords = (session, tree) => {
 const evaluate = async (session, tree) => {
   const lowered = await lowerForLint(session, tree);
 
-  /** @type {{ schemaNode: JsonSchemaNode; valuesNode: JsonSchemaKeywordNode; isConst: boolean }[]} */
+  /** @type {{ schemaNode: JsonSchemaNode; valuesNode: JsonSchemaKeywordNode; isConst: boolean; valueNodes: JsonSchemaTolerantNode[] }[]} */
   const found = [];
-  visitSchemas(tree, (schemaNode) => {
-    if (schemaNode.type !== "json-schema") {
-      return;
+  for (const [schemaNode, keywords] of lowered) {
+    const values = keywords.map(valuesOf).filter((values) => values !== undefined);
+    const chosen = values.find(({ isConst }) => isConst) ?? values[0];
+    if (chosen !== undefined) {
+      found.push({ schemaNode, ...chosen });
     }
-
-    const constNode = findKeyword(schemaNode, constUri);
-    const enumNodes = enumUris.map((uri) => findKeyword(schemaNode, uri)).filter((node) => node !== undefined);
-    if (constNode !== undefined) {
-      found.push({ schemaNode, valuesNode: constNode, isConst: true });
-    } else if (enumNodes.length === 1 && enumNodes[0].children[1].jsonType === "array") {
-      found.push({ schemaNode, valuesNode: enumNodes[0], isConst: false });
-    }
-  });
+  }
   if (found.length === 0) {
     return [];
   }
@@ -82,11 +77,8 @@ const evaluate = async (session, tree) => {
 
   /** @type KeywordResult[] */
   const results = [];
-  for (const { schemaNode, valuesNode, isConst } of found) {
+  for (const { schemaNode, valuesNode, isConst, valueNodes: allValueNodes } of found) {
     // Values that couldn't be parsed aren't evaluated
-    const valuesValue = valuesNode.children[1];
-    /** @type JsonSchemaTolerantNode[] */
-    const allValueNodes = isConst ? [valuesValue] : valuesValue.jsonType === "array" ? valuesValue.children : [];
     const valueNodes = allValueNodes.filter((valueNode) => !isErrorNode(valueNode));
     const evaluations = valueNodes.map((valueNode) => evaluator.keywords(schemaNode, valueNode));
 
@@ -96,7 +88,7 @@ const evaluate = async (session, tree) => {
 
     for (const [index, keyword] of (lowered.get(schemaNode) ?? []).entries()) {
       const { group, keywordNode } = keyword;
-      if (keywordNode === valuesNode || group.expression.op === "typeIs") {
+      if (keywordNode === valuesNode) {
         continue;
       }
 
@@ -104,6 +96,7 @@ const evaluate = async (session, tree) => {
         valuesNode,
         isConst,
         keywordNode,
+        isType: group.expression.op === "typeIs",
         results: valueNodes.map((valueNode, valueIndex) => [valueNode, evaluations[valueIndex][index][1]]),
         marksAreRead: marksRead
       });
@@ -111,4 +104,28 @@ const evaluate = async (session, tree) => {
   }
 
   return results;
+};
+
+/**
+ * The values a keyword allows, and their nodes: what `equals` allows is
+ * one value, and what `oneOfValues` allows is a list. A list of one value
+ * (`"enum": [1]`) lowers to `equals` too, so `equals` of an array of one
+ * item that isn't the value is a list.
+ *
+ * @type (keyword: LoweredKeyword) => { valuesNode: JsonSchemaKeywordNode; isConst: boolean; valueNodes: JsonSchemaTolerantNode[] } | undefined
+ */
+const valuesOf = ({ group, keywordNode }) => {
+  const { expression } = group;
+  const valueNode = keywordNode.children[1];
+  if (expression.op === "oneOfValues") {
+    return valueNode.jsonType === "array" ? { valuesNode: keywordNode, isConst: false, valueNodes: valueNode.children } : undefined;
+  } else if (expression.op !== "equals") {
+    return;
+  }
+
+  const isList = valueNode.jsonType === "array" && valueNode.children.length === 1
+    && JSON.stringify(jsonValue(valueNode)) !== JSON.stringify(expression.value);
+  return isList
+    ? { valuesNode: keywordNode, isConst: false, valueNodes: valueNode.children }
+    : { valuesNode: keywordNode, isConst: true, valueNodes: [valueNode] };
 };

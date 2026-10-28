@@ -16,7 +16,12 @@ const constOrEnumValueRejected = lintRule({ origin: "json-schema-lint:const-or-e
   // A value a keyword might reject isn't reported.
   /** @type Map<JsonSchemaTolerantNode, { isConst: boolean; valuesName: string; names: string[] }> */
   const rejected = new Map();
-  for (const { valuesNode, isConst, keywordNode, results } of await constOrEnumKeywords(session, tree)) {
+  for (const { valuesNode, isConst, keywordNode, isType, results } of await constOrEnumKeywords(session, tree)) {
+    // A value `type` doesn't allow is const-or-enum-value-for-disallowed-type's
+    if (isType) {
+      continue;
+    }
+
     for (const [valueNode, { valid }] of results) {
       if (valid === false) {
         const entry = rejected.get(valueNode) ?? { isConst, valuesName: valuesNode.children[0].value, names: [] };
