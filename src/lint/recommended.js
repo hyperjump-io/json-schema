@@ -9,7 +9,6 @@ import contradictoryLimits from "./rules/contradictory-limits.js";
 import impossibleProperty from "./rules/impossible-property.js";
 import additionalItemsWithoutItemsArray from "./rules/additional-items-without-items-array.js";
 import ignoredRefSiblings from "./rules/ignored-ref-siblings.js";
-import constAndEnum from "./rules/const-and-enum.js";
 import contentSchemaWithoutMediaType from "./rules/content-schema-without-media-type.js";
 import dependencyOnRequiredProperty from "./rules/dependency-on-required-property.js";
 import keywordForDisallowedType from "./rules/keyword-for-disallowed-type.js";
@@ -67,7 +66,6 @@ const recommended = {
     [impossibleProperty, ["warn"]],
     [additionalItemsWithoutItemsArray, ["warn"]],
     [ignoredRefSiblings, ["warn"]],
-    [constAndEnum, ["warn"]],
     [contentSchemaWithoutMediaType, ["warn"]],
     [dependencyOnRequiredProperty, ["warn"]],
     [keywordForDisallowedType, ["warn"]],

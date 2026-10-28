@@ -27,7 +27,6 @@ it doesn't.
 | [`additional-items-without-items-array`](additional-items-without-items-array.md) | `additionalItems` without an `items` that's an array of schemas (draft-04 through 2019-09) |
 | [`ignored-ref-siblings`](ignored-ref-siblings.md) | A property next to `$ref` in draft-04 through draft-07, where `$ref` replaces the whole schema |
 | [`misnamed-definitions`](misnamed-definitions.md) | `definitions` in 2019-09 and later, or `$defs` in draft-04 through draft-07, where it isn't a keyword, so what's in it isn't a schema |
-| [`const-and-enum`](const-and-enum.md) | `const` and `enum` in the same schema, where `enum` either has no effect or nothing is valid |
 | [`single-value-enum`](single-value-enum.md) | `enum` with only one value, which `const` says more directly (draft-06 and later) |
 | [`content-schema-without-media-type`](content-schema-without-media-type.md) | `contentSchema` without `contentMediaType` |
 | [`invalid-default-or-example`](invalid-default-or-example.md) | A `default` value or a value in `examples` that isn't valid against the schema it's in, or against a schema that applies it, like one with `allOf` |

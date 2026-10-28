@@ -67,3 +67,9 @@ catalogue doesn't cover: `empty-type`,
 `invalid-default-or-example` checking values against the schemas that
 apply theirs.
 `keyword-implied-by-const-or-enum` also covers the catalogue's
+`enum_validation_keywords_default`. `const_and_enum` was ported as
+`const-and-enum` and removed on 2026-10-28: `enum` next to `const` is a
+keyword next to `const` like any other, so
+`keyword-implied-by-const-or-enum` reports an `enum` that has the `const`
+value, and `const-or-enum-value-rejected` reports a `const` value that
+isn't in it.
