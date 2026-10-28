@@ -3,10 +3,12 @@ import type { EvaluationPlugin } from "../kernel/evaluation-plugin.d.ts";
 import type { JsonSchema } from "../json-schema.d.ts";
 import type { KeywordInfo } from "../kernel/evaluation-plugin.d.ts";
 import type { DetailedValidationError, toVFileMessage, ValidationError } from "./validation-error.d.ts";
+import type { relativeFileUri } from "@hyperjump/browser";
 
 /**
  * How an output format is produced. It's called for each evaluation that
- * uses the format.
+ * uses the format. Say a location with {@link relativeFileUri}, so a
+ * `file:` URI doesn't reveal where the schemas are on the machine.
  *
  * Evaluation without plugins is fastest, so an instance is evaluated without
  * the format's plugin first unless other plugins are used. The plugin only

@@ -1,7 +1,9 @@
+import { relativeFileUri } from "@hyperjump/browser";
+
 /**
  * @import { EvaluationLocation, KeywordInfo } from "../kernel/evaluation-plugin.d.ts"
  * @import { JsonSyntaxError, OutputError } from "./output-format.d.ts"
- * @import { ValidationError } from "./validation-error.d.ts"
+ * @import { DetailedValidationError, ValidationError } from "./validation-error.d.ts"
  */
 
 /** The `ruleId` of an error from a `false` schema */
@@ -39,6 +41,24 @@ export const validationError = (ruleId, absoluteKeywordLocation, at) => ({
   instanceLocation: at.instanceLocation,
   place: at.node?.position
 });
+
+/**
+ * Says each error's location, and its subschemas' errors' locations, with
+ * `relativeFileUri`, so a schema in a file is relative to the working
+ * directory. It's done for the errors that are kept, when the output is
+ * made, not for each one that's created.
+ *
+ * @type <E extends DetailedValidationError>(errors: E[]) => E[]
+ */
+export const withRelativeLocations = (errors) => {
+  for (const error of errors) {
+    error.absoluteKeywordLocation = relativeFileUri(error.absoluteKeywordLocation);
+    if (error.errors !== undefined) {
+      withRelativeLocations(error.errors);
+    }
+  }
+  return errors;
+};
 
 /**
  * Errors with positions are sorted by where they start. Errors without

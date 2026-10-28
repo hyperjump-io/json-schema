@@ -1,5 +1,5 @@
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { join, relative } from "node:path";
 import { cwd } from "node:process";
 import { describe, test, beforeAll, afterAll, expect } from "vitest";
 import { VFile } from "vfile";
@@ -24,6 +24,9 @@ describe("reference-without-target", () => {
     await rm(directory, { recursive: true, force: true });
   });
 
+  /** @type (name: string) => string */
+  const fromWorkingDirectory = (name) => relative(cwd(), join(directory, name));
+
   /** @type (json: string) => Promise<VFile> */
   const lint = async (json) => {
     const file = new VFile({ path: join(directory, "a.schema.json"), value: json });
@@ -38,7 +41,10 @@ describe("reference-without-target", () => {
 
   test("a JSON Pointer into the same document that finds nothing", async () => {
     const file = await lint(`{ "$schema": "${v1}", "$ref": "#/$defs/bar", "$defs": { "foo": true } }`);
-    expect(reasons(file)).toEqual([expect.stringMatching(/^The reference doesn't find a schema\. Property 'bar' doesn't exist/)]);
+    // A file's location is relative to the working directory, so it doesn't
+    // reveal where the file is
+    expect(reasons(file)).to.eql([`The reference doesn't find a schema. Property 'bar' doesn't exist at ${fromWorkingDirectory("a.schema.json")}#/$defs/bar`]);
+    expect(file.messages[0].cause).to.equal(undefined);
     expect(file.messages[0]).toMatchObject({
       ruleId: "reference-without-target",
       source: "json-schema-lint",
@@ -54,7 +60,7 @@ describe("reference-without-target", () => {
 
   test("an anchor that isn't in the document", async () => {
     const file = await lint(`{ "$schema": "${v1}", "$ref": "#foo" }`);
-    expect(reasons(file)).toEqual([expect.stringContaining("There's no 'foo' anchor")]);
+    expect(reasons(file)).to.eql([`The reference doesn't find a schema. There's no 'foo' anchor in '${fromWorkingDirectory("a.schema.json")}'`]);
   });
 
   test("a dynamic reference that finds nothing", async () => {
@@ -104,7 +110,7 @@ describe("reference-without-target", () => {
 
   test("a file that doesn't exist", async () => {
     const file = await lint(`{ "$schema": "${v1}", "$ref": "missing.schema.json" }`);
-    expect(reasons(file)).toEqual([expect.stringMatching(/^The reference doesn't find a schema\. There's no file at 'file:.*\/missing\.schema\.json'$/)]);
+    expect(reasons(file)).to.eql([`The reference doesn't find a schema. There's no file at '${fromWorkingDirectory("missing.schema.json")}'`]);
   });
 
   test("a JSON Pointer into another file that finds nothing", async () => {

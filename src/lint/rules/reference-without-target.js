@@ -23,7 +23,9 @@ const referenceWithoutTarget = lintRule({ origin: "json-schema-lint:reference-wi
   for (const [uri, node] of references) {
     const result = await findSchema(session, uri, { document: tree });
     if (result.status === "missing") {
-      file.message(`The reference doesn't find a schema. ${result.reason.message}`, { place: node.position, cause: result.reason });
+      // A missing schema is what's found, not a failure, so the reason's cause
+      // and stack aren't reported
+      file.message(`The reference doesn't find a schema. ${result.reason.message}`, { place: node.position });
     }
   }
 });

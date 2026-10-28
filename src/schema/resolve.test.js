@@ -1,6 +1,7 @@
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, relative } from "node:path";
+import { cwd } from "node:process";
 import { pathToFileURL } from "node:url";
 import { describe, test, beforeEach, beforeAll, afterAll, expect } from "vitest";
 import { unified } from "unified";
@@ -431,6 +432,19 @@ describe("jsonSchemaResolve", () => {
 
       expect(ruleIds(file)).to.eql(["duplicate-anchor"]);
       expect(document.anchors).to.eql({ foo: "/$defs/foo" });
+    });
+
+    // Relative to the working directory, so it doesn't reveal where the file is
+    test("a duplicate anchor in a file is said relative to the working directory", async () => {
+      const { file } = await resolve(jsonSchema, `{
+        "$schema": "${dialectUri}",
+        "$defs": {
+          "foo": { "$anchor": "foo" },
+          "bar": { "$anchor": "foo" }
+        }
+      }`, { path: "/folder/root.json" });
+
+      expect(file.messages.map((message) => message.reason)).to.eql([`The 'foo' anchor is already defined in '${relative(cwd(), "/folder/root.json")}'`]);
     });
   });
 

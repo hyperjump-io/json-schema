@@ -1,3 +1,4 @@
+import { relativeFileUri } from "@hyperjump/browser";
 import * as JsonPointer from "@hyperjump/json-pointer";
 import { keywordDefinitionUri } from "../keywords/unknown.js";
 import { codePointLength, instanceEqual } from "../keywords/utilities.js";
@@ -222,7 +223,7 @@ export const instrumented = (jsonSchema, kernel, options) => {
     let evaluator = evaluators.get(handle);
     if (evaluator === undefined) {
       if (!(handle in kernel.schemas)) {
-        throw Error(`The '${handle}' schema wasn't compiled`);
+        throw Error(`The '${relativeFileUri(handle)}' schema wasn't compiled`);
       }
 
       // Schemas can refer to themselves, so it's built after it's cached

@@ -1,4 +1,4 @@
-import { falseSchemaRuleId, inDocumentOrder, isCondition, keywordStart, startOf, validationError } from "./utilities.js";
+import { falseSchemaRuleId, inDocumentOrder, isCondition, keywordStart, startOf, validationError, withRelativeLocations } from "./utilities.js";
 
 /**
  * @import { EvaluationPlugin } from "../kernel/evaluation-plugin.d.ts"
@@ -79,6 +79,6 @@ export const detailedOutputFormat = () => {
   const plugin = new DetailedOutputPlugin();
   return {
     plugin,
-    output: (valid, syntaxErrors) => ({ valid, errors: inDocumentOrder([...syntaxErrors, ...plugin.errors]) })
+    output: (valid, syntaxErrors) => ({ valid, errors: inDocumentOrder([...syntaxErrors, ...withRelativeLocations(plugin.errors)]) })
   };
 };

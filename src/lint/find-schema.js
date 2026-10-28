@@ -1,4 +1,4 @@
-import { HttpError, RetrievalError, RetrievalNotAllowedError } from "@hyperjump/browser";
+import { FileNotFoundError, HttpError, relativeFileUri, RetrievalError, RetrievalNotAllowedError } from "@hyperjump/browser";
 import { JsonPointerError, pointerGet } from "@hyperjump/browser/json";
 import { parseIri, toAbsoluteIri } from "@hyperjump/uri";
 import { AnchorNotFoundError } from "../schema/media-type-plugin.js";
@@ -32,7 +32,7 @@ export const findSchema = async (session, uri, options = {}) => {
   }
 
   if (document.type !== "json-schema-document") {
-    return { status: "missing", reason: Error(`'${uri}' isn't a schema. It's ${document.mediaType}.`) };
+    return { status: "missing", reason: Error(`'${relativeFileUri(uri)}' isn't a schema. It's ${document.mediaType}.`) };
   }
 
   /** @type JsonSchemaNode */
@@ -40,7 +40,8 @@ export const findSchema = async (session, uri, options = {}) => {
   try {
     const { fragment } = parseIri(uri);
     const pointer = fragment === undefined ? "" : session.jsonSchema.fragmentPointer(document, fragment);
-    node = pointerGet(pointer, /** @type JsonSchemaNode */ (document.children[0]), document.uri);
+    // The pointer's message says where it is with the document's URI
+    node = pointerGet(pointer, /** @type JsonSchemaNode */ (document.children[0]), document.uri && relativeFileUri(document.uri));
   } catch (error) {
     if (error instanceof JsonPointerError || error instanceof AnchorNotFoundError) {
       return { status: "missing", reason: error };
@@ -49,7 +50,7 @@ export const findSchema = async (session, uri, options = {}) => {
   }
 
   if (node.type !== "json-schema" && node.type !== "reference") {
-    return { status: "missing", reason: Error(`'${uri}' isn't a schema`) };
+    return { status: "missing", reason: Error(`'${relativeFileUri(uri)}' isn't a schema`) };
   }
 
   return { status: "found", node, document: /** @type JsonSchemaDocumentNode */ (/** @type unknown */ (document)) };
@@ -62,9 +63,8 @@ export const findSchema = async (session, uri, options = {}) => {
  * @type (uri: string, error: unknown) => Error | undefined
  */
 const absence = (uri, error) => {
-  const code = /** @type {{ code?: unknown }} */ (error).code;
-  if (code === "ENOENT" || code === "ENOTDIR") {
-    return Error(`There's no file at '${uri}'`, { cause: error });
+  if (error instanceof FileNotFoundError) {
+    return error;
   } else if (error instanceof HttpError && (error.response.status === 404 || error.response.status === 410)) {
     return Error(`There's nothing at '${uri}' (${error.response.status})`, { cause: error });
   }

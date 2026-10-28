@@ -28,9 +28,11 @@ Implemented in `src/kernel/validator.js`.
 - Errors are converted to `VFileMessage`s where they're reported, with
   `toVFileMessage`, which gives them a generic message. A validation error
   says it fails the constraint at its absolute keyword location, which
-  identifies the keyword wherever evaluation started. It names the
-  instance location only when there's no position, because a position
-  says where the instance is better. Reporting errors with unified needs
+  identifies the keyword wherever evaluation started, except that a
+  `file:` one is relative to the working directory (see [Local paths in
+  messages and output](../file-uris.md)). It names the instance location
+  only when there's no position, because a position says where the
+  instance is better. Reporting errors with unified needs
   this conversion anyway: `file.message` makes a message that belongs to
   the file, so a `VFileMessage` made elsewhere would have to be made again.
 - Validation errors were `VFileMessage`s with generic messages at first.

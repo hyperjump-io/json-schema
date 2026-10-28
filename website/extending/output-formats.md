@@ -57,6 +57,20 @@ the format. It returns:
 - `output(valid, syntaxErrors)`: the result. `syntaxErrors` are from parsing
   JSON text, and empty otherwise.
 
+A location in a schema that's in a file would say where your files are,
+so `BASIC` and `DETAILED` give it relative to the working directory. If
+your format reports locations from a plugin of its own, do the same with
+`relativeFileUri`:
+
+```typescript
+import { relativeFileUri } from "@hyperjump/json-schema";
+
+relativeFileUri(keyword.absoluteKeywordLocation);
+// "schemas/person.schema.json#/properties/age/minimum"
+```
+
+A URI that isn't a `file:` URI is returned as it is.
+
 A value is evaluated the fast way first, without the plugin. The plugin only
 runs if the value is invalid, so `output(true, [])` can be called without
 the plugin having seen anything.

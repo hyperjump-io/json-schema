@@ -1,3 +1,4 @@
+import { relativeFileUri } from "@hyperjump/browser";
 import { toAbsoluteIri } from "@hyperjump/uri";
 import { VFileMessage } from "vfile-message";
 import { appendToLocation, jsonValue, pointerGet } from "@hyperjump/browser/json";
@@ -256,7 +257,7 @@ class Lowerer {
     if (node.type === "reference") {
       return this.#compileUri(node.href, this.#absoluteIri(node.location));
     } else if (node.type !== "json-schema") {
-      throw Error(`No schema found at '${node.location}'`);
+      throw Error(`No schema found at '${relativeFileUri(node.location)}'`);
     }
 
     const handle = node.location;
@@ -275,7 +276,7 @@ class Lowerer {
       this.#schemas[handle] = node.value;
       return handle;
     } else if (node.jsonType !== "object") {
-      throw Error(`No schema found at '${handle}'`);
+      throw Error(`No schema found at '${relativeFileUri(handle)}'`);
     }
 
     const dialect = await this.#dialect(node.dialectUri);

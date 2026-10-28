@@ -126,7 +126,7 @@ export class SessionRegistries {
       return error;
     }
 
-    return new RetrievalError(`Unable to load resource '${uri}'`, { cause: new AggregateError([error, ...reasons], reasons[0].message) });
+    return new RetrievalError(uri, { cause: new AggregateError([error, ...reasons], reasons[0].message) });
   }
 
   /**
@@ -149,10 +149,10 @@ export class SessionRegistries {
       try {
         indexed = index.lookup(id);
       } catch (error) {
-        throw new RetrievalError(`Unable to load resource '${uri}'`, { cause: error });
+        throw new RetrievalError(uri, { cause: error });
       }
       if (indexed && found && indexed.entry !== found.entry) {
-        throw new RetrievalError(`Unable to load resource '${uri}'`, {
+        throw new RetrievalError(uri, {
           cause: Error(`More than one registry has a schema identified as '${id}'`)
         });
       }
@@ -186,7 +186,7 @@ export class SessionRegistries {
     if (indexed.error) {
       // Resolving throws the problem that kept the entry from being
       // identified, with any others. If it didn't, it's still a problem.
-      throw new RetrievalError(`Unable to load resource '${indexed.uri}'`, { cause: indexed.error });
+      throw new RetrievalError(indexed.uri, { cause: indexed.error });
     }
     if (Object.values(document.embedded).every((resource) => resource.dialectUri === undefined || jsonSchema.hasDialect(resource.dialectUri))) {
       let documents = sharedDocuments.get(jsonSchema);

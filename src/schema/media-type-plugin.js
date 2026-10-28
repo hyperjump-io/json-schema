@@ -1,3 +1,4 @@
+import { relativeFileUri } from "@hyperjump/browser";
 import { parse as parseContentType } from "content-type";
 import { resolveSchemaText } from "./resolve-text.js";
 import { JsonSchemaSession } from "../session.js";
@@ -58,7 +59,7 @@ export class AnchorNotFoundError extends Error {
    * @param {string} uri
    */
   constructor(anchor, uri) {
-    super(`There's no '${anchor}' anchor in '${uri}'`);
+    super(`There's no '${anchor}' anchor in '${relativeFileUri(uri)}'`);
     this.name = this.constructor.name;
     this.anchor = anchor;
     this.uri = uri;

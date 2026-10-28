@@ -1,3 +1,4 @@
+import { relativeFileUri } from "@hyperjump/browser";
 import * as JsonPointer from "@hyperjump/json-pointer";
 import { isIriReference } from "@hyperjump/json-schema-formats";
 import { encodeIriFragment, parseIri, resolveIri, toAbsoluteIri } from "@hyperjump/uri";
@@ -301,7 +302,7 @@ class Resolver {
   #addAnchors(found, anchors, resourceUri, pointer, label) {
     for (const [name, anchorNode] of found) {
       if (name in anchors) {
-        this.#message(`The '${name}' ${label} is already defined in '${resourceUri}'`, anchorNode, "duplicate-anchor");
+        this.#message(`The '${name}' ${label} is already defined in '${relativeFileUri(resourceUri)}'`, anchorNode, "duplicate-anchor");
       } else {
         anchors[name] = pointer;
       }
@@ -337,7 +338,7 @@ class Resolver {
           // a file. Its references would be resolved as if it were one, which
           // would give it access to the filesystem.
           if (parseIri(baseUri).scheme === "file" && parseIri(this.#documentUri).scheme !== "file") {
-            this.#message(`A schema that wasn't retrieved from a 'file:' URI can't be identified by one: ${baseUri}`, valueNode, "file-uri-not-allowed");
+            this.#message(`A schema that wasn't retrieved from a 'file:' URI can't be identified by one: ${relativeFileUri(baseUri)}`, valueNode, "file-uri-not-allowed");
             return;
           }
 
@@ -478,8 +479,9 @@ class Resolver {
     try {
       return await this.#session.getDialect(toAbsoluteIri(uri), { referencedFrom: this.#documentUri });
     } catch (error) {
-      const cause = /** @type Error */ (error);
-      this.#message(cause.message, node, "unknown-dialect", cause);
+      // The error's message is the message, so what caused it is the cause
+      const { message, cause } = /** @type Error */ (error);
+      this.#message(message, node, "unknown-dialect", cause instanceof Error ? cause : undefined);
     }
   }
 

@@ -1,6 +1,6 @@
 import { unified } from "unified";
 import { VFile } from "vfile";
-import { RetrievalError, Session } from "@hyperjump/browser";
+import { relativeFileUri, RetrievalError, Session } from "@hyperjump/browser";
 import { encodeIriFragment, toAbsoluteIri } from "@hyperjump/uri";
 import { SessionRegistries } from "./registry/session-registries.js";
 import { lower } from "./kernel/lower.js";
@@ -253,7 +253,7 @@ export class JsonSchemaSession extends Session {
     }
 
     if (document.type !== "json-schema-document") {
-      throw Error(`'${uri}' isn't a schema. It's ${document.mediaType}.`);
+      throw Error(`'${relativeFileUri(uri)}' isn't a schema. It's ${document.mediaType}.`);
     }
 
     // Loaded when it's needed, so code that never lints never loads the rules

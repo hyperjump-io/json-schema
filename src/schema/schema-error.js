@@ -1,3 +1,5 @@
+import { relativeFileUri } from "@hyperjump/browser";
+
 /**
  * @import * as API from "./schema-error.d.ts"
  */
@@ -11,7 +13,7 @@ export class SchemaError extends Error {
     const [first] = messages;
     const others = messages.length - 1;
     const more = others === 0 ? "" : ` (and ${others} more problem${others === 1 ? "" : "s"})`;
-    super(`The schema at '${first.uri}' is invalid: ${first.message}${more}`);
+    super(`The schema at '${relativeFileUri(first.uri)}' is invalid: ${first.message}${more}`);
     this.name = this.constructor.name;
     this.messages = messages;
   }

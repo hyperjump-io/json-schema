@@ -40,6 +40,9 @@
   conditions). Creating only the ones that are kept was considered, but
   an error is a small object now that locations are cheap to read, and not
   creating error objects at all was only 0–3% faster.
+- BASIC and DETAILED say a `file:` location relative to the working
+  directory, when the output is made (see [Local paths in messages and
+  output](../file-uris.md)).
 - Output formats can share utility functions, but not a base class. Each
   format's plugin has all of its own hooks, so it reads on its own and can
   change without affecting the others.

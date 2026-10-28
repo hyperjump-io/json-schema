@@ -105,7 +105,7 @@ A validation error is plain data:
 | --- | --- |
 | `source` | `"json-schema"` |
 | `ruleId` | The URI of the keyword that failed, like `https://json-schema.org/keyword/minimum`. It's the same in every dialect that has the keyword, so you can tell what failed without knowing which dialect the schema is in. |
-| `absoluteKeywordLocation` | Where the keyword is: the schema's URI, with a JSON Pointer to the keyword |
+| `absoluteKeywordLocation` | Where the keyword is: the schema's URI, with a JSON Pointer to the keyword. For a schema in a file, it's relative to the working directory, like `schemas/person.schema.json#/properties/age`, so it doesn't say where your files are. |
 | `instanceLocation` | A JSON Pointer to the value that failed. `""` is the whole value. |
 | `place` | The line and column of the value in the JSON text, if it was validated from text |
 | `errors` | `DETAILED` only: the errors that made this keyword fail |

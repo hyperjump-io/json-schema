@@ -1,7 +1,8 @@
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { pathToFileURL } from "node:url";
+import { join, relative } from "node:path";
+import { cwd } from "node:process";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { describe, test, beforeEach, beforeAll, afterAll, expect } from "vitest";
 import { VFileMessage } from "vfile-message";
 import { fromJson, pointerGet } from "@hyperjump/browser/json";
@@ -616,6 +617,55 @@ describe("Validator", () => {
         instanceLocation: "/foo",
         place: undefined
       });
+    });
+
+    // A file's location would reveal where the schemas are on the machine
+    test("a location in a file is relative to the working directory", async () => {
+      const other = await schemaFile({ type: "number" });
+      const otherName = other.slice(other.lastIndexOf("/") + 1);
+      const main = await schemaFile({
+        properties: { foo: { type: "number" }, bar: { $ref: otherName } }
+      });
+      const validator = await jsonSchema.compile(main);
+      const mainPath = relative(cwd(), fileURLToPath(main));
+      const otherPath = relative(cwd(), fileURLToPath(other));
+
+      const basic = validator.validate({ foo: "x", bar: "y" }, { output: "BASIC" });
+      expect(basic.errors.map((error) => /** @type ValidationError */ (error).absoluteKeywordLocation)).to.eql([
+        `${mainPath}#/properties/foo/type`,
+        `${otherPath}#/type`
+      ]);
+
+      const detailed = validator.validate({ bar: "y" }, { output: "DETAILED" });
+      expect(detailed.errors).to.eql([{
+        source: "json-schema",
+        ruleId: "https://example.com/keyword/properties",
+        absoluteKeywordLocation: `${mainPath}#/properties`,
+        instanceLocation: "",
+        place: undefined,
+        errors: [{
+          source: "json-schema",
+          ruleId: "https://example.com/keyword/ref",
+          absoluteKeywordLocation: `${mainPath}#/properties/bar/$ref`,
+          instanceLocation: "/bar",
+          place: undefined,
+          errors: [{ source: "json-schema", ruleId: typeKeyword.uri, absoluteKeywordLocation: `${otherPath}#/type`, instanceLocation: "/bar", place: undefined }]
+        }]
+      }]);
+    });
+
+    test("a location that isn't in a file stays absolute", async () => {
+      const main = await schemaFile({
+        properties: { foo: { $ref: "https://example.com/mixed" }, bar: { type: "number" } },
+        $defs: { mixed: { $id: "https://example.com/mixed", type: "number" } }
+      });
+      const validator = await jsonSchema.compile(main);
+
+      const result = validator.validate({ foo: "x", bar: "y" }, { output: "BASIC" });
+      expect(result.errors.map((error) => /** @type ValidationError */ (error).absoluteKeywordLocation)).to.eql([
+        "https://example.com/mixed#/type",
+        `${relative(cwd(), fileURLToPath(main))}#/properties/bar/type`
+      ]);
     });
 
     test("the absolute keyword location of a subschema with its own identifier", async () => {

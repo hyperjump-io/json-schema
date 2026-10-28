@@ -6,6 +6,7 @@ where it shows up.
 - [No global state](no-global-state.md)
 - [Be tolerant of bad input](tolerant-input.md)
 - [Schemas aren't trusted](schemas-arent-trusted.md)
+- [No local paths in output](no-local-paths.md)
 - [Meaning comes from the kernel](meaning-from-the-kernel.md)
 - [Optimizations are passes](optimizations-are-passes.md)
 - [Plugins see what was evaluated](plugins-see-what-was-evaluated.md)

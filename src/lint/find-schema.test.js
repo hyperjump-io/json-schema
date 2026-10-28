@@ -1,3 +1,5 @@
+import { relative } from "node:path";
+import { cwd } from "node:process";
 import { describe, test, beforeEach, expect } from "vitest";
 import { VFile } from "vfile";
 import { HttpError } from "@hyperjump/browser";
@@ -61,7 +63,8 @@ describe("findSchema", () => {
   describe("missing", () => {
     test("a file that doesn't exist", async () => {
       const result = await findSchema(session, "file:///nothing-here/a.schema.json");
-      expect(result).toMatchObject({ status: "missing", reason: { message: "There's no file at 'file:///nothing-here/a.schema.json'" } });
+      // Relative to the working directory, so it doesn't reveal where the file is
+      expect(result).toMatchObject({ status: "missing", reason: { message: `There's no file at '${relative(cwd(), "/nothing-here/a.schema.json")}'` } });
     });
 
     test("an HTTP resource that doesn't exist", async () => {
