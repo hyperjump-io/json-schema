@@ -1502,10 +1502,49 @@ describe("Validator", () => {
       const validator = await jsonSchema.compile(await schemaFile({ properties: { foo: { type: "number" } } }));
       const serialized = JSON.parse(JSON.stringify(validator.serialize()));
 
-      const restored = jsonSchema.restoreValidator(serialized);
+      const restored = jsonSchema.restoreValidator(serialized, { uri: validator.uri });
       expect(restored.uri).to.equal(validator.uri);
       expect(restored.validate({ foo: 1 })).to.equal(true);
       expect(restored.validate({ foo: "1" })).to.equal(false);
+    });
+
+    // A file's absolute URI says where the files are, and isn't the same on
+    // another machine
+    test("a schema in a file is serialized relative to it", async () => {
+      const other = await schemaFile({ type: "number" });
+      const otherName = other.slice(other.lastIndexOf("/") + 1);
+      const validator = await jsonSchema.compile(await schemaFile({ properties: { foo: { $ref: otherName } } }));
+      const serialized = /** @type Record<string, Json> */ (validator.serialize());
+
+      expect(JSON.stringify(serialized)).not.to.contain("file:");
+      expect(serialized.uri).to.equal("#");
+      expect(Object.keys(/** @type object */ (serialized.schemas))).to.include.members(["#", "#/properties/foo", `${otherName}#`]);
+    });
+
+    test("it's restored wherever its files are now", async () => {
+      const other = await schemaFile({ type: "number" });
+      const otherName = other.slice(other.lastIndexOf("/") + 1);
+      const validator = await jsonSchema.compile(await schemaFile({ properties: { foo: { $ref: otherName } } }));
+      const serialized = JSON.parse(JSON.stringify(validator.serialize()));
+
+      const moved = pathToFileURL(join(cwd(), "moved", "person.schema.json")).href;
+      const restored = jsonSchema.restoreValidator(serialized, { uri: moved });
+      expect(restored.uri).to.equal(`${moved}#`);
+      const result = restored.validate({ foo: "x" }, { output: "BASIC" });
+      expect(result.errors.map((error) => /** @type ValidationError */ (error).absoluteKeywordLocation)).to.eql([`${join("moved", otherName)}#/type`]);
+    });
+
+    test("without where it is, its URIs stay relative", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({ properties: { foo: { type: "number" } } }));
+      const restored = jsonSchema.restoreValidator(JSON.parse(JSON.stringify(validator.serialize())));
+
+      expect(restored.uri).to.equal("#");
+      expect(restored.validate({ foo: "x" }, { output: "BASIC" }).errors.map((error) => /** @type ValidationError */ (error).absoluteKeywordLocation)).to.eql(["#/properties/foo/type"]);
+    });
+
+    test("a schema that isn't a file is serialized as it is", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({ $id: "https://example.com/serialized", type: "number" }));
+      expect(/** @type Record<string, Json> */ (validator.serialize()).uri).to.equal("https://example.com/serialized#");
     });
 
     test("restoring needs the same keywords", async () => {

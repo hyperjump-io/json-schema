@@ -31,3 +31,22 @@ different compiled format, so compile again after upgrading.
 
 A compiled schema doesn't change when its source schemas do. Compile again
 when they change, such as in your build.
+
+## Schemas in files
+
+A schema in a file is saved with its `file:` URLs relative to it, so the
+compiled schema doesn't say where your files are, and you can restore it on
+another machine. Tell `restoreValidator` where the schema is now, so the
+locations in errors are its files:
+
+```typescript
+import { pathToFileURL } from "node:url";
+
+const validator = jsonSchema.restoreValidator(compiled, {
+  uri: pathToFileURL("./schemas/person.schema.json").href
+});
+```
+
+Its other files need to be laid out the same way relative to it. Without
+`uri`, the validator works the same, and its locations are relative, like
+`#/properties/name`.

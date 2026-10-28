@@ -33,6 +33,20 @@ keyword, asserting format, and escape hatch's `evaluate` the kernel needs,
 so a definition that's missing from the `JsonSchema` fails there, not on
 the first evaluation.
 
+A kernel for a schema in a file is serialized with its `file:` URIs
+relative to the entry's document (`src/kernel/kernel-uris.js`), so it
+doesn't say where the files are and can be restored on another machine. A
+URI in the entry's own document is only its fragment (`#/properties/a`),
+so the document can be renamed too, and another file is a relative path
+(`common/address.json#/type`). `restoreValidator(compiled, { uri })`
+resolves them against where the entry is now. Without `uri`, they stay
+relative, which still works as handles, because handles are only
+compared. Other URIs are absolute. It didn't change the version, because
+an operation's meaning didn't change, and an older kernel with absolute
+URIs restores as it is. Rejected: relative to the working directory, like
+messages, which would only restore from the same working directory, and a
+deployed application often runs from another.
+
 `validateJson` and `annotateJson` parse with browser's error-tolerant
 `fromJson` and then evaluate the AST. Validating while parsing is a possible
 optimization later. The two phases don't rule it out.

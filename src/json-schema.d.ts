@@ -154,11 +154,16 @@ export class JsonSchema extends Hyperjump<JsonSchemaNode> {
    * Restore a validator from {@link Validator.serialize}. It doesn't
    * retrieve anything, but it needs the same keywords to have been added.
    *
+   * A schema in a file is serialized with its `file:` URIs relative to it.
+   * `uri` is where it is now, like `pathToFileURL("schemas/person.json")`,
+   * which they're resolved against, so its locations in output and plugins
+   * are its files. Without it, they stay relative.
+   *
    * @throws Error if the compiled schema is in a kernel version other than
    * this library's (`kernel: 1`), or if a keyword or asserting format in it
    * hasn't been added.
    */
-  restoreValidator(compiled: ReadonlyJson): Validator;
+  restoreValidator(compiled: ReadonlyJson, options?: RestoreOptions): Validator;
 
   /**
    * Add an output format. BASIC and DETAILED are added by default and can be
@@ -244,9 +249,21 @@ export type Validator = {
 
   /**
    * The compiled schema as JSON, to be restored with
-   * {@link JsonSchema.restoreValidator} without compiling again.
+   * {@link JsonSchema.restoreValidator} without compiling again. For a
+   * schema in a file, its `file:` URIs are relative to it: `#/properties/a`
+   * in its own document and `common/address.json#/type` in another. So it
+   * doesn't say where the files are, and it can be restored on another
+   * machine. Other URIs are absolute.
    */
   serialize(): Json;
+};
+
+export type RestoreOptions = {
+  /**
+   * Where the schema that was serialized is now, to resolve its relative
+   * `file:` URIs against
+   */
+  uri?: string;
 };
 
 export type ValidationOptions<F extends OutputFormat = OutputFormat> = {

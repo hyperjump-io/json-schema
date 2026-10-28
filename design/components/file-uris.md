@@ -32,6 +32,9 @@ and the library re-exports the function for output formats and plugins.
   schema is a finding, not a failure.
 - A stack trace still says where the library is installed, so the CLI
   prints causes without them (see hjlint's Input and output).
+- A serialized kernel's `file:` URIs are relative to its entry's document
+  instead, so it can be restored wherever the files are moved (see
+  [Compile and evaluate](kernel/README.md)).
 - An error keeps the exact URI on a property where code needs it, like
   browser's `RetrievalError.uri` and `AnchorNotFoundError.uri`.
   `SchemaMessage.uri` and a `VFileMessage`'s `file` stay absolute too,
@@ -55,6 +58,3 @@ Rejected:
 Open:
 
 - `bundle`'s errors, and what a bundle says for a schema in a file.
-- A compiled schema's handles are its schemas' URIs, so serializing one
-  for a `file:` schema includes local paths, and it can't be used on
-  another machine.

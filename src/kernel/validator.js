@@ -1,4 +1,5 @@
 import { fromJs, fromJson } from "@hyperjump/browser/json";
+import { withRelativeFileUris } from "./kernel-uris.js";
 import { astInstance, jsInstance } from "./instance.js";
 import { optimize } from "./optimize.js";
 import { fast } from "./fast.js";
@@ -125,7 +126,7 @@ export class Validator {
 
   /** @type API.Validator["serialize"] */
   serialize() {
-    return structuredClone(this.#kernel);
+    return structuredClone(withRelativeFileUris(this.#kernel));
   }
 
   /**

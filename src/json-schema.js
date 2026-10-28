@@ -1,6 +1,7 @@
 import { Hyperjump } from "@hyperjump/browser";
 import { toAbsoluteIri } from "@hyperjump/uri";
 import { JsonSchemaMediaTypePlugin } from "./schema/media-type-plugin.js";
+import { withResolvedUris } from "./kernel/kernel-uris.js";
 import { JsonOrSchemaMediaTypePlugin } from "./schema/json-media-type-plugin.js";
 import { JsonSchemaSession } from "./session.js";
 import { addedRegistriesOf } from "./registry/session-registries.js";
@@ -232,7 +233,7 @@ export class JsonSchema extends Hyperjump {
   }
 
   /** @type API.JsonSchema["restoreValidator"] */
-  restoreValidator(compiled) {
+  restoreValidator(compiled, options = {}) {
     const kernel = /** @type Kernel */ (compiled);
     const version = typeof compiled === "object" && compiled !== null && !Array.isArray(compiled) ? kernel.kernel : undefined;
     if (version !== 1) {
@@ -269,7 +270,7 @@ export class JsonSchema extends Hyperjump {
       }
     }
 
-    return new Validator(this, { ...kernel, reads });
+    return new Validator(this, withResolvedUris({ ...kernel, reads }, options.uri));
   }
 
   /** @type API.JsonSchema["validate"] */
