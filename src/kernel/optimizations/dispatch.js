@@ -83,6 +83,8 @@ export default {
           return new Set(expression.values.map(typeOf));
         case "all":
           return intersection(expression.of);
+        case "inline":
+          return intersection(expression.keywords.map(({ expression }) => expression));
         case "any":
         case "one": {
           const types = expression.of.map(possibleTypes);
@@ -205,6 +207,8 @@ export default {
           }
           return result;
         }
+        case "inline":
+          return possibleValues({ op: "all", of: expression.keywords.map(({ expression }) => expression) });
         case "any":
         case "one": {
           const values = expression.of.map(possibleValues);
@@ -275,6 +279,8 @@ export default {
           }
           return facts;
         }
+        case "inline":
+          return objectFacts({ op: "all", of: expression.keywords.map(({ expression }) => expression) });
         case "any":
         case "one": {
           // Only what can pass an object says anything about objects
@@ -455,7 +461,7 @@ const typeOf = (value) => {
 };
 
 /** The operations `possibleTypes` knows something about */
-const constrainsTypes = new Set(["fail", "typeIs", "equals", "oneOfValues", "all", "any", "one", "apply"]);
+const constrainsTypes = new Set(["fail", "typeIs", "equals", "oneOfValues", "all", "any", "one", "apply", "inline"]);
 
 /**
  * @typedef {{ by: "value"; name: string; cases: [Scalar, number[]][]; other: number[]; absent: number[] }

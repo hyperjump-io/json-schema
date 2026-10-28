@@ -48,9 +48,11 @@ export type Limits = { min?: number; max?: number };
 
 /**
  * A kernel expression. Fields that hold expressions can hold any expression,
- * nested. A schema is used through `apply`. The operations are in the
- * groups of `design/specs/kernel/operations/`, starting with logic and schemas,
- * which says what each one means.
+ * nested. A schema is used through `apply`. An optimization can put the
+ * keyword groups of the schema an `apply` applies in its place (`inline`),
+ * so they're evaluated as groups of the schema they're in. The operations
+ * are in the groups of `design/specs/kernel/operations/`, starting with
+ * logic and schemas, which says what each one means.
  *
  * A keyword that can't be said with the other operations uses an escape
  * hatch. `predicate` is a check of instances of `types`, which passes any
@@ -69,6 +71,7 @@ export type Expression = { op: "pass" }
   | { op: "propertySwitch"; name: string; cases: [Scalar, Expression][]; other: Expression; absent: Expression; unparsed: Expression }
   | { op: "keySwitch"; cases: [string, Expression][]; none: Expression; unparsed: Expression }
   | { op: "apply"; schema: Handle }
+  | { op: "inline"; schema: Handle; keywords: KeywordGroup[] }
   | { op: "dynamicApply"; anchor: string; fallback: Handle | null }
 
   // Values of any type

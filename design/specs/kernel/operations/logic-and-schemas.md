@@ -13,6 +13,7 @@
 | `{ op: "propertySwitch", name: string, cases: [Scalar, Expression][], other: Expression, absent: Expression, unparsed: Expression }` | object | see below | the branch's that applied |
 | `{ op: "keySwitch", cases: [string, Expression][], none: Expression, unparsed: Expression }` | object | see below | the branch's that applied |
 | `{ op: "apply", schema: Handle }` | everything | the schema passes | the schema's |
+| `{ op: "inline", schema: Handle, keywords: KeywordGroup[] }` | everything | every group passes | every group's |
 | `{ op: "dynamicApply", anchor: string, fallback: Handle \| null }` | everything | see below | the applied schema's |
 
 - `apply` and `dynamicApply` explain their failures. `all` does if every
@@ -55,6 +56,12 @@
 - **`any`, `one`**: without plugins or annotations, `any` can stop at the
   first that passes unless something reads what's evaluated, and `one` can
   stop at the second.
+- **`inline`** is the keyword groups of the schema `schema`, evaluated as
+  groups of the schema it's in: each group gets its own hooks, nested in
+  the group the `inline` is in, and the schema's own hooks aren't called.
+  It isn't lowered from keywords: the optimizer makes it from an `apply`
+  (see [Optimizer](../optimizer.md)). It explains its failures, because
+  its groups report their own.
 - **`dynamicApply`** applies the outermost schema in the dynamic scope with
   the dynamic anchor `anchor`. If there isn't one, it applies `fallback`,
   and if that's `null`, it's an error (v1's `$dynamicRef` without an anchor

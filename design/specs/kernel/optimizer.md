@@ -9,8 +9,9 @@ over the items, resolving `unevaluated` selectors that
 don't depend on the instance, folding schemas that always pass,
 evaluating only the expressions of an `any` or `one` that can pass the
 instance's type or tag (as a `typeSwitch`, `propertySwitch`, or
-`keySwitch`), inlining the schemas a schema applies and combining
-operations of the same kind without plugins, resolving `dynamicApply` from the entry, copying a schema
+`keySwitch`), inlining the schemas a schema applies (combining
+operations of the same kind without plugins, and as `inline` groups with
+them), resolving `dynamicApply` from the entry, copying a schema
 applied with different anchors in scope, and leaving
 out groups with no effect ([Optimizations](../../components/kernel/optimizations/README.md)).
 
@@ -56,6 +57,12 @@ hooks. The list of matches, by group, is the source map. The same pass
 finds which required names the instance has, so a `required` group's
 result comes from the matching too. Without plugins, the evaluation is
 merged too.
+
+Inlining a schema with plugins keeps its groups: an `inline` operation
+holds them, so each one makes its own hook calls, nested in the group
+that applied the schema, and the schema's own hook calls are left out
+([`combine`](../../components/kernel/optimizations/combine.md)). The
+groups in the `inline` are the source map.
 
 Optimizations can depend on which hooks the plugins have. Without an
 `annotation` hook (BASIC, DETAILED), `annotate` has no effect, so a group

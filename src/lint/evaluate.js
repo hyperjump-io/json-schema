@@ -402,6 +402,9 @@ const buildEvaluator = async (session, tree) => {
       }
       case "apply":
         return evaluateSchema(handles.get(expression.schema), instance, marks);
+      // Only optimizations make it, and lint doesn't optimize
+      case "inline":
+        return evaluate({ op: "all", of: expression.keywords.map((group) => group.expression) }, instance, marks);
       case "dynamicApply":
         // Which schema it applies depends on the dynamic scope, which depends
         // on what applies the schema it's in

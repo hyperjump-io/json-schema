@@ -6,7 +6,7 @@ import combine from "./combine.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
- * @import { Kernel } from "../kernel.d.ts"
+ * @import { CompiledSchema, Kernel } from "../kernel.d.ts"
  * @import { Mode } from "../optimize.js"
  */
 
@@ -14,6 +14,7 @@ const jsonSchema = new JsonSchema();
 addV1(jsonSchema);
 
 const fast = { fast: true, plugins: false, annotations: false };
+const plugins = { fast: false, plugins: true, annotations: false };
 
 let count = 0;
 
@@ -66,9 +67,65 @@ describe("combine", () => {
     expect(expression).to.eql(undefined);
   });
 
-  test("nothing changes with plugins", async () => {
-    const expression = await optimized({ type: "string", allOf: [{ type: "string" }] }, { fast: false, plugins: true, annotations: false });
-    expect(expression).to.eql(undefined);
+  test("with plugins, an applied schema's groups are inlined, without the ones nothing sees", async () => {
+    const kernel = await optimizedKernel({ type: "string", allOf: [{ description: "A", type: "string" }] }, plugins);
+    const allOf = kernel.keywords.find(({ keywordUri }) => keywordUri.endsWith("/allOf"));
+    expect(allOf?.expression).to.eql({
+      op: "inline",
+      schema: "/allOf/0",
+      keywords: [
+        { keywordUri: "https://json-schema.org/keyword/type", location: "/allOf/0/type", sources: [], expression: { op: "typeIs", types: ["string"] } }
+      ]
+    });
+    expect(kernel.keywords.map(({ keywordUri }) => keywordUri.replace(/.*\//, ""))).to.eql(["type", "allOf"]);
+  });
+
+  test("with annotations, annotating groups are kept", async () => {
+    const kernel = await optimizedKernel({ allOf: [{ description: "A" }] }, { fast: false, plugins: true, annotations: true });
+    const allOf = kernel.keywords.find(({ keywordUri }) => keywordUri.endsWith("/allOf"));
+    expect(allOf?.expression).to.include({ op: "inline" });
+  });
+
+  test("with plugins, a false schema isn't inlined", async () => {
+    const kernel = await optimizedKernel({ allOf: [false, { type: "string" }] }, plugins);
+    const allOf = kernel.keywords.find(({ keywordUri }) => keywordUri.endsWith("/allOf"));
+    expect(allOf?.expression).to.include({ op: "all" });
+    expect(/** @type {{ of: { op: string }[] }} */ (allOf?.expression).of.map(({ op }) => op)).to.eql(["apply", "inline"]);
+  });
+
+  test("with plugins, inlined groups have their hooks in the group that applied them", async () => {
+    const validator = await compile({ type: "number", allOf: [{ type: "string" }] });
+    /** @type string[] */
+    const calls = [];
+    /** @type (location: string) => string */
+    const at = (location) => location.replace(/.*#/, "");
+    /** @type import("../evaluation-plugin.d.ts").EvaluationPlugin */
+    const recorder = {
+      beforeSchema: (schema) => { calls.push(`beforeSchema ${at(schema.absoluteKeywordLocation)}`); },
+      afterSchema: (schema, _at, valid) => { calls.push(`afterSchema ${at(schema.absoluteKeywordLocation)} ${valid}`); },
+      beforeKeyword: (keyword) => { calls.push(`beforeKeyword ${at(keyword.absoluteKeywordLocation)}`); },
+      afterKeyword: (keyword, _at, valid) => { calls.push(`afterKeyword ${at(keyword.absoluteKeywordLocation)} ${valid}`); }
+    };
+    validator.validate(1, { plugins: [recorder] });
+    expect(calls).to.eql([
+      "beforeSchema ",
+      "beforeKeyword /type",
+      "afterKeyword /type true",
+      "beforeKeyword /allOf",
+      "beforeKeyword /allOf/0/type",
+      "afterKeyword /allOf/0/type false",
+      "afterKeyword /allOf false",
+      "afterSchema  false"
+    ]);
+  });
+
+  test("with plugins, each inlined group has its own errors", async () => {
+    const validator = await compile({ type: "number", allOf: [{ type: "string" }, { minLength: 2 }] });
+    const result = validator.validate("a", { output: "BASIC" });
+    expect(result.errors.map((error) => /** @type {{ absoluteKeywordLocation: string }} */ (error).absoluteKeywordLocation.replace(/.*#/, ""))).to.eql([
+      "/type",
+      "/allOf/1/minLength"
+    ]);
   });
 
   test("a combined schema means the same", async () => {
@@ -108,4 +165,20 @@ const optimized = async (schema, mode = fast) => {
   }
 
   return JSON.parse(JSON.stringify(root.keywords[0].expression), (key, value) => key === "schema" ? value.replace(/.*#/, "") : value);
+};
+
+/**
+ * The root schema after the pass, with each handle and location as its JSON
+ * pointer
+ *
+ * @type (schema: Record<string, Json>, mode: Mode) => Promise<Exclude<CompiledSchema, boolean>>
+ */
+const optimizedKernel = async (schema, mode) => {
+  const kernel = /** @type Kernel */ ((await compile(schema)).serialize());
+  const root = combine.optimize(kernel, mode).get(kernel.uri);
+  if (typeof root !== "object" || root === null) {
+    throw Error("Expected the root schema to be replaced");
+  }
+
+  return JSON.parse(JSON.stringify(root), (key, value) => key === "schema" || key === "location" ? value.replace(/.*#/, "") : value);
 };

@@ -41,6 +41,8 @@ export const subexpressions = (expression) => {
       return patternItems(expression.pattern);
     case "opaque":
       return expression.schemas;
+    case "inline":
+      return expression.keywords.map((group) => group.expression);
     default:
       return [];
   }
@@ -120,6 +122,15 @@ export const mapSubexpressions = (expression, map) => {
     case "opaque": {
       const schemas = mapEach(expression.schemas, map);
       return schemas === expression.schemas ? expression : { ...expression, schemas };
+    }
+    case "inline": {
+      /** @type (group: API.KeywordGroup) => API.KeywordGroup */
+      const mapGroup = (group) => {
+        const mapped = map(group.expression);
+        return mapped === group.expression ? group : { ...group, expression: mapped };
+      };
+      const keywords = mapEach(expression.keywords, mapGroup);
+      return keywords === expression.keywords ? expression : { ...expression, keywords };
     }
     default:
       return expression;
@@ -236,6 +247,7 @@ export const explainsFailure = (expression) => {
   switch (expression.op) {
     case "pass":
     case "apply":
+    case "inline":
     case "dynamicApply":
     case "item":
     case "eachItem":

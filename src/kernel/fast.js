@@ -146,6 +146,8 @@ export const fast = (jsonSchema, kernel) => {
         return () => false;
       case "all":
         return every(expression.of.map(build));
+      case "inline":
+        return every(expression.keywords.map((group) => build(group.expression)));
       case "any": {
         const of = expression.of.map(build);
         return (instance, marks) => {

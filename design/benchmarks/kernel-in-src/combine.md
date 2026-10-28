@@ -36,3 +36,28 @@ corpora it was 1.4–3.6%.
   on OpenAPI 3.0.
 - Before `annotate` was left out, inlined annotations were evaluated,
   and the 2020-12 corpora were 1.082 and 1.221.
+
+## With plugins
+
+Recorded the same day, when the pass started inlining with plugins and
+annotations, as `inline`s of the applied schemas' groups. `ab.ts`, B/A,
+against the commit that only inlined in `fast`; `hooks` is a plugin whose
+hooks do nothing:
+
+| | hooks | BASIC | annotating |
+| --- | --- | --- | --- |
+| SchemaStore `package.json` | 1.014 | 0.996 | 1.019 |
+| SchemaStore `package.json` (2020-12) | 0.959–0.973 | 0.992 | 0.980 |
+| SchemaStore `tsconfig.json` | 0.985 | 1.003 | 0.970 |
+| SchemaStore `tsconfig.json` (2020-12) | 0.913 | 0.975 | 0.943 |
+| OpenAPI 3.0 | 1.006 | 0.940 (0.709–1.033) | 1.002 |
+| 2019-09 meta-schema | 0.895 | 0.976 | 0.898 |
+| 2020-12 meta-schema | 0.885 | 0.861 | 0.813 |
+
+- Inlining schemas with two or more groups that are only property
+  operations made `package.json` as 2020-12 1.034–1.046 with hooks: the
+  instrumented evaluator merges their loops over the properties within a
+  schema, and inlined groups each had their own.
+- `optimize` for plugins on `package.json` went from about 12 to 18 ms:
+  2.5 ms is the pass, and `dispatch` and `drop-groups` take longer going
+  through the inlined groups.

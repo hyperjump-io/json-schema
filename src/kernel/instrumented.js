@@ -122,6 +122,10 @@ export const instrumented = (jsonSchema, kernel, options) => {
   let plugin = noPlugin;
   /** @type unknown */
   let keywordState;
+  // The state of the schema being evaluated, for the groups `inline` puts
+  // in it
+  /** @type unknown */
+  let schemaState;
   /** @type I | undefined */
   let currentInstance;
   /** @type Location | undefined */
@@ -406,7 +410,9 @@ export const instrumented = (jsonSchema, kernel, options) => {
 
       const parentState = keywordState;
       const schemaAt = /** @type EvaluationLocation */ (currentAt);
-      const schemaState = plugin.beforeSchema?.(info, schemaAt, parentState);
+      const outerSchemaState = schemaState;
+      const ownState = plugin.beforeSchema?.(info, schemaAt, parentState);
+      schemaState = ownState;
 
       // Marks are kept only for groups that pass, and only if something
       // reads them. A group starts with what's marked so far, so an
@@ -417,7 +423,7 @@ export const instrumented = (jsonSchema, kernel, options) => {
       let matches;
       for (const group of groups) {
         const keywordAt = /** @type EvaluationLocation */ (currentAt);
-        const state = plugin.beforeKeyword?.(group.info, keywordAt, schemaState);
+        const state = plugin.beforeKeyword?.(group.info, keywordAt, ownState);
         keywordState = state;
 
         const groupMarks = schemaMarks && startMarks(group.marks, schemaMarks);
@@ -432,7 +438,7 @@ export const instrumented = (jsonSchema, kernel, options) => {
           isGroupValid = evaluateMatches(matches, group.slot, groupMarks);
         }
 
-        plugin.afterKeyword?.(group.info, keywordAt, isGroupValid, state, schemaState);
+        plugin.afterKeyword?.(group.info, keywordAt, isGroupValid, state, ownState);
         keywordState = parentState;
 
         // A group's marks are only kept if it passes. Its annotations are only
@@ -456,7 +462,8 @@ export const instrumented = (jsonSchema, kernel, options) => {
         annotations.length = schemaStart;
       }
 
-      plugin.afterSchema?.(info, schemaAt, valid, schemaState, parentState);
+      schemaState = outerSchemaState;
+      plugin.afterSchema?.(info, schemaAt, valid, ownState, parentState);
 
       currentInstance = outerInstance;
       currentAt = outerAt;
@@ -739,6 +746,35 @@ export const instrumented = (jsonSchema, kernel, options) => {
       }
       case "apply":
         return schema(expression.schema);
+      case "inline": {
+        // The schema's groups, as groups of the schema they're in: each with
+        // its own hooks, nested in the group they're in, without the
+        // schema's own
+        const groups = expression.keywords.map((group) => {
+          const groupInfo = keywordInfo(group);
+          return { info: groupInfo, evaluate: build(group.expression, groupInfo) };
+        });
+        return (instance, marks) => {
+          const inSchemaState = schemaState;
+          const parentState = keywordState;
+          let valid = true;
+          for (const group of groups) {
+            const keywordAt = /** @type EvaluationLocation */ (currentAt);
+            const state = plugin.beforeKeyword?.(group.info, keywordAt, inSchemaState);
+            keywordState = state;
+            const isGroupValid = group.evaluate(instance, marks);
+            plugin.afterKeyword?.(group.info, keywordAt, isGroupValid, state, inSchemaState);
+            keywordState = parentState;
+            if (!isGroupValid) {
+              valid = false;
+              if (stopsEarly) {
+                break;
+              }
+            }
+          }
+          return valid;
+        };
+      }
       case "dynamicApply": {
         const { anchor, fallback } = expression;
         return (instance, marks) => {
@@ -1438,6 +1474,7 @@ export const instrumented = (jsonSchema, kernel, options) => {
   return (instance, callPlugins = []) => {
     const outerPlugin = plugin;
     const outerKeywordState = keywordState;
+    const outerSchemaState = schemaState;
     const outerInstance = currentInstance;
     const outerAt = currentAt;
     const outerResource = currentResource;
@@ -1448,6 +1485,7 @@ export const instrumented = (jsonSchema, kernel, options) => {
     // which is the usual case, doesn't loop or keep arrays of states
     plugin = callPlugins.length === 0 ? noPlugin : callPlugins.length === 1 ? callPlugins[0] : combinePlugins(callPlugins);
     keywordState = undefined;
+    schemaState = undefined;
     currentInstance = undefined;
     currentAt = undefined;
     currentResource = undefined;
@@ -1464,6 +1502,7 @@ export const instrumented = (jsonSchema, kernel, options) => {
     } finally {
       plugin = outerPlugin;
       keywordState = outerKeywordState;
+      schemaState = outerSchemaState;
       currentInstance = outerInstance;
       currentAt = outerAt;
       currentResource = outerResource;
