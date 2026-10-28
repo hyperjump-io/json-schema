@@ -1,0 +1,43 @@
+import { allowsNothing } from "../allows-nothing.js";
+import { lintRule } from "../lint-rule.js";
+import { lowerForLint } from "../lower.js";
+import { visitSchemas } from "../utilities.js";
+
+/**
+ * @import { JsonSchemaDocumentNode, JsonSchemaNode } from "../../schema/schema-ast.d.ts"
+ */
+
+/**
+ * A keyword allows nothing if its group does (`allowsNothing`), following
+ * only the schemas in its own value, so no keyword is named
+ *
+ * @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void>
+ */
+const keywordAllowsNothing = lintRule({ origin: "json-schema-lint:keyword-allows-nothing", url: "https://hyperjump.io/json-schema/linting/rules/keyword-allows-nothing/" }, async (tree, file) => {
+  const session = file.data.jsonSchemaSession;
+  if (session === undefined) {
+    return;
+  }
+
+  /** @type Map<string, JsonSchemaNode> */
+  const schemaNodes = new Map();
+  visitSchemas(tree, (schemaNode) => {
+    schemaNodes.set(schemaNode.location, schemaNode);
+  });
+
+  const lowered = await lowerForLint(session, tree);
+  for (const keywords of lowered.values()) {
+    for (const { group, keywordNode } of keywords) {
+      if (!allowsNothing(group.expression, schemaNodes, lowered, group.location)) {
+        continue;
+      }
+
+      const name = keywordNode.children[0].value;
+      const valueNode = keywordNode.children[1];
+      const reason = valueNode.jsonType === "array" && valueNode.children.length === 0 ? "is empty" : "allows nothing";
+      file.message(`'${name}' ${reason}, so nothing is valid against it`, { place: keywordNode.position });
+    }
+  }
+});
+
+export default keywordAllowsNothing;

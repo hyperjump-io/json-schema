@@ -17,7 +17,8 @@ ported, merged into another rule, or not ported for a reason below.
 - Something a spec says a keyword's value MUST be is validity, so it isn't
   ported as a rule (see [Validity and lint](validity.md)). Check what each draft says,
   because some changed: draft-04's `enum` MUST have values, and later
-  drafts' SHOULD, so `empty-enum` is lint everywhere but draft-04.
+  drafts' SHOULD, so an empty `enum` is lint everywhere but draft-04
+  (`keyword-allows-nothing`).
   `duplicate_required_values` isn't, because `required`'s check
   (`uniqueStrings`) reports duplicates in every dialect, as their
   meta-schemas do.
@@ -58,7 +59,7 @@ ported, merged into another rule, or not ported for a reason below.
   page lists, and checks the README row and the severity the page says.
 
 Rules of our own are added too, when porting turns up a mistake the
-catalogue doesn't cover: `empty-type`,
+catalogue doesn't cover: `keyword-allows-nothing`,
 `const-or-enum-value-for-disallowed-type`, `required-property-not-allowed`,
 `keyword-without-type`, `required` against `maxProperties` in
 `contradictory-limits`, `const-or-enum-value-rejected`,
@@ -73,3 +74,8 @@ keyword next to `const` like any other, so
 `keyword-implied-by-const-or-enum` reports an `enum` that has the `const`
 value, and `const-or-enum-value-rejected` reports a `const` value that
 isn't in it.
+`empty_enum` was ported as `empty-enum`, and our `empty-type` was added
+next to it. On 2026-10-28 both became `keyword-allows-nothing`, which
+reports any keyword nothing is valid against, from what it lowers to.
+Names from the catalogue are a starting point, and change whenever a
+better one, or a broader rule, suits.

@@ -27,7 +27,7 @@
 - A rule about how a keyword is written still finds it by keyword URI,
   never by name, so it works in every dialect with the keyword and does
   nothing if the keyword isn't loaded: `single-type-array`,
-  `single-value-enum`, `duplicate-enum-values`, `empty-type`, `empty-enum`,
+  `single-value-enum`, `duplicate-enum-values`,
   `then-else-without-if`, `if-without-then-else`, and the rules about
   dialects, identifiers, references, and definitions. So does a rule about
   what the kernel doesn't say, like what an annotation means

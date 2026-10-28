@@ -10,7 +10,7 @@ values. Turn this rule off if yours do.
 
 If `type` doesn't allow a value, it does have an effect, and
 `const-or-enum-value-for-disallowed-type` reports the value instead. Next
-to an empty `enum`, which `empty-enum` reports, nothing is valid, so `type`
+to an empty `enum`, which `keyword-allows-nothing` reports, nothing is valid, so `type`
 has no effect. It has no options.
 
 ## Examples

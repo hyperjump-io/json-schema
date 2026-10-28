@@ -1,8 +1,6 @@
 import thenElseWithoutIf from "./rules/then-else-without-if.js";
 import ifWithoutThenElse from "./rules/if-without-then-else.js";
 import duplicateEnumValues from "./rules/duplicate-enum-values.js";
-import emptyEnum from "./rules/empty-enum.js";
-import emptyType from "./rules/empty-type.js";
 import duplicateOneOfSchemas from "./rules/duplicate-one-of-schemas.js";
 import duplicateAllOfAnyOfSchemas from "./rules/duplicate-all-of-any-of-schemas.js";
 import contradictoryLimits from "./rules/contradictory-limits.js";
@@ -47,6 +45,7 @@ import requiredDependentProperty from "./rules/required-dependent-property.js";
 import keywordImpliedByConstOrEnum from "./rules/keyword-implied-by-const-or-enum.js";
 import constOrEnumValueRejected from "./rules/const-or-enum-value-rejected.js";
 import invalidDefaultOrExample from "./rules/invalid-default-or-example.js";
+import keywordAllowsNothing from "./rules/keyword-allows-nothing.js";
 
 /**
  * @import { Preset } from "unified"
@@ -58,8 +57,7 @@ const recommended = {
     [thenElseWithoutIf, ["warn"]],
     [ifWithoutThenElse, ["warn"]],
     [duplicateEnumValues, ["warn"]],
-    [emptyEnum, ["warn"]],
-    [emptyType, ["warn"]],
+    [keywordAllowsNothing, ["warn"]],
     [duplicateOneOfSchemas, ["warn"]],
     [duplicateAllOfAnyOfSchemas, ["warn"]],
     [contradictoryLimits, ["warn"]],

@@ -11,8 +11,7 @@ it doesn't.
 | [`empty-then-else`](empty-then-else.md) | `then` or `else`, or another branch of a condition, that every value is valid against, like `{}`, so it has no effect |
 | [`false-then-else`](false-then-else.md) | `then` or `else` that allows nothing, where `not` or the `if` schema says the same thing, or both, so nothing is valid |
 | [`duplicate-enum-values`](duplicate-enum-values.md) | A value in `enum` that's equal to one before it |
-| [`empty-enum`](empty-enum.md) | An `enum` with no values, which nothing is valid against |
-| [`empty-type`](empty-type.md) | A `type` that's an empty array, which nothing is valid against |
+| [`keyword-allows-nothing`](keyword-allows-nothing.md) | A keyword that nothing is valid against, like an empty `enum` or `type`, or `allOf` with `false` |
 | [`duplicate-one-of-schemas`](duplicate-one-of-schemas.md) | A schema in `oneOf` that's the same as one before it, so a value it matches always fails |
 | [`duplicate-all-of-any-of-schemas`](duplicate-all-of-any-of-schemas.md) | A schema in `allOf` or `anyOf` that's the same as one before it, so it has no effect |
 | [`contradictory-limits`](contradictory-limits.md) | A lower limit above its upper limit, like `minimum` above `maximum` or `minLength` above `maxLength`, or more required properties than `maxProperties` allows |

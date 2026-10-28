@@ -61,7 +61,7 @@ describe("keyword-for-disallowed-type", () => {
     expect(await reasons(`{ "$schema": "${draft2020}", "minimum": 0, "maxLength": 2 }`)).to.eql([]);
   });
 
-  test("an empty type is left to empty-type", async () => {
+  test("an empty type is left to keyword-allows-nothing", async () => {
     expect(await reasons(`{ "$schema": "${draft2020}", "type": [], "minimum": 0 }`)).to.eql([]);
   });
 
