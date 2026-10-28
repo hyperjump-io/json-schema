@@ -132,5 +132,12 @@ export type JsonSchemaDocumentNode<S extends JsonParseStatus = JsonParseStatus> 
   /** Every resource in the document by URI, shared by all of them */
   embedded: Record<string, JsonSchemaDocumentNode<S>>;
 
+  /**
+   * Where a document from a registry came from, from its entry's `origin`,
+   * like the path of the file it was read from. Only the document's root
+   * has it. It isn't an identifier.
+   */
+  origin?: string;
+
   data?: Data;
 };

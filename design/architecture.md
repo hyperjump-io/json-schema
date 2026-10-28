@@ -12,7 +12,14 @@ text ─ rejsonParse ─▶ JSON AST ─ jsonSchemaResolve ─▶ Schema AST ─
   (`application/schema+json`, `.schema.json`) runs `rejsonParse` and
   `jsonSchemaResolve`. Any message from either is fatal there: it throws a
   `SchemaError` with all of them (see [Validation API](components/validation-api/README.md)).
-- Plain JSON files are never treated as schemas.
+- A JSON document (`application/json`, `.json`) is a schema if its
+  top-level `$schema` is a dialect the session has or can find
+  (`JsonOrSchemaMediaTypePlugin`, which replaces browser's JSON plugin), and
+  JSON otherwise. Its `mediaType` is `application/schema+json`, so its
+  fragments are a schema's. Before 2026-10-27, only `.schema.json` files
+  and `application/schema+json` responses were schemas, and a workspace
+  registry gave hjlint its `.json` schemas. Rejected: requiring
+  `.schema.json`, which many projects don't use.
 
 ## Code map
 

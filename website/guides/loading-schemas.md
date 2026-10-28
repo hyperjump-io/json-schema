@@ -64,13 +64,24 @@ const registry = new SchemaRegistry().with(text);
 
 A schema without an `$id` needs a `retrievalUri` to be found by. It's also
 the base URI for a relative `$id`. A schema without `$schema` can be given
-its dialect with `dialectUri`.
+its dialect with `dialectUri`. Neither can be a `file:` URL: a schema in a
+file is loaded from the file.
 
 ```typescript
 const registry = new SchemaRegistry().with({ type: "string" }, {
   retrievalUri: "https://example.com/name",
   dialectUri: "https://json-schema.org/v1"
 });
+```
+
+### Where a schema came from
+
+`origin` says where a schema came from, like the path of the file you read
+it from. It isn't used to find the schema. Its document has it, and so does
+every problem found in it, so you can show a problem where it is.
+
+```typescript
+const registry = new SchemaRegistry().with(text, { origin: "schemas/person.schema.json" });
 ```
 
 ### Changing a registry
@@ -112,9 +123,11 @@ const uri = pathToFileURL("./schemas/person.schema.json").href;
 const validator = await jsonSchema.compile(uri);
 ```
 
-Only files whose names end with `.schema.json` are schemas. Other `.json`
-files are plain JSON, and referencing one is an error. Files aren't
-available in browsers.
+A `.json` file is a schema if its `$schema` is a dialect, like
+`https://json-schema.org/v1`, whatever it's named. One without `$schema`
+is a schema only if its name ends with `.schema.json`. Other files are
+plain JSON, and referencing one is an error. Files aren't available in
+browsers.
 
 By default, only files in the working directory can be retrieved. See
 [Controlling retrieval](retrieval.md) to allow more or less.
@@ -134,7 +147,8 @@ const uri = "https://schemas.example.com/person";
 const validator = await jsonSchema.compile(uri);
 ```
 
-The response must be `application/schema+json`. Responses are cached by
+The response must be `application/schema+json`, or `application/json`
+with a `$schema` that's a dialect. Responses are cached by
 their caching headers, and a schema retrieved once is reused for the life of
 the session. To send credentials, see
 [Controlling retrieval](retrieval.md#sending-credentials).

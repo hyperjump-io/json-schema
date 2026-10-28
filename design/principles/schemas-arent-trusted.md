@@ -8,8 +8,8 @@ registry.
 - Only what the application allows is retrieved, and the default allows
   only what's local to it (see
   [`allowRetrieval`](../components/sessions/allow-retrieval.md)).
-- A schema that wasn't retrieved from a `file:` URI can't be identified by
-  one (see [Schema validation](../components/schema-validation.md)).
+- A schema can't be identified by a `file:` URI, so only a file can
+  reference files (see [Schema validation](../components/schema-validation.md)).
 - Request headers are a function of the URL, so credentials only go where
   they belong (see browser's
   [Request headers](https://github.com/hyperjump-io/browser/blob/v2/design/components/request-headers.md)).

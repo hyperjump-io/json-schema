@@ -245,5 +245,5 @@ const sharedDocuments = new WeakMap();
  * @type (session: JsonSchemaSession, indexed: IndexedEntry) => Promise<JsonSchemaDocumentNode>
  */
 const resolveEntry = async (session, { entry, uri }) => {
-  return resolveSchemaText(entry.schema, session, entry.retrievalUri ?? uri, entry.dialectUri);
+  return resolveSchemaText(entry.schema, session, entry.retrievalUri ?? uri, entry.dialectUri, entry.origin);
 };

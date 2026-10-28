@@ -169,7 +169,7 @@ from errors.
 
 Real schemas usually live in files and reference each other. Compile one by
 its `file:` URL, and its references are found relative to it. A file is a
-schema if its name ends with `.schema.json`.
+schema if its `$schema` is a dialect, or its name ends with `.schema.json`.
 
 ```json
 {

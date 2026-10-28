@@ -8,6 +8,7 @@ import vocabularyKeyword, { addVocabulary } from "../keywords/vocabulary.js";
 /**
  * @import { Json } from "@hyperjump/browser/json"
  * @import { JsonSchemaConfig } from "../json-schema.d.ts"
+ * @import { JsonSchemaDocumentNode } from "../schema/schema-ast.d.ts"
  */
 
 describe("SchemaRegistry", () => {
@@ -83,16 +84,16 @@ describe("SchemaRegistry", () => {
       });
     });
 
-    test("a schema can't be identified as a file without a file retrieval URI", async () => {
+    // A schema in a file is retrieved from the file
+    test("a schema can't be identified as a file", async () => {
       const registry = registryOf(v1({ $id: "file:///a.schema.json" }));
 
       await expect(compile(registry, "file:///a.schema.json")).rejects.toThrow(RetrievalError);
     });
 
-    test("a schema with a file retrieval URI", async () => {
-      const registry = new SchemaRegistry().with(v1({ type: "string" }), { retrievalUri: "file:///not/on/disk.schema.json" });
-
-      expect((await compile(registry, "file:///not/on/disk.schema.json")).validate(42)).to.equal(false);
+    test("a schema can't have a file retrieval URI", () => {
+      expect(() => new SchemaRegistry().with(v1({ type: "string" }), { retrievalUri: "file:///not/on/disk.schema.json" })).to.throw("can't have a 'file:' retrieval URI");
+      expect(() => new SchemaRegistry([{ schema: v1({ type: "string" }), retrievalUri: "file:///not/on/disk.schema.json" }])).to.throw("can't have a 'file:' retrieval URI");
     });
 
     test("a schema that can't be identified throws when it's found by its retrieval URI", async () => {
@@ -358,6 +359,23 @@ describe("SchemaRegistry", () => {
       await expect(compile(registry, "https://example.com/a")).rejects.toMatchObject({
         messages: [{ ruleId: "https://json-schema.org/keyword/type", severity: "error", uri: "https://example.com/a" }]
       });
+    });
+
+    // So a tool can say which file a problem is in
+    test("a problem has the schema's origin", async () => {
+      const registry = new SchemaRegistry([{ schema: v1({ $id: "https://example.com/a", type: 42 }), origin: "schemas/a.schema.json" }]);
+
+      await expect(compile(registry, "https://example.com/a")).rejects.toMatchObject({
+        messages: [{ uri: "https://example.com/a", origin: "schemas/a.schema.json" }]
+      });
+    });
+
+    test("the schema's document has its origin", async () => {
+      const registry = new SchemaRegistry([{ schema: v1({ $id: "https://example.com/a" }), origin: "schemas/a.schema.json" }]);
+      const session = offline().session({ registries: [registry] });
+      const document = await session.getDocument("https://example.com/a");
+
+      expect(/** @type JsonSchemaDocumentNode */ (/** @type unknown */ (document)).origin).to.equal("schemas/a.schema.json");
     });
 
     test("invalid JSON is an error when it's found by its retrieval URI", async () => {

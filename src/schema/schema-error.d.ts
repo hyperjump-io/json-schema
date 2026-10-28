@@ -25,6 +25,12 @@ export type SchemaMessage = {
   /** The URI of the document it's in */
   uri: string;
 
+  /**
+   * Where the document came from, for a schema from a registry with an
+   * `origin`, like the path of the file it was read from
+   */
+  origin?: string;
+
   /** Where it is in the document's text */
   place?: Point | Position;
 

@@ -265,7 +265,7 @@ export class JsonSchemaSession extends Session {
     const file = new VFile({ data: { jsonSchemaSession: this } });
     await linter.run(/** @type any */ (tree), file);
 
-    return file.messages.map((message) => toSchemaMessage(message, tree.uri, message.fatal ? "error" : "warn"));
+    return file.messages.map((message) => toSchemaMessage(message, tree.uri, message.fatal ? "error" : "warn", tree.origin));
   }
 
   /** @type API.JsonSchemaSession["annotation"] */

@@ -32,10 +32,16 @@ an internal meta-schema.
   reports what's wrong with it then.
 - Dialect schemas (meta-schemas) are for dev-time tooling, not validators.
   There's no generated "what this implementation supports" meta-schema.
-- A schema that wasn't retrieved from a `file:` URI can't be identified by
-  one, in every dialect. Its references would be resolved as if it were a
-  file, which would get around browser's rule that only files can reference
-  files. v1 had the same rule for registered schemas.
+- A schema can't be identified by a `file:` URI, in every dialect,
+  including a relative `$id` that resolves against a file. A file is where
+  a schema is, not what it is: the identifier wouldn't be the same on
+  another machine, and in a schema that wasn't retrieved from a file, its
+  references would be resolved as if it were one, which would get around
+  browser's rule that only files can reference files. A relative `$id` in a
+  file needs an ancestor with an absolute identifier that isn't a file.
+  Before 2026-10-27, only a schema that wasn't retrieved from a file was
+  refused. v1 had that rule for registered schemas. The message quotes the
+  `$id` as it's written.
 - The resolver's own checks (schemas that aren't objects or booleans,
   misplaced `$schema`, duplicate ids and anchors, invalid identifiers,
   `file:` identifiers) are schema validation too.

@@ -14,8 +14,10 @@ A root without `$id`, or with a fragment-only draft-04–07 `$id`, which is
 an anchor, isn't reported: a schema identified by where it lives is common,
 and nothing about it is ambiguous. A relative `$id` on an embedded resource
 is resolved against the resource it's in, so it isn't reported either. An
-`$id` that isn't a valid URI reference is reported by the resolver. It has
-no options.
+`$id` that isn't a valid URI reference is reported by the resolver. In a
+file, a relative root `$id` resolves to a `file:` URI, which the resolver
+reports too, because a schema can't be identified by a file. It has no
+options.
 
 ## Examples
 

@@ -14,13 +14,14 @@ import { SchemaError } from "./schema-error.js";
 /**
  * Parse and resolve a schema document, for a schema that's retrieved or in a
  * registry. A syntax error the parser recovers from doesn't stop it, so
- * every problem in the document is found.
+ * every problem in the document is found. A registry entry's `origin` is on
+ * the document and its problems.
  *
- * @type (text: string, session: JsonSchemaSession, uri: string, dialectUri: string | undefined) => Promise<JsonSchemaDocumentNode>
+ * @type (text: string, session: JsonSchemaSession, uri: string, dialectUri: string | undefined, origin?: string) => Promise<JsonSchemaDocumentNode>
  * @throws SchemaError if the document has any problem, because a schema with
  * problems can't be used reliably
  */
-export const resolveSchemaText = async (text, session, uri, dialectUri) => {
+export const resolveSchemaText = async (text, session, uri, dialectUri, origin) => {
   const file = new VFile(text);
   const processor = unified()
     .use(rejsonParse, { accept: "recovered" })
@@ -39,18 +40,21 @@ export const resolveSchemaText = async (text, session, uri, dialectUri) => {
   }
 
   if (document === undefined || file.messages.length > 0) {
-    throw schemaError(file, uri);
+    throw schemaError(file, uri, origin);
   }
 
+  if (origin !== undefined) {
+    document.origin = origin;
+  }
   return document;
 };
 
 /**
  * A message on a file as plain data
  *
- * @type (message: VFileMessage, uri: string, severity: SchemaMessage["severity"]) => SchemaMessage
+ * @type (message: VFileMessage, uri: string, severity: SchemaMessage["severity"], origin?: string) => SchemaMessage
  */
-export const toSchemaMessage = (message, uri, severity) => {
+export const toSchemaMessage = (message, uri, severity, origin) => {
   /** @type SchemaMessage */
   const schemaMessage = {
     source: message.source ?? "json-schema",
@@ -66,6 +70,9 @@ export const toSchemaMessage = (message, uri, severity) => {
   if (message.cause !== undefined) {
     schemaMessage.cause = message.cause;
   }
+  if (origin !== undefined) {
+    schemaMessage.origin = origin;
+  }
   return schemaMessage;
 };
 
@@ -73,8 +80,8 @@ export const toSchemaMessage = (message, uri, severity) => {
  * Every message on a file that was resolved as a schema, as a SchemaError. A
  * schema with any problem can't be used, so they're all errors.
  *
- * @type (file: VFile, uri: string) => SchemaError
+ * @type (file: VFile, uri: string, origin: string | undefined) => SchemaError
  */
-const schemaError = (file, uri) => {
-  return new SchemaError(file.messages.map((message) => toSchemaMessage(message, uri, "error")));
+const schemaError = (file, uri, origin) => {
+  return new SchemaError(file.messages.map((message) => toSchemaMessage(message, uri, "error", origin)));
 };

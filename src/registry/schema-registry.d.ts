@@ -3,7 +3,8 @@ import type { ReadonlyJson } from "@hyperjump/browser/json";
 /**
  * Schemas that aren't retrieved from a URI. A schema is identified the way
  * JSON Schema identifies it: by its `$id` (or `id` in draft-04), resolved
- * against `retrievalUri`, or by `retrievalUri` if it doesn't have one. It's
+ * against `retrievalUri`, or by `retrievalUri` if it doesn't have one.
+ * Neither can be a `file:` URI. It's
  * also found by its `retrievalUri`, like a retrieved schema. Only the root
  * resource is identified. Embedded resources are only found from the same
  * document.
@@ -32,7 +33,8 @@ import type { ReadonlyJson } from "@hyperjump/browser/json";
  */
 export class SchemaRegistry<S = ReadonlyJson> {
   /**
-   * @throws Error if two entries have the same `retrievalUri`
+   * @throws Error if two entries have the same `retrievalUri`, or one is a
+   * `file:` URI
    * @throws TypeError if a schema can't be made into JSON text, like one
    * with a cycle
    */
@@ -41,7 +43,8 @@ export class SchemaRegistry<S = ReadonlyJson> {
   /**
    * A registry that also has this schema
    *
-   * @throws Error if the `retrievalUri` is already in the registry
+   * @throws Error if the `retrievalUri` is already in the registry, or is a
+   * `file:` URI
    * @throws TypeError if the schema can't be made into JSON text, like one
    * with a cycle
    */
@@ -58,13 +61,23 @@ export class SchemaRegistry<S = ReadonlyJson> {
 export type SchemaRegistryAddOptions = {
   /**
    * The schema's URI if it doesn't have an `$id`, and the base URI for a
-   * relative `$id`. It's also how the schema is removed. It can be a
-   * `file:` URI.
+   * relative `$id`. It's also how the schema is removed. It can't be a
+   * `file:` URI, because a schema in a file is retrieved from the file. Use
+   * `origin` to say which file a schema came from.
    */
   retrievalUri?: string;
 
   /** The dialect if the schema doesn't have `$schema` */
   dialectUri?: string;
+
+  /**
+   * Where the schema came from, for the application, like the path of the
+   * file it was read from. It's never used to find or identify the schema.
+   * The schema's document has it (`JsonSchemaDocumentNode.origin`), and so
+   * does every problem found in it (`SchemaMessage.origin`), so a tool can
+   * show them where they are.
+   */
+  origin?: string;
 };
 
 export type SchemaRegistryEntry<S = ReadonlyJson> = SchemaRegistryAddOptions & {

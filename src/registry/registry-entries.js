@@ -13,6 +13,7 @@
  *   schema: string;
  *   retrievalUri?: string;
  *   dialectUri?: string;
+ *   origin?: string;
  * }} RegistryEntry
  */
 

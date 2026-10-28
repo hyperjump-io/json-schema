@@ -1,4 +1,4 @@
-import { toAbsoluteIri } from "@hyperjump/uri";
+import { parseIri, toAbsoluteIri } from "@hyperjump/uri";
 import { entriesOf, setEntries } from "./registry-entries.js";
 
 /**
@@ -58,11 +58,22 @@ export class SchemaRegistry {
  *
  * @type (schema: ReadonlyJson | string, options: API.SchemaRegistryAddOptions) => RegistryEntry
  */
-const createEntry = (schema, options) => Object.freeze({
-  schema: typeof schema === "string" ? schema : JSON.stringify(schema, null, "  "),
-  retrievalUri: options.retrievalUri === undefined ? undefined : toAbsoluteIri(options.retrievalUri),
-  dialectUri: options.dialectUri === undefined ? undefined : toAbsoluteIri(options.dialectUri)
-});
+const createEntry = (schema, options) => {
+  const retrievalUri = options.retrievalUri === undefined ? undefined : toAbsoluteIri(options.retrievalUri);
+
+  // A schema in a file is retrieved from the file. A registry identifying
+  // one would be a way to read files that nothing retrieved.
+  if (retrievalUri !== undefined && parseIri(retrievalUri).scheme === "file") {
+    throw Error(`A schema in a registry can't have a 'file:' retrieval URI. A schema in a file is retrieved from it. Use 'origin' to say which file a schema came from.`);
+  }
+
+  return Object.freeze({
+    schema: typeof schema === "string" ? schema : JSON.stringify(schema, null, "  "),
+    retrievalUri: retrievalUri,
+    dialectUri: options.dialectUri === undefined ? undefined : toAbsoluteIri(options.dialectUri),
+    origin: options.origin
+  });
+};
 
 /**
  * A registry with entries that were already created and checked

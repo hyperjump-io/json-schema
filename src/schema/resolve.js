@@ -334,11 +334,15 @@ class Resolver {
             return;
           }
 
-          // A document that wasn't read from the filesystem can't identify as
-          // a file. Its references would be resolved as if it were one, which
-          // would give it access to the filesystem.
-          if (parseIri(baseUri).scheme === "file" && parseIri(this.#documentUri).scheme !== "file") {
-            this.#message(`A schema that wasn't retrieved from a 'file:' URI can't be identified by one: ${relativeFileUri(baseUri)}`, valueNode, "file-uri-not-allowed");
+          // A file is where a schema is, not what it is. An identifier that's a
+          // file, including a relative one resolved against a file, isn't the
+          // same on another machine, and in a document that wasn't read from
+          // the filesystem, its references would be resolved as if it were a
+          // file, which would give it access to the filesystem.
+          if (parseIri(baseUri).scheme === "file") {
+            // It's said as it's written, which is in the document already
+            const written = valueNode.type === "json" && valueNode.jsonType === "string" ? valueNode.value : uri;
+            this.#message(`'${written}' identifies the schema by a 'file:' URI. Give it an absolute URI that isn't a file, or no identifier.`, valueNode, "file-uri-not-allowed");
             return;
           }
 

@@ -10,13 +10,14 @@ const draft202012 = "https://json-schema.org/draft/2020-12/schema";
 describe("relative-root-id", () => {
   test("a relative root $id", async () => {
     const file = await lint(`{ "$schema": "${draft202012}", "$id": "/user" }`);
-    expect(file.messages.map((message) => message.reason)).to.eql([
+    expect(ruleMessages(file).map((message) => message.reason)).to.eql([
       "'/user' is relative, so the schema is identified by resolving it against wherever the schema was retrieved from. Give the root '$id' an absolute URI so the schema has the same identifier wherever it is."
     ]);
-    expect(file.messages[0].ruleId).to.equal("relative-root-id");
-    expect(file.messages[0].source).to.equal("json-schema-lint");
-    expect(file.messages[0].fatal).to.equal(false);
-    expect(file.messages[0].place).to.eql({
+    const [message] = ruleMessages(file);
+    expect(message.ruleId).to.equal("relative-root-id");
+    expect(message.source).to.equal("json-schema-lint");
+    expect(message.fatal).to.equal(false);
+    expect(message.place).to.eql({
       start: { line: 1, column: 69, offset: 68 },
       end: { line: 1, column: 76, offset: 75 }
     });
@@ -50,7 +51,7 @@ describe("relative-root-id", () => {
 
   test("a relative root $id in draft-07", async () => {
     const file = await lint(`{ "$schema": "${draft07}", "$id": "user.schema.json" }`);
-    expect(file.messages.map((message) => message.ruleId)).to.eql(["relative-root-id"]);
+    expect(ruleMessages(file).map((message) => message.ruleId)).to.eql(["relative-root-id"]);
   });
 
   test("a fragment-only root $id in draft-07", async () => {
@@ -60,7 +61,7 @@ describe("relative-root-id", () => {
 
   test("a relative root id in draft-04", async () => {
     const file = await lint(`{ "$schema": "${draft04}", "id": "user.schema.json" }`);
-    expect(file.messages.map((message) => message.reason)).to.eql([
+    expect(ruleMessages(file).map((message) => message.reason)).to.eql([
       "'user.schema.json' is relative, so the schema is identified by resolving it against wherever the schema was retrieved from. Give the root 'id' an absolute URI so the schema has the same identifier wherever it is."
     ]);
   });
@@ -84,3 +85,11 @@ const lint = async (json) => {
     .process(file);
   return file;
 };
+
+/**
+ * The rule's messages. In a file, a relative root `$id` resolves to a
+ * `file:` URI, which the resolver reports too.
+ *
+ * @type (file: VFile) => VFile["messages"]
+ */
+const ruleMessages = (file) => file.messages.filter((message) => message.ruleId === "relative-root-id");

@@ -45,9 +45,19 @@ a session finds schemas in the registries it sees is in
   costs more: `JSON.parse` instead of reading the value. Rejected: keeping
   the value, which a caller could change, and `structuredClone`, which
   copies a value only to stringify it later.
-- `retrievalUri` can be a `file:` URI, because the code calling `with` is
-  trusted. The resolver's rule that only a schema retrieved from a `file:`
-  URI can be identified by one still applies.
+- A registry entry can't be identified by a `file:` URI: `retrievalUri`
+  can't be one, and neither can its `$id`. A schema in a file is retrieved
+  from the file, so a `file:` URI only ever comes from browser. Before
+  2026-10-27, `retrievalUri` could be one, because the code calling `with`
+  is trusted, and hjlint's workspace registry used them.
+- An entry's `origin` says where it came from, like the path of the file a
+  tool read it from. It's never used to find or identify the entry. It's
+  on the entry's document and every problem found in it, so a tool can
+  show them where they are. A schema that's found both by its `$id` from a
+  registry and by its path from browser is two documents, and `origin` is
+  what maps the registry's copy back to its file. Rejected: one document
+  for both, which needs a registry entry to be something browser reads, or
+  browser's cache to know about registries.
 - Registries are attached two ways: `addRegistry`/`removeRegistry` on
   `JsonSchema`, which every new session sees, and session registries
   (`session({ registries })`, `compile(uri, { registries })`). There's no

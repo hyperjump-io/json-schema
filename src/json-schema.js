@@ -1,6 +1,7 @@
 import { Hyperjump } from "@hyperjump/browser";
 import { toAbsoluteIri } from "@hyperjump/uri";
 import { JsonSchemaMediaTypePlugin } from "./schema/media-type-plugin.js";
+import { JsonOrSchemaMediaTypePlugin } from "./schema/json-media-type-plugin.js";
 import { JsonSchemaSession } from "./session.js";
 import { addedRegistriesOf } from "./registry/session-registries.js";
 import schemaKeyword from "./keywords/schema.js";
@@ -62,6 +63,7 @@ export class JsonSchema extends Hyperjump {
     this.addKeyword(unknownKeyword);
 
     this.addMediaTypePlugin(new JsonSchemaMediaTypePlugin());
+    this.addMediaTypePlugin(new JsonOrSchemaMediaTypePlugin());
 
     this.addOutputFormat("BASIC", basicOutputFormat);
     this.addOutputFormat("DETAILED", detailedOutputFormat);

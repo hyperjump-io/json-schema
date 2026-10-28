@@ -6,6 +6,7 @@ import { pathToFileURL } from "node:url";
 import { describe, test, beforeEach, beforeAll, afterAll, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
+import { RetrievalNotAllowedError } from "@hyperjump/browser";
 import { pointerGet, rejsonParse } from "@hyperjump/browser/json";
 import { JsonSchema, SchemaError } from "../json-schema.js";
 import { jsonSchemaResolve } from "./resolve.js";
@@ -348,7 +349,7 @@ describe("jsonSchemaResolve", () => {
       expect(Object.keys(document.embedded)).to.eql([baseUri]);
     });
 
-    test("a schema that wasn't retrieved from a file can't identify as one", async () => {
+    test("a schema can't be identified by a file", async () => {
       const { file, document } = await resolve(jsonSchema, `{
         "$schema": "${dialectUri}",
         "$id": "file:///folder/root.json",
@@ -361,14 +362,40 @@ describe("jsonSchemaResolve", () => {
       expect(document.uri).to.equal(baseUri);
     });
 
-    test("a schema retrieved from a file can identify as one", async () => {
+    // A file is where a schema is, not what it is
+    test("a schema retrieved from a file can't be identified by one either", async () => {
       const { file, document } = await resolve(jsonSchema, `{
         "$schema": "${dialectUri}",
         "$id": "file:///folder/root.json"
       }`, { uri: "file:///other/schema.json" });
 
+      expect(file.messages.map((message) => [message.ruleId, message.reason])).to.eql([
+        ["file-uri-not-allowed", "'file:///folder/root.json' identifies the schema by a 'file:' URI. Give it an absolute URI that isn't a file, or no identifier."]
+      ]);
+      expect(document.uri).to.equal("file:///other/schema.json");
+    });
+
+    test("a relative $id that resolves to a file isn't allowed", async () => {
+      const { file, document } = await resolve(jsonSchema, `{
+        "$schema": "${dialectUri}",
+        "$defs": { "foo": { "$id": "foo.json" } }
+      }`, { uri: "file:///folder/schema.json" });
+
+      expect(file.messages.map((message) => message.reason)).to.eql([
+        "'foo.json' identifies the schema by a 'file:' URI. Give it an absolute URI that isn't a file, or no identifier."
+      ]);
+      expect(Object.keys(document.embedded)).to.eql(["file:///folder/schema.json"]);
+    });
+
+    test("a relative $id under an identifier that isn't a file", async () => {
+      const { file, document } = await resolve(jsonSchema, `{
+        "$schema": "${dialectUri}",
+        "$id": "https://example.com/schema",
+        "$defs": { "foo": { "$id": "foo" } }
+      }`, { uri: "file:///folder/schema.json" });
+
       expect(ruleIds(file)).to.eql([]);
-      expect(document.uri).to.equal("file:///folder/root.json");
+      expect(Object.keys(document.embedded)).to.eql(["https://example.com/schema", "https://example.com/foo"]);
     });
 
     test("duplicate $id", async () => {
@@ -860,7 +887,7 @@ describe("jsonSchemaResolve", () => {
 
     test("an embedded resource isn't visible outside the document that embeds it", async () => {
       const session = jsonSchema.session();
-      const embeddedUri = pathToFileURL(join(directory, "not-a-file.schema.json")).toString();
+      const embeddedUri = "https://example.com/embedded-only";
       const uri = await schemaFile("embeds-a-file.schema.json", {
         $schema: legacyDialectUri,
         definitions: { e: { $id: embeddedUri, type: "string" } }
@@ -868,7 +895,7 @@ describe("jsonSchemaResolve", () => {
 
       await session.get(uri);
       expect((await session.getDocument(embeddedUri, { referencedFrom: uri })).uri).to.equal(embeddedUri);
-      await expect(session.get(embeddedUri)).rejects.toThrow("Unable to load resource");
+      await expect(session.get(embeddedUri)).rejects.toThrow(RetrievalNotAllowedError);
     });
 
     test("a schema with problems can't be retrieved", async () => {

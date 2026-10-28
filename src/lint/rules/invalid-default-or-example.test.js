@@ -11,7 +11,7 @@ import { linter } from "../test-linter.js";
 import invalidDefaultOrExample from "./invalid-default-or-example.js";
 
 const draft2020 = "https://json-schema.org/draft/2020-12/schema";
-const uri = "file:///schemas/a.schema.json";
+const uri = "https://example.com/schemas/a.schema.json";
 
 const invalidDefault = "The 'default' value isn't valid against the schema it's in";
 const invalidExample = "This example isn't valid against the schema it's in";

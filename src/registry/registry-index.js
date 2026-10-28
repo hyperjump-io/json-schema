@@ -365,8 +365,8 @@ const identifyRoot = (jsonSchema, entry, registryDialect, root) => {
     }
 
     uri = toAbsoluteIri(uri);
-    if (parseIri(uri).scheme === "file" && (retrievalUri === undefined || parseIri(retrievalUri).scheme !== "file")) {
-      throw Error(`A schema that doesn't have a 'file:' retrieval URI can't be identified by one: ${uri}`);
+    if (parseIri(uri).scheme === "file") {
+      throw Error(`A schema in a registry can't be identified by a 'file:' URI: ${uri}`);
     }
 
     return { uri, definedDialect, fromRegistry };
