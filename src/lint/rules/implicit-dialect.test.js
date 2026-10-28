@@ -3,6 +3,7 @@ import { unified } from "unified";
 import { VFile } from "vfile";
 import { rejsonParse } from "@hyperjump/browser/json";
 import { JsonSchema } from "../../json-schema.js";
+import { SchemaRegistry } from "../../registry/schema-registry.js";
 import { jsonSchemaResolve } from "../../schema/resolve.js";
 import { addDraft07 } from "../../dialects/draft-07/index.js";
 import { addDraft202012 } from "../../dialects/draft-2020-12/index.js";
@@ -71,6 +72,34 @@ describe("implicit-dialect", () => {
       .use(implicitDialect)
       .process(file);
     expect(file.messages.map((message) => message.ruleId)).to.eql(["missing-dialect"]);
+  });
+
+  // The CLI never reports it, so these are how it's used
+  describe("linting from code", () => {
+    test("a registry entry's dialectUri", async () => {
+      const jsonSchema = new JsonSchema();
+      addDraft202012(jsonSchema);
+      jsonSchema.addRegistry(new SchemaRegistry([{
+        schema: `{ "type": "string" }`,
+        retrievalUri: "https://example.com/a",
+        dialectUri: draft202012
+      }]));
+      const results = await jsonSchema.lint("https://example.com/a", { plugins: [implicitDialect] });
+
+      expect(results.map((result) => result.ruleId)).to.eql(["implicit-dialect"]);
+    });
+
+    test("the default dialect", async () => {
+      const jsonSchema = new JsonSchema({ defaultDialectUri: draft202012 });
+      addDraft202012(jsonSchema);
+      jsonSchema.addRegistry(new SchemaRegistry([{
+        schema: `{ "type": "string" }`,
+        retrievalUri: "https://example.com/a"
+      }]));
+      const results = await jsonSchema.lint("https://example.com/a", { plugins: [implicitDialect] });
+
+      expect(results.map((result) => result.ruleId)).to.eql(["implicit-dialect"]);
+    });
   });
 });
 
