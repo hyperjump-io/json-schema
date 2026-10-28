@@ -1,51 +1,48 @@
+import { typeIsOf } from "../analysis.js";
+import { boundsOf, namesOf } from "../bounds.js";
 import { lintRule } from "../lint-rule.js";
-import { findKeyword, typeNames, visitSchemas } from "../utilities.js";
+import { lowerForLint } from "../lower.js";
 
 /**
  * @import { JsonSchemaDocumentNode } from "../../schema/schema-ast.d.ts"
  */
 
-const keyword = "https://json-schema.org/keyword";
-
 /**
- * Numeric limits, how each rounds to the integer it's the same as, and the
- * inclusive limit an exclusive one is the same as. Draft-04's exclusive
- * limits are booleans, so its `maximum` and `minimum` aren't here: whether
- * they're exclusive changes the integer.
+ * Limits are what `range` says (`boundsOf`), and `type` is a keyword that
+ * lowers to `typeIs`, so no keyword is named. A limit rounds to the integer
+ * it's the same as, toward what it allows, and an exclusive one is then the
+ * same as an inclusive one, including draft-04's.
  *
- * @type [string, (value: number) => number, string?][]
+ * @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void>
  */
-const limits = [
-  [`${keyword}/maximum`, Math.floor],
-  [`${keyword}/minimum`, Math.ceil],
-  [`${keyword}/exclusiveMaximum`, Math.floor, "maximum"],
-  [`${keyword}/exclusiveMinimum`, Math.ceil, "minimum"]
-];
+const fractionalLimitForInteger = lintRule({ origin: "json-schema-lint:fractional-limit-for-integer", url: "https://hyperjump.io/json-schema/linting/rules/fractional-limit-for-integer/" }, async (tree, file) => {
+  const session = file.data.jsonSchemaSession;
+  if (session === undefined) {
+    return;
+  }
 
-/** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
-const fractionalLimitForInteger = lintRule({ origin: "json-schema-lint:fractional-limit-for-integer", url: "https://hyperjump.io/json-schema/linting/rules/fractional-limit-for-integer/" }, (tree, file) => {
-  visitSchemas(tree, (schemaNode) => {
+  for (const keywords of (await lowerForLint(session, tree)).values()) {
     // Only numbers that are integers are valid
-    const type = typeNames(schemaNode);
-    if (!type?.names.has("integer") || type.names.has("number")) {
-      return;
+    const type = typeIsOf(keywords);
+    if (!type?.types.has("integer") || type.types.has("number")) {
+      continue;
     }
 
-    for (const [uri, round, inclusive] of limits) {
-      const keywordNode = findKeyword(schemaNode, uri);
-      const valueNode = keywordNode?.children[1];
-      if (keywordNode === undefined || valueNode?.jsonType !== "number" || Number.isInteger(valueNode.value)) {
-        continue;
+    const typeName = type.keywordNode.children[0].value;
+    const { number } = boundsOf(keywords);
+    for (const [bounds, round] of /** @type const */ ([[number.max, Math.floor], [number.min, Math.ceil]])) {
+      for (const bound of bounds) {
+        if (Number.isInteger(bound.value)) {
+          continue;
+        }
+
+        // An exclusive limit that isn't an integer allows the integer it rounds to
+        const integer = round(bound.value);
+        const sameAs = bound.exclusive ? `${integer} inclusive` : `${integer}`;
+        file.message(`${namesOf(bound.limitNodes)} isn't an integer, but '${typeName}' only allows integers, so it's the same as ${sameAs}`, { place: bound.keywordNode.position });
       }
-
-      const name = keywordNode.children[0].value;
-      const typeName = type.keywordNode.children[0].value;
-      // An exclusive limit that isn't an integer allows the integer it rounds to
-      const integer = round(valueNode.value);
-      const sameAs = inclusive === undefined ? `${integer}` : `'${inclusive}': ${integer}`;
-      file.message(`'${name}' isn't an integer, but '${typeName}' only allows integers, so it's the same as ${sameAs}`, { place: keywordNode.position });
     }
-  });
+  }
 });
 
 export default fractionalLimitForInteger;

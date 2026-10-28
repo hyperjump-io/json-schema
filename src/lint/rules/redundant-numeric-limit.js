@@ -1,49 +1,45 @@
+import { boundsOf, tightestMax, tightestMin } from "../bounds.js";
 import { lintRule } from "../lint-rule.js";
-import { findKeyword, visitSchemas } from "../utilities.js";
+import { lowerForLint } from "../lower.js";
 
 /**
- * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode } from "../../schema/schema-ast.d.ts"
+ * @import { JsonSchemaDocumentNode } from "../../schema/schema-ast.d.ts"
  */
 
-const keyword = "https://json-schema.org/keyword";
+/**
+ * Limits are what `range` says (`boundsOf`), from whichever keywords
+ * lowered to it, so no keyword is named. A limit that isn't the tightest
+ * on its side has no effect, if it's all its keyword lowers to.
+ *
+ * @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void>
+ */
+const redundantNumericLimit = lintRule({ origin: "json-schema-lint:redundant-numeric-limit", url: "https://hyperjump.io/json-schema/linting/rules/redundant-numeric-limit/" }, async (tree, file) => {
+  const session = file.data.jsonSchemaSession;
+  if (session === undefined) {
+    return;
+  }
 
-/** Each inclusive limit, its exclusive limit, and the word for the tighter one */
-const pairs = /** @type const */ ([
-  [`${keyword}/maximum`, `${keyword}/exclusiveMaximum`, "lower"],
-  [`${keyword}/minimum`, `${keyword}/exclusiveMinimum`, "higher"]
-]);
+  for (const keywords of (await lowerForLint(session, tree)).values()) {
+    const { number } = boundsOf(keywords);
+    for (const [bounds, tightest, tighter] of /** @type const */ ([[number.max, tightestMax, "lower"], [number.min, tightestMin, "higher"]])) {
+      const limit = tightest(bounds);
+      for (const bound of bounds) {
+        if (limit === undefined || bound === limit || !bound.alone || bound.limitNodes.some((node) => limit.limitNodes.includes(node))) {
+          continue;
+        }
 
-/** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
-const redundantNumericLimit = lintRule({ origin: "json-schema-lint:redundant-numeric-limit", url: "https://hyperjump.io/json-schema/linting/rules/redundant-numeric-limit/" }, (tree, file) => {
-  visitSchemas(tree, (schemaNode) => {
-    for (const [inclusiveUri, exclusiveUri, tighter] of pairs) {
-      const inclusiveNode = findKeyword(schemaNode, inclusiveUri);
-      const exclusiveNode = findKeyword(schemaNode, exclusiveUri);
-      const inclusive = numberOf(inclusiveNode);
-      const exclusive = numberOf(exclusiveNode);
-      if (inclusiveNode === undefined || exclusiveNode === undefined || inclusive === undefined || exclusive === undefined) {
-        continue;
-      }
-
-      const inclusiveName = `'${inclusiveNode.children[0].value}'`;
-      const exclusiveName = `'${exclusiveNode.children[0].value}'`;
-      // Whether the exclusive limit allows less than the inclusive one does
-      const exclusiveIsTighter = tighter === "lower" ? exclusive <= inclusive : exclusive >= inclusive;
-      if (exclusive === inclusive) {
-        file.message(`${inclusiveName} has no effect, because ${exclusiveName} excludes the same value`, { place: inclusiveNode.position });
-      } else if (exclusiveIsTighter) {
-        file.message(`${inclusiveName} has no effect, because ${exclusiveName} is ${tighter}`, { place: inclusiveNode.position });
-      } else {
-        file.message(`${exclusiveName} has no effect, because ${inclusiveName} is ${tighter}`, { place: exclusiveNode.position });
+        let reason;
+        if (bound.value !== limit.value) {
+          reason = `${limit.label} is ${tighter}`;
+        } else if (limit.exclusive && !bound.exclusive) {
+          reason = `${limit.label} excludes the same value`;
+        } else {
+          reason = `${limit.label} is the same`;
+        }
+        file.message(`${bound.label} has no effect, because ${reason}`, { place: bound.keywordNode.position });
       }
     }
-  });
+  }
 });
 
 export default redundantNumericLimit;
-
-/** @type (keywordNode: JsonSchemaKeywordNode | undefined) => number | undefined */
-const numberOf = (keywordNode) => {
-  const valueNode = keywordNode?.children[1];
-  return valueNode?.jsonType === "number" ? valueNode.value : undefined;
-};

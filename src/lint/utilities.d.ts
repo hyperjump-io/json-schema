@@ -72,21 +72,6 @@ export const findKeyword: (schemaNode: JsonSchemaNode, keywordUri: string) => Js
 export const siblingKeyword: (schemaNode: JsonSchemaNode, keywordUri: string) => JsonSchemaNode | undefined;
 
 /**
- * A schema's `type` keyword, in any dialect, and the types it allows. It's
- * undefined if the schema doesn't have `type`, or its value isn't a string
- * or a non-empty array of strings.
- */
-export const typeNames: (schemaNode: JsonSchemaNode) => { keywordNode: JsonSchemaKeywordNode; names: Set<string> } | undefined;
-
-/**
- * Whether `type` allows a value, as the `type` keyword decides it, given the
- * types from {@link typeNames}. A number with no fractional part, including
- * one written like `1.0`, is an `integer`. It's undefined for a value that
- * couldn't be parsed.
- */
-export const typeAllows: (names: Set<string>, valueNode: JsonSchemaTolerantNode) => boolean | undefined;
-
-/**
  * Where a property name is in a keyword's value: its entry, if the value is
  * an object, or the item that's the name, if it's an array, like in
  * `required`. It's undefined if it isn't there.

@@ -1,8 +1,10 @@
+import { typeIsOf } from "../analysis.js";
+import { boundsOf, second, tightestMax, tightestMin } from "../bounds.js";
 import { lintRule } from "../lint-rule.js";
-import { findKeyword, typeNames, visitSchemas } from "../utilities.js";
+import { lowerForLint } from "../lower.js";
 
 /**
- * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode } from "../../schema/schema-ast.d.ts"
+ * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode } from "../../schema/schema-ast.d.ts"
  * @import { Dialect } from "../../dialect.d.ts"
  */
 
@@ -10,52 +12,42 @@ const keyword = "https://json-schema.org/keyword";
 const constUri = `${keyword}/const`;
 const enumUris = [`${keyword}/enum`, `${keyword}/draft-04/enum`];
 
-/** Inclusive limits, and draft-04's, which a sibling boolean makes exclusive */
-const limitPairs = [
-  [`${keyword}/minimum`, `${keyword}/maximum`],
-  [`${keyword}/draft-04/minimum`, `${keyword}/draft-04/maximum`, `${keyword}/draft-04/exclusiveMinimum`, `${keyword}/draft-04/exclusiveMaximum`]
-];
-
-/** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
+/**
+ * Limits are what `range` says (`boundsOf`), and `type` is a keyword that
+ * lowers to `typeIs`, so no keyword is named, except the one it suggests
+ * instead, in the dialect's own name.
+ *
+ * @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void>
+ */
 const singleValueRange = lintRule({ origin: "json-schema-lint:single-value-range", url: "https://hyperjump.io/json-schema/linting/rules/single-value-range/" }, async (tree, file) => {
   const session = file.data.jsonSchemaSession;
   if (session === undefined) {
     return;
   }
 
-  /** @type [JsonSchemaKeywordNode, JsonSchemaKeywordNode, number, string][] */
+  /** @type [string, string, JsonSchemaKeywordNode, number, string][] */
   const found = [];
-  visitSchemas(tree, (schemaNode) => {
-    if (schemaNode.type !== "json-schema") {
-      return;
-    }
-
+  for (const [schemaNode, keywords] of await lowerForLint(session, tree)) {
     // Values of other types are valid, which `const` wouldn't allow
-    const type = typeNames(schemaNode);
-    if (type === undefined || [...type.names].some((name) => name !== "number" && name !== "integer")) {
-      return;
+    const type = typeIsOf(keywords);
+    if (schemaNode.type !== "json-schema" || type === undefined || [...type.types].some((name) => name !== "number" && name !== "integer")) {
+      continue;
     }
 
-    for (const [minimumUri, maximumUri, exclusiveMinimumUri, exclusiveMaximumUri] of limitPairs) {
-      const minimumNode = findKeyword(schemaNode, minimumUri);
-      const maximumNode = findKeyword(schemaNode, maximumUri);
-      const minimumValueNode = minimumNode?.children[1];
-      const maximumValueNode = maximumNode?.children[1];
-      // With an exclusive limit, nothing is valid, which contradictory-limits reports
-      if (minimumNode === undefined || maximumNode === undefined
-        || minimumValueNode?.jsonType !== "number" || maximumValueNode?.jsonType !== "number"
-        || minimumValueNode.value !== maximumValueNode.value
-        || isTrue(schemaNode, exclusiveMinimumUri) || isTrue(schemaNode, exclusiveMaximumUri)) {
-        continue;
-      }
-
-      found.push([minimumNode, maximumNode, minimumValueNode.value, schemaNode.dialectUri]);
+    // With an exclusive limit, nothing is valid, which contradictory-limits reports
+    const { number } = boundsOf(keywords);
+    const min = tightestMin(number.min);
+    const max = tightestMax(number.max);
+    if (min === undefined || max === undefined || min.exclusive || max.exclusive || min.value !== max.value || min.keywordNode === max.keywordNode) {
+      continue;
     }
-  });
+
+    found.push([min.label, max.label, second(min.keywordNode, max.keywordNode), min.value, schemaNode.dialectUri]);
+  }
 
   /** @type Map<string, Promise<Dialect>> */
   const dialects = new Map();
-  for (const [minimumNode, maximumNode, value, dialectUri] of found) {
+  for (const [minimumLabel, maximumLabel, place, value, dialectUri] of found) {
     let dialect = dialects.get(dialectUri);
     if (dialect === undefined) {
       dialect = session.getDialect(dialectUri);
@@ -70,23 +62,11 @@ const singleValueRange = lintRule({ origin: "json-schema-lint:single-value-range
       continue;
     }
 
-    const minimumName = minimumNode.children[0].value;
-    const maximumName = maximumNode.children[0].value;
-    // The message goes on whichever comes second
-    const place = /** @type number */ (minimumNode.position?.start.offset) < /** @type number */ (maximumNode.position?.start.offset)
-      ? maximumNode.position
-      : minimumNode.position;
-    file.message(`'${minimumName}' and '${maximumName}' are both ${value}, so it's the only valid value. Use ${replacement} instead.`, { place });
+    file.message(`${minimumLabel} and ${maximumLabel} are both ${value}, so it's the only valid value. Use ${replacement} instead.`, { place: place.position });
   }
 });
 
 export default singleValueRange;
-
-/** @type (schemaNode: JsonSchemaNode, uri: string | undefined) => boolean */
-const isTrue = (schemaNode, uri) => {
-  const valueNode = uri === undefined ? undefined : findKeyword(schemaNode, uri)?.children[1];
-  return valueNode?.jsonType === "boolean" && valueNode.value;
-};
 
 /** @type (dialect: Dialect, uris: string[]) => string | undefined */
 const nameOf = ({ keywords }, uris) => Object.keys(keywords).find((name) => uris.includes(keywords[name]));

@@ -34,8 +34,8 @@ describe("fractional-limit-for-integer", () => {
 
   test("fractional exclusive limits", async () => {
     expect(await reasons(`{ "$schema": "${draft2020}", "type": "integer", "exclusiveMaximum": 7.8, "exclusiveMinimum": 0.5 }`)).to.eql([
-      "'exclusiveMaximum' isn't an integer, but 'type' only allows integers, so it's the same as 'maximum': 7",
-      "'exclusiveMinimum' isn't an integer, but 'type' only allows integers, so it's the same as 'minimum': 1"
+      "'exclusiveMaximum' isn't an integer, but 'type' only allows integers, so it's the same as 7 inclusive",
+      "'exclusiveMinimum' isn't an integer, but 'type' only allows integers, so it's the same as 1 inclusive"
     ]);
   });
 
@@ -65,8 +65,13 @@ describe("fractional-limit-for-integer", () => {
     expect(await reasons(`{ "$schema": "http://json-schema.org/draft-06/schema#", "type": "integer", "maximum": 7.8 }`)).to.have.length(1);
   });
 
-  test("draft-04's limits aren't checked", async () => {
-    expect(await reasons(`{ "$schema": "http://json-schema.org/draft-04/schema#", "type": "integer", "maximum": 7.8 }`)).to.eql([]);
+  test("draft-04", async () => {
+    expect(await reasons(`{ "$schema": "http://json-schema.org/draft-04/schema#", "type": "integer", "maximum": 7.8 }`)).to.eql([
+      "'maximum' isn't an integer, but 'type' only allows integers, so it's the same as 7"
+    ]);
+    expect(await reasons(`{ "$schema": "http://json-schema.org/draft-04/schema#", "type": "integer", "maximum": 7.8, "exclusiveMaximum": true }`)).to.eql([
+      "'maximum' isn't an integer, but 'type' only allows integers, so it's the same as 7 inclusive"
+    ]);
   });
 });
 
