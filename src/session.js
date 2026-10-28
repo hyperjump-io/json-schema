@@ -179,7 +179,7 @@ export class JsonSchemaSession extends Session {
     }
 
     if (this.#isWaitingOn(uri, referencedFrom)) {
-      throw Error(`The meta-schemas for the '${referencedFrom}' and '${uri}' dialects depend on each other`);
+      throw Error(`The meta-schemas for the '${relativeFileUri(referencedFrom)}' and '${relativeFileUri(uri)}' dialects depend on each other`);
     }
     waitingOn.add(uri);
   }
@@ -208,16 +208,16 @@ export class JsonSchemaSession extends Session {
       try {
         metaSchema = await this.getDocument(uri);
       } catch (error) {
-        throw Error(`Unable to retrieve the meta-schema for the '${uri}' dialect`, { cause: error });
+        throw Error(`Unable to retrieve the meta-schema for the '${relativeFileUri(uri)}' dialect`, { cause: error });
       }
 
       if (metaSchema.type !== "json-schema-document") {
-        throw Error(`The meta-schema for the '${uri}' dialect isn't a schema. It needs to be retrieved as 'application/schema+json' or from a '.schema.json' file.`);
+        throw Error(`The meta-schema for the '${relativeFileUri(uri)}' dialect isn't a schema. It needs to be retrieved as 'application/schema+json' or from a '.schema.json' file.`);
       }
 
       const { definedDialect } = /** @type JsonSchemaDocumentNode */ (/** @type unknown */ (metaSchema));
       if (!definedDialect) {
-        throw Error(`The meta-schema for the '${uri}' dialect doesn't define a dialect (with '$vocabulary', for example). Use the 'addDialect' function to add support for this dialect.`);
+        throw Error(`The meta-schema for the '${relativeFileUri(uri)}' dialect doesn't define a dialect (with '$vocabulary', for example). Use the 'addDialect' function to add support for this dialect.`);
       }
 
       // The dialect is identified by whichever URI found the meta-schema
@@ -289,7 +289,7 @@ export class JsonSchemaSession extends Session {
 
     const dialect = this.#dialect(toAbsoluteIri(dialectUri));
     if (!dialect) {
-      throw Error(`The '${dialectUri}' dialect isn't defined in this session`);
+      throw Error(`The '${relativeFileUri(dialectUri)}' dialect isn't defined in this session`);
     }
 
     return Object.hasOwn(dialect.keywords, keyword)

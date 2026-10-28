@@ -1,4 +1,5 @@
 import { VFileMessage } from "vfile-message";
+import { relativeFileUri } from "@hyperjump/browser";
 import { fromJs, fromJson } from "@hyperjump/browser/json";
 import { parseIri, toAbsoluteIri } from "@hyperjump/uri";
 import { toVFileMessage } from "../output/validation-error.js";
@@ -366,7 +367,7 @@ const identifyRoot = (jsonSchema, entry, registryDialect, root) => {
 
     uri = toAbsoluteIri(uri);
     if (parseIri(uri).scheme === "file") {
-      throw Error(`A schema in a registry can't be identified by a 'file:' URI: ${uri}`);
+      throw Error(`A schema in a registry can't be identified by a 'file:' URI: ${relativeFileUri(uri)}`);
     }
 
     return { uri, definedDialect, fromRegistry };

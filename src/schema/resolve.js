@@ -210,7 +210,7 @@ class Resolver {
     if (isDocumentRoot || effects.baseUri !== undefined) {
       resource.dialectUri = dialect.uri;
       if (resource.uri in this.#embedded) {
-        this.#message(`There is already a schema resource identified as '${resource.uri}'`, node, "duplicate-id");
+        this.#message(`There is already a schema resource identified as '${relativeFileUri(resource.uri)}'`, node, "duplicate-id");
       } else {
         this.#embedded[resource.uri] = resource;
       }

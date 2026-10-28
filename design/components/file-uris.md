@@ -23,6 +23,9 @@ and the library re-exports the function for output formats and plugins.
 - Only a document's location can be a `file:` URI. `$schema` in a schema is
   absolute, so a dialect URI is what the author wrote, and messages about
   dialects say it as it is.
+- Messages that say a URI that's usually not a file, like a dialect's or a
+  handle, still go through `relativeFileUri`, so one that is a file can't
+  say where it is. `relativeFileUri` returns anything else as it is.
 - Messages are made from the URIs, not rewritten afterwards. A pointer's
   message is from browser's `pointerGet`, which is given the relative
   document URI, and a missing file is browser's `FileNotFoundError`.
