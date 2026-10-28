@@ -137,15 +137,20 @@ export class JsonSchemaSession extends Session<JsonSchemaNode> {
    * Meta-schemas aren't bundled.
    *
    * The main schema always has `$schema`. It's identified by its URI, unless
-   * it's a file. Then the bundle can be moved with the files it came from,
-   * so it isn't given an identifier, and embedded files get identifiers
-   * relative to it.
+   * it's a file. A schema can't be identified by a file, so a main schema
+   * from a file is identified by the `id` option, and each embedded file is
+   * identified where it is relative to the main schema, resolved against
+   * `id`, so references between them find the same schemas. A file with an
+   * `$id` of its own, and anything that isn't a file, keeps its URI. A main
+   * schema from a file that embeds nothing doesn't need `id`, and isn't
+   * given an identifier without it.
    *
    * @throws Error if a schema can't be embedded: a reference finds a schema
    * that's identified by a different URI, the root of a referenced schema is
    * a `$ref` that replaces the whole object (draft-04 through draft-07),
-   * which would ignore its identifier, or the main schema's dialect has
-   * nowhere to put it.
+   * which would ignore its identifier, a file would be embedded without
+   * `id`, or the main schema's dialect has nowhere to put it. Also if `id`
+   * isn't an absolute URI, is a file, or has a fragment.
    * @throws SchemaError if a schema has problems.
    * @throws RetrievalError from `@hyperjump/browser` if a schema can't be
    * found.
