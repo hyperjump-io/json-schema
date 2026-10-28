@@ -32,6 +32,8 @@ and the library re-exports the function for output formats and plugins.
   schema is a finding, not a failure.
 - A stack trace still says where the library is installed, so the CLI
   prints causes without them (see hjlint's Input and output).
+- A bundle of files is identified by its `id` option, so it doesn't have
+  `file:` identifiers (see [Bundling](bundling.md)).
 - A serialized kernel's `file:` URIs are relative to its entry's document
   instead, so it can be restored wherever the files are moved (see
   [Compile and evaluate](kernel/README.md)).
@@ -54,7 +56,3 @@ Rejected:
   logs `outputErrorMessage`.
 - Rewriting every `file:` URI in message text. Which part of a message is a
   URI isn't known, and the places that make messages know.
-
-Open:
-
-- `bundle`'s errors, and what a bundle says for a schema in a file.

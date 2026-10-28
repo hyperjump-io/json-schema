@@ -1,3 +1,4 @@
+import { relativeFileUri } from "@hyperjump/browser";
 import { jsonValue } from "@hyperjump/browser/json";
 import { parseIri, resolveIri, toAbsoluteIri, toRelativeIri } from "@hyperjump/uri";
 import { visitReferences } from "../lint/utilities.js";
@@ -25,11 +26,12 @@ export const bundle = async (session, uri, options = {}) => {
 
   const main = await schemaDocument(session, toAbsoluteIri(uri));
   const documents = await referencedDocuments(session, main, externalSchemas);
+  const identifier = identifierFor(main, documents, options.id);
 
   const mainRoot = /** @type JsonSchemaNode */ (main.children[0]);
   if (mainRoot.type === "reference") {
     if (documents.length > 0) {
-      throw Error(`Schemas can't be embedded in '${main.uri}', because its root is a '$ref' that replaces the whole object, so its definitions would be ignored`);
+      throw Error(`Schemas can't be embedded in '${relativeFileUri(main.uri)}', because its root is a '$ref' that replaces the whole object, so its definitions would be ignored`);
     }
 
     // Nothing else in it means anything, so it isn't given a dialect or an
@@ -40,17 +42,15 @@ export const bundle = async (session, uri, options = {}) => {
     return mainRoot.value;
   }
 
-  // A file's bundle can be moved with the files it came from
-  const isFile = parseIri(main.uri).scheme === "file";
   const mainDialect = await session.getDialect(/** @type string */ (main.dialectUri));
-  const bundled = identify(/** @type Record<string, Json> */ (jsonValue(mainRoot)), mainDialect, isFile ? undefined : main.uri, true);
+  const bundled = identify(/** @type Record<string, Json> */ (jsonValue(mainRoot)), mainDialect, identifier(main.uri), true);
   if (documents.length === 0) {
     return bundled;
   }
 
   const definitionsName = keywordName(mainDialect, definitionsUri);
   if (definitionsName === undefined) {
-    throw Error(`Schemas can't be embedded in '${main.uri}', because its dialect, '${mainDialect.uri}', doesn't have definitions`);
+    throw Error(`Schemas can't be embedded in '${relativeFileUri(main.uri)}', because its dialect, '${mainDialect.uri}', doesn't have definitions`);
   }
 
   const existing = /** @type Record<string, Json> | undefined */ (bundled[definitionsName]);
@@ -58,19 +58,57 @@ export const bundle = async (session, uri, options = {}) => {
   /** @type Record<string, Json> */
   const definitions = { ...existing };
   for (const document of documents) {
-    const id = isFile ? toRelativeIri(main.uri, document.uri) : document.uri;
+    const id = /** @type string */ (identifier(document.uri));
     const includeDialect = alwaysIncludeDialect || document.dialectUri !== main.dialectUri;
     const embedded = await embeddable(session, document, id, includeDialect);
 
     const name = definitionNamingStrategy === "uuid" ? crypto.randomUUID() : id;
     if (Object.hasOwn(definitions, name)) {
-      throw Error(`'${document.uri}' can't be embedded in '${main.uri}', because its definitions already have '${name}'`);
+      throw Error(`'${relativeFileUri(document.uri)}' can't be embedded in '${relativeFileUri(main.uri)}', because its definitions already have '${name}'`);
     }
     definitions[name] = embedded;
   }
   bundled[definitionsName] = definitions;
 
   return bundled;
+};
+
+/**
+ * What each document in a bundle is identified as. A schema can't be
+ * identified by a `file:` URI, so a file without an identifier of its own
+ * is identified by the `id` option: the main schema is that, and every
+ * other file is where it is relative to the main schema, resolved against
+ * it, so references between them find the same schemas. A main schema from
+ * a file that embeds nothing isn't given one. Anything that isn't a file
+ * keeps its URI.
+ *
+ * @type (main: JsonSchemaDocumentNode, documents: JsonSchemaDocumentNode[], id: string | undefined) => (uri: string) => string | undefined
+ */
+const identifierFor = (main, documents, id) => {
+  const isFile = (/** @type string */ uri) => parseIri(uri).scheme === "file";
+  if (!isFile(main.uri)) {
+    return (uri) => uri;
+  }
+
+  if (id === undefined) {
+    const file = documents.find((document) => isFile(document.uri));
+    if (file !== undefined) {
+      throw Error(`'${relativeFileUri(file.uri)}' can't be embedded without an identifier, because a schema can't be identified by a file. Give the bundle an identifier with the 'id' option, and the files are identified relative to it.`);
+    }
+    return (uri) => isFile(uri) ? undefined : uri;
+  }
+
+  let base;
+  try {
+    base = toAbsoluteIri(id);
+  } catch {
+    throw Error(`The bundle's 'id' has to be an absolute URI: '${id}'`);
+  }
+  if (isFile(base) || parseIri(id).fragment !== undefined) {
+    throw Error(`The bundle's 'id' has to be an absolute URI that isn't a file, without a fragment: '${id}'`);
+  }
+
+  return (uri) => isFile(uri) ? resolveIri(toRelativeIri(main.uri, uri) || base, base) : uri;
 };
 
 /**
@@ -82,7 +120,7 @@ export const bundle = async (session, uri, options = {}) => {
 const schemaDocument = async (session, uri) => {
   const document = await session.getDocument(uri);
   if (document.type !== "json-schema-document") {
-    throw Error(`'${uri}' isn't a schema`);
+    throw Error(`'${relativeFileUri(uri)}' isn't a schema`);
   }
 
   return /** @type JsonSchemaDocumentNode */ (/** @type unknown */ (document));
@@ -108,7 +146,7 @@ const referencedDocuments = async (session, main, externalSchemas) => {
       const document = await schemaDocument(session, uri);
       if (document.uri !== uri) {
         // Embedded, it's only found by its identifier
-        throw Error(`'${uri}' is identified as '${document.uri}', so a reference to '${uri}' wouldn't find it in the bundle`);
+        throw Error(`'${relativeFileUri(uri)}' is identified as '${document.uri}', so a reference to '${relativeFileUri(uri)}' wouldn't find it in the bundle`);
       }
 
       for (const resourceUri in document.embedded) {
@@ -145,7 +183,7 @@ const references = (document) => {
 const embeddable = async (session, document, id, includeDialect) => {
   const root = /** @type JsonSchemaNode */ (document.children[0]);
   if (root.type === "reference") {
-    throw Error(`'${document.uri}' can't be embedded, because its root is a '$ref' that replaces the whole object, so an identifier would be ignored`);
+    throw Error(`'${relativeFileUri(document.uri)}' can't be embedded, because its root is a '$ref' that replaces the whole object, so an identifier would be ignored`);
   }
 
   const dialect = await session.getDialect(/** @type string */ (document.dialectUri));
@@ -156,7 +194,7 @@ const embeddable = async (session, document, id, includeDialect) => {
     // Only an object can have an identifier
     const notName = keywordName(dialect, notUri);
     if (!root.value && notName === undefined) {
-      throw Error(`'${document.uri}' can't be embedded, because it's 'false' and its dialect, '${dialect.uri}', doesn't have 'not'`);
+      throw Error(`'${relativeFileUri(document.uri)}' can't be embedded, because it's 'false' and its dialect, '${dialect.uri}', doesn't have 'not'`);
     }
     schema = root.value ? {} : { [/** @type string */ (notName)]: {} };
   } else {

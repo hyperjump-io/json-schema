@@ -38,9 +38,27 @@ being considered (see [Open questions](../specs/keyword/README.md#open-questions
   another dialect is identified by its own dialect's `$id`. One that already
   has `$schema` keeps it. draft-04–07 dialects are written with an empty
   fragment, as their meta-schemas are.
-- A main schema from a file isn't given an identifier, and embedded files
-  are identified relative to it, so the bundle can be moved with its files.
-  Anything else is identified by its absolute URI.
+- A schema can't be identified by a `file:` URI, so a bundle of files is
+  identified by the `id` option: the main schema gets it, and each embedded
+  file is identified where it is relative to the main schema, resolved
+  against `id`. References aren't changed, and they resolve against the
+  new base the way they did against the folder, so they find the same
+  schemas. Embedded files stay resources of their own, so `$dynamicRef`,
+  `#` references, and annotations are the same. A file with an absolute
+  `$id`, and anything that isn't a file, keeps its URI. Embedding a file
+  without an identifier and without `id` is an error that names the
+  option, and a file that embeds nothing doesn't need it. `id` has to be
+  absolute, not a file, and without a fragment. It's named for what it
+  sets, the main schema's identifier, not "base URI", which is what
+  references are resolved against. Before 2026-10-27, a file's bundle had
+  no identifier and embedded files were identified relative to it, which
+  the rule about `file:` identifiers made invalid. Rejected: rewriting
+  references into the bundle (`#/$defs/address/...`), which makes an
+  embedded file not a resource and changes how its own references and
+  dynamic anchors resolve, and making up an identifier (`tag:`), which two
+  bundles would both claim.
+- Its errors say document URIs relative to the working directory (see
+  [Local paths in messages and output](file-uris.md)).
 - `false` is embedded as `{ "not": {} }`, because only an object can have
   an identifier. `true` is `{}`.
 - In draft-04–07, a `$ref` at the root replaces the whole object. An
@@ -53,6 +71,12 @@ being considered (see [Open questions](../specs/keyword/README.md#open-questions
 - Tests run v1's bundle test cases in every dialect, with both naming
   strategies: the bundle is compiled on its own and must give the same
   DETAILED errors and annotations as the schemas it was made from.
+
+## Known limitations
+
+- A reference written as an absolute `file:` URL isn't changed, so in a
+  bundle with `id` it still names the file, and doesn't find the embedded
+  schema. It should be an error.
 
 ## Open questions
 

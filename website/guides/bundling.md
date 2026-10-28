@@ -8,7 +8,9 @@ give one to a tool that can't follow references between documents.
 import { pathToFileURL } from "node:url";
 
 const uri = pathToFileURL("./schemas/person.schema.json").href;
-const bundled = await jsonSchema.bundle(uri);
+const bundled = await jsonSchema.bundle(uri, {
+  id: "https://example.com/schemas/person.schema.json"
+});
 ```
 
 Each referenced document is embedded in the main schema's `$defs`
@@ -45,15 +47,16 @@ the bundle is:
 ```json
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/person.schema.json",
   "type": "object",
   "properties": {
     "name": { "type": "string" },
     "address": { "$ref": "./address.schema.json" }
   },
   "$defs": {
-    "address.schema.json": {
+    "https://example.com/schemas/address.schema.json": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "address.schema.json",
+      "$id": "https://example.com/schemas/address.schema.json",
       "type": "object",
       "properties": {
         "street": { "type": "string" }
@@ -63,9 +66,12 @@ the bundle is:
 }
 ```
 
-A bundle of files doesn't get an `$id`, and the files in it get identifiers
-relative to it, so it can be moved like the files it came from. A bundle of
-a schema with a URL keeps its URL.
+A schema can't be identified by a file, so a bundle of files needs an
+identifier, which `id` gives the main schema. Each file in it is identified
+where it is relative to the main schema, resolved against `id`, so
+`./address.schema.json` finds it. Use the URL the schemas will be published
+at. A file with an `$id` of its own keeps it, and so does a schema with a
+URL. A file that references nothing doesn't need `id`.
 
 What's bundled:
 
@@ -87,6 +93,7 @@ await jsonSchema.bundle(uri, {
 
 | Option | What it does |
 | --- | --- |
+| `id` | The main schema's identifier, for a bundle of files. Each file is identified relative to it. It has to be an absolute URL that isn't a file. |
 | `externalSchemas` | Schemas that will be available where the bundle is used. They aren't embedded, and neither is anything only they reference. |
 | `alwaysIncludeDialect` | Give every embedded schema `$schema`, not only the ones in a different dialect |
 | `definitionNamingStrategy` | Name embedded schemas by their identifier (`"uri"`, the default) or by a random UUID (`"uuid"`) |
@@ -102,6 +109,8 @@ means:
 - In draft-04 to draft-07, the root of a referenced schema is a `$ref`,
   which replaces the whole object, so its `$id` would be ignored.
 - The main schema's dialect has no `$defs` or `definitions` to put it in.
+- A file without an `$id` would be embedded, and there's no `id` to
+  identify it by.
 
 It throws a `SchemaError` for a schema with problems, and a `RetrievalError`
 for one that can't be found, like `compile`.

@@ -45,6 +45,19 @@ export type BundleOptions = {
    * embedded, and neither is anything only they reference.
    */
   externalSchemas?: string[];
+
+  /**
+   * The main schema's identifier, for a main schema from a file, like
+   * `https://example.com/schemas/person.schema.json`. A schema can't be
+   * identified by a file, so each embedded file is identified relative to
+   * it, where the file is relative to the main schema
+   * (`https://example.com/schemas/common/address.schema.json`), and
+   * references between them find the same schemas. It's needed to embed a
+   * file that doesn't have an `$id` of its own. A schema that isn't a file,
+   * or has an `$id`, keeps it. It has to be an absolute URI that isn't a
+   * file, without a fragment.
+   */
+  id?: string;
 };
 
 export type DefinitionNamingStrategy = "uri" | "uuid";

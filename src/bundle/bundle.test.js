@@ -279,26 +279,57 @@ describe("bundle", () => {
     /** @type (name: string) => string */
     const fileUri = (name) => pathToFileURL(join(import.meta.dirname, "file-schemas", name)).href;
 
-    test("a file's bundle isn't identified, and embedded files are relative to it", async () => {
-      const bundled = await fileJsonSchema.bundle(fileUri("main.schema.json"));
+    const id = "https://example.com/schemas/main.schema.json";
+
+    // A schema can't be identified by a file, so the bundle needs an
+    // identifier, and its files are identified relative to it
+    test("a file's bundle is identified by 'id', and embedded files relative to it", async () => {
+      const bundled = await fileJsonSchema.bundle(fileUri("main.schema.json"), { id });
 
       expect(bundled).to.eql({
         $schema: draft202012DialectUri,
+        $id: id,
         type: "object",
         properties: {
           foo: { $ref: "string.schema.json" }
         },
         $defs: {
-          "string.schema.json": { $id: "string.schema.json", $schema: draft202012DialectUri, type: "string" }
+          "https://example.com/schemas/string.schema.json": {
+            $id: "https://example.com/schemas/string.schema.json",
+            $schema: draft202012DialectUri,
+            type: "string"
+          }
         }
       });
     });
 
-    test("schemas that aren't files are absolute in a file's bundle", async () => {
-      const registry = registryOf({ [`${testDomain}/number`]: { type: "number" } }, draft202012DialectUri);
-      const bundled = /** @type Record<string, Json> */ (await fileJsonSchema.bundle(fileUri("mixed-schemes.schema.json"), { registries: [registry] }));
+    test("a file's bundle validates like its files", async () => {
+      const bundled = await fileJsonSchema.bundle(fileUri("main.schema.json"), { id });
+      const validator = await fileJsonSchema.compile(id, { registries: [new SchemaRegistry().with(bundled)] });
 
-      expect(Object.keys(/** @type object */ (bundled.$defs))).to.eql(["string.schema.json", `${testDomain}/number`]);
+      expect(validator.validate({ foo: "a" })).to.equal(true);
+      expect(validator.validate({ foo: 1 })).to.equal(false);
+    });
+
+    test("embedding a file without 'id' is an error", async () => {
+      await expect(fileJsonSchema.bundle(fileUri("main.schema.json"))).rejects.toThrow("Give the bundle an identifier with the 'id' option");
+    });
+
+    test("a file that embeds nothing doesn't need 'id'", async () => {
+      expect(await fileJsonSchema.bundle(fileUri("string.schema.json"))).to.eql({ $schema: draft202012DialectUri, type: "string" });
+    });
+
+    test("'id' can't be a file, relative, or have a fragment", async () => {
+      await expect(fileJsonSchema.bundle(fileUri("main.schema.json"), { id: "file:///schemas/main.schema.json" })).rejects.toThrow("isn't a file");
+      await expect(fileJsonSchema.bundle(fileUri("main.schema.json"), { id: "main.schema.json" })).rejects.toThrow("absolute URI");
+      await expect(fileJsonSchema.bundle(fileUri("main.schema.json"), { id: `${id}#foo` })).rejects.toThrow("without a fragment");
+    });
+
+    test("schemas that aren't files keep their identifiers in a file's bundle", async () => {
+      const registry = registryOf({ [`${testDomain}/number`]: { type: "number" } }, draft202012DialectUri);
+      const bundled = /** @type Record<string, Json> */ (await fileJsonSchema.bundle(fileUri("mixed-schemes.schema.json"), { registries: [registry], id }));
+
+      expect(Object.keys(/** @type object */ (bundled.$defs))).to.eql(["https://example.com/schemas/string.schema.json", `${testDomain}/number`]);
     });
   });
 });
