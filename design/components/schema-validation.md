@@ -41,10 +41,28 @@ an internal meta-schema.
   file needs an ancestor with an absolute identifier that isn't a file.
   Before 2026-10-27, only a schema that wasn't retrieved from a file was
   refused. v1 had that rule for registered schemas. The message quotes the
-  `$id` as it's written.
+  `$id` as it's written, and so do the messages about references and
+  `$schema`.
+- A reference can't be written as a `file:` URI, in every dialect. It names
+  a file on one machine, so it doesn't find the same schema anywhere else,
+  and in a bundle it would still name the file instead of the schema
+  embedded from it. A file references another with a relative reference,
+  which resolves against the file. A reference written that way is
+  reported and has no URI. In draft-04–07, a `$ref` like that doesn't
+  replace the schema. An embedded resource with an identifier that isn't a
+  file can't reference the file it's in, so the file needs an identifier
+  too.
+- `$schema` can't be a `file:` URI either, for the same reason: the dialect
+  wouldn't be the same on another machine. A meta-schema in a file is found
+  by its `$id`, which can't be a file, from a registry, like hjlint's
+  workspace registry. The schema has no dialect then, like one whose
+  dialect can't be found. Before 2026-10-27, a meta-schema could be found
+  by its path. `JsonOrSchemaMediaTypePlugin` reads a `.json` file whose
+  `$schema` is a file as JSON without retrieving it, because that's an
+  instance naming its schema, like `"$schema": "./schema.json"`.
 - The resolver's own checks (schemas that aren't objects or booleans,
   misplaced `$schema`, duplicate ids and anchors, invalid identifiers,
-  `file:` identifiers) are schema validation too.
+  `file:` identifiers, references, and dialects) are schema validation too.
   Every problem is a
   `VFileMessage` with `source: "json-schema"`, a `ruleId`, and `fatal: true`,
   because a schema with a problem can't be used. It's an error that isn't

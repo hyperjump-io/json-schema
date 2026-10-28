@@ -153,7 +153,12 @@ class Resolver {
     // `$schema` is the only keyword that doesn't depend on the dialect
     const $schemaNode = node.jsonType === "object" ? propertyValue(node, "$schema") : undefined;
     if ($schemaNode !== undefined && !isErrorNode($schemaNode)) {
-      if ($schemaNode.jsonType === "string") {
+      if ($schemaNode.jsonType === "string" && isFileUri($schemaNode.value)) {
+        // A dialect in a file is only found on this machine. Its meta-schema
+        // can't be identified by a file either, so it has another URI.
+        this.#message(`The '${$schemaNode.value}' dialect is a 'file:' URI, which only finds the file on this machine. Use the URI its meta-schema's '$id' identifies it with.`, $schemaNode, "file-uri-not-allowed");
+        dialect = undefined;
+      } else if ($schemaNode.jsonType === "string") {
         dialect = isDocumentRoot && this.#isSelfDescribing($schemaNode.value)
           ? this.#selfDescribingDialect($schemaNode.value, $schemaNode)
           : await this.#getDialect($schemaNode.value, $schemaNode);
@@ -355,6 +360,11 @@ class Resolver {
           effects.dynamicAnchors.push([name, valueNode]);
         },
         setReference: (href) => {
+          if (isFileUri(href)) {
+            this.#fileReference(href, valueNode);
+            return;
+          }
+
           try {
             effects.reference = resolveIri(href, resource.uri);
           } catch (_error) {
@@ -405,7 +415,11 @@ class Resolver {
     } else if (shape === "reference") {
       this.#data(node, resource, pointer);
       const referenceNode = /** @type TreeNode & { type: "json"; jsonType: "string"; value: string; href?: string } */ (node);
-      referenceNode.href = resolveIri(referenceNode.value, resource.uri);
+      if (isFileUri(referenceNode.value)) {
+        this.#fileReference(referenceNode.value, node);
+      } else {
+        referenceNode.href = resolveIri(referenceNode.value, resource.uri);
+      }
     } else if ("array" in shape && !isErrorNode(node) && node.jsonType === "array") {
       node.location = location(resource, pointer);
       let index = 0;
@@ -419,6 +433,18 @@ class Resolver {
         await this.#shape(valueNode, shape.map, keywordUri, resource, JsonPointer.append(nameNode.value, pointer), dialect);
       }
     }
+  }
+
+  /**
+   * A reference written as a `file:` URI names a file on one machine, so it
+   * doesn't find the same schema anywhere else, and in a bundle it still
+   * names the file instead of the schema embedded from it. A file references
+   * another file with a relative reference.
+   *
+   * @type (href: string, node: TreeNode) => void
+   */
+  #fileReference(href, node) {
+    this.#message(`The reference to '${href}' is a 'file:' URI, which only finds the file on this machine. Use a reference relative to the schema.`, node, "file-uri-not-allowed");
   }
 
   /** @type (node: TreeNode, shape: Shape, keywordUri: string, resource: JsonSchemaDocumentNode, pointer: string) => void */
@@ -604,3 +630,6 @@ const propertyValue = (node, name) => {
 
 /** @type (node: TreeNode, name: string) => boolean */
 const hasProperty = (node, name) => propertyValue(node, name) !== undefined;
+
+/** @type (uriReference: string) => boolean */
+const isFileUri = (uriReference) => /^file:/i.test(uriReference);

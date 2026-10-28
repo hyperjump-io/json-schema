@@ -12,7 +12,8 @@ import type { JsonSchema } from "../json-schema.d.ts";
  * `@hyperjump/browser`'s `JsonMediaTypePlugin`, which this replaces, parses
  * it. So a schema doesn't have to be a `.schema.json` file or served as
  * `application/schema+json` to be found by its location. A document with a
- * `$schema` that's an instance's schema, rather than a dialect, is JSON.
+ * `$schema` that's an instance's schema, rather than a dialect, is JSON, and
+ * so is one with a `$schema` that's a file, which can't be a dialect.
  *
  * It's added to every {@link JsonSchema}. Only a `JsonSchemaSession` reads a
  * document as a schema.

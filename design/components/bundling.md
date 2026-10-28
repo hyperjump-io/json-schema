@@ -66,17 +66,14 @@ being considered (see [Open questions](../specs/keyword/README.md#open-questions
   with one would lose its definitions, so both are errors. A main schema
   that's only a `$ref` with nothing to embed is returned as it is, because
   its dialect isn't recorded.
+- A reference can't be written as a `file:` URI (see
+  [Schema validation](schema-validation.md)), so every reference between
+  files is relative and finds the embedded schema in a bundle with `id`.
 - Meta-schemas aren't bundled. `$schema` isn't a reference, and
   `getDialect` doesn't look in embedded resources.
 - Tests run v1's bundle test cases in every dialect, with both naming
   strategies: the bundle is compiled on its own and must give the same
   DETAILED errors and annotations as the schemas it was made from.
-
-## Known limitations
-
-- A reference written as an absolute `file:` URL isn't changed, so in a
-  bundle with `id` it still names the file, and doesn't find the embedded
-  schema. It should be an error.
 
 ## Open questions
 

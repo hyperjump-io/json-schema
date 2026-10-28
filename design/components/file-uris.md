@@ -20,9 +20,12 @@ and the library re-exports the function for output formats and plugins.
 - Only `file:` URIs change. Other URIs are public identifiers, and the spec
   says `absoluteKeywordLocation` is absolute, so this is as small a
   deviation from it as it can be.
-- Only a document's location can be a `file:` URI. `$schema` in a schema is
-  absolute, so a dialect URI is what the author wrote, and messages about
-  dialects say it as it is.
+- Only a document's location can be a `file:` URI. An identifier, a
+  reference, or `$schema` written as one is an error (see
+  [Schema validation](schema-validation.md)). Its message quotes it as the
+  author wrote it, like any URI a message quotes from a schema, because
+  it's in the schema already. Before 2026-10-28, it was relative to the
+  working directory.
 - Messages that say a URI that's usually not a file, like a dialect's or a
   handle, still go through `relativeFileUri`, so one that is a file can't
   say where it is. `relativeFileUri` returns anything else as it is.

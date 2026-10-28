@@ -114,7 +114,10 @@ const validator = await jsonSchema.compile("https://example.com/person", {
 
 Compile a schema in a file by its `file:` URL. References in it are
 resolved relative to the file, so a `$ref` of `./address.schema.json` finds
-the file next to it.
+the file next to it. A reference, an `$id`, or a `$schema` can't be a
+`file:` URL, because it would only find the file on your machine. A custom
+meta-schema in a file needs an `$id`, and is found by it from a
+[registry](#registries).
 
 ```typescript
 import { pathToFileURL } from "node:url";

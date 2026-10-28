@@ -6,7 +6,7 @@ import { pathToFileURL } from "node:url";
 import { describe, test, beforeEach, beforeAll, afterAll, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
-import { RetrievalNotAllowedError } from "@hyperjump/browser";
+import { HttpError, RetrievalNotAllowedError } from "@hyperjump/browser";
 import { pointerGet, rejsonParse } from "@hyperjump/browser/json";
 import { JsonSchema, SchemaError } from "../json-schema.js";
 import { jsonSchemaResolve } from "./resolve.js";
@@ -34,8 +34,10 @@ describe("jsonSchemaResolve", () => {
   let jsonSchema;
 
   beforeEach(() => {
-    jsonSchema = new JsonSchema({ allowRetrieval: [pathToFileURL(join(tmpdir(), "/")).href] });
+    jsonSchema = new JsonSchema({ allowRetrieval: [pathToFileURL(join(tmpdir(), "/")).href, "test:/"] });
     addTestDialects(jsonSchema);
+    jsonSchema.addUriSchemePlugin({ schemes: ["test"], retrieve: respond });
+    served.clear();
   });
 
   describe("annotations", () => {
@@ -174,6 +176,28 @@ describe("jsonSchemaResolve", () => {
       ]);
       expect(at("/$ref", root).href).to.equal(undefined);
       expect(at("/allOf/0/$ref", root).href).to.equal(undefined);
+    });
+
+    test("a reference written as a file: URI is reported and has no URI", async () => {
+      const { root, file } = await resolve(jsonSchema, `{
+        "$schema": "${dialectUri}",
+        "$ref": "FILE:///folder/a.schema.json"
+      }`, { uri: "file:///folder/schema.json" });
+
+      expect(file.messages.map(({ reason, ruleId }) => [reason, ruleId])).to.eql([
+        ["The reference to 'FILE:///folder/a.schema.json' is a 'file:' URI, which only finds the file on this machine. Use a reference relative to the schema.", "file-uri-not-allowed"]
+      ]);
+      expect(at("/$ref", root).href).to.equal(undefined);
+    });
+
+    test("a relative reference in a file resolves to a file", async () => {
+      const { root, file } = await resolve(jsonSchema, `{
+        "$schema": "${dialectUri}",
+        "$ref": "a.schema.json"
+      }`, { uri: "file:///folder/schema.json" });
+
+      expect(file.messages).to.eql([]);
+      expect(at("/$ref", root).href).to.equal("file:///folder/a.schema.json");
     });
 
     test("a schema a keyword doesn't apply is resolved like any schema", async () => {
@@ -540,9 +564,18 @@ describe("jsonSchemaResolve", () => {
     });
 
     test("a dialect that can't be retrieved", async () => {
-      const { root, file } = await resolve(jsonSchema, `{ "$schema": "file:///does/not/exist" }`);
+      const { root, file } = await resolve(jsonSchema, `{ "$schema": "test:/does-not-exist" }`);
 
       expect(ruleIds(file)).to.eql(["unknown-dialect"]);
+      expect(root.type).to.equal("json");
+    });
+
+    test("a dialect that's a file", async () => {
+      const { root, file } = await resolve(jsonSchema, `{ "$schema": "file:///folder/meta.schema.json" }`);
+
+      expect(file.messages.map(({ reason, ruleId }) => [reason, ruleId])).to.eql([
+        ["The 'file:///folder/meta.schema.json' dialect is a 'file:' URI, which only finds the file on this machine. Use the URI its meta-schema's '$id' identifies it with.", "file-uri-not-allowed"]
+      ]);
       expect(root.type).to.equal("json");
     });
 
@@ -554,19 +587,9 @@ describe("jsonSchemaResolve", () => {
     });
 
     describe("from $vocabulary", () => {
-      /** @type string */
-      let directory;
-
-      /** @type (name: string, schema: unknown) => Promise<string> */
-      const schemaFile = async (name, schema) => {
-        const path = join(directory, name);
-        await writeFile(path, JSON.stringify(schema));
-        return pathToFileURL(path).toString();
-      };
-
-      /** @type (name: string, vocabularies: Record<string, boolean>) => Promise<string> */
-      const metaSchema = async (name, vocabularies) => {
-        return schemaFile(`${name}.schema.json`, { $schema: dialectUri, $vocabulary: vocabularies });
+      /** @type (name: string, vocabularies: Record<string, boolean>) => string */
+      const metaSchema = (name, vocabularies) => {
+        return serve(name, { $schema: dialectUri, $vocabulary: vocabularies });
       };
 
       /** @type (error: unknown) => string */
@@ -577,16 +600,8 @@ describe("jsonSchemaResolve", () => {
         return error instanceof Error ? `${error.message} ${causes(error.cause)}` : "";
       };
 
-      beforeAll(async () => {
-        directory = await mkdtemp(join(tmpdir(), "json-schema-"));
-      });
-
-      afterAll(async () => {
-        await rm(directory, { recursive: true });
-      });
-
       test("the dialect is built from the vocabularies", async () => {
-        const uri = await metaSchema("meta", {
+        const uri = metaSchema("meta", {
           "https://example.com/vocab/core": true,
           "https://example.com/vocab/optional": false
         });
@@ -598,7 +613,7 @@ describe("jsonSchemaResolve", () => {
       });
 
       test("a required vocabulary that isn't supported", async () => {
-        const uri = await metaSchema("required", { "https://example.com/vocab/required": true });
+        const uri = metaSchema("required", { "https://example.com/vocab/required": true });
         const { file } = await resolve(jsonSchema, `{ "$schema": "${uri}" }`);
 
         expect(ruleIds(file)).to.eql(["unknown-dialect"]);
@@ -606,7 +621,7 @@ describe("jsonSchemaResolve", () => {
       });
 
       test("a meta-schema that isn't a schema isn't used", async () => {
-        const uri = await schemaFile("meta.json", { $vocabulary: { "https://example.com/vocab/core": true } });
+        const uri = serve("meta", { $vocabulary: { "https://example.com/vocab/core": true } }, "application/json");
         const { root, file } = await resolve(jsonSchema, `{ "$schema": "${uri}" }`);
 
         expect(ruleIds(file)).to.eql(["unknown-dialect"]);
@@ -686,9 +701,7 @@ describe("jsonSchemaResolve", () => {
       });
 
       test("a self-describing meta-schema's dialect has to be added", { timeout: 2000 }, async () => {
-        const path = join(directory, "self.schema.json");
-        const uri = pathToFileURL(path).toString();
-        await writeFile(path, JSON.stringify({ $schema: uri, $vocabulary: { "https://example.com/vocab/core": true } }));
+        const uri = serve("self", { $schema: "test:/self", $vocabulary: { "https://example.com/vocab/core": true } });
         const { file } = await resolve(jsonSchema, `{ "$schema": "${uri}" }`);
 
         expect(ruleIds(file)).to.eql(["unknown-dialect"]);
@@ -696,10 +709,8 @@ describe("jsonSchemaResolve", () => {
       });
 
       test("meta-schemas that depend on each other", { timeout: 2000 }, async () => {
-        const aUri = pathToFileURL(join(directory, "a.schema.json")).toString();
-        const bUri = pathToFileURL(join(directory, "b.schema.json")).toString();
-        await schemaFile("a.schema.json", { $schema: bUri, $vocabulary: { "https://example.com/vocab/core": true } });
-        await schemaFile("b.schema.json", { $schema: aUri, $vocabulary: { "https://example.com/vocab/core": true } });
+        const aUri = serve("a", { $schema: "test:/b", $vocabulary: { "https://example.com/vocab/core": true } });
+        serve("b", { $schema: aUri, $vocabulary: { "https://example.com/vocab/core": true } });
         const { file } = await resolve(jsonSchema, `{ "$schema": "${aUri}" }`);
 
         expect(ruleIds(file)).to.eql(["unknown-dialect"]);
@@ -708,7 +719,7 @@ describe("jsonSchemaResolve", () => {
       });
 
       test("a meta-schema without $vocabulary", async () => {
-        const uri = await schemaFile("none.schema.json", { $schema: dialectUri });
+        const uri = serve("none", { $schema: dialectUri });
         const { file } = await resolve(jsonSchema, `{ "$schema": "${uri}" }`);
 
         expect(ruleIds(file)).to.eql(["unknown-dialect"]);
@@ -747,6 +758,18 @@ describe("jsonSchemaResolve", () => {
       expect(keywordNode(foo, "type").keywordUri).to.equal(undefined);
       expect(at("/properties/foo/type", root)).to.include({ type: "json", location: `${baseUri}#/properties/foo/type` });
       expect(Object.keys(document.embedded)).to.eql([baseUri]);
+    });
+
+    test("a $ref written as a file: URI is reported and doesn't replace the schema", async () => {
+      const { root, file } = await resolve(jsonSchema, `{
+        "$schema": "${legacyDialectUri}",
+        "definitions": { "a": { "$ref": "file:///folder/a.schema.json" } }
+      }`);
+
+      expect(file.messages.map(({ reason, ruleId }) => [reason, ruleId])).to.eql([
+        ["The reference to 'file:///folder/a.schema.json' is a 'file:' URI, which only finds the file on this machine. Use a reference relative to the schema.", "file-uri-not-allowed"]
+      ]);
+      expect(at("/definitions/a", root).type).to.equal("json-schema");
     });
 
     test("an invalid $id is reported", async () => {
@@ -870,19 +893,19 @@ describe("jsonSchemaResolve", () => {
 
     test("an embedded resource can reference the document that embeds it", async () => {
       const session = jsonSchema.session();
-      const rootUri = pathToFileURL(join(directory, "embedding.schema.json")).toString();
       const uri = await schemaFile("embedding.schema.json", {
         $schema: legacyDialectUri,
+        $id: "https://example.com/embedding",
         properties: { foo: { $ref: "https://example.com/c" } },
         definitions: {
-          c: { $id: "https://example.com/c", properties: { root: { $ref: `${rootUri}#/definitions/d` } } },
+          c: { $id: "https://example.com/c", properties: { root: { $ref: "embedding#/definitions/d" } } },
           d: { type: "string" }
         }
       });
 
       const c = await session.get(`${uri}#/properties/foo`);
       const d = await session.step("root", await session.step("properties", c));
-      expect(d.location).to.equal(`${uri}#/definitions/d`);
+      expect(d.location).to.equal("https://example.com/embedding#/definitions/d");
     });
 
     test("an embedded resource isn't visible outside the document that embeds it", async () => {
@@ -986,6 +1009,29 @@ const addTestDialects = (jsonSchema) => {
     },
     unknownKeywords: "error"
   });
+};
+
+/** What the `test:` scheme serves: a body and its media type for each URI */
+const served = new Map();
+
+/** @type (name: string, json: unknown, contentType?: string) => string */
+const serve = (name, json, contentType = "application/schema+json") => {
+  const uri = `test:/${name}`;
+  served.set(uri, [JSON.stringify(json), contentType]);
+  return uri;
+};
+
+/** @type (uri: string) => Promise<Response> */
+const respond = async (uri) => {
+  const resource = served.get(uri);
+  if (resource === undefined) {
+    throw new HttpError(new Response(null, { status: 404 }));
+  }
+
+  const [body, contentType] = resource;
+  const response = new Response(body, { headers: { "Content-Type": contentType } });
+  Object.defineProperty(response, "url", { value: uri });
+  return response;
 };
 
 /**

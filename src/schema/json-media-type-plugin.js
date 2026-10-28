@@ -36,7 +36,7 @@ export class JsonOrSchemaMediaTypePlugin {
  * The dialect of JSON text that's a schema: its top-level `$schema`, if the
  * session has that dialect or can find a meta-schema that defines it. Text
  * that doesn't mention `$schema` isn't parsed. A meta-schema whose `$schema`
- * is itself describes itself, so it's a schema.
+ * is itself describes itself, so it's a schema. A dialect can't be a file.
  *
  * @type (text: string, url: string, session: unknown) => Promise<string | undefined>
  */
@@ -53,6 +53,12 @@ const schemaDialect = async (text, url, session) => {
     }
     dialectUri = toAbsoluteIri(resolveIri(json.$schema, url));
   } catch {
+    return;
+  }
+
+  // A dialect can't be a file, so a `$schema` that's a file, like
+  // `./schema.json` in an instance, is an instance's schema
+  if (/^file:/i.test(dialectUri)) {
     return;
   }
 

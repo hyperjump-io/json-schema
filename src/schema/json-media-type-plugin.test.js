@@ -56,21 +56,34 @@ describe("JsonOrSchemaMediaTypePlugin", () => {
     expect((await session().getDocument(uri)).type).to.equal("json-document");
   });
 
+  test("a .json file whose $schema is a file is JSON", async () => {
+    const uri = await jsonFile("relative-instance.json", { $schema: "./instance-schema.json", name: "a" });
+    expect((await session().getDocument(uri)).type).to.equal("json-document");
+  });
+
   test("a .json file whose $schema is an instance's schema is JSON", async () => {
     const schemaUri = await jsonFile("instance-schema.json", { $schema: v1DialectUri, type: "object" });
     const uri = await jsonFile("instance.json", { $schema: schemaUri, name: "a" });
     expect((await session().getDocument(uri)).type).to.equal("json-document");
   });
 
-  test("a .json file in a dialect a .json meta-schema defines is a schema", async () => {
-    const metaUri = await jsonFile("meta.json", {
+  test("a .json file in a dialect an application/json meta-schema defines is a schema", async () => {
+    const metaSchema = JSON.stringify({
       $schema: "https://json-schema.org/draft/2020-12/schema",
       $vocabulary: { "https://json-schema.org/draft/2020-12/vocab/core": true }
     });
-    const jsonSchema = new JsonSchema();
+    const jsonSchema = new JsonSchema({ allowRetrieval: ["./", "test:/"] });
     addV1(jsonSchema);
     addDraft202012(jsonSchema);
-    const uri = await jsonFile("custom.json", { $schema: metaUri });
+    jsonSchema.addUriSchemePlugin({
+      schemes: ["test"],
+      retrieve: async (uri) => {
+        const response = new Response(metaSchema, { headers: { "Content-Type": "application/json" } });
+        Object.defineProperty(response, "url", { value: uri });
+        return response;
+      }
+    });
+    const uri = await jsonFile("custom.json", { $schema: "test:/meta" });
 
     expect((await jsonSchema.session().getDocument(uri)).type).to.equal("json-schema-document");
   });
