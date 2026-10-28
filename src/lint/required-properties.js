@@ -159,6 +159,18 @@ export const fewestProperties = (alternatives) => {
 };
 
 /**
+ * The properties every object that passes a schema's other keywords than
+ * one has (see {@link propertyAlternatives}). It's undefined if no object
+ * passes them, which `contradictory-limits` reports.
+ *
+ * @type (schemaNode: JsonSchemaNode, keywords: LoweredKeyword[], schemas: Map<string, LoweredKeyword[]>, keyword: LoweredKeyword) => Set<string> | undefined
+ */
+export const requiredByOthers = (schemaNode, keywords, schemas, keyword) => {
+  const alternatives = propertyAlternatives(schemaNode, keywords.filter((other) => other !== keyword), schemas);
+  return alternatives.length === 0 ? undefined : intersection(alternatives.map(({ names }) => names));
+};
+
+/**
  * Whether a location is at or under another
  *
  * @type (location: string, parent: string) => boolean

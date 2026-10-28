@@ -31,15 +31,15 @@ it doesn't.
 | [`single-value-enum`](single-value-enum.md) | `enum` with only one value, which `const` says more directly (draft-06 and later) |
 | [`content-schema-without-media-type`](content-schema-without-media-type.md) | `contentSchema` without `contentMediaType` |
 | [`invalid-default-or-example`](invalid-default-or-example.md) | A `default` value or a value in `examples` that isn't valid against the schema it's in, or against a schema that applies it, like one with `allOf` |
-| [`dependency-on-required-property`](dependency-on-required-property.md) | A dependency in `dependentRequired`, `dependentSchemas`, or `dependencies` on a property that's in `required`, so it always applies |
-| [`required-dependent-property`](required-dependent-property.md) | A property a dependency in `dependentRequired` or `dependencies` requires that `required` already requires, so requiring it there has no effect |
+| [`dependency-on-required-property`](dependency-on-required-property.md) | A dependency in `dependentRequired`, `dependentSchemas`, or `dependencies` on a property that's already required, so it always applies, or an `if` that only requires required properties |
+| [`required-dependent-property`](required-dependent-property.md) | A property a dependency in `dependentRequired` or `dependencies` requires that's already required, so requiring it there has no effect |
 | [`keyword-for-disallowed-type`](keyword-for-disallowed-type.md) | A keyword or known format for one type of value, like `minimum`, `properties`, or the `date` format, in a schema whose `type` doesn't allow that type |
-| [`min-properties-covered-by-required`](min-properties-covered-by-required.md) | `minProperties` that's no more than the number of properties in `required`, so it has no effect |
+| [`min-properties-covered-by-required`](min-properties-covered-by-required.md) | `minProperties` that's no more than the number of properties already required, so it has no effect |
 | [`type-implied-by-const-or-enum`](type-implied-by-const-or-enum.md) | `type` that allows the `const` value or every value in `enum`, so it has no effect. Turn it off if your tools need `type` |
 | [`const-or-enum-value-for-disallowed-type`](const-or-enum-value-for-disallowed-type.md) | A `const` value or a value in `enum` that `type` doesn't allow, so it's never valid |
 | [`keyword-implied-by-const-or-enum`](keyword-implied-by-const-or-enum.md) | A keyword next to `const` or `enum`, like `minLength` or `allOf`, that allows every value, so it has no effect |
 | [`const-or-enum-value-rejected`](const-or-enum-value-rejected.md) | A `const` value or a value in `enum` that a keyword next to it, like `multipleOf` or `properties`, rejects, so it's never valid |
-| [`required-property-not-allowed`](required-property-not-allowed.md) | A property in `required` that `properties`, `patternProperties`, or `additionalProperties` doesn't allow, so no object is valid |
+| [`required-property-not-allowed`](required-property-not-allowed.md) | A required property that `properties`, `patternProperties`, or `additionalProperties` doesn't allow, so no object is valid |
 | [`required-property-not-defined`](required-property-not-defined.md) | A property in `required` that no schema applying to the same object defines in `properties` or `patternProperties`, including schemas it's combined with by `allOf`, `anyOf`, `$ref`, and so on |
 | [`keyword-without-type`](keyword-without-type.md) | A keyword or known format for one type of value, like `properties`, `minimum`, or the `date` format, where no `type`, `const`, or `enum` says what type the value is, so values of other types are valid |
 | [`property-names-type`](property-names-type.md) | `type` in a `propertyNames` schema, which has no effect if it allows strings, because property names are always strings, and otherwise rejects every property name |

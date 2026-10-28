@@ -1,26 +1,62 @@
+import { operationsOf } from "../analysis.js";
 import { lintRule } from "../lint-rule.js";
-import { requiredNames, visitKeywords } from "../utilities.js";
+import { lowerForLint } from "../lower.js";
+import { fewestProperties, propertyAlternatives } from "../required-properties.js";
 
 /**
- * @import { JsonSchemaDocumentNode } from "../../schema/schema-ast.d.ts"
+ * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode } from "../../schema/schema-ast.d.ts"
  */
 
-const minPropertiesUri = "https://json-schema.org/keyword/minProperties";
+/**
+ * A minimum is `propertyCount`'s `min`, and required properties are what
+ * the schema's other keywords require (`propertyAlternatives`), so no
+ * keyword is named.
+ *
+ * @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void>
+ */
+const minPropertiesCoveredByRequired = lintRule({ origin: "json-schema-lint:min-properties-covered-by-required", url: "https://hyperjump.io/json-schema/linting/rules/min-properties-covered-by-required/" }, async (tree, file) => {
+  const session = file.data.jsonSchemaSession;
+  if (session === undefined) {
+    return;
+  }
 
-/** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
-const minPropertiesCoveredByRequired = lintRule({ origin: "json-schema-lint:min-properties-covered-by-required", url: "https://hyperjump.io/json-schema/linting/rules/min-properties-covered-by-required/" }, (tree, file) => {
-  visitKeywords(tree, minPropertiesUri, (keywordNode, schemaNode) => {
-    const valueNode = keywordNode.children[1];
-    const required = requiredNames(schemaNode);
-    if (valueNode.jsonType !== "number" || required === undefined || valueNode.value > required.names.size) {
-      return;
+  const lowered = await lowerForLint(session, tree);
+  const schemas = new Map([...lowered].map(([schemaNode, keywords]) => [schemaNode.location, keywords]));
+  for (const [schemaNode, keywords] of lowered) {
+    for (const keyword of keywords) {
+      // A maximum from the same keyword has an effect of its own
+      const min = operationsOf(keyword.group.expression)
+        .find((operation) => operation.op === "propertyCount" && operation.min !== undefined && operation.max === undefined);
+      if (min?.op !== "propertyCount" || min.min === undefined) {
+        continue;
+      }
+
+      // If no object is valid, contradictory-limits reports it
+      const alternatives = propertyAlternatives(schemaNode, keywords.filter((other) => other !== keyword), schemas);
+      const fewest = alternatives.length > 0 ? fewestProperties(alternatives) : undefined;
+      if (fewest === undefined || fewest.count < min.min) {
+        continue;
+      }
+
+      const requiring = new Set(alternatives.flatMap(({ keywordNodes }) => [...keywordNodes]));
+      const children = /** @type JsonSchemaKeywordNode[] */ (schemaNode.jsonType === "object" ? schemaNode.children : []);
+      const names = children.filter((keywordNode) => requiring.has(keywordNode)).map((keywordNode) => `'${keywordNode.children[0].value}'`);
+      const requires = names.length === 1 ? "requires" : "require";
+      const properties = fewest.count === 1 ? "property" : "properties";
+      const count = fewest.exact ? `${fewest.count} ${properties}` : `at least ${fewest.count} ${properties}`;
+      const name = keyword.keywordNode.children[0].value;
+      file.message(`'${name}' has no effect, because ${list(names)} already ${requires} ${count}`, { place: keyword.keywordNode.position });
     }
-
-    const name = keywordNode.children[0].value;
-    const requiredName = required.keywordNode.children[0].value;
-    const count = required.names.size === 1 ? "1 property" : `${required.names.size} properties`;
-    file.message(`'${name}' has no effect, because '${requiredName}' already requires ${count}`, { place: keywordNode.position });
-  });
+  }
 });
 
 export default minPropertiesCoveredByRequired;
+
+/**
+ * Names, like "'a', 'b', and 'c'"
+ *
+ * @type (names: string[]) => string
+ */
+const list = (names) => names.length < 3
+  ? names.join(" and ")
+  : `${names.slice(0, -1).join(", ")}, and ${names.at(-1)}`;

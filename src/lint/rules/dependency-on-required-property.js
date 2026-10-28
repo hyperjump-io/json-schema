@@ -1,36 +1,116 @@
+import { dependsOn, operationsOf } from "../analysis.js";
 import { lintRule } from "../lint-rule.js";
-import { requiredNames, visitKeywords } from "../utilities.js";
+import { lowerForLint } from "../lower.js";
+import { requiredByOthers } from "../required-properties.js";
+import { nodeFor } from "../utilities.js";
 
 /**
  * @import { JsonSchemaDocumentNode } from "../../schema/schema-ast.d.ts"
+ * @import { Expression } from "../../kernel/kernel.d.ts"
+ * @import { LoweredKeyword } from "../lower.d.ts"
  */
 
-const dependencyUris = [
-  "https://json-schema.org/keyword/dependentRequired",
-  "https://json-schema.org/keyword/dependentSchemas",
-  "https://json-schema.org/keyword/draft-07/dependencies",
-  "https://json-schema.org/keyword/draft-04/dependencies"
-];
+/**
+ * A dependency is a `cases` whose condition is that the object has a
+ * property (`dependentRequired`, `dependentSchemas`, `dependencies`), and
+ * a condition like `if` is one that only requires properties. Required
+ * properties are what the schema's other keywords require
+ * (`propertyAlternatives`), so no keyword is named.
+ *
+ * @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void>
+ */
+const dependencyOnRequiredProperty = lintRule({ origin: "json-schema-lint:dependency-on-required-property", url: "https://hyperjump.io/json-schema/linting/rules/dependency-on-required-property/" }, async (tree, file) => {
+  const session = file.data.jsonSchemaSession;
+  if (session === undefined) {
+    return;
+  }
 
-/** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
-const dependencyOnRequiredProperty = lintRule({ origin: "json-schema-lint:dependency-on-required-property", url: "https://hyperjump.io/json-schema/linting/rules/dependency-on-required-property/" }, (tree, file) => {
-  for (const dependencyUri of dependencyUris) {
-    visitKeywords(tree, dependencyUri, (keywordNode, schemaNode) => {
-      const valueNode = keywordNode.children[1];
-      if (valueNode.jsonType !== "object") {
-        return;
+  const lowered = await lowerForLint(session, tree);
+  const schemas = new Map([...lowered].map(([schemaNode, keywords]) => [schemaNode.location, keywords]));
+  for (const [schemaNode, keywords] of lowered) {
+    for (const keyword of keywords) {
+      const conditions = operationsOf(keyword.group.expression)
+        .flatMap((operation) => operation.op === "cases" ? operation.cases.map(([condition]) => condition) : []);
+      if (conditions.length === 0) {
+        continue;
       }
 
-      const required = requiredNames(schemaNode)?.names ?? new Set();
+      const required = requiredByOthers(schemaNode, keywords, schemas, keyword);
+      if (required === undefined) {
+        continue;
+      }
 
-      for (const property of valueNode.children) {
-        const name = property.children[0].value;
-        if (required.has(name)) {
-          file.message(`'${name}' is required, so this dependency always applies`, { place: property.position });
+      const { keywordNode } = keyword;
+      for (const condition of conditions) {
+        const dependency = dependsOn(condition);
+        const names = dependency === undefined ? requiredBy(condition, schemas) : [dependency];
+        if (names === undefined || names.length === 0 || !names.every((name) => required.has(name))) {
+          continue;
+        }
+
+        if (dependency !== undefined) {
+          const place = (nodeFor(keywordNode, dependency) ?? keywordNode).position;
+          file.message(`'${dependency}' is required, so this dependency always applies`, { place });
+        } else {
+          const are = names.length === 1 ? "is" : "are";
+          const name = keywordNode.children[0].value;
+          file.message(`${list(names.map((name) => `'${name}'`))} ${are} required, so the '${name}' schema always passes`, { place: keywordNode.position });
         }
       }
-    });
+    }
   }
 });
 
 export default dependencyOnRequiredProperty;
+
+/**
+ * The properties a condition requires, if that's all it asserts, following
+ * the schemas it applies. A condition that does anything else, or applies a
+ * schema that isn't known, is undefined.
+ *
+ * @type (condition: Expression, schemas: Map<string, LoweredKeyword[]>) => string[] | undefined
+ */
+const requiredBy = (condition, schemas) => {
+  /** @type Set<string> */
+  const names = new Set();
+  /** @type Set<string> */
+  const following = new Set();
+
+  /** @type (expression: Expression) => boolean */
+  const visit = (expression) => {
+    switch (expression.op) {
+      case "pass":
+      case "annotate":
+        return true;
+      case "hasProperty":
+        names.add(expression.name);
+        return true;
+      case "all":
+        return expression.of.every(visit);
+      case "apply": {
+        const keywords = schemas.get(expression.schema);
+        if (keywords === undefined || following.has(expression.schema)) {
+          return false;
+        }
+
+        following.add(expression.schema);
+        const result = keywords.every(({ group }) => visit(group.expression));
+        following.delete(expression.schema);
+        return result;
+      }
+      default:
+        return false;
+    }
+  };
+
+  return visit(condition) ? [...names] : undefined;
+};
+
+/**
+ * Names, like "'a', 'b', and 'c'"
+ *
+ * @type (names: string[]) => string
+ */
+const list = (names) => names.length < 3
+  ? names.join(" and ")
+  : `${names.slice(0, -1).join(", ")}, and ${names.at(-1)}`;

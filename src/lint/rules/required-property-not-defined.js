@@ -1,36 +1,51 @@
+import { operationsOf, propertyOperations } from "../analysis.js";
 import { lintRule } from "../lint-rule.js";
+import { appliedSchemas } from "../applied.js";
+import { lowerForLint } from "../lower.js";
 import { isNegated, schemaGroup } from "../schema-group.js";
-import { findKeyword, propertySchemas, visitSchemas } from "../utilities.js";
+import { nodeFor } from "../utilities.js";
 
 /**
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode } from "../../schema/schema-ast.d.ts"
+ * @import { LoweredKeyword } from "../lower.d.ts"
  */
-
-const keyword = "https://json-schema.org/keyword";
-
-/** Keywords that define properties. An `unevaluatedProperties` defines every one. */
-const definingUris = ["properties", "patternProperties", "additionalProperties", "unevaluatedProperties"]
-  .map((name) => `${keyword}/${name}`);
 
 /**
- * @typedef {{ schemaNode: JsonSchemaNode; requiredNode: JsonSchemaKeywordNode }} Required
+ * @typedef {{ schemaNode: JsonSchemaNode; keywordNode: JsonSchemaKeywordNode; name: string }} Required
  */
 
-/** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
+/**
+ * A required property is `hasProperty`, and what defines one is `property`
+ * or `eachProperty` (`propertyOperations`). An `unevaluated` selector
+ * defines every one. So no keyword is named.
+ *
+ * @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void>
+ */
 const requiredPropertyNotDefined = lintRule({ origin: "json-schema-lint:required-property-not-defined", url: "https://hyperjump.io/json-schema/linting/rules/required-property-not-defined/" }, async (tree, file) => {
+  const session = file.data.jsonSchemaSession;
+  if (session === undefined) {
+    return;
+  }
+
+  const lowered = await lowerForLint(session, tree);
+
   /** @type Required[] */
   const requireds = [];
-  visitSchemas(tree, (schemaNode) => {
-    for (const requiredUri of [`${keyword}/required`, `${keyword}/draft-04/required`]) {
-      const requiredNode = findKeyword(schemaNode, requiredUri);
-      if (requiredNode?.children[1].jsonType === "array") {
-        requireds.push({ schemaNode, requiredNode });
+  for (const [schemaNode, keywords] of lowered) {
+    for (const { group, keywordNode } of keywords) {
+      for (const operation of operationsOf(group.expression)) {
+        if (operation.op === "hasProperty") {
+          requireds.push({ schemaNode, keywordNode, name: operation.name });
+        }
       }
     }
-  });
+  }
 
-  for (const { schemaNode, requiredNode } of requireds) {
-    const group = await schemaGroup(file.data.jsonSchemaSession, tree, schemaNode);
+  // A schema in the group can be in another document
+  const applied = await appliedSchemas(session, tree);
+
+  for (const { schemaNode, keywordNode, name } of requireds) {
+    const group = await schemaGroup(session, tree, schemaNode);
 
     // A schema in `not` requires that a property isn't there
     if (group.unknown || isNegated(group, schemaNode)) {
@@ -39,31 +54,33 @@ const requiredPropertyNotDefined = lintRule({ origin: "json-schema-lint:required
 
     // A schema that's a reference (draft-04 through draft-07) ignores what's
     // next to it, so it doesn't define anything
-    const defining = group.schemas.filter((member) => member.type === "json-schema");
+    const defining = await Promise.all(group.schemas
+      .filter((member) => member.type === "json-schema")
+      .map(async (member) => await applied.lowered(member) ?? []));
 
     // A group that defines no properties, and could be applied from another
     // document, is likely meant to be combined with one that does
-    const definesAny = defining.some((member) => definingUris.some((uri) => findKeyword(member, uri) !== undefined));
-    if (group.open && !definesAny) {
+    if (group.open && !defining.some(definesAny)) {
       continue;
     }
 
-    const requiredValue = /** @type JsonSchemaNode & { jsonType: "array" } */ (requiredNode.children[1]);
-    for (const itemNode of requiredValue.children) {
-      if (itemNode.jsonType !== "string") {
-        continue;
-      }
-
-      const name = itemNode.value;
-      const defined = defining.some((member) => {
-        const schemas = propertySchemas(member, name);
-        return schemas === undefined || schemas.length > 0 || findKeyword(member, `${keyword}/unevaluatedProperties`) !== undefined;
-      });
-      if (!defined) {
-        file.message(`'${name}' is required, but no 'properties' or 'patternProperties' defines it, so any value is allowed`, { place: itemNode.position });
-      }
+    const defined = defining.some((keywords) => {
+      const operations = propertyOperations(keywords, name);
+      return operations === undefined || operations.length > 0 || readsUnevaluated(keywords);
+    });
+    if (!defined) {
+      const place = (nodeFor(keywordNode, name) ?? keywordNode).position;
+      file.message(`'${name}' is required, but no 'properties' or 'patternProperties' defines it, so any value is allowed`, { place });
     }
   }
 });
 
 export default requiredPropertyNotDefined;
+
+/** @type (keywords: LoweredKeyword[]) => boolean */
+const definesAny = (keywords) => keywords.some(({ group }) => operationsOf(group.expression)
+  .some((operation) => operation.op === "property" || operation.op === "eachProperty"));
+
+/** @type (keywords: LoweredKeyword[]) => boolean */
+const readsUnevaluated = (keywords) => keywords.some(({ group }) => operationsOf(group.expression)
+  .some((operation) => operation.op === "eachProperty" && "unevaluated" in operation.select));

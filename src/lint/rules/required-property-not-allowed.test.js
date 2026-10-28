@@ -54,6 +54,22 @@ describe("required-property-not-allowed", () => {
     expect(await reasons(`{ "$schema": "${draft2020}", "properties": { "required": false, "additionalProperties": true } }`)).to.eql([]);
   });
 
+  test("a schema that no value passes", async () => {
+    expect(await reasons(`{ "$schema": "${draft2020}", "required": ["a"], "properties": { "a": { "type": "string", "const": 1 } } }`)).to.eql([
+      "'a' is required, but 'properties' doesn't allow it, so no object is valid"
+    ]);
+  });
+
+  test("v1's requireAllExcept", async () => {
+    expect(await reasons(`{
+      "$schema": "https://json-schema.org/v1",
+      "properties": { "a": false, "b": true },
+      "requireAllExcept": ["b"]
+    }`)).to.eql([
+      "'a' is required, but 'properties' doesn't allow it, so no object is valid"
+    ]);
+  });
+
   test("draft-04", async () => {
     expect(await reasons(`{ "$schema": "http://json-schema.org/draft-04/schema#", "additionalProperties": false, "required": ["a"] }`)).to.have.length(1);
   });

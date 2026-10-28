@@ -1,6 +1,6 @@
 import type { JsonType } from "@hyperjump/browser/json";
 import type { JsonSchema } from "../json-schema.d.ts";
-import type { Expression } from "../kernel/kernel.d.ts";
+import type { Expression, Selector, TypeName } from "../kernel/kernel.d.ts";
 import type { JsonSchemaKeywordNode } from "../schema/schema-ast.d.ts";
 import type { LoweredKeyword } from "./lower.d.ts";
 
@@ -33,3 +33,38 @@ export const canPass: (expression: Expression) => Set<JsonType>;
  * `const`, `enum`) and `format` aren't counted.
  */
 export const assertsOnItsOwn: (expression: Expression) => boolean;
+
+/** A keyword group's operations: what's in its top-level `all`, or the expression itself */
+export const operationsOf: (expression: Expression) => Expression[];
+
+/**
+ * The first keyword in a schema whose keywords are `keywords` (from
+ * `lowerForLint`) that lowers to `typeIs`, and its types, so a rule about
+ * `type` works with any keyword that says the same. A `type` that allows
+ * nothing lowers to `fail`, so it isn't found.
+ */
+export const typeIsOf: (keywords: LoweredKeyword[]) => { keywordNode: JsonSchemaKeywordNode; types: Set<TypeName> } | undefined;
+
+/**
+ * Whether an `eachProperty` selector selects a property name. It's
+ * undefined for an `unevaluated` selector, which depends on what's marked,
+ * and for a pattern that isn't valid.
+ */
+export const selects: (select: Selector, name: string) => boolean | undefined;
+
+/**
+ * What the keywords of a schema (from `lowerForLint`) apply to a property
+ * with the given name: `property` for the name, and `eachProperty` with a
+ * selector that selects it, each with its keyword. An `unevaluated`
+ * selector isn't included, because what it selects depends on what's
+ * marked. It's undefined if a pattern isn't valid, because then what
+ * applies is unknown.
+ */
+export const propertyOperations: (keywords: LoweredKeyword[], name: string) => { keyword: LoweredKeyword; of: Expression }[] | undefined;
+
+/**
+ * The property a dependency's condition is that an object has, like the
+ * conditions `dependentRequired` and `dependentSchemas` lower to. It's
+ * undefined for any other condition.
+ */
+export const dependsOn: (condition: Expression) => string | undefined;

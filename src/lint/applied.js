@@ -16,6 +16,7 @@ import { lowerForLint } from "./lower.js";
  *   keywordsOf: (node: JsonSchemaNode) => LoweredKeyword[] | undefined;
  *   find: (uri: string) => Promise<JsonSchemaNode | undefined>;
  *   appliedBy: (keyword: LoweredKeyword) => (handle: string) => Promise<JsonSchemaNode | undefined>;
+ *   lowered: (node: JsonSchemaNode) => Promise<LoweredKeyword[] | undefined>;
  * }} AppliedSchemas
  */
 
@@ -23,7 +24,8 @@ import { lowerForLint } from "./lower.js";
  * What the schemas a keyword applies lower to, for following `apply`. A
  * subschema is applied by its location, and anything else is a reference,
  * which is found with `findSchema`, into another document too, and is
- * `undefined` if it can't be.
+ * `undefined` if it can't be. `lowered` is what a schema lowers to, in
+ * whichever document it's in.
  *
  * @type (session: JsonSchemaSession, tree: JsonSchemaDocumentNode) => Promise<AppliedSchemas>
  */
@@ -57,7 +59,15 @@ export const appliedSchemas = async (session, tree) => {
     return async (handle) => subschemas.get(handle) ?? await find(handle);
   };
 
-  return { keywordsOf: (node) => schemas.get(node), find, appliedBy };
+  /** @type AppliedSchemas["lowered"] */
+  const lowered = async (node) => {
+    if (!schemas.has(node)) {
+      await find(node.location);
+    }
+    return schemas.get(node);
+  };
+
+  return { keywordsOf: (node) => schemas.get(node), find, appliedBy, lowered };
 };
 
 /**

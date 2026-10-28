@@ -57,6 +57,41 @@ describe("dependency-on-required-property", () => {
     expect(await reasons(`{ "$schema": "http://json-schema.org/draft-04/schema#", "required": ["meta"], "dependencies": { "meta": ["data"] } }`)).to.eql([message]);
   });
 
+  test("required in an allOf", async () => {
+    expect(await reasons(`{ "$schema": "${draft2020}", "allOf": [{ "required": ["meta"] }], "dependentRequired": { "meta": ["data"] } }`)).to.eql([message]);
+  });
+
+  test("required through a reference", async () => {
+    expect(await reasons(`{
+      "$schema": "${draft2020}",
+      "$ref": "#/$defs/meta",
+      "dependentRequired": { "meta": ["data"] },
+      "$defs": { "meta": { "required": ["meta"] } }
+    }`)).to.eql([message]);
+  });
+
+  test("required in only one branch of an anyOf", async () => {
+    expect(await reasons(`{ "$schema": "${draft2020}", "anyOf": [{ "required": ["meta"] }, {}], "dependentRequired": { "meta": ["data"] } }`)).to.eql([]);
+  });
+
+  test("an if that only requires required properties", async () => {
+    expect(await reasons(`{ "$schema": "${draft2020}", "required": ["a", "b"], "if": { "required": ["a", "b"] }, "then": { "required": ["c"] } }`)).to.eql([
+      "'a' and 'b' are required, so the 'if' schema always passes"
+    ]);
+  });
+
+  test("an if that requires a property that isn't required", async () => {
+    expect(await reasons(`{ "$schema": "${draft2020}", "required": ["a"], "if": { "required": ["a", "b"] }, "then": { "required": ["c"] } }`)).to.eql([]);
+  });
+
+  test("an if that asserts more than required properties", async () => {
+    expect(await reasons(`{ "$schema": "${draft2020}", "required": ["a"], "if": { "required": ["a"], "minProperties": 2 }, "then": { "required": ["c"] } }`)).to.eql([]);
+  });
+
+  test("an empty if", async () => {
+    expect(await reasons(`{ "$schema": "${draft2020}", "required": ["a"], "if": {}, "then": { "required": ["c"] } }`)).to.eql([]);
+  });
+
   test("dependencies isn't a keyword after draft-07", async () => {
     expect(await reasons(`{ "$schema": "${draft2020}", "required": ["meta"], "dependencies": { "meta": ["data"] } }`)).to.eql([]);
   });

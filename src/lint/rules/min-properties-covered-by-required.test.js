@@ -49,6 +49,43 @@ describe("min-properties-covered-by-required", () => {
     expect(await reasons(`{ "$schema": "${draft2020}", "properties": { "required": { "minProperties": 1 }, "minProperties": true } }`)).to.eql([]);
   });
 
+  test("required in an allOf", async () => {
+    expect(await reasons(`{ "$schema": "${draft2020}", "minProperties": 1, "allOf": [{ "required": ["a"] }] }`)).to.eql([
+      "'minProperties' has no effect, because 'allOf' already requires 1 property"
+    ]);
+  });
+
+  test("required by more than one keyword", async () => {
+    expect(await reasons(`{ "$schema": "${draft2020}", "required": ["a"], "minProperties": 2, "allOf": [{ "required": ["b"] }] }`)).to.eql([
+      "'minProperties' has no effect, because 'required' and 'allOf' already require 2 properties"
+    ]);
+  });
+
+  test("every branch of an anyOf requires enough", async () => {
+    expect(await reasons(`{ "$schema": "${draft2020}", "minProperties": 1, "anyOf": [{ "required": ["a"] }, { "required": ["b"] }] }`)).to.eql([
+      "'minProperties' has no effect, because 'anyOf' already requires at least 1 property"
+    ]);
+  });
+
+  test("a branch of an anyOf that doesn't require enough", async () => {
+    expect(await reasons(`{ "$schema": "${draft2020}", "minProperties": 1, "anyOf": [{ "required": ["a"] }, {}] }`)).to.eql([]);
+  });
+
+  test("a dependency doesn't always require its properties", async () => {
+    expect(await reasons(`{ "$schema": "${draft2020}", "minProperties": 2, "required": ["a"], "dependentRequired": { "b": ["c"] } }`)).to.eql([]);
+  });
+
+  test("v1's requireAllExcept", async () => {
+    expect(await reasons(`{
+      "$schema": "https://json-schema.org/v1",
+      "minProperties": 2,
+      "properties": { "a": true, "b": true, "c": true },
+      "requireAllExcept": ["c"]
+    }`)).to.eql([
+      "'minProperties' has no effect, because 'requireAllExcept' already requires 2 properties"
+    ]);
+  });
+
   test("draft-04", async () => {
     expect(await reasons(`{ "$schema": "http://json-schema.org/draft-04/schema#", "required": ["a"], "minProperties": 1 }`)).to.have.length(1);
   });

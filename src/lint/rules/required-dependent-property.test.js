@@ -7,7 +7,7 @@ const draft04 = "http://json-schema.org/draft-04/schema#";
 const draft07 = "http://json-schema.org/draft-07/schema#";
 const draft202012 = "https://json-schema.org/draft/2020-12/schema";
 
-const noEffect = "'b' is in 'required', so requiring it here has no effect";
+const noEffect = "'b' is already required, so requiring it here has no effect";
 
 describe("required-dependent-property", () => {
   test("a dependent property that's required", async () => {
@@ -47,6 +47,14 @@ describe("required-dependent-property", () => {
       "$schema": "${draft202012}",
       "properties": { "foo": { "required": ["b"], "dependentRequired": { "a": ["b"] } } }
     }`)).to.eql([noEffect]);
+  });
+
+  test("required in an allOf", async () => {
+    expect(await reasons(`{ "$schema": "${draft202012}", "allOf": [{ "required": ["b"] }], "dependentRequired": { "a": ["b"] } }`)).to.eql([noEffect]);
+  });
+
+  test("required by another dependency on the same property", async () => {
+    expect(await reasons(`{ "$schema": "${draft202012}", "dependentRequired": { "a": ["b"] }, "dependentSchemas": { "a": { "required": ["b"] } } }`)).to.eql([]);
   });
 
   test("a property named dependentRequired", async () => {

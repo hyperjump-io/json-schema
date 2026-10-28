@@ -1,4 +1,5 @@
 /**
+ * @import { Node } from "unist"
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode, JsonSchemaTolerantNode } from "../schema/schema-ast.d.ts"
  */
 
@@ -138,36 +139,19 @@ export const findKeyword = (schemaNode, keywordUri) => {
  */
 export const siblingKeyword = (schemaNode, keywordUri) => findKeyword(schemaNode, keywordUri)?.children[1];
 
-const requiredUris = [
-  "https://json-schema.org/keyword/required",
-  "https://json-schema.org/keyword/draft-04/required"
-];
-
 /**
- * A schema's `required` keyword and the distinct property names it
- * requires. Items that aren't strings are a schema problem, so they're
- * left out. It's undefined if the schema doesn't have `required` or its
- * value isn't an array.
+ * Where a property name is in a keyword's value: its entry, if the value is
+ * an object, or the item that's the name, if it's an array, like in
+ * `required`. It's undefined if it isn't there.
  *
- * @type (schemaNode: JsonSchemaNode) => { keywordNode: JsonSchemaKeywordNode; names: Set<string> } | undefined
+ * @type (keywordNode: JsonSchemaKeywordNode, name: string) => Node | undefined
  */
-export const requiredNames = (schemaNode) => {
-  for (const requiredUri of requiredUris) {
-    const keywordNode = findKeyword(schemaNode, requiredUri);
-    const valueNode = keywordNode?.children[1];
-    if (keywordNode === undefined || valueNode?.jsonType !== "array") {
-      continue;
-    }
-
-    /** @type Set<string> */
-    const names = new Set();
-    for (const itemNode of valueNode.children) {
-      if (itemNode.jsonType === "string") {
-        names.add(itemNode.value);
-      }
-    }
-
-    return { keywordNode, names };
+export const nodeFor = (keywordNode, name) => {
+  const valueNode = /** @type JsonSchemaNode */ (keywordNode.children[1]);
+  if (valueNode.jsonType === "object") {
+    return valueNode.children.find((propertyNode) => propertyNode.children[0].value === name);
+  } else if (valueNode.jsonType === "array") {
+    return valueNode.children.find((itemNode) => itemNode.jsonType === "string" && itemNode.value === name);
   }
 };
 
@@ -227,59 +211,6 @@ export const typeAllows = (names, valueNode) => {
   return names.has(type) || (type === "number" && names.has("integer") && Number.isInteger(valueNode.value));
 };
 
-const keyword = "https://json-schema.org/keyword";
-
-/** @type Map<string, RegExp | null> */
-const patterns = new Map();
-
-/**
- * @typedef {{ keywordNode: JsonSchemaKeywordNode; valueNode: JsonSchemaNode }} PropertySchema
- */
-
-/**
- * The schemas in a schema's `properties`, `patternProperties`, and
- * `additionalProperties` that apply to a property with the given name, each
- * with the keyword it's in. `additionalProperties` applies only if the
- * others don't. It's undefined if a pattern isn't valid, because then
- * what applies is unknown.
- *
- * @type (schemaNode: JsonSchemaNode, name: string) => PropertySchema[] | undefined
- */
-export const propertySchemas = (schemaNode, name) => {
-  /** @type PropertySchema[] */
-  const result = [];
-
-  const propertiesNode = findKeyword(schemaNode, `${keyword}/properties`);
-  const propertiesValue = propertiesNode?.children[1];
-  if (propertiesNode && propertiesValue?.jsonType === "object") {
-    for (const property of propertiesValue.children) {
-      if (property.children[0].value === name) {
-        result.push({ keywordNode: propertiesNode, valueNode: /** @type JsonSchemaNode */ (property.children[1]) });
-      }
-    }
-  }
-
-  const patternPropertiesNode = findKeyword(schemaNode, `${keyword}/patternProperties`);
-  const patternPropertiesValue = patternPropertiesNode?.children[1];
-  if (patternPropertiesNode && patternPropertiesValue?.jsonType === "object") {
-    for (const property of patternPropertiesValue.children) {
-      const regExp = compilePattern(property.children[0].value);
-      if (regExp === null) {
-        return;
-      } else if (regExp.test(name)) {
-        result.push({ keywordNode: patternPropertiesNode, valueNode: /** @type JsonSchemaNode */ (property.children[1]) });
-      }
-    }
-  }
-
-  const additionalPropertiesNode = findKeyword(schemaNode, `${keyword}/additionalProperties`);
-  if (result.length === 0 && additionalPropertiesNode) {
-    result.push({ keywordNode: additionalPropertiesNode, valueNode: /** @type JsonSchemaNode */ (additionalPropertiesNode.children[1]) });
-  }
-
-  return result;
-};
-
 /** @type (tree: JsonSchemaDocumentNode, visitor: (node: TreeNode) => void) => void */
 const visitNodes = (tree, visitor) => {
   /** @type (node: TreeNode) => void */
@@ -291,24 +222,4 @@ const visitNodes = (tree, visitor) => {
   };
 
   visit(/** @type TreeNode */ (tree));
-};
-
-/**
- * A `patternProperties` pattern as the keyword compiles it, with the `u`
- * flag. It's null if the pattern isn't valid.
- *
- * @type (pattern: string) => RegExp | null
- */
-const compilePattern = (pattern) => {
-  let regExp = patterns.get(pattern);
-  if (regExp === undefined) {
-    try {
-      regExp = new RegExp(pattern, "u");
-    } catch {
-      regExp = null;
-    }
-    patterns.set(pattern, regExp);
-  }
-
-  return regExp;
 };

@@ -2,7 +2,7 @@ import { subexpressions } from "../kernel/kernel.js";
 
 /**
  * @import { Json, JsonType } from "@hyperjump/browser/json"
- * @import { Expression, Op, TypeName } from "../kernel/kernel.d.ts"
+ * @import { Expression, Op, Selector, TypeName } from "../kernel/kernel.d.ts"
  * @import { JsonSchemaKeywordNode } from "../schema/schema-ast.d.ts"
  * @import { LoweredKeyword } from "./lower.d.ts"
  * @import * as API from "./analysis.d.ts"
@@ -151,6 +151,82 @@ export const assertsOnItsOwn = (expression) => {
   visit(expression);
 
   return asserts && !applies;
+};
+
+/** @type API.operationsOf */
+export const operationsOf = (expression) => expression.op === "all" ? expression.of : [expression];
+
+/** @type API.dependsOn */
+export const dependsOn = (condition) => {
+  const operations = operationsOf(condition)
+    .filter((operation) => operation.op !== "typeIs" || operation.types.length !== 1 || operation.types[0] !== "object");
+  return operations.length === 1 && operations[0].op === "hasProperty" ? operations[0].name : undefined;
+};
+
+/** @type API.typeIsOf */
+export const typeIsOf = (keywords) => {
+  for (const { group, keywordNode } of keywords) {
+    if (group.expression.op === "typeIs") {
+      return { keywordNode, types: new Set(group.expression.types) };
+    }
+  }
+};
+
+/** @type API.selects */
+export const selects = (select, name) => {
+  if ("pattern" in select) {
+    return compilePattern(select.pattern)?.test(name);
+  } else if ("except" in select) {
+    const regExps = select.except.patterns.map(compilePattern);
+    if (regExps.includes(null)) {
+      return;
+    }
+    return !select.except.names.includes(name) && !regExps.some((regExp) => regExp?.test(name));
+  }
+};
+
+/** @type API.propertyOperations */
+export const propertyOperations = (keywords, name) => {
+  /** @type ReturnType<API.propertyOperations> */
+  const result = [];
+  for (const keyword of keywords) {
+    for (const operation of operationsOf(keyword.group.expression)) {
+      if (operation.op === "property" && operation.name === name) {
+        result.push({ keyword, of: operation.of });
+      } else if (operation.op === "eachProperty" && !("unevaluated" in operation.select)) {
+        const selected = selects(operation.select, name);
+        if (selected === undefined) {
+          return;
+        } else if (selected) {
+          result.push({ keyword, of: operation.of });
+        }
+      }
+    }
+  }
+  return result;
+};
+
+/** @type Map<string, RegExp | null> */
+const patterns = new Map();
+
+/**
+ * A pattern as the kernel compiles it, with the `u` flag. It's null if the
+ * pattern isn't valid.
+ *
+ * @type (pattern: string) => RegExp | null
+ */
+const compilePattern = (pattern) => {
+  let regExp = patterns.get(pattern);
+  if (regExp === undefined) {
+    try {
+      regExp = new RegExp(pattern, "u");
+    } catch {
+      regExp = null;
+    }
+    patterns.set(pattern, regExp);
+  }
+
+  return regExp;
 };
 
 /** @type () => Set<JsonType> */

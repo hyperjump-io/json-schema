@@ -1,9 +1,10 @@
+import { operationsOf } from "../analysis.js";
 import { lintRule } from "../lint-rule.js";
 import { lowerForLint } from "../lower.js";
 import { fewestProperties, propertyAlternatives } from "../required-properties.js";
+import { nodeFor } from "../utilities.js";
 
 /**
- * @import { Position } from "unist"
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode } from "../../schema/schema-ast.d.ts"
  * @import { Expression } from "../../kernel/kernel.d.ts"
  * @import { LoweredKeyword } from "../lower.d.ts"
@@ -56,7 +57,7 @@ const impossibleProperty = lintRule({ origin: "json-schema-lint:impossible-prope
       const reason = `An object with '${name}' needs ${count} properties, but ${maxName} allows at most ${max.value}, so no valid object has '${name}'`;
       file.message(reason, { place: max.keywordNode.position });
       for (const keywordNode of new Set(keywordNodes)) {
-        file.message(reason, { place: placeFor(keywordNode, name) });
+        file.message(reason, { place: (nodeFor(keywordNode, name) ?? keywordNode).position });
       }
     }
   }
@@ -65,24 +66,17 @@ const impossibleProperty = lintRule({ origin: "json-schema-lint:impossible-prope
 export default impossibleProperty;
 
 /**
- * A group's operations, from its top-level `all`
- *
- * @type (expression: Expression) => Expression[]
- */
-const operations = (expression) => expression.op === "all" ? expression.of : [expression];
-
-/**
  * The properties a keyword is about without requiring them: ones it applies
  * a schema to (`properties`), ones it makes something depend on
  * (`dependentRequired`, `dependencies`), and ones a switch is by
  *
  * @type (expression: Expression) => string[]
  */
-const namesOf = (expression) => operations(expression).flatMap((operation) => {
+const namesOf = (expression) => operationsOf(expression).flatMap((operation) => {
   if (operation.op === "property") {
     return [operation.name];
   } else if (operation.op === "cases") {
-    return operation.cases.flatMap(([condition]) => operations(condition))
+    return operation.cases.flatMap(([condition]) => operationsOf(condition))
       .flatMap((condition) => condition.op === "hasProperty" ? [condition.name] : []);
   } else if (operation.op === "typeSwitch") {
     return namesOf(operation.cases.object ?? operation.otherwise);
@@ -96,18 +90,6 @@ const namesOf = (expression) => operations(expression).flatMap((operation) => {
 });
 
 /**
- * Where a message about a property goes: its entry in the keyword's value,
- * if it has one, otherwise the keyword
- *
- * @type (keywordNode: JsonSchemaKeywordNode, name: string) => Position | undefined
- */
-const placeFor = (keywordNode, name) => {
-  const valueNode = keywordNode.children[1];
-  const entry = valueNode.jsonType === "object" ? valueNode.children.find((propertyNode) => propertyNode.children[0].value === name) : undefined;
-  return (entry ?? keywordNode).position;
-};
-
-/**
  * The tightest `maxProperties`, from whichever keyword lowered to it
  *
  * @type (keywords: LoweredKeyword[]) => { value: number; keywordNode: JsonSchemaKeywordNode } | undefined
@@ -115,7 +97,7 @@ const placeFor = (keywordNode, name) => {
 const mostProperties = (keywords) => {
   let result;
   for (const { group, keywordNode } of keywords) {
-    for (const operation of operations(group.expression)) {
+    for (const operation of operationsOf(group.expression)) {
       if (operation.op === "propertyCount" && operation.max !== undefined && (result === undefined || operation.max < result.value)) {
         result = { value: operation.max, keywordNode };
       }

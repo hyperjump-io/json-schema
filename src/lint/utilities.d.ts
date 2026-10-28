@@ -1,3 +1,4 @@
+import type { Node } from "unist";
 import type { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode, JsonSchemaTolerantNode } from "../schema/schema-ast.d.ts";
 
 /**
@@ -71,13 +72,6 @@ export const findKeyword: (schemaNode: JsonSchemaNode, keywordUri: string) => Js
 export const siblingKeyword: (schemaNode: JsonSchemaNode, keywordUri: string) => JsonSchemaNode | undefined;
 
 /**
- * A schema's `required` keyword, in any dialect, and the distinct property
- * names it requires. Items that aren't strings are left out. It's undefined
- * if the schema doesn't have `required` or its value isn't an array.
- */
-export const requiredNames: (schemaNode: JsonSchemaNode) => { keywordNode: JsonSchemaKeywordNode; names: Set<string> } | undefined;
-
-/**
  * A schema's `type` keyword, in any dialect, and the types it allows. It's
  * undefined if the schema doesn't have `type`, or its value isn't a string
  * or a non-empty array of strings.
@@ -93,11 +87,8 @@ export const typeNames: (schemaNode: JsonSchemaNode) => { keywordNode: JsonSchem
 export const typeAllows: (names: Set<string>, valueNode: JsonSchemaTolerantNode) => boolean | undefined;
 
 /**
- * The schemas in a schema's `properties`, `patternProperties`, and
- * `additionalProperties` that apply to a property with the given name, each
- * with the keyword it's in. Patterns are compiled as `patternProperties`
- * compiles them. `additionalProperties` applies only if the others don't.
- * It's undefined if a pattern isn't valid, because then what applies is
- * unknown.
+ * Where a property name is in a keyword's value: its entry, if the value is
+ * an object, or the item that's the name, if it's an array, like in
+ * `required`. It's undefined if it isn't there.
  */
-export const propertySchemas: (schemaNode: JsonSchemaNode, name: string) => { keywordNode: JsonSchemaKeywordNode; valueNode: JsonSchemaNode }[] | undefined;
+export const nodeFor: (keywordNode: JsonSchemaKeywordNode, name: string) => Node | undefined;
