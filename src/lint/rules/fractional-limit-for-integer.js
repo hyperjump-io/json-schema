@@ -28,7 +28,8 @@ const fractionalLimitForInteger = lintRule({ origin: "json-schema-lint:fractiona
       continue;
     }
 
-    const typeName = type.keywordNode.children[0].value;
+    const typeName = namesOf(type.keywords.map(({ keywordNode }) => keywordNode));
+    const allow = type.keywords.length === 1 ? "allows" : "allow";
     const { number } = boundsOf(keywords);
     for (const [bounds, round] of /** @type const */ ([[number.max, Math.floor], [number.min, Math.ceil]])) {
       for (const bound of bounds) {
@@ -39,7 +40,7 @@ const fractionalLimitForInteger = lintRule({ origin: "json-schema-lint:fractiona
         // An exclusive limit that isn't an integer allows the integer it rounds to
         const integer = round(bound.value);
         const sameAs = bound.exclusive ? `${integer} inclusive` : `${integer}`;
-        file.message(`${namesOf(bound.limitNodes)} isn't an integer, but '${typeName}' only allows integers, so it's the same as ${sameAs}`, { place: bound.keywordNode.position });
+        file.message(`${namesOf(bound.limitNodes)} isn't an integer, but ${typeName} only ${allow} integers, so it's the same as ${sameAs}`, { place: bound.keywordNode.position });
       }
     }
   }

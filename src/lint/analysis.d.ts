@@ -38,12 +38,19 @@ export const assertsOnItsOwn: (expression: Expression) => boolean;
 export const operationsOf: (expression: Expression) => Expression[];
 
 /**
- * The first keyword in a schema whose keywords are `keywords` (from
- * `lowerForLint`) that lowers to `typeIs`, and its types, so a rule about
- * `type` works with any keyword that says the same. A `type` that allows
- * nothing lowers to `fail`, so it isn't found.
+ * The keywords in a schema whose keywords are `keywords` (from
+ * `lowerForLint`) that lower to `typeIs`, each with its types, and the
+ * types they all allow, so a rule about `type` works with any keyword that
+ * says the same, and with more than one. `number` allows `integer`, so
+ * `number` and `["integer", "string"]` allow `integer`. Keywords that allow
+ * no type together allow an empty set. A `type` that allows nothing lowers
+ * to `fail`, so it isn't found. It's undefined if no keyword lowers to
+ * `typeIs`.
  */
-export const typeIsOf: (keywords: LoweredKeyword[]) => { keywordNode: JsonSchemaKeywordNode; types: Set<TypeName> } | undefined;
+export const typeIsOf: (keywords: LoweredKeyword[]) => {
+  keywords: { keywordNode: JsonSchemaKeywordNode; types: Set<TypeName> }[];
+  types: Set<TypeName>;
+} | undefined;
 
 /**
  * Whether an `eachProperty` selector selects a property name. It's

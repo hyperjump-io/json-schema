@@ -9,7 +9,8 @@ import { lowerForLint } from "../lower.js";
 
 /**
  * A schema for property names is one `eachPropertyName` applies, and `type`
- * is a keyword in it that lowers to `typeIs`, so no keyword is named.
+ * is a keyword in it that lowers to `typeIs`, so no keyword is named. With
+ * more than one, each is reported.
  *
  * @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void>
  */
@@ -42,12 +43,15 @@ const propertyNamesType = lintRule({ origin: "json-schema-lint:property-names-ty
       continue;
     }
 
-    const name = type.keywordNode.children[0].value;
+    // If they all allow strings, each has no effect. If not, the ones that don't are why.
     const propertyNames = keywordNode.children[0].value;
-    if (type.types.has("string")) {
-      file.message(`'${name}' has no effect in '${propertyNames}', because property names are always strings`, { place: type.keywordNode.position });
-    } else {
-      file.message(`'${name}' doesn't allow strings, so no property name is valid, and only objects without properties are`, { place: type.keywordNode.position });
+    for (const { keywordNode: typeNode, types } of type.keywords) {
+      const name = typeNode.children[0].value;
+      if (type.types.has("string")) {
+        file.message(`'${name}' has no effect in '${propertyNames}', because property names are always strings`, { place: typeNode.position });
+      } else if (!types.has("string")) {
+        file.message(`'${name}' doesn't allow strings, so no property name is valid, and only objects without properties are`, { place: typeNode.position });
+      }
     }
   }
 });

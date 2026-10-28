@@ -165,12 +165,31 @@ export const dependsOn = (condition) => {
 
 /** @type API.typeIsOf */
 export const typeIsOf = (keywords) => {
+  /** @type {{ keywordNode: JsonSchemaKeywordNode; types: Set<TypeName> }[]} */
+  const found = [];
   for (const { group, keywordNode } of keywords) {
     if (group.expression.op === "typeIs") {
-      return { keywordNode, types: new Set(group.expression.types) };
+      found.push({ keywordNode, types: new Set(group.expression.types) });
     }
   }
+
+  if (found.length === 0) {
+    return;
+  }
+
+  // A type is allowed if every keyword allows it, and `number` allows `integer`
+  const named = new Set(found.flatMap(({ types }) => [...types]));
+  const types = new Set([...named].filter((type) => found.every((keyword) => allowsType(keyword.types, type))));
+  return { keywords: found, types };
 };
+
+/**
+ * Whether a `typeIs`'s types allow a type: they have it, or it's `integer`
+ * and they have `number`
+ *
+ * @type (types: Set<TypeName>, type: TypeName) => boolean
+ */
+const allowsType = (types, type) => types.has(type) || (type === "integer" && types.has("number"));
 
 /** @type API.selects */
 export const selects = (select, name) => {

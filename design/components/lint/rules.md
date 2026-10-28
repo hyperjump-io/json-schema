@@ -21,7 +21,12 @@
   a limit is `range` or a count, a dependency is a `cases` whose condition
   is `hasProperty`, and a value in `const` or `enum` is `equals` or
   `oneOfValues`. Messages name the keywords an operation came from
-  (`cameFrom`). Before 2026-10-28, about half the rules matched keyword
+  (`cameFrom`). A schema can have more than one keyword that lowers to
+  `typeIs`, like `type` and a custom keyword, and it allows the types they
+  all allow (`typeIsOf`). Messages name the ones that are why, or all of
+  them. A schema whose keywords allow no type together allows nothing, so
+  `keyword-for-disallowed-type` doesn't report its keywords. Until
+  2026-10-28, rules read only the first. Before 2026-10-28, about half the rules matched keyword
   URIs. They missed what a schema in an `allOf` or a `$ref` requires, and
   draft-04's limits, and each needed a table of URIs per dialect.
 - A rule about how a keyword is written still finds it by keyword URI,

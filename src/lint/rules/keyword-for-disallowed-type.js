@@ -1,10 +1,12 @@
 import { keywordAppliesTo, typeIsOf } from "../analysis.js";
+import { namesOf } from "../bounds.js";
 import { formatTypes } from "../format-types.js";
 import { lintRule } from "../lint-rule.js";
 import { lowerForLint } from "../lower.js";
 
 /**
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode } from "../../schema/schema-ast.d.ts"
+ * @import { TypeName } from "../../kernel/kernel.d.ts"
  */
 
 const plurals = {
@@ -25,17 +27,23 @@ const keywordForDisallowedType = lintRule({ origin: "json-schema-lint:keyword-fo
 
   for (const [schemaNode, keywords] of await lowerForLint(session, tree)) {
     const type = typeIsOf(keywords);
-    if (type === undefined || schemaNode.jsonType !== "object") {
+    // If they allow no type together, every keyword would be reported
+    if (type === undefined || type.types.size === 0 || schemaNode.jsonType !== "object") {
       continue;
     }
 
-    /** @type Set<string> */
-    const allowed = new Set(type.types);
-    if (allowed.has("integer")) {
-      allowed.add("number");
-    }
+    const allowed = allowedTypes(type.types);
+    const allowedBy = type.keywords.map(({ keywordNode, types }) => ({ keywordNode, allowed: allowedTypes(types) }));
 
-    const typeName = type.keywordNode.children[0].value;
+    // The keywords that don't allow some of the types, which is why none is allowed
+    /** @type (types: string[]) => string */
+    const disallowedBy = (types) => {
+      const keywordNodes = allowedBy
+        .filter((keyword) => types.some((type) => !keyword.allowed.has(type)))
+        .map(({ keywordNode }) => keywordNode);
+      return `${namesOf(keywordNodes)} ${keywordNodes.length === 1 ? "doesn't" : "don't"} allow`;
+    };
+
     for (const keywordNode of /** @type JsonSchemaKeywordNode[] */ (schemaNode.children)) {
       // A format that could apply to any type isn't reported
       const types = await formatTypes(session, schemaNode, keywordNode);
@@ -44,7 +52,7 @@ const keywordForDisallowedType = lintRule({ origin: "json-schema-lint:keyword-fo
         if (!types.some((type) => allowed.has(type))) {
           const format = formatNode.value;
           const typeList = types.map((type) => plurals[type]).join(" or ");
-          file.message(`The '${format}' format applies only to ${typeList}, which '${typeName}' doesn't allow`, { place: keywordNode.position });
+          file.message(`The '${format}' format applies only to ${typeList}, which ${disallowedBy(types)}`, { place: keywordNode.position });
         }
         continue;
       }
@@ -54,10 +62,25 @@ const keywordForDisallowedType = lintRule({ origin: "json-schema-lint:keyword-fo
       if (applies.length > 0 && !applies.some((type) => allowed.has(type))) {
         const name = keywordNode.children[0].value;
         const typeList = applies.map((type) => plurals[type]).join(" or ");
-        file.message(`'${name}' applies only to ${typeList}, which '${typeName}' doesn't allow`, { place: keywordNode.position });
+        file.message(`'${name}' applies only to ${typeList}, which ${disallowedBy(applies)}`, { place: keywordNode.position });
       }
     }
   }
 });
 
 export default keywordForDisallowedType;
+
+/**
+ * The types of value a `typeIs`'s types allow some of. `integer` allows
+ * some numbers.
+ *
+ * @type (types: Set<TypeName>) => Set<string>
+ */
+const allowedTypes = (types) => {
+  /** @type Set<string> */
+  const allowed = new Set(types);
+  if (allowed.has("integer")) {
+    allowed.add("number");
+  }
+  return allowed;
+};

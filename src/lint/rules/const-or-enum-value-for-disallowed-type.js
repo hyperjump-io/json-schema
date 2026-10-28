@@ -35,11 +35,8 @@ const constOrEnumValueForDisallowedType = lintRule({ origin: "json-schema-lint:c
   /** @type Map<JsonSchemaKeywordNode, Set<TypeName>> */
   const typesOf = new Map();
   for (const keywords of (await lowerForLint(session, tree)).values()) {
-    for (const keyword of keywords) {
-      const type = typeIsOf([keyword]);
-      if (type !== undefined) {
-        typesOf.set(type.keywordNode, type.types);
-      }
+    for (const { keywordNode, types } of typeIsOf(keywords)?.keywords ?? []) {
+      typesOf.set(keywordNode, types);
     }
   }
 

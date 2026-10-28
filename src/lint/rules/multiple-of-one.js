@@ -1,4 +1,5 @@
 import { operationsOf, typeIsOf } from "../analysis.js";
+import { namesOf } from "../bounds.js";
 import { lintRule } from "../lint-rule.js";
 import { lowerForLint } from "../lower.js";
 
@@ -26,7 +27,8 @@ const multipleOfOne = lintRule({ origin: "json-schema-lint:multiple-of-one", url
       continue;
     }
 
-    const typeName = type.keywordNode.children[0].value;
+    const typeNodes = type.keywords.map(({ keywordNode }) => keywordNode);
+    const typeName = namesOf(typeNodes);
     for (const { group, keywordNode } of keywords) {
       const operations = operationsOf(group.expression);
       if (operations.length !== 1 || operations[0].op !== "multipleOf" || operations[0].divisor !== 1) {
@@ -34,12 +36,14 @@ const multipleOfOne = lintRule({ origin: "json-schema-lint:multiple-of-one", url
       }
 
       const name = keywordNode.children[0].value;
-      if (type.types.has("number") && type.types.has("integer")) {
-        file.message(`'${name}': 1 only allows integers. Remove it, and 'number' from '${typeName}', which also allows 'integer'.`, { place: keywordNode.position });
+      if (type.types.has("number") && typeNodes.length > 1) {
+        file.message(`'${name}': 1 only allows integers. Remove it, and allow 'integer' instead of 'number' in ${typeName}.`, { place: keywordNode.position });
+      } else if (type.types.has("number") && type.types.has("integer")) {
+        file.message(`'${name}': 1 only allows integers. Remove it, and 'number' from ${typeName}, which also allows 'integer'.`, { place: keywordNode.position });
       } else if (type.types.has("number")) {
-        file.message(`'${name}': 1 only allows integers. Remove it, and replace 'number' with 'integer' in '${typeName}'.`, { place: keywordNode.position });
+        file.message(`'${name}': 1 only allows integers. Remove it, and replace 'number' with 'integer' in ${typeName}.`, { place: keywordNode.position });
       } else if (type.types.has("integer")) {
-        file.message(`'${name}': 1 has no effect, because '${typeName}' only allows integers`, { place: keywordNode.position });
+        file.message(`'${name}': 1 has no effect, because ${typeName} only ${typeNodes.length === 1 ? "allows" : "allow"} integers`, { place: keywordNode.position });
       }
     }
   }
