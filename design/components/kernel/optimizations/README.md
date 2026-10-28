@@ -60,6 +60,7 @@ In the order they run:
 - [`static-dynamic-scope.js`](static-dynamic-scope.md)
 - [`static-unevaluated.js`](static-unevaluated.md)
 - [`fold-passing.js`](fold-passing.md)
+- [`combine.js`](combine.md)
 - [`dispatch.js`](dispatch.md)
 - [`drop-groups.js`](drop-groups.md)
 

@@ -1,6 +1,7 @@
 import staticDynamicScope from "./static-dynamic-scope.js";
 import staticUnevaluated from "./static-unevaluated.js";
 import foldPassing from "./fold-passing.js";
+import combine from "./combine.js";
 import dispatch from "./dispatch.js";
 import dropGroups from "./drop-groups.js";
 
@@ -21,6 +22,7 @@ export const optimizations = [
   staticDynamicScope,
   staticUnevaluated,
   foldPassing,
+  combine,
   dispatch,
   dropGroups
 ];

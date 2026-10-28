@@ -9,7 +9,8 @@ over the items, resolving `unevaluated` selectors that
 don't depend on the instance, folding schemas that always pass,
 evaluating only the expressions of an `any` or `one` that can pass the
 instance's type or tag (as a `typeSwitch`, `propertySwitch`, or
-`keySwitch`), resolving `dynamicApply` from the entry, copying a schema
+`keySwitch`), inlining the schemas a schema applies and combining
+operations of the same kind without plugins, resolving `dynamicApply` from the entry, copying a schema
 applied with different anchors in scope, and leaving
 out groups with no effect ([Optimizations](../../components/kernel/optimizations/README.md)).
 

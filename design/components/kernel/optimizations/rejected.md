@@ -5,7 +5,9 @@
   2020-12, where `$ref` is a keyword, and nothing on the test suite. It
   made the first `validate` about twice as slow (7 to 13–15 ms), half in
   the pass and half in building the 34% more keywords it copies, so it
-  would take about 65,000 validations to make that back.
+  would take about 65,000 validations to make that back. Inlining in the
+  kernel, without plugins, is [`combine`](combine.md), which costs much
+  less and is worth much more without `annotate`.
 - Finding the instance's type once per schema and only evaluating the
   operations for that type was up to 18% slower.
 - Annotating a JS value by evaluating the value instead of its AST

@@ -33,3 +33,4 @@ were written for one-off investigations.
   - [Resolving the dynamic scope](kernel-in-src/static-dynamic-scope.md)
   - [Evaluating ASTs](kernel-in-src/evaluating-asts.md)
   - [Unevaluated when annotating](kernel-in-src/unevaluated-when-annotating.md)
+  - [Inlining and combining](kernel-in-src/combine.md)
