@@ -96,6 +96,7 @@ export const lintRule = (meta, rule) => {
       transform(tree, file, (error, ...rest) => {
         if (error === undefined) {
           removeDisabled(tree, file, from, ruleId);
+          sortMessages(file, from);
         }
         next(error, ...rest);
       });
@@ -198,6 +199,21 @@ const isEnabled = (applicable, offset) => {
   }
 
   return innermost?.enabled ?? true;
+};
+
+/**
+ * Puts the messages a rule added in document order. Rules that work from
+ * what keywords lower to find things in the order the operations are in.
+ * The sort is stable, so messages in the same place stay in the order
+ * they were found, and ones without a position go last.
+ *
+ * @type (file: VFile, from: number) => void
+ */
+const sortMessages = (file, from) => {
+  const sorted = file.messages.slice(from).toSorted((a, b) => {
+    return (startOffset(a.place) ?? Infinity) - (startOffset(b.place) ?? Infinity);
+  });
+  file.messages.splice(from, sorted.length, ...sorted);
 };
 
 /** @type (tree: JsonSchemaDocumentNode, file: VFile, from: number, ruleId: string) => void */

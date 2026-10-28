@@ -15,8 +15,8 @@ describe("impossible-property", () => {
     expect(file.messages.map((message) => message.reason)).to.eql([reason, reason]);
     expect(file.messages[0].ruleId).to.equal("impossible-property");
     expect(file.messages[0].source).to.equal("json-schema-lint");
-    expect(file.messages[0].column).to.equal(json.indexOf(`"maxProperties"`) + 1);
-    expect(file.messages[1].column).to.equal(json.indexOf(`"a"`) + 1);
+    expect(file.messages[0].column).to.equal(json.indexOf(`"a"`) + 1);
+    expect(file.messages[1].column).to.equal(json.indexOf(`"maxProperties"`) + 1);
   });
 
   test("a dependency that fits", async () => {
@@ -33,9 +33,9 @@ describe("impossible-property", () => {
     const json = `{ "$schema": "${draft07}", "properties": { "a": {} }, "dependencies": { "a": ["b", "c"] }, "maxProperties": 2 }`;
     const file = await lint(json);
     expect(file.messages.map((message) => message.column)).to.eql([
-      json.indexOf(`"maxProperties"`) + 1,
       json.indexOf(`"a"`) + 1,
-      json.lastIndexOf(`"a"`) + 1
+      json.lastIndexOf(`"a"`) + 1,
+      json.indexOf(`"maxProperties"`) + 1
     ]);
   });
 

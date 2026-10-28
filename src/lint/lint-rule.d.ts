@@ -37,5 +37,10 @@ import type { JsonSchemaDocumentNode } from "../schema/schema-ast.d.ts";
  * work whatever order rules are used in. A message without a position can't
  * be turned off. A rule made with `unified-lint-rule` directly ignores
  * directives.
+ *
+ * Then the rule's messages are put in document order, by where they start,
+ * so a rule can report things in whatever order it finds them. Messages in
+ * the same place stay in the order they were reported, and ones without a
+ * position go last.
  */
 export const lintRule: <Option = unknown>(meta: Meta | string, rule: Rule<JsonSchemaDocumentNode, Option>) => Plugin<JsonSchemaDocumentNode, Option>;

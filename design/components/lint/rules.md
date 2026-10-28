@@ -64,6 +64,14 @@
   mean the same (`same-schema.js`). A rule that needs to know
   whether a value is valid evaluates the lowered schemas
   (`evaluatorForLint` in `evaluate.js`) instead of compiling.
+- A rule's messages are in document order. `lintRule` sorts each rule's
+  messages by where they start when it finishes, after removing the ones
+  configuration comments turn off. Rules that work from what keywords
+  lower to find things in the order of the operations, like upper limits
+  before lower ones, and sorting in each rule would mean every rule had to
+  remember to. The sort is stable, so messages in the same place stay in
+  the order they were found. Messages from different rules aren't merged
+  into one order; a reporter can do that.
 - A rule reports everything it finds, even what another rule reports too,
   like `unevaluatedProperties: true` next to `additionalProperties: false`,
   which `empty-catch-all-schema` and `unevaluated-without-effect` both

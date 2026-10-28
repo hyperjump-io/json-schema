@@ -190,6 +190,17 @@ describe("configuration comments", () => {
   });
 });
 
+describe("message order", () => {
+  test("each rule's messages are in document order", async () => {
+    // fractional-limit-for-integer finds upper limits before lower ones
+    const file = await lint(`{ "$schema": "https://json-schema.org/v1", "type": "integer", "minimum": 0.5, "maximum": 7.8 }`);
+    expect(file.messages.map((message) => message.reason)).to.eql([
+      "'minimum' isn't an integer, but 'type' only allows integers, so it's the same as 1",
+      "'maximum' isn't an integer, but 'type' only allows integers, so it's the same as 7"
+    ]);
+  });
+});
+
 /** @type (json: string) => Promise<VFile> */
 const lint = async (json) => {
   const file = new VFile({ path: "/schemas/a.schema.json", value: json });
