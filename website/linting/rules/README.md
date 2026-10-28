@@ -54,6 +54,7 @@ it doesn't.
 | [`invalid-dialect-uri`](invalid-dialect-uri.md) | A v1 `$schema` with a fragment or that isn't normalized, which v1 doesn't allow (an error) |
 | [`relative-root-id`](relative-root-id.md) | A relative `$id` on the root schema, like `/user`, so the schema's identifier depends on where it was retrieved from |
 | [`implicit-dialect`](implicit-dialect.md) | A root schema without `$schema` whose dialect came from a media type parameter or the default dialect, so other tools may not know it |
+| [`reference-by-location`](reference-by-location.md) | A `$ref` that finds a schema by its file or by a JSON Pointer into an embedded resource, rather than by the schema's `$id` |
 | [`reference-without-target`](reference-without-target.md) | A `$ref` that doesn't find a schema, such as a file that doesn't exist or a JSON Pointer that doesn't point to anything |
 
 A rule with options takes them after the severity, like

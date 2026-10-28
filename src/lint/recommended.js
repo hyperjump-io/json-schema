@@ -28,6 +28,7 @@ import unsafeIntegerLimit from "./rules/unsafe-integer-limit.js";
 import readOnlyAndWriteOnly from "./rules/read-only-and-write-only.js";
 import minMaxContainsWithoutContains from "./rules/min-max-contains-without-contains.js";
 import referenceWithoutTarget from "./rules/reference-without-target.js";
+import referenceByLocation from "./rules/reference-by-location.js";
 import nonCanonicalDialectUri from "./rules/non-canonical-dialect-uri.js";
 import invalidDialectUri from "./rules/invalid-dialect-uri.js";
 import relativeRootId from "./rules/relative-root-id.js";
@@ -87,6 +88,7 @@ const recommended = {
     [nonCanonicalDialectUri, ["warn"]],
     [relativeRootId, ["warn"]],
     [implicitDialect, ["warn"]],
+    [referenceByLocation, ["warn"]],
     [keywordWithoutEffect, ["warn"]],
     [emptyCatchAllSchema, ["warn"]],
     [unevaluatedWithoutEffect, ["warn"]],

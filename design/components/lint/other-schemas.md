@@ -51,6 +51,22 @@ document finds something. They can see what's in registries and what
   A target that isn't a schema is `missing` too, such as `#/definitions/foo`
   in 2020-12, where `definitions` isn't a keyword, which `compile` also
   can't find. A reference that's `unknown` isn't reported.
+- `reference-by-location` reports a static reference that finds a schema
+  by a URI with a different base than the canonical URI of what it finds
+  (the found node's `location`): a file or URL for a schema with an `$id`,
+  or a JSON Pointer into an embedded resource. It's one rule for both
+  because they're the same mistake, a location where an identifier works
+  everywhere, and the spec says a JSON Pointer SHOULD NOT cross into an
+  embedded resource. A schema in a file that's found both ways is two
+  documents (an entry's `origin` maps the registry's copy to its file),
+  which is why the rule was wanted. It's reported only if the identifier
+  finds the schema in the session too. Otherwise the reference couldn't
+  use it, like the file's `$id` when the schema isn't in a registry. The
+  message gives the identifier as an absolute URI, which can't be a `file:`
+  URI, so it doesn't say where files are. Rejected: reporting only `file:`
+  references, which leaves out retrieval URLs and embedded resources, and
+  giving the identifier relative to the referencing schema, which is
+  shorter but harder to read when the bases have nothing in common.
 - Schemas aren't trusted, but plugins are. A plugin could make its own
   unrestricted `JsonSchema`. Nothing can stop code that sets out to do that.
   The restriction keeps a schema from making rules retrieve what it names.
