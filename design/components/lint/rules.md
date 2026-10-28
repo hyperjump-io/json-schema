@@ -44,8 +44,9 @@
   "Lowering for lint"): which types it applies to and can pass, its
   operations, its `typeIs`, and what applies to a property (`analysis.js`),
   its limits (`bounds.js`), the properties every valid object has
-  (`required-properties.js`), what it does (`effect.js`), and whether a
-  schema allows nothing (`allows-nothing.js`). A rule that needs to know
+  (`required-properties.js`), what it does (`effect.js`), whether a
+  schema allows nothing (`allows-nothing.js`), and whether two schemas
+  mean the same (`same-schema.js`). A rule that needs to know
   whether a value is valid evaluates the lowered schemas
   (`evaluatorForLint` in `evaluate.js`) instead of compiling.
 - A rule reports everything it finds, even what another rule reports too,

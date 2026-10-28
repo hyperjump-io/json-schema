@@ -26,9 +26,41 @@ describe("duplicate-all-of-any-of-schemas", () => {
     ]);
   });
 
-  test("schemas are compared as JSON values", async () => {
+  test("schemas are compared by what they mean", async () => {
     expect(await reasons(`{ "$schema": "${draft2020}", "allOf": [{ "minimum": 1, "type": "integer" }, { "type": "integer", "minimum": 1.0 }] }`)).to.have.length(1);
-    expect(await reasons(`{ "$schema": "${draft2020}", "allOf": [true, {}] }`)).to.eql([]);
+    expect(await reasons(`{ "$schema": "${draft2020}", "allOf": [true, {}] }`)).to.have.length(1);
+    expect(await reasons(`{ "$schema": "${draft2020}", "anyOf": [{ "const": 1 }, { "enum": [1] }] }`)).to.have.length(1);
+    expect(await reasons(`{ "$schema": "${draft2020}", "anyOf": [{ "$comment": "a" }, { "$comment": "b" }] }`)).to.have.length(1);
+  });
+
+  test("subschemas are compared by what they mean", async () => {
+    expect(await reasons(`{ "$schema": "${draft2020}", "anyOf": [{ "items": { "type": "string" } }, { "items": { "type": ["string"] } }] }`)).to.have.length(1);
+    expect(await reasons(`{ "$schema": "${draft2020}", "anyOf": [{ "items": { "type": "string" } }, { "items": { "type": "number" } }] }`)).to.eql([]);
+  });
+
+  test("references to the same schema, written differently", async () => {
+    expect(await reasons(`{
+      "$schema": "${draft2020}",
+      "$id": "https://example.com/a",
+      "anyOf": [{ "$ref": "#/$defs/b" }, { "$ref": "https://example.com/a#/$defs/b" }],
+      "$defs": { "b": { "type": "string" } }
+    }`)).to.have.length(1);
+  });
+
+  test("schemas that refer to themselves", async () => {
+    expect(await reasons(`{
+      "$schema": "${draft2020}",
+      "anyOf": [{ "$ref": "#/$defs/b" }, { "$ref": "#/$defs/c" }],
+      "$defs": {
+        "b": { "items": { "$ref": "#/$defs/b" } },
+        "c": { "items": { "$ref": "#/$defs/c" } }
+      }
+    }`)).to.have.length(1);
+  });
+
+  test("annotations from different keywords aren't the same", async () => {
+    expect(await reasons(`{ "$schema": "${draft2020}", "anyOf": [{ "title": "a" }, { "description": "a" }] }`)).to.eql([]);
+    expect(await reasons(`{ "$schema": "${draft2020}", "anyOf": [{ "title": "a" }, { "title": "b" }] }`)).to.eql([]);
   });
 
   test("oneOf isn't reported", async () => {

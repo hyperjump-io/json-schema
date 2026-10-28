@@ -30,8 +30,13 @@ describe("duplicate-one-of-schemas", () => {
     expect(file.messages).to.have.length(1);
   });
 
-  test("different schemas", async () => {
+  test("the same schemas, written differently", async () => {
     const file = await lint(`{ "$schema": "https://json-schema.org/v1", "oneOf": [true, {}, { "type": "string" }, { "type": ["string"] }] }`);
+    expect(file.messages).to.have.length(2);
+  });
+
+  test("different schemas", async () => {
+    const file = await lint(`{ "$schema": "https://json-schema.org/v1", "oneOf": [true, false, { "type": "string" }, { "type": ["string", "null"] }] }`);
     expect(file.messages).to.eql([]);
   });
 

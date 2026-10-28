@@ -13,8 +13,8 @@ it doesn't.
 | [`duplicate-enum-values`](duplicate-enum-values.md) | A value in `enum` that's equal to one before it |
 | [`empty-enum`](empty-enum.md) | An `enum` with no values, which nothing is valid against |
 | [`empty-type`](empty-type.md) | A `type` that's an empty array, which nothing is valid against |
-| [`duplicate-one-of-schemas`](duplicate-one-of-schemas.md) | A schema in `oneOf` that's equal to one before it, so a value it matches always fails |
-| [`duplicate-all-of-any-of-schemas`](duplicate-all-of-any-of-schemas.md) | A schema in `allOf` or `anyOf` that's equal to one before it, so it has no effect |
+| [`duplicate-one-of-schemas`](duplicate-one-of-schemas.md) | A schema in `oneOf` that's the same as one before it, so a value it matches always fails |
+| [`duplicate-all-of-any-of-schemas`](duplicate-all-of-any-of-schemas.md) | A schema in `allOf` or `anyOf` that's the same as one before it, so it has no effect |
 | [`contradictory-limits`](contradictory-limits.md) | A lower limit above its upper limit, like `minimum` above `maximum` or `minLength` above `maxLength`, or more required properties than `maxProperties` allows |
 | [`impossible-property`](impossible-property.md) | A property no valid object can have, because an object with it needs more properties than `maxProperties` allows, like a `dependentRequired` that depends on it |
 | [`redundant-numeric-limit`](redundant-numeric-limit.md) | `maximum` and `exclusiveMaximum`, or `minimum` and `exclusiveMinimum`, where the looser one has no effect |
