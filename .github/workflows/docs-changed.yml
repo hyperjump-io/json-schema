@@ -4,7 +4,7 @@ name: Docs Changed
 on:
   push:
     branches:
-      - "v2"
+      - "main"
     paths:
       - "website/**"
 
