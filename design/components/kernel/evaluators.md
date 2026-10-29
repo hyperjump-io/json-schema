@@ -58,6 +58,10 @@
   looking each name up again, which on an AST is a search of the object's
   properties. Bits count a name the JSON text has twice once
   ([Object loops](../../benchmarks/kernel-in-src/object-loops.md)).
+  `fast.js`'s loops with an `except` read a property's value first,
+  before anything that uses it. Reading it only where it's used made V8 12.9 and later
+  (Node 23+) deoptimize the loop again and again
+  ([Reading a property's value first](../../benchmarks/kernel-in-src/property-values-first.md)).
 - Arrays are evaluated the same way in `fast.js`. A schema's `typeIs` of
   only `array`, `itemCount`, and `eachItem` are one evaluator that tests
   whether the instance is an array once, and an `eachItem` whose item

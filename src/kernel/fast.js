@@ -916,16 +916,21 @@ export const fast = (jsonSchema, kernel) => {
         }
         let found = 0;
         for (const name in instance) {
+          // The value is read first, every time. Reading it only where it's
+          // used made V8 12.9+ (Node 23+) deoptimize this loop again and
+          // again, which was 1.5–2.7× slower on schemas that spend their
+          // time here (nest-cli, stale, semantic-release)
+          const value = instance[name];
           const entry = entries[name];
           if (entry !== undefined && entry.property) {
-            if (entry.of === undefined ? (entry.mask & (1 << typeIndex(instance[name]))) === 0 : !entry.of(instance[name], undefined)) {
+            if (entry.of === undefined ? (entry.mask & (1 << typeIndex(value))) === 0 : !entry.of(value, undefined)) {
               return false;
             }
             marks?.add(name);
           } else if (unmatchedFails) {
             return false;
           } else if (unmatched !== undefined) {
-            if (!unmatched(instance[name], undefined)) {
+            if (!unmatched(value, undefined)) {
               return false;
             }
             marks?.add(name);
