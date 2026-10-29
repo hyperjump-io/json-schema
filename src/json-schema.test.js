@@ -12,6 +12,7 @@ import { AnchorNotFoundError } from "./schema/media-type-plugin.js";
 import vocabularyKeyword, { addVocabulary } from "./keywords/vocabulary.js";
 
 /**
+ * @import { Json } from "@hyperjump/browser/json"
  * @import { Dialect } from "./dialect.d.ts"
  * @import { Keyword } from "./keyword.d.ts"
  */
@@ -187,6 +188,103 @@ describe("JsonSchema", () => {
       } finally {
         await rm(directory, { recursive: true });
       }
+    });
+  });
+
+  describe("a URI identifies one resource in a session", () => {
+    // trusted → trusted-sub → common
+    const trusted = new SchemaRegistry()
+      .with({
+        $schema: v1DialectUri,
+        $id: "https://example.com/trusted",
+        $ref: "https://example.com/trusted-sub",
+        $defs: {
+          sub: { $id: "https://example.com/trusted-sub", $ref: "https://example.com/common" }
+        }
+      })
+      .with({ $schema: v1DialectUri, $id: "https://example.com/common", type: "string" });
+
+    /** @type (defs: Record<string, Json>) => SchemaRegistry */
+    const other = (defs) => new SchemaRegistry().with({
+      $schema: v1DialectUri,
+      $id: "https://example.com/other",
+      $ref: "https://example.com/trusted",
+      $defs: defs
+    });
+
+    beforeEach(() => {
+      jsonSchema.addRegistry(trusted);
+    });
+
+    test("a document can't change what a reference in another document finds", async () => {
+      const session = jsonSchema.session({
+        registries: [other({
+          sub: { $id: "https://example.com/trusted-sub" },
+          common: { $id: "https://example.com/common", type: "number" }
+        })]
+      });
+
+      await expect(session.compile("https://example.com/other")).rejects.toMatchObject({
+        name: "SchemaError",
+        messages: [{
+          ruleId: "duplicate-id",
+          uri: "https://example.com/trusted",
+          message: "'https://example.com/other' has a different schema resource identified as 'https://example.com/trusted-sub'"
+        }]
+      });
+    });
+
+    test("an identical resource can't bring different resources with it", async () => {
+      const session = jsonSchema.session({
+        registries: [other({
+          sub: { $id: "https://example.com/trusted-sub", $ref: "https://example.com/common" },
+          common: { $id: "https://example.com/common", type: "number" }
+        })]
+      });
+
+      await expect(session.compile("https://example.com/other")).rejects.toMatchObject({
+        name: "SchemaError",
+        messages: [{
+          ruleId: "duplicate-id",
+          uri: "https://example.com/common",
+          message: "'https://example.com/other' has a different schema resource identified as 'https://example.com/common'"
+        }]
+      });
+    });
+
+    test("an identical resource can be in more than one document", async () => {
+      const session = jsonSchema.session({
+        registries: [other({
+          sub: { $id: "https://example.com/trusted-sub", $ref: "https://example.com/common" },
+          common: { $id: "https://example.com/common", type: "string" }
+        })]
+      });
+
+      expect((await session.compile("https://example.com/other")).validate(42)).to.equal(false);
+      expect((await session.compile("https://example.com/trusted")).validate(42)).to.equal(false);
+    });
+
+    test("an embedded resource and a document with the same URI", async () => {
+      const session = jsonSchema.session({
+        registries: [new SchemaRegistry().with({
+          $schema: v1DialectUri,
+          $id: "https://example.com/other",
+          $ref: "https://example.com/common",
+          $defs: {
+            common: { $id: "https://example.com/common", type: "number" }
+          }
+        })]
+      });
+
+      expect((await session.compile("https://example.com/other")).validate(42)).to.equal(true);
+      await expect(session.compile("https://example.com/common")).rejects.toMatchObject({
+        name: "SchemaError",
+        messages: [{
+          ruleId: "duplicate-id",
+          uri: "https://example.com/common",
+          message: "'https://example.com/other' has a different schema resource identified as 'https://example.com/common'"
+        }]
+      });
     });
   });
 

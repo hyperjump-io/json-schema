@@ -1,6 +1,7 @@
 import { unified } from "unified";
 import { VFile } from "vfile";
 import { relativeFileUri, RetrievalError, Session } from "@hyperjump/browser";
+import { jsonValue } from "@hyperjump/browser/json";
 import { encodeIriFragment, toAbsoluteIri } from "@hyperjump/uri";
 import { SessionRegistries } from "./registry/session-registries.js";
 import { lower } from "./kernel/lower.js";
@@ -12,9 +13,11 @@ import unknownKeyword, { keywordDefinitionUri } from "./keywords/unknown.js";
 
 /**
  * @import { DocumentNode, GetOptions } from "@hyperjump/browser"
+ * @import { Json } from "@hyperjump/browser/json"
  * @import { Dialect } from "./dialect.d.ts"
  * @import { JsonSchema } from "./json-schema.d.ts"
  * @import { JsonSchemaDocumentNode, JsonSchemaNode } from "./schema/schema-ast.d.ts"
+ * @import { SchemaMessage } from "./schema/schema-error.d.ts"
  * @import * as API from "./session.d.ts"
  */
 
@@ -32,10 +35,18 @@ export class JsonSchemaSession extends Session {
   /**
    * Maps the URI of every resource in a schema document to the `embedded`
    * object they share, so a reference from any of them can find the others.
+   * A URI is only in more than one document if its resources are identical.
    *
-   * @type Record<string, Record<string, JsonSchemaDocumentNode>>
+   * @type Map<string, Record<string, JsonSchemaDocumentNode>[]>
    */
   #embedded;
+
+  /**
+   * The documents in `#embedded` by their `embedded` objects
+   *
+   * @type WeakMap<Record<string, JsonSchemaDocumentNode>, JsonSchemaDocumentNode>
+   */
+  #documents;
 
   /**
    * Dialects built from meta-schemas in this session
@@ -70,7 +81,8 @@ export class JsonSchemaSession extends Session {
     super(jsonSchema, { allowRetrieval: options.allowRetrieval });
 
     this.#jsonSchema = jsonSchema;
-    this.#embedded = {};
+    this.#embedded = new Map();
+    this.#documents = new WeakMap();
     this.#dialects = {};
     this.#pendingDialects = {};
     this.#loading = new Map();
@@ -85,17 +97,37 @@ export class JsonSchemaSession extends Session {
    * An embedded resource is only found by a reference from the document that
    * contains it. Registries come next, then the URI is retrieved.
    *
+   * A resource that's in more than one document is identical in each, but
+   * only some of them might embed what it references. Where one doesn't, the
+   * reference finds a schema the usual way, so that has to be identical too.
+   * Otherwise, a document could change what a reference in another one
+   * finds.
+   *
    * @param {string} uri
    * @param {GetOptions} [options]
    */
   async getDocument(uri, options = {}) {
     if (options.referencedFrom !== undefined) {
-      const embeddedDocument = this.#embedded[options.referencedFrom]?.[toAbsoluteIri(uri)];
+      const id = toAbsoluteIri(uri);
+      const resources = (this.#embedded.get(options.referencedFrom) ?? []).map((embedded) => embedded[id]);
+      const embeddedDocument = resources.find((resource) => resource !== undefined);
       if (embeddedDocument) {
+        if (resources.some((resource) => resource === undefined)) {
+          await this.#getDocument(uri, options);
+        }
         return /** @type DocumentNode<JsonSchemaNode> */ (/** @type unknown */ (embeddedDocument));
       }
     }
 
+    return this.#getDocument(uri, options);
+  }
+
+  /**
+   * A document from a registry or retrieved
+   *
+   * @type (uri: string, options: GetOptions) => Promise<DocumentNode<JsonSchemaNode>>
+   */
+  async #getDocument(uri, options) {
     /** @type DocumentNode<JsonSchemaNode> */
     let document;
     const registryDocument = this.#registries.get(uri);
@@ -122,17 +154,52 @@ export class JsonSchemaSession extends Session {
   }
 
   /**
-   * If two schema documents embed a resource with the same URI, references
-   * from that resource find the resources embedded alongside it in whichever
-   * document was retrieved first.
+   * A URI identifies one resource in a session. Two documents can only have
+   * a resource with the same URI if it's identical in both, like a schema
+   * and a bundle that includes it.
    *
    * @type (document: JsonSchemaDocumentNode) => void
    */
   #addEmbedded(document) {
-    this.#embedded[document.uri] = document.embedded;
-    for (const uri in document.embedded) {
-      this.#embedded[uri] ??= document.embedded;
+    const embedded = document.embedded;
+    if (this.#documents.has(embedded)) {
+      return;
     }
+
+    /** @type SchemaMessage[] */
+    const messages = [];
+    for (const uri in embedded) {
+      const otherEmbedded = this.#embedded.get(uri)?.[0];
+      if (otherEmbedded && !sameResource(otherEmbedded[uri], embedded[uri])) {
+        const otherDocument = /** @type JsonSchemaDocumentNode */ (this.#documents.get(otherEmbedded));
+        /** @type SchemaMessage */
+        const message = {
+          source: "json-schema",
+          ruleId: "duplicate-id",
+          severity: "error",
+          uri: document.uri,
+          place: embedded[uri].children[0]?.position,
+          message: `'${relativeFileUri(otherDocument.uri)}' has a different schema resource identified as '${relativeFileUri(uri)}'`
+        };
+        if (document.origin !== undefined) {
+          message.origin = document.origin;
+        }
+        messages.push(message);
+      }
+    }
+    if (messages.length > 0) {
+      throw new SchemaError(messages);
+    }
+
+    for (const uri of new Set([document.uri, ...Object.keys(embedded)])) {
+      const documents = this.#embedded.get(uri);
+      if (documents) {
+        documents.push(embedded);
+      } else {
+        this.#embedded.set(uri, [embedded]);
+      }
+    }
+    this.#documents.set(embedded, document);
   }
 
   /** @type API.JsonSchemaSession["hasDialect"] */
@@ -297,3 +364,36 @@ export class JsonSchemaSession extends Session {
       : `${unknownKeyword.uri}#${encodeIriFragment(keyword)}`;
   }
 }
+
+/**
+ * Resources are the same if they have the same dialect and the same JSON.
+ * `$schema` isn't compared, because a bundle leaves it off a resource with
+ * the same dialect as the one it's in. Only resources with the same URI are
+ * compared, so references in them resolve the same way.
+ *
+ * @type (a: JsonSchemaDocumentNode, b: JsonSchemaDocumentNode) => boolean
+ */
+const sameResource = (a, b) => a === b || (a.dialectUri === b.dialectUri && jsonEqual(resourceValue(a), resourceValue(b)));
+
+/** @type (resource: JsonSchemaDocumentNode) => Json */
+const resourceValue = (resource) => {
+  const value = jsonValue(/** @type JsonSchemaNode */ (resource.children[0]));
+  if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+    delete value.$schema;
+  }
+  return value;
+};
+
+/** @type (a: Json, b: Json) => boolean */
+const jsonEqual = (a, b) => {
+  if (a === b) {
+    return true;
+  } else if (typeof a !== "object" || typeof b !== "object" || a === null || b === null) {
+    return false;
+  } else if (Array.isArray(a) || Array.isArray(b)) {
+    return Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every((item, index) => jsonEqual(item, b[index]));
+  } else {
+    const keys = Object.keys(a);
+    return keys.length === Object.keys(b).length && keys.every((key) => Object.hasOwn(b, key) && jsonEqual(a[key], b[key]));
+  }
+};
