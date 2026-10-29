@@ -151,6 +151,27 @@ export const codePointLength = (value) => {
 };
 
 /**
+ * Whether a string's length in code points is from `min` to `max`. A string
+ * of n code units has from ⌈n/2⌉ to n code points, so most strings are
+ * decided without counting them, which was 30–50% of FLAG on schemas with
+ * `minLength` or `maxLength` (vercel, aws-cdk)
+ *
+ * @type (value: string, min: number, max: number) => boolean
+ */
+export const codePointLengthIsWithin = (value, min, max) => {
+  const units = value.length;
+  const fewest = Math.ceil(units / 2);
+  if (units < min || fewest > max) {
+    return false;
+  } else if (units <= max && fewest >= min) {
+    return true;
+  }
+
+  const length = codePointLength(value);
+  return length >= min && length <= max;
+};
+
+/**
  * The items of an array node that are equal to an item before them, compared
  * as `instanceEqual` does. Items that couldn't be parsed aren't equal to
  * anything, so they're never duplicates.

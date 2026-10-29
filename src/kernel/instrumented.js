@@ -1,7 +1,7 @@
 import { relativeFileUri } from "@hyperjump/browser";
 import * as JsonPointer from "@hyperjump/json-pointer";
 import { keywordDefinitionUri } from "../keywords/unknown.js";
-import { codePointLength, instanceEqual } from "../keywords/utilities.js";
+import { codePointLengthIsWithin, instanceEqual } from "../keywords/utilities.js";
 import { jsInstance } from "./instance.js";
 import { conditionsOf, explainsFailure, readsMarks, subexpressions } from "./kernel.js";
 import { addDynamicAnchors, addReachable, isClose, itemSequenceStates, keywordEvaluate, selector, typeIndexes } from "./fast.js";
@@ -867,8 +867,7 @@ export const instrumented = (jsonSchema, kernel, options) => {
           if (ops.typeOf(instance) !== "string") {
             return true;
           }
-          const length = codePointLength(/** @type string */ (ops.value(instance)));
-          return length >= min && length <= max;
+          return codePointLengthIsWithin(/** @type string */ (ops.value(instance)), min, max);
         };
       }
       case "matches": {

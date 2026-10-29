@@ -1,6 +1,6 @@
 import { relativeFileUri } from "@hyperjump/browser";
 import { jsInstance } from "./instance.js";
-import { codePointLength } from "../keywords/utilities.js";
+import { codePointLengthIsWithin } from "../keywords/utilities.js";
 import { readsMarks } from "./kernel.js";
 
 /**
@@ -304,8 +304,7 @@ export const fast = (jsonSchema, kernel) => {
           if (typeof instance !== "string") {
             return true;
           }
-          const length = codePointLength(instance);
-          return length >= min && length <= max;
+          return codePointLengthIsWithin(instance, min, max);
         };
       }
       case "matches": {

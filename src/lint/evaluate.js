@@ -1,7 +1,7 @@
 import { addReachable, isClose, itemSequenceStates, keywordEvaluate, selector } from "../kernel/fast.js";
 import { astInstance, jsInstance } from "../kernel/instance.js";
 import { readsMarks, subexpressions } from "../kernel/kernel.js";
-import { codePointLength, instanceEqual } from "../keywords/utilities.js";
+import { codePointLengthIsWithin, instanceEqual } from "../keywords/utilities.js";
 import { findSchema } from "./find-schema.js";
 import { lowerForLint } from "./lower.js";
 import { visitReferences, visitSchemas } from "./utilities.js";
@@ -438,8 +438,7 @@ const buildEvaluator = async (session, tree) => {
           return pass;
         }
         const { min = 0, max = Infinity } = expression;
-        const length = codePointLength(/** @type string */ (astInstance.value(instance)));
-        return length >= min && length <= max ? pass : fail;
+        return codePointLengthIsWithin(/** @type string */ (astInstance.value(instance)), min, max) ? pass : fail;
       }
       case "matches":
         return type !== "string" || regExp(expression.pattern).test(/** @type string */ (astInstance.value(instance))) ? pass : fail;

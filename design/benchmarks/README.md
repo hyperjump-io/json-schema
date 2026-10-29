@@ -35,3 +35,4 @@ were written for one-off investigations.
   - [Unevaluated when annotating](kernel-in-src/unevaluated-when-annotating.md)
   - [Inlining and combining](kernel-in-src/combine.md)
   - [Reading a property's value first](kernel-in-src/property-values-first.md)
+  - [String lengths without counting](kernel-in-src/string-lengths.md)
