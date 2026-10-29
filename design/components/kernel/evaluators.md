@@ -101,7 +101,9 @@
   and its state, annotations) lives in the evaluator's closure instead of
   being passed through every call. An evaluation started from inside
   another one, such as by a plugin, saves the outer one's state and
-  restores it. The fast evaluator only tracks the dynamic scope.
+  restores it. The fast evaluator only tracks the dynamic scope, and only
+  for a kernel that reads it, so for most schemas it has nothing to save
+  ([The root without a wrapper](../../benchmarks/kernel-in-src/root-without-a-wrapper.md)).
 
 The evaluators also choose how to evaluate an operation, which isn't a
 pass, because it doesn't change the expression. `fast.js` checks more than

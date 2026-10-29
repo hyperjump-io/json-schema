@@ -1005,6 +1005,13 @@ export const fast = (jsonSchema, kernel) => {
   const fails = (expression) => expression.op === "fail" || (expression.op === "apply" && kernel.schemas[expression.schema] === false);
 
   const root = schema(kernel.uri);
+
+  // Without a dynamic scope, nothing sets it, so there's nothing to restore.
+  // The wrapper was about a fifth of FLAG on yamllint.
+  if (!tracksDynamicScope) {
+    return (instance) => root(instance, undefined);
+  }
+
   return (instance) => {
     // A plugin or keyword can start another evaluation while one is in
     // progress, so the outer one's dynamic scope is restored after
