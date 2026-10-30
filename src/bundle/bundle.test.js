@@ -14,7 +14,7 @@ import { draft04Dialect, draft04DialectUri } from "../dialects/draft-04/index.js
 import { DETAILED } from "../output/index.js";
 import { compile } from "../operations/compile.js";
 import { bundle } from "../operations/bundle.js";
-import { validatorFor, annotatorFor } from "../operations/validate.js";
+import { validatorFor, annotatorFor } from "../operations/validate-compiled.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"

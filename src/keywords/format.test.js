@@ -7,7 +7,7 @@ import { JsonSchema, extendDialect } from "../json-schema.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import { fullFormats } from "../formats/full.js";
 import { compile } from "../operations/compile.js";
-import { annotatorFor, validatorFor } from "../operations/validate.js";
+import { annotatorFor, validatorFor } from "../operations/validate-compiled.js";
 
 /**
  * @import { Json, ReadonlyJson } from "@hyperjump/browser/json"

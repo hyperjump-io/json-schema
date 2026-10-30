@@ -8,7 +8,7 @@ import { instrumented } from "../instrumented.js";
 import dispatch from "./dispatch.js";
 import { BASIC } from "../../output/index.js";
 import { compile as compileSchema, restore, serialize } from "../../operations/compile.js";
-import { validatorFor } from "../../operations/validate.js";
+import { validatorFor } from "../../operations/validate-compiled.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"

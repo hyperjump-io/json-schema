@@ -6,6 +6,7 @@ export * from "./schema/json-media-type-plugin.js";
 export * from "./validate/validate.js";
 export * from "./output/index.js";
 export * from "./operations/validate.js";
+export * from "./operations/validate-compiled.js";
 export * from "./operations/compile.js";
 export * from "./operations/bundle.js";
 export * from "./operations/lint.js";

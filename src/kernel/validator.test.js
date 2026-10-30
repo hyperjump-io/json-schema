@@ -12,7 +12,8 @@ import anchorKeyword from "../keywords/anchor.js";
 import dynamicAnchorKeyword from "../keywords/dynamicAnchor.js";
 import { BASIC, DETAILED, FLAG } from "../output/index.js";
 import { compile, restore, serialize } from "../operations/compile.js";
-import { validate, annotatorFor, validatorFor } from "../operations/validate.js";
+import { validate } from "../operations/validate.js";
+import { annotatorFor, validatorFor } from "../operations/validate-compiled.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"

@@ -23,6 +23,15 @@ schema are in `src/kernel/validator.js`, which isn't exported.
   the same result type.
 - Without `output` or `plugins`, a value goes through the fast path that
   takes no options, as `validate(instance)` did on the old `Validator`.
+- The instrumented evaluator (`src/kernel/instrumented.js`) isn't imported
+  by the validator. `validator` and `annotator` load it with `import()`
+  when the options need it (output, plugins, annotating, or an input other
+  than a value) and give it to the compiled schema (`useInstrumented`), so
+  code that only validates values with FLAG never loads it. `validatorFor`
+  and `annotatorFor` are synchronous, so they import it, in a module of
+  their own (`src/operations/validate-compiled.js`). The package is
+  `"sideEffects": false`, or bundlers keep every re-exported module (see
+  [Bundle size](../../benchmarks/bundle-size.md)).
 - A schema given as a value is added to the session in a registry of its
   own (`addSchemaValue` in `src/registry/session-registries.js`), found
   first. It's identified by a new `urn:uuid:` URI, which also identifies it

@@ -1,0 +1,20 @@
+import { instrumented } from "../kernel/instrumented.js";
+import { annotateFunction, validateFunction, validatorOf } from "./evaluators.js";
+
+/**
+ * @import * as API from "./validate-compiled.d.ts"
+ */
+
+// These are synchronous, so they can't load the instrumented evaluator when
+// it's needed. They're in a module of their own, so code that doesn't use
+// them doesn't load it.
+
+/** @type API.validatorFor */
+export const validatorFor = (compiled, options = {}) => {
+  return validateFunction(validatorOf(compiled).useInstrumented(instrumented), options);
+};
+
+/** @type API.annotatorFor */
+export const annotatorFor = (compiled, options = {}) => {
+  return annotateFunction(validatorOf(compiled).useInstrumented(instrumented), options);
+};

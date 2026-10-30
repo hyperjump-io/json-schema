@@ -12,7 +12,8 @@ import { AnchorNotFoundError } from "./schema/media-type-plugin.js";
 import vocabularyKeyword from "./keywords/vocabulary.js";
 import idKeyword from "./keywords/id.js";
 import { compile } from "./operations/compile.js";
-import { annotate, validatorFor } from "./operations/validate.js";
+import { annotate } from "./operations/validate.js";
+import { validatorFor } from "./operations/validate-compiled.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"

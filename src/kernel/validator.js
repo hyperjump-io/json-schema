@@ -3,7 +3,6 @@ import { withRelativeFileUris } from "./kernel-uris.js";
 import { astInstance, jsInstance } from "./instance.js";
 import { optimize } from "./optimize.js";
 import { fast } from "./fast.js";
-import { instrumented } from "./instrumented.js";
 import { FLAG } from "../output/flag.js";
 
 /**
@@ -15,7 +14,7 @@ import { FLAG } from "../output/flag.js";
  * @import { EvaluationPlugin } from "./evaluation-plugin.d.ts"
  * @import { InstanceOps } from "../keyword.d.ts"
  * @import { Kernel } from "./kernel.d.ts"
- * @import { Instrumented } from "./instrumented.js"
+ * @import { Instrumented, instrumented } from "./instrumented.js"
  * @import { InstanceNode } from "./instance.js"
  */
 
@@ -57,6 +56,15 @@ export class Validator {
   #jsFlag;
 
   /**
+   * The evaluator for plugins, annotating, and ASTs. It isn't imported here,
+   * so code that only validates values without output doesn't load it. The
+   * operations that need it give it to the validator (see `useInstrumented`).
+   *
+   * @type typeof instrumented | undefined
+   */
+  #instrumentedEvaluator;
+
+  /**
    * @param {JsonSchema} jsonSchema
    * @param {Kernel} kernel
    */
@@ -69,6 +77,12 @@ export class Validator {
 
   get uri() {
     return this.#kernel.uri;
+  }
+
+  /** @type (evaluator: typeof instrumented) => this */
+  useInstrumented(evaluator) {
+    this.#instrumentedEvaluator = evaluator;
+    return this;
   }
 
   /** @type API.Validator["validate"] */
@@ -160,7 +174,10 @@ export class Validator {
   #instrumented(ops, isAst, annotating, plugins) {
     const annotations = annotating || plugins.some((plugin) => plugin.annotation !== undefined);
     const kernel = optimize(this.#kernel, { fast: !annotating && plugins.length === 0, plugins: plugins.length > 0, annotations });
-    return instrumented(this.#jsonSchema, kernel, { instance: ops, isAst, annotating, instrumented: plugins.length > 0 });
+    if (!this.#instrumentedEvaluator) {
+      throw Error("Evaluating with output, plugins, annotations, or an AST needs the instrumented evaluator, which wasn't loaded");
+    }
+    return this.#instrumentedEvaluator(this.#jsonSchema, kernel, { instance: ops, isAst, annotating, instrumented: plugins.length > 0 });
   }
 
   /**

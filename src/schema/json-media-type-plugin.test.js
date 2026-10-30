@@ -7,7 +7,7 @@ import { JsonSchema } from "../json-schema.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import { draft202012Dialect } from "../dialects/draft-2020-12/index.js";
 import { compile } from "../operations/compile.js";
-import { validatorFor } from "../operations/validate.js";
+import { validatorFor } from "../operations/validate-compiled.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"

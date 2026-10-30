@@ -4,7 +4,7 @@ import { SchemaRegistry } from "../../registry/schema-registry.js";
 import { v1Dialect, v1DialectUri } from "../../dialects/v1/index.js";
 import foldPassing from "./fold-passing.js";
 import { compile as compileSchema, serialize } from "../../operations/compile.js";
-import { validatorFor } from "../../operations/validate.js";
+import { validatorFor } from "../../operations/validate-compiled.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"

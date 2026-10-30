@@ -5,7 +5,7 @@ import { v1Dialect, v1DialectUri } from "../../dialects/v1/index.js";
 import combine from "./combine.js";
 import { BASIC } from "../../output/index.js";
 import { compile as compileSchema, serialize } from "../../operations/compile.js";
-import { validatorFor } from "../../operations/validate.js";
+import { validatorFor } from "../../operations/validate-compiled.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"

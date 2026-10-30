@@ -1,6 +1,6 @@
 import { outputErrorMessage } from "../output/validation-error.js";
 import { BASIC } from "../output/basic.js";
-import { validatorFor } from "../operations/validate.js";
+import { validatorFor } from "../operations/validate-compiled.js";
 
 /**
  * @import * as API from "./validate.d.ts"

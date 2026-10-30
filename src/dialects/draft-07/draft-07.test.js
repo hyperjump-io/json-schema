@@ -3,7 +3,7 @@ import { JsonSchema } from "../../json-schema.js";
 import { SchemaRegistry } from "../../registry/schema-registry.js";
 import { draft07Dialect, draft07DialectUri } from "./index.js";
 import { compile as compileSchema } from "../../operations/compile.js";
-import { validatorFor } from "../../operations/validate.js";
+import { validatorFor } from "../../operations/validate-compiled.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"

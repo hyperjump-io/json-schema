@@ -13,6 +13,7 @@
     "url": "https://github.com/sponsors/hyperjump-io"
   },
   "type": "module",
+  "sideEffects": false,
   "exports": {
     ".": {
       "types": "./src/index.d.ts",

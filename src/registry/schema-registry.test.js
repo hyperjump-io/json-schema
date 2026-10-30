@@ -7,7 +7,7 @@ import vocabularyKeyword from "../keywords/vocabulary.js";
 import idKeyword from "../keywords/id.js";
 import typeKeyword from "../keywords/type.js";
 import { compile as compileSchema } from "../operations/compile.js";
-import { validatorFor } from "../operations/validate.js";
+import { validatorFor } from "../operations/validate-compiled.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"

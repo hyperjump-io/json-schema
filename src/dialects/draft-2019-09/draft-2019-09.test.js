@@ -4,7 +4,7 @@ import { SchemaRegistry } from "../../registry/schema-registry.js";
 import { draft202012Dialect, draft202012DialectUri } from "../draft-2020-12/index.js";
 import { draft201909Dialect, draft201909DialectUri } from "./index.js";
 import { compile as compileSchema } from "../../operations/compile.js";
-import { validatorFor } from "../../operations/validate.js";
+import { validatorFor } from "../../operations/validate-compiled.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"

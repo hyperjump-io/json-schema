@@ -9,6 +9,14 @@ an internal meta-schema.
   never validated against a meta-schema.
 - Unsupported keywords are reported by the resolver according to the
   dialect's `unknownKeywords`.
+- A retrieved or registry schema is parsed and resolved by
+  `resolveSchemaText` (`src/schema/resolve-text.js`) the way a pipeline of
+  `rejsonParse` (accepting what it recovered from) and `jsonSchemaResolve`
+  would, but without a `unified()` processor: it uses `rejsonParse`'s
+  parser and calls the resolver's transformer, so code that only loads
+  schemas doesn't load `unified` (see
+  [Bundle size](../../benchmarks/bundle-size.md)). Problems are still
+  collected on a `VFile`.
 - Every problem with a schema is found while it's resolved, and a schema is
   always checked. There's no option to skip it. A trusted schema that has
   to start fast can be compiled once and restored with

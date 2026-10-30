@@ -1,4 +1,3 @@
-import { unified } from "unified";
 import { VFile } from "vfile";
 import { rejsonParse } from "@hyperjump/browser/json";
 import { jsonSchemaResolve } from "./resolve.js";
@@ -6,6 +5,7 @@ import { SchemaError } from "./schema-error.js";
 
 /**
  * @import { VFileMessage } from "vfile-message"
+ * @import { JsonDocumentNode } from "@hyperjump/browser/json"
  * @import { JsonSchemaSession } from "../session.d.ts"
  * @import { JsonSchemaDocumentNode } from "./schema-ast.d.ts"
  * @import { SchemaMessage } from "./schema-error.d.ts"
@@ -23,14 +23,13 @@ import { SchemaError } from "./schema-error.js";
  */
 export const resolveSchemaText = async (text, session, uri, dialectUri, origin) => {
   const file = new VFile(text);
-  const processor = unified()
-    .use(rejsonParse, { accept: "recovered" })
-    .use(jsonSchemaResolve, { session, uri, dialectUri });
 
   /** @type JsonSchemaDocumentNode | undefined */
   let document;
   try {
-    document = /** @type JsonSchemaDocumentNode */ (await processor.run(processor.parse(file), file));
+    // The resolver's transformer doesn't use the processor
+    const resolve = /** @type Function */ (jsonSchemaResolve).call(undefined, { session, uri, dialectUri });
+    document = /** @type JsonSchemaDocumentNode */ (await resolve(parse(file), file));
   } catch (error) {
     // A syntax error the parser can't recover from fails the file. Every
     // syntax error is on the file by then.
@@ -47,6 +46,20 @@ export const resolveSchemaText = async (text, session, uri, dialectUri, origin) 
     document.origin = origin;
   }
   return document;
+};
+
+/**
+ * Parse a file the way `rejsonParse` does in a pipeline, with what it sets
+ * as the parser. A schema is resolved without a unified processor, so code
+ * that only loads schemas doesn't load unified.
+ *
+ * @type (file: VFile) => JsonDocumentNode
+ */
+const parse = (file) => {
+  /** @type {{ parser?: (document: string, file: VFile) => JsonDocumentNode }} */
+  const processor = {};
+  rejsonParse.call(/** @type any */ (processor), { accept: "recovered" });
+  return /** @type NonNullable<typeof processor.parser> */ (processor.parser)(String(file), file);
 };
 
 /**

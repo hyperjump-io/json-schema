@@ -12,7 +12,8 @@ import type { Format } from "./format.d.ts";
 import type { BasicOutput } from "./output/output-format.d.ts";
 import { BASIC } from "./output/index.js";
 import { compile, restore, serialize } from "./operations/compile.js";
-import { annotate, annotatorFor, validate, validator, validatorFor } from "./operations/validate.js";
+import { annotate, validate, validator } from "./operations/validate.js";
+import { annotatorFor, validatorFor } from "./operations/validate-compiled.js";
 
 // What's only read can be readonly
 const instance = { tags: ["a", "b"], nested: { list: [1, 2] } } as const;

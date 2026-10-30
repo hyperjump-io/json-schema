@@ -8,7 +8,7 @@ import { optimize } from "../optimize.js";
 import staticDynamicScope from "./static-dynamic-scope.js";
 import { BASIC } from "../../output/index.js";
 import { compile as compileSchema, serialize } from "../../operations/compile.js";
-import { annotatorFor, validatorFor } from "../../operations/validate.js";
+import { annotatorFor, validatorFor } from "../../operations/validate-compiled.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"

@@ -8,7 +8,7 @@ import { SchemaRegistry } from "../src/registry/schema-registry.js";
 import { fullFormats } from "../src/formats/full.js";
 import { BASIC } from "../src/output/index.js";
 import { compile } from "../src/operations/compile.js";
-import { annotatorFor, validatorFor } from "../src/operations/validate.js";
+import { annotatorFor, validatorFor } from "../src/operations/validate-compiled.js";
 
 /**
  * @import { Json, JsonNode } from "@hyperjump/browser/json"

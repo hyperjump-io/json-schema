@@ -37,12 +37,6 @@ export function annotate<S, R = boolean, I extends Input = "value">(context: Con
 /** Compile a schema into a function that annotates instances, like {@link validator} */
 export function annotator<S, R = boolean, I extends Input = "value">(context: Context<S>, schema: NoInfer<SchemaSource<S>>, options?: ValidationOptions<R, I>): Promise<(instance: InstanceOf<I>) => AnnotationResult<R>>;
 
-/** A function that validates instances against a compiled schema */
-export function validatorFor<R = boolean, I extends Input = "value">(compiled: CompiledSchema, options?: EvaluationOptions<R, I>): (instance: InstanceOf<I>) => R;
-
-/** A function that annotates instances with a compiled schema */
-export function annotatorFor<R = boolean, I extends Input = "value">(compiled: CompiledSchema, options?: EvaluationOptions<R, I>): (instance: InstanceOf<I>) => AnnotationResult<R>;
-
 /**
  * What an instance is:
  *

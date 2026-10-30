@@ -56,3 +56,46 @@ Results from 2026-10-29, at c332b10:
   (23 kB), `vfile` (20 kB), and `unified` (16 kB), which validating
   doesn't need.
 - The other five dialects add 26 kB, 3 kB gzipped.
+
+## After the API as functions
+
+Results from 2026-10-29, at the end of the plan's stage 6, the same entries
+with the operations as functions (`validator`, `bundle`, `lint`), and
+browser without its `rejson` and `jref` processors:
+
+| Entry | Up front | Up front, gzipped | Total | Total, gzipped |
+| --- | --- | --- | --- | --- |
+| v1-validate-flag | 171.0 kB | 45.8 kB | 194.6 kB | 51.1 kB |
+| v1-validate-basic | 172.4 kB | 46.2 kB | 196.0 kB | 51.6 kB |
+| v1-bundle | 117.7 kB | 32.6 kB | 117.7 kB | 32.6 kB |
+| v1-lint | 125.2 kB | 35.4 kB | 228.5 kB | 59.3 kB |
+| all-dialects-validate | 184.8 kB | 47.9 kB | 208.4 kB | 53.4 kB |
+
+- Each entry only has what it uses. Bundling and linting don't compile,
+  so they leave out the kernel's evaluators and optimizations: bundling is
+  49% smaller up front than before (44% gzipped), and linting 45% (39%),
+  with its rules still loaded on demand.
+- Validating values with FLAG is 25% smaller up front (21% gzipped). The
+  instrumented evaluator (39 kB before minifying) is loaded with
+  `import()` only for output formats, plugins, annotating, and JSON text
+  or ASTs, so it's in the total, not up front. BASIC up front only adds
+  the format itself. `validatorFor` and `annotatorFor` import it
+  statically, because they're synchronous.
+- None of the operations' savings happened until `"sideEffects": false`:
+  without it, the bundler kept every module the package's entry point
+  re-exports, and their imports. That took FLAG to 195.5 kB (54.0 kB
+  gzipped).
+- `unified` was in every bundle for two reasons. Every schema was resolved
+  by a `unified()` pipeline (`src/schema/resolve-text.js`), which now parses
+  with `rejsonParse`'s parser and calls the resolver's transformer
+  directly (8 kB). And browser's `@hyperjump/browser/json` re-exported a
+  `rejson` processor created when its module loaded, which bundlers had to
+  keep. Removing it, and `jref`'s, saved another 16 kB. `vfile` stays (10 kB
+  before minifying), because the resolver reports problems on a `VFile`.
+  browser is `"sideEffects": false` too, which only changed how well the
+  bundles compress (1.2 kB gzipped) once the processors were gone.
+- What's left up front for FLAG, before minifying: the optimization
+  passes (33 kB), the fast evaluator (29 kB), browser's JSON parser
+  (14 kB), the resolver (14 kB), browser's HTTP support
+  (`http-cache-semantics` and `content-type`, 23 kB), and `vfile` (10 kB).
+- The other five dialects add 14 kB up front, 2 kB gzipped.

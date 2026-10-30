@@ -6,7 +6,8 @@ import { SchemaRegistry } from "../registry/schema-registry.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import { BASIC } from "../output/index.js";
 import { compile, restore, serialize } from "./compile.js";
-import { annotate, annotator, annotatorFor, validate, validator, validatorFor } from "./validate.js";
+import { annotate, annotator, validate, validator } from "./validate.js";
+import { annotatorFor, validatorFor } from "./validate-compiled.js";
 import { bundle } from "./bundle.js";
 import { lint } from "./lint.js";
 
