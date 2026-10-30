@@ -8,8 +8,8 @@ import { rejsonParse } from "@hyperjump/browser/json";
 import { JsonSchema } from "../../json-schema.js";
 import { SchemaRegistry } from "../../registry/schema-registry.js";
 import { jsonSchemaResolve } from "../../schema/resolve.js";
-import { addV1 } from "../../dialects/v1/index.js";
-import { addDraft07 } from "../../dialects/draft-07/index.js";
+import { v1Dialect } from "../../dialects/v1/index.js";
+import { draft07Dialect } from "../../dialects/draft-07/index.js";
 import referenceByLocation from "./reference-by-location.js";
 
 const v1 = "https://json-schema.org/v1";
@@ -38,9 +38,7 @@ describe("reference-by-location", () => {
    * @type (json: string, registry?: SchemaRegistry) => Promise<VFile>
    */
   const lint = async (json, registry = new SchemaRegistry([{ schema: common, origin: join(directory, "common.schema.json") }])) => {
-    const jsonSchema = new JsonSchema();
-    addV1(jsonSchema);
-    addDraft07(jsonSchema);
+    const jsonSchema = new JsonSchema({ dialects: [v1Dialect, draft07Dialect] });
     const file = new VFile({ path: join(directory, "a.schema.json"), value: json });
     const processor = unified()
       .use(rejsonParse)

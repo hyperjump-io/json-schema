@@ -1,4 +1,3 @@
-import type { JsonSchema } from "../json-schema.d.ts";
 import type { Format } from "../format.d.ts";
 
 /**
@@ -7,6 +6,3 @@ import type { Format } from "../format.d.ts";
  * `full.js` for those.
  */
 export const liteFormats: Format[];
-
-/** Add the {@link liteFormats} to a {@link JsonSchema} */
-export function addLiteFormats(jsonSchema: JsonSchema): void;

@@ -2,12 +2,15 @@ import { describe, test, beforeEach, expect } from "vitest";
 import { RetrievalError } from "@hyperjump/browser";
 import { JsonSchema, RetrievalNotAllowedError } from "../json-schema.js";
 import { SchemaRegistry } from "./schema-registry.js";
-import { addV1, v1DialectUri } from "../dialects/v1/index.js";
-import vocabularyKeyword, { addVocabulary } from "../keywords/vocabulary.js";
+import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
+import vocabularyKeyword from "../keywords/vocabulary.js";
+import idKeyword from "../keywords/id.js";
+import typeKeyword from "../keywords/type.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
  * @import { JsonSchemaConfig } from "../json-schema.d.ts"
+ * @import { DialectConfig } from "../dialect.d.ts"
  * @import { JsonSchemaDocumentNode } from "../schema/schema-ast.d.ts"
  */
 
@@ -294,21 +297,20 @@ describe("SchemaRegistry", () => {
   describe("dialects", () => {
     const dialectUri = "https://example.com/dialect";
 
-    test("a schema waits for its dialect to be defined", async () => {
+    /** @type DialectConfig */
+    const dialect = { uri: dialectUri, keywords: { $id: idKeyword }, unknownKeywords: "error" };
+
+    test("a schema whose dialect isn't defined says which dialect it needs", async () => {
       const registry = registryOf({ $schema: dialectUri, $id: "https://example.com/a" });
+
       await expect(compile(registry, "https://example.com/a")).rejects.toMatchObject({
         cause: { message: expect.stringContaining(dialectUri) }
       });
-
-      jsonSchema.addDialect({ uri: dialectUri, keywords: { $id: "https://json-schema.org/keyword/id" }, unknownKeywords: "error" });
-
-      await expect(compile(registry, "https://example.com/a")).resolves.toBeDefined();
     });
 
     test("each JsonSchema identifies a schema with its own dialects", async () => {
       const registry = registryOf({ $schema: dialectUri, $id: "https://example.com/a" });
-      const other = offline();
-      other.addDialect({ uri: dialectUri, keywords: { $id: "https://json-schema.org/keyword/id" }, unknownKeywords: "error" });
+      const other = offline({ dialects: [v1Dialect, dialect] });
 
       await expect(other.compile("https://example.com/a", { registry })).resolves.toBeDefined();
       await expect(compile(registry, "https://example.com/a")).rejects.toThrow(RetrievalError);
@@ -328,19 +330,18 @@ describe("SchemaRegistry", () => {
       /** @type Json */
       const schema = { $schema: dialectUri, $id: "https://example.com/a", type: "string" };
 
-      /** @type (jsonSchema: JsonSchema) => JsonSchema */
-      const addMetaDialect = (jsonSchema) => {
-        addVocabulary(jsonSchema, coreVocabularyUri, { keywords: { $id: "https://json-schema.org/keyword/id", type: "https://json-schema.org/keyword/type" } });
-        jsonSchema.addDialect({
-          uri: metaDialectUri,
-          keywords: { $id: "https://json-schema.org/keyword/id", $vocabulary: vocabularyKeyword.uri },
-          unknownKeywords: "annotation"
-        });
-        return jsonSchema;
+      /** @type DialectConfig */
+      const metaDialect = {
+        uri: metaDialectUri,
+        keywords: { $id: idKeyword, $vocabulary: vocabularyKeyword },
+        unknownKeywords: "annotation",
+        vocabularies: {
+          [coreVocabularyUri]: { keywords: { $id: idKeyword, type: typeKeyword } }
+        }
       };
 
       beforeEach(() => {
-        addMetaDialect(jsonSchema);
+        jsonSchema = offline({ dialects: [v1Dialect, metaDialect] });
       });
 
       test("a schema is identified with the dialect its meta-schema defines", async () => {
@@ -461,8 +462,7 @@ describe("SchemaRegistry", () => {
  * @type (config?: JsonSchemaConfig) => JsonSchema
  */
 const offline = (config) => {
-  const jsonSchema = new JsonSchema({ allowRetrieval: [], ...config });
-  addV1(jsonSchema);
+  const jsonSchema = new JsonSchema({ allowRetrieval: [], dialects: [v1Dialect], ...config });
   return jsonSchema;
 };
 

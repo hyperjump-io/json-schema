@@ -7,7 +7,7 @@ import { describe, test, beforeAll, afterAll, expect } from "vitest";
 import { RetrievalError } from "@hyperjump/browser";
 import { toRelativeIri } from "@hyperjump/uri";
 import { JsonSchema, RetrievalNotAllowedError } from "./json-schema.js";
-import { addV1, v1DialectUri } from "./dialects/v1/index.js";
+import { v1Dialect, v1DialectUri } from "./dialects/v1/index.js";
 import { SchemaRegistry } from "./registry/schema-registry.js";
 
 /**
@@ -82,7 +82,6 @@ describe("allowRetrieval", () => {
 
 /** @type (config?: JsonSchemaConfig) => JsonSchema */
 const v1 = (config) => {
-  const jsonSchema = new JsonSchema(config);
-  addV1(jsonSchema);
+  const jsonSchema = new JsonSchema({ dialects: [v1Dialect], ...config });
   return jsonSchema;
 };

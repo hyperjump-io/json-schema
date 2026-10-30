@@ -5,12 +5,12 @@ import { describe, test, beforeAll, expect } from "vitest";
 import { isCompatible } from "../../test/test-suite.js";
 import { JsonSchema } from "../json-schema.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
-import { addV1, v1DialectUri } from "../dialects/v1/index.js";
-import { addDraft202012, draft202012DialectUri } from "../dialects/draft-2020-12/index.js";
-import { addDraft201909, draft201909DialectUri } from "../dialects/draft-2019-09/index.js";
-import { addDraft07, draft07DialectUri } from "../dialects/draft-07/index.js";
-import { addDraft06, draft06DialectUri } from "../dialects/draft-06/index.js";
-import { addDraft04, draft04DialectUri } from "../dialects/draft-04/index.js";
+import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
+import { draft202012Dialect, draft202012DialectUri } from "../dialects/draft-2020-12/index.js";
+import { draft201909Dialect, draft201909DialectUri } from "../dialects/draft-2019-09/index.js";
+import { draft07Dialect, draft07DialectUri } from "../dialects/draft-07/index.js";
+import { draft06Dialect, draft06DialectUri } from "../dialects/draft-06/index.js";
+import { draft04Dialect, draft04DialectUri } from "../dialects/draft-04/index.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
@@ -336,13 +336,7 @@ describe("bundle", () => {
 
 /** @type (config?: JsonSchemaConfig) => JsonSchema */
 const allDialects = (config) => {
-  const jsonSchema = new JsonSchema(config);
-  addV1(jsonSchema);
-  addDraft202012(jsonSchema);
-  addDraft201909(jsonSchema);
-  addDraft07(jsonSchema);
-  addDraft06(jsonSchema);
-  addDraft04(jsonSchema);
+  const jsonSchema = new JsonSchema({ dialects: [v1Dialect, draft202012Dialect, draft201909Dialect, draft07Dialect, draft06Dialect, draft04Dialect], ...config });
   return jsonSchema;
 };
 

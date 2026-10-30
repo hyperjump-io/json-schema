@@ -1,12 +1,14 @@
 # Custom keywords
 
-A keyword is a plain object with a URI. Add it with `addKeyword`, then give
-it a name in a dialect with `extendDialect`.
+A keyword is a plain object with a URI. Give it a name in a dialect with
+`extendDialect`, which returns a new dialect, and put that in the config
+instead of the dialect.
 
 ```typescript
-import { v1DialectUri } from "@hyperjump/json-schema/v1";
+import { JsonSchema, extendDialect } from "@hyperjump/json-schema";
+import { v1Dialect } from "@hyperjump/json-schema/v1";
 
-jsonSchema.addKeyword({
+const evenKeyword = {
   uri: "https://example.com/keyword/even",
   shape: "data",
   check(valueNode, { message }) {
@@ -15,10 +17,10 @@ jsonSchema.addKeyword({
     }
   },
   lower: (even) => even ? { op: "multipleOf", divisor: 2 } : { op: "pass" }
-});
+};
 
-jsonSchema.extendDialect(v1DialectUri, {
-  keywords: { even: "https://example.com/keyword/even" }
+const jsonSchema = new JsonSchema({
+  dialects: [extendDialect(v1Dialect, { keywords: { even: evenKeyword } })]
 });
 ```
 
@@ -30,8 +32,12 @@ jsonSchema.extendDialect(v1DialectUri, {
 }
 ```
 
-Add keywords before compiling schemas that use them. Schemas that were
-already resolved don't see them.
+To replace a keyword a dialect has, put a definition with the same URI in
+the `keywords` config. It's used in every dialect that has the keyword.
+
+```typescript
+const jsonSchema = new JsonSchema({ dialects: [v1Dialect], keywords: [myTypeKeyword] });
+```
 
 ## The parts of a keyword
 
@@ -81,7 +87,7 @@ is. A keyword that has no effect, like `even: false`, lowers to
 This keyword applies a schema only to strings:
 
 ```typescript
-jsonSchema.addKeyword({
+const ifStringKeyword = {
   uri: "https://example.com/keyword/ifString",
   shape: "schema",
   lower: (schema) => ({
@@ -89,7 +95,7 @@ jsonSchema.addKeyword({
     cases: { string: schema },
     otherwise: { op: "pass" }
   })
-});
+};
 ```
 
 The kernel has operations for types (`typeIs`), values (`equals`,
@@ -143,7 +149,7 @@ const isPrime = (n) => {
   return true;
 };
 
-jsonSchema.addKeyword({
+const primeKeyword = {
   uri: "https://example.com/keyword/prime",
   shape: "data",
   lower: (prime) => prime
@@ -157,7 +163,7 @@ jsonSchema.addKeyword({
   evaluate: (_value, { instance }) => (node) => {
     return isPrime(instance.value(node));
   }
-});
+};
 ```
 
 `evaluate` is called once, with the predicate's `value`, and returns the

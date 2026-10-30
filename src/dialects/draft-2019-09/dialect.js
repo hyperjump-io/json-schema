@@ -69,13 +69,10 @@ import uriTemplateFormat from "../../formats/uri-template.js";
 import jsonPointerFormat from "../../formats/json-pointer.js";
 import relativeJsonPointerFormat from "../../formats/relative-json-pointer.js";
 import regexFormat from "../../formats/regex.js";
-import vocabularyKeyword, { addVocabulary } from "../../keywords/vocabulary.js";
-import { addPreset } from "../add-preset.js";
+import vocabularyKeyword from "../../keywords/vocabulary.js";
 
 /**
- * @import { Keyword } from "../../keyword.d.ts"
- * @import { Format } from "../../format.d.ts"
- * @import { Vocabulary } from "../../keywords/vocabulary.js"
+ * @import { VocabularyConfig } from "../../dialect.d.ts"
  * @import * as API from "./index.d.ts"
  */
 
@@ -84,106 +81,106 @@ export const draft201909DialectUri = "https://json-schema.org/draft/2019-09/sche
 
 /** The formats 2019-09 defines */
 const dialectFormats = {
-  "date-time": "https://json-schema.org/format/date-time",
-  "date": "https://json-schema.org/format/date",
-  "time": "https://json-schema.org/format/time",
-  "duration": "https://json-schema.org/format/duration",
-  "email": "https://json-schema.org/format/email",
+  "date-time": dateTimeFormat,
+  "date": dateFormat,
+  "time": timeFormat,
+  "duration": durationFormat,
+  "email": emailFormat,
   "idn-email": "https://json-schema.org/format/idn-email",
   "hostname": "https://json-schema.org/format/hostname",
   "idn-hostname": "https://json-schema.org/format/idn-hostname",
-  "ipv4": "https://json-schema.org/format/ipv4",
-  "ipv6": "https://json-schema.org/format/ipv6",
-  "uri": "https://json-schema.org/format/uri",
-  "uri-reference": "https://json-schema.org/format/uri-reference",
-  "iri": "https://json-schema.org/format/iri",
-  "iri-reference": "https://json-schema.org/format/iri-reference",
-  "uuid": "https://json-schema.org/format/uuid",
-  "uri-template": "https://json-schema.org/format/uri-template",
-  "json-pointer": "https://json-schema.org/format/json-pointer",
-  "relative-json-pointer": "https://json-schema.org/format/relative-json-pointer",
-  "regex": "https://json-schema.org/format/regex"
+  "ipv4": ipv4Format,
+  "ipv6": ipv6Format,
+  "uri": uriFormat,
+  "uri-reference": uriReferenceFormat,
+  "iri": iriFormat,
+  "iri-reference": iriReferenceFormat,
+  "uuid": uuidFormat,
+  "uri-template": uriTemplateFormat,
+  "json-pointer": jsonPointerFormat,
+  "relative-json-pointer": relativeJsonPointerFormat,
+  "regex": regexFormat
 };
 
-/** @type Record<string, Vocabulary> */
+/** @type Record<string, VocabularyConfig> */
 const vocabularies = {
   "https://json-schema.org/draft/2019-09/vocab/core": {
     keywords: {
-      $anchor: anchorKeyword.uri,
-      $comment: "https://json-schema.org/keyword/comment",
-      $defs: "https://json-schema.org/keyword/definitions",
-      $id: "https://json-schema.org/keyword/id",
-      $recursiveAnchor: recursiveAnchorKeyword.uri,
-      $recursiveRef: recursiveRefKeyword.uri,
-      $ref: "https://json-schema.org/keyword/ref",
-      $vocabulary: "https://json-schema.org/keyword/vocabulary"
+      $anchor: anchorKeyword,
+      $comment: commentKeyword,
+      $defs: definitionsKeyword,
+      $id: idKeyword,
+      $recursiveAnchor: recursiveAnchorKeyword,
+      $recursiveRef: recursiveRefKeyword,
+      $ref: refKeyword,
+      $vocabulary: vocabularyKeyword
     }
   },
   "https://json-schema.org/draft/2019-09/vocab/applicator": {
     keywords: {
-      additionalItems: additionalItemsKeyword.uri,
-      additionalProperties: "https://json-schema.org/keyword/additionalProperties",
-      allOf: "https://json-schema.org/keyword/allOf",
-      anyOf: "https://json-schema.org/keyword/anyOf",
-      contains: "https://json-schema.org/keyword/contains",
-      dependentSchemas: "https://json-schema.org/keyword/dependentSchemas",
-      if: "https://json-schema.org/keyword/if",
-      then: "https://json-schema.org/keyword/then",
-      else: "https://json-schema.org/keyword/else",
-      items: itemsKeyword.uri,
-      not: "https://json-schema.org/keyword/not",
-      oneOf: "https://json-schema.org/keyword/oneOf",
-      patternProperties: "https://json-schema.org/keyword/patternProperties",
-      properties: "https://json-schema.org/keyword/properties",
-      propertyNames: "https://json-schema.org/keyword/propertyNames",
-      unevaluatedItems: "https://json-schema.org/keyword/unevaluatedItems",
-      unevaluatedProperties: "https://json-schema.org/keyword/unevaluatedProperties"
+      additionalItems: additionalItemsKeyword,
+      additionalProperties: additionalPropertiesKeyword,
+      allOf: allOfKeyword,
+      anyOf: anyOfKeyword,
+      contains: containsKeyword,
+      dependentSchemas: dependentSchemasKeyword,
+      if: ifKeyword,
+      then: thenKeyword,
+      else: elseKeyword,
+      items: itemsKeyword,
+      not: notKeyword,
+      oneOf: oneOfKeyword,
+      patternProperties: patternPropertiesKeyword,
+      properties: propertiesKeyword,
+      propertyNames: propertyNamesKeyword,
+      unevaluatedItems: unevaluatedItemsKeyword,
+      unevaluatedProperties: unevaluatedPropertiesKeyword
     }
   },
   "https://json-schema.org/draft/2019-09/vocab/validation": {
     keywords: {
-      const: "https://json-schema.org/keyword/const",
-      dependentRequired: "https://json-schema.org/keyword/dependentRequired",
-      enum: "https://json-schema.org/keyword/enum",
-      exclusiveMaximum: "https://json-schema.org/keyword/exclusiveMaximum",
-      exclusiveMinimum: "https://json-schema.org/keyword/exclusiveMinimum",
-      maxContains: "https://json-schema.org/keyword/maxContains",
-      maxItems: "https://json-schema.org/keyword/maxItems",
-      maxLength: "https://json-schema.org/keyword/maxLength",
-      maxProperties: "https://json-schema.org/keyword/maxProperties",
-      maximum: "https://json-schema.org/keyword/maximum",
-      minContains: "https://json-schema.org/keyword/minContains",
-      minItems: "https://json-schema.org/keyword/minItems",
-      minLength: "https://json-schema.org/keyword/minLength",
-      minProperties: "https://json-schema.org/keyword/minProperties",
-      minimum: "https://json-schema.org/keyword/minimum",
-      multipleOf: "https://json-schema.org/keyword/multipleOf",
-      pattern: "https://json-schema.org/keyword/pattern",
-      required: "https://json-schema.org/keyword/required",
-      type: typeKeyword.uri,
-      uniqueItems: "https://json-schema.org/keyword/uniqueItems"
+      const: constKeyword,
+      dependentRequired: dependentRequiredKeyword,
+      enum: enumKeyword,
+      exclusiveMaximum: exclusiveMaximumKeyword,
+      exclusiveMinimum: exclusiveMinimumKeyword,
+      maxContains: maxContainsKeyword,
+      maxItems: maxItemsKeyword,
+      maxLength: maxLengthKeyword,
+      maxProperties: maxPropertiesKeyword,
+      maximum: maximumKeyword,
+      minContains: minContainsKeyword,
+      minItems: minItemsKeyword,
+      minLength: minLengthKeyword,
+      minProperties: minPropertiesKeyword,
+      minimum: minimumKeyword,
+      multipleOf: multipleOfKeyword,
+      pattern: patternKeyword,
+      required: requiredKeyword,
+      type: typeKeyword,
+      uniqueItems: uniqueItemsKeyword
     }
   },
   "https://json-schema.org/draft/2019-09/vocab/meta-data": {
     keywords: {
-      default: "https://json-schema.org/keyword/default",
-      deprecated: "https://json-schema.org/keyword/deprecated",
-      description: "https://json-schema.org/keyword/description",
-      examples: "https://json-schema.org/keyword/examples",
-      readOnly: "https://json-schema.org/keyword/readOnly",
-      title: "https://json-schema.org/keyword/title",
-      writeOnly: "https://json-schema.org/keyword/writeOnly"
+      default: defaultKeyword,
+      deprecated: deprecatedKeyword,
+      description: descriptionKeyword,
+      examples: examplesKeyword,
+      readOnly: readOnlyKeyword,
+      title: titleKeyword,
+      writeOnly: writeOnlyKeyword
     }
   },
   "https://json-schema.org/draft/2019-09/vocab/format": {
-    keywords: { format: "https://json-schema.org/keyword/format" },
+    keywords: { format: formatKeyword },
     formats: dialectFormats
   },
   "https://json-schema.org/draft/2019-09/vocab/content": {
     keywords: {
-      contentEncoding: "https://json-schema.org/keyword/contentEncoding",
-      contentMediaType: "https://json-schema.org/keyword/contentMediaType",
-      contentSchema: "https://json-schema.org/keyword/contentSchema"
+      contentEncoding: contentEncodingKeyword,
+      contentMediaType: contentMediaTypeKeyword,
+      contentSchema: contentSchemaKeyword
     }
   }
 };
@@ -194,103 +191,6 @@ export const draft201909Dialect = {
   keywords: Object.assign({}, ...Object.values(vocabularies).map((vocabulary) => vocabulary.keywords)),
   unknownKeywords: "annotation",
   formats: dialectFormats,
-  assertFormats: false
-};
-
-/**
- * The keyword definitions the dialect uses
- *
- * @type Keyword<any>[]
- */
-const keywords = [
-  anchorKeyword,
-  commentKeyword,
-  definitionsKeyword,
-  idKeyword,
-  recursiveAnchorKeyword,
-  recursiveRefKeyword,
-  refKeyword,
-  vocabularyKeyword,
-  additionalItemsKeyword,
-  additionalPropertiesKeyword,
-  allOfKeyword,
-  anyOfKeyword,
-  containsKeyword,
-  dependentSchemasKeyword,
-  ifKeyword,
-  thenKeyword,
-  elseKeyword,
-  itemsKeyword,
-  notKeyword,
-  oneOfKeyword,
-  patternPropertiesKeyword,
-  propertiesKeyword,
-  propertyNamesKeyword,
-  unevaluatedItemsKeyword,
-  unevaluatedPropertiesKeyword,
-  constKeyword,
-  dependentRequiredKeyword,
-  enumKeyword,
-  exclusiveMaximumKeyword,
-  exclusiveMinimumKeyword,
-  maxContainsKeyword,
-  maxItemsKeyword,
-  maxLengthKeyword,
-  maxPropertiesKeyword,
-  maximumKeyword,
-  minContainsKeyword,
-  minItemsKeyword,
-  minLengthKeyword,
-  minPropertiesKeyword,
-  minimumKeyword,
-  multipleOfKeyword,
-  patternKeyword,
-  requiredKeyword,
-  typeKeyword,
-  uniqueItemsKeyword,
-  defaultKeyword,
-  deprecatedKeyword,
-  descriptionKeyword,
-  examplesKeyword,
-  readOnlyKeyword,
-  titleKeyword,
-  writeOnlyKeyword,
-  formatKeyword,
-  contentEncodingKeyword,
-  contentMediaTypeKeyword,
-  contentSchemaKeyword
-];
-
-/**
- * The format definitions the dialect uses. Formats that need large tables of
- * Unicode data aren't included. They're added with the full formats.
- *
- * @type Format[]
- */
-const formats = [
-  dateTimeFormat,
-  dateFormat,
-  timeFormat,
-  durationFormat,
-  emailFormat,
-  ipv4Format,
-  ipv6Format,
-  uriFormat,
-  uriReferenceFormat,
-  iriFormat,
-  iriReferenceFormat,
-  uuidFormat,
-  uriTemplateFormat,
-  jsonPointerFormat,
-  relativeJsonPointerFormat,
-  regexFormat
-];
-
-/** @type API.addDraft201909 */
-export const addDraft201909 = (jsonSchema) => {
-  addPreset(jsonSchema, draft201909Dialect, { keywords, formats });
-
-  for (const uri in vocabularies) {
-    addVocabulary(jsonSchema, uri, vocabularies[uri]);
-  }
+  assertFormats: false,
+  vocabularies: vocabularies
 };

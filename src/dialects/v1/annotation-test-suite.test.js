@@ -1,8 +1,7 @@
 import { describeAnnotationTestSuite, testSuiteJsonSchema } from "../../../test/test-suite.js";
-import { addV1, v1Dialect } from "./index.js";
+import { v1Dialect } from "./index.js";
 
-const jsonSchema = testSuiteJsonSchema();
-addV1(jsonSchema);
+const jsonSchema = testSuiteJsonSchema({ dialects: [v1Dialect] });
 
 describeAnnotationTestSuite({
   description: "JSON-Schema-Test-Suite v1 annotations",

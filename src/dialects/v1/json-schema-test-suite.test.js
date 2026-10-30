@@ -1,7 +1,7 @@
 import { readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describeValidationTestSuite, testSuiteJsonSchema, validationTestsPath } from "../../../test/test-suite.js";
-import { addV1, v1DialectUri } from "./index.js";
+import { v1Dialect, v1DialectUri } from "./index.js";
 
 const proposalsPath = join(validationTestsPath, "proposals");
 
@@ -23,8 +23,7 @@ testDirectories["extension-tests/"] = join(import.meta.dirname, "extension-tests
 /** In v1, `format` asserts by default */
 const supportedTags = new Set(["format-assertion"]);
 
-const jsonSchema = testSuiteJsonSchema();
-addV1(jsonSchema);
+const jsonSchema = testSuiteJsonSchema({ dialects: [v1Dialect] });
 
 describeValidationTestSuite({
   description: "JSON-Schema-Test-Suite v1",

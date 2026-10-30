@@ -5,8 +5,8 @@ Everything is per instance. v1 had global state (`registerSchema`,
 couldn't configure JSON Schema differently, and tests leaked into each
 other.
 
-- Keywords, formats, and dialects are added to a `JsonSchema`, not to the
-  module.
+- Keywords, formats, and dialects are in a `JsonSchema`'s config, not
+  added to the module.
 - Definitions are plain, stateless objects, so one definition can be shared
   by every `JsonSchema` and every dialect. Anything instance-specific comes
   through a context argument (see [Keywords](../specs/keyword/README.md)).

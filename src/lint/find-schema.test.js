@@ -6,7 +6,7 @@ import { HttpError } from "@hyperjump/browser";
 import { linter } from "./test-linter.js";
 import { JsonSchema } from "../json-schema.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
-import { addV1, v1DialectUri } from "../dialects/v1/index.js";
+import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import { findSchema } from "./find-schema.js";
 
 /**
@@ -19,8 +19,7 @@ describe("findSchema", () => {
   let session;
 
   beforeEach(() => {
-    const jsonSchema = new JsonSchema({ allowRetrieval: ["test:/", "file:///nothing-here/"] });
-    addV1(jsonSchema);
+    const jsonSchema = new JsonSchema({ allowRetrieval: ["test:/", "file:///nothing-here/"], dialects: [v1Dialect] });
     jsonSchema.addUriSchemePlugin({ schemes: ["test"], retrieve: respond });
 
     const registry = new SchemaRegistry().with({

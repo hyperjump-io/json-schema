@@ -6,7 +6,7 @@ import { linter } from "../test-linter.js";
 import { JsonSchema } from "../../json-schema.js";
 import { SchemaRegistry } from "../../registry/schema-registry.js";
 import { jsonSchemaResolve } from "../../schema/resolve.js";
-import { addDraft202012 } from "../../dialects/draft-2020-12/index.js";
+import { draft202012Dialect } from "../../dialects/draft-2020-12/index.js";
 import requiredPropertyNotDefined from "./required-property-not-defined.js";
 
 const draft2020 = "https://json-schema.org/draft/2020-12/schema";
@@ -139,8 +139,7 @@ const reasons = async (json) => (await lint(json)).messages.map((message) => mes
  * @type (json: string) => Promise<string[]>
  */
 const reasonsWithBase = async (json) => {
-  const jsonSchema = new JsonSchema();
-  addDraft202012(jsonSchema);
+  const jsonSchema = new JsonSchema({ dialects: [draft202012Dialect] });
   const registry = new SchemaRegistry().with({
     $schema: draft2020,
     $id: "https://example.com/base",

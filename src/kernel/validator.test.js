@@ -17,6 +17,7 @@ import dynamicAnchorKeyword from "../keywords/dynamicAnchor.js";
  * @import { Expression, TypeName } from "./kernel.d.ts"
  * @import { EvaluationLocation, EvaluationPlugin } from "./evaluation-plugin.d.ts"
  * @import { DetailedValidationError, ValidationError } from "../output/validation-error.d.ts"
+ * @import { DialectConfig } from "../dialect.d.ts"
  */
 
 const dialectUri = "https://example.com/dialect";
@@ -335,8 +336,7 @@ describe("Validator", () => {
   });
 
   beforeEach(() => {
-    jsonSchema = new JsonSchema({ allowRetrieval: [pathToFileURL(join(tmpdir(), "/")).href] });
-    addTestDialect(jsonSchema);
+    jsonSchema = new JsonSchema({ allowRetrieval: [pathToFileURL(join(tmpdir(), "/")).href], dialects: [testDialect], keywords });
   });
 
   describe("validate", () => {
@@ -954,7 +954,11 @@ describe("Validator", () => {
     test("x- keywords are annotations if unknown keywords are errors", async () => {
       for (const unknownKeywords of /** @type const */ (["error", "ignore"])) {
         const strictDialectUri = `https://example.com/${unknownKeywords}-dialect`;
-        jsonSchema.addDialect({ uri: strictDialectUri, keywords: {}, unknownKeywords });
+        const jsonSchema = new JsonSchema({
+          allowRetrieval: [pathToFileURL(join(tmpdir(), "/")).href],
+          dialects: [testDialect, { uri: strictDialectUri, keywords: {}, unknownKeywords }],
+          keywords
+        });
         const path = join(directory, `${fileCount++}.schema.json`);
         await writeFile(path, JSON.stringify({ "$schema": strictDialectUri, "x-foo": 1 }));
         const validator = await jsonSchema.compile(pathToFileURL(path).toString());
@@ -1568,9 +1572,7 @@ describe("Validator", () => {
       const validator = await jsonSchema.compile(await schemaFile({ sorted: "ascending" }));
       const serialized = validator.serialize();
 
-      const other = new JsonSchema();
-      addTestDialect(other);
-      other.addKeyword({ ...sortedKeyword, evaluate: undefined });
+      const other = new JsonSchema({ dialects: [testDialect], keywords: [...keywords, { ...sortedKeyword, evaluate: undefined }] });
       expect(() => other.restoreValidator(serialized)).to.throw("needs 'evaluate'");
     });
 
@@ -1617,47 +1619,46 @@ const opaqueContext = (context) => {
   return context;
 };
 
-/** @type (jsonSchema: JsonSchema) => void */
-const addTestDialect = (jsonSchema) => {
-  for (const keyword of keywords) {
-    jsonSchema.addKeyword(keyword);
-  }
-
-  jsonSchema.addDialect({
-    uri: dialectUri,
-    keywords: {
-      $id: idKeyword.uri,
-      $anchor: anchorKeyword.uri,
-      $dynamicAnchor: dynamicAnchorKeyword.uri,
-      $defs: "https://example.com/keyword/defs",
-      $ref: refKeyword.uri,
-      $dynamicRef: dynamicRefKeyword.uri,
-      type: typeKeyword.uri,
-      minimum: minimumKeyword.uri,
-      title: titleKeyword.uri,
-      properties: propertiesKeyword.uri,
-      patternProperties: patternPropertiesKeyword.uri,
-      additionalProperties: additionalPropertiesKeyword.uri,
-      required: requiredKeyword.uri,
-      items: itemsKeyword.uri,
-      minItems: minItemsKeyword.uri,
-      uniqueItems: uniqueItemsKeyword.uri,
-      allOf: allOfKeyword.uri,
-      anyOf: anyOfKeyword.uri,
-      if: ifKeyword.uri,
-      then: "https://example.com/keyword/then",
-      unevaluatedProperties: unevaluatedPropertiesKeyword.uri,
-      unevaluatedItems: unevaluatedItemsKeyword.uri,
-      sorted: sortedKeyword.uri,
-      propertiesByType: propertiesByTypeKeyword.uri,
-      firstOf: firstOfKeyword.uri,
-      firstOfProperties: firstOfPropertiesKeyword.uri,
-      sameAs: sameAsKeyword.uri,
-      maxUnevaluated: maxUnevaluatedKeyword.uri,
-      dynamicProperties: dynamicPropertiesKeyword.uri
-    },
-    unknownKeywords: "annotation"
-  });
+/**
+ * The test dialect names its keywords by URI. Their definitions are in the
+ * config's `keywords`.
+ *
+ * @type DialectConfig
+ */
+const testDialect = {
+  uri: dialectUri,
+  keywords: {
+    $id: idKeyword.uri,
+    $anchor: anchorKeyword.uri,
+    $dynamicAnchor: dynamicAnchorKeyword.uri,
+    $defs: "https://example.com/keyword/defs",
+    $ref: refKeyword.uri,
+    $dynamicRef: dynamicRefKeyword.uri,
+    type: typeKeyword.uri,
+    minimum: minimumKeyword.uri,
+    title: titleKeyword.uri,
+    properties: propertiesKeyword.uri,
+    patternProperties: patternPropertiesKeyword.uri,
+    additionalProperties: additionalPropertiesKeyword.uri,
+    required: requiredKeyword.uri,
+    items: itemsKeyword.uri,
+    minItems: minItemsKeyword.uri,
+    uniqueItems: uniqueItemsKeyword.uri,
+    allOf: allOfKeyword.uri,
+    anyOf: anyOfKeyword.uri,
+    if: ifKeyword.uri,
+    then: "https://example.com/keyword/then",
+    unevaluatedProperties: unevaluatedPropertiesKeyword.uri,
+    unevaluatedItems: unevaluatedItemsKeyword.uri,
+    sorted: sortedKeyword.uri,
+    propertiesByType: propertiesByTypeKeyword.uri,
+    firstOf: firstOfKeyword.uri,
+    firstOfProperties: firstOfPropertiesKeyword.uri,
+    sameAs: sameAsKeyword.uri,
+    maxUnevaluated: maxUnevaluatedKeyword.uri,
+    dynamicProperties: dynamicPropertiesKeyword.uri
+  },
+  unknownKeywords: "annotation"
 };
 
 /** @type (error: ValidationError) => Record<string, string> */

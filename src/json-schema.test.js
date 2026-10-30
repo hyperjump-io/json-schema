@@ -5,15 +5,16 @@ import { pathToFileURL } from "node:url";
 import { describe, test, beforeEach, expect } from "vitest";
 import { Session } from "@hyperjump/browser";
 import { pointerGet } from "@hyperjump/browser/json";
-import { JsonSchema } from "./json-schema.js";
-import { addV1, v1DialectUri } from "./dialects/v1/index.js";
+import { JsonSchema, extendDialect } from "./json-schema.js";
+import { v1Dialect, v1DialectUri } from "./dialects/v1/index.js";
 import { SchemaRegistry } from "./registry/schema-registry.js";
 import { AnchorNotFoundError } from "./schema/media-type-plugin.js";
-import vocabularyKeyword, { addVocabulary } from "./keywords/vocabulary.js";
+import vocabularyKeyword from "./keywords/vocabulary.js";
+import idKeyword from "./keywords/id.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
- * @import { Dialect } from "./dialect.d.ts"
+ * @import { Dialect, DialectConfig } from "./dialect.d.ts"
  * @import { Keyword } from "./keyword.d.ts"
  */
 
@@ -22,119 +23,127 @@ describe("JsonSchema", () => {
   let jsonSchema;
 
   beforeEach(() => {
-    jsonSchema = new JsonSchema({ allowRetrieval: [pathToFileURL(join(tmpdir(), "/")).href] });
-    addV1(jsonSchema);
+    jsonSchema = new JsonSchema({ allowRetrieval: [pathToFileURL(join(tmpdir(), "/")).href], dialects: [v1Dialect] });
   });
 
   describe("dialects", () => {
-    /** @type Dialect */
+    /** @type DialectConfig */
     const dialect = {
       uri: "https://example.com/dialect",
-      keywords: { $id: "https://json-schema.org/keyword/id" },
+      keywords: { $id: idKeyword },
       unknownKeywords: "error"
     };
 
-    test("addDialect", () => {
-      jsonSchema.addDialect(dialect);
+    test("a dialect in the config", () => {
+      const jsonSchema = new JsonSchema({ dialects: [dialect] });
 
       expect(jsonSchema.hasDialect(dialect.uri)).to.equal(true);
-      expect(jsonSchema.getDialect(dialect.uri)).to.eql(dialect);
+      expect(jsonSchema.getDialect(dialect.uri)).to.eql({ ...dialect, keywords: { $id: idKeyword.uri } });
+      expect(jsonSchema.getKeyword(idKeyword.uri)).to.equal(idKeyword);
     });
 
     test("an empty fragment identifies the same dialect", () => {
-      jsonSchema.addDialect({ ...dialect, uri: `${dialect.uri}#` });
+      const jsonSchema = new JsonSchema({ dialects: [{ ...dialect, uri: `${dialect.uri}#` }] });
 
       expect(jsonSchema.hasDialect(dialect.uri)).to.equal(true);
-      expect(jsonSchema.getDialect(dialect.uri)).to.eql(dialect);
+      expect(jsonSchema.getDialect(dialect.uri)).to.include({ uri: dialect.uri });
     });
 
-    test("a dialect can't be replaced", () => {
-      jsonSchema.addDialect(dialect);
-
-      expect(() => jsonSchema.addDialect(dialect)).to.throw("already defined");
+    test("a dialect can't be in the config twice", () => {
+      expect(() => new JsonSchema({ dialects: [dialect, { ...dialect, keywords: {} }] })).to.throw("more than once");
     });
 
-    test("a dialect can be replaced after it's removed", () => {
-      jsonSchema.addDialect(dialect);
-      jsonSchema.removeDialect(dialect.uri);
+    test("a dialect that isn't in the config", () => {
+      expect(() => jsonSchema.getDialect(dialect.uri)).to.throw("isn't defined");
+    });
 
-      expect(jsonSchema.hasDialect(dialect.uri)).to.equal(false);
+    test("a keyword named by URI comes from the config's keywords", () => {
+      const foo = { uri: "https://example.com/keyword/foo", shape: /** @type const */ ("data") };
+      const jsonSchema = new JsonSchema({ dialects: [{ ...dialect, keywords: { foo: foo.uri } }], keywords: [foo] });
 
-      const replacement = { ...dialect, keywords: {} };
-      jsonSchema.addDialect(replacement);
-      expect(jsonSchema.getDialect(dialect.uri)).to.eql(replacement);
+      expect(jsonSchema.getKeyword(foo.uri)).to.equal(foo);
+    });
+
+    test("a keyword named by URI that isn't defined", () => {
+      expect(() => new JsonSchema({ dialects: [{ ...dialect, keywords: { foo: "https://example.com/keyword/foo" } }] }))
+        .to.throw("no definition for the 'https://example.com/keyword/foo' keyword");
+    });
+
+    test("a format named by URI that isn't defined isn't supported", () => {
+      const jsonSchema = new JsonSchema({ dialects: [{ ...dialect, formats: { bar: "https://example.com/format/bar" } }] });
+
+      expect(jsonSchema.getDialect(dialect.uri).formats).to.eql({ bar: "https://example.com/format/bar" });
+      expect(jsonSchema.hasFormat("https://example.com/format/bar")).to.equal(false);
     });
 
     test("extendDialect", () => {
-      jsonSchema.addDialect(dialect);
-      const original = jsonSchema.getDialect(dialect.uri);
-      jsonSchema.extendDialect(dialect.uri, {
-        keywords: { foo: "https://example.com/keyword/foo" },
-        formats: { bar: "https://example.com/format/bar" }
-      });
+      const foo = { uri: "https://example.com/keyword/foo", shape: /** @type const */ ("data") };
+      const bar = { uri: "https://example.com/format/bar", validate: () => true };
+      const extended = extendDialect(dialect, { keywords: { foo }, formats: { bar } });
 
-      expect(jsonSchema.getDialect(dialect.uri)).to.eql({
-        ...dialect,
-        keywords: { ...dialect.keywords, foo: "https://example.com/keyword/foo" },
-        formats: { bar: "https://example.com/format/bar" }
-      });
-      expect(original).to.eql(dialect);
+      expect(extended).to.eql({ ...dialect, keywords: { ...dialect.keywords, foo }, formats: { bar } });
+      expect(dialect.keywords).to.eql({ $id: idKeyword });
     });
 
     test("extendDialect can't replace a keyword", () => {
-      jsonSchema.addDialect(dialect);
-
-      expect(() => jsonSchema.extendDialect(dialect.uri, { keywords: { $id: "https://example.com/keyword/id" } })).to.throw("already has");
-      expect(() => jsonSchema.extendDialect(dialect.uri, { keywords: { $schema: "https://example.com/keyword/schema" } })).to.throw("already has");
+      expect(() => extendDialect(dialect, { keywords: { $id: "https://example.com/keyword/id" } })).to.throw("already has");
+      expect(() => extendDialect(dialect, { keywords: { $schema: "https://example.com/keyword/schema" } })).to.throw("already has");
     });
 
     test("extendDialect can't replace a format", () => {
-      jsonSchema.addDialect({ ...dialect, formats: { bar: "https://example.com/format/bar" } });
+      const withFormat = { ...dialect, formats: { bar: "https://example.com/format/bar" } };
 
-      expect(() => jsonSchema.extendDialect(dialect.uri, { formats: { bar: "https://example.com/format/other" } })).to.throw("already has");
+      expect(() => extendDialect(withFormat, { formats: { bar: "https://example.com/format/other" } })).to.throw("already has");
+    });
+  });
+
+  describe("keywords", () => {
+    test("one in the config replaces a dialect's", () => {
+      const replacement = { ...idKeyword, check: () => {} };
+      const jsonSchema = new JsonSchema({ dialects: [v1Dialect], keywords: [replacement] });
+
+      expect(jsonSchema.getKeyword(idKeyword.uri)).to.equal(replacement);
     });
 
-    test("extendDialect for a dialect that isn't defined", () => {
-      expect(() => jsonSchema.extendDialect(dialect.uri, {})).to.throw("isn't defined");
+    test("a keyword that isn't defined", () => {
+      expect(() => jsonSchema.getKeyword("https://example.com/keyword/nope")).to.throw("'keywords' config");
     });
   });
 
   describe("formats", () => {
-    test("addFormat", () => {
+    test("a format in the config", () => {
       const format = { uri: "https://example.com/format/foo", validate: () => true };
-      jsonSchema.addFormat(format);
+      const jsonSchema = new JsonSchema({ formats: [format] });
 
       expect(jsonSchema.getFormat(format.uri)).to.equal(format);
     });
 
-    test("a format that hasn't been added", () => {
-      expect(() => jsonSchema.getFormat("https://example.com/format/nope")).to.throw("addFormat");
+    test("a format that isn't defined", () => {
+      expect(() => jsonSchema.getFormat("https://example.com/format/nope")).to.throw("'formats' config");
     });
   });
 
   describe("x- keywords are reserved", () => {
     const keywords = { "x-foo": "https://example.com/keyword/foo" };
 
-    test("addDialect", () => {
-      expect(() => jsonSchema.addDialect({ uri: "https://example.com/x", keywords, unknownKeywords: "error" })).to.throw("reserved");
-      expect(jsonSchema.hasDialect("https://example.com/x")).to.equal(false);
+    test("in a dialect", () => {
+      expect(() => new JsonSchema({ dialects: [{ uri: "https://example.com/x", keywords, unknownKeywords: "error" }] })).to.throw("reserved");
     });
 
     test("extendDialect", () => {
-      jsonSchema.addDialect({ uri: "https://example.com/x", keywords: {}, unknownKeywords: "error" });
-
-      expect(() => jsonSchema.extendDialect("https://example.com/x", { keywords })).to.throw("reserved");
-      expect(jsonSchema.getDialect("https://example.com/x").keywords).to.eql({});
+      expect(() => extendDialect({ uri: "https://example.com/x", keywords: {}, unknownKeywords: "error" }, { keywords })).to.throw("reserved");
     });
   });
 
   describe("sessions", () => {
     test("a dialect built from a meta-schema only belongs to the session", async () => {
-      addVocabulary(jsonSchema, "https://example.com/vocab/core", { keywords: { $id: "https://json-schema.org/keyword/id" } });
-      jsonSchema.addDialect({
-        uri: "https://example.com/meta-dialect",
-        keywords: { $id: "https://json-schema.org/keyword/id", $vocabulary: vocabularyKeyword.uri },
-        unknownKeywords: "annotation"
+      const jsonSchema = new JsonSchema({
+        dialects: [{
+          uri: "https://example.com/meta-dialect",
+          keywords: { $id: idKeyword, $vocabulary: vocabularyKeyword },
+          unknownKeywords: "annotation",
+          vocabularies: { "https://example.com/vocab/core": { keywords: { $id: idKeyword } } }
+        }]
       });
       const uri = "https://example.com/session-dialect";
       const registry = new SchemaRegistry().with({
@@ -150,11 +159,10 @@ describe("JsonSchema", () => {
       expect(jsonSchema.session().hasDialect(uri)).to.equal(false);
     });
 
-    test("a session sees dialects added to its JsonSchema", async () => {
+    test("a session sees the dialects in its JsonSchema's config", async () => {
       /** @type Dialect */
       const dialect = { uri: "https://example.com/added-dialect", keywords: {}, unknownKeywords: "annotation" };
-      jsonSchema.addDialect(dialect);
-      const session = jsonSchema.session();
+      const session = new JsonSchema({ dialects: [dialect] }).session();
 
       expect(session.hasDialect(dialect.uri)).to.equal(true);
       expect(await session.getDialect(dialect.uri)).to.eql(dialect);
@@ -344,9 +352,12 @@ describe("JsonSchema", () => {
     });
 
     test("annotation by name in another dialect", async () => {
-      jsonSchema.addDialect({ uri: "https://example.com/dialect", keywords: { label: "https://json-schema.org/keyword/title" }, unknownKeywords: "error" });
-      const { node } = await jsonSchema.annotate("https://example.com/annotated", {});
-      const session = jsonSchema.session();
+      const other = new JsonSchema({
+        dialects: [v1Dialect, { uri: "https://example.com/dialect", keywords: { label: "https://json-schema.org/keyword/title" }, unknownKeywords: "error" }]
+      });
+      other.registry = jsonSchema.registry;
+      const { node } = await other.annotate("https://example.com/annotated", {});
+      const session = other.session();
 
       expect(session.annotation(node, "label", "https://example.com/dialect")).to.eql(["root"]);
       expect(session.annotation(node, "title", "https://example.com/dialect")).to.eql([]);
@@ -389,18 +400,7 @@ describe("JsonSchema", () => {
     });
   });
 
-  describe("keywords", () => {
-    test("addKeyword", () => {
-      const keyword = { uri: "https://example.com/keyword/foo", shape: /** @type const */ ("data") };
-      jsonSchema.addKeyword(keyword);
-
-      expect(jsonSchema.getKeyword(keyword.uri)).to.equal(keyword);
-    });
-
-    test("a keyword that hasn't been added", () => {
-      expect(() => jsonSchema.getKeyword("https://example.com/keyword/foo")).to.throw("isn't supported");
-    });
-
+  describe("built-in keywords", () => {
     test.each([
       "https://json-schema.org/keyword/schema",
       "https://json-schema.org/keyword/unknown"

@@ -1,7 +1,7 @@
 import { describe, test, expect } from "vitest";
 import { JsonSchema } from "../../json-schema.js";
 import { SchemaRegistry } from "../../registry/schema-registry.js";
-import { addV1, v1DialectUri } from "../../dialects/v1/index.js";
+import { v1Dialect, v1DialectUri } from "../../dialects/v1/index.js";
 import combine from "./combine.js";
 
 /**
@@ -10,8 +10,7 @@ import combine from "./combine.js";
  * @import { Mode } from "../optimize.js"
  */
 
-const jsonSchema = new JsonSchema();
-addV1(jsonSchema);
+const jsonSchema = new JsonSchema({ dialects: [v1Dialect] });
 
 const fast = { fast: true, plugins: false, annotations: false };
 const plugins = { fast: false, plugins: true, annotations: false };

@@ -15,8 +15,8 @@
   defined isn't replaced.
 - A self-describing meta-schema (its `$schema` is the URI it was retrieved
   from) can't define its own dialect, because the dialect is needed to find
-  out what it defines. Its dialect has to be added, which the presets do for
-  2019-09 and 2020-12. Custom meta-schemas normally use `$schema` for one of
+  out what it defines. Its dialect has to be in the config, as the built-in
+  2019-09 and 2020-12 are. Custom meta-schemas normally use `$schema` for one of
   those, so they still define their dialects. Meta-schemas that depend on
   each other are detected with `getDialect`'s `referencedFrom` option instead
   of waiting forever.

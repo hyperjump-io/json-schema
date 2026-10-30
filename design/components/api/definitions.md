@@ -1,6 +1,10 @@
 # Definitions
 
-Part of [The API as functions](README.md). Decided 2026-10-29, not built.
+Part of [The API as functions](README.md). Decided 2026-10-29. The config
+and dialects that carry their definitions were built the same day (stage
+2). Vocabularies, which this didn't cover, became a `vocabularies` config,
+and dialects carry theirs (see [Vocabularies](../dialects/vocabularies.md)).
+Schema types from the config aren't built yet.
 
 ```js
 import { JsonSchema, extendDialect } from "@hyperjump/json-schema";

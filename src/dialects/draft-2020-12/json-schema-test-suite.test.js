@@ -1,5 +1,5 @@
 import { describeValidationTestSuite, testSuiteJsonSchema } from "../../../test/test-suite.js";
-import { addDraft202012, draft202012DialectUri } from "./index.js";
+import { draft202012Dialect, draft202012DialectUri } from "./index.js";
 
 /**
  * @import { JsonSchema } from "../../json-schema.d.ts"
@@ -7,8 +7,7 @@ import { addDraft202012, draft202012DialectUri } from "./index.js";
 
 /** @type (validateFormats: boolean) => JsonSchema */
 const draft202012JsonSchema = (validateFormats) => {
-  const jsonSchema = testSuiteJsonSchema({ validateFormats });
-  addDraft202012(jsonSchema);
+  const jsonSchema = testSuiteJsonSchema({ validateFormats, dialects: [draft202012Dialect] });
   return jsonSchema;
 };
 

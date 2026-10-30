@@ -5,8 +5,8 @@ import { rejsonParse } from "@hyperjump/browser/json";
 import { JsonSchema } from "../../json-schema.js";
 import { SchemaRegistry } from "../../registry/schema-registry.js";
 import { jsonSchemaResolve } from "../../schema/resolve.js";
-import { addDraft07 } from "../../dialects/draft-07/index.js";
-import { addDraft202012 } from "../../dialects/draft-2020-12/index.js";
+import { draft07Dialect } from "../../dialects/draft-07/index.js";
+import { draft202012Dialect } from "../../dialects/draft-2020-12/index.js";
 import { linter } from "../test-linter.js";
 import implicitDialect from "./implicit-dialect.js";
 
@@ -77,8 +77,7 @@ describe("implicit-dialect", () => {
   // The CLI never reports it, so these are how it's used
   describe("linting from code", () => {
     test("a registry entry's dialectUri", async () => {
-      const jsonSchema = new JsonSchema();
-      addDraft202012(jsonSchema);
+      const jsonSchema = new JsonSchema({ dialects: [draft202012Dialect] });
       jsonSchema.registry = new SchemaRegistry([{
         schema: `{ "type": "string" }`,
         retrievalUri: "https://example.com/a",
@@ -90,8 +89,7 @@ describe("implicit-dialect", () => {
     });
 
     test("the default dialect", async () => {
-      const jsonSchema = new JsonSchema({ defaultDialectUri: draft202012 });
-      addDraft202012(jsonSchema);
+      const jsonSchema = new JsonSchema({ defaultDialectUri: draft202012, dialects: [draft202012Dialect] });
       jsonSchema.registry = new SchemaRegistry([{
         schema: `{ "type": "string" }`,
         retrievalUri: "https://example.com/a"
@@ -105,9 +103,7 @@ describe("implicit-dialect", () => {
 
 /** @type (json: string, options: { dialectUri?: string; defaultDialectUri?: string }) => Promise<VFile> */
 const lint = async (json, { dialectUri, defaultDialectUri }) => {
-  const jsonSchema = new JsonSchema({ defaultDialectUri });
-  addDraft07(jsonSchema);
-  addDraft202012(jsonSchema);
+  const jsonSchema = new JsonSchema({ defaultDialectUri, dialects: [draft07Dialect, draft202012Dialect] });
 
   const file = new VFile({ path: "/schemas/a.schema.json", value: json });
   const processor = unified()

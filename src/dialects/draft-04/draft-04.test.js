@@ -1,11 +1,7 @@
 import { describe, test, beforeEach, expect } from "vitest";
 import { JsonSchema } from "../../json-schema.js";
 import { SchemaRegistry } from "../../registry/schema-registry.js";
-import { addDraft06 } from "../draft-06/index.js";
-import { addDraft07 } from "../draft-07/index.js";
-import { addDraft201909 } from "../draft-2019-09/index.js";
-import { addDraft202012 } from "../draft-2020-12/index.js";
-import { addDraft04, draft04DialectUri } from "./index.js";
+import { draft04Dialect, draft04DialectUri } from "./index.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
@@ -15,8 +11,7 @@ import { addDraft04, draft04DialectUri } from "./index.js";
 describe("draft-04", () => {
   /** @type (config?: JsonSchemaConfig) => JsonSchema */
   const draft04 = (config) => {
-    const jsonSchema = new JsonSchema({ allowRetrieval: [], ...config });
-    addDraft04(jsonSchema);
+    const jsonSchema = new JsonSchema({ allowRetrieval: [], dialects: [draft04Dialect], ...config });
     return jsonSchema;
   };
 
@@ -34,17 +29,6 @@ describe("draft-04", () => {
 
   beforeEach(() => {
     jsonSchema = draft04();
-  });
-
-  test("it can only be added once", () => {
-    expect(() => addDraft04(jsonSchema)).to.throw();
-  });
-
-  test("it can be added with every other preset", () => {
-    addDraft06(jsonSchema);
-    addDraft07(jsonSchema);
-    addDraft201909(jsonSchema);
-    addDraft202012(jsonSchema);
   });
 
   test("$ref replaces the whole schema", async () => {

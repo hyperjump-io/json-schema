@@ -2,7 +2,7 @@ import { describe, test, expect } from "vitest";
 import { pointerGet } from "@hyperjump/browser/json";
 import { JsonSchema } from "../../json-schema.js";
 import { SchemaRegistry } from "../../registry/schema-registry.js";
-import { addDraft202012, draft202012DialectUri } from "../../dialects/draft-2020-12/index.js";
+import { draft202012Dialect, draft202012DialectUri } from "../../dialects/draft-2020-12/index.js";
 import { hasOp } from "../kernel.js";
 import { optimize } from "../optimize.js";
 import staticDynamicScope from "./static-dynamic-scope.js";
@@ -15,8 +15,7 @@ import staticDynamicScope from "./static-dynamic-scope.js";
  * @import { ValidationError } from "../../output/validation-error.d.ts"
  */
 
-const jsonSchema = new JsonSchema();
-addDraft202012(jsonSchema);
+const jsonSchema = new JsonSchema({ dialects: [draft202012Dialect] });
 
 const fast = { fast: true, plugins: false, annotations: false };
 const plugins = { fast: false, plugins: true, annotations: false };

@@ -2,9 +2,9 @@ import { describe, test, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
 import { rejsonParse, rejsonStringify } from "@hyperjump/browser/json";
-import { JsonSchema } from "../json-schema.js";
+import { JsonSchema, extendDialect } from "../json-schema.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
-import { addDraft202012 } from "../dialects/draft-2020-12/index.js";
+import { draft202012Dialect } from "../dialects/draft-2020-12/index.js";
 import fractionalLimitForInteger from "./rules/fractional-limit-for-integer.js";
 import keywordForDisallowedType from "./rules/keyword-for-disallowed-type.js";
 import multipleOfOne from "./rules/multiple-of-one.js";
@@ -32,10 +32,7 @@ const allowsKeyword = {
   lower: (types) => ({ op: "typeIs", types: Array.isArray(types) ? types : [types] })
 };
 
-const jsonSchema = new JsonSchema();
-addDraft202012(jsonSchema);
-jsonSchema.addKeyword(allowsKeyword);
-jsonSchema.extendDialect(draft2020, { keywords: { allows: allowsKeyword.uri } });
+const jsonSchema = new JsonSchema({ dialects: [extendDialect(draft202012Dialect, { keywords: { allows: allowsKeyword } })] });
 
 describe("more than one keyword that lowers to typeIs", () => {
   test("keyword-for-disallowed-type names the keywords that don't allow the type", async () => {

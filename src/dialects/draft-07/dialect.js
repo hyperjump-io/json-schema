@@ -57,11 +57,8 @@ import uriTemplateFormat from "../../formats/uri-template.js";
 import jsonPointerFormat from "../../formats/json-pointer.js";
 import relativeJsonPointerFormat from "../../formats/relative-json-pointer.js";
 import regexFormat from "../../formats/regex.js";
-import { addPreset } from "../add-preset.js";
 
 /**
- * @import { Keyword } from "../../keyword.d.ts"
- * @import { Format } from "../../format.d.ts"
  * @import * as API from "./index.d.ts"
  */
 
@@ -72,152 +69,71 @@ export const draft07DialectUri = "http://json-schema.org/draft-07/schema";
 export const draft07Dialect = {
   uri: draft07DialectUri,
   keywords: {
-    additionalItems: additionalItemsKeyword.uri,
-    additionalProperties: "https://json-schema.org/keyword/additionalProperties",
-    allOf: "https://json-schema.org/keyword/allOf",
-    anyOf: "https://json-schema.org/keyword/anyOf",
-    $comment: "https://json-schema.org/keyword/comment",
-    const: "https://json-schema.org/keyword/const",
-    contains: "https://json-schema.org/keyword/contains",
-    contentEncoding: "https://json-schema.org/keyword/contentEncoding",
-    contentMediaType: "https://json-schema.org/keyword/contentMediaType",
-    default: "https://json-schema.org/keyword/default",
-    definitions: "https://json-schema.org/keyword/definitions",
-    dependencies: dependenciesKeyword.uri,
-    description: "https://json-schema.org/keyword/description",
-    else: "https://json-schema.org/keyword/else",
-    enum: "https://json-schema.org/keyword/enum",
-    examples: "https://json-schema.org/keyword/examples",
-    exclusiveMaximum: "https://json-schema.org/keyword/exclusiveMaximum",
-    exclusiveMinimum: "https://json-schema.org/keyword/exclusiveMinimum",
-    format: formatKeyword.uri,
-    $id: idKeyword.uri,
-    if: "https://json-schema.org/keyword/if",
-    items: itemsKeyword.uri,
-    maximum: "https://json-schema.org/keyword/maximum",
-    maxItems: "https://json-schema.org/keyword/maxItems",
-    maxLength: "https://json-schema.org/keyword/maxLength",
-    maxProperties: "https://json-schema.org/keyword/maxProperties",
-    minimum: "https://json-schema.org/keyword/minimum",
-    minItems: "https://json-schema.org/keyword/minItems",
-    minLength: "https://json-schema.org/keyword/minLength",
-    minProperties: "https://json-schema.org/keyword/minProperties",
-    multipleOf: "https://json-schema.org/keyword/multipleOf",
-    not: "https://json-schema.org/keyword/not",
-    oneOf: "https://json-schema.org/keyword/oneOf",
-    pattern: "https://json-schema.org/keyword/pattern",
-    patternProperties: "https://json-schema.org/keyword/patternProperties",
-    properties: "https://json-schema.org/keyword/properties",
-    propertyNames: "https://json-schema.org/keyword/propertyNames",
-    readOnly: "https://json-schema.org/keyword/readOnly",
-    $ref: refKeyword.uri,
-    required: "https://json-schema.org/keyword/required",
-    then: "https://json-schema.org/keyword/then",
-    title: "https://json-schema.org/keyword/title",
-    type: typeKeyword.uri,
-    uniqueItems: "https://json-schema.org/keyword/uniqueItems",
-    writeOnly: "https://json-schema.org/keyword/writeOnly"
+    additionalItems: additionalItemsKeyword,
+    additionalProperties: additionalPropertiesKeyword,
+    allOf: allOfKeyword,
+    anyOf: anyOfKeyword,
+    $comment: commentKeyword,
+    const: constKeyword,
+    contains: containsKeyword,
+    contentEncoding: contentEncodingKeyword,
+    contentMediaType: contentMediaTypeKeyword,
+    default: defaultKeyword,
+    definitions: definitionsKeyword,
+    dependencies: dependenciesKeyword,
+    description: descriptionKeyword,
+    else: elseKeyword,
+    enum: enumKeyword,
+    examples: examplesKeyword,
+    exclusiveMaximum: exclusiveMaximumKeyword,
+    exclusiveMinimum: exclusiveMinimumKeyword,
+    format: formatKeyword,
+    $id: idKeyword,
+    if: ifKeyword,
+    items: itemsKeyword,
+    maximum: maximumKeyword,
+    maxItems: maxItemsKeyword,
+    maxLength: maxLengthKeyword,
+    maxProperties: maxPropertiesKeyword,
+    minimum: minimumKeyword,
+    minItems: minItemsKeyword,
+    minLength: minLengthKeyword,
+    minProperties: minPropertiesKeyword,
+    multipleOf: multipleOfKeyword,
+    not: notKeyword,
+    oneOf: oneOfKeyword,
+    pattern: patternKeyword,
+    patternProperties: patternPropertiesKeyword,
+    properties: propertiesKeyword,
+    propertyNames: propertyNamesKeyword,
+    readOnly: readOnlyKeyword,
+    $ref: refKeyword,
+    required: requiredKeyword,
+    then: thenKeyword,
+    title: titleKeyword,
+    type: typeKeyword,
+    uniqueItems: uniqueItemsKeyword,
+    writeOnly: writeOnlyKeyword
   },
   unknownKeywords: "ignore",
   formats: {
-    "date-time": "https://json-schema.org/format/date-time",
-    "date": "https://json-schema.org/format/date",
-    "time": "https://json-schema.org/format/time",
-    "email": "https://json-schema.org/format/email",
+    "date-time": dateTimeFormat,
+    "date": dateFormat,
+    "time": timeFormat,
+    "email": emailFormat,
     "idn-email": "https://json-schema.org/format/idn-email",
     "hostname": "https://json-schema.org/format/hostname",
     "idn-hostname": "https://json-schema.org/format/idn-hostname",
-    "ipv4": "https://json-schema.org/format/ipv4",
-    "ipv6": "https://json-schema.org/format/ipv6",
-    "uri": "https://json-schema.org/format/uri",
-    "uri-reference": "https://json-schema.org/format/uri-reference",
-    "iri": "https://json-schema.org/format/iri",
-    "iri-reference": "https://json-schema.org/format/iri-reference",
-    "uri-template": "https://json-schema.org/format/uri-template",
-    "json-pointer": "https://json-schema.org/format/json-pointer",
-    "relative-json-pointer": "https://json-schema.org/format/relative-json-pointer",
-    "regex": "https://json-schema.org/format/regex"
+    "ipv4": ipv4Format,
+    "ipv6": ipv6Format,
+    "uri": uriFormat,
+    "uri-reference": uriReferenceFormat,
+    "iri": iriFormat,
+    "iri-reference": iriReferenceFormat,
+    "uri-template": uriTemplateFormat,
+    "json-pointer": jsonPointerFormat,
+    "relative-json-pointer": relativeJsonPointerFormat,
+    "regex": regexFormat
   },
   assertFormats: true
-};
-
-/**
- * The keyword definitions the dialect uses
- *
- * @type Keyword<any>[]
- */
-const keywords = [
-  additionalItemsKeyword,
-  additionalPropertiesKeyword,
-  allOfKeyword,
-  anyOfKeyword,
-  commentKeyword,
-  constKeyword,
-  containsKeyword,
-  contentEncodingKeyword,
-  contentMediaTypeKeyword,
-  defaultKeyword,
-  definitionsKeyword,
-  dependenciesKeyword,
-  descriptionKeyword,
-  elseKeyword,
-  enumKeyword,
-  examplesKeyword,
-  exclusiveMaximumKeyword,
-  exclusiveMinimumKeyword,
-  formatKeyword,
-  idKeyword,
-  ifKeyword,
-  itemsKeyword,
-  maximumKeyword,
-  maxItemsKeyword,
-  maxLengthKeyword,
-  maxPropertiesKeyword,
-  minimumKeyword,
-  minItemsKeyword,
-  minLengthKeyword,
-  minPropertiesKeyword,
-  multipleOfKeyword,
-  notKeyword,
-  oneOfKeyword,
-  patternKeyword,
-  patternPropertiesKeyword,
-  propertiesKeyword,
-  propertyNamesKeyword,
-  readOnlyKeyword,
-  refKeyword,
-  requiredKeyword,
-  thenKeyword,
-  titleKeyword,
-  typeKeyword,
-  uniqueItemsKeyword,
-  writeOnlyKeyword
-];
-
-/**
- * The format definitions the dialect uses. Formats that need large tables of
- * Unicode data aren't included. They're added with the full formats.
- *
- * @type Format[]
- */
-const formats = [
-  dateTimeFormat,
-  dateFormat,
-  timeFormat,
-  emailFormat,
-  ipv4Format,
-  ipv6Format,
-  uriFormat,
-  uriReferenceFormat,
-  iriFormat,
-  iriReferenceFormat,
-  uriTemplateFormat,
-  jsonPointerFormat,
-  relativeJsonPointerFormat,
-  regexFormat
-];
-
-/** @type API.addDraft07 */
-export const addDraft07 = (jsonSchema) => {
-  addPreset(jsonSchema, draft07Dialect, { keywords, formats });
 };

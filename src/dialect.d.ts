@@ -1,12 +1,66 @@
 import type { Keyword, KeywordValue } from "./keyword.d.ts";
+import type { Format } from "./format.d.ts";
+
+/**
+ * A dialect as it's given to a {@link JsonSchema} in its config, with the
+ * definitions it uses. A keyword or format can be a definition or a URI. A
+ * URI means the definition comes from somewhere else: the config's
+ * `keywords` or `formats`, or another dialect. A format named by a URI that
+ * nothing defines isn't supported, like `hostname` without the full formats.
+ * The `JsonSchema` keeps it as a {@link Dialect}, with URIs.
+ */
+export type DialectConfig = {
+  uri: string;
+
+  /**
+   * Keyword names mapped to their definitions. See {@link Dialect.keywords}.
+   */
+  keywords: Record<string, Keyword<any, any, any> | string>;
+
+  /** See {@link Dialect.unknownKeywords} */
+  unknownKeywords: UnknownKeywords;
+
+  /** Format names mapped to their definitions. See {@link Dialect.formats}. */
+  formats?: Record<string, Format | string>;
+
+  /** See {@link Dialect.assertFormats} */
+  assertFormats?: boolean;
+
+  /**
+   * The vocabularies `$vocabulary` can use, by URI, for a dialect whose
+   * meta-schemas list them, like 2020-12. Every dialect of a `JsonSchema`
+   * sees them.
+   */
+  vocabularies?: Record<string, VocabularyConfig>;
+};
+
+/**
+ * What a vocabulary adds to a dialect a meta-schema defines with
+ * `$vocabulary`. `assertFormats` makes `format` validate by default if any
+ * listed vocabulary says so (2020-12's format-assertion).
+ */
+export type VocabularyConfig = {
+  keywords: Record<string, Keyword<any, any, any> | string>;
+  formats?: Record<string, Format | string>;
+  assertFormats?: boolean;
+};
+
+/** A vocabulary as a {@link JsonSchema} keeps it, with URIs */
+export type Vocabulary = {
+  keywords: Readonly<Record<string, string>>;
+  formats?: Readonly<Record<string, string>>;
+  assertFormats?: boolean;
+};
 
 /**
  * The keywords that are available in a schema. A schema's dialect is
  * identified by its `$schema`, which is also the URI of the dialect's
  * meta-schema.
  *
- * Dialects that aren't added explicitly are built from the `$vocabulary` of
- * their meta-schema, which is retrieved the first time the dialect is used.
+ * Dialects that aren't in the {@link JsonSchema}'s config are built from
+ * the `$vocabulary` of their meta-schema, which is retrieved the first time
+ * the dialect is used. This is how a dialect is read, with its definitions
+ * named by URI. It's given as a {@link DialectConfig}.
  */
 export type Dialect = {
   uri: string;
@@ -55,11 +109,11 @@ export type DialectDefinition = Omit<Dialect, "uri">;
 
 /** Keywords and formats to add to a dialect with `extendDialect` */
 export type DialectExtension = {
-  /** Keyword names mapped to {@link Keyword} URIs */
-  keywords?: Record<string, string>;
+  /** Keyword names mapped to definitions or their URIs */
+  keywords?: Record<string, Keyword<any, any, any> | string>;
 
-  /** Format names mapped to {@link Format} URIs */
-  formats?: Record<string, string>;
+  /** Format names mapped to definitions or their URIs */
+  formats?: Record<string, Format | string>;
 };
 
 export type UnknownKeywords = "error" | "annotation" | "ignore";
@@ -72,8 +126,8 @@ export type UnknownKeywords = "error" | "annotation" | "ignore";
  * Otherwise, any keyword is, but the values of the dialect's keywords are
  * still checked. `$schema` can have an empty fragment, as draft-04 through
  * draft-07 schemas usually do. The
- * type of each keyword's value is its {@link KeywordValue}. The presets
- * export the types of their dialects, such as `V1Schema`.
+ * type of each keyword's value is its {@link KeywordValue}. The built-in dialects
+ * export their schema types, such as `V1Schema`.
  *
  * ```ts
  * type MySchema = SchemaOf<V1Keywords & { myKeyword: typeof myKeyword }, typeof v1DialectUri, "error">;

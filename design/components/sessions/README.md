@@ -35,7 +35,7 @@ Both libraries have a long-lived object and sessions created from it, and
   on `JsonSchemaSession`.
 - `JsonSchema.compile(uri)` compiles in a new session, so each compilation
   sees changes. `JsonSchemaSession.compile` compiles in that session.
-- Dialects from `addDialect` belong to `JsonSchema`, and its `getDialect`
+- Dialects from the config belong to `JsonSchema`, and its `getDialect`
   only finds those. A dialect built from a meta-schema belongs to the
   session that built it. `JsonSchemaSession.getDialect` finds both, and it's
   what the resolver and the compiler use.

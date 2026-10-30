@@ -8,7 +8,7 @@ import { unified } from "unified";
 import { VFile } from "vfile";
 import { HttpError, RetrievalNotAllowedError } from "@hyperjump/browser";
 import { pointerGet, rejsonParse } from "@hyperjump/browser/json";
-import { JsonSchema, SchemaError } from "../json-schema.js";
+import { JsonSchema, SchemaError, extendDialect } from "../json-schema.js";
 import { jsonSchemaResolve } from "./resolve.js";
 import idKeyword from "../keywords/id.js";
 import anchorKeyword from "../keywords/anchor.js";
@@ -16,10 +16,13 @@ import dynamicAnchorKeyword from "../keywords/dynamicAnchor.js";
 import legacyIdKeyword from "../keywords/draft-07/id.js";
 import legacyRefKeyword from "../keywords/draft-07/ref.js";
 import recursiveAnchorKeyword from "../keywords/draft-2019-09/recursiveAnchor.js";
-import vocabularyKeyword, { addVocabulary } from "../keywords/vocabulary.js";
+import vocabularyKeyword from "../keywords/vocabulary.js";
 
 /**
  * @import { JsonParseStatus } from "@hyperjump/browser/json"
+ * @import { JsonSchemaConfig } from "../json-schema.d.ts"
+ * @import { DialectConfig, DialectExtension } from "../dialect.d.ts"
+ * @import { Keyword } from "../keyword.d.ts"
  * @import { JsonSchemaResolveOptions } from "./resolve.d.ts"
  * @import { JsonSchemaKeywordNode, JsonSchemaTolerantNode } from "./schema-ast.d.ts"
  */
@@ -34,9 +37,7 @@ describe("jsonSchemaResolve", () => {
   let jsonSchema;
 
   beforeEach(() => {
-    jsonSchema = new JsonSchema({ allowRetrieval: [pathToFileURL(join(tmpdir(), "/")).href, "test:/"] });
-    addTestDialects(jsonSchema);
-    jsonSchema.addUriSchemePlugin({ schemes: ["test"], retrieve: respond });
+    jsonSchema = testJsonSchema();
     served.clear();
   });
 
@@ -86,7 +87,7 @@ describe("jsonSchemaResolve", () => {
     });
 
     test("$schema is a keyword in every dialect", async () => {
-      jsonSchema.addDialect({ uri: "https://example.com/minimal", keywords: {}, unknownKeywords: "error" });
+      const jsonSchema = testJsonSchema({ dialects: [{ uri: "https://example.com/minimal", keywords: {}, unknownKeywords: "error" }] });
       const { root, file } = await resolve(jsonSchema, `{ "$schema": "https://example.com/minimal" }`);
 
       expect(file.messages).to.eql([]);
@@ -95,7 +96,7 @@ describe("jsonSchemaResolve", () => {
     });
 
     test("unknown keywords use the unknown keyword's definition", async () => {
-      jsonSchema.addKeyword({ uri: "https://json-schema.org/keyword/unknown", shape: "schema" });
+      const jsonSchema = testJsonSchema({ keywords: [{ uri: "https://json-schema.org/keyword/unknown", shape: "schema" }] });
       const { root } = await resolve(jsonSchema, `{ "$schema": "${dialectUri}", "foo": { "type": "string" } }`);
 
       expect(keywordNode(root, "foo").keywordUri).to.equal("https://json-schema.org/keyword/unknown#foo");
@@ -118,7 +119,7 @@ describe("jsonSchemaResolve", () => {
     });
 
     test("a misplaced $schema doesn't report keywords twice", async () => {
-      jsonSchema.addDialect({ uri: "https://example.com/strict2", keywords: {}, unknownKeywords: "error" });
+      const jsonSchema = testJsonSchema({ dialects: [{ uri: "https://example.com/strict2", keywords: {}, unknownKeywords: "error" }] });
       const { file } = await resolve(jsonSchema, `{
         "$schema": "${strictDialectUri}",
         "$defs": {
@@ -130,7 +131,23 @@ describe("jsonSchemaResolve", () => {
     });
 
     test("a keyword in the dialect that isn't supported", async () => {
-      const { root, file } = await resolve(jsonSchema, `{ "$schema": "${dialectUri}", "notSupported": {} }`);
+      // A dialect in the config can't name a keyword that isn't defined, but
+      // one a meta-schema defines can
+      const jsonSchema = testJsonSchema({
+        extension: {
+          keywords: {
+            defineUnsupported: {
+              uri: "https://example.com/keyword/define-unsupported",
+              shape: "data",
+              resolve: (_valueNode, context) => {
+                context.defineDialect({ keywords: { notSupported: "https://example.com/keyword/not-supported" }, unknownKeywords: "annotation" });
+              }
+            }
+          }
+        }
+      });
+      const metaSchemaUri = serve("unsupported", { $schema: dialectUri, defineUnsupported: true });
+      const { root, file } = await resolve(jsonSchema, `{ "$schema": "${metaSchemaUri}", "notSupported": {} }`);
 
       expect(ruleIds(file)).to.eql(["unsupported-keyword"]);
       expect(keywordNode(root, "notSupported").keywordUri).to.equal("https://example.com/keyword/not-supported");
@@ -255,8 +272,7 @@ describe("jsonSchemaResolve", () => {
     });
 
     test("a data alternative leaves a value that doesn't match the others to the keyword", async () => {
-      jsonSchema.addKeyword({ uri: "https://example.com/keyword/pattern", shape: { array: ["schema", "data"] } });
-      jsonSchema.extendDialect(dialectUri, { keywords: { pattern: "https://example.com/keyword/pattern" } });
+      const jsonSchema = testJsonSchema({ extension: { keywords: { pattern: { uri: "https://example.com/keyword/pattern", shape: { array: ["schema", "data"] } } } } });
       const { root, file } = await resolve(jsonSchema, `{ "$schema": "${dialectUri}", "pattern": [{}, "*", 42] }`);
 
       expect(file.messages).to.eql([]);
@@ -516,8 +532,7 @@ describe("jsonSchemaResolve", () => {
     });
 
     test("the default dialect", async () => {
-      jsonSchema = new JsonSchema({ defaultDialectUri: dialectUri, allowRetrieval: [pathToFileURL(join(tmpdir(), "/")).href] });
-      addTestDialects(jsonSchema);
+      const jsonSchema = testJsonSchema({ config: { defaultDialectUri: dialectUri } });
       const { root } = await resolve(jsonSchema, `{ "type": "string" }`);
 
       expect(root).to.include({ type: "json-schema", dialectUri: dialectUri });
@@ -658,14 +673,19 @@ describe("jsonSchemaResolve", () => {
 
       test("a defined dialect can't have x- keywords", async () => {
         const keywordUri = "https://example.com/keyword/define-reserved";
-        jsonSchema.addKeyword({
-          uri: keywordUri,
-          shape: "data",
-          resolve: (_valueNode, context) => {
-            context.defineDialect({ keywords: { "x-foo": "https://example.com/keyword/foo" }, unknownKeywords: "annotation" });
+        const jsonSchema = testJsonSchema({
+          extension: {
+            keywords: {
+              defineReserved: {
+                uri: keywordUri,
+                shape: "data",
+                resolve: (_valueNode, context) => {
+                  context.defineDialect({ keywords: { "x-foo": "https://example.com/keyword/foo" }, unknownKeywords: "annotation" });
+                }
+              }
+            }
           }
         });
-        jsonSchema.extendDialect(dialectUri, { keywords: { defineReserved: keywordUri } });
         const { document, file } = await resolve(jsonSchema, `{
           "$schema": "${dialectUri}",
           "defineReserved": true
@@ -782,10 +802,12 @@ describe("jsonSchemaResolve", () => {
     });
 
     test("unknown keywords ignored because of $ref aren't reported", async () => {
-      jsonSchema.addDialect({
-        uri: "https://example.com/strict-legacy",
-        keywords: { $ref: legacyRefKeyword.uri },
-        unknownKeywords: "error"
+      const jsonSchema = testJsonSchema({
+        dialects: [{
+          uri: "https://example.com/strict-legacy",
+          keywords: { $ref: legacyRefKeyword.uri },
+          unknownKeywords: "error"
+        }]
       });
       const { file } = await resolve(jsonSchema, `{
         "$schema": "https://example.com/strict-legacy",
@@ -952,63 +974,93 @@ describe("jsonSchemaResolve", () => {
   });
 });
 
-/** @type (jsonSchema: JsonSchema) => void */
-const addTestDialects = (jsonSchema) => {
-  for (const keyword of [idKeyword, anchorKeyword, dynamicAnchorKeyword, legacyIdKeyword, legacyRefKeyword, recursiveAnchorKeyword]) {
-    jsonSchema.addKeyword(keyword);
+/** @type Keyword<any, any, any>[] */
+const testKeywords = [
+  idKeyword,
+  anchorKeyword,
+  dynamicAnchorKeyword,
+  legacyIdKeyword,
+  legacyRefKeyword,
+  recursiveAnchorKeyword,
+  vocabularyKeyword,
+  { uri: "https://example.com/keyword/defs", shape: { map: "schema" } },
+  { uri: "https://example.com/keyword/properties", shape: { map: "schema" } },
+  { uri: "https://example.com/keyword/allOf", shape: { array: "schema" } },
+  { uri: "https://example.com/keyword/items", shape: ["schema", { array: "schema" }] },
+  { uri: "https://example.com/keyword/type", shape: "data" },
+  { uri: "https://example.com/keyword/const", shape: "data" },
+  { uri: "https://example.com/keyword/ref", shape: "reference" },
+  { uri: "https://example.com/keyword/contentSchema", shape: "unappliedSchema" }
+];
+
+/**
+ * The test dialects name their keywords by URI. Their definitions are in
+ * `testKeywords`.
+ *
+ * @type DialectConfig
+ */
+const testDialect = {
+  uri: dialectUri,
+  keywords: {
+    $id: idKeyword.uri,
+    $anchor: anchorKeyword.uri,
+    $dynamicAnchor: dynamicAnchorKeyword.uri,
+    $recursiveAnchor: recursiveAnchorKeyword.uri,
+    $vocabulary: vocabularyKeyword.uri,
+    $defs: "https://example.com/keyword/defs",
+    properties: "https://example.com/keyword/properties",
+    allOf: "https://example.com/keyword/allOf",
+    items: "https://example.com/keyword/items",
+    type: "https://example.com/keyword/type",
+    const: "https://example.com/keyword/const",
+    $ref: "https://example.com/keyword/ref",
+    contentSchema: "https://example.com/keyword/contentSchema"
+  },
+  unknownKeywords: "annotation",
+  vocabularies: {
+    "https://example.com/vocab/core": { keywords: { $id: idKeyword.uri, $defs: "https://example.com/keyword/defs" } }
   }
-  addVocabulary(jsonSchema, "https://example.com/vocab/core", { keywords: { $id: idKeyword.uri, $defs: "https://example.com/keyword/defs" } });
-  jsonSchema.addKeyword({ uri: "https://example.com/keyword/defs", shape: { map: "schema" } });
-  jsonSchema.addKeyword({ uri: "https://example.com/keyword/properties", shape: { map: "schema" } });
-  jsonSchema.addKeyword({ uri: "https://example.com/keyword/allOf", shape: { array: "schema" } });
-  jsonSchema.addKeyword({ uri: "https://example.com/keyword/items", shape: ["schema", { array: "schema" }] });
-  jsonSchema.addKeyword({ uri: "https://example.com/keyword/type", shape: "data" });
-  jsonSchema.addKeyword({ uri: "https://example.com/keyword/const", shape: "data" });
-  jsonSchema.addKeyword({ uri: "https://example.com/keyword/ref", shape: "reference" });
-  jsonSchema.addKeyword({ uri: "https://example.com/keyword/contentSchema", shape: "unappliedSchema" });
+};
 
-  jsonSchema.addDialect({
-    uri: dialectUri,
-    keywords: {
-      $id: idKeyword.uri,
-      $anchor: anchorKeyword.uri,
-      $dynamicAnchor: dynamicAnchorKeyword.uri,
-      $recursiveAnchor: recursiveAnchorKeyword.uri,
-      $vocabulary: vocabularyKeyword.uri,
-      $defs: "https://example.com/keyword/defs",
-      properties: "https://example.com/keyword/properties",
-      allOf: "https://example.com/keyword/allOf",
-      items: "https://example.com/keyword/items",
-      type: "https://example.com/keyword/type",
-      const: "https://example.com/keyword/const",
-      $ref: "https://example.com/keyword/ref",
-      contentSchema: "https://example.com/keyword/contentSchema",
-      notSupported: "https://example.com/keyword/not-supported"
-    },
-    unknownKeywords: "annotation"
-  });
+/** @type DialectConfig */
+const legacyDialect = {
+  uri: legacyDialectUri,
+  keywords: {
+    $id: legacyIdKeyword.uri,
+    $ref: legacyRefKeyword.uri,
+    definitions: "https://example.com/keyword/defs",
+    properties: "https://example.com/keyword/properties",
+    type: "https://example.com/keyword/type"
+  },
+  unknownKeywords: "ignore"
+};
 
-  jsonSchema.addDialect({
-    uri: legacyDialectUri,
-    keywords: {
-      $id: legacyIdKeyword.uri,
-      $ref: legacyRefKeyword.uri,
-      definitions: "https://example.com/keyword/defs",
-      properties: "https://example.com/keyword/properties",
-      type: "https://example.com/keyword/type"
-    },
-    unknownKeywords: "ignore"
-  });
+/** @type DialectConfig */
+const strictDialect = {
+  uri: strictDialectUri,
+  keywords: {
+    $id: idKeyword.uri,
+    $defs: "https://example.com/keyword/defs",
+    type: "https://example.com/keyword/type"
+  },
+  unknownKeywords: "error"
+};
 
-  jsonSchema.addDialect({
-    uri: strictDialectUri,
-    keywords: {
-      $id: idKeyword.uri,
-      $defs: "https://example.com/keyword/defs",
-      type: "https://example.com/keyword/type"
-    },
-    unknownKeywords: "error"
+/**
+ * A JsonSchema with the test dialects, which can also retrieve `test:` URIs.
+ * `extension` adds keywords to the main test dialect.
+ *
+ * @type (options?: { dialects?: DialectConfig[]; keywords?: Keyword<any, any, any>[]; extension?: DialectExtension; config?: JsonSchemaConfig }) => JsonSchema
+ */
+const testJsonSchema = ({ dialects = [], keywords = [], extension, config } = {}) => {
+  const jsonSchema = new JsonSchema({
+    allowRetrieval: [pathToFileURL(join(tmpdir(), "/")).href, "test:/"],
+    ...config,
+    dialects: [extension ? extendDialect(testDialect, extension) : testDialect, legacyDialect, strictDialect, ...dialects],
+    keywords: [...testKeywords, ...keywords]
   });
+  jsonSchema.addUriSchemePlugin({ schemes: ["test"], retrieve: respond });
+  return jsonSchema;
 };
 
 /** What the `test:` scheme serves: a body and its media type for each URI */

@@ -20,16 +20,15 @@ A `JsonSchema` holds everything your application's schemas need: the
 dialects (versions of JSON Schema) it supports, the schemas it knows about,
 and its configuration. Most applications create one and use it everywhere.
 
-It starts without any dialects, so add the ones your schemas use. This
+It starts without any dialects, so give it the ones your schemas use. This
 tutorial uses JSON Schema v1. [Dialects](guides/dialects.md) lists the
 others.
 
 ```typescript
 import { JsonSchema } from "@hyperjump/json-schema";
-import { addV1 } from "@hyperjump/json-schema/v1";
+import { v1Dialect } from "@hyperjump/json-schema/v1";
 
-const jsonSchema = new JsonSchema();
-addV1(jsonSchema);
+const jsonSchema = new JsonSchema({ dialects: [v1Dialect] });
 ```
 
 ## Add a schema

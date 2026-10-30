@@ -3,9 +3,9 @@ import { unified } from "unified";
 import { VFile } from "vfile";
 import { rejsonParse } from "@hyperjump/browser/json";
 import { linter } from "../test-linter.js";
-import { JsonSchema } from "../../json-schema.js";
+import { JsonSchema, extendDialect } from "../../json-schema.js";
 import { jsonSchemaResolve } from "../../schema/resolve.js";
-import { addDraft202012 } from "../../dialects/draft-2020-12/index.js";
+import { draft202012Dialect } from "../../dialects/draft-2020-12/index.js";
 import keywordForDisallowedType from "./keyword-for-disallowed-type.js";
 
 const draft2020 = "https://json-schema.org/draft/2020-12/schema";
@@ -170,10 +170,8 @@ const reasons = async (json) => (await lint(json)).messages.map((message) => mes
  * @type (json: string, types?: import("@hyperjump/browser/json").JsonType[]) => Promise<string[]>
  */
 const reasonsWithCustomFormat = async (json, types) => {
-  const jsonSchema = new JsonSchema();
-  addDraft202012(jsonSchema);
-  jsonSchema.addFormat({ uri: "https://example.com/format/custom", types, validate: () => true });
-  jsonSchema.extendDialect(draft2020, { formats: { custom: "https://example.com/format/custom" } });
+  const custom = { uri: "https://example.com/format/custom", types, validate: () => true };
+  const jsonSchema = new JsonSchema({ dialects: [extendDialect(draft202012Dialect, { formats: { custom } })] });
 
   const file = new VFile({ path: "/schemas/a.schema.json", value: json });
   const processor = unified()

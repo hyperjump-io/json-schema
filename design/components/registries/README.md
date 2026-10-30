@@ -38,7 +38,7 @@ a session finds schemas in the registries it sees is in
   removed, and removing a `retrievalUri` that isn't there returns the same
   registry. Adding a `retrievalUri` that's already in the registry throws,
   so an edit is `without` then `with`. The constructor is for creating a
-  registry in one step, like the presets and the test suite do.
+  registry in one step, like the test suite does.
 - A schema is kept as JSON text. A value is stringified when it's added,
   so changing it afterward doesn't change the registry, and everything a
   `JsonSchema` caches from an entry stays right. A value that can't be

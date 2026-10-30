@@ -5,7 +5,7 @@ import { pathToFileURL } from "node:url";
 import { describe, test, beforeAll, afterAll, expect } from "vitest";
 import { JsonSchema } from "../json-schema.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
-import { addV1, v1DialectUri } from "../dialects/v1/index.js";
+import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import recommended from "./recommended.js";
 import thenElseWithoutIf from "./rules/then-else-without-if.js";
 import referenceWithoutTarget from "./rules/reference-without-target.js";
@@ -148,8 +148,7 @@ describe("lint", () => {
 
 /** @type (...schemas: string[]) => JsonSchema */
 const jsonSchemaWith = (...schemas) => {
-  const jsonSchema = new JsonSchema();
-  addV1(jsonSchema);
+  const jsonSchema = new JsonSchema({ dialects: [v1Dialect] });
   jsonSchema.registry = new SchemaRegistry(schemas.map((schema) => ({ schema })));
   return jsonSchema;
 };

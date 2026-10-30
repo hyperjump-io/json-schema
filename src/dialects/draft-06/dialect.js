@@ -44,11 +44,8 @@ import uriFormat from "../../formats/uri.js";
 import uriReferenceFormat from "../../formats/uri-reference.js";
 import uriTemplateFormat from "../../formats/uri-template.js";
 import jsonPointerFormat from "../../formats/json-pointer.js";
-import { addPreset } from "../add-preset.js";
 
 /**
- * @import { Keyword } from "../../keyword.d.ts"
- * @import { Format } from "../../format.d.ts"
  * @import * as API from "./index.d.ts"
  */
 
@@ -59,123 +56,55 @@ export const draft06DialectUri = "http://json-schema.org/draft-06/schema";
 export const draft06Dialect = {
   uri: draft06DialectUri,
   keywords: {
-    additionalItems: additionalItemsKeyword.uri,
-    additionalProperties: "https://json-schema.org/keyword/additionalProperties",
-    allOf: "https://json-schema.org/keyword/allOf",
-    anyOf: "https://json-schema.org/keyword/anyOf",
-    const: "https://json-schema.org/keyword/const",
-    contains: "https://json-schema.org/keyword/contains",
-    default: "https://json-schema.org/keyword/default",
-    definitions: "https://json-schema.org/keyword/definitions",
-    dependencies: dependenciesKeyword.uri,
-    description: "https://json-schema.org/keyword/description",
-    enum: "https://json-schema.org/keyword/enum",
-    examples: "https://json-schema.org/keyword/examples",
-    exclusiveMaximum: "https://json-schema.org/keyword/exclusiveMaximum",
-    exclusiveMinimum: "https://json-schema.org/keyword/exclusiveMinimum",
-    format: formatKeyword.uri,
-    $id: idKeyword.uri,
-    items: itemsKeyword.uri,
-    maximum: "https://json-schema.org/keyword/maximum",
-    maxItems: "https://json-schema.org/keyword/maxItems",
-    maxLength: "https://json-schema.org/keyword/maxLength",
-    maxProperties: "https://json-schema.org/keyword/maxProperties",
-    minimum: "https://json-schema.org/keyword/minimum",
-    minItems: "https://json-schema.org/keyword/minItems",
-    minLength: "https://json-schema.org/keyword/minLength",
-    minProperties: "https://json-schema.org/keyword/minProperties",
-    multipleOf: "https://json-schema.org/keyword/multipleOf",
-    not: "https://json-schema.org/keyword/not",
-    oneOf: "https://json-schema.org/keyword/oneOf",
-    pattern: "https://json-schema.org/keyword/pattern",
-    patternProperties: "https://json-schema.org/keyword/patternProperties",
-    properties: "https://json-schema.org/keyword/properties",
-    propertyNames: "https://json-schema.org/keyword/propertyNames",
-    $ref: refKeyword.uri,
-    required: "https://json-schema.org/keyword/required",
-    title: "https://json-schema.org/keyword/title",
-    type: typeKeyword.uri,
-    uniqueItems: "https://json-schema.org/keyword/uniqueItems"
+    additionalItems: additionalItemsKeyword,
+    additionalProperties: additionalPropertiesKeyword,
+    allOf: allOfKeyword,
+    anyOf: anyOfKeyword,
+    const: constKeyword,
+    contains: containsKeyword,
+    default: defaultKeyword,
+    definitions: definitionsKeyword,
+    dependencies: dependenciesKeyword,
+    description: descriptionKeyword,
+    enum: enumKeyword,
+    examples: examplesKeyword,
+    exclusiveMaximum: exclusiveMaximumKeyword,
+    exclusiveMinimum: exclusiveMinimumKeyword,
+    format: formatKeyword,
+    $id: idKeyword,
+    items: itemsKeyword,
+    maximum: maximumKeyword,
+    maxItems: maxItemsKeyword,
+    maxLength: maxLengthKeyword,
+    maxProperties: maxPropertiesKeyword,
+    minimum: minimumKeyword,
+    minItems: minItemsKeyword,
+    minLength: minLengthKeyword,
+    minProperties: minPropertiesKeyword,
+    multipleOf: multipleOfKeyword,
+    not: notKeyword,
+    oneOf: oneOfKeyword,
+    pattern: patternKeyword,
+    patternProperties: patternPropertiesKeyword,
+    properties: propertiesKeyword,
+    propertyNames: propertyNamesKeyword,
+    $ref: refKeyword,
+    required: requiredKeyword,
+    title: titleKeyword,
+    type: typeKeyword,
+    uniqueItems: uniqueItemsKeyword
   },
   unknownKeywords: "ignore",
   formats: {
-    "date-time": "https://json-schema.org/format/date-time",
-    "email": "https://json-schema.org/format/email",
-    "hostname": hostnameFormat.uri,
-    "ipv4": "https://json-schema.org/format/ipv4",
-    "ipv6": "https://json-schema.org/format/ipv6",
-    "uri": "https://json-schema.org/format/uri",
-    "uri-reference": "https://json-schema.org/format/uri-reference",
-    "uri-template": "https://json-schema.org/format/uri-template",
-    "json-pointer": "https://json-schema.org/format/json-pointer"
+    "date-time": dateTimeFormat,
+    "email": emailFormat,
+    "hostname": hostnameFormat,
+    "ipv4": ipv4Format,
+    "ipv6": ipv6Format,
+    "uri": uriFormat,
+    "uri-reference": uriReferenceFormat,
+    "uri-template": uriTemplateFormat,
+    "json-pointer": jsonPointerFormat
   },
   assertFormats: true
-};
-
-/**
- * The keyword definitions the dialect uses
- *
- * @type Keyword<any>[]
- */
-const keywords = [
-  additionalItemsKeyword,
-  additionalPropertiesKeyword,
-  allOfKeyword,
-  anyOfKeyword,
-  constKeyword,
-  containsKeyword,
-  defaultKeyword,
-  definitionsKeyword,
-  dependenciesKeyword,
-  descriptionKeyword,
-  enumKeyword,
-  examplesKeyword,
-  exclusiveMaximumKeyword,
-  exclusiveMinimumKeyword,
-  formatKeyword,
-  idKeyword,
-  itemsKeyword,
-  maximumKeyword,
-  maxItemsKeyword,
-  maxLengthKeyword,
-  maxPropertiesKeyword,
-  minimumKeyword,
-  minItemsKeyword,
-  minLengthKeyword,
-  minPropertiesKeyword,
-  multipleOfKeyword,
-  notKeyword,
-  oneOfKeyword,
-  patternKeyword,
-  patternPropertiesKeyword,
-  propertiesKeyword,
-  propertyNamesKeyword,
-  refKeyword,
-  requiredKeyword,
-  titleKeyword,
-  typeKeyword,
-  uniqueItemsKeyword
-];
-
-/**
- * The format definitions the dialect uses. Formats that need large tables of
- * Unicode data aren't included. They're added with the full formats.
- *
- * @type Format[]
- */
-const formats = [
-  dateTimeFormat,
-  emailFormat,
-  hostnameFormat,
-  ipv4Format,
-  ipv6Format,
-  uriFormat,
-  uriReferenceFormat,
-  uriTemplateFormat,
-  jsonPointerFormat
-];
-
-/** @type API.addDraft06 */
-export const addDraft06 = (jsonSchema) => {
-  addPreset(jsonSchema, draft06Dialect, { keywords, formats });
 };

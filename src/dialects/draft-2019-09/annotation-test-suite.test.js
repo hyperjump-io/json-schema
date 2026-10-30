@@ -1,8 +1,7 @@
 import { describeAnnotationTestSuite, testSuiteJsonSchema } from "../../../test/test-suite.js";
-import { addDraft201909, draft201909Dialect } from "./index.js";
+import { draft201909Dialect } from "./index.js";
 
-const jsonSchema = testSuiteJsonSchema();
-addDraft201909(jsonSchema);
+const jsonSchema = testSuiteJsonSchema({ dialects: [draft201909Dialect] });
 
 describeAnnotationTestSuite({
   description: "JSON-Schema-Test-Suite 2019-09 annotations",

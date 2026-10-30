@@ -5,8 +5,8 @@ import { pointerGet, rejsonParse } from "@hyperjump/browser/json";
 import { JsonSchema } from "../json-schema.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
-import { addDraft07 } from "../dialects/draft-07/index.js";
-import { addDraft202012 } from "../dialects/draft-2020-12/index.js";
+import { draft07Dialect } from "../dialects/draft-07/index.js";
+import { draft202012Dialect } from "../dialects/draft-2020-12/index.js";
 import { isNegated, schemaGroup } from "./schema-group.js";
 
 /**
@@ -223,34 +223,30 @@ describe("schemaGroup", () => {
 
 /** @type (schema: Record<string, Json>) => Promise<{ session: JsonSchemaSession; tree: JsonSchemaDocumentNode; at: (pointer: string) => JsonSchemaNode }> */
 const resolve = async (schema) => {
-  const jsonSchema = new JsonSchema();
-  addDraft07(jsonSchema);
-  addDraft202012(jsonSchema);
-
-  // Applies schemas, in order, until one passes. It's `opaque`, so where
-  // its schemas apply isn't known.
-  jsonSchema.addKeyword({
-    uri: "https://example.com/keyword/firstOf",
-    shape: { array: "schema" },
-    lower: (schemas) => ({ op: "opaque", keyword: "https://example.com/keyword/firstOf", value: null, schemas }),
-    evaluate: () => () => true
-  });
-  jsonSchema.addKeyword({
-    uri: "https://example.com/keyword/opaqueRef",
-    shape: "reference",
-    lower: (reference) => ({ op: "opaque", keyword: "https://example.com/keyword/opaqueRef", value: null, schemas: [reference.schema] }),
-    evaluate: () => () => true
-  });
-  jsonSchema.addDialect({
-    uri: opaqueDialect,
-    keywords: {
-      $defs: `${keyword}/definitions`,
-      $ref: `${keyword}/ref`,
-      allOf: `${keyword}/allOf`,
-      firstOf: "https://example.com/keyword/firstOf",
-      opaqueRef: "https://example.com/keyword/opaqueRef"
-    },
-    unknownKeywords: "annotation"
+  const jsonSchema = new JsonSchema({
+    dialects: [draft07Dialect, draft202012Dialect, {
+      uri: opaqueDialect,
+      keywords: {
+        $defs: `${keyword}/definitions`,
+        $ref: `${keyword}/ref`,
+        allOf: `${keyword}/allOf`,
+        // Applies schemas, in order, until one passes. It's `opaque`, so
+        // where its schemas apply isn't known.
+        firstOf: {
+          uri: "https://example.com/keyword/firstOf",
+          shape: { array: "schema" },
+          lower: (schemas) => ({ op: "opaque", keyword: "https://example.com/keyword/firstOf", value: null, schemas }),
+          evaluate: () => () => true
+        },
+        opaqueRef: {
+          uri: "https://example.com/keyword/opaqueRef",
+          shape: "reference",
+          lower: (reference) => ({ op: "opaque", keyword: "https://example.com/keyword/opaqueRef", value: null, schemas: [reference.schema] }),
+          evaluate: () => () => true
+        }
+      },
+      unknownKeywords: "annotation"
+    }]
   });
 
   const registry = new SchemaRegistry().with({

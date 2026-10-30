@@ -5,12 +5,12 @@ import { JsonPointerError, pointerGet } from "@hyperjump/browser/json";
 import { resolveIri, toAbsoluteIri } from "@hyperjump/uri";
 import { JsonSchema } from "../src/json-schema.js";
 import { SchemaRegistry } from "../src/registry/schema-registry.js";
-import { addFullFormats } from "../src/formats/full.js";
+import { fullFormats } from "../src/formats/full.js";
 
 /**
  * @import { Json, JsonNode } from "@hyperjump/browser/json"
  * @import { JsonSchemaConfig, Validator } from "../src/json-schema.d.ts"
- * @import { Dialect } from "../src/dialect.d.ts"
+ * @import { DialectConfig } from "../src/dialect.d.ts"
  */
 
 /**
@@ -129,8 +129,7 @@ export const isSkipped = (skip, path) => {
  * @type (config?: JsonSchemaConfig) => JsonSchema
  */
 export const testSuiteJsonSchema = (config) => {
-  const jsonSchema = new JsonSchema({ allowRetrieval: [], ...config });
-  addFullFormats(jsonSchema);
+  const jsonSchema = new JsonSchema({ allowRetrieval: [], ...config, formats: fullFormats });
 
   return jsonSchema;
 };
@@ -257,7 +256,7 @@ export const describeValidationTestSuite = (options) => {
  * @typedef {{
  *   description: string;
  *   version: number;
- *   dialect: Dialect;
+ *   dialect: DialectConfig;
  *   jsonSchema: JsonSchema;
  *   skip?: Set<string>;
  * }} AnnotationTestSuiteOptions

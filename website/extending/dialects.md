@@ -8,28 +8,24 @@ mean. Most custom dialects don't need code:
 - **In 2019-09 and 2020-12**, a meta-schema with `$vocabulary` defines its
   own dialect. See [Dialects](../guides/dialects.md#custom-meta-schemas).
 
-Use `addDialect` for a dialect whose meta-schema doesn't define it, like one
-based on draft-07, or one whose meta-schema describes itself.
+Write a dialect of your own for one whose meta-schema doesn't define it,
+like one based on draft-07, or one whose meta-schema describes itself, and
+put it in the `dialects` config.
 
 ```typescript
-addV1(jsonSchema); // Adds the built-in keywords this dialect uses
+import { v1Dialect } from "@hyperjump/json-schema/v1";
 
-jsonSchema.addDialect({
+const { $id, $ref, $defs, type, properties } = v1Dialect.keywords;
+
+const myDialect = {
   uri: "https://example.com/dialect",
-  keywords: {
-    $id: "https://json-schema.org/keyword/id",
-    $ref: "https://json-schema.org/keyword/ref",
-    $defs: "https://json-schema.org/keyword/definitions",
-    type: "https://json-schema.org/keyword/type",
-    properties: "https://json-schema.org/keyword/properties",
-    even: "https://example.com/keyword/even"
-  },
-  formats: {
-    hex: "https://example.com/format/hex"
-  },
+  keywords: { $id, $ref, $defs, type, properties, even: evenKeyword },
+  formats: { hex: hexFormat },
   unknownKeywords: "error",
   assertFormats: true
-});
+};
+
+const jsonSchema = new JsonSchema({ dialects: [myDialect] });
 ```
 
 ```json
@@ -45,23 +41,23 @@ jsonSchema.addDialect({
 | Property | What it is |
 | --- | --- |
 | `uri` | The dialect's URI, which schemas use as `$schema` |
-| `keywords` | Keyword names, mapped to keyword URIs. `$schema` is in every dialect, so leave it out. Names can't start with `x-`, which are for schema authors. |
+| `keywords` | Keyword names, mapped to keyword definitions. `$schema` is in every dialect, so leave it out. Names can't start with `x-`, which are for schema authors. |
 | `unknownKeywords` | What a property that isn't a keyword means: `"error"`, `"annotation"`, or `"ignore"` |
-| `formats` | Format names, mapped to format URIs |
+| `formats` | Format names, mapped to format definitions |
 | `assertFormats` | Whether `format` validates by default |
+| `vocabularies` | Vocabularies `$vocabulary` can use, for a dialect whose meta-schemas define dialects |
 
-Every keyword and format must have been added. The built-in ones are added
-with their dialects, so add a dialect that has a keyword, like
-`addV1(jsonSchema)`, before using its keywords in your own. A built-in
-keyword's URI is in the dialect it's from, like `v1Dialect.keywords.type`.
+A built-in keyword's definition is in the dialect it's from, like
+`v1Dialect.keywords.type`. A keyword or format can also be its URI, for a
+definition in the config's `keywords` or `formats`. A keyword named by a
+URI that nothing defines is an error when the `JsonSchema` is created. A
+format that nothing defines isn't supported.
 
 A dialect only has the keywords you give it, even `$id` and `$ref`. Without
 `$id`, a schema in your dialect has no identifier.
 
 A dialect's URI should be the URI of its meta-schema, so tools that
-retrieve `$schema` find one.
-
-To replace a dialect, remove it first with `removeDialect`.
+retrieve `$schema` find one. A dialect can only be in the config once.
 
 ## In TypeScript
 

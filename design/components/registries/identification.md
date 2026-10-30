@@ -34,9 +34,11 @@ entries. Each `JsonSchema` indexes each registry it's used with.
   them.
 - An entry whose dialect isn't defined yet waits in a list by dialect URI.
   Nothing is retrieved to identify an entry. Waiting entries are tried
-  again once the rest of the registry is identified and when a lookup
-  misses, so a dialect added with `addDialect` later is picked up. The
-  dialects they're waiting for are in the error when the lookup fails.
+  again once the rest of the registry is identified. A `JsonSchema`'s
+  dialects never change, so that's the last time. Until 2026-10-29, they
+  were also tried again when a lookup missed, for a dialect added later
+  with `addDialect`. The dialects they're waiting for are in the error when
+  the lookup fails.
   Until then, a waiting entry is found by its `retrievalUri`. Resolving it
   gets its dialect with `JsonSchemaSession.getDialect`, which can find the
   meta-schema anywhere.

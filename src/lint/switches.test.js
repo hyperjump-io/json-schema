@@ -2,9 +2,9 @@ import { describe, test, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
 import { fromJs, rejsonParse, rejsonStringify } from "@hyperjump/browser/json";
-import { JsonSchema } from "../json-schema.js";
+import { JsonSchema, extendDialect } from "../json-schema.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
-import { addDraft202012 } from "../dialects/draft-2020-12/index.js";
+import { draft202012Dialect } from "../dialects/draft-2020-12/index.js";
 import { appliesTo, canPass } from "./analysis.js";
 import { evaluatorForLint } from "./evaluate.js";
 import { provenance } from "./provenance.js";
@@ -54,13 +54,10 @@ const byKeyKeyword = {
   lower: (pairs) => ({ op: "keySwitch", cases: pairs, none: { op: "fail" }, unparsed: anyOf(pairs) })
 };
 
-const jsonSchema = new JsonSchema();
-addDraft202012(jsonSchema);
-for (const keyword of [byKindKeyword, byTypeKeyword, byKeyKeyword]) {
-  jsonSchema.addKeyword(keyword);
-}
-jsonSchema.extendDialect(draft2020, {
-  keywords: { byKind: byKindKeyword.uri, byType: byTypeKeyword.uri, byKey: byKeyKeyword.uri }
+const jsonSchema = new JsonSchema({
+  dialects: [extendDialect(draft202012Dialect, {
+    keywords: { byKind: byKindKeyword, byType: byTypeKeyword, byKey: byKeyKeyword }
+  })]
 });
 
 describe("the switches in lint", () => {

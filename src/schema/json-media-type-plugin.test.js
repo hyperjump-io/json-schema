@@ -4,8 +4,8 @@ import { cwd } from "node:process";
 import { pathToFileURL } from "node:url";
 import { describe, test, beforeAll, afterAll, expect } from "vitest";
 import { JsonSchema } from "../json-schema.js";
-import { addV1, v1DialectUri } from "../dialects/v1/index.js";
-import { addDraft202012 } from "../dialects/draft-2020-12/index.js";
+import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
+import { draft202012Dialect } from "../dialects/draft-2020-12/index.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
@@ -31,8 +31,7 @@ describe("JsonOrSchemaMediaTypePlugin", () => {
   });
 
   const session = () => {
-    const jsonSchema = new JsonSchema();
-    addV1(jsonSchema);
+    const jsonSchema = new JsonSchema({ dialects: [v1Dialect] });
     return jsonSchema.session();
   };
 
@@ -72,9 +71,7 @@ describe("JsonOrSchemaMediaTypePlugin", () => {
       $schema: "https://json-schema.org/draft/2020-12/schema",
       $vocabulary: { "https://json-schema.org/draft/2020-12/vocab/core": true }
     });
-    const jsonSchema = new JsonSchema({ allowRetrieval: ["./", "test:/"] });
-    addV1(jsonSchema);
-    addDraft202012(jsonSchema);
+    const jsonSchema = new JsonSchema({ allowRetrieval: ["./", "test:/"], dialects: [v1Dialect, draft202012Dialect] });
     jsonSchema.addUriSchemePlugin({
       schemes: ["test"],
       retrieve: async (uri) => {

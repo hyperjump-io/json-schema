@@ -49,11 +49,11 @@ hand and have JSDoc explaining the details. Documentation for users is in
   - [Dialects from meta-schemas](components/dialects/from-meta-schemas.md)
   - [`x-` keywords](components/dialects/x-keywords.md)
 - [Formats](components/formats.md)
-- [Presets](components/presets/README.md)
-  - [Built-in keywords](components/presets/built-in-keywords.md)
-  - [2020-12](components/presets/draft-2020-12.md),
-    [2019-09](components/presets/draft-2019-09.md), and
-    [draft-04, draft-06, and draft-07](components/presets/draft-04-06-07.md)
+- [Built-in dialects](components/built-in-dialects/README.md)
+  - [Built-in keywords](components/built-in-dialects/built-in-keywords.md)
+  - [2020-12](components/built-in-dialects/draft-2020-12.md),
+    [2019-09](components/built-in-dialects/draft-2019-09.md), and
+    [draft-04, draft-06, and draft-07](components/built-in-dialects/draft-04-06-07.md)
 - [Schema validation](components/schema-validation.md)
 - [Schema types](components/schema-types.md): checking schemas written in
   TypeScript

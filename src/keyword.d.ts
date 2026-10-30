@@ -355,6 +355,9 @@ export type CheckContext = {
 };
 
 export type ResolveContext = {
+  /** The instance resolving the schema */
+  jsonSchema: JsonSchema;
+
   /**
    * The base URI the schema is in before any identifier in the schema
    * applies.

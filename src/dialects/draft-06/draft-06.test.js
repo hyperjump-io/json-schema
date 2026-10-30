@@ -1,7 +1,7 @@
 import { describe, test, beforeEach, expect } from "vitest";
 import { JsonSchema } from "../../json-schema.js";
 import { SchemaRegistry } from "../../registry/schema-registry.js";
-import { addDraft06, draft06DialectUri } from "./index.js";
+import { draft06Dialect, draft06DialectUri } from "./index.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
@@ -11,8 +11,7 @@ import { addDraft06, draft06DialectUri } from "./index.js";
 describe("draft-06", () => {
   /** @type (config?: JsonSchemaConfig) => JsonSchema */
   const draft06 = (config) => {
-    const jsonSchema = new JsonSchema({ allowRetrieval: [], ...config });
-    addDraft06(jsonSchema);
+    const jsonSchema = new JsonSchema({ allowRetrieval: [], dialects: [draft06Dialect], ...config });
     return jsonSchema;
   };
 
@@ -30,10 +29,6 @@ describe("draft-06", () => {
 
   beforeEach(() => {
     jsonSchema = draft06();
-  });
-
-  test("it can only be added once", () => {
-    expect(() => addDraft06(jsonSchema)).to.throw();
   });
 
   test("$ref replaces the whole schema", async () => {

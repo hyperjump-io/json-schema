@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { describe, test, beforeAll, afterAll, expect } from "vitest";
 import { JsonSchema } from "../json-schema.js";
-import { addV1, v1DialectUri } from "../dialects/v1/index.js";
+import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
@@ -33,8 +33,7 @@ describe("applicator errors", () => {
 
   beforeAll(async () => {
     directory = await mkdtemp(join(tmpdir(), "json-schema-"));
-    jsonSchema = new JsonSchema({ allowRetrieval: [pathToFileURL(join(tmpdir(), "/")).href] });
-    addV1(jsonSchema);
+    jsonSchema = new JsonSchema({ allowRetrieval: [pathToFileURL(join(tmpdir(), "/")).href], dialects: [v1Dialect] });
   });
 
   afterAll(async () => {

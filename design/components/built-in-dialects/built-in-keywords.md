@@ -1,8 +1,8 @@
 # Built-in keywords
 
 - The v1 dialect (`src/dialects/v1`) includes the `propertyDependencies`
-  proposal. `conditional`, `itemPattern`, and `requireAllExcept` are added
-  with `extendDialect`, as a reminder that they aren't full proposals yet.
+  proposal, and `conditional`, `itemPattern`, and `requireAllExcept` under a
+  comment, because they aren't full proposals yet.
 - Equality (`const`, `enum`, `uniqueItems`) compares through `InstanceOps`,
   so an AST isn't copied. A value that couldn't be parsed counts as equal
   for `const` and `enum` and as different for `uniqueItems`, so it never

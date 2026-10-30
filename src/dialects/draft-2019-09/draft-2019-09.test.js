@@ -1,8 +1,8 @@
 import { describe, test, beforeEach, expect } from "vitest";
 import { JsonSchema } from "../../json-schema.js";
 import { SchemaRegistry } from "../../registry/schema-registry.js";
-import { addDraft202012, draft202012DialectUri } from "../draft-2020-12/index.js";
-import { addDraft201909, draft201909DialectUri } from "./index.js";
+import { draft202012Dialect, draft202012DialectUri } from "../draft-2020-12/index.js";
+import { draft201909Dialect, draft201909DialectUri } from "./index.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
@@ -12,8 +12,7 @@ import { addDraft201909, draft201909DialectUri } from "./index.js";
 describe("draft-2019-09", () => {
   /** @type (config?: JsonSchemaConfig) => JsonSchema */
   const draft201909 = (config) => {
-    const jsonSchema = new JsonSchema({ allowRetrieval: [], ...config });
-    addDraft201909(jsonSchema);
+    const jsonSchema = new JsonSchema({ allowRetrieval: [], dialects: [draft201909Dialect], ...config });
     return jsonSchema;
   };
 
@@ -30,12 +29,8 @@ describe("draft-2019-09", () => {
     jsonSchema = draft201909();
   });
 
-  test("it can only be added once", () => {
-    expect(() => addDraft201909(jsonSchema)).to.throw();
-  });
-
-  test("it can be added with 2020-12", async () => {
-    addDraft202012(jsonSchema);
+  test("it can be used with 2020-12", async () => {
+    const jsonSchema = draft201909({ dialects: [draft201909Dialect, draft202012Dialect] });
     const uri = "https://example.com/both";
     const validator = await compile(jsonSchema, [
       { $schema: draft201909DialectUri, $id: uri, items: [{ type: "string" }], additionalItems: { $ref: "2020-12" } },

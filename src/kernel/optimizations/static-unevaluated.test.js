@@ -1,8 +1,8 @@
 import { describe, test, expect } from "vitest";
 import { JsonSchema } from "../../json-schema.js";
 import { SchemaRegistry } from "../../registry/schema-registry.js";
-import { addV1, v1DialectUri } from "../../dialects/v1/index.js";
-import { addDraft201909, draft201909DialectUri } from "../../dialects/draft-2019-09/index.js";
+import { v1Dialect, v1DialectUri } from "../../dialects/v1/index.js";
+import { draft201909Dialect, draft201909DialectUri } from "../../dialects/draft-2019-09/index.js";
 import staticUnevaluated from "./static-unevaluated.js";
 
 /**
@@ -10,11 +10,9 @@ import staticUnevaluated from "./static-unevaluated.js";
  * @import { Expression, Kernel } from "../kernel.d.ts"
  */
 
-const jsonSchema = new JsonSchema();
-addV1(jsonSchema);
+const jsonSchema = new JsonSchema({ dialects: [v1Dialect] });
 
-const draft201909JsonSchema = new JsonSchema();
-addDraft201909(draft201909JsonSchema);
+const draft201909JsonSchema = new JsonSchema({ dialects: [draft201909Dialect] });
 
 const mode = { fast: true, plugins: false, annotations: false };
 

@@ -1,11 +1,7 @@
 import type { Json } from "@hyperjump/browser/json";
-import type { JsonSchema } from "../../json-schema.d.ts";
-import type { Dialect, SchemaOf } from "../../dialect.d.ts";
+import type { DialectConfig, SchemaOf } from "../../dialect.d.ts";
 import type { Keyword, Reference } from "../../keyword.d.ts";
 import type { Expression, TypeName } from "../../kernel/kernel.d.ts";
-
-export { addVocabulary } from "../../keywords/vocabulary.js";
-export type { Vocabulary } from "../../keywords/vocabulary.js";
 
 /** The URI of the JSON Schema 2019-09 dialect */
 export const draft201909DialectUri: "https://json-schema.org/draft/2019-09/schema";
@@ -16,25 +12,12 @@ export const draft201909DialectUri: "https://json-schema.org/draft/2019-09/schem
  * annotation by default. Set the `validateFormats` config to validate it.
  *
  * The meta-schema describes itself, so the dialect can't be built from it
- * and is added instead.
+ * and is in the `dialects` config instead, with its keywords and formats. It
+ * also brings its vocabularies, so meta-schemas that extend 2019-09 with
+ * `$vocabulary` define their own dialects. Add other vocabularies they can
+ * use to the `vocabularies` config.
  */
-export const draft201909Dialect: Dialect;
-
-/**
- * Add JSON Schema 2019-09: its `$anchor`, `$recursiveAnchor`,
- * `$recursiveRef`, `items`, and `additionalItems`, 2020-12's `type`, its
- * vocabularies (with
- * {@link addVocabulary}), and its dialect. Meta-schemas that extend 2019-09
- * with `$vocabulary` define their own dialects. Use {@link addVocabulary} to
- * add vocabularies they can use.
- *
- * Every other keyword and format it uses is shared with the other presets.
- * Each preset adds the ones it uses that haven't been added, so presets don't
- * depend on each other, and a keyword or format you replaced stays replaced.
- *
- * @throws Error if it's already been added
- */
-export function addDraft201909(jsonSchema: JsonSchema): void;
+export const draft201909Dialect: DialectConfig;
 
 /**
  * The type of a JSON Schema 2019-09 schema, for checking schemas written in
@@ -52,8 +35,8 @@ export function addDraft201909(jsonSchema: JsonSchema): void;
 export type Draft201909Schema<Extension extends Record<string, Keyword<any, any, any>> = {}> = SchemaOf<Draft201909Keywords & Extension, typeof draft201909DialectUri, "annotation">;
 
 /**
- * The types of the keywords {@link addDraft201909} adds to the 2019-09
- * dialect, by name, for {@link SchemaOf}
+ * The types of the 2019-09 dialect's keywords, by name, for
+ * {@link SchemaOf}
  */
 export type Draft201909Keywords = {
   $anchor: Keyword<string, "data">;

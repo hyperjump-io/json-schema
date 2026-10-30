@@ -169,9 +169,9 @@ allows it. Nothing on the network is allowed by default.
 
 ```typescript
 const jsonSchema = new JsonSchema({
+  dialects: [v1Dialect],
   allowRetrieval: ["./", "https://schemas.example.com/"]
 });
-addV1(jsonSchema);
 
 const uri = "https://schemas.example.com/person";
 const validator = await jsonSchema.compile(uri);

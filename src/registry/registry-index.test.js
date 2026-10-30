@@ -2,7 +2,7 @@ import { describe, test, expect } from "vitest";
 import { JsonSchema } from "../json-schema.js";
 import { SchemaRegistry } from "./schema-registry.js";
 import { RegistryIndex } from "./registry-index.js";
-import { addV1, v1DialectUri } from "../dialects/v1/index.js";
+import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 
 describe("RegistryIndex", () => {
   const uri = "https://example.com/a";
@@ -53,17 +53,23 @@ describe("RegistryIndex", () => {
   });
 
   test("a session doesn't identify entries until it looks for a schema", async () => {
-    const jsonSchema = v1();
     let identified = 0;
-    jsonSchema.addKeyword({
-      uri: "https://example.com/keyword/counted-id",
-      shape: "data",
-      resolve: (valueNode, context) => {
-        identified++;
-        context.setBaseUri(/** @type {{ value: string }} */ (valueNode).value);
-      }
+    const jsonSchema = new JsonSchema({
+      dialects: [{
+        uri: "https://example.com/counted",
+        keywords: {
+          $id: {
+            uri: "https://example.com/keyword/counted-id",
+            shape: "data",
+            resolve: (valueNode, context) => {
+              identified++;
+              context.setBaseUri(/** @type {{ value: string }} */ (valueNode).value);
+            }
+          }
+        },
+        unknownKeywords: "ignore"
+      }]
     });
-    jsonSchema.addDialect({ uri: "https://example.com/counted", keywords: { $id: "https://example.com/keyword/counted-id" }, unknownKeywords: "ignore" });
     const registry = new SchemaRegistry().with({ $schema: "https://example.com/counted", $id: "https://example.com/counted-schema" });
 
     const session = jsonSchema.session({ registry });
@@ -76,7 +82,6 @@ describe("RegistryIndex", () => {
 
 /** @type () => JsonSchema */
 const v1 = () => {
-  const jsonSchema = new JsonSchema();
-  addV1(jsonSchema);
+  const jsonSchema = new JsonSchema({ dialects: [v1Dialect] });
   return jsonSchema;
 };

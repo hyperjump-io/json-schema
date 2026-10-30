@@ -27,9 +27,9 @@ draft-04 and draft-06 have a simpler `hostname` of their own, which is
 always loaded.
 
 ```typescript
-import { addFullFormats } from "@hyperjump/json-schema/formats/full";
+import { fullFormats } from "@hyperjump/json-schema/formats/full";
 
-addFullFormats(jsonSchema);
+const jsonSchema = new JsonSchema({ dialects: [v1Dialect], formats: fullFormats });
 ```
 
 | Dialect | Formats |
@@ -47,7 +47,7 @@ CLI loads every format.
 When formats are validated, `compile` throws if a schema uses a format that
 can't be checked:
 
-- One of the three formats above, without `addFullFormats`.
+- One of the three formats above, without `fullFormats`.
 - In v1, 2019-09, and 2020-12, a format the dialect doesn't define, like
   `"phone"`. A schema that asks for a check that can't be made would
   otherwise pass everything. draft-04 to draft-07 ignore formats they don't

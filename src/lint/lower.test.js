@@ -4,10 +4,10 @@ import { VFile } from "vfile";
 import { pointerGet, rejsonParse } from "@hyperjump/browser/json";
 import { JsonSchema } from "../json-schema.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
-import { addDraft04 } from "../dialects/draft-04/index.js";
-import { addDraft07 } from "../dialects/draft-07/index.js";
-import { addDraft201909 } from "../dialects/draft-2019-09/index.js";
-import { addDraft202012 } from "../dialects/draft-2020-12/index.js";
+import { draft04Dialect } from "../dialects/draft-04/index.js";
+import { draft07Dialect } from "../dialects/draft-07/index.js";
+import { draft201909Dialect } from "../dialects/draft-2019-09/index.js";
+import { draft202012Dialect } from "../dialects/draft-2020-12/index.js";
 import { appliesTo, assertsOnItsOwn, keywordAppliesTo } from "./analysis.js";
 import { lowerForLint } from "./lower.js";
 
@@ -266,11 +266,7 @@ describe("assertsOnItsOwn", () => {
  * }>
  */
 const lower = async (json) => {
-  const jsonSchema = new JsonSchema();
-  addDraft04(jsonSchema);
-  addDraft07(jsonSchema);
-  addDraft201909(jsonSchema);
-  addDraft202012(jsonSchema);
+  const jsonSchema = new JsonSchema({ dialects: [draft04Dialect, draft07Dialect, draft201909Dialect, draft202012Dialect] });
   const session = jsonSchema.session();
 
   const file = new VFile({ path: "/schemas/a.schema.json", value: json });

@@ -38,10 +38,3 @@ export const liteFormats = [
   relativeJsonPointerFormat,
   regexFormat
 ];
-
-/** @type API.addLiteFormats */
-export const addLiteFormats = (jsonSchema) => {
-  for (const format of liteFormats) {
-    jsonSchema.addFormat(format);
-  }
-};

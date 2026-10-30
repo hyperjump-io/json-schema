@@ -2,10 +2,10 @@ import { describe, test, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
 import { fromJs, pointerGet, rejsonParse } from "@hyperjump/browser/json";
-import { JsonSchema } from "../json-schema.js";
+import { JsonSchema, extendDialect } from "../json-schema.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
-import { addDraft202012 } from "../dialects/draft-2020-12/index.js";
-import { addV1 } from "../dialects/v1/index.js";
+import { draft202012Dialect } from "../dialects/draft-2020-12/index.js";
+import { v1Dialect } from "../dialects/v1/index.js";
 import { evaluatorForLint } from "./evaluate.js";
 
 /**
@@ -184,12 +184,9 @@ describe("evaluatorForLint", () => {
  * @type (schema: object, pointer?: string) => Promise<(value: Json) => LintEvaluation>
  */
 const evaluatorAt = async (schema, pointer = "") => {
-  const jsonSchema = new JsonSchema();
-  addDraft202012(jsonSchema);
-  addV1(jsonSchema);
-  jsonSchema.addKeyword(lowercaseKeyword);
-  jsonSchema.addKeyword(wrapKeyword);
-  jsonSchema.extendDialect(draft2020, { keywords: { lowercase: lowercaseKeyword.uri, wrap: wrapKeyword.uri } });
+  const jsonSchema = new JsonSchema({
+    dialects: [extendDialect(draft202012Dialect, { keywords: { lowercase: lowercaseKeyword, wrap: wrapKeyword } }), v1Dialect]
+  });
   const session = jsonSchema.session();
 
   const file = new VFile({ path: "/schemas/a.schema.json", value: JSON.stringify(schema) });

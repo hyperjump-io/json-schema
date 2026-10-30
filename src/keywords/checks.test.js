@@ -6,27 +6,33 @@ import { describe, test, beforeEach, beforeAll, afterAll, expect } from "vitest"
 import { unified } from "unified";
 import { VFile } from "vfile";
 import { rejsonParse } from "@hyperjump/browser/json";
-import { JsonSchema } from "../json-schema.js";
+import { JsonSchema, extendDialect } from "../json-schema.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
-import { addV1, v1DialectUri } from "../dialects/v1/index.js";
-import { addDraft04, draft04DialectUri } from "../dialects/draft-04/index.js";
-import { addDraft07, draft07DialectUri } from "../dialects/draft-07/index.js";
-import { addDraft201909, draft201909DialectUri } from "../dialects/draft-2019-09/index.js";
-import { addDraft202012, draft202012DialectUri } from "../dialects/draft-2020-12/index.js";
+import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
+import { draft04Dialect, draft04DialectUri } from "../dialects/draft-04/index.js";
+import { draft07Dialect, draft07DialectUri } from "../dialects/draft-07/index.js";
+import { draft201909Dialect, draft201909DialectUri } from "../dialects/draft-2019-09/index.js";
+import { draft202012Dialect, draft202012DialectUri } from "../dialects/draft-2020-12/index.js";
 
 /**
  * @import { JsonParseStatus } from "@hyperjump/browser/json"
+ * @import { Keyword } from "../keyword.d.ts"
  */
 
 const baseUri = "https://example.com/schema";
+
+/** @type (extension: Record<string, Keyword<any, any, any>>, keywords?: Keyword<any, any, any>[]) => JsonSchema */
+const withV1Keywords = (extension, keywords) => new JsonSchema({
+  dialects: [extendDialect(v1Dialect, { keywords: extension })],
+  keywords
+});
 
 describe("keyword checks", () => {
   /** @type JsonSchema */
   let jsonSchema;
 
   beforeEach(() => {
-    jsonSchema = new JsonSchema();
-    addV1(jsonSchema);
+    jsonSchema = new JsonSchema({ dialects: [v1Dialect, draft04Dialect, draft07Dialect, draft201909Dialect, draft202012Dialect] });
   });
 
   test("valid keyword values", async () => {
@@ -95,10 +101,6 @@ describe("keyword checks", () => {
   });
 
   test("checks of keywords from other dialects", async () => {
-    addDraft07(jsonSchema);
-    addDraft201909(jsonSchema);
-    addDraft202012(jsonSchema);
-
     expect(await check(jsonSchema, `{ "$schema": "${draft07DialectUri}", "dependencies": { "a": ["b", 1, "b"], "c": {}, "d": [] } }`)).to.eql([
       { reason: "Expected a string", ruleId: "https://json-schema.org/keyword/draft-07/dependencies", at: "1" },
       { reason: "'b' is a duplicate", ruleId: "https://json-schema.org/keyword/draft-07/dependencies", at: `"b"` }
@@ -110,8 +112,6 @@ describe("keyword checks", () => {
   });
 
   test("draft-04's exclusiveMaximum and exclusiveMinimum require maximum and minimum", async () => {
-    addDraft04(jsonSchema);
-
     expect(await check(jsonSchema, `{ "$schema": "${draft04DialectUri}#", "exclusiveMaximum": true, "minimum": 1, "exclusiveMinimum": false }`)).to.eql([
       { reason: "'exclusiveMaximum' requires 'maximum'", ruleId: "https://json-schema.org/keyword/draft-04/exclusiveMaximum", at: "true" }
     ]);
@@ -121,8 +121,6 @@ describe("keyword checks", () => {
   });
 
   test("draft-04's enum, required, and dependencies can't be empty or have duplicates", async () => {
-    addDraft04(jsonSchema);
-
     const messages = await check(jsonSchema, `{
       "$schema": "${draft04DialectUri}#",
       "properties": {
@@ -146,9 +144,6 @@ describe("keyword checks", () => {
   });
 
   test("type can only be empty before v1", async () => {
-    addDraft04(jsonSchema);
-    addDraft202012(jsonSchema);
-
     expect(await check(jsonSchema, `{ "$schema": "${draft04DialectUri}#", "type": [] }`)).to.eql([]);
     expect(await check(jsonSchema, `{ "$schema": "${draft202012DialectUri}", "type": [] }`)).to.eql([]);
     expect(await check(jsonSchema, `{ "$schema": "${draft202012DialectUri}", "type": ["nope", "null", "null"] }`)).to.eql([
@@ -169,15 +164,16 @@ describe("keyword checks", () => {
   test("a check can read a sibling that comes after it", async () => {
     /** @type (string | undefined)[] */
     const siblings = [];
-    jsonSchema.addKeyword({
-      uri: "https://example.com/keyword/a",
-      shape: "data",
-      siblings: { minLength: "https://json-schema.org/keyword/minLength" },
-      check(_valueNode, context) {
-        siblings.push(context.siblings.minLength?.type);
+    const jsonSchema = withV1Keywords({
+      a: {
+        uri: "https://example.com/keyword/a",
+        shape: "data",
+        siblings: { minLength: "https://json-schema.org/keyword/minLength" },
+        check(_valueNode, context) {
+          siblings.push(context.siblings.minLength?.type);
+        }
       }
     });
-    jsonSchema.extendDialect(v1DialectUri, { keywords: { a: "https://example.com/keyword/a" } });
 
     await check(jsonSchema, `{ "$schema": "${v1DialectUri}", "a": true, "minLength": 1 }`);
 
@@ -187,23 +183,24 @@ describe("keyword checks", () => {
   test("a custom keyword's check sees which parts of the value are schemas", async () => {
     /** @type string[] */
     const types = [];
-    jsonSchema.addKeyword({
-      uri: "https://example.com/keyword/pairs",
-      shape: { array: ["schema", "data"] },
-      check(valueNode, context) {
-        if (valueNode.jsonType !== "array") {
-          return;
-        }
-        for (const itemNode of valueNode.children) {
-          types.push(itemNode.type);
-          if (itemNode.type === "json") {
-            context.message("Not a schema", itemNode);
+    const jsonSchema = withV1Keywords({
+      pairs: {
+        uri: "https://example.com/keyword/pairs",
+        shape: { array: ["schema", "data"] },
+        check(valueNode, context) {
+          if (valueNode.jsonType !== "array") {
+            return;
           }
+          for (const itemNode of valueNode.children) {
+            types.push(itemNode.type);
+            if (itemNode.type === "json") {
+              context.message("Not a schema", itemNode);
+            }
+          }
+          context.message("The whole value");
         }
-        context.message("The whole value");
       }
     });
-    jsonSchema.extendDialect(v1DialectUri, { keywords: { pairs: "https://example.com/keyword/pairs" } });
 
     const messages = await check(jsonSchema, `{ "$schema": "${v1DialectUri}", "pairs": [{}, 1] }`);
 
@@ -222,7 +219,6 @@ describe("keyword checks", () => {
   });
 
   test("keywords ignored because of $ref aren't checked", async () => {
-    addDraft07(jsonSchema);
     const messages = await check(jsonSchema, `{ "$schema": "${draft07DialectUri}", "$ref": "#/definitions/a", "minLength": -1 }`);
 
     expect(messages).to.eql([]);
@@ -230,11 +226,10 @@ describe("keyword checks", () => {
 
   test("a replaced keyword's check is used", async () => {
     const uri = "https://example.com/keyword/even";
-    jsonSchema.addKeyword({ uri, shape: "data" });
-    jsonSchema.extendDialect(v1DialectUri, { keywords: { even: uri } });
+    const jsonSchema = withV1Keywords({ even: { uri, shape: "data" } });
     expect(await check(jsonSchema, `{ "$schema": "${v1DialectUri}", "even": "yes" }`)).to.eql([]);
 
-    jsonSchema.addKeyword({
+    const replaced = withV1Keywords({ even: { uri, shape: "data" } }, [{
       uri,
       shape: "data",
       check(valueNode, context) {
@@ -242,8 +237,8 @@ describe("keyword checks", () => {
           context.message("Expected a boolean");
         }
       }
-    });
-    expect(await check(jsonSchema, `{ "$schema": "${v1DialectUri}", "even": "yes" }`)).to.eql([
+    }]);
+    expect(await check(replaced, `{ "$schema": "${v1DialectUri}", "even": "yes" }`)).to.eql([
       { reason: "Expected a boolean", ruleId: uri, at: `"yes"` }
     ]);
   });
@@ -265,8 +260,7 @@ describe("a schema with an invalid keyword value", () => {
     const path = join(directory, "invalid.schema.json");
     await writeFile(path, `{ "$schema": "${v1DialectUri}", "minLength": -1 }`);
 
-    const jsonSchema = new JsonSchema({ allowRetrieval: [pathToFileURL(join(tmpdir(), "/")).href] });
-    addV1(jsonSchema);
+    const jsonSchema = new JsonSchema({ allowRetrieval: [pathToFileURL(join(tmpdir(), "/")).href], dialects: [v1Dialect] });
     await expect(jsonSchema.compile(pathToFileURL(path).toString())).rejects.toMatchObject({
       messages: [{ ruleId: "https://json-schema.org/keyword/minLength" }]
     });

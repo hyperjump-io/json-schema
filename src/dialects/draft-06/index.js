@@ -1,1 +1,1 @@
-export { draft06DialectUri, draft06Dialect, addDraft06 } from "./dialect.js";
+export { draft06DialectUri, draft06Dialect } from "./dialect.js";

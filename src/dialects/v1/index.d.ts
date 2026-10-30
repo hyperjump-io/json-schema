@@ -1,6 +1,6 @@
 import type { Json } from "@hyperjump/browser/json";
 import type { JsonSchema } from "../../json-schema.d.ts";
-import type { Dialect, SchemaOf } from "../../dialect.d.ts";
+import type { DialectConfig, SchemaOf } from "../../dialect.d.ts";
 import type { Keyword, Reference } from "../../keyword.d.ts";
 import type { Expression, TypeName } from "../../kernel/kernel.d.ts";
 
@@ -8,32 +8,20 @@ import type { Expression, TypeName } from "../../kernel/kernel.d.ts";
 export const v1DialectUri: "https://json-schema.org/v1";
 
 /**
- * The JSON Schema v1 dialect. Unknown keywords are errors. Add custom keywords with
- * {@link JsonSchema.extendDialect}. `conditional`, `itemPattern`, and
- * `requireAllExcept`, which aren't full proposals yet, are added to it that
- * way.
+ * The JSON Schema v1 dialect, with its keywords and formats, for the
+ * `dialects` config. Unknown keywords are errors. Add custom keywords with
+ * `extendDialect`. It also has `conditional`, `itemPattern`, and
+ * `requireAllExcept`, which aren't full proposals yet.
  *
  * `format` validates by default, with the lite formats. Add the full formats
- * (`formats/full.js`) for `hostname`, `idn-hostname`, and `idn-email`.
+ * (`formats/full.js`) to the `formats` config for `hostname`,
+ * `idn-hostname`, and `idn-email`.
  */
-export const v1Dialect: Dialect;
-
-/**
- * Add JSON Schema v1: its keywords, formats, and dialect. `conditional`,
- * `itemPattern`, and `requireAllExcept` are added with
- * {@link JsonSchema.extendDialect}.
- *
- * Every other keyword and format it uses is shared with the other presets.
- * Each preset adds the ones it uses that haven't been added, so presets don't
- * depend on each other, and a keyword or format you replaced stays replaced.
- *
- * @throws Error if it's already been added
- */
-export function addV1(jsonSchema: JsonSchema): void;
+export const v1Dialect: DialectConfig;
 
 /**
  * The type of a JSON Schema v1 schema, for checking schemas written in
- * TypeScript. It has the keywords {@link addV1} adds, including
+ * TypeScript. It has the dialect's keywords, including
  * `conditional`, `itemPattern`, and `requireAllExcept`. Unknown keywords are
  * errors, except ones starting with `x-`. Add the types of custom keywords
  * by name.
@@ -54,8 +42,7 @@ export function addV1(jsonSchema: JsonSchema): void;
 export type V1Schema<Extension extends Record<string, Keyword<any, any, any>> = {}> = SchemaOf<V1Keywords & Extension, typeof v1DialectUri, "error">;
 
 /**
- * The types of the keywords {@link addV1} adds to the v1 dialect, by name,
- * for {@link SchemaOf}
+ * The types of the v1 dialect's keywords, by name, for {@link SchemaOf}
  */
 export type V1Keywords = {
   // Core

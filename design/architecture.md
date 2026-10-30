@@ -33,9 +33,9 @@ text ─ rejsonParse ─▶ JSON AST ─ jsonSchemaResolve ─▶ Schema AST ─
 | `src/kernel/optimizations/` | Optimization passes on kernel expressions, one per file. `index.js` lists them in the order they run |
 | `src/output/` | Output formats and validation errors |
 | `src/registry/` | `SchemaRegistry`, indexing registries, and how a session finds schemas in them |
-| `src/dialects/` | The presets: `v1`, `draft-04` … `draft-2020-12`. Each has the dialect and its tests, including the test suite runners. `add-preset.js` adds a preset's dialect and the definitions it uses |
+| `src/dialects/` | The built-in dialects: `v1`, `draft-04` … `draft-2020-12`. Each has the dialect, with the definitions it uses, and its tests, including the test suite runners. `extend-dialect.js` has `extendDialect` |
 | `src/keywords/` | Keyword definitions, and `checks.js`, the checks they share for their values |
-| `src/formats/` | Format definitions and the lite and full presets |
+| `src/formats/` | Format definitions, and the lite and full format lists |
 | `src/bundle/` | Bundling, which embeds referenced schemas in one document, and its tests, ported from v1 |
 | `src/lint/` | Lint rules (`rules/`, one per file), the recommended preset, `lintRule`, which applies configuration comments, and the utilities rules share |
 | `src/validate/` | `jsonSchemaValidate`, the unified plugin that validates JSON files |

@@ -26,6 +26,10 @@ operation:
 | v1-lint | `addV1`, `lint` |
 | all-dialects-validate | every `add*` dialect function, `compile`, `validate` |
 
+Since the definitions moved to the config (stage 2 of the plan in
+`TODO.md`), the entries put the dialects in the `dialects` config instead,
+and otherwise do the same thing.
+
 ## Before the API as functions
 
 Results from 2026-10-29, at c332b10:

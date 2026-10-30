@@ -1,7 +1,7 @@
 import { describe, test, expect } from "vitest";
 import { JsonSchema, SchemaError, toVFileMessage } from "../json-schema.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
-import { addV1, v1DialectUri } from "../dialects/v1/index.js";
+import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 
 describe("SchemaError", () => {
   test("its message describes the first problem", async () => {
@@ -37,8 +37,7 @@ describe("SchemaError", () => {
 
 /** @type (schema: string) => Promise<SchemaError> */
 const schemaError = async (schema) => {
-  const jsonSchema = new JsonSchema();
-  addV1(jsonSchema);
+  const jsonSchema = new JsonSchema({ dialects: [v1Dialect] });
   jsonSchema.registry = new SchemaRegistry().with(schema);
 
   try {

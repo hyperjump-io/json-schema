@@ -14,10 +14,3 @@ export const fullFormats = [
   hostnameFormat,
   idnHostnameFormat
 ];
-
-/** @type API.addFullFormats */
-export const addFullFormats = (jsonSchema) => {
-  for (const format of fullFormats) {
-    jsonSchema.addFormat(format);
-  }
-};

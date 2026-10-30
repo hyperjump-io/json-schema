@@ -25,6 +25,7 @@ and a registry that's one edit away from another is cheap to index.
 - What a session still builds itself is its document cache and embedded
   index for what it actually uses, plus anything that depends on a dialect
   only that session has.
-- A cached identification or resolved document reflects the definitions
-  when it was made. A later `addKeyword` or `extendDialect` doesn't change
-  it, as with any schema that's already been resolved.
+- A cached identification or resolved document can't go stale, because a
+  `JsonSchema`'s definitions are in its config and never change. Before
+  2026-10-29, a later `addKeyword` or `extendDialect` didn't change what
+  was already cached.

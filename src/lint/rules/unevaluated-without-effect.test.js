@@ -6,7 +6,7 @@ import { linter } from "../test-linter.js";
 import { JsonSchema } from "../../json-schema.js";
 import { SchemaRegistry } from "../../registry/schema-registry.js";
 import { jsonSchemaResolve } from "../../schema/resolve.js";
-import { addDraft202012 } from "../../dialects/draft-2020-12/index.js";
+import { draft202012Dialect } from "../../dialects/draft-2020-12/index.js";
 import unevaluatedWithoutEffect from "./unevaluated-without-effect.js";
 
 const v1 = "https://json-schema.org/v1";
@@ -205,8 +205,7 @@ const reasons = async (json) => (await lint(json)).messages.map((message) => mes
  * @type (json: string) => Promise<string[]>
  */
 const reasonsWithClosed = async (json) => {
-  const jsonSchema = new JsonSchema();
-  addDraft202012(jsonSchema);
+  const jsonSchema = new JsonSchema({ dialects: [draft202012Dialect] });
   const registry = new SchemaRegistry().with({
     $schema: draft202012,
     $id: "https://example.com/closed",

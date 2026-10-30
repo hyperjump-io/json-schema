@@ -284,7 +284,7 @@ export class JsonSchemaSession extends Session {
 
       const { definedDialect } = /** @type JsonSchemaDocumentNode */ (/** @type unknown */ (metaSchema));
       if (!definedDialect) {
-        throw Error(`The meta-schema for the '${relativeFileUri(uri)}' dialect doesn't define a dialect (with '$vocabulary', for example). Use the 'addDialect' function to add support for this dialect.`);
+        throw Error(`The meta-schema for the '${relativeFileUri(uri)}' dialect doesn't define a dialect (with '$vocabulary', for example). Add it to the 'dialects' config.`);
       }
 
       // The dialect is identified by whichever URI found the meta-schema

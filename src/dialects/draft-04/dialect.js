@@ -37,11 +37,8 @@ import hostnameFormat from "../../formats/draft-06/hostname.js";
 import ipv4Format from "../../formats/ipv4.js";
 import ipv6Format from "../../formats/ipv6.js";
 import uriFormat from "../../formats/uri.js";
-import { addPreset } from "../add-preset.js";
 
 /**
- * @import { Keyword } from "../../keyword.d.ts"
- * @import { Format } from "../../format.d.ts"
  * @import * as API from "./index.d.ts"
  */
 
@@ -52,109 +49,48 @@ export const draft04DialectUri = "http://json-schema.org/draft-04/schema";
 export const draft04Dialect = {
   uri: draft04DialectUri,
   keywords: {
-    additionalItems: additionalItemsKeyword.uri,
-    additionalProperties: "https://json-schema.org/keyword/additionalProperties",
-    allOf: "https://json-schema.org/keyword/allOf",
-    anyOf: "https://json-schema.org/keyword/anyOf",
-    default: "https://json-schema.org/keyword/default",
-    definitions: "https://json-schema.org/keyword/definitions",
-    dependencies: dependenciesKeyword.uri,
-    description: "https://json-schema.org/keyword/description",
-    enum: enumKeyword.uri,
-    exclusiveMaximum: exclusiveMaximumKeyword.uri,
-    exclusiveMinimum: exclusiveMinimumKeyword.uri,
-    format: formatKeyword.uri,
-    id: idKeyword.uri,
-    items: itemsKeyword.uri,
-    maximum: maximumKeyword.uri,
-    maxItems: "https://json-schema.org/keyword/maxItems",
-    maxLength: "https://json-schema.org/keyword/maxLength",
-    maxProperties: "https://json-schema.org/keyword/maxProperties",
-    minimum: minimumKeyword.uri,
-    minItems: "https://json-schema.org/keyword/minItems",
-    minLength: "https://json-schema.org/keyword/minLength",
-    minProperties: "https://json-schema.org/keyword/minProperties",
-    multipleOf: "https://json-schema.org/keyword/multipleOf",
-    not: "https://json-schema.org/keyword/not",
-    oneOf: "https://json-schema.org/keyword/oneOf",
-    pattern: "https://json-schema.org/keyword/pattern",
-    patternProperties: "https://json-schema.org/keyword/patternProperties",
-    properties: "https://json-schema.org/keyword/properties",
-    $ref: refKeyword.uri,
-    required: requiredKeyword.uri,
-    title: "https://json-schema.org/keyword/title",
-    type: typeKeyword.uri,
-    uniqueItems: "https://json-schema.org/keyword/uniqueItems"
+    additionalItems: additionalItemsKeyword,
+    additionalProperties: additionalPropertiesKeyword,
+    allOf: allOfKeyword,
+    anyOf: anyOfKeyword,
+    default: defaultKeyword,
+    definitions: definitionsKeyword,
+    dependencies: dependenciesKeyword,
+    description: descriptionKeyword,
+    enum: enumKeyword,
+    exclusiveMaximum: exclusiveMaximumKeyword,
+    exclusiveMinimum: exclusiveMinimumKeyword,
+    format: formatKeyword,
+    id: idKeyword,
+    items: itemsKeyword,
+    maximum: maximumKeyword,
+    maxItems: maxItemsKeyword,
+    maxLength: maxLengthKeyword,
+    maxProperties: maxPropertiesKeyword,
+    minimum: minimumKeyword,
+    minItems: minItemsKeyword,
+    minLength: minLengthKeyword,
+    minProperties: minPropertiesKeyword,
+    multipleOf: multipleOfKeyword,
+    not: notKeyword,
+    oneOf: oneOfKeyword,
+    pattern: patternKeyword,
+    patternProperties: patternPropertiesKeyword,
+    properties: propertiesKeyword,
+    $ref: refKeyword,
+    required: requiredKeyword,
+    title: titleKeyword,
+    type: typeKeyword,
+    uniqueItems: uniqueItemsKeyword
   },
   unknownKeywords: "ignore",
   formats: {
-    "date-time": "https://json-schema.org/format/date-time",
-    "email": "https://json-schema.org/format/email",
-    "hostname": hostnameFormat.uri,
-    "ipv4": "https://json-schema.org/format/ipv4",
-    "ipv6": "https://json-schema.org/format/ipv6",
-    "uri": "https://json-schema.org/format/uri"
+    "date-time": dateTimeFormat,
+    "email": emailFormat,
+    "hostname": hostnameFormat,
+    "ipv4": ipv4Format,
+    "ipv6": ipv6Format,
+    "uri": uriFormat
   },
   assertFormats: true
-};
-
-/**
- * The keyword definitions the dialect uses
- *
- * @type Keyword<any>[]
- */
-const keywords = [
-  additionalItemsKeyword,
-  additionalPropertiesKeyword,
-  allOfKeyword,
-  anyOfKeyword,
-  defaultKeyword,
-  definitionsKeyword,
-  dependenciesKeyword,
-  descriptionKeyword,
-  enumKeyword,
-  exclusiveMaximumKeyword,
-  exclusiveMinimumKeyword,
-  formatKeyword,
-  idKeyword,
-  itemsKeyword,
-  maximumKeyword,
-  maxItemsKeyword,
-  maxLengthKeyword,
-  maxPropertiesKeyword,
-  minimumKeyword,
-  minItemsKeyword,
-  minLengthKeyword,
-  minPropertiesKeyword,
-  multipleOfKeyword,
-  notKeyword,
-  oneOfKeyword,
-  patternKeyword,
-  patternPropertiesKeyword,
-  propertiesKeyword,
-  refKeyword,
-  requiredKeyword,
-  titleKeyword,
-  typeKeyword,
-  uniqueItemsKeyword
-];
-
-/**
- * The format definitions the dialect uses. Formats that need large tables of
- * Unicode data aren't included. They're added with the full formats.
- *
- * @type Format[]
- */
-const formats = [
-  dateTimeFormat,
-  emailFormat,
-  hostnameFormat,
-  ipv4Format,
-  ipv6Format,
-  uriFormat
-];
-
-/** @type API.addDraft04 */
-export const addDraft04 = (jsonSchema) => {
-  addPreset(jsonSchema, draft04Dialect, { keywords, formats });
 };

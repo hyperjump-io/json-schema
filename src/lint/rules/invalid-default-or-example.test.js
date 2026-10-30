@@ -5,8 +5,8 @@ import { rejsonParse } from "@hyperjump/browser/json";
 import { JsonSchema } from "../../json-schema.js";
 import { SchemaRegistry } from "../../registry/schema-registry.js";
 import { jsonSchemaResolve } from "../../schema/resolve.js";
-import { addDraft04 } from "../../dialects/draft-04/index.js";
-import { addDraft202012 } from "../../dialects/draft-2020-12/index.js";
+import { draft04Dialect } from "../../dialects/draft-04/index.js";
+import { draft202012Dialect } from "../../dialects/draft-2020-12/index.js";
 import { linter } from "../test-linter.js";
 import invalidDefaultOrExample from "./invalid-default-or-example.js";
 
@@ -148,9 +148,7 @@ describe("invalid-default-or-example", () => {
  * @type (json: string) => Promise<VFile>
  */
 const lint = async (json) => {
-  const jsonSchema = new JsonSchema();
-  addDraft04(jsonSchema);
-  addDraft202012(jsonSchema);
+  const jsonSchema = new JsonSchema({ dialects: [draft04Dialect, draft202012Dialect] });
   const session = jsonSchema.session({ registry: new SchemaRegistry([{ schema: json, retrievalUri: uri }]) });
 
   const file = new VFile({ path: "/schemas/a.schema.json", value: json });

@@ -1,7 +1,7 @@
 import { describe, test, beforeEach, expect } from "vitest";
 import { JsonSchema } from "../../json-schema.js";
 import { SchemaRegistry } from "../../registry/schema-registry.js";
-import { addDraft07, draft07DialectUri } from "./index.js";
+import { draft07Dialect, draft07DialectUri } from "./index.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
@@ -11,8 +11,7 @@ import { addDraft07, draft07DialectUri } from "./index.js";
 describe("draft-07", () => {
   /** @type (config?: JsonSchemaConfig) => JsonSchema */
   const draft07 = (config) => {
-    const jsonSchema = new JsonSchema({ allowRetrieval: [], ...config });
-    addDraft07(jsonSchema);
+    const jsonSchema = new JsonSchema({ allowRetrieval: [], dialects: [draft07Dialect], ...config });
     return jsonSchema;
   };
 
@@ -30,10 +29,6 @@ describe("draft-07", () => {
 
   beforeEach(() => {
     jsonSchema = draft07();
-  });
-
-  test("it can only be added once", () => {
-    expect(() => addDraft07(jsonSchema)).to.throw();
   });
 
   test("$ref replaces the whole schema", async () => {
@@ -68,8 +63,8 @@ describe("draft-07", () => {
     expect(validator.validate("not a uuid")).to.equal(true);
   });
 
-  test("a format whose definition hasn't been added is still an error", async () => {
-    await expect(compile(jsonSchema, { $schema, format: "idn-hostname" })).rejects.toThrow("addFormat");
+  test("a format the dialect names without a definition is still an error", async () => {
+    await expect(compile(jsonSchema, { $schema, format: "idn-hostname" })).rejects.toThrow("'formats' config");
   });
 
   test("format is only an annotation if the config says so", async () => {

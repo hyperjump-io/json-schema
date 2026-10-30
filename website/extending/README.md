@@ -12,13 +12,15 @@ dialect maps names to URIs: in v1, `minimum` is
 different names in different dialects, and two dialects can use the same
 name for different keywords.
 
-So adding a keyword takes two steps: define it with its URI, then give it a
-name in a dialect.
+So a keyword is defined with its URI, and given a name in a dialect.
+Dialects carry their definitions, and `extendDialect` makes a dialect with
+more of them, which goes in the config.
 
 ```typescript
-jsonSchema.addKeyword({ uri: "https://example.com/keyword/even", ... });
-jsonSchema.extendDialect(v1DialectUri, {
-  keywords: { even: "https://example.com/keyword/even" }
+const evenKeyword = { uri: "https://example.com/keyword/even", ... };
+
+const jsonSchema = new JsonSchema({
+  dialects: [extendDialect(v1Dialect, { keywords: { even: evenKeyword } })]
 });
 ```
 

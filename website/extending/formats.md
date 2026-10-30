@@ -1,19 +1,20 @@
 # Custom formats
 
-A format is a plain object with a URI. Add it with `addFormat`, then give
-it a name in a dialect with `extendDialect`.
+A format is a plain object with a URI. Give it a name in a dialect with
+`extendDialect`, and put the dialect it returns in the config.
 
 ```typescript
-import { v1DialectUri } from "@hyperjump/json-schema/v1";
+import { JsonSchema, extendDialect } from "@hyperjump/json-schema";
+import { v1Dialect } from "@hyperjump/json-schema/v1";
 
-jsonSchema.addFormat({
+const hexFormat = {
   uri: "https://example.com/format/hex",
   types: ["string"],
   validate: (value) => /^[0-9a-f]+$/i.test(value)
-});
+};
 
-jsonSchema.extendDialect(v1DialectUri, {
-  formats: { hex: "https://example.com/format/hex" }
+const jsonSchema = new JsonSchema({
+  dialects: [extendDialect(v1Dialect, { formats: { hex: hexFormat } })]
 });
 ```
 

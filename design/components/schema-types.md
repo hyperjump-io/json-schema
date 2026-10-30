@@ -30,12 +30,12 @@ written. Custom keywords are part of the type.
   misspelled keyword isn't an error, but the dialect's keywords' values
   are still checked. That's what those dialects say: an unknown keyword is
   allowed.
-- **Presets declare their dialect's types.** `V1Keywords` lists each
+- **Built-in dialects declare their types.** `V1Keywords` lists each
   keyword's type by name, and `V1Schema<Extension>` adds custom keywords by
-  intersection. Every preset has the same pair (`Draft202012Keywords` and
+  intersection. Every built-in dialect has the same pair (`Draft202012Keywords` and
   `Draft202012Schema`, and so on). Keyword definitions aren't public, so
-  each list is written in the preset's `index.d.ts`, like the preset's own
-  list of keywords. Each preset's `schema-type.test-d.ts` checks that its
+  each list is written in the dialect's `index.d.ts`, like the dialect's
+  own map of keywords. Each dialect's `schema-type.test-d.ts` checks that its
   list matches the definitions, and that schemas that should and shouldn't
   fit do. tsc checks them. Vitest doesn't run them.
 - **A union of dialects is told apart by `$schema`.** A schema with a
@@ -62,7 +62,7 @@ written. Custom keywords are part of the type.
   evaluation only reads it.
 - **Keyword definitions are annotated with their shapes**
   (`@type Keyword<number, "data">`), so their types can be checked against
-  the preset's list. That's also how a custom keyword gets its type:
+  the dialect's list. That's also how a custom keyword gets its type:
   `satisfies Keyword<V>` keeps `shape` as written.
 
 ## Rejected

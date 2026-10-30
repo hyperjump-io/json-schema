@@ -21,10 +21,9 @@ A JSON Schema validator and linter for JavaScript, for Node.js and browsers.
 
 ```typescript
 import { JsonSchema, SchemaRegistry } from "@hyperjump/json-schema";
-import { addV1 } from "@hyperjump/json-schema/v1";
+import { v1Dialect } from "@hyperjump/json-schema/v1";
 
-const jsonSchema = new JsonSchema();
-addV1(jsonSchema);
+const jsonSchema = new JsonSchema({ dialects: [v1Dialect] });
 jsonSchema.registry = new SchemaRegistry().with({
   $schema: "https://json-schema.org/v1",
   $id: "https://example.com/person",

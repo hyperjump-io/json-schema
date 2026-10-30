@@ -9,5 +9,5 @@
   `src/kernel/optimizations/`, with `index.js` listing them in the order
   they run.
 - Tests are next to the code they test.
-- A preset's directory has its dialect and its tests, including the test
+- A built-in dialect's directory has its dialect and its tests, including the test
   suite runners.

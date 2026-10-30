@@ -1,7 +1,7 @@
 import { describe, test, beforeEach, expect } from "vitest";
 import { JsonSchema } from "../../json-schema.js";
 import { SchemaRegistry } from "../../registry/schema-registry.js";
-import { addDraft202012, draft202012DialectUri } from "./index.js";
+import { draft202012Dialect, draft202012DialectUri } from "./index.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
@@ -11,8 +11,7 @@ import { addDraft202012, draft202012DialectUri } from "./index.js";
 describe("draft-2020-12", () => {
   /** @type (config?: JsonSchemaConfig) => JsonSchema */
   const draft202012 = (config) => {
-    const jsonSchema = new JsonSchema({ allowRetrieval: [], ...config });
-    addDraft202012(jsonSchema);
+    const jsonSchema = new JsonSchema({ allowRetrieval: [], dialects: [draft202012Dialect], ...config });
     return jsonSchema;
   };
 
@@ -27,10 +26,6 @@ describe("draft-2020-12", () => {
 
   beforeEach(() => {
     jsonSchema = draft202012();
-  });
-
-  test("it can only be added once", () => {
-    expect(() => addDraft202012(jsonSchema)).to.throw();
   });
 
   describe("format", () => {

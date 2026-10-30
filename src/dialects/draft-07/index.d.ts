@@ -1,6 +1,5 @@
 import type { Json } from "@hyperjump/browser/json";
-import type { JsonSchema } from "../../json-schema.d.ts";
-import type { Dialect, SchemaOf } from "../../dialect.d.ts";
+import type { DialectConfig, SchemaOf } from "../../dialect.d.ts";
 import type { Keyword } from "../../keyword.d.ts";
 import type { Expression, TypeName } from "../../kernel/kernel.d.ts";
 
@@ -17,21 +16,11 @@ export const draft07DialectUri: "http://json-schema.org/draft-07/schema";
  * default, as most implementations of these drafts did. Set the
  * `validateFormats` config to `false` to make it only an annotation. A
  * format the draft doesn't define is only an annotation either way.
- */
-export const draft07Dialect: Dialect;
-
-/**
- * Add JSON Schema draft-07: its keywords, formats, and dialect. Its own are
- * its `$id`, `$ref`, `format`, and `dependencies`, 2019-09's `items` and
- * `additionalItems`, and 2020-12's `type`.
  *
- * Every other keyword and format it uses is shared with the other presets.
- * Each preset adds the ones it uses that haven't been added, so presets don't
- * depend on each other, and a keyword or format you replaced stays replaced.
- *
- * @throws Error if it's already been added
+ * Its meta-schema doesn't define it, so it's in the `dialects` config, with
+ * its keywords and formats.
  */
-export function addDraft07(jsonSchema: JsonSchema): void;
+export const draft07Dialect: DialectConfig;
 
 /**
  * The type of a JSON Schema draft-07 schema, for checking schemas written
@@ -50,8 +39,8 @@ export function addDraft07(jsonSchema: JsonSchema): void;
 export type Draft07Schema<Extension extends Record<string, Keyword<any, any, any>> = {}> = SchemaOf<Draft07Keywords & Extension, typeof draft07DialectUri, "ignore">;
 
 /**
- * The types of the keywords {@link addDraft07} adds to the draft-07
- * dialect, by name, for {@link SchemaOf}
+ * The types of the draft-07 dialect's keywords, by name, for
+ * {@link SchemaOf}
  */
 export type Draft07Keywords = {
   additionalItems: Keyword<Expression, "schema">;

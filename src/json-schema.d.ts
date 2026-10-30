@@ -8,7 +8,7 @@ import type {
 } from "@hyperjump/browser/json";
 import type { JsonSchemaNode } from "./schema/schema-ast.d.ts";
 import type { Keyword } from "./keyword.d.ts";
-import type { Dialect, DialectExtension } from "./dialect.d.ts";
+import type { Dialect, DialectConfig, DialectExtension, Vocabulary, VocabularyConfig } from "./dialect.d.ts";
 import type { Format } from "./format.d.ts";
 import type { EvaluationPlugin } from "./kernel/evaluation-plugin.d.ts";
 import type { SchemaRegistry } from "./registry/schema-registry.d.ts";
@@ -37,7 +37,43 @@ export type JsonSchemaConfig = HyperjumpConfig & {
    * annotation in most dialects.
    */
   validateFormats?: boolean;
+
+  /**
+   * The dialects schemas can use, like `v1Dialect`, with the keywords and
+   * formats they bring. Other dialects can still be defined by meta-schemas
+   * (`$vocabulary`), and a session builds those the first time they're
+   * used. A dialect can't be in the list twice. They can't change after the
+   * `JsonSchema` is created.
+   */
+  dialects?: DialectConfig[];
+
+  /**
+   * Keywords that replace a dialect's definition with the same URI, or that
+   * a dialect names by URI
+   */
+  keywords?: Keyword<any, any, any>[];
+
+  /**
+   * Formats that replace a dialect's definition with the same URI, or that
+   * a dialect names by URI, like `fullFormats`
+   */
+  formats?: Format[];
+
+  /**
+   * More vocabularies `$vocabulary` can use, by URI, in addition to the ones
+   * the dialects bring. One here replaces a dialect's.
+   */
+  vocabularies?: Record<string, VocabularyConfig>;
 };
+
+/**
+ * A dialect with more keywords or formats, such as a custom keyword in the
+ * v1 dialect. Pass it in the config instead of the dialect.
+ *
+ * @throws Error if the dialect already has a keyword or format with one of
+ * the names, or a keyword name starts with `x-`
+ */
+export function extendDialect(dialect: DialectConfig, extension: DialectExtension): DialectConfig;
 
 export class JsonSchema extends Hyperjump<JsonSchemaNode> {
   constructor(config?: JsonSchemaConfig);
@@ -59,10 +95,7 @@ export class JsonSchema extends Hyperjump<JsonSchemaNode> {
    */
   registry: SchemaRegistry<any>;
 
-  /** Add or replace a keyword definition */
-  addKeyword(keyword: Keyword): void;
-
-  /** Whether a keyword definition has been added */
+  /** Whether there's a keyword definition with this URI */
   hasKeyword(uri: string): boolean;
 
   /**
@@ -72,10 +105,7 @@ export class JsonSchema extends Hyperjump<JsonSchemaNode> {
    */
   getKeyword(uri: string): Keyword;
 
-  /** Add or replace a format definition */
-  addFormat(format: Format): void;
-
-  /** Whether a format definition has been added */
+  /** Whether there's a format definition with this URI */
   hasFormat(uri: string): boolean;
 
   /**
@@ -86,41 +116,23 @@ export class JsonSchema extends Hyperjump<JsonSchemaNode> {
   getFormat(uri: string): Format;
 
   /**
-   * Add a dialect. Most dialects don't need to be added. A meta-schema can
-   * define one, as `$vocabulary` does, and it's found the first time it's
-   * used. Add one for a dialect whose meta-schema doesn't define it, such as
-   * draft-04 through draft-07, or one whose meta-schema describes itself.
-   *
-   * @throws Error if the dialect is already defined (use {@link removeDialect}
-   * first to replace it) or a keyword name starts with `x-`.
-   */
-  addDialect(dialect: Dialect): void;
-
-  /**
-   * Add keywords or formats to a dialect that's defined, such as a custom
-   * keyword in the v1 dialect. Schemas that were already resolved aren't
-   * affected.
-   *
-   * @throws Error if the dialect isn't defined, it already has a keyword or
-   * format with one of the names, or a keyword name starts with `x-`.
-   */
-  extendDialect(uri: string, extension: DialectExtension): void;
-
-  /**
-   * Whether a dialect has been added. A dialect a session built from its
+   * Whether a dialect is in the config. A dialect a session built from its
    * meta-schema isn't.
    */
   hasDialect(uri: string): boolean;
 
-  /** Remove a dialect so it can be replaced. */
-  removeDialect(uri: string): void;
-
   /**
-   * Get a dialect that has been added.
+   * Get a dialect from the config, with its definitions named by URI.
    *
-   * @throws Error if the dialect hasn't been added.
+   * @throws Error if the dialect isn't in the config.
    */
   getDialect(uri: string): Dialect;
+
+  /**
+   * A vocabulary `$vocabulary` can use, from the config or a dialect, with
+   * its definitions named by URI
+   */
+  getVocabulary(uri: string): Vocabulary | undefined;
 
   /**
    * Compile a schema into a {@link Validator} that can be used for any

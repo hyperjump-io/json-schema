@@ -59,9 +59,8 @@ const identifications = new WeakMap();
 
 /**
  * A JsonSchema's index of a registry: each entry by the URI it's identified
- * by with the JsonSchema's dialects. A registry never changes, so neither
- * does its index, except that entries waiting for a dialect are identified
- * once the JsonSchema has it. A session's own registry can also use the
+ * by with the JsonSchema's dialects. A registry never changes, and neither
+ * do a JsonSchema's dialects, so neither does its index. A session's own registry can also use the
  * dialects defined in the JsonSchema's registry, so its index is made with
  * that registry's index.
  */
@@ -207,9 +206,6 @@ export class RegistryIndex {
    * @type RegistryDialects
    */
   dialect(dialectUri) {
-    if (!this.#dialects.has(dialectUri) && this.#waiting.size > 0) {
-      this.#identifyWaiting();
-    }
     return this.#dialects.get(dialectUri);
   }
 
@@ -234,13 +230,7 @@ export class RegistryIndex {
    * @throws Error if more than one entry is found by the URI
    */
   lookup(uri) {
-    let found = this.#byUri.get(uri);
-    if (!found && this.#waiting.size > 0) {
-      // An entry might be waiting for a dialect that's been added since
-      this.#identifyWaiting();
-      found = this.#byUri.get(uri);
-    }
-
+    const found = this.#byUri.get(uri);
     if (!found) {
       return;
     } else if (found.length > 1) {
@@ -422,6 +412,7 @@ const rootEffects = (jsonSchema, root, dialect, retrievalUri) => {
 
     /** @type ResolveContext */
     const context = {
+      jsonSchema: jsonSchema,
       baseUri: retrievalUri ?? "",
       dialectUri: dialect.uri,
       setBaseUri: (baseUri) => {

@@ -8,7 +8,7 @@ import { VFile } from "vfile";
 import { rejsonParse, rejsonStringify } from "@hyperjump/browser/json";
 import { JsonSchema } from "../json-schema.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
-import { addV1 } from "../dialects/v1/index.js";
+import { v1Dialect } from "../dialects/v1/index.js";
 import { jsonSchemaValidate } from "./validate.js";
 
 /**
@@ -23,8 +23,7 @@ describe("jsonSchemaValidate", () => {
   let validator;
 
   beforeAll(async () => {
-    const jsonSchema = new JsonSchema();
-    addV1(jsonSchema);
+    const jsonSchema = new JsonSchema({ dialects: [v1Dialect] });
     const registry = new SchemaRegistry([{
       schema: {
         $schema: "https://json-schema.org/v1",
@@ -101,8 +100,7 @@ describe("jsonSchemaValidate", () => {
       directory = await mkdtemp(join(cwd(), ".validate-test-"));
       const path = join(directory, "person.schema.json");
       await writeFile(path, JSON.stringify({ $schema: "https://json-schema.org/v1", properties: { age: { minimum: 0 } } }));
-      const jsonSchema = new JsonSchema();
-      addV1(jsonSchema);
+      const jsonSchema = new JsonSchema({ dialects: [v1Dialect] });
       fileValidator = await jsonSchema.compile(pathToFileURL(path).href);
     });
 

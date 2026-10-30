@@ -3,13 +3,14 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { describe, test, beforeAll, afterAll, expect } from "vitest";
-import { JsonSchema } from "../json-schema.js";
-import { addV1, v1DialectUri } from "../dialects/v1/index.js";
-import { addFullFormats } from "../formats/full.js";
+import { JsonSchema, extendDialect } from "../json-schema.js";
+import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
+import { fullFormats } from "../formats/full.js";
 
 /**
  * @import { Json, ReadonlyJson } from "@hyperjump/browser/json"
  * @import { JsonSchemaConfig } from "../json-schema.d.ts"
+ * @import { Format } from "../format.d.ts"
  */
 
 describe("format", () => {
@@ -26,8 +27,7 @@ describe("format", () => {
 
   /** @type (config?: JsonSchemaConfig) => JsonSchema */
   const v1 = (config) => {
-    const jsonSchema = new JsonSchema({ allowRetrieval: [pathToFileURL(join(tmpdir(), "/")).href], ...config });
-    addV1(jsonSchema);
+    const jsonSchema = new JsonSchema({ allowRetrieval: [pathToFileURL(join(tmpdir(), "/")).href], dialects: [v1Dialect], ...config });
     return jsonSchema;
   };
 
@@ -52,12 +52,11 @@ describe("format", () => {
   });
 
   test("the lite formats don't include the formats that need Unicode data", async () => {
-    await expect(v1().compile(await schemaFile({ format: "idn-hostname" }))).rejects.toThrow("addFormat");
+    await expect(v1().compile(await schemaFile({ format: "idn-hostname" }))).rejects.toThrow("'formats' config");
   });
 
   test("the full formats", async () => {
-    const jsonSchema = v1();
-    addFullFormats(jsonSchema);
+    const jsonSchema = v1({ formats: fullFormats });
     const validator = await jsonSchema.compile(await schemaFile({ format: "idn-hostname" }));
 
     expect(validator.validate("例え.テスト")).to.equal(true);
@@ -86,9 +85,9 @@ describe("format", () => {
   });
 
   test("a format added to a dialect", async () => {
-    const jsonSchema = v1();
-    jsonSchema.addFormat({ uri: "https://example.com/format/even", types: ["number"], validate: (value) => /** @type number */ (value) % 2 === 0 });
-    jsonSchema.extendDialect(v1DialectUri, { formats: { even: "https://example.com/format/even" } });
+    /** @type Format */
+    const even = { uri: "https://example.com/format/even", types: ["number"], validate: (value) => /** @type number */ (value) % 2 === 0 };
+    const jsonSchema = v1({ dialects: [extendDialect(v1Dialect, { formats: { even } })] });
     const validator = await jsonSchema.compile(await schemaFile({ format: "even" }));
 
     expect(validator.validate(2)).to.equal(true);
@@ -96,18 +95,18 @@ describe("format", () => {
   });
 
   test("a value of a type the format doesn't apply to is valid without calling validate", async () => {
-    const jsonSchema = v1();
     /** @type ReadonlyJson[] */
     const validated = [];
-    jsonSchema.addFormat({
+    /** @type Format */
+    const never = {
       uri: "https://example.com/format/never",
       types: ["string", "array"],
       validate: (value) => {
         validated.push(value);
         return false;
       }
-    });
-    jsonSchema.extendDialect(v1DialectUri, { formats: { never: "https://example.com/format/never" } });
+    };
+    const jsonSchema = v1({ dialects: [extendDialect(v1Dialect, { formats: { never } })] });
     const validator = await jsonSchema.compile(await schemaFile({ format: "never" }));
 
     expect(validator.validate("foo")).to.equal(false);
@@ -119,9 +118,8 @@ describe("format", () => {
   });
 
   test("a format without types applies to every type", async () => {
-    const jsonSchema = v1();
-    jsonSchema.addFormat({ uri: "https://example.com/format/never", validate: () => false });
-    jsonSchema.extendDialect(v1DialectUri, { formats: { never: "https://example.com/format/never" } });
+    const never = { uri: "https://example.com/format/never", validate: () => false };
+    const jsonSchema = v1({ dialects: [extendDialect(v1Dialect, { formats: { never } })] });
     const validator = await jsonSchema.compile(await schemaFile({ format: "never" }));
 
     for (const value of ["foo", 42, true, null, [], {}]) {

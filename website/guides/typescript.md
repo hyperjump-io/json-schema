@@ -42,7 +42,7 @@ How strict a type is follows what its dialect says about unknown keywords:
 - **v1** makes an unknown keyword an error, so its type only allows the
   keywords v1 has, and names starting with `x-`, which can have any
   value. It includes `conditional`, `itemPattern`, and `requireAllExcept`,
-  which `addV1` adds.
+  which `v1Dialect` has.
 - **2020-12 and earlier** allow an unknown keyword, so their types allow
   any property, and a misspelled keyword isn't an error. The values of the
   dialect's keywords are still checked.
@@ -145,7 +145,7 @@ const count = {
 Where `evenKeyword` comes from, and how a keyword's definition gives the
 type of its value, is in
 [Custom keywords](../extending/keywords.md#in-typescript). A dialect of
-your own, made with `addDialect`, has a type made with `SchemaOf`. See
+your own has a type made with `SchemaOf`. See
 [Custom dialects](../extending/dialects.md#in-typescript).
 
 ## What isn't checked

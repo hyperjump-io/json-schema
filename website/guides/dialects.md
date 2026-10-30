@@ -4,29 +4,29 @@ A dialect is a version of JSON Schema, like draft-07 or 2020-12. It decides
 which keywords there are and what they mean. A schema says which dialect
 it's written in with `$schema`.
 
-## Adding dialects
+## Choosing dialects
 
-A `JsonSchema` starts without any dialects, so your application only loads
-the ones it uses. Add each one from its module.
+A `JsonSchema` only has the dialects in its `dialects` config, so your
+application only loads the ones it uses. Import each one from its module.
+A dialect brings the keywords and formats it uses. The dialects can't
+change after the `JsonSchema` is created.
 
 ```typescript
 import { JsonSchema } from "@hyperjump/json-schema";
-import { addDraft202012 } from "@hyperjump/json-schema/draft-2020-12";
-import { addDraft07 } from "@hyperjump/json-schema/draft-07";
+import { draft202012Dialect } from "@hyperjump/json-schema/draft-2020-12";
+import { draft07Dialect } from "@hyperjump/json-schema/draft-07";
 
-const jsonSchema = new JsonSchema();
-addDraft202012(jsonSchema);
-addDraft07(jsonSchema);
+const jsonSchema = new JsonSchema({ dialects: [draft202012Dialect, draft07Dialect] });
 ```
 
-| Dialect | Module | Function | Dialect URI |
+| Dialect | Module | Export | Dialect URI |
 | --- | --- | --- | --- |
-| v1 | `@hyperjump/json-schema/v1` | `addV1` | `https://json-schema.org/v1` |
-| 2020-12 | `@hyperjump/json-schema/draft-2020-12` | `addDraft202012` | `https://json-schema.org/draft/2020-12/schema` |
-| 2019-09 | `@hyperjump/json-schema/draft-2019-09` | `addDraft201909` | `https://json-schema.org/draft/2019-09/schema` |
-| draft-07 | `@hyperjump/json-schema/draft-07` | `addDraft07` | `http://json-schema.org/draft-07/schema#` |
-| draft-06 | `@hyperjump/json-schema/draft-06` | `addDraft06` | `http://json-schema.org/draft-06/schema#` |
-| draft-04 | `@hyperjump/json-schema/draft-04` | `addDraft04` | `http://json-schema.org/draft-04/schema#` |
+| v1 | `@hyperjump/json-schema/v1` | `v1Dialect` | `https://json-schema.org/v1` |
+| 2020-12 | `@hyperjump/json-schema/draft-2020-12` | `draft202012Dialect` | `https://json-schema.org/draft/2020-12/schema` |
+| 2019-09 | `@hyperjump/json-schema/draft-2019-09` | `draft201909Dialect` | `https://json-schema.org/draft/2019-09/schema` |
+| draft-07 | `@hyperjump/json-schema/draft-07` | `draft07Dialect` | `http://json-schema.org/draft-07/schema#` |
+| draft-06 | `@hyperjump/json-schema/draft-06` | `draft06Dialect` | `http://json-schema.org/draft-06/schema#` |
+| draft-04 | `@hyperjump/json-schema/draft-04` | `draft04Dialect` | `http://json-schema.org/draft-04/schema#` |
 
 Each module also exports its dialect URI, like `v1DialectUri` and
 `draft202012DialectUri`, for code that needs to name it.
@@ -49,6 +49,7 @@ it gets its dialect from somewhere else:
 
 ```typescript
 const jsonSchema = new JsonSchema({
+  dialects: [v1Dialect],
   defaultDialectUri: "https://json-schema.org/v1"
 });
 ```
@@ -75,11 +76,23 @@ lint rule reports them, with a suggestion when it looks like a misspelling.
 
 In 2019-09 and 2020-12, a meta-schema can define a dialect of its own with
 `$vocabulary`, choosing which vocabularies of keywords it uses. A schema
-whose `$schema` is that meta-schema's URI uses that dialect. You don't need
-to add it. It's built the first time a schema uses it, so the meta-schema
-only needs to be somewhere it can be found, like a registry.
+whose `$schema` is that meta-schema's URI uses that dialect. It doesn't go
+in the config. It's built the first time a schema uses it, so the
+meta-schema only needs to be somewhere it can be found, like a registry.
+The meta-schema's own dialect, like 2020-12, does need to be in the config,
+and brings the vocabularies 2020-12 defines.
 
-To use a vocabulary of your own in a meta-schema, add it with
-`addVocabulary` from `@hyperjump/json-schema/draft-2020-12` or
-`@hyperjump/json-schema/draft-2019-09`. To make a dialect any other way, see
-[Custom dialects](../extending/dialects.md).
+To use a vocabulary of your own in a meta-schema, put it in the
+`vocabularies` config, by its URI. Its keywords are definitions, like a
+dialect's (see [Custom keywords](../extending/keywords.md)).
+
+```typescript
+const jsonSchema = new JsonSchema({
+  dialects: [draft202012Dialect],
+  vocabularies: {
+    "https://example.com/vocab/even": { keywords: { even: evenKeyword } }
+  }
+});
+```
+
+To make a dialect any other way, see [Custom dialects](../extending/dialects.md).

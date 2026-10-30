@@ -328,6 +328,7 @@ class Resolver {
 
       /** @type ResolveContext */
       const context = {
+        jsonSchema: this.#session.jsonSchema,
         baseUri: resource.uri,
         dialectUri: dialect.uri,
         setBaseUri: (uri) => {
@@ -545,7 +546,7 @@ class Resolver {
       return this.#session.jsonSchema.getDialect(uri);
     }
 
-    this.#message(`The '${uri}' meta-schema describes itself, so its dialect has to be added. Use the 'addDialect' function to add support for it.`, node, "unknown-dialect");
+    this.#message(`The '${uri}' meta-schema describes itself, so its dialect has to be in the 'dialects' config.`, node, "unknown-dialect");
   }
 
   /** @type (reason: string, node: Node, ruleId: string, cause?: Error) => VFileMessage */

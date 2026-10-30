@@ -3,9 +3,9 @@ import { unified } from "unified";
 import { VFile } from "vfile";
 import { rejsonParse } from "@hyperjump/browser/json";
 import { linter } from "../test-linter.js";
-import { JsonSchema } from "../../json-schema.js";
+import { JsonSchema, extendDialect } from "../../json-schema.js";
 import { jsonSchemaResolve } from "../../schema/resolve.js";
-import { addDraft202012 } from "../../dialects/draft-2020-12/index.js";
+import { draft202012Dialect } from "../../dialects/draft-2020-12/index.js";
 import mergeableSchemas from "./mergeable-schemas.js";
 
 const draft2020 = "https://json-schema.org/draft/2020-12/schema";
@@ -159,10 +159,8 @@ describe("mergeable-schemas", () => {
   });
 
   test("a custom keyword that reads a sibling", async () => {
-    const jsonSchema = new JsonSchema();
-    addDraft202012(jsonSchema);
-    jsonSchema.addKeyword({ uri: "https://example.com/keyword/scale", shape: "data", siblings: { maximum: "https://json-schema.org/keyword/maximum" } });
-    jsonSchema.extendDialect(draft2020, { keywords: { scale: "https://example.com/keyword/scale" } });
+    const scaleKeyword = { uri: "https://example.com/keyword/scale", shape: /** @type const */ ("data"), siblings: { maximum: "https://json-schema.org/keyword/maximum" } };
+    const jsonSchema = new JsonSchema({ dialects: [extendDialect(draft202012Dialect, { keywords: { scale: scaleKeyword } })] });
 
     /** @type (json: string) => Promise<string[]> */
     const customReasons = async (json) => {
