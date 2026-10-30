@@ -5,13 +5,15 @@ A format is a plain object with a URI. Give it a name in a dialect with
 
 ```typescript
 import { JsonSchema, extendDialect } from "@hyperjump/json-schema";
+import type { Format } from "@hyperjump/json-schema";
 import { v1Dialect } from "@hyperjump/json-schema/v1";
 
 const hexFormat = {
   uri: "https://example.com/format/hex",
   types: ["string"],
-  validate: (value) => /^[0-9a-f]+$/i.test(value)
-};
+  validate: (value) => typeof value === "string"
+    && /^[0-9a-f]+$/i.test(value)
+} satisfies Format;
 
 const jsonSchema = new JsonSchema({
   dialects: [extendDialect(v1Dialect, { formats: { hex: hexFormat } })]
@@ -30,8 +32,9 @@ const jsonSchema = new JsonSchema({
 other type is valid, and `validate` isn't called for it, as the spec says.
 Without `types`, a format applies to every type.
 
-`validate` can get the instance being validated itself, not a copy, so it
-shouldn't change the value. In TypeScript, it's readonly.
+`validate` can get the instance being validated itself, not a copy, so its
+type is readonly: a `ReadonlyJson`. `types` doesn't narrow it, so check the
+type before using the value.
 
 There's no `integer` type for formats, because formats apply to the types in
 JSON's data model. A format for integers applies to numbers, and checks

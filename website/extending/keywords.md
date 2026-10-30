@@ -6,6 +6,7 @@ instead of the dialect.
 
 ```typescript
 import { JsonSchema, extendDialect } from "@hyperjump/json-schema";
+import type { Keyword } from "@hyperjump/json-schema";
 import { v1Dialect } from "@hyperjump/json-schema/v1";
 
 const evenKeyword = {
@@ -17,7 +18,7 @@ const evenKeyword = {
     }
   },
   lower: (even) => even ? { op: "multipleOf", divisor: 2 } : { op: "pass" }
-};
+} satisfies Keyword<boolean>;
 
 const jsonSchema = new JsonSchema({
   dialects: [extendDialect(v1Dialect, { keywords: { even: evenKeyword } })]
@@ -31,6 +32,11 @@ const jsonSchema = new JsonSchema({
   "even": true
 }
 ```
+
+`Keyword<boolean>` says `lower` gets a boolean, so its parameters are typed
+without annotations. Declare a keyword with `satisfies`, not a type
+annotation, so it keeps its `shape` as written, and its type says what its
+value is in a schema (see [Schemas that use it](#schemas-that-use-it)).
 
 To replace a keyword a dialect has, put a definition with the same URI in
 the `keywords` config. It's used in every dialect that has the keyword.
@@ -54,17 +60,22 @@ const jsonSchema = new JsonSchema({ dialects: [v1Dialect], keywords: [myTypeKeyw
 
 The shape says which parts of the value are schemas, so they're resolved
 and compiled, and so tools that walk schemas, like lint rules and bundling,
-find them without knowing your keyword.
+find them without knowing your keyword. It's also the type of the
+keyword's value in a schema.
 
-| Shape | The value is |
-| --- | --- |
-| `"data"` | Plain JSON, like `minimum`'s number |
-| `"schema"` | A schema, like `not`'s |
-| `"unappliedSchema"` | A schema the keyword doesn't apply, like `contentSchema`'s. It's resolved, but not compiled. |
-| `"reference"` | A URI reference, like `$ref`'s |
-| `{ array: shape }` | An array of that shape, like `allOf`'s array of schemas |
-| `{ map: shape }` | An object whose values are that shape, like `properties` |
-| `[shape, shape]` | Any of the shapes, like `items` in draft-07, a schema or an array of schemas |
+| Shape | The value is | Its type in a schema |
+| --- | --- | --- |
+| `"data"` | Plain JSON, like `minimum`'s number | What `lower` gets, readonly |
+| `"schema"` | A schema, like `not`'s | A schema |
+| `"unappliedSchema"` | A schema the keyword doesn't apply, like `contentSchema`'s. It's resolved, but not compiled. | A schema |
+| `"reference"` | A URI reference, like `$ref`'s | `string` |
+| `{ array: shape }` | An array of that shape, like `allOf`'s array of schemas | An array of the shape's type |
+| `{ map: shape }` | An object whose values are that shape, like `properties` | An object of the shape's type |
+| `[shape, shape]` | Any of the shapes, like `items` in draft-07, a schema or an array of schemas | Any of the shapes' types |
+
+A schema in the value has the type of the schema it's in, so it can use
+the dialect's other keywords, including yours. A `"data"` keyword whose
+`lower` doesn't give its value a type can have any JSON.
 
 A value that doesn't fit the shape is a problem with the schema, reported
 before `check` is called.
@@ -95,7 +106,7 @@ const ifStringKeyword = {
     cases: { string: schema },
     otherwise: { op: "pass" }
   })
-};
+} satisfies Keyword;
 ```
 
 The kernel has operations for types (`typeIs`), values (`equals`,
@@ -113,17 +124,27 @@ examples of each.
 A keyword that depends on another keyword in the same schema, like
 `additionalProperties` depends on `properties`, declares it in `siblings`
 by a name of its choosing. `lower` and `check` get its value by that name,
-or `undefined` if it isn't there.
+parsed by its shape, or `undefined` if it isn't there. `Keyword`'s third
+type parameter is their types. A map of schemas, like `properties`, is its
+pairs in order.
 
 ```typescript
-siblings: { properties: "https://json-schema.org/keyword/properties" },
-lower: (schema, { properties = [] }) => ({
-  op: "eachProperty",
-  select: {
-    except: { names: properties.map(([name]) => name), patterns: [] }
-  },
-  of: schema
-})
+import type { Expression, Keyword } from "@hyperjump/json-schema";
+
+const otherPropertiesKeyword = {
+  uri: "https://example.com/keyword/otherProperties",
+  shape: "schema",
+  siblings: { properties: "https://json-schema.org/keyword/properties" },
+  lower: (schema, { properties = [] }) => ({
+    op: "eachProperty",
+    select: {
+      except: { names: properties.map(([name]) => name), patterns: [] }
+    },
+    of: schema
+  })
+} satisfies Keyword<Expression, "schema", {
+  properties?: [string, Expression][];
+}>;
 ```
 
 Declaring them also tells lint rules that move keywords between schemas,
@@ -137,7 +158,7 @@ A keyword that checks something the kernel has no operation for lowers to a
 the `types` it lists. Values of other types pass.
 
 ```typescript
-const isPrime = (n) => {
+const isPrime = (n: number) => {
   if (n < 2) {
     return false;
   }
@@ -161,42 +182,35 @@ const primeKeyword = {
     }
     : { op: "pass" },
   evaluate: (_value, { instance }) => (node) => {
-    return isPrime(instance.value(node));
+    const value = instance.value(node);
+    return typeof value === "number" && isPrime(value);
   }
-};
+} satisfies Keyword<boolean>;
 ```
 
 `evaluate` is called once, with the predicate's `value`, and returns the
 function that evaluates each instance. Read the instance with
 `context.instance`, because the instance can be a JavaScript value or an
 AST node, depending on how it's validated. For a JavaScript value,
-`instance.value` returns the instance itself, not a copy, so don't change
-it. In TypeScript, it's readonly.
+`instance.value` returns the instance itself, not a copy, so its type is
+readonly: a `ReadonlyJson`. Check its type before using it, even for a
+predicate that only applies to integers.
 
 A keyword that applies schemas in a way the kernel can't express lowers to
 an `opaque` operation instead, and gets evaluators for its schemas. Prefer
 the kernel's operations wherever you can. Tools can see inside them, and
 can't see inside a predicate or an opaque operation.
 
-## In TypeScript
+## Schemas that use it
 
-Declare a keyword with `satisfies Keyword`, giving the type of the value
-`lower` gets. That keeps its `shape` as written, so the keyword's type
-says what its value is in a schema, and schemas that use it can be checked
-with your dialect's type (see
-[Schemas in TypeScript](../guides/typescript.md#custom-keywords)):
+A `JsonSchema` with your dialect checks schemas passed to it as values,
+with your keyword's type (see
+[Schema types](../guides/schema-types.md#custom-keywords)). To name the
+type, give a dialect's type your keywords by the names they have in the
+dialect:
 
 ```typescript
-import type { Keyword } from "@hyperjump/json-schema";
 import type { V1Schema } from "@hyperjump/json-schema/v1";
-
-const evenKeyword = {
-  uri: "https://example.com/keyword/even",
-  shape: "data",
-  lower: (even: boolean) => even
-    ? { op: "multipleOf", divisor: 2 }
-    : { op: "pass" }
-} satisfies Keyword<boolean>;
 
 type MySchema = V1Schema<{ even: typeof evenKeyword }>;
 
@@ -207,22 +221,6 @@ const schema = { type: "integer", even: 2 } satisfies MySchema;
 Type 'number' is not assignable to type 'boolean | undefined'.
 ```
 
-The type of the keyword's value comes from its shape. A schema in the value
-has the type of the schema it's in, so it can use the dialect's other
-keywords, including yours. Data is the type `lower` gets, readonly:
-`boolean`, above.
-
-| Shape | Like | In a schema |
-| --- | --- | --- |
-| `"data"` | `minLength` | What `lower` gets |
-| `"schema"` | `not` | A schema |
-| `"unappliedSchema"` | `contentSchema` | A schema |
-| `"reference"` | `$ref` | A string |
-| `{ array: "schema" }` | `allOf` | An array of schemas |
-| `{ map: "schema" }` | `properties` | An object of schemas |
-| `["schema", { array: "schema" }]` | `items` in 2019-09 | A schema or an array of schemas |
-| `{ map: ["schema", { array: "data" }] }` | `dependencies` in draft-07 | An object of schemas or arrays of strings |
-
-A keyword whose `lower` doesn't give its value a type can have any JSON
-there. One declared with a type annotation (`const evenKeyword: Keyword`)
-loses its shape, and can have any value at all.
+A keyword declared with a type annotation
+(`const evenKeyword: Keyword`) loses its shape, and can have any value at
+all.

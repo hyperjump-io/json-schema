@@ -38,7 +38,7 @@ The error's own `message` sums them up:
 The schema at 'https://example.com/bad' is invalid: 'tpye' isn't a keyword in the 'https://json-schema.org/v1' dialect (and 1 more problem)
 ```
 
-`messages` are plain objects:
+`messages` are `SchemaMessage`s, which are plain objects:
 
 | Property | What it is |
 | --- | --- |

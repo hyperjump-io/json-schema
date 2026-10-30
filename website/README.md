@@ -12,6 +12,8 @@ A JSON Schema validator and linter for JavaScript, for Node.js and browsers.
 - **A linter.** Lint rules find schemas that work but probably don't mean
   what their author meant, like `then` without `if` or a misspelled
   `required` property.
+- **Typed schemas.** Each dialect has a TypeScript type, so a misspelled
+  keyword in a schema you write in code is a type error, before it runs.
 - **Annotations.** Get the `title`, `description`, `default`, and other
   annotations that apply to each part of a value.
 - **Extensible.** Add keywords, formats, dialects, output formats, and lint
@@ -54,6 +56,8 @@ Using version 1.x? Its docs are in the
   - [Loading schemas](guides/loading-schemas.md): registries, files, and
     HTTP
   - [Dialects](guides/dialects.md): which versions of JSON Schema to support
+  - [Schema types](guides/schema-types.md): checking schemas as you write
+    them
   - [Validating](guides/validating.md): JavaScript values, JSON text, and
     JSON ASTs
   - [Output and errors](guides/output.md): finding out why a value is
@@ -70,8 +74,6 @@ Using version 1.x? Its docs are in the
     in one document
   - [Caching compiled schemas](guides/caching.md): skipping compilation when
     your application starts
-  - [Schemas in TypeScript](guides/typescript.md): checking schemas as
-    you write them
   - [Configuration](guides/configuration.md): every option, in one place
 - [Linting schemas](linting/README.md)
   - [Rules](linting/rules/README.md): every rule, with examples

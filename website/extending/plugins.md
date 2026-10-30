@@ -10,7 +10,7 @@ validator's plugins are chosen when it's made, so each value it validates
 is evaluated with the same plugin objects.
 
 ```typescript
-const keywords = new Set();
+const keywords = new Set<string>();
 await validate(jsonSchema, uri, instance, {
   plugins: [{
     afterKeyword(keyword, at, valid) {
@@ -39,6 +39,20 @@ plugin's state for that schema or keyword, and it's passed to the matching
 `after` hook and to the hooks of what's evaluated inside it. That's enough
 to build nested results, like the `DETAILED` output.
 
+A plugin is an `EvaluationPlugin<S, K>`, where `S` is the type of the
+state `beforeSchema` returns and `K` the type of the state `beforeKeyword`
+returns. A plugin written in the `plugins` option gets its hooks'
+parameter types from it. Declare one written elsewhere with `satisfies`:
+
+```typescript
+import type { EvaluationPlugin } from "@hyperjump/json-schema";
+
+const depth = {
+  beforeSchema: (_schema, _at, parent) => (parent ?? 0) + 1,
+  beforeKeyword: (_keyword, _at, schema) => schema
+} satisfies EvaluationPlugin<number, number>;
+```
+
 ## Every annotation
 
 `annotation` is called for every annotation, even from schemas that fail,
@@ -46,8 +60,10 @@ which aren't kept in the result. A language server can use it to show a
 `description` in a document that has errors.
 
 ```typescript
+import type { Json } from "@hyperjump/browser/json";
+
 const description = "https://json-schema.org/keyword/description";
-const descriptions = new Map();
+const descriptions = new Map<string, Json>();
 await validate(jsonSchema, uri, json, {
   input: "json",
   plugins: [{

@@ -1,9 +1,9 @@
-# Schemas in TypeScript
+# Schema types
 
-A schema written in TypeScript can be checked as it's written. Each dialect
-has a type, so a misspelled keyword or a value of the wrong type is a type
-error, anywhere in the schema. Nothing changes at runtime: the types only
-check what you write.
+A schema in your code is checked as you write it. Each dialect has a type,
+so a misspelled keyword or a value of the wrong type is a type error,
+anywhere in the schema. Nothing changes at runtime: the types only check
+what you write.
 
 ```typescript
 import type { V1Schema } from "@hyperjump/json-schema/v1";
@@ -210,12 +210,12 @@ const count = {
 
 Where `evenKeyword` comes from, and how a keyword's definition gives the
 type of its value, is in
-[Custom keywords](../extending/keywords.md#in-typescript). Declare a
+[Custom keywords](../extending/keywords.md#schemas-that-use-it). Declare a
 keyword with `satisfies Keyword`, before the config, so its type keeps its
 shape; a keyword written inside the config can lose its parameter types. A
 dialect of your own has a type too, from its keywords (`DialectSchema`),
 and one named by a URI allows any value. See
-[Custom dialects](../extending/dialects.md#in-typescript).
+[Custom dialects](../extending/dialects.md#its-schema-type).
 
 ## What isn't checked
 

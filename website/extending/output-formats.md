@@ -12,14 +12,15 @@ every error. This one turns them into messages:
 ```typescript
 import { jsonSyntaxErrorMessage } from "@hyperjump/browser/json";
 import { BASIC } from "@hyperjump/json-schema";
+import type { OutputError, OutputFormat } from "@hyperjump/json-schema";
 
-const messages = {
+const messages: Record<string, string> = {
   "https://json-schema.org/keyword/minimum": "is too small",
   "https://json-schema.org/keyword/required": "is missing a property",
   "https://json-schema.org/keyword/type": "is the wrong type"
 };
 
-const describe = (error) => {
+const describe = (error: OutputError) => {
   if (error.source === "json") {
     return jsonSyntaxErrorMessage(error);
   }
@@ -28,7 +29,9 @@ const describe = (error) => {
   return `${where} ${messages[error.ruleId] ?? "is invalid"}`;
 };
 
-const MESSAGES = () => {
+type Messages = { valid: boolean; messages: string[] };
+
+const MESSAGES: OutputFormat<Messages> = () => {
   const basic = BASIC();
   return {
     plugin: basic.plugin,
@@ -39,8 +42,12 @@ const MESSAGES = () => {
   };
 };
 
-await validate(jsonSchema, "https://example.com/person", { age: -1 }, { output: MESSAGES });
+const result = await validate(jsonSchema, "https://example.com/person",
+  { age: -1 }, { output: MESSAGES });
 ```
+
+A format is an `OutputFormat<R>`, where `R` is its result, and validation
+returns an `R`, so `result` is a `Messages`:
 
 ```json
 {
@@ -75,19 +82,3 @@ A URI that isn't a `file:` URI is returned as it is.
 A value is evaluated the fast way first, without the plugin. The plugin only
 runs if the value is invalid, so `output(true, [])` can be called without
 the plugin having seen anything.
-
-## Types
-
-In TypeScript, a format is an `OutputFormat<R>`, where `R` is its result,
-and `validate` returns `R`:
-
-```typescript
-import type { OutputFormat } from "@hyperjump/json-schema";
-
-const MESSAGES: OutputFormat<{ valid: boolean; messages: string[] }> = () => {
-  // ...
-};
-
-const result = await validate(jsonSchema, "https://example.com/person", { age: -1 }, { output: MESSAGES });
-result.messages; // string[]
-```

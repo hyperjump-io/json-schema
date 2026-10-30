@@ -17,11 +17,14 @@ When a schema is needed, it's looked for in this order:
 
 A `SchemaRegistry` holds schemas you already have, like ones bundled with
 your application or stored in a database. A schema is found by its `$id`.
+Its type parameter is the type of the schemas it takes, so each one is
+checked as you write it.
 
 ```typescript
 import { SchemaRegistry } from "@hyperjump/json-schema";
+import type { V1Schema } from "@hyperjump/json-schema/v1";
 
-const registry = new SchemaRegistry()
+const registry = new SchemaRegistry<V1Schema>()
   .with({
     $schema: "https://json-schema.org/v1",
     $id: "https://example.com/person",
@@ -40,11 +43,10 @@ jsonSchema.registry = registry;
 ```
 
 The `JsonSchema`'s `registry` is seen by everything it compiles. It starts
-empty.
-
-In TypeScript, a registry can check the schemas added to it, like
-`new SchemaRegistry<V1Schema>()`. See
-[Schemas in TypeScript](typescript.md#in-a-registry).
+empty, with the type of the `JsonSchema`'s dialects' schemas. A registry
+without a type parameter takes any JSON. See
+[Schema types](schema-types.md#in-a-registry) for registries of more than
+one dialect.
 
 References between schemas in a registry work like references anywhere:
 `/address` is resolved against `https://example.com/person`.
@@ -53,7 +55,8 @@ References between schemas in a registry work like references anywhere:
 
 A schema can be a JavaScript value or JSON text. Pass the text when you have
 it, such as a file you read yourself. Then a problem with the schema is
-reported with its line and column.
+reported with its line and column. Text isn't type-checked, because its
+type is `string`.
 
 A value is copied when it's added, so changing it afterward doesn't change
 the registry. A value that can't be JSON, like one with a cycle, throws a
@@ -72,7 +75,7 @@ its dialect with `dialectUri`. Neither can be a `file:` URL: a schema in a
 file is loaded from the file.
 
 ```typescript
-const registry = new SchemaRegistry().with({ type: "string" }, {
+const registry = new SchemaRegistry<V1Schema>().with({ type: "string" }, {
   retrievalUri: "https://example.com/name",
   dialectUri: "https://json-schema.org/v1"
 });

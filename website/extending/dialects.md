@@ -13,17 +13,18 @@ like one based on draft-07, or one whose meta-schema describes itself, and
 put it in the `dialects` config.
 
 ```typescript
+import type { DialectConfig } from "@hyperjump/json-schema";
 import { v1Dialect } from "@hyperjump/json-schema/v1";
 
 const { $id, $ref, $defs, type, properties } = v1Dialect.keywords;
 
 const myDialect = {
-  uri: "https://example.com/dialect",
+  uri: "https://example.com/dialect" as const,
   keywords: { $id, $ref, $defs, type, properties, even: evenKeyword },
   formats: { hex: hexFormat },
   unknownKeywords: "error",
   assertFormats: true
-};
+} satisfies DialectConfig;
 
 const jsonSchema = new JsonSchema({ dialects: [myDialect] });
 ```
@@ -59,26 +60,20 @@ A dialect only has the keywords you give it, even `$id` and `$ref`. Without
 A dialect's URI should be the URI of its meta-schema, so tools that
 retrieve `$schema` find one. A dialect can only be in the config once.
 
-## In TypeScript
+Declare a dialect with `satisfies DialectConfig`, not a type annotation,
+so `unknownKeywords` keeps its literal type, and its URI `as const`. Then
+its schemas have a type (see [Its schema type](#its-schema-type)).
+
+## Its schema type
 
 A dialect's schema type comes from its keywords, so a `JsonSchema` with
 your dialect checks schemas passed to it as values (see
-[Schemas in TypeScript](../guides/typescript.md)). Declare it with
-`satisfies DialectConfig`, so `unknownKeywords` keeps its literal type and
-the URI can be `as const`. `DialectSchema` names its type. A keyword named
-by a URI, with its definition in the config's `keywords`, allows any value.
+[Schema types](../guides/schema-types.md)). `DialectSchema` names its type.
+A keyword named by a URI, with its definition in the config's `keywords`,
+allows any value.
 
 ```typescript
-import type { DialectConfig, DialectSchema } from "@hyperjump/json-schema";
-import { v1Dialect } from "@hyperjump/json-schema/v1";
-
-const { $id, $ref, $defs, type, properties } = v1Dialect.keywords;
-
-const myDialect = {
-  uri: "https://example.com/dialect" as const,
-  keywords: { $id, $ref, $defs, type, properties, even: evenKeyword },
-  unknownKeywords: "error"
-} satisfies DialectConfig;
+import type { DialectSchema } from "@hyperjump/json-schema";
 
 type MySchema = DialectSchema<typeof myDialect>;
 

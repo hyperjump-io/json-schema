@@ -31,7 +31,7 @@ a file, or anywhere [`allowRetrieval`](../guides/retrieval.md) allows.
 
 ## Results
 
-Each result is a plain object:
+Each result is a `SchemaMessage`, a plain object:
 
 | Property | What it is |
 | --- | --- |

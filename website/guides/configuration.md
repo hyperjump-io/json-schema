@@ -12,8 +12,9 @@ const jsonSchema = new JsonSchema({
 });
 ```
 
-What schemas can use is decided by the config, and can't change after the
-`JsonSchema` is created.
+What schemas can use is decided by the config, a `JsonSchemaConfig`, and
+can't change after the `JsonSchema` is created. Its dialects give the
+`JsonSchema` its [schema type](schema-types.md).
 
 | Option | Default | What it does |
 | --- | --- | --- |

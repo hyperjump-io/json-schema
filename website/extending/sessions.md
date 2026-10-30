@@ -44,12 +44,17 @@ a bundler, finds what a reference points to with the session's
 the URI of the document it's in.
 
 ```typescript
+import type { JsonSchemaDocumentNode } from "@hyperjump/json-schema";
 import { visitReferences } from "@hyperjump/json-schema/lint";
 
 const session = jsonSchema.session();
-const person = await session.getDocument("https://example.com/person");
+const document = await session.getDocument("https://example.com/person");
+if (document.type !== "json-schema-document") {
+  throw Error("Not a schema");
+}
+const person = document as unknown as JsonSchemaDocumentNode;
 
-const references = [];
+const references: string[] = [];
 visitReferences(person, (uri) => references.push(uri));
 
 for (const uri of references) {
@@ -58,6 +63,10 @@ for (const uri of references) {
   const schema = await session.get(uri, { referencedFrom: person.uri });
 }
 ```
+
+`getDocument` finds any document, like a JSON file, so check that it's a
+schema before treating it as one. Its type doesn't narrow, so it needs the
+cast.
 
 `referencedFrom` matters for a schema embedded in the same document, like
 an `$id` in `$defs`. It's only found from the document it's in, so without

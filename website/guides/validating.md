@@ -53,14 +53,15 @@ schema value compiles it again each time. Use `validator` once instead.
 A validator takes a value in one of three forms, chosen with the `input`
 option. Pick the one you have.
 
-| You have | `input` |
-| --- | --- |
-| A JavaScript value | `"value"` (the default) |
-| JSON text | `"json"` |
-| A JSON AST node | `"node"` |
+| You have | `input` | The instance's type |
+| --- | --- | --- |
+| A JavaScript value | `"value"` (the default) | `ReadonlyJson` |
+| JSON text | `"json"` | `string` |
+| A JSON AST node | `"node"` | `JsonNode` |
 
 A JSON string is also a valid value, so a validator can't tell text from a
-string. That's why the form is an option.
+string. That's why the form is an option. The function a validator returns
+takes the type its `input` says.
 
 ### A JavaScript value
 

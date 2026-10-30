@@ -33,13 +33,12 @@ const jsonSchema = new JsonSchema({ dialects: [v1Dialect] });
 
 ## Add a schema
 
-Schemas are identified by URI. A `SchemaRegistry` holds schemas you give it
-directly, by their `$id`.
+Schemas are identified by URI. The `JsonSchema`'s `registry` holds schemas
+you give it directly, by their `$id`. `with` returns a new registry with
+the schema in it.
 
 ```typescript
-import { SchemaRegistry } from "@hyperjump/json-schema";
-
-jsonSchema.registry = new SchemaRegistry().with({
+jsonSchema.registry = jsonSchema.registry.with({
   $schema: "https://json-schema.org/v1",
   $id: "https://example.com/person",
   title: "Person",
@@ -55,9 +54,25 @@ jsonSchema.registry = new SchemaRegistry().with({
 `$schema` says which dialect the schema is written in. Every schema needs
 one.
 
-In TypeScript, `new SchemaRegistry<V1Schema>()` checks each schema you add
-as you write it, so a misspelled keyword is a type error. See
-[Schemas in TypeScript](guides/typescript.md).
+The registry takes v1 schemas, because v1 is the dialect the `JsonSchema`
+has, so the schema is checked as you write it. A misspelled keyword is a
+type error:
+
+```typescript
+jsonSchema.registry = jsonSchema.registry.with({
+  $schema: "https://json-schema.org/v1",
+  $id: "https://example.com/person",
+  type: "object",
+  properties: { name: { type: "string", minLenght: 1 } }
+});
+```
+
+```text
+Object literal may only specify known properties, but 'minLenght' does not exist in type ... Did you mean to write 'minLength'?
+```
+
+[Schema types](guides/schema-types.md) has each dialect's type, and how to
+check schemas that aren't in a registry.
 
 ## Validate
 
@@ -101,6 +116,9 @@ const result = checkPerson({ age: -1 });
 result.valid; // false
 result.errors.length; // 2
 ```
+
+The output format decides what validation returns, and its type. With
+`BASIC`, `result` is a `BasicOutput`.
 
 Each error says where in the value the problem is (`instanceLocation`, a
 JSON Pointer) and which keyword failed (`absoluteKeywordLocation`):
@@ -215,7 +233,7 @@ what can be retrieved.
 
 A schema can be valid and still not do what its author meant. Lint rules
 find those mistakes. `lint` runs the recommended rules on a schema document
-and returns what they find.
+and returns what they find, as `SchemaMessage`s.
 
 ```typescript
 import { lint } from "@hyperjump/json-schema";

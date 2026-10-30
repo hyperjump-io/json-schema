@@ -36,8 +36,9 @@ export default lintRule({
   it's turned off in a
   [configuration comment](../linting/configuration-comments.md).
 - `url` is a page about the rule, put on every message it reports.
-- The function gets the schema AST and the file, and reports with
-  `file.message`, with the position of the node it's about.
+- The function gets the schema AST, a `JsonSchemaDocumentNode`, and the
+  file, and reports with `file.message`, with the position of the node
+  it's about.
 
 `lintRule` is
 [`unified-lint-rule`](https://github.com/remarkjs/remark-lint/tree/main/packages/unified-lint-rule)'s,
@@ -72,15 +73,22 @@ they're used.
 A rule that needs another schema, such as the target of a `$ref`, finds it
 with `findSchema`. Use the session the schema was resolved in,
 `file.data.jsonSchemaSession`, so the rule only sees what your
-application's registry and `allowRetrieval` allow. Pass the tree as
-`document`, so references into the schema being linted find what's in it.
+application's registry and `allowRetrieval` allow. It's `undefined` when
+the schema couldn't be resolved, so there's nothing to look at. Pass the
+tree as `document`, so references into the schema being linted find what's
+in it.
 
 ```typescript
+import type { JsonSchemaNode } from "@hyperjump/json-schema";
 import { findSchema, visitReferences } from "@hyperjump/json-schema/lint";
 
-const references = [];
-visitReferences(tree, (uri, node) => references.push([uri, node]));
 const session = file.data.jsonSchemaSession;
+if (session === undefined) {
+  return;
+}
+
+const references: [string, JsonSchemaNode][] = [];
+visitReferences(tree, (uri, node) => references.push([uri, node]));
 for (const [uri, node] of references) {
   const result = await findSchema(session, uri, { document: tree });
   if (result.status === "missing") {

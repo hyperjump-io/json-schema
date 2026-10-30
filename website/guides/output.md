@@ -12,9 +12,12 @@ const result = checkPerson({ age: -1 });
 
 | Output | Result | Use it for |
 | --- | --- | --- |
-| `FLAG` (the default) | `true` or `false` | Only whether it's valid. It's the fastest. |
-| `BASIC` | `{ valid, errors }`, with a flat list of errors | Reporting each problem |
-| `DETAILED` | `{ valid, errors }`, with errors nested by schema structure | Explaining how a failure in a subschema made its parent fail |
+| `FLAG` (the default) | `boolean` | Only whether it's valid. It's the fastest. |
+| `BASIC` | `BasicOutput`: `{ valid, errors }`, with a flat list of errors | Reporting each problem |
+| `DETAILED` | `DetailedOutput`: `{ valid, errors }`, with errors nested by schema structure | Explaining how a failure in a subschema made its parent fail |
+
+The result's type follows the format, so `result.errors` is only there
+when you ask for errors.
 
 A format you don't import isn't in your bundle, so code that only uses
 `FLAG` doesn't load what's needed to find errors.
@@ -105,7 +108,9 @@ const result = await validate(jsonSchema, "https://example.com/person", { age: -
 
 ## What's in an error
 
-A validation error is plain data:
+An error is an `OutputError`: a `ValidationError` from a keyword that
+failed, or, for [JSON text](validating.md#json-text), a `JsonSyntaxError`.
+Check `source` to tell them apart. A validation error is plain data:
 
 | Property | What it is |
 | --- | --- |
@@ -116,9 +121,16 @@ A validation error is plain data:
 | `place` | The line and column of the value in the JSON text, if it was validated from text |
 | `errors` | `DETAILED` only: the errors that made this keyword fail |
 
-When validating [JSON text](validating.md#json-text), a syntax error is in
-`errors` too. It has a `source` of `"json"`, a `ruleId` like
+A syntax error has a `source` of `"json"`, a `ruleId` like
 `"trailing-comma"`, and a `place`, but no locations.
+
+```typescript
+for (const error of result.errors) {
+  if (error.source === "json-schema") {
+    error.instanceLocation; // A ValidationError's
+  }
+}
+```
 
 ## Messages
 
