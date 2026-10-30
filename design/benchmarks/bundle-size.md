@@ -13,7 +13,9 @@ files). Nothing is external. "Up front" is the entry chunk and the chunks it
 imports statically. "Total" adds the chunks loaded by `import()`, which is
 how lint's recommended rules are loaded. Gzipped is level 9.
 `benchmark/bundle-size/breakdown.js` lists what a bundle is made of, by
-rendered size before minifying.
+rendered size before minifying. `benchmark/bundle-size/entries-v1/` has
+the same entries for v1, which `node bundle-size/measure.js entries-v1`
+measures against the v1 worktree `benchmark/link.js` links.
 
 Each entry creates a `JsonSchema`, adds its dialects, and calls one
 operation:
@@ -99,3 +101,44 @@ browser without its `rejson` and `jref` processors:
   (14 kB), the resolver (14 kB), browser's HTTP support
   (`http-cache-semantics` and `content-type`, 23 kB), and `vfile` (10 kB).
 - The other five dialects add 14 kB up front, 2 kB gzipped.
+
+## Compared with v1
+
+Results from 2026-10-30, v1 at 1.18.0 (its `main`, 28a940e, and the npm
+release) against v2 at the end of the API as functions. The v1 entries do
+the same things with v1's API: `validate(uri)` for a validator,
+`validate(uri, instance, "BASIC")`, and `bundle` from
+`@hyperjump/json-schema/bundle`, with each dialect imported. v1 has no
+lint. v1 loads everything up front, so its totals are the same.
+
+| Entry | v1 up front | v2 up front | v2 / v1 | v1 gzipped | v2 gzipped | v2 / v1 |
+| --- | --- | --- | --- | --- | --- | --- |
+| v1-validate-flag | 69.0 kB | 171.0 kB | 2.5× | 17.7 kB | 45.8 kB | 2.6× |
+| v1-validate-basic | 69.1 kB | 172.4 kB | 2.5× | 17.7 kB | 46.2 kB | 2.6× |
+| v1-bundle | 75.8 kB | 117.7 kB | 1.6× | 19.6 kB | 32.6 kB | 1.7× |
+| all-dialects-validate | 118.8 kB | 184.8 kB | 1.6× | 21.4 kB | 47.9 kB | 2.2× |
+
+v1's bundles are complete: its keywords and formats are in them. Where the
+difference comes from, for FLAG, before minifying (268 kB in v2, 130 kB in
+v1):
+
+- Compiling and evaluating: v2's kernel is 77 kB (the optimization passes
+  33 kB, the fast evaluator 29 kB, lowering and the kernel's operations
+  15 kB), and its keyword definitions with their checks 23 kB. v1's
+  keywords compile and evaluate themselves, in 42 kB.
+- Parsing: v2 parses schemas with browser's JSON parser and scanner
+  (24 kB), so every node has a position. v1 uses `JSON.parse`.
+- Resolving: v2's resolver, which builds the schema AST and reports
+  problems with positions, and its registry index and sessions, are 31 kB.
+  v1's registered schemas (`lib/schema.js`) are 8 kB.
+- Dependencies v1 doesn't have: `http-cache-semantics` (13.5 kB) for
+  browser's HTTP cache, and `vfile` and `vfile-message` (17 kB) for
+  problems with positions.
+
+Most of it is what v2 adds on purpose: positions everywhere, a schema AST
+for editors and the language server, the kernel and the optimizations
+that make it faster, HTTP caching, and sessions. Every dialect costs v2
+less than v1 (14 kB against 50 kB up front), because most of the code is
+shared by them. v2 with one dialect is still 2.1× v1 with every dialect,
+gzipped.
+
