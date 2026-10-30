@@ -21,7 +21,7 @@ be in one config.
   added a dialect named by URIs, with a separate list of the definitions it
   used (`addPreset`). Dialects carry their definitions now, so the list
   became the dialect's maps, and the add functions went with the rest of
-  the setup methods (see [Definitions](../api/definitions.md)).
+  the setup methods (see [Dialects](../dialects/README.md#the-config)).
 - v1 used to be in every `JsonSchema`, because keyword schemas were written
   in v1. Now it's a dialect like the others.
 - v1's `conditional`, `itemPattern`, and `requireAllExcept` aren't full
@@ -30,6 +30,13 @@ be in one config.
 - Formats that need Unicode data aren't in any dialect. A dialect names
   them by URI, and they're only supported when `fullFormats` is in the
   config's `formats`.
+
+- Rejected: a separate preset value (`{ dialect, keywords, formats }`) for
+  each dialect, which was only needed while a dialect named its keywords by
+  URI; and keeping `addV1` and the others for unified pipelines. A unified
+  plugin's `this` is the processor, not a `JsonSchema`, and a pipeline that
+  needs dialects is given a `JsonSchema` that has them, as lint's rules
+  are.
 
 ## Meta-schemas
 

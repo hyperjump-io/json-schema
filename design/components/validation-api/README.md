@@ -82,6 +82,35 @@ schema are in `src/kernel/validator.js`, which isn't exported.
   messages made BASIC about 40% faster and DETAILED about 55% faster on the
   test suite's invalid instances.
 
+## Rejected
+
+- Instances in three forms as separate functions (`validateJson`,
+  `jsonValidator`, …), twelve names, or as methods on the returned
+  function (`check.json(text)`), which leaves the one-off calls without the
+  other forms. Splitting them would save little in a bundle, because the
+  JSON parser is loaded to read schemas anyway.
+- Output formats registered by name on the instance, as before 2026-10-29.
+  Every registered format stayed in a bundle, and a custom one needed
+  declaration merging for its type.
+- For a schema given as a value without an `$id`: a counter
+  (`urn:hyperjump:anonymous-1`), which is easier to read but repeats
+  between processes; one fixed URN, which can't tell two schemas apart;
+  and requiring an `$id`, which makes the simple path longer.
+- For a value whose `$id` a registry also has: allowing identical ones,
+  as a session does (see [Schema AST](../../specs/schema-ast.md)), and the
+  value replacing the registry's schema, which is the override the session
+  rule prevents.
+- Caching compiled values: by the object, which a caller can change
+  afterward (the reason a registry stringifies values, see
+  [Registries](../registries/README.md)), or by JSON text, which costs a
+  stringify on every call. Any cache would also have to be keyed by the
+  registry, because the same schema's references can find different
+  schemas with a different one.
+- Keeping `compile`, `bundle`, and `lint` as methods on `JsonSchemaSession`
+  too. A session keeps what's about documents and dialects (`get`,
+  `getDocument`, `getDialect`, `hasDialect`, `annotation`), so there's one
+  way to do each operation.
+
 ## Known limitations
 
 - The `JsonSchema` shortcuts (`validate(uri, ...)` and the others) compile the

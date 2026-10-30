@@ -58,5 +58,5 @@ each method and type as you use it.
 - [Custom output formats](output-formats.md)
 - [Lint rules](lint-rules.md)
 - [Evaluation plugins](plugins.md): observing an evaluation
-- [Sessions](sessions.md): browsing schemas, and compiling several with the
-  same documents
+- [Sessions](sessions.md): browsing schemas, following references, and
+  compiling several with the same documents

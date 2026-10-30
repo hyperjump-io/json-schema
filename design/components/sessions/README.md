@@ -37,7 +37,7 @@ Both libraries have a long-lived object and sessions created from it, and
 - An operation given a `JsonSchema` runs in a new session, so each call
   sees changes. Given a session, it runs in that session. Sessions only
   browse; compiling, bundling, and linting are functions (see
-  [Operations](../api/operations.md)).
+  [Validation API](../validation-api/README.md)).
 - Dialects from the config belong to `JsonSchema`, and its `getDialect`
   only finds those. A dialect built from a meta-schema belongs to the
   session that built it. `JsonSchemaSession.getDialect` finds both, and it's

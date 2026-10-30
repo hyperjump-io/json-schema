@@ -20,10 +20,14 @@ These stay public, because something users write depends on them.
 
 ## Decided
 
-- `getDocument(uri, { referencedFrom })` is documented as how to follow a
-  reference. An embedded resource is only found that way, so an operation
-  that follows `$ref` without it, like a docs generator or a bundler, gets
-  embedded resources wrong. It's public already, but not documented.
+- `getDocument(uri, { referencedFrom })` and `get` are how to follow a
+  reference, documented in the website's
+  [Sessions](../../../website/extending/sessions.md#following-references)
+  page, with `visitReferences` to find them. An embedded resource is only
+  found that way, so an operation that follows `$ref` without it, like a
+  docs generator or a bundler, gets embedded resources wrong.
+  `referencedFrom` is the URI of the document the reference is in, because
+  every resource in a document shares its index of what it embeds.
 - There's no `lower` function. `serialize(await compile(context, uri))`
   is the kernel as it was lowered. The optimization passes run inside a
   validator, once for each evaluation mode, and what they produce is never

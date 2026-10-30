@@ -39,10 +39,7 @@ hand and have JSDoc explaining the details. Documentation for users is in
 ## Components
 
 - [Architecture](architecture.md): the pipeline, and a code map
-- [The API as functions](components/api/README.md): decided, not built yet
-  - [Operations](components/api/operations.md)
-  - [Definitions](components/api/definitions.md)
-  - [Registries](components/api/registries.md)
+- [The API as functions](components/api/README.md)
   - [Public API](components/api/public-api.md)
 - [Dialects](components/dialects/README.md)
   - [Vocabularies](components/dialects/vocabularies.md)

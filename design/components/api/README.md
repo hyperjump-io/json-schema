@@ -1,8 +1,9 @@
 # The API as functions
 
-Decided 2026-10-29 and not built yet. Until each stage of the plan in
-`TODO.md` lands, the other component documents describe the code as it is,
-and each stage updates the ones it changes.
+Decided and built 2026-10-29, replacing methods on `JsonSchema`,
+`JsonSchemaSession`, and `Validator`, and setup methods like `addV1` and
+`addKeyword`. Bundles shrank as a result (see
+[Bundle size](../../benchmarks/bundle-size.md)).
 
 `JsonSchema` keeps what decides how schemas are read: its definitions
 (dialects, keywords, formats), its registry, the `getDocument` override,
@@ -56,10 +57,16 @@ isPerson(data);
 
 ## Contents
 
-- [Operations](operations.md): the functions, their options, and schemas
-  passed as values
-- [Definitions](definitions.md): the config, dialects that carry their
-  definitions, and schema types from the config
-- [Registries](registries.md): one per call, one on the instance, and
-  combining them
 - [Public API](public-api.md): what third parties can build on
+
+How the parts work is in their components:
+
+- [Validation API](../validation-api/README.md): the operations, their
+  options, contexts, and schemas passed as values
+- [Dialects](../dialects/README.md) and
+  [Built-in dialects](../built-in-dialects/README.md): the config, and
+  dialects that carry their definitions
+- [Schema types](../schema-types.md): schema types from the config
+- [Registries](../registries/README.md): one per call, one on the
+  instance, and combining them
+- [Output formats](../kernel/output-formats.md): output formats as values

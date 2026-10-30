@@ -96,6 +96,15 @@ a session finds schemas in the registries it sees is in
   O(n). That's fast for a language server's workspace. If it shows up in
   a profile, an index could build on its parent's index.
 
+## Open questions
+
+- Listing the URIs a registry's entries are identified by, for something
+  like a language server's "go to schema". A registry can't do it, because
+  identification depends on the dialect, so it would be a function of a
+  `JsonSchema` and a registry (`identify(jsonSchema, registry)`), built on
+  the index each `JsonSchema` already has. It's left until something needs
+  it.
+
 ## Contents
 
 - [Identification](identification.md)

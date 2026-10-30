@@ -41,6 +41,22 @@
   the instance's dialect, with `addDialect` and `removeDialect`, and a
   schema resolved before the change didn't see it.
 
+## The config
+
+- A `JsonSchema`'s dialects, keywords, formats, and vocabularies are in its
+  config, and can't change after it's created. Before 2026-10-29 they were
+  added with methods, and a schema resolved before a change didn't see it.
+  Now nothing cached from a definition can go stale. Adding a dialect
+  later, like one loaded with `import()` when a schema needs it, means
+  creating another `JsonSchema`.
+- There's still no default dialect. One isn't inferred when there's only
+  one dialect, because adding a second would change how schemas without
+  `$schema` are read. `defaultDialectUri` sets one.
+- A dialect in the config isn't plain data, because it holds definitions
+  with functions. Nothing needed it to be: compiled schemas don't
+  serialize dialects, and dialects from meta-schemas are built internally
+  with URIs.
+
 ## Contents
 
 - [Vocabularies](vocabularies.md)
