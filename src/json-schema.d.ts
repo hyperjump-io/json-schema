@@ -1,8 +1,8 @@
 import type { Hyperjump, HyperjumpConfig } from "@hyperjump/browser";
-import type { Json } from "@hyperjump/browser/json";
+import type { Json, ReadonlyJson } from "@hyperjump/browser/json";
 import type { JsonSchemaNode } from "./schema/schema-ast.d.ts";
 import type { Keyword } from "./keyword.d.ts";
-import type { Dialect, DialectConfig, DialectExtension, Vocabulary, VocabularyConfig } from "./dialect.d.ts";
+import type { Dialect, DialectConfig, DialectExtension, DialectKeywords, DialectSchema, UnknownKeywords, Vocabulary, VocabularyConfig } from "./dialect.d.ts";
 import type { Format } from "./format.d.ts";
 import type { SchemaRegistry } from "./registry/schema-registry.d.ts";
 import type { JsonSchemaSession, SessionOptions } from "./session.d.ts";
@@ -14,7 +14,7 @@ export type { ValidationError, DetailedValidationError } from "./output/validati
 export type { SchemaMessage } from "./schema/schema-error.js";
 export type { BasicOutput, DetailedOutput, OutputError, OutputFormat, JsonSyntaxError } from "./output/output-format.d.ts";
 
-export type JsonSchemaConfig = HyperjumpConfig & {
+export type JsonSchemaConfig<D extends DialectConfig<any, any, any> = DialectConfig<any, any, any>> = HyperjumpConfig & {
   /**
    * The dialect of a schema that doesn't have `$schema` and doesn't get a
    * dialect from anywhere else, such as a `Content-Type` parameter or the
@@ -34,9 +34,9 @@ export type JsonSchemaConfig = HyperjumpConfig & {
    * formats they bring. Other dialects can still be defined by meta-schemas
    * (`$vocabulary`), and a session builds those the first time they're
    * used. A dialect can't be in the list twice. They can't change after the
-   * `JsonSchema` is created.
+   * `JsonSchema` is created. Their schema types are the `JsonSchema`'s.
    */
-  dialects?: DialectConfig[];
+  dialects?: D[];
 
   /**
    * Keywords that replace a dialect's definition with the same URI, or that
@@ -59,32 +59,79 @@ export type JsonSchemaConfig = HyperjumpConfig & {
 
 /**
  * A dialect with more keywords or formats, such as a custom keyword in the
- * v1 dialect. Pass it in the config instead of the dialect.
+ * v1 dialect. Pass it in the config instead of the dialect. Its schema type
+ * has the keywords it adds.
  *
  * @throws Error if the dialect already has a keyword or format with one of
  * the names, or a keyword name starts with `x-`
  */
-export function extendDialect(dialect: DialectConfig, extension: DialectExtension): DialectConfig;
+export function extendDialect<K extends DialectKeywords, Uri extends string, U extends UnknownKeywords, E extends DialectKeywords = {}>(
+  dialect: DialectConfig<K, Uri, U>,
+  extension: DialectExtension<E>
+): DialectConfig<K & E, Uri, U>;
 
-export class JsonSchema extends Hyperjump<JsonSchemaNode> {
-  constructor(config?: JsonSchemaConfig);
+/** Any dialect in the config. It's `D` when there are none. */
+type AnyDialectConfig = DialectConfig<DialectKeywords, string, UnknownKeywords>;
 
+/**
+ * Any schema: what a `JsonSchema` without dialects in its config takes,
+ * because its schemas' dialects come from meta-schemas
+ */
+export type AnySchema = boolean | { readonly [property: string]: ReadonlyJson };
+
+/**
+ * The schema type of a `JsonSchema` (`S`), like `V1Schema`, for a registry
+ * of its schemas: `new SchemaRegistry<SchemaTypeOf<typeof jsonSchema>>()`
+ */
+export type SchemaTypeOf<J> = J extends JsonSchema<infer S> ? S : never;
+
+/**
+ * Creates a `JsonSchema`. Its schema type is the union of its dialects'
+ * ({@link DialectSchema}), so `new JsonSchema({ dialects: [v1Dialect] })` is
+ * a `JsonSchema<V1Schema>`, and a schema an operation is given as a value
+ * is checked against it.
+ */
+export type JsonSchemaConstructor = {
+  // Without a default for D, which TypeScript would pick instead of
+  // inferring it when a dialect in the config has a function with untyped
+  // parameters
+  new<const D extends AnyDialectConfig>(config?: JsonSchemaConfig<D>): JsonSchema<AnyDialectConfig extends D ? AnySchema : DialectSchema<D>>;
+
+  // For `class MyJsonSchema extends JsonSchema`, which needs a signature
+  // without type parameters. A subclass's schemas are `any`.
+  new (config?: JsonSchemaConfig): JsonSchema;
+  readonly prototype: JsonSchema;
+};
+
+export const JsonSchema: JsonSchemaConstructor;
+
+/**
+ * What decides how schemas are read: definitions, a registry, and how
+ * schemas are retrieved. `S` is the type of its schemas, from its dialects.
+ * Operations, like `validate` and `bundle`, are functions that take it.
+ */
+export interface JsonSchema<S = any> extends Hyperjump<JsonSchemaNode> {
   readonly config: JsonSchemaConfig;
 
   /**
-   * Start a session for retrieving and compiling schemas. Dialects built
+   * Start a session for retrieving and browsing schemas. Dialects built
    * from meta-schemas belong to the session, like the documents it
-   * retrieves.
+   * retrieves. Operations given the session share them.
    */
-  session(options?: SessionOptions): JsonSchemaSession;
+  session(options?: SessionOptions): JsonSchemaSession<S>;
 
   /**
    * Schemas every session sees, like custom meta-schemas, after the
    * session's own `registry`. It starts empty. Change it by replacing it
    * with a new registry (`with`, `without`, `concat`). A session sees the
    * registry this was when the session was created.
+   *
+   * It has the `JsonSchema`'s schema type, so a schema added to it with
+   * `jsonSchema.registry = jsonSchema.registry.with(schema)` is checked.
+   * Any registry can be assigned to it.
    */
-  registry: SchemaRegistry<any>;
+  get registry(): SchemaRegistry<S>;
+  set registry(value: SchemaRegistry<any>);
 
   /** Whether there's a keyword definition with this URI */
   hasKeyword(uri: string): boolean;

@@ -14,6 +14,8 @@ import { isNegated, schemaGroup } from "./schema-group.js";
  * @import { JsonSchemaDocumentNode, JsonSchemaNode } from "../schema/schema-ast.d.ts"
  * @import { JsonSchemaSession } from "../session.d.ts"
  * @import { SchemaGroup } from "./schema-group.d.ts"
+ * @import { Expression } from "../kernel/kernel.d.ts"
+ * @import { Reference } from "../keyword.d.ts"
  */
 
 const draft2020 = "https://json-schema.org/draft/2020-12/schema";
@@ -235,13 +237,13 @@ const resolve = async (schema) => {
         firstOf: {
           uri: "https://example.com/keyword/firstOf",
           shape: { array: "schema" },
-          lower: (schemas) => ({ op: "opaque", keyword: "https://example.com/keyword/firstOf", value: null, schemas }),
+          lower: (/** @type Expression[] */ schemas) => ({ op: "opaque", keyword: "https://example.com/keyword/firstOf", value: null, schemas }),
           evaluate: () => () => true
         },
         opaqueRef: {
           uri: "https://example.com/keyword/opaqueRef",
           shape: "reference",
-          lower: (reference) => ({ op: "opaque", keyword: "https://example.com/keyword/opaqueRef", value: null, schemas: [reference.schema] }),
+          lower: (/** @type Reference */ reference) => ({ op: "opaque", keyword: "https://example.com/keyword/opaqueRef", value: null, schemas: [reference.schema] }),
           evaluate: () => () => true
         }
       },

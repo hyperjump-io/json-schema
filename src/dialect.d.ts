@@ -1,4 +1,4 @@
-import type { Keyword, KeywordValue } from "./keyword.d.ts";
+import type { Keyword, KeywordValue, Shape } from "./keyword.d.ts";
 import type { Format } from "./format.d.ts";
 
 /**
@@ -8,17 +8,26 @@ import type { Format } from "./format.d.ts";
  * `keywords` or `formats`, or another dialect. A format named by a URI that
  * nothing defines isn't supported, like `hostname` without the full formats.
  * The `JsonSchema` keeps it as a {@link Dialect}, with URIs.
+ *
+ * Its type parameters are its keywords, URI, and what unknown keywords
+ * mean, so its schema type ({@link DialectSchema}) comes from its
+ * definitions. A keyword named by a URI has no type, so any value is
+ * allowed for it.
  */
-export type DialectConfig = {
-  uri: string;
+export type DialectConfig<
+  K extends DialectKeywords = DialectKeywords,
+  Uri extends string = string,
+  U extends UnknownKeywords = UnknownKeywords
+> = {
+  uri: Uri;
 
   /**
    * Keyword names mapped to their definitions. See {@link Dialect.keywords}.
    */
-  keywords: Record<string, Keyword<any, any, any> | string>;
+  keywords: K;
 
   /** See {@link Dialect.unknownKeywords} */
-  unknownKeywords: UnknownKeywords;
+  unknownKeywords: U;
 
   /** Format names mapped to their definitions. See {@link Dialect.formats}. */
   formats?: Record<string, Format | string>;
@@ -33,6 +42,22 @@ export type DialectConfig = {
    */
   vocabularies?: Record<string, VocabularyConfig>;
 };
+
+/** Keyword names mapped to definitions or their URIs */
+export type DialectKeywords = Record<string, Keyword<any, Shape, any> | string>;
+
+/**
+ * The type of a schema in a dialect from the config, for checking schemas
+ * written in TypeScript. A union of dialects gives a union of their schema
+ * types.
+ *
+ * ```ts
+ * type MySchema = DialectSchema<typeof myDialect>;
+ * ```
+ */
+export type DialectSchema<D> = D extends DialectConfig<infer K, infer Uri, infer U>
+  ? SchemaOf<{ [Name in keyof K]: K[Name] extends Keyword<any, any, any> ? K[Name] : Keyword<any, any, any> }, Uri, U>
+  : never;
 
 /**
  * What a vocabulary adds to a dialect a meta-schema defines with
@@ -108,9 +133,9 @@ export type Dialect = {
 export type DialectDefinition = Omit<Dialect, "uri">;
 
 /** Keywords and formats to add to a dialect with `extendDialect` */
-export type DialectExtension = {
+export type DialectExtension<E extends DialectKeywords = DialectKeywords> = {
   /** Keyword names mapped to definitions or their URIs */
-  keywords?: Record<string, Keyword<any, any, any> | string>;
+  keywords?: E;
 
   /** Format names mapped to definitions or their URIs */
   formats?: Record<string, Format | string>;

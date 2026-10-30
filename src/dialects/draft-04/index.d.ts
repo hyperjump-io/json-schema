@@ -20,7 +20,7 @@ export const draft04DialectUri: "http://json-schema.org/draft-04/schema";
  * Its meta-schema doesn't define it, so it's in the `dialects` config, with
  * its keywords and formats.
  */
-export const draft04Dialect: DialectConfig;
+export const draft04Dialect: DialectConfig<Draft04Keywords, typeof draft04DialectUri, "ignore">;
 
 /**
  * The type of a JSON Schema draft-04 schema, for checking schemas written

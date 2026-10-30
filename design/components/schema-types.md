@@ -42,15 +42,60 @@ written. Custom keywords are part of the type.
   dialect's `$schema` only fits that dialect's type. One without `$schema`
   fits any of them, so with an open dialect in the union, a misspelled
   keyword fits that one.
+- **A `JsonSchema` has its dialects' schema types.** A dialect in the
+  config is a `DialectConfig<K, Uri, U>`, with its keyword map, so
+  `DialectSchema<D>` is `SchemaOf` of its keywords' types. A keyword named
+  by a URI has no type, so any value fits it. The built-in dialects are
+  declared with their keyword lists (`DialectConfig<V1Keywords, …>`), so
+  tsc checks that the definitions in `dialect.js` fit them, as well as the
+  `schema-type.test-d.ts` files. `new JsonSchema({ dialects })` is a
+  `JsonSchema<S>` with the union of their types, and without dialects it's
+  `AnySchema`. `extendDialect` returns `DialectConfig<K & E, …>`, so the
+  keywords it adds are in the type. A session is a
+  `JsonSchemaSession<S>`.
+- **A schema an operation is given as a value is checked.** `validate`,
+  `validator`, `annotate`, `annotator`, `compile`, and `bundle` take
+  `NoInfer<SchemaSource<S>>`, so `S` comes from the context, not the
+  schema. A URI isn't checked. `SchemaTypeOf<J>` gets a `JsonSchema`'s `S`,
+  for a registry. Rejected: a type argument on each call
+  (`validate<V1Schema>(…)`), which leaves the simple path unchecked.
+- **`JsonSchema` is declared as an interface and a constructor.** A class
+  can't infer its type parameter as a type computed from its constructor's
+  argument, so `JsonSchema<S>` is an interface, and `JsonSchema` the value
+  is a `JsonSchemaConstructor` with a generic construct signature, plus one
+  without type parameters, because `class X extends JsonSchema` needs it
+  (a subclass's schemas are `any`). The implementation is still a class.
+  `S` isn't in any member's parameters, so a `JsonSchema<V1Schema>` is
+  assignable to a `JsonSchema`, whose `S` is `any`.
+- **What it took in TypeScript 6.** The dialects' type parameter is
+  `const`, so a dialect written in the config keeps `unknownKeywords` and
+  its keywords' shapes as literals. Its constraint uses
+  `Keyword<any, Shape, any>`, because `Keyword<any, any, any>` gives
+  `shape` no contextual type. It has no default: with one, TypeScript
+  picks the default instead of inferring when a dialect in the config has
+  a function with untyped parameters. And `NoInfer` wraps the whole
+  `SchemaSource<S>`: `string | NoInfer<S>` rejected schemas that fit `S`.
 - **A registry has the type of the schemas it takes.**
   `SchemaRegistry<S = ReadonlyJson>` checks what `with` and the constructor are
   given, and the registries `with` and `without` return keep `S`. `concat`
   returns a union of its registries' types. A union
   takes more than one dialect. The constructor's entries don't infer `S`
   (`NoInfer`), or a registry made from entries would only take schemas
-  like them. Where a registry is used (the `registry` property and option), it's
-  `SchemaRegistry<any>`, because a `SchemaRegistry<V1Schema>` isn't a
-  `SchemaRegistry<Json>`: neither schema type is assignable to the other.
+  like them. Where a registry is given (the `registry` property's setter
+  and the option), it's `SchemaRegistry<any>`, because a
+  `SchemaRegistry<V1Schema>` isn't a `SchemaRegistry<Json>`: neither schema
+  type is assignable to the other.
+- **The instance's registry has the `JsonSchema`'s schema type.** Its
+  getter is `SchemaRegistry<S>` and its setter takes any registry, so
+  `jsonSchema.registry = jsonSchema.registry.with(schema)` checks the
+  schema without a type written anywhere. Decided 2026-10-29, because
+  `new SchemaRegistry<SchemaTypeOf<typeof jsonSchema>>()` was the only way
+  before. A registry for the `registry` option still needs its own type.
+  Rejected: checking it where it's used, which would need a registry's type
+  to accumulate every schema added to it and would report a mismatch at
+  the call instead of the schema; and a function that makes a typed empty
+  registry (`registryFor(jsonSchema)`), which does nothing at runtime and
+  is a second way to make one.
 - **What's only read is `ReadonlyJson`** (from `@hyperjump/browser/json`):
   a registry's schemas, the instance `validate` and `annotate` get, and
   `restore`'s compiled schema. So is what a format, a keyword's
@@ -101,6 +146,12 @@ written. Custom keywords are part of the type.
   loosely. The precise type is in `v1/index.d.ts`.
 - A dialect built from a meta-schema's `$vocabulary` has no type unless
   someone writes its keyword map.
+- A keyword written inside the config, with a function whose parameters
+  aren't typed, loses their contextual types while the dialects' type is
+  inferred, so they're implicitly `any`. Declaring the keyword before the
+  config, with `satisfies Keyword`, avoids it.
+- A dialect declared as a variable needs `satisfies DialectConfig`, or
+  `unknownKeywords` widens to `string` and doesn't fit.
 
 ## Open questions
 

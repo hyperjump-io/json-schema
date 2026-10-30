@@ -33,7 +33,7 @@ import type { Context, SchemaSource } from "./context.d.ts";
  * @throws RetrievalError from `@hyperjump/browser` if a schema can't be
  * found.
  */
-export function bundle(context: Context, schema: SchemaSource, options?: SessionOptions & BundleOptions): Promise<Json>;
+export function bundle<S>(context: Context<S>, schema: NoInfer<SchemaSource<S>>, options?: SessionOptions & BundleOptions): Promise<Json>;
 
 export type BundleOptions = {
   /**

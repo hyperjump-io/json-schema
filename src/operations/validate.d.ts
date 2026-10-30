@@ -13,7 +13,7 @@ import type { Context, SchemaSource } from "./context.d.ts";
  * @throws RetrievalError from `@hyperjump/browser` if a schema can't be
  * retrieved.
  */
-export function validate<R = boolean, I extends Input = "value">(context: Context, schema: SchemaSource, instance: InstanceOf<I>, options?: ValidationOptions<R, I>): Promise<R>;
+export function validate<S, R = boolean, I extends Input = "value">(context: Context<S>, schema: NoInfer<SchemaSource<S>>, instance: InstanceOf<I>, options?: ValidationOptions<R, I>): Promise<R>;
 
 /**
  * Compile a schema into a function that validates instances. The output
@@ -24,7 +24,7 @@ export function validate<R = boolean, I extends Input = "value">(context: Contex
  * @throws RetrievalError from `@hyperjump/browser` if a schema can't be
  * retrieved.
  */
-export function validator<R = boolean, I extends Input = "value">(context: Context, schema: SchemaSource, options?: ValidationOptions<R, I>): Promise<(instance: InstanceOf<I>) => R>;
+export function validator<S, R = boolean, I extends Input = "value">(context: Context<S>, schema: NoInfer<SchemaSource<S>>, options?: ValidationOptions<R, I>): Promise<(instance: InstanceOf<I>) => R>;
 
 /**
  * Validate an instance and annotate it: the result has the instance as a
@@ -32,10 +32,10 @@ export function validator<R = boolean, I extends Input = "value">(context: Conte
  * `JsonSchemaSession.annotation`. It compiles the schema every time, like
  * {@link validate}.
  */
-export function annotate<R = boolean, I extends Input = "value">(context: Context, schema: SchemaSource, instance: InstanceOf<I>, options?: ValidationOptions<R, I>): Promise<AnnotationResult<R>>;
+export function annotate<S, R = boolean, I extends Input = "value">(context: Context<S>, schema: NoInfer<SchemaSource<S>>, instance: InstanceOf<I>, options?: ValidationOptions<R, I>): Promise<AnnotationResult<R>>;
 
 /** Compile a schema into a function that annotates instances, like {@link validator} */
-export function annotator<R = boolean, I extends Input = "value">(context: Context, schema: SchemaSource, options?: ValidationOptions<R, I>): Promise<(instance: InstanceOf<I>) => AnnotationResult<R>>;
+export function annotator<S, R = boolean, I extends Input = "value">(context: Context<S>, schema: NoInfer<SchemaSource<S>>, options?: ValidationOptions<R, I>): Promise<(instance: InstanceOf<I>) => AnnotationResult<R>>;
 
 /** A function that validates instances against a compiled schema */
 export function validatorFor<R = boolean, I extends Input = "value">(compiled: CompiledSchema, options?: EvaluationOptions<R, I>): (instance: InstanceOf<I>) => R;

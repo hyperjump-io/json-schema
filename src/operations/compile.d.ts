@@ -26,7 +26,7 @@ export type CompiledSchema = {
  * @throws RetrievalError from `@hyperjump/browser` if a schema can't be
  * retrieved.
  */
-export function compile(context: Context, schema: SchemaSource, options?: SessionOptions): Promise<CompiledSchema>;
+export function compile<S>(context: Context<S>, schema: NoInfer<SchemaSource<S>>, options?: SessionOptions): Promise<CompiledSchema>;
 
 /**
  * The compiled schema as JSON, to be restored with {@link restore} without

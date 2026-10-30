@@ -21,7 +21,7 @@ export const extendDialect = (dialect, { keywords = {}, formats = {} }) => {
 
   return {
     ...dialect,
-    keywords: { ...dialect.keywords, ...keywords },
+    keywords: /** @type any */ ({ ...dialect.keywords, ...keywords }),
     formats: { ...dialectFormats, ...formats }
   };
 };

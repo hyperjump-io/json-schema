@@ -61,13 +61,41 @@ retrieve `$schema` find one. A dialect can only be in the config once.
 
 ## In TypeScript
 
-`SchemaOf` makes the type of a schema in your dialect, for checking
-schemas as they're written (see
-[Schemas in TypeScript](../guides/typescript.md)). Give it the types of its
-keywords by name, its URI, and what unknown keywords mean. The built-in
-dialects' keyword types are exported, like `V1Keywords`, and a custom
-keyword's type comes from its definition (see
-[Custom keywords](keywords.md#in-typescript)).
+A dialect's schema type comes from its keywords, so a `JsonSchema` with
+your dialect checks schemas passed to it as values (see
+[Schemas in TypeScript](../guides/typescript.md)). Declare it with
+`satisfies DialectConfig`, so `unknownKeywords` keeps its literal type and
+the URI can be `as const`. `DialectSchema` names its type. A keyword named
+by a URI, with its definition in the config's `keywords`, allows any value.
+
+```typescript
+import type { DialectConfig, DialectSchema } from "@hyperjump/json-schema";
+import { v1Dialect } from "@hyperjump/json-schema/v1";
+
+const { $id, $ref, $defs, type, properties } = v1Dialect.keywords;
+
+const myDialect = {
+  uri: "https://example.com/dialect" as const,
+  keywords: { $id, $ref, $defs, type, properties, even: evenKeyword },
+  unknownKeywords: "error"
+} satisfies DialectConfig;
+
+type MySchema = DialectSchema<typeof myDialect>;
+
+const count = { type: "integer", minimum: 0 } satisfies MySchema;
+```
+
+```text
+Object literal may only specify known properties, and 'minimum' does not exist in type ...
+```
+
+With `"error"`, only the dialect's keywords and names starting with `x-`
+are allowed. With `"annotation"` or `"ignore"`, any property is.
+
+`SchemaOf` makes the same type from keyword types by name, a URI, and what
+unknown keywords mean, for a dialect you don't have as a value, like one a
+meta-schema defines. The built-in dialects' keyword types are exported,
+like `V1Keywords`.
 
 ```typescript
 import type { SchemaOf } from "@hyperjump/json-schema";
@@ -79,13 +107,4 @@ type MySchema = SchemaOf<
   "https://example.com/dialect",
   "error"
 >;
-
-const count = { type: "integer", minimum: 0 } satisfies MySchema;
 ```
-
-```text
-Object literal may only specify known properties, and 'minimum' does not exist in type ...
-```
-
-With `"error"`, only the dialect's keywords and names starting with `x-`
-are allowed. With `"annotation"` or `"ignore"`, any property is.

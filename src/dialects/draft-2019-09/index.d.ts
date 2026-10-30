@@ -17,7 +17,7 @@ export const draft201909DialectUri: "https://json-schema.org/draft/2019-09/schem
  * `$vocabulary` define their own dialects. Add other vocabularies they can
  * use to the `vocabularies` config.
  */
-export const draft201909Dialect: DialectConfig;
+export const draft201909Dialect: DialectConfig<Draft201909Keywords, typeof draft201909DialectUri, "annotation">;
 
 /**
  * The type of a JSON Schema 2019-09 schema, for checking schemas written in

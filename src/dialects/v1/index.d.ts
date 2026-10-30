@@ -17,7 +17,7 @@ export const v1DialectUri: "https://json-schema.org/v1";
  * (`formats/full.js`) to the `formats` config for `hostname`,
  * `idn-hostname`, and `idn-email`.
  */
-export const v1Dialect: DialectConfig;
+export const v1Dialect: DialectConfig<V1Keywords, typeof v1DialectUri, "error">;
 
 /**
  * The type of a JSON Schema v1 schema, for checking schemas written in

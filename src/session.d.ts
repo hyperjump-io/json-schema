@@ -32,10 +32,10 @@ export type SessionOptions = {
  * Create one with {@link JsonSchema.session}, and pass it to operations, like
  * `validator` and `bundle`, so they share what it retrieved.
  */
-export class JsonSchemaSession extends Session<JsonSchemaNode> {
-  constructor(jsonSchema: JsonSchema, options?: SessionOptions);
+export class JsonSchemaSession<S = any> extends Session<JsonSchemaNode> {
+  constructor(jsonSchema: JsonSchema<S>, options?: SessionOptions);
 
-  readonly jsonSchema: JsonSchema;
+  readonly jsonSchema: JsonSchema<S>;
 
   /**
    * Documents are found in this order: an embedded resource, if the

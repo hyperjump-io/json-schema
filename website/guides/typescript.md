@@ -24,6 +24,35 @@ Object literal may only specify known properties, but 'minLenght' does not exist
 Use `satisfies` rather than a type annotation, so `person` keeps its own
 type. A schema declared `as const` fits too.
 
+## Schemas you pass to operations
+
+A `JsonSchema` has the type of its dialects' schemas, so a schema you pass
+as a value to `validate`, `validator`, `compile`, or `bundle` is checked
+without naming a type. `new JsonSchema({ dialects: [v1Dialect] })` is a
+`JsonSchema<V1Schema>`. A URI isn't checked.
+
+```typescript
+import { JsonSchema, validate } from "@hyperjump/json-schema";
+import { v1Dialect } from "@hyperjump/json-schema/v1";
+
+const jsonSchema = new JsonSchema({ dialects: [v1Dialect] });
+
+await validate(jsonSchema, {
+  $schema: "https://json-schema.org/v1",
+  type: "string",
+  minLenght: 1
+}, "Jason");
+```
+
+```text
+Object literal may only specify known properties, but 'minLenght' does not exist in type ...
+```
+
+With more than one dialect, it's the union of their types, and a session
+has its `JsonSchema`'s. A `JsonSchema` without dialects takes any schema.
+`SchemaTypeOf<typeof jsonSchema>` is the type, for a function of your
+own.
+
 ## The dialects' types
 
 Each dialect's type is in the module that adds it:
@@ -70,9 +99,31 @@ do.
 
 ## In a registry
 
-Give a registry the type of the schemas it takes, and every schema added
-to it is checked, by the constructor, `with`, and the registries `with`
-returns. A registry without a type takes any JSON. JSON text isn't
+The `JsonSchema`'s `registry` has its schema type, so a schema you add to
+it is checked without declaring anything:
+
+```typescript
+const jsonSchema = new JsonSchema({ dialects: [v1Dialect] });
+
+jsonSchema.registry = jsonSchema.registry.with({
+  $schema: "https://json-schema.org/v1",
+  $id: "https://example.com/person",
+  type: "object",
+  properties: { name: { type: "string", minLenght: 1 } }
+});
+```
+
+```text
+Object literal may only specify known properties, but 'minLenght' does not exist in type ...
+```
+
+Any registry can be assigned to it, so one without a type still works.
+
+A registry of its own, like one for a call's `registry` option, is checked
+when you give it the type of the schemas it takes. Every schema added to it
+is checked, by the constructor, `with`, and the registries `with` returns.
+The type can be a dialect's, or come from a `JsonSchema`:
+`new SchemaRegistry<SchemaTypeOf<typeof jsonSchema>>()`. A registry without a type takes any JSON. JSON text isn't
 checked, because its type is `string`.
 
 ```typescript
@@ -128,9 +179,24 @@ await validate(jsonSchema, "https://example.com/person", jason); // true
 
 ## Custom keywords
 
-A dialect's type can be given the types of your keywords, by the names
-they have in the dialect. Their subschemas are the same type, so they can
-use your keywords too.
+A dialect extended with `extendDialect` has the types of the keywords it
+adds, so a `JsonSchema` with it checks schemas that use them. Their
+subschemas are the same type, so they can use your keywords too.
+
+```typescript
+const jsonSchema = new JsonSchema({
+  dialects: [extendDialect(v1Dialect, { keywords: { even: evenKeyword } })]
+});
+
+await validate(jsonSchema, { type: "integer", even: 2 }, 4);
+```
+
+```text
+Type 'number' is not assignable to type 'boolean | undefined'.
+```
+
+To name the type, give a dialect's type your keywords by the names they
+have in the dialect:
 
 ```typescript
 type MySchema = V1Schema<{ even: typeof evenKeyword }>;
@@ -144,8 +210,11 @@ const count = {
 
 Where `evenKeyword` comes from, and how a keyword's definition gives the
 type of its value, is in
-[Custom keywords](../extending/keywords.md#in-typescript). A dialect of
-your own has a type made with `SchemaOf`. See
+[Custom keywords](../extending/keywords.md#in-typescript). Declare a
+keyword with `satisfies Keyword`, before the config, so its type keeps its
+shape; a keyword written inside the config can lose its parameter types. A
+dialect of your own has a type too, from its keywords (`DialectSchema`),
+and one named by a URI allows any value. See
 [Custom dialects](../extending/dialects.md#in-typescript).
 
 ## What isn't checked
