@@ -12,8 +12,8 @@ entries. Each `JsonSchema` indexes each registry it's used with.
   keywords whose resolve hooks run are made into nodes (with `fromJs`). A
   tree with positions is much slower to build and is only needed for a
   problem, so an entry that has one is parsed again into a tree, and the
-  problem has a position (see hjlint's
-  [Workspace registry](https://github.com/hyperjump-io/hjlint/blob/main/design/benchmarks/workspace-registry.md) benchmark).
+  problem has a position (see the CLI's
+  [Workspace registry](https://github.com/hyperjump-io/cli/blob/main/design/benchmarks/workspace-registry.md) benchmark).
 - An entry that can't be identified, such as one that isn't valid JSON or
   has an invalid `$id`, is found by its `retrievalUri`, and finding it
   resolves it, which throws a `SchemaError` with that problem and any

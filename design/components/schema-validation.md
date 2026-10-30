@@ -54,7 +54,7 @@ an internal meta-schema.
   too.
 - `$schema` can't be a `file:` URI either, for the same reason: the dialect
   wouldn't be the same on another machine. A meta-schema in a file is found
-  by its `$id`, which can't be a file, from a registry, like hjlint's
+  by its `$id`, which can't be a file, from a registry, like the CLI's
   workspace registry. The schema has no dialect then, like one whose
   dialect can't be found. Before 2026-10-27, a meta-schema could be found
   by its path. `JsonOrSchemaMediaTypePlugin` reads a `.json` file whose

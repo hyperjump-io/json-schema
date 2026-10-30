@@ -37,7 +37,7 @@ and the library re-exports the function for output formats and plugins.
 - `reference-without-target` doesn't give its message a cause. A missing
   schema is a finding, not a failure.
 - A stack trace still says where the library is installed, so the CLI
-  prints causes without them (see hjlint's Input and output).
+  prints causes without them (see the CLI's Input and output).
 - A bundle of files is identified by its `id` option, so it doesn't have
   `file:` identifiers (see [Bundling](bundling.md)).
 - A serialized kernel's `file:` URIs are relative to its entry's document

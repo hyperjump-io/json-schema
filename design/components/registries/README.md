@@ -51,7 +51,7 @@ a session finds schemas in the registries it sees is in
   can't be one, and neither can its `$id`. A schema in a file is retrieved
   from the file, so a `file:` URI only ever comes from browser. Before
   2026-10-27, `retrievalUri` could be one, because the code calling `with`
-  is trusted, and hjlint's workspace registry used them.
+  is trusted, and the CLI's workspace registry used them.
 - An entry's `origin` says where it came from, like the path of the file a
   tool read it from. It's never used to find or identify the entry. It's
   on the entry's document and every problem found in it, so a tool can

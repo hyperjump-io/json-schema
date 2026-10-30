@@ -56,7 +56,7 @@ const hasErrors = results.some((result) => result.severity === "error");
 ## Choosing rules
 
 The default is the recommended preset. Pass `plugins` to choose others, in
-the same shape as [hjlint's configuration](choosing-rules.md), with the
+the same shape as [the CLI's configuration](choosing-rules.md), with the
 modules imported instead of named.
 
 ```typescript

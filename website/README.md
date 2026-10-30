@@ -44,7 +44,7 @@ Using version 1.x? Its docs are in the
 - New to the library? [Getting started](getting-started.md) takes you from
   installing it to validating, reporting errors, and linting.
 - Want to check schemas and JSON files from the command line or in CI? Use
-  [hjlint](https://github.com/hyperjump-io/hjlint/blob/main/website/README.md).
+  [Hyperjump CLI](https://github.com/hyperjump-io/cli/blob/main/website/README.md).
 - Looking for a lint rule? Every rule has a page in
   [Rules](linting/rules/README.md).
 

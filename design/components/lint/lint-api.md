@@ -1,6 +1,6 @@
 # Linting from code
 
-Linting needs a unified pipeline today, outside of hjlint. `lint(uri)` on
+Linting needs a unified pipeline today, outside of the CLI. `lint(uri)` on
 `JsonSchema` and `JsonSchemaSession` lints a schema document without one.
 
 - It lints the whole document `uri` is in, the way `bundle` takes the
@@ -12,7 +12,7 @@ Linting needs a unified pipeline today, outside of hjlint. `lint(uri)` on
   schema with an unknown dialect or a keyword value that doesn't fit its
   shape would stop lint quietly.
 - It doesn't lint the documents `uri` references. Each document is linted
-  on its own, as a file is in hjlint.
+  on its own, as a file is in the CLI.
 - `compile` doesn't lint. A compiled schema is the entry point and what it
   reaches, which isn't the unit lint works on, so linting the documents it
   used would report on schemas it doesn't use.

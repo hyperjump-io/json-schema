@@ -39,8 +39,8 @@ const jsonSchema = new JsonSchema({ dialects: [v1Dialect], formats: fullFormats 
 | draft-06 | `date-time`, `email`, `hostname`, `ipv4`, `ipv6`, `uri`, `uri-reference`, `uri-template`, `json-pointer` |
 | draft-04 | `date-time`, `email`, `hostname`, `ipv4`, `ipv6`, `uri` |
 
-The [hjlint](https://github.com/hyperjump-io/hjlint/blob/main/website/README.md)
-CLI loads every format.
+The [Hyperjump CLI](https://github.com/hyperjump-io/cli/blob/main/website/README.md)
+loads every format.
 
 ## Formats that can't be checked
 

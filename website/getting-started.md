@@ -227,8 +227,8 @@ https://hyperjump.io/json-schema/linting/rules/required-property-not-defined/
 
 Every message links to its rule's page, which explains the problem and how
 to fix it. To lint every schema in a project, and check JSON files against
-their schemas, use the [hjlint](https://github.com/hyperjump-io/hjlint/blob/main/website/README.md)
-command line tool.
+their schemas, use the
+[Hyperjump CLI](https://github.com/hyperjump-io/cli/blob/main/website/README.md).
 
 ## Next steps
 

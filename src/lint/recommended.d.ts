@@ -5,7 +5,7 @@ import type { Preset } from "unified";
  * A rule is a warning if the schema still works, and an error if it can't
  * be compiled, like `reference-without-target`.
  *
- * Use it in `hjlint`'s `.hyperjumprc`, and adjust rules after it:
+ * Use it in the CLI's `.hyperjumprc`, and adjust rules after it:
  *
  * ```json
  * {

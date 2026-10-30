@@ -162,6 +162,6 @@ if (evaluator.schema(schemaNode, defaultNode.children[1]).valid === false) {
 
 ## Publishing rules
 
-A package named `hyperjump-<name>` can be used in hjlint's `.hyperjumprc`
+A package named `hyperjump-<name>` can be used in the CLI's `.hyperjumprc`
 as `<name>`. A package can export a preset, a list of rules with their
 settings, like `@hyperjump/json-schema/lint/recommended`.

@@ -27,7 +27,7 @@ how to fix it, with examples. Messages link to them.
 ## Running the linter
 
 - **From the command line**, with
-  [hjlint](https://github.com/hyperjump-io/hjlint/blob/main/website/README.md).
+  [Hyperjump CLI](https://github.com/hyperjump-io/cli/blob/main/website/README.md).
   It lints every schema in your project, and validates your JSON files
   against their schemas too. This is what most projects want, in an editor
   workflow or in CI.

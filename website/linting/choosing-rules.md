@@ -1,8 +1,8 @@
 # Choosing rules
 
 Rules are configured as a list of plugins: presets and rules, each with an
-optional setting. The list is the same everywhere: in hjlint's
-[`.hyperjumprc`](https://github.com/hyperjump-io/hjlint/blob/main/website/configuration.md),
+optional setting. The list is the same everywhere: in the CLI's
+[`.hyperjumprc`](https://github.com/hyperjump-io/cli/blob/main/website/configuration.md),
 and in the `plugins` option of [`lint`](from-code.md).
 
 ```json
@@ -33,7 +33,7 @@ the severity first:
 | Severity | Meaning |
 | --- | --- |
 | `"off"` | Don't run the rule |
-| `"warn"` | Report it as a warning. hjlint doesn't fail on warnings unless you use `--frail`. |
+| `"warn"` | Report it as a warning. The CLI doesn't fail on warnings unless you use `--frail`. |
 | `"error"` | Report it as an error |
 
 A rule with options takes them after the severity. Each rule's page lists

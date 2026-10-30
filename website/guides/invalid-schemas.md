@@ -60,7 +60,7 @@ about the first document found to have any.
 
 To see every problem in your schemas during development rather than when
 your application starts, lint them. The
-[hjlint](https://github.com/hyperjump-io/hjlint/blob/main/website/README.md)
-CLI reports schema problems as errors, along with lint warnings, without
+[Hyperjump CLI](https://github.com/hyperjump-io/cli/blob/main/website/README.md)
+reports schema problems as errors, along with lint warnings, without
 compiling anything. From code, [`lint`](../linting/from-code.md) returns a
 schema's problems instead of throwing them.

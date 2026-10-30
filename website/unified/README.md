@@ -5,8 +5,8 @@ syntax trees, with plugins. It's behind tools like remark, for markdown.
 This library has unified plugins for JSON and JSON Schema, so you can build
 your own tools that validate and lint JSON files, with every problem
 reported at its line and column. The
-[hjlint](https://github.com/hyperjump-io/hjlint/blob/main/website/README.md)
-CLI is built this way.
+[Hyperjump CLI](https://github.com/hyperjump-io/cli/blob/main/website/README.md)
+is built this way.
 
 A pipeline starts with `rejsonParse` from `@hyperjump/browser/json`, which
 parses JSON text into a JSON AST. It's error-tolerant: with
