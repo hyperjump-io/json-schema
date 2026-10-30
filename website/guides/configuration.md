@@ -34,21 +34,24 @@ What schemas can use is decided by the config, and can't change after the
 Schemas that aren't retrieved go in its `registry` property, which starts
 empty (see [Loading schemas](loading-schemas.md#registries)).
 
-## Per compilation
+## Per call
 
-`compile`, `bundle`, `lint`, and `session` take options that apply to that
-call only:
+Every operation (`validate`, `validator`, `compile`, `bundle`, `lint`, …)
+and `jsonSchema.session()` take options that apply to that call only. An
+operation given a session uses the session's, so it can't take these.
 
 | Option | What it does |
 | --- | --- |
 | `registry` | Schemas for this call, checked before the `JsonSchema`'s `registry` |
 | `allowRetrieval` | Replaces the config's `allowRetrieval` |
 
-## Per validation
+## Per validator
 
-The validator's methods take:
+`validate`, `validator`, `annotate`, and `annotator` also take these, and
+so do `validatorFor` and `annotatorFor`:
 
 | Option | Default | What it does |
 | --- | --- | --- |
+| `input` | `"value"` | What the instance is: `"value"`, `"json"` (JSON text), or `"node"` (a JSON AST). See [Validating](validating.md#what-to-validate). |
 | `output` | `FLAG` | `FLAG`, `BASIC`, `DETAILED`, or one of your own. See [Output and errors](output.md). |
 | `plugins` | None | [Evaluation plugins](../extending/plugins.md) that observe the evaluation |

@@ -49,7 +49,7 @@ Use it like a built-in rule:
 ```typescript
 import minWithoutMax from "./min-without-max.js";
 
-const results = await jsonSchema.lint(uri, {
+const results = await lint(jsonSchema, uri, {
   plugins: [recommended, [minWithoutMax, ["warn"]]]
 });
 ```

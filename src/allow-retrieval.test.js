@@ -9,6 +9,8 @@ import { toRelativeIri } from "@hyperjump/uri";
 import { JsonSchema, RetrievalNotAllowedError } from "./json-schema.js";
 import { v1Dialect, v1DialectUri } from "./dialects/v1/index.js";
 import { SchemaRegistry } from "./registry/schema-registry.js";
+import { compile } from "./operations/compile.js";
+import { validatorFor } from "./operations/validate.js";
 
 /**
  * @import { JsonSchemaConfig } from "./json-schema.d.ts"
@@ -42,13 +44,13 @@ describe("allowRetrieval", () => {
   });
 
   test("by default, a schema in the working directory can be compiled", async () => {
-    const validator = await v1().compile(pathToFileURL(join(inside, "inside.schema.json")).href);
-    expect(validator.validate("foo")).to.equal(true);
+    const compiled = await compile(v1(), pathToFileURL(join(inside, "inside.schema.json")).href);
+    expect(validatorFor(compiled)("foo")).to.equal(true);
   });
 
   test("by default, a schema outside the working directory is refused", async () => {
     const uri = pathToFileURL(join(outside, "outside.schema.json")).href;
-    const error = await v1().compile(uri)
+    const error = await compile(v1(), uri)
       .catch((/** @type unknown */ error) => error);
     expect(error).to.be.instanceOf(RetrievalNotAllowedError);
     expect(error).not.to.be.instanceOf(RetrievalError);
@@ -57,26 +59,26 @@ describe("allowRetrieval", () => {
 
   test("a reference is refused", async () => {
     const uri = pathToFileURL(join(inside, "refers-outside.schema.json")).href;
-    await expect(v1().compile(uri)).rejects.toThrow(RetrievalNotAllowedError);
+    await expect(compile(v1(), uri)).rejects.toThrow(RetrievalNotAllowedError);
   });
 
   test("the config replaces the default", async () => {
     const jsonSchema = v1({ allowRetrieval: [pathToFileURL(join(outside, "/")).href] });
-    const validator = await jsonSchema.compile(pathToFileURL(join(outside, "outside.schema.json")).href);
-    expect(validator.validate("foo")).to.equal(true);
+    const compiled = await compile(jsonSchema, pathToFileURL(join(outside, "outside.schema.json")).href);
+    expect(validatorFor(compiled)("foo")).to.equal(true);
   });
 
   test("a session's list is used instead of the config's", async () => {
     const session = v1({ allowRetrieval: [] }).session({ allowRetrieval: ["./", pathToFileURL(join(outside, "/")).href] });
-    const validator = await session.compile(pathToFileURL(join(inside, "refers-outside.schema.json")).href);
-    expect(validator.validate("foo")).to.equal(true);
+    const compiled = await compile(session, pathToFileURL(join(inside, "refers-outside.schema.json")).href);
+    expect(validatorFor(compiled)("foo")).to.equal(true);
   });
 
   test("registries aren't checked", async () => {
     const jsonSchema = v1({ allowRetrieval: [] });
     const registry = new SchemaRegistry().with(schema, { retrievalUri: "https://example.com/schema" });
-    const validator = await jsonSchema.compile("https://example.com/schema", { registry });
-    expect(validator.validate("foo")).to.equal(true);
+    const compiled = await compile(jsonSchema, "https://example.com/schema", { registry });
+    expect(validatorFor(compiled)("foo")).to.equal(true);
   });
 });
 

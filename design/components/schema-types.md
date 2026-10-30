@@ -53,7 +53,7 @@ written. Custom keywords are part of the type.
   `SchemaRegistry<Json>`: neither schema type is assignable to the other.
 - **What's only read is `ReadonlyJson`** (from `@hyperjump/browser/json`):
   a registry's schemas, the instance `validate` and `annotate` get, and
-  `restoreValidator`'s compiled schema. So is what a format, a keyword's
+  `restore`'s compiled schema. So is what a format, a keyword's
   `InstanceOps.value`, and a plugin's `value()` get, because for a JS
   value that's the caller's instance. `Json` is assignable to it, so
   nothing that worked stops working. What's returned, like `serialize()`

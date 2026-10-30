@@ -6,9 +6,9 @@ has a message, the position if there is one, the `ruleId`, and the
 `source`, so it prints like the messages of other unified tools.
 
 ```typescript
-import { BASIC, toVFileMessage } from "@hyperjump/json-schema";
+import { BASIC, toVFileMessage, validate } from "@hyperjump/json-schema";
 
-const result = validator.validateJson(json, { output: BASIC });
+const result = await validate(jsonSchema, uri, json, { input: "json", output: BASIC });
 
 for (const error of result.errors) {
   console.log(String(toVFileMessage(error)));
@@ -20,7 +20,7 @@ for (const error of result.errors) {
 1:29-1:30: Trailing commas are not allowed
 ```
 
-Use it to report errors from `validateJson`, from a `SchemaError`'s
+Use it to report errors from validating JSON text, from a `SchemaError`'s
 `messages`, or from [`lint`](../linting/from-code.md) with unified
 tooling, without building a pipeline.
 

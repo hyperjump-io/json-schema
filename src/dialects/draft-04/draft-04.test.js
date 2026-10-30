@@ -2,10 +2,13 @@ import { describe, test, beforeEach, expect } from "vitest";
 import { JsonSchema } from "../../json-schema.js";
 import { SchemaRegistry } from "../../registry/schema-registry.js";
 import { draft04Dialect, draft04DialectUri } from "./index.js";
+import { compile as compileSchema } from "../../operations/compile.js";
+import { annotatorFor, validatorFor } from "../../operations/validate.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
  * @import { JsonSchemaConfig } from "../../json-schema.d.ts"
+ * @import { CompiledSchema } from "../../operations/compile.d.ts"
  */
 
 describe("draft-04", () => {
@@ -18,10 +21,10 @@ describe("draft-04", () => {
   const $schema = `${draft04DialectUri}#`;
   const uri = "http://example.com/schema";
 
-  /** @type (jsonSchema: JsonSchema, schema: Json) => ReturnType<JsonSchema["compile"]> */
+  /** @type (jsonSchema: JsonSchema, schema: Json) => Promise<CompiledSchema> */
   const compile = (jsonSchema, schema) => {
     const registry = new SchemaRegistry([{ schema, retrievalUri: uri }]);
-    return jsonSchema.compile(uri, { registry });
+    return compileSchema(jsonSchema, uri, { registry });
   };
 
   /** @type JsonSchema */
@@ -32,45 +35,45 @@ describe("draft-04", () => {
   });
 
   test("$ref replaces the whole schema", async () => {
-    const validator = await compile(jsonSchema, {
+    const compiled = await compile(jsonSchema, {
       $schema,
       definitions: { string: { type: "string" } },
       properties: { foo: { $ref: "#/definitions/string", maxLength: 1 } }
     });
 
-    expect(validator.validate({ foo: "long" })).to.equal(true);
-    expect(validator.validate({ foo: 1 })).to.equal(false);
+    expect(validatorFor(compiled)({ foo: "long" })).to.equal(true);
+    expect(validatorFor(compiled)({ foo: 1 })).to.equal(false);
   });
 
   test("unknown keywords are ignored", async () => {
-    const validator = await compile(jsonSchema, { $schema, foo: "bar" });
+    const compiled = await compile(jsonSchema, { $schema, foo: "bar" });
 
-    expect(validator.annotate(1).node.data?.annotations).to.equal(undefined);
+    expect(annotatorFor(compiled)(1).node.data?.annotations).to.equal(undefined);
   });
 
   describe("maximum and minimum", () => {
     test("are inclusive by default", async () => {
-      const validator = await compile(jsonSchema, { $schema, minimum: 1, maximum: 3 });
+      const compiled = await compile(jsonSchema, { $schema, minimum: 1, maximum: 3 });
 
-      expect(validator.validate(1)).to.equal(true);
-      expect(validator.validate(3)).to.equal(true);
-      expect(validator.validate(0)).to.equal(false);
-      expect(validator.validate(4)).to.equal(false);
+      expect(validatorFor(compiled)(1)).to.equal(true);
+      expect(validatorFor(compiled)(3)).to.equal(true);
+      expect(validatorFor(compiled)(0)).to.equal(false);
+      expect(validatorFor(compiled)(4)).to.equal(false);
     });
 
     test("are exclusive with exclusiveMinimum and exclusiveMaximum", async () => {
-      const validator = await compile(jsonSchema, { $schema, minimum: 1, exclusiveMinimum: true, maximum: 3, exclusiveMaximum: true });
+      const compiled = await compile(jsonSchema, { $schema, minimum: 1, exclusiveMinimum: true, maximum: 3, exclusiveMaximum: true });
 
-      expect(validator.validate(2)).to.equal(true);
-      expect(validator.validate(1)).to.equal(false);
-      expect(validator.validate(3)).to.equal(false);
+      expect(validatorFor(compiled)(2)).to.equal(true);
+      expect(validatorFor(compiled)(1)).to.equal(false);
+      expect(validatorFor(compiled)(3)).to.equal(false);
     });
 
     test("are inclusive with exclusiveMinimum and exclusiveMaximum false", async () => {
-      const validator = await compile(jsonSchema, { $schema, minimum: 1, exclusiveMinimum: false, maximum: 3, exclusiveMaximum: false });
+      const compiled = await compile(jsonSchema, { $schema, minimum: 1, exclusiveMinimum: false, maximum: 3, exclusiveMaximum: false });
 
-      expect(validator.validate(1)).to.equal(true);
-      expect(validator.validate(3)).to.equal(true);
+      expect(validatorFor(compiled)(1)).to.equal(true);
+      expect(validatorFor(compiled)(3)).to.equal(true);
     });
 
     test("exclusiveMinimum and exclusiveMaximum require minimum and maximum", async () => {
@@ -81,46 +84,46 @@ describe("draft-04", () => {
 
   describe("dependencies", () => {
     test("an array is properties that are required too", async () => {
-      const validator = await compile(jsonSchema, { $schema, dependencies: { foo: ["bar"] } });
+      const compiled = await compile(jsonSchema, { $schema, dependencies: { foo: ["bar"] } });
 
-      expect(validator.validate({ foo: 1, bar: 2 })).to.equal(true);
-      expect(validator.validate({ bar: 2 })).to.equal(true);
-      expect(validator.validate({ foo: 1 })).to.equal(false);
+      expect(validatorFor(compiled)({ foo: 1, bar: 2 })).to.equal(true);
+      expect(validatorFor(compiled)({ bar: 2 })).to.equal(true);
+      expect(validatorFor(compiled)({ foo: 1 })).to.equal(false);
     });
 
     test("a schema applies to the whole instance", async () => {
-      const validator = await compile(jsonSchema, { $schema, dependencies: { foo: { required: ["bar"] } } });
+      const compiled = await compile(jsonSchema, { $schema, dependencies: { foo: { required: ["bar"] } } });
 
-      expect(validator.validate({ foo: 1, bar: 2 })).to.equal(true);
-      expect(validator.validate({ foo: 1 })).to.equal(false);
+      expect(validatorFor(compiled)({ foo: 1, bar: 2 })).to.equal(true);
+      expect(validatorFor(compiled)({ foo: 1 })).to.equal(false);
     });
   });
 
   describe("format", () => {
     test("validates by default", async () => {
-      const validator = await compile(jsonSchema, { $schema, format: "ipv4" });
+      const compiled = await compile(jsonSchema, { $schema, format: "ipv4" });
 
-      expect(validator.validate("127.0.0.1")).to.equal(true);
-      expect(validator.validate("not an ip")).to.equal(false);
+      expect(validatorFor(compiled)("127.0.0.1")).to.equal(true);
+      expect(validatorFor(compiled)("not an ip")).to.equal(false);
     });
 
     test("is only an annotation if the config says so", async () => {
-      const validator = await compile(draft04({ validateFormats: false }), { $schema, format: "ipv4" });
+      const compiled = await compile(draft04({ validateFormats: false }), { $schema, format: "ipv4" });
 
-      expect(validator.validate("not an ip")).to.equal(true);
+      expect(validatorFor(compiled)("not an ip")).to.equal(true);
     });
 
     test("hostname doesn't need the full formats", async () => {
-      const validator = await compile(jsonSchema, { $schema, format: "hostname" });
+      const compiled = await compile(jsonSchema, { $schema, format: "hostname" });
 
-      expect(validator.validate("example.com")).to.equal(true);
-      expect(validator.validate("-invalid-")).to.equal(false);
+      expect(validatorFor(compiled)("example.com")).to.equal(true);
+      expect(validatorFor(compiled)("-invalid-")).to.equal(false);
     });
 
     test("a format draft-04 doesn't define is only an annotation", async () => {
-      const validator = await compile(jsonSchema, { $schema, format: "uri-reference" });
+      const compiled = await compile(jsonSchema, { $schema, format: "uri-reference" });
 
-      expect(validator.validate("not a uri reference")).to.equal(true);
+      expect(validatorFor(compiled)("not a uri reference")).to.equal(true);
     });
   });
 });

@@ -6,6 +6,8 @@ import { describe, test, beforeAll, afterAll, expect } from "vitest";
 import { JsonSchema } from "../json-schema.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import { draft202012Dialect } from "../dialects/draft-2020-12/index.js";
+import { compile } from "../operations/compile.js";
+import { validatorFor } from "../operations/validate.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
@@ -45,9 +47,9 @@ describe("JsonOrSchemaMediaTypePlugin", () => {
 
   test("its fragments are a schema's", async () => {
     const uri = await jsonFile("anchored.json", { $schema: v1DialectUri, $defs: { name: { $anchor: "name", type: "string" } } });
-    const validator = await session().compile(`${uri}#name`);
+    const compiled = await compile(session(), `${uri}#name`);
 
-    expect(validator.validate(42)).to.equal(false);
+    expect(validatorFor(compiled)(42)).to.equal(false);
   });
 
   test("a .json file without $schema is JSON", async () => {

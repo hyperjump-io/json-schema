@@ -2,7 +2,7 @@ import { addDynamicAnchors } from "../fast.js";
 import { mapSubexpressions, subexpressions } from "../kernel.js";
 
 /**
- * @import { CompiledSchema, Expression, Handle, Kernel } from "../kernel.d.ts"
+ * @import { KernelSchema, Expression, Handle, Kernel } from "../kernel.d.ts"
  * @import { Optimization } from "../optimize.js"
  */
 
@@ -30,7 +30,7 @@ import { mapSubexpressions, subexpressions } from "../kernel.js";
  */
 export default {
   optimize(kernel) {
-    /** @type Map<Handle, CompiledSchema | null> */
+    /** @type Map<Handle, KernelSchema | null> */
     const replaced = new Map();
     if (kernel.reads.dynamicScope.length === 0) {
       return replaced;
@@ -39,7 +39,7 @@ export default {
     // An `opaque` operation looks anchors up when it's evaluated, and
     // applies the schema it finds, not its copy
     for (const handle of kernel.reads.dynamicScope) {
-      const schema = /** @type Exclude<CompiledSchema, boolean> */ (kernel.schemas[handle]);
+      const schema = /** @type Exclude<KernelSchema, boolean> */ (kernel.schemas[handle]);
       if (schema.keywords.some(({ expression }) => opaqueReadsDynamicScope(expression))) {
         return replaced;
       }
@@ -67,7 +67,7 @@ export default {
         return handle;
       }
 
-      const schema = /** @type Exclude<CompiledSchema, boolean> */ (kernel.schemas[handle]);
+      const schema = /** @type Exclude<KernelSchema, boolean> */ (kernel.schemas[handle]);
       const inScope = addDynamicAnchors(kernel.resources[schema.resource].dynamicAnchors, outer);
       /** @type [string, Handle][] */
       const entries = [];
@@ -102,7 +102,7 @@ export default {
       const [handle, copy, anchors] = /** @type [Handle, Handle, Record<string, Handle>] */ (queue.pop());
       /** @type (handle: Handle) => Handle */
       const applied = (handle) => specialize(handle, anchors);
-      const schema = /** @type Exclude<CompiledSchema, boolean> */ (kernel.schemas[handle]);
+      const schema = /** @type Exclude<KernelSchema, boolean> */ (kernel.schemas[handle]);
       const keywords = schema.keywords.map((group) => ({ ...group, expression: resolve(group.expression, anchors, applied) }));
       replaced.set(copy, copy === handle ? { ...schema, keywords } : { ...schema, keywords, copyOf: handle });
     }

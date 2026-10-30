@@ -11,6 +11,8 @@ import { SchemaRegistry } from "./registry/schema-registry.js";
 import { AnchorNotFoundError } from "./schema/media-type-plugin.js";
 import vocabularyKeyword from "./keywords/vocabulary.js";
 import idKeyword from "./keywords/id.js";
+import { compile } from "./operations/compile.js";
+import { annotate, validatorFor } from "./operations/validate.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
@@ -175,10 +177,10 @@ describe("JsonSchema", () => {
         const uri = pathToFileURL(path).toString();
 
         await writeFile(path, JSON.stringify({ $schema: v1DialectUri, type: "string" }));
-        expect((await jsonSchema.compile(uri)).validate(42)).to.equal(false);
+        expect(validatorFor(await compile(jsonSchema, uri))(42)).to.equal(false);
 
         await writeFile(path, JSON.stringify({ $schema: v1DialectUri, type: "number" }));
-        expect((await jsonSchema.compile(uri)).validate(42)).to.equal(true);
+        expect(validatorFor(await compile(jsonSchema, uri))(42)).to.equal(true);
       } finally {
         await rm(directory, { recursive: true });
       }
@@ -232,7 +234,7 @@ describe("JsonSchema", () => {
         })
       });
 
-      await expect(session.compile("https://example.com/other")).rejects.toMatchObject({
+      await expect(compile(session, "https://example.com/other")).rejects.toMatchObject({
         name: "SchemaError",
         messages: [{
           ruleId: "duplicate-id",
@@ -250,7 +252,7 @@ describe("JsonSchema", () => {
         })
       });
 
-      await expect(session.compile("https://example.com/other")).rejects.toMatchObject({
+      await expect(compile(session, "https://example.com/other")).rejects.toMatchObject({
         name: "SchemaError",
         messages: [{
           ruleId: "duplicate-id",
@@ -268,8 +270,8 @@ describe("JsonSchema", () => {
         })
       });
 
-      expect((await session.compile("https://example.com/other")).validate(42)).to.equal(false);
-      expect((await session.compile("https://example.com/trusted")).validate(42)).to.equal(false);
+      expect(validatorFor(await compile(session, "https://example.com/other"))(42)).to.equal(false);
+      expect(validatorFor(await compile(session, "https://example.com/trusted"))(42)).to.equal(false);
     });
 
     test("an embedded resource and a document with the same URI", async () => {
@@ -284,8 +286,8 @@ describe("JsonSchema", () => {
         })
       });
 
-      expect((await session.compile("https://example.com/other")).validate(42)).to.equal(true);
-      await expect(session.compile("https://example.com/common")).rejects.toMatchObject({
+      expect(validatorFor(await compile(session, "https://example.com/other"))(42)).to.equal(true);
+      await expect(compile(session, "https://example.com/common")).rejects.toMatchObject({
         name: "SchemaError",
         messages: [{
           ruleId: "duplicate-id",
@@ -312,7 +314,7 @@ describe("JsonSchema", () => {
     });
 
     test("annotation by name in the v1 dialect", async () => {
-      const { node } = await jsonSchema.annotate("https://example.com/annotated", { foo: 1, bar: 2 });
+      const { node } = await annotate(jsonSchema, "https://example.com/annotated", { foo: 1, bar: 2 });
       const session = jsonSchema.session();
 
       expect(session.annotation(node, "title")).to.eql(["root"]);
@@ -321,31 +323,31 @@ describe("JsonSchema", () => {
     });
 
     test("annotation by keyword URI", async () => {
-      const { node } = await jsonSchema.annotate("https://example.com/annotated", {});
+      const { node } = await annotate(jsonSchema, "https://example.com/annotated", {});
 
       expect(jsonSchema.session().annotation(node, "https://json-schema.org/keyword/title")).to.eql(["root"]);
     });
 
     test("annotation by unknown keyword name", async () => {
-      const { node } = await jsonSchema.annotate("https://example.com/annotated", {});
+      const { node } = await annotate(jsonSchema, "https://example.com/annotated", {});
 
       expect(jsonSchema.session().annotation(node, "x-foo")).to.eql(["bar"]);
     });
 
     test("annotation by unknown keyword URI", async () => {
-      const { node } = await jsonSchema.annotate("https://example.com/annotated", {});
+      const { node } = await annotate(jsonSchema, "https://example.com/annotated", {});
 
       expect(jsonSchema.session().annotation(node, "https://json-schema.org/keyword/unknown#x-foo")).to.eql(["bar"]);
     });
 
     test("annotation by keyword URI doesn't need the dialect", async () => {
-      const { node } = await jsonSchema.annotate("https://example.com/annotated", {});
+      const { node } = await annotate(jsonSchema, "https://example.com/annotated", {});
 
       expect(jsonSchema.session().annotation(node, "https://json-schema.org/keyword/title", "https://example.com/dialect")).to.eql(["root"]);
     });
 
     test("annotation by name with property names", async () => {
-      const { node } = await jsonSchema.annotate("https://example.com/annotated", { foo: 1 });
+      const { node } = await annotate(jsonSchema, "https://example.com/annotated", { foo: 1 });
       const nameNode = /** @type any */ (node).children[0].children[0];
 
       expect(jsonSchema.session().annotation(nameNode, "title")).to.eql(["name"]);
@@ -356,7 +358,7 @@ describe("JsonSchema", () => {
         dialects: [v1Dialect, { uri: "https://example.com/dialect", keywords: { label: "https://json-schema.org/keyword/title" }, unknownKeywords: "error" }]
       });
       other.registry = jsonSchema.registry;
-      const { node } = await other.annotate("https://example.com/annotated", {});
+      const { node } = await annotate(other, "https://example.com/annotated", {});
       const session = other.session();
 
       expect(session.annotation(node, "label", "https://example.com/dialect")).to.eql(["root"]);
@@ -364,7 +366,7 @@ describe("JsonSchema", () => {
     });
 
     test("annotation by name in a dialect that isn't defined", async () => {
-      const { node } = await jsonSchema.annotate("https://example.com/annotated", {});
+      const { node } = await annotate(jsonSchema, "https://example.com/annotated", {});
 
       expect(() => jsonSchema.session().annotation(node, "title", "https://example.com/dialect")).to.throw("isn't defined");
     });
@@ -378,12 +380,12 @@ describe("JsonSchema", () => {
         $ref: "#foo",
         $defs: { foo: { $anchor: "foo", type: "string" } }
       });
-      expect((await jsonSchema.compile("https://example.com/anchor")).validate(42)).to.equal(false);
+      expect(validatorFor(await compile(jsonSchema, "https://example.com/anchor"))(42)).to.equal(false);
     });
 
     test("an anchor that isn't in the document", async () => {
       jsonSchema.registry = new SchemaRegistry().with({ $schema: v1DialectUri, $id: "https://example.com/no-anchor", $ref: "#foo" });
-      const error = await jsonSchema.compile("https://example.com/no-anchor")
+      const error = await compile(jsonSchema, "https://example.com/no-anchor")
         .catch((/** @type unknown */ error) => error);
       expect(error).to.be.instanceOf(AnchorNotFoundError);
       expect(error).toMatchObject({ anchor: "foo", uri: "https://example.com/no-anchor", message: "There's no 'foo' anchor in 'https://example.com/no-anchor'" });
@@ -396,7 +398,7 @@ describe("JsonSchema", () => {
         $ref: "#%2F$defs%2Ffoo",
         $defs: { foo: { type: "string" } }
       });
-      expect((await jsonSchema.compile("https://example.com/pointer")).validate(42)).to.equal(false);
+      expect(validatorFor(await compile(jsonSchema, "https://example.com/pointer"))(42)).to.equal(false);
     });
   });
 

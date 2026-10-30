@@ -7,11 +7,13 @@ import { hasOp } from "../kernel.js";
 import { optimize } from "../optimize.js";
 import staticDynamicScope from "./static-dynamic-scope.js";
 import { BASIC } from "../../output/index.js";
+import { compile as compileSchema, serialize } from "../../operations/compile.js";
+import { annotatorFor, validatorFor } from "../../operations/validate.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
  * @import { Kernel } from "../kernel.d.ts"
- * @import { Validator } from "../../json-schema.d.ts"
+ * @import { CompiledSchema } from "../../operations/compile.d.ts"
  * @import { KeywordInfo, SchemaInfo } from "../evaluation-plugin.d.ts"
  * @import { ValidationError } from "../../output/validation-error.d.ts"
  */
@@ -27,8 +29,8 @@ let count = 0;
 describe("staticDynamicScope", () => {
   test("applies what the outermost anchor identifies", async () => {
     const { tree, strictTree } = trees();
-    const validator = await compile(strictTree, [tree]);
-    const kernel = /** @type Kernel */ (validator.serialize());
+    const compiled = await compile(strictTree, [tree]);
+    const kernel = /** @type Kernel */ (serialize(compiled));
     expect(kernel.reads.dynamicScope.length).to.be.greaterThan(0);
 
     const optimized = optimize(kernel, fast);
@@ -36,38 +38,38 @@ describe("staticDynamicScope", () => {
     expect(hasDynamicApply(optimized)).to.equal(false);
     expect(copies(optimized)).to.equal(0);
 
-    expect(validator.validate({ children: [{ data: 1 }] })).to.equal(true);
-    expect(validator.validate({ children: [{ daat: 1 }] })).to.equal(false);
+    expect(validatorFor(compiled)({ children: [{ data: 1 }] })).to.equal(true);
+    expect(validatorFor(compiled)({ children: [{ daat: 1 }] })).to.equal(false);
   });
 
   test("copies a schema applied with different anchors in scope", async () => {
     const { tree, strictTree } = trees();
-    const validator = await compile({
+    const compiled = await compile({
       properties: {
         loose: { $ref: tree.$id },
         strict: { $ref: strictTree.$id }
       }
     }, [tree, strictTree]);
-    const optimized = optimize(/** @type Kernel */ (validator.serialize()), fast);
+    const optimized = optimize(/** @type Kernel */ (serialize(compiled)), fast);
     expect(optimized.reads.dynamicScope).to.eql([]);
     expect(copies(optimized)).to.be.greaterThan(0);
 
-    expect(validator.validate({ loose: { children: [{ daat: 1 }] } })).to.equal(true);
-    expect(validator.validate({ strict: { children: [{ daat: 1 }] } })).to.equal(false);
-    expect(validator.validate({ strict: { children: [{ data: 1 }] } })).to.equal(true);
+    expect(validatorFor(compiled)({ loose: { children: [{ daat: 1 }] } })).to.equal(true);
+    expect(validatorFor(compiled)({ strict: { children: [{ daat: 1 }] } })).to.equal(false);
+    expect(validatorFor(compiled)({ strict: { children: [{ data: 1 }] } })).to.equal(true);
   });
 
   test("doesn't copy a schema for anchors it can't read", async () => {
     const { tree } = trees();
     // `other` is in scope through `wrapper`, but `tree` can't read it
     const wrapper = { $id: `https://example.com/wrapper-${count++}`, $dynamicAnchor: "other", $ref: tree.$id };
-    const validator = await compile({
+    const compiled = await compile({
       properties: {
         direct: { $ref: tree.$id },
         wrapped: { $ref: wrapper.$id }
       }
     }, [tree, wrapper]);
-    const optimized = optimize(/** @type Kernel */ (validator.serialize()), fast);
+    const optimized = optimize(/** @type Kernel */ (serialize(compiled)), fast);
     expect(optimized.reads.dynamicScope).to.eql([]);
     expect(copies(optimized)).to.equal(0);
   });
@@ -76,36 +78,36 @@ describe("staticDynamicScope", () => {
     // Which of `t1` or `f1`, then `t2` or `f2`, it goes through decides
     // what `x1` and `x2` identify in `phi`
     const [root, schemas] = choices(2);
-    const validator = await compile(root, schemas);
-    const optimized = optimize(/** @type Kernel */ (validator.serialize()), fast);
+    const compiled = await compile(root, schemas);
+    const optimized = optimize(/** @type Kernel */ (serialize(compiled)), fast);
     expect(optimized.reads.dynamicScope).to.eql([]);
     expect(copies(optimized)).to.be.greaterThan(0);
 
-    expect(validator.validate(null)).to.equal(true);
-    expect(validator.validate("foo")).to.equal(true);
-    expect(validator.validate(1)).to.equal(false);
+    expect(validatorFor(compiled)(null)).to.equal(true);
+    expect(validatorFor(compiled)("foo")).to.equal(true);
+    expect(validatorFor(compiled)(1)).to.equal(false);
   });
 
   test("gives up when there are more copies than schemas that read the dynamic scope", async () => {
     const [root, schemas] = choices(8);
-    const validator = await compile(root, schemas);
-    const kernel = /** @type Kernel */ (validator.serialize());
+    const compiled = await compile(root, schemas);
+    const kernel = /** @type Kernel */ (serialize(compiled));
     expect(staticDynamicScope.optimize(kernel, fast).size).to.equal(0);
     expect(optimize(kernel, fast).reads.dynamicScope.length).to.be.greaterThan(0);
 
-    expect(validator.validate(null)).to.equal(true);
-    expect(validator.validate(1)).to.equal(false);
+    expect(validatorFor(compiled)(null)).to.equal(true);
+    expect(validatorFor(compiled)(1)).to.equal(false);
   });
 
   test("removes a schema that reads the dynamic scope that nothing applies", async () => {
     // A resource's dynamic anchors are lowered whether they're applied or not
-    const validator = await compile({
+    const compiled = await compile({
       type: "string",
       $defs: {
         node: { $dynamicAnchor: "node", items: { $dynamicRef: "#node" } }
       }
     });
-    const kernel = /** @type Kernel */ (validator.serialize());
+    const kernel = /** @type Kernel */ (serialize(compiled));
     expect(kernel.reads.dynamicScope.length).to.be.greaterThan(0);
 
     const optimized = optimize(kernel, fast);
@@ -116,19 +118,19 @@ describe("staticDynamicScope", () => {
   });
 
   test("lets static-unevaluated see what a dynamic reference applies", async () => {
-    const validator = await compile({
+    const compiled = await compile({
       $dynamicRef: "#meta",
       unevaluatedProperties: false,
       $defs: {
         meta: { $dynamicAnchor: "meta", properties: { foo: true } }
       }
     });
-    const kernel = /** @type Kernel */ (validator.serialize());
+    const kernel = /** @type Kernel */ (serialize(compiled));
     expect(kernel.reads.evaluated.length).to.be.greaterThan(0);
     expect(optimize(kernel, fast).reads.evaluated).to.eql([]);
 
-    expect(validator.validate({ foo: 1 })).to.equal(true);
-    expect(validator.validate({ bar: 1 })).to.equal(false);
+    expect(validatorFor(compiled)({ foo: 1 })).to.equal(true);
+    expect(validatorFor(compiled)({ bar: 1 })).to.equal(false);
   });
 
   test("doesn't change a kernel with an opaque operation that reads the dynamic scope", () => {
@@ -157,8 +159,8 @@ describe("staticDynamicScope", () => {
 
   describe("with plugins", () => {
     test("they see the location of the schema a copy copies, with its infos", async () => {
-      const validator = await looseAndStrict();
-      const optimized = optimize(/** @type Kernel */ (validator.serialize()), plugins);
+      const compiled = await looseAndStrict();
+      const optimized = optimize(/** @type Kernel */ (serialize(compiled)), plugins);
       expect(copies(optimized)).to.be.greaterThan(0);
       expect(optimized.reads.dynamicScope).to.eql([]);
 
@@ -173,9 +175,9 @@ describe("staticDynamicScope", () => {
         seen.add(info);
         infos.set(info.absoluteKeywordLocation, seen);
       };
-      validator.validate({ loose: { kids: { kids: {} } }, strict: { kids: { kids: {} } } }, {
+      validatorFor(compiled, {
         plugins: [{ beforeSchema: see(schemaInfos), beforeKeyword: see(keywordInfos) }]
-      });
+      })({ loose: { kids: { kids: {} } }, strict: { kids: { kids: {} } } });
 
       for (const infos of [schemaInfos, keywordInfos]) {
         expect([...infos.keys()].filter((location) => location.includes(" "))).to.eql([]);
@@ -186,11 +188,11 @@ describe("staticDynamicScope", () => {
     });
 
     test("BASIC reports what it would tracking the dynamic scope", async () => {
-      const validator = await looseAndStrict();
-      const { base } = validator;
+      const compiled = await looseAndStrict();
+      const { base } = compiled;
       /** @type (instance: Json) => [string, string][] */
       const errors = (instance) => {
-        const output = validator.validate(instance, { output: BASIC });
+        const output = validatorFor(compiled, { output: BASIC })(instance);
         return output.errors.map((error) => {
           const { absoluteKeywordLocation, instanceLocation } = /** @type ValidationError */ (error);
           return [absoluteKeywordLocation.replace(base, ""), instanceLocation];
@@ -223,15 +225,15 @@ describe("staticDynamicScope", () => {
     });
 
     test("annotating applies the copies", async () => {
-      const validator = await looseAndStrict();
-      expect(copies(optimize(/** @type Kernel */ (validator.serialize()), { fast: false, plugins: false, annotations: true }))).to.be.greaterThan(0);
+      const compiled = await looseAndStrict();
+      expect(copies(optimize(/** @type Kernel */ (serialize(compiled)), { fast: false, plugins: false, annotations: true }))).to.be.greaterThan(0);
 
       // `kids` is applied by `properties` and by `if`'s condition, which passes
-      const { output, node } = validator.annotate({ strict: { data: 1, kids: { data: 1 } } });
+      const { output, node } = annotatorFor(compiled)({ strict: { data: 1, kids: { data: 1 } } });
       expect(output).to.equal(true);
       expect(pointerGet("/strict", /** @type any */ (node)).data.annotations.get(titleKeywordUri)).to.eql(["tree"]);
       expect(pointerGet("/strict/kids", /** @type any */ (node)).data.annotations.get(titleKeywordUri)).to.eql(["tree", "tree"]);
-      expect(validator.annotate({ strict: { data: 1, kids: { data: 1, extra: 1 } } }).output).to.equal(false);
+      expect(annotatorFor(compiled)({ strict: { data: 1, kids: { data: 1, extra: 1 } } }).output).to.equal(false);
     });
   });
 });
@@ -241,7 +243,7 @@ describe("staticDynamicScope", () => {
  * as a tree and as a strict tree, so its schemas are copied. Its `base` is
  * what its schemas' URIs start with.
  *
- * @type () => Promise<Validator & { base: string }>
+ * @type () => Promise<CompiledSchema & { base: string }>
  */
 const looseAndStrict = async () => {
   const base = `https://example.com/loose-and-strict-${count++}/`;
@@ -255,11 +257,11 @@ const looseAndStrict = async () => {
     else: { required: ["data"] }
   };
   const strictTree = { $id: `${base}strict-tree`, $dynamicAnchor: "node", $ref: "tree", unevaluatedProperties: false };
-  const validator = await compile({
+  const compiled = await compile({
     $id: `${base}root`,
     properties: { loose: { $ref: "tree" }, strict: { $ref: "strict-tree" } }
   }, [tree, strictTree]);
-  return Object.assign(validator, { base });
+  return Object.assign(compiled, { base });
 };
 
 /**
@@ -320,14 +322,14 @@ const choices = (n) => {
   return [root, schemas];
 };
 
-/** @type (schema: Record<string, Json>, schemas?: (Record<string, Json> & { $id: string })[]) => Promise<Validator> */
+/** @type (schema: Record<string, Json>, schemas?: (Record<string, Json> & { $id: string })[]) => Promise<CompiledSchema> */
 const compile = async (schema, schemas = []) => {
   const uri = /** @type string | undefined */ (schema.$id) ?? `https://example.com/schema-${count++}`;
   const registry = new SchemaRegistry([
     { schema, retrievalUri: uri, dialectUri: draft202012DialectUri },
     ...schemas.map((each) => ({ schema: each, retrievalUri: each.$id, dialectUri: draft202012DialectUri }))
   ]);
-  return jsonSchema.compile(uri, { registry });
+  return compileSchema(jsonSchema, uri, { registry });
 };
 
 /**

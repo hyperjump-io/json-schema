@@ -2,7 +2,7 @@ import { optimizations } from "./optimizations/index.js";
 import { schemaReads } from "./kernel.js";
 
 /**
- * @import { CompiledSchema, EvaluationState, Expression, Handle, Kernel } from "./kernel.d.ts"
+ * @import { KernelSchema, EvaluationState, Expression, Handle, Kernel } from "./kernel.d.ts"
  */
 
 /**
@@ -31,19 +31,8 @@ import { schemaReads } from "./kernel.js";
  * do for a mode returns an empty map. `null` removes a schema, which nothing
  * left in the kernel can apply.
  *
- * @typedef {{ optimize: (kernel: Kernel, mode: Mode) => Map<Handle, CompiledSchema | null> }} Optimization
+ * @typedef {{ optimize: (kernel: Kernel, mode: Mode) => Map<Handle, KernelSchema | null> }} Optimization
  */
-
-/**
- * Whether a keyword group has no effect anything in a mode can see:
- * `annotate` when nothing sees annotations, and `pass` without plugins.
- * Plugins see a keyword that has no effect, like `uniqueItems: false`, pass.
- *
- * @type (expression: Expression, mode: Mode) => boolean
- */
-export const isInert = (expression, { plugins, annotations }) => {
-  return (!plugins && expression.op === "pass") || (!annotations && expression.op === "annotate");
-};
 
 /**
  * Run the optimizations, in order, for a mode

@@ -13,6 +13,7 @@ import { draft04Dialect, draft04DialectUri } from "../dialects/draft-04/index.js
 import { draft07Dialect, draft07DialectUri } from "../dialects/draft-07/index.js";
 import { draft201909Dialect, draft201909DialectUri } from "../dialects/draft-2019-09/index.js";
 import { draft202012Dialect, draft202012DialectUri } from "../dialects/draft-2020-12/index.js";
+import { compile } from "../operations/compile.js";
 
 /**
  * @import { JsonParseStatus } from "@hyperjump/browser/json"
@@ -261,7 +262,7 @@ describe("a schema with an invalid keyword value", () => {
     await writeFile(path, `{ "$schema": "${v1DialectUri}", "minLength": -1 }`);
 
     const jsonSchema = new JsonSchema({ allowRetrieval: [pathToFileURL(join(tmpdir(), "/")).href], dialects: [v1Dialect] });
-    await expect(jsonSchema.compile(pathToFileURL(path).toString())).rejects.toMatchObject({
+    await expect(compile(jsonSchema, pathToFileURL(path).toString())).rejects.toMatchObject({
       messages: [{ ruleId: "https://json-schema.org/keyword/minLength" }]
     });
   });

@@ -7,10 +7,13 @@ import { JsonSchema } from "../src/json-schema.js";
 import { SchemaRegistry } from "../src/registry/schema-registry.js";
 import { fullFormats } from "../src/formats/full.js";
 import { BASIC } from "../src/output/index.js";
+import { compile } from "../src/operations/compile.js";
+import { annotatorFor, validatorFor } from "../src/operations/validate.js";
 
 /**
  * @import { Json, JsonNode } from "@hyperjump/browser/json"
- * @import { JsonSchemaConfig, Validator } from "../src/json-schema.d.ts"
+ * @import { JsonSchemaConfig } from "../src/json-schema.d.ts"
+ * @import { CompiledSchema } from "../src/operations/compile.d.ts"
  * @import { DialectConfig } from "../src/dialect.d.ts"
  */
 
@@ -140,7 +143,7 @@ export const testSuiteJsonSchema = (config) => {
  * test cases, so each test case has its own registry. The suite's schemas
  * don't have `$schema`, so the dialect under test is given for them.
  *
- * @type (jsonSchema: JsonSchema, dialectUri: string, uri: string, schema: Json, externalSchemas?: Record<string, Json>) => Promise<Validator>
+ * @type (jsonSchema: JsonSchema, dialectUri: string, uri: string, schema: Json, externalSchemas?: Record<string, Json>) => Promise<CompiledSchema>
  */
 export const compileTestCase = async (jsonSchema, dialectUri, uri, schema, externalSchemas = {}) => {
   const registry = new SchemaRegistry([
@@ -154,7 +157,7 @@ export const compileTestCase = async (jsonSchema, dialectUri, uri, schema, exter
     ? toAbsoluteIri(resolveIri(schema.$id, uri))
     : uri;
 
-  return jsonSchema.compile(id, { registry });
+  return compile(jsonSchema, id, { registry });
 };
 
 /**
@@ -219,8 +222,8 @@ export const describeValidationTestSuite = (options) => {
           const testCase = testCases[index];
 
           describe(testCase.description, () => {
-            /** @type Validator */
-            let validator;
+            /** @type CompiledSchema */
+            let compiled;
 
             beforeAll(async () => {
               if (isSkipped(skip, [file, testCase.description])) {
@@ -228,16 +231,16 @@ export const describeValidationTestSuite = (options) => {
               }
 
               const uri = `${validationTestCaseUri}${file}/${index}`;
-              validator = await compileTestCase(jsonSchema(testCase), dialectUri, uri, testCase.schema, testCase.externalSchemas);
+              compiled = await compileTestCase(jsonSchema(testCase), dialectUri, uri, testCase.schema, testCase.externalSchemas);
             });
 
             for (const { description, data, valid } of testCase.tests) {
               test.skipIf(isSkipped(skip, [file, testCase.description, description]))(description, () => {
                 expect({
-                  validate: validator.validate(data),
-                  validateJson: validator.validateJson(JSON.stringify(data)),
-                  basic: validator.validate(data, { output: BASIC }).valid,
-                  annotate: validator.annotate(data).output
+                  validate: validatorFor(compiled)(data),
+                  validateJson: validatorFor(compiled, { input: "json" })(JSON.stringify(data)),
+                  basic: validatorFor(compiled, { output: BASIC })(data).valid,
+                  annotate: annotatorFor(compiled)(data).output
                 }).to.eql({
                   validate: valid,
                   validateJson: valid,
@@ -322,8 +325,8 @@ export const describeAnnotationTestSuite = ({ description, version, dialect, jso
           const testCase = testCases[index];
 
           describe(testCase.description, () => {
-            /** @type Validator */
-            let validator;
+            /** @type CompiledSchema */
+            let compiled;
 
             beforeAll(async () => {
               if (isSkipped(skip, [file, testCase.description])) {
@@ -331,7 +334,7 @@ export const describeAnnotationTestSuite = ({ description, version, dialect, jso
               }
 
               const uri = `${annotationTestCaseUri}${file}/${index}`;
-              validator = await compileTestCase(jsonSchema, dialect.uri, uri, testCase.schema, testCase.externalSchemas);
+              compiled = await compileTestCase(jsonSchema, dialect.uri, uri, testCase.schema, testCase.externalSchemas);
             });
 
             for (const { instance, assertions } of testCase.tests) {
@@ -339,8 +342,8 @@ export const describeAnnotationTestSuite = ({ description, version, dialect, jso
               test.skipIf(isSkipped(skip, [file, testCase.description, description]))(description, () => {
                 // Both ways of annotating should agree
                 const nodes = {
-                  annotate: validator.annotate(instance).node,
-                  annotateJson: validator.annotateJson(JSON.stringify(instance)).node
+                  annotate: annotatorFor(compiled)(instance).node,
+                  annotateJson: annotatorFor(compiled, { input: "json" })(JSON.stringify(instance)).node
                 };
 
                 // The suite orders the expected annotations by convention

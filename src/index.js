@@ -6,4 +6,8 @@ export * from "./schema/json-media-type-plugin.js";
 export { SchemaRegistry } from "./registry/schema-registry.js";
 export * from "./validate/validate.js";
 export * from "./output/index.js";
+export * from "./operations/validate.js";
+export * from "./operations/compile.js";
+export * from "./operations/bundle.js";
+export * from "./operations/lint.js";
 export { relativeFileUri } from "@hyperjump/browser";

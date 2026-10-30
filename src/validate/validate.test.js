@@ -10,17 +10,18 @@ import { JsonSchema } from "../json-schema.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
 import { v1Dialect } from "../dialects/v1/index.js";
 import { jsonSchemaValidate } from "./validate.js";
+import { compile } from "../operations/compile.js";
 
 /**
  * @import { JsonParseStatus } from "@hyperjump/browser/json"
- * @import { Validator } from "../json-schema.d.ts"
+ * @import { CompiledSchema } from "../operations/compile.d.ts"
  */
 
 const schemaUri = "https://example.com/person";
 
 describe("jsonSchemaValidate", () => {
-  /** @type Validator */
-  let validator;
+  /** @type CompiledSchema */
+  let compiled;
 
   beforeAll(async () => {
     const jsonSchema = new JsonSchema({ dialects: [v1Dialect] });
@@ -35,7 +36,7 @@ describe("jsonSchemaValidate", () => {
         required: ["name"]
       }
     }]);
-    validator = await jsonSchema.compile(schemaUri, { registry });
+    compiled = await compile(jsonSchema, schemaUri, { registry });
   });
 
   /** @type (json: string, accept?: JsonParseStatus) => Promise<VFile> */
@@ -43,7 +44,7 @@ describe("jsonSchemaValidate", () => {
     const file = new VFile({ path: "/data/person.json", value: json });
     await unified()
       .use(rejsonParse, { accept })
-      .use(jsonSchemaValidate, { validator })
+      .use(jsonSchemaValidate, { compiled })
       .use(rejsonStringify)
       .process(file);
     return file;
@@ -93,7 +94,7 @@ describe("jsonSchemaValidate", () => {
     /** @type string */
     let directory;
 
-    /** @type Validator */
+    /** @type CompiledSchema */
     let fileValidator;
 
     beforeAll(async () => {
@@ -101,7 +102,7 @@ describe("jsonSchemaValidate", () => {
       const path = join(directory, "person.schema.json");
       await writeFile(path, JSON.stringify({ $schema: "https://json-schema.org/v1", properties: { age: { minimum: 0 } } }));
       const jsonSchema = new JsonSchema({ dialects: [v1Dialect] });
-      fileValidator = await jsonSchema.compile(pathToFileURL(path).href);
+      fileValidator = await compile(jsonSchema, pathToFileURL(path).href);
     });
 
     afterAll(async () => {
@@ -112,7 +113,7 @@ describe("jsonSchemaValidate", () => {
       const file = new VFile({ path: join(directory, "data", "person.json"), value: `{ "age": -1 }` });
       await unified()
         .use(rejsonParse)
-        .use(jsonSchemaValidate, { validator: fileValidator })
+        .use(jsonSchemaValidate, { compiled: fileValidator })
         .use(rejsonStringify)
         .process(file);
 

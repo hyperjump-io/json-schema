@@ -1,7 +1,7 @@
 import { subexpressions } from "../kernel.js";
 
 /**
- * @import { CompiledSchema, Expression, Handle, KeywordGroup } from "../kernel.d.ts"
+ * @import { KernelSchema, Expression, Handle, KeywordGroup } from "../kernel.d.ts"
  * @import { Optimization } from "../optimize.js"
  */
 
@@ -40,7 +40,7 @@ import { subexpressions } from "../kernel.js";
  */
 export default {
   optimize(kernel, { plugins }) {
-    /** @type Map<Handle, CompiledSchema> */
+    /** @type Map<Handle, KernelSchema> */
     const replaced = new Map();
     if (plugins) {
       return replaced;
@@ -177,7 +177,7 @@ const addMarks = (marks, more) => {
  * operations on items don't mark properties, and the other way around.
  */
 class Analysis {
-  /** @type Record<Handle, CompiledSchema> */
+  /** @type Record<Handle, KernelSchema> */
   #schemas;
 
   /** @type {"properties" | "items"} */
@@ -190,7 +190,7 @@ class Analysis {
   #inProgress;
 
   /**
-   * @param {Record<Handle, CompiledSchema>} schemas
+   * @param {Record<Handle, KernelSchema>} schemas
    * @param {"properties" | "items"} kind
    */
   constructor(schemas, kind) {
@@ -203,7 +203,7 @@ class Analysis {
   /**
    * The marks every group in a schema but one makes
    *
-   * @type (schema: Exclude<CompiledSchema, boolean>, except?: KeywordGroup) => Marks | undefined
+   * @type (schema: Exclude<KernelSchema, boolean>, except?: KeywordGroup) => Marks | undefined
    */
   siblingMarks(schema, except) {
     const marks = nothing();

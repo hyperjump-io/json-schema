@@ -18,7 +18,7 @@ them, and `src/kernel/optimize.js` runs them.
 - The kernel's `reads` lists the schemas with a keyword group that reads
   marks (`evaluated`) or the dynamic scope (`dynamicScope`). Lowering
   records it, `optimize` keeps it right for the schemas passes replace,
-  and `restoreValidator` works it out again rather than trusting it. So
+  and `restore` works it out again rather than trusting it. So
   "does anything read marks?" isn't a walk over every expression, which
   took 1.7–2 ms on `package.json` each time a pass or evaluator asked, and
   `static-unevaluated` only looks at the schemas that read marks.

@@ -4,10 +4,12 @@ import { SchemaRegistry } from "../../registry/schema-registry.js";
 import { v1Dialect, v1DialectUri } from "../../dialects/v1/index.js";
 import combine from "./combine.js";
 import { BASIC } from "../../output/index.js";
+import { compile as compileSchema, serialize } from "../../operations/compile.js";
+import { validatorFor } from "../../operations/validate.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
- * @import { CompiledSchema, Kernel } from "../kernel.d.ts"
+ * @import { KernelSchema, Kernel } from "../kernel.d.ts"
  * @import { Mode } from "../optimize.js"
  */
 
@@ -28,9 +30,9 @@ describe("combine", () => {
   });
 
   test("types with nothing in common fail", async () => {
-    const validator = await compile({ type: "string", allOf: [{ type: "number" }] });
-    expect(validator.validate("a")).to.equal(false);
-    expect(validator.validate(1)).to.equal(false);
+    const compiled = await compile({ type: "string", allOf: [{ type: "number" }] });
+    expect(validatorFor(compiled)("a")).to.equal(false);
+    expect(validatorFor(compiled)(1)).to.equal(false);
   });
 
   test("ranges are the tightest limits, exclusive if an equal one is", async () => {
@@ -94,7 +96,7 @@ describe("combine", () => {
   });
 
   test("with plugins, inlined groups have their hooks in the group that applied them", async () => {
-    const validator = await compile({ type: "number", allOf: [{ type: "string" }] });
+    const compiled = await compile({ type: "number", allOf: [{ type: "string" }] });
     /** @type string[] */
     const calls = [];
     /** @type (location: string) => string */
@@ -106,7 +108,7 @@ describe("combine", () => {
       beforeKeyword: (keyword) => { calls.push(`beforeKeyword ${at(keyword.absoluteKeywordLocation)}`); },
       afterKeyword: (keyword, _at, valid) => { calls.push(`afterKeyword ${at(keyword.absoluteKeywordLocation)} ${valid}`); }
     };
-    validator.validate(1, { plugins: [recorder] });
+    validatorFor(compiled, { plugins: [recorder] })(1);
     expect(calls).to.eql([
       "beforeSchema ",
       "beforeKeyword /type",
@@ -120,8 +122,8 @@ describe("combine", () => {
   });
 
   test("with plugins, each inlined group has its own errors", async () => {
-    const validator = await compile({ type: "number", allOf: [{ type: "string" }, { minLength: 2 }] });
-    const result = validator.validate("a", { output: BASIC });
+    const compiled = await compile({ type: "number", allOf: [{ type: "string" }, { minLength: 2 }] });
+    const result = validatorFor(compiled, { output: BASIC })("a");
     expect(result.errors.map((error) => /** @type {{ absoluteKeywordLocation: string }} */ (error).absoluteKeywordLocation.replace(/.*#/, ""))).to.eql([
       "/type",
       "/allOf/1/minLength"
@@ -129,22 +131,22 @@ describe("combine", () => {
   });
 
   test("a combined schema means the same", async () => {
-    const validator = await compile({
+    const compiled = await compile({
       type: "number",
       minimum: 3,
       allOf: [{ type: "integer", minimum: 5 }, { type: ["number", "string"], maximum: 10 }]
     });
     /** @type Json[] */
     const instances = [4, 5, 5.5, 10, 11, "a"];
-    expect(instances.map((instance) => validator.validate(instance))).to.eql([false, true, false, true, false, false]);
+    expect(instances.map((instance) => validatorFor(compiled)(instance))).to.eql([false, true, false, true, false, false]);
   });
 });
 
-/** @type (schema: Record<string, Json>) => Promise<import("../../json-schema.d.ts").Validator> */
+/** @type (schema: Record<string, Json>) => Promise<import("../../operations/compile.d.ts").CompiledSchema> */
 const compile = async (schema) => {
   const uri = `https://example.com/schema-${count++}`;
   const registry = new SchemaRegistry([{ schema, retrievalUri: uri, dialectUri: v1DialectUri }]);
-  return jsonSchema.compile(uri, { registry });
+  return compileSchema(jsonSchema, uri, { registry });
 };
 
 /**
@@ -155,7 +157,7 @@ const compile = async (schema) => {
  * @type (schema: Record<string, Json>, mode?: Mode) => Promise<Json | undefined>
  */
 const optimized = async (schema, mode = fast) => {
-  const kernel = /** @type Kernel */ ((await compile(schema)).serialize());
+  const kernel = /** @type Kernel */ (serialize((await compile(schema))));
   const root = combine.optimize(kernel, mode).get(kernel.uri);
   if (root === undefined) {
     return undefined;
@@ -171,10 +173,10 @@ const optimized = async (schema, mode = fast) => {
  * The root schema after the pass, with each handle and location as its JSON
  * pointer
  *
- * @type (schema: Record<string, Json>, mode: Mode) => Promise<Exclude<CompiledSchema, boolean>>
+ * @type (schema: Record<string, Json>, mode: Mode) => Promise<Exclude<KernelSchema, boolean>>
  */
 const optimizedKernel = async (schema, mode) => {
-  const kernel = /** @type Kernel */ ((await compile(schema)).serialize());
+  const kernel = /** @type Kernel */ (serialize((await compile(schema))));
   const root = combine.optimize(kernel, mode).get(kernel.uri);
   if (typeof root !== "object" || root === null) {
     throw Error("Expected the root schema to be replaced");

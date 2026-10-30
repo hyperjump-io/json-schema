@@ -6,6 +6,8 @@ import { describe, test, beforeAll, afterAll, expect } from "vitest";
 import { JsonSchema, extendDialect } from "../json-schema.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import { fullFormats } from "../formats/full.js";
+import { compile } from "../operations/compile.js";
+import { annotatorFor, validatorFor } from "../operations/validate.js";
 
 /**
  * @import { Json, ReadonlyJson } from "@hyperjump/browser/json"
@@ -40,46 +42,46 @@ describe("format", () => {
   });
 
   test("v1 validates formats by default", async () => {
-    const validator = await v1().compile(await schemaFile({ format: "date" }));
+    const compiled = await compile(v1(), await schemaFile({ format: "date" }));
 
-    expect(validator.validate("2026-10-17")).to.equal(true);
-    expect(validator.validate("not a date")).to.equal(false);
-    expect(validator.validate(42)).to.equal(true);
+    expect(validatorFor(compiled)("2026-10-17")).to.equal(true);
+    expect(validatorFor(compiled)("not a date")).to.equal(false);
+    expect(validatorFor(compiled)(42)).to.equal(true);
   });
 
   test("a format that isn't supported is an error", async () => {
-    await expect(v1().compile(await schemaFile({ format: "nope" }))).rejects.toThrow("'nope' format isn't supported");
+    await expect(compile(v1(), await schemaFile({ format: "nope" }))).rejects.toThrow("'nope' format isn't supported");
   });
 
   test("the lite formats don't include the formats that need Unicode data", async () => {
-    await expect(v1().compile(await schemaFile({ format: "idn-hostname" }))).rejects.toThrow("'formats' config");
+    await expect(compile(v1(), await schemaFile({ format: "idn-hostname" }))).rejects.toThrow("'formats' config");
   });
 
   test("the full formats", async () => {
     const jsonSchema = v1({ formats: fullFormats });
-    const validator = await jsonSchema.compile(await schemaFile({ format: "idn-hostname" }));
+    const compiled = await compile(jsonSchema, await schemaFile({ format: "idn-hostname" }));
 
-    expect(validator.validate("例え.テスト")).to.equal(true);
-    expect(validator.validate("-invalid-")).to.equal(false);
+    expect(validatorFor(compiled)("例え.テスト")).to.equal(true);
+    expect(validatorFor(compiled)("-invalid-")).to.equal(false);
   });
 
   test("validateFormats overrides the dialect", async () => {
-    const validator = await v1({ validateFormats: false }).compile(await schemaFile({ format: "date" }));
+    const compiled = await compile(v1({ validateFormats: false }), await schemaFile({ format: "date" }));
 
-    expect(validator.validate("not a date")).to.equal(true);
+    expect(validatorFor(compiled)("not a date")).to.equal(true);
   });
 
   test("any format is allowed if formats aren't validated", async () => {
-    const validator = await v1({ validateFormats: false }).compile(await schemaFile({ format: "nope" }));
+    const compiled = await compile(v1({ validateFormats: false }), await schemaFile({ format: "nope" }));
 
-    expect(validator.validate("foo")).to.equal(true);
+    expect(validatorFor(compiled)("foo")).to.equal(true);
   });
 
   test("format is an annotation", async () => {
     for (const validateFormats of [true, false]) {
-      const validator = await v1({ validateFormats }).compile(await schemaFile({ format: "date" }));
+      const compiled = await compile(v1({ validateFormats }), await schemaFile({ format: "date" }));
 
-      const { node } = validator.annotate("2026-10-17");
+      const { node } = annotatorFor(compiled)("2026-10-17");
       expect(node.data?.annotations?.get("https://json-schema.org/keyword/format")).to.eql(["date"]);
     }
   });
@@ -88,10 +90,10 @@ describe("format", () => {
     /** @type Format */
     const even = { uri: "https://example.com/format/even", types: ["number"], validate: (value) => /** @type number */ (value) % 2 === 0 };
     const jsonSchema = v1({ dialects: [extendDialect(v1Dialect, { formats: { even } })] });
-    const validator = await jsonSchema.compile(await schemaFile({ format: "even" }));
+    const compiled = await compile(jsonSchema, await schemaFile({ format: "even" }));
 
-    expect(validator.validate(2)).to.equal(true);
-    expect(validator.validate(3)).to.equal(false);
+    expect(validatorFor(compiled)(2)).to.equal(true);
+    expect(validatorFor(compiled)(3)).to.equal(false);
   });
 
   test("a value of a type the format doesn't apply to is valid without calling validate", async () => {
@@ -107,28 +109,28 @@ describe("format", () => {
       }
     };
     const jsonSchema = v1({ dialects: [extendDialect(v1Dialect, { formats: { never } })] });
-    const validator = await jsonSchema.compile(await schemaFile({ format: "never" }));
+    const compiled = await compile(jsonSchema, await schemaFile({ format: "never" }));
 
-    expect(validator.validate("foo")).to.equal(false);
-    expect(validator.validate([1])).to.equal(false);
-    expect(validator.validate(42)).to.equal(true);
-    expect(validator.validate({ a: 1 })).to.equal(true);
-    expect(validator.validate(null)).to.equal(true);
+    expect(validatorFor(compiled)("foo")).to.equal(false);
+    expect(validatorFor(compiled)([1])).to.equal(false);
+    expect(validatorFor(compiled)(42)).to.equal(true);
+    expect(validatorFor(compiled)({ a: 1 })).to.equal(true);
+    expect(validatorFor(compiled)(null)).to.equal(true);
     expect(validated).to.eql(["foo", [1]]);
   });
 
   test("a format without types applies to every type", async () => {
     const never = { uri: "https://example.com/format/never", validate: () => false };
     const jsonSchema = v1({ dialects: [extendDialect(v1Dialect, { formats: { never } })] });
-    const validator = await jsonSchema.compile(await schemaFile({ format: "never" }));
+    const compiled = await compile(jsonSchema, await schemaFile({ format: "never" }));
 
     for (const value of ["foo", 42, true, null, [], {}]) {
-      expect(validator.validate(value)).to.equal(false);
+      expect(validatorFor(compiled)(value)).to.equal(false);
     }
   });
 
   test("a value of a type the format doesn't apply to is annotated", async () => {
-    const { node } = (await v1().compile(await schemaFile({ format: "date" }))).annotate(42);
+    const { node } = annotatorFor(await compile(v1(), await schemaFile({ format: "date" })))(42);
     expect(node.data?.annotations?.get("https://json-schema.org/keyword/format")).to.eql(["date"]);
   });
 });

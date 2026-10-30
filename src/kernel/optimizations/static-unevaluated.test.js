@@ -4,6 +4,7 @@ import { SchemaRegistry } from "../../registry/schema-registry.js";
 import { v1Dialect, v1DialectUri } from "../../dialects/v1/index.js";
 import { draft201909Dialect, draft201909DialectUri } from "../../dialects/draft-2019-09/index.js";
 import staticUnevaluated from "./static-unevaluated.js";
+import { compile as compileSchema, serialize } from "../../operations/compile.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
@@ -164,8 +165,8 @@ describe("staticUnevaluated", () => {
 const compile = async (schema, dialect = { jsonSchema, dialectUri: v1DialectUri }) => {
   const uri = `https://example.com/schema-${count++}`;
   const registry = new SchemaRegistry([{ schema, retrievalUri: uri, dialectUri: dialect.dialectUri }]);
-  const validator = await dialect.jsonSchema.compile(uri, { registry });
-  return /** @type Kernel */ (validator.serialize());
+  const compiled = await compileSchema(dialect.jsonSchema, uri, { registry });
+  return /** @type Kernel */ (serialize(compiled));
 };
 
 /**

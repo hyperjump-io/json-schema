@@ -1,10 +1,10 @@
 import { mapSubexpressions } from "../kernel.js";
 import { normalForm } from "../normalize.js";
-import { isInert } from "../optimize.js";
+import { isInert } from "../inert.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
- * @import { CompiledSchema, Expression, Handle, KeywordGroup, Scalar, TypeName } from "../kernel.d.ts"
+ * @import { KernelSchema, Expression, Handle, KeywordGroup, Scalar, TypeName } from "../kernel.d.ts"
  * @import { Optimization } from "../optimize.js"
  */
 
@@ -57,7 +57,7 @@ import { isInert } from "../optimize.js";
  */
 export default {
   optimize(kernel, mode) {
-    /** @type Map<Handle, CompiledSchema> */
+    /** @type Map<Handle, KernelSchema> */
     const replaced = new Map();
 
     /** @type Map<Handle, Set<TypeName> | null> */

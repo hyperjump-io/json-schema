@@ -9,7 +9,7 @@
   open question before the kernel, because every keyword would have needed
   a second evaluator. Now it's one evaluator for each operation.
 - `instrumented.js` evaluates everything else: with plugins, annotating,
-  and ASTs (`validateJson`, `validateNode`). It reads instances through
+  and ASTs (`input: "json"` and `"node"`). It reads instances through
   `InstanceOps` (`instance.js`), so it's written once for plain values and
   AST nodes. `jsInstance` and `astInstance` are instances of two classes,
   not object literals. Literals with the same properties share a hidden

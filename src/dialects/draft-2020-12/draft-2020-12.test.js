@@ -2,10 +2,13 @@ import { describe, test, beforeEach, expect } from "vitest";
 import { JsonSchema } from "../../json-schema.js";
 import { SchemaRegistry } from "../../registry/schema-registry.js";
 import { draft202012Dialect, draft202012DialectUri } from "./index.js";
+import { compile as compileSchema } from "../../operations/compile.js";
+import { validatorFor } from "../../operations/validate.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
  * @import { JsonSchemaConfig } from "../../json-schema.d.ts"
+ * @import { CompiledSchema } from "../../operations/compile.d.ts"
  */
 
 describe("draft-2020-12", () => {
@@ -15,10 +18,10 @@ describe("draft-2020-12", () => {
     return jsonSchema;
   };
 
-  /** @type (jsonSchema: JsonSchema, schemas: Json[], uri: string) => ReturnType<JsonSchema["compile"]> */
+  /** @type (jsonSchema: JsonSchema, schemas: Json[], uri: string) => Promise<CompiledSchema> */
   const compile = (jsonSchema, schemas, uri) => {
     const registry = new SchemaRegistry(schemas.map((schema) => ({ schema })));
-    return jsonSchema.compile(uri, { registry });
+    return compileSchema(jsonSchema, uri, { registry });
   };
 
   /** @type JsonSchema */
@@ -33,21 +36,21 @@ describe("draft-2020-12", () => {
     const schema = { $schema: draft202012DialectUri, $id: uri, format: "date" };
 
     test("is an annotation by default", async () => {
-      const validator = await compile(jsonSchema, [schema], uri);
+      const compiled = await compile(jsonSchema, [schema], uri);
 
-      expect(validator.validate("not a date")).to.equal(true);
+      expect(validatorFor(compiled)("not a date")).to.equal(true);
     });
 
     test("validates if the config says so", async () => {
-      const validator = await compile(draft202012({ validateFormats: true }), [schema], uri);
+      const compiled = await compile(draft202012({ validateFormats: true }), [schema], uri);
 
-      expect(validator.validate("2026-10-17")).to.equal(true);
-      expect(validator.validate("not a date")).to.equal(false);
+      expect(validatorFor(compiled)("2026-10-17")).to.equal(true);
+      expect(validatorFor(compiled)("not a date")).to.equal(false);
     });
 
     test("validates in a dialect with the format-assertion vocabulary", async () => {
       const metaUri = "https://example.com/format-assertion-meta";
-      const validator = await compile(jsonSchema, [
+      const compiled = await compile(jsonSchema, [
         {
           $schema: draft202012DialectUri,
           $id: metaUri,
@@ -59,7 +62,7 @@ describe("draft-2020-12", () => {
         { $schema: metaUri, $id: uri, format: "date" }
       ], uri);
 
-      expect(validator.validate("not a date")).to.equal(false);
+      expect(validatorFor(compiled)("not a date")).to.equal(false);
     });
   });
 });

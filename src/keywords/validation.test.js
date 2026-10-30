@@ -6,6 +6,8 @@ import { describe, test, beforeAll, afterAll, expect } from "vitest";
 import { JsonSchema } from "../json-schema.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import { BASIC } from "../output/index.js";
+import { compile } from "../operations/compile.js";
+import { validatorFor } from "../operations/validate.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
@@ -60,9 +62,9 @@ describe("validation keywords with syntax errors", () => {
 
   for (const [description, schema, json, ruleIds] of cases) {
     test(description, async () => {
-      const validator = await jsonSchema.compile(await schemaFile(schema));
+      const compiled = await compile(jsonSchema, await schemaFile(schema));
 
-      const result = validator.validateJson(json, { output: BASIC });
+      const result = validatorFor(compiled, { input: "json", output: BASIC })(json);
       expect(result.errors.map((error) => error.ruleId)).to.eql(ruleIds);
     });
   }

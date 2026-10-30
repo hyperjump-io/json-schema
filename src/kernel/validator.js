@@ -8,7 +8,9 @@ import { FLAG } from "../output/flag.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
- * @import * as API from "../json-schema.d.ts"
+ * @import * as API from "./validator.d.ts"
+ * @import { JsonSchema } from "../json-schema.d.ts"
+ * @import { EvaluationOptions } from "../operations/validate.d.ts"
  * @import { JsonSyntaxError, OutputFormat } from "../output/output-format.d.ts"
  * @import { EvaluationPlugin } from "./evaluation-plugin.d.ts"
  * @import { InstanceOps } from "../keyword.d.ts"
@@ -28,7 +30,7 @@ const noSyntaxErrors = /** @type JsonSyntaxError[] */ (/** @type unknown */ (Obj
 
 /** @implements API.Validator */
 export class Validator {
-  /** @type API.JsonSchema */
+  /** @type JsonSchema */
   #jsonSchema;
 
   /** @type Kernel */
@@ -55,7 +57,7 @@ export class Validator {
   #jsFlag;
 
   /**
-   * @param {API.JsonSchema} jsonSchema
+   * @param {JsonSchema} jsonSchema
    * @param {Kernel} kernel
    */
   constructor(jsonSchema, kernel) {
@@ -134,7 +136,7 @@ export class Validator {
    * @template R
    * @param {InstanceNode} node
    * @param {boolean} annotating
-   * @param {API.ValidationOptions<R> | undefined} options
+   * @param {EvaluationOptions<R> | undefined} options
    * @param {JsonSyntaxError[]} syntaxErrors
    * @returns {R}
    */
@@ -172,7 +174,7 @@ export class Validator {
    * @param {(annotating: boolean, plugins: EvaluationPlugin[]) => Evaluate<I>} evaluatorFor
    * @param {I} instance
    * @param {boolean} annotating
-   * @param {API.ValidationOptions<R> | undefined} options
+   * @param {EvaluationOptions<R> | undefined} options
    * @param {JsonSyntaxError[]} syntaxErrors
    * @returns {R}
    */

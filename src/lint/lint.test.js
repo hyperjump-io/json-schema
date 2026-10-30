@@ -9,6 +9,7 @@ import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import recommended from "./recommended.js";
 import thenElseWithoutIf from "./rules/then-else-without-if.js";
 import referenceWithoutTarget from "./rules/reference-without-target.js";
+import { lint } from "../operations/lint.js";
 
 const a = `{
   "$schema": "${v1DialectUri}",
@@ -18,7 +19,7 @@ const a = `{
 
 describe("lint", () => {
   test("results are plain data", async () => {
-    expect(await jsonSchemaWith(a).lint("https://example.com/a", { plugins: [thenElseWithoutIf] })).to.eql([{
+    expect(await lint(jsonSchemaWith(a), "https://example.com/a", { plugins: [thenElseWithoutIf] })).to.eql([{
       source: "json-schema-lint",
       ruleId: "then-else-without-if",
       severity: "warn",
@@ -30,13 +31,13 @@ describe("lint", () => {
   });
 
   test("the recommended preset by default", async () => {
-    const results = await jsonSchemaWith(a).lint("https://example.com/a");
+    const results = await lint(jsonSchemaWith(a), "https://example.com/a");
 
     expect(results.map((result) => result.ruleId)).to.eql(["then-else-without-if"]);
   });
 
   test("a preset with a rule adjusted after it", async () => {
-    const results = await jsonSchemaWith(a).lint("https://example.com/a", {
+    const results = await lint(jsonSchemaWith(a), "https://example.com/a", {
       plugins: [recommended, [thenElseWithoutIf, ["error"]]]
     });
 
@@ -44,7 +45,7 @@ describe("lint", () => {
   });
 
   test("a rule that's off", async () => {
-    const results = await jsonSchemaWith(a).lint("https://example.com/a", {
+    const results = await lint(jsonSchemaWith(a), "https://example.com/a", {
       plugins: [recommended, [thenElseWithoutIf, ["off"]]]
     });
 
@@ -52,28 +53,28 @@ describe("lint", () => {
   });
 
   test("the whole document, including definitions nothing references", async () => {
-    const results = await jsonSchemaWith(`{
+    const results = await lint(jsonSchemaWith(`{
       "$schema": "${v1DialectUri}",
       "$id": "https://example.com/main",
       "$defs": { "unused": { "then": { "type": "string" } } }
-    }`).lint("https://example.com/main", { plugins: [thenElseWithoutIf] });
+    }`), "https://example.com/main", { plugins: [thenElseWithoutIf] });
 
     expect(results).to.have.length(1);
   });
 
   test("the whole document, whatever the fragment", async () => {
-    const results = await jsonSchemaWith(`{
+    const results = await lint(jsonSchemaWith(`{
       "$schema": "${v1DialectUri}",
       "$id": "https://example.com/main",
       "then": { "type": "string" },
       "$defs": { "foo": { "else": true } }
-    }`).lint("https://example.com/main#/$defs/foo", { plugins: [thenElseWithoutIf] });
+    }`), "https://example.com/main#/$defs/foo", { plugins: [thenElseWithoutIf] });
 
     expect(results).to.have.length(2);
   });
 
   test("a document it references isn't linted, but rules can see it", async () => {
-    const results = await jsonSchemaWith(`{
+    const results = await lint(jsonSchemaWith(`{
       "$schema": "${v1DialectUri}",
       "$id": "https://example.com/main",
       "properties": {
@@ -84,7 +85,7 @@ describe("lint", () => {
       "$schema": "${v1DialectUri}",
       "$id": "https://example.com/other",
       "then": { "type": "string" }
-    }`).lint("https://example.com/main", { plugins: [thenElseWithoutIf, referenceWithoutTarget] });
+    }`), "https://example.com/main", { plugins: [thenElseWithoutIf, referenceWithoutTarget] });
 
     expect(results.map((result) => [result.uri, result.ruleId])).to.eql([
       ["https://example.com/main", "reference-without-target"]
@@ -92,22 +93,22 @@ describe("lint", () => {
   });
 
   test("configuration comments apply", async () => {
-    const results = await jsonSchemaWith(`{
+    const results = await lint(jsonSchemaWith(`{
       "$schema": "${v1DialectUri}",
       "$id": "https://example.com/main",
       "$comment": "json-schema-lint-disable then-else-without-if",
       "then": { "type": "string" }
-    }`).lint("https://example.com/main", { plugins: [thenElseWithoutIf] });
+    }`), "https://example.com/main", { plugins: [thenElseWithoutIf] });
 
     expect(results).to.eql([]);
   });
 
   test("a document's schema problems are returned, not thrown", async () => {
-    const results = await jsonSchemaWith(`{
+    const results = await lint(jsonSchemaWith(`{
       "$schema": "${v1DialectUri}",
       "$id": "https://example.com/bad",
       "minLength": -1
-    }`).lint("https://example.com/bad");
+    }`), "https://example.com/bad");
 
     expect(results).toMatchObject([{
       source: "json-schema",
@@ -119,7 +120,7 @@ describe("lint", () => {
 
   test("in a session", async () => {
     const session = jsonSchemaWith(a).session();
-    const results = await session.lint("https://example.com/a", { plugins: [thenElseWithoutIf] });
+    const results = await lint(session, "https://example.com/a", { plugins: [thenElseWithoutIf] });
 
     expect(results).to.have.length(1);
   });
@@ -141,7 +142,7 @@ describe("lint", () => {
       await writeFile(path, "{}");
       const jsonSchema = new JsonSchema({ allowRetrieval: [pathToFileURL(join(directory, "/")).href] });
 
-      await expect(jsonSchema.lint(pathToFileURL(path).href)).rejects.toThrow("isn't a schema");
+      await expect(lint(jsonSchema, pathToFileURL(path).href)).rejects.toThrow("isn't a schema");
     });
   });
 });

@@ -61,29 +61,42 @@ as you write it, so a misspelled keyword is a type error. See
 
 ## Validate
 
-Compile the schema once, then use the validator for as many values as you
-like.
+`validator` compiles the schema once and returns a function you can use
+for as many values as you like.
 
 ```typescript
-const validator = await jsonSchema.compile("https://example.com/person");
+import { validator } from "@hyperjump/json-schema";
 
-validator.validate({ name: "Jason", age: 42 }); // true
-validator.validate({ age: -1 }); // false
+const isPerson = await validator(jsonSchema, "https://example.com/person");
+
+isPerson({ name: "Jason", age: 42 }); // true
+isPerson({ age: -1 }); // false
 ```
 
 Compiling is the slow part. It finds the schema and everything it
 references, checks that they're valid schemas, and prepares them for
 validation. Validating is fast.
 
+For a one-off check, `validate` does both in one call, and a schema can be
+passed as a value instead of a URI. It compiles every time, so use
+`validator` for anything you validate more than once.
+
+```typescript
+import { validate } from "@hyperjump/json-schema";
+
+await validate(jsonSchema, { $schema: "https://json-schema.org/v1", type: "string" }, 42); // false
+```
+
 ## Find out what's wrong
 
-By default, `validate` only says whether a value is valid. Ask for the
+By default, a validator only says whether a value is valid. Ask for the
 `BASIC` output format to get a list of errors.
 
 ```typescript
 import { BASIC } from "@hyperjump/json-schema";
 
-const result = validator.validate({ age: -1 }, { output: BASIC });
+const checkPerson = await validator(jsonSchema, "https://example.com/person", { output: BASIC });
+const result = checkPerson({ age: -1 });
 
 result.valid; // false
 result.errors.length; // 2
@@ -121,8 +134,8 @@ everything in an error.
 
 ## Validate JSON text
 
-When the data is JSON text, such as a file or a request body, use
-`validateJson` instead of parsing it yourself. Errors then have a `place`:
+When the data is JSON text, such as a file or a request body, say so with
+`input: "json"` instead of parsing it yourself. Errors then have a `place`:
 the line and column of the value that failed. Syntax errors are reported
 too, and the rest of the text is still validated, so you see every problem
 at once.
@@ -141,7 +154,8 @@ const file = new VFile({
   path: "person.json",
   value: `{ "name": "Jason", "age": -1, }`
 });
-const result = validator.validateJson(String(file), { output: BASIC });
+const checkText = await validator(jsonSchema, "https://example.com/person", { input: "json", output: BASIC });
+const result = checkText(String(file));
 
 for (const error of result.errors) {
   const message = file.message(outputErrorMessage(error), {
@@ -188,7 +202,7 @@ schema if its `$schema` is a dialect, or its name ends with `.schema.json`.
 import { pathToFileURL } from "node:url";
 
 const uri = pathToFileURL("./schemas/person.schema.json").href;
-const validator = await jsonSchema.compile(uri);
+const isPerson = await validator(jsonSchema, uri);
 ```
 
 By default, only files in the working directory can be retrieved, so a
@@ -204,6 +218,8 @@ find those mistakes. `lint` runs the recommended rules on a schema document
 and returns what they find.
 
 ```typescript
+import { lint } from "@hyperjump/json-schema";
+
 jsonSchema.registry = jsonSchema.registry.with(`{
   "$schema": "https://json-schema.org/v1",
   "$id": "https://example.com/user",
@@ -212,7 +228,7 @@ jsonSchema.registry = jsonSchema.registry.with(`{
   "required": ["nmae"]
 }`);
 
-const results = await jsonSchema.lint("https://example.com/user");
+const results = await lint(jsonSchema, "https://example.com/user");
 
 for (const result of results) {
   console.log(result.message);

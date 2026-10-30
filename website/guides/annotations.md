@@ -26,7 +26,8 @@ An annotation belongs to part of a value. In this schema, `"Name"` is the
 with each node's annotations attached to it.
 
 ```typescript
-const { output, node } = validator.annotate({ name: "Jason" });
+const annotatePerson = await annotator(jsonSchema, "https://example.com/person");
+const { output, node } = annotatePerson({ name: "Jason" });
 
 output; // true
 node.data.annotations;
@@ -39,9 +40,9 @@ can use unist utilities like
 the nodes you need. Each node has a `jsonType`, its `location`, and its
 `children`.
 
-`annotateJson` does the same for JSON text, and the nodes have positions.
-`annotateNode` annotates a node you already have, and returns only the
-output. Like the validation methods, they take an
+With `input: "json"`, it does the same for JSON text, and the nodes have
+positions. With `input: "node"`, it annotates a node you already have, so
+`node` is the one you passed. Like `validator`, it takes an
 [`output`](output.md) option.
 
 ## Reading an annotation

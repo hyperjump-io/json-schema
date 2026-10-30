@@ -4,9 +4,10 @@ By default, validation only says whether a value is valid. To find out why
 it isn't, pass an output format as the `output` option.
 
 ```typescript
-import { BASIC } from "@hyperjump/json-schema";
+import { BASIC, validator } from "@hyperjump/json-schema";
 
-const result = validator.validate({ age: -1 }, { output: BASIC });
+const checkPerson = await validator(jsonSchema, "https://example.com/person", { output: BASIC });
+const result = checkPerson({ age: -1 });
 ```
 
 | Output | Result | Use it for |
@@ -48,7 +49,7 @@ The results below show only each error's `absoluteKeywordLocation` and
 A list of every keyword that failed, in document order.
 
 ```typescript
-const result = validator.validate({ age: -1 }, { output: BASIC });
+const result = await validate(jsonSchema, "https://example.com/person", { age: -1 }, { output: BASIC });
 ```
 
 ```json wrap
@@ -77,7 +78,7 @@ The same errors, nested under the keywords that applied them. Here,
 `minimum` is under the `properties` that applied its schema to `/age`.
 
 ```typescript
-const result = validator.validate({ age: -1 }, { output: DETAILED });
+const result = await validate(jsonSchema, "https://example.com/person", { age: -1 }, { output: DETAILED });
 ```
 
 ```json wrap

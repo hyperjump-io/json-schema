@@ -6,9 +6,10 @@ give one to a tool that can't follow references between documents.
 
 ```typescript
 import { pathToFileURL } from "node:url";
+import { bundle } from "@hyperjump/json-schema";
 
 const uri = pathToFileURL("./schemas/person.schema.json").href;
-const bundled = await jsonSchema.bundle(uri, {
+const bundled = await bundle(jsonSchema, uri, {
   id: "https://example.com/schemas/person.schema.json"
 });
 ```
@@ -84,7 +85,7 @@ What's bundled:
 ## Options
 
 ```typescript
-await jsonSchema.bundle(uri, {
+await bundle(jsonSchema, uri, {
   externalSchemas: ["https://schemas.example.com/common"],
   alwaysIncludeDialect: true,
   definitionNamingStrategy: "uuid"
@@ -98,7 +99,8 @@ await jsonSchema.bundle(uri, {
 | `alwaysIncludeDialect` | Give every embedded schema `$schema`, not only the ones in a different dialect |
 | `definitionNamingStrategy` | Name embedded schemas by their identifier (`"uri"`, the default) or by a random UUID (`"uuid"`) |
 
-`bundle` also takes `registry` and `allowRetrieval`, like `compile`.
+`bundle` also takes `registry` and `allowRetrieval`, like `validator`, and
+a schema can be given as a value.
 
 ## When a schema can't be bundled
 

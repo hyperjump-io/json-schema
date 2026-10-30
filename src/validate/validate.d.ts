@@ -1,10 +1,10 @@
 import type { Plugin } from "unified";
 import type { JsonDocumentNode } from "@hyperjump/browser/json";
-import type { Validator } from "../json-schema.d.ts";
+import type { CompiledSchema } from "../operations/compile.d.ts";
 
 export type JsonSchemaValidateOptions = {
   /** The compiled schema to validate the document against */
-  validator: Validator;
+  compiled: CompiledSchema;
 };
 
 /**

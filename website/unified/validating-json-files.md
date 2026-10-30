@@ -15,13 +15,13 @@ import { unified } from "unified";
 import { VFile } from "vfile";
 import { reporter } from "vfile-reporter";
 import { rejsonParse, rejsonStringify } from "@hyperjump/browser/json";
-import { jsonSchemaValidate } from "@hyperjump/json-schema";
+import { compile, jsonSchemaValidate } from "@hyperjump/json-schema";
 
-const validator = await jsonSchema.compile("https://example.com/person");
+const compiled = await compile(jsonSchema, "https://example.com/person");
 
 const file = await unified()
   .use(rejsonParse, { accept: "recovered" })
-  .use(jsonSchemaValidate, { validator })
+  .use(jsonSchemaValidate, { compiled })
   .use(rejsonStringify)
   .process(new VFile({
     path: "alice.json",

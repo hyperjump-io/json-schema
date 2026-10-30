@@ -3,7 +3,7 @@
 A compiled schema is a boolean, or the expressions of its keywords:
 
 ```ts
-type CompiledSchema = boolean | { resource: string; keywords: KeywordGroup[]; copyOf?: Handle };
+type KernelSchema = boolean | { resource: string; keywords: KeywordGroup[]; copyOf?: Handle };
 
 type KeywordGroup = {
   keywordUri: string;
@@ -46,11 +46,11 @@ type KeywordGroup = {
   the schema it copies, which is where it is. Lowering doesn't make
   copies, so a serialized kernel doesn't have any.
 - **Versioning.** A serialized compiled schema has `kernel: 1`, the version
-  of the kernel its expressions are in. `restoreValidator` rejects any other
+  of the kernel its expressions are in. `restore` rejects any other
   version. The version goes up when an operation's meaning changes.
 - **What's read.** The kernel's `reads` lists the schemas with a keyword
   group that reads marks (`evaluated`) or the dynamic scope
   (`dynamicScope`), so evaluators and the optimizer know what to track
   without reading every expression. It's derived from the expressions, so
-  `restoreValidator` works it out again, and adding it didn't change the
+  `restore` works it out again, and adding it didn't change the
   version.

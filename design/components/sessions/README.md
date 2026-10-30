@@ -27,14 +27,17 @@ Both libraries have a long-lived object and sessions created from it, and
   create a `JsonSchemaSession`. There's no default session. Browsing
   (`get`, `step`, …) is only on sessions, because a node needs its session to
   follow references.
-- `JsonSchema.compile(uri, { registry })` creates a session for that
-  compilation. Compilations that run at the same time each have their own
-  session, so they can't see each other's registries. A `Validator` doesn't
-  need its session after compiling, because its kernel is self-contained.
+- An operation given a `JsonSchema` (`compile(jsonSchema, uri, { registry })`)
+  creates a session for that call. Calls that run at the same time each
+  have their own session, so they can't see each other's registries. A
+  compiled schema doesn't need its session after compiling, because its
+  kernel is self-contained.
 - The `getDocument` override and the embedded index (see [Schema AST](../../specs/schema-ast.md)) are
   on `JsonSchemaSession`.
-- `JsonSchema.compile(uri)` compiles in a new session, so each compilation
-  sees changes. `JsonSchemaSession.compile` compiles in that session.
+- An operation given a `JsonSchema` runs in a new session, so each call
+  sees changes. Given a session, it runs in that session. Sessions only
+  browse; compiling, bundling, and linting are functions (see
+  [Operations](../api/operations.md)).
 - Dialects from the config belong to `JsonSchema`, and its `getDialect`
   only finds those. A dialect built from a meta-schema belongs to the
   session that built it. `JsonSchemaSession.getDialect` finds both, and it's

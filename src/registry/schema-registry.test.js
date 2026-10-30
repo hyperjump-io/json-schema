@@ -6,12 +6,15 @@ import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import vocabularyKeyword from "../keywords/vocabulary.js";
 import idKeyword from "../keywords/id.js";
 import typeKeyword from "../keywords/type.js";
+import { compile as compileSchema } from "../operations/compile.js";
+import { validatorFor } from "../operations/validate.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
  * @import { JsonSchemaConfig } from "../json-schema.d.ts"
  * @import { DialectConfig } from "../dialect.d.ts"
  * @import { JsonSchemaDocumentNode } from "../schema/schema-ast.d.ts"
+ * @import { CompiledSchema } from "../operations/compile.d.ts"
  */
 
 describe("SchemaRegistry", () => {
@@ -22,8 +25,8 @@ describe("SchemaRegistry", () => {
     jsonSchema = offline();
   });
 
-  /** @type (registry: SchemaRegistry, uri: string) => ReturnType<JsonSchema["compile"]> */
-  const compile = (registry, uri) => jsonSchema.compile(uri, { registry });
+  /** @type (registry: SchemaRegistry, uri: string) => Promise<CompiledSchema> */
+  const compile = (registry, uri) => compileSchema(jsonSchema, uri, { registry });
 
   /** @type (...schemas: (Json | string)[]) => SchemaRegistry */
   const registryOf = (...schemas) => new SchemaRegistry(schemas.map((schema) => ({ schema })));
@@ -32,21 +35,21 @@ describe("SchemaRegistry", () => {
     test("a schema is identified by its $id", async () => {
       const registry = registryOf(v1({ $id: "https://example.com/a", type: "string" }));
 
-      const validator = await compile(registry, "https://example.com/a");
-      expect(validator.validate("foo")).to.equal(true);
-      expect(validator.validate(42)).to.equal(false);
+      const compiled = await compile(registry, "https://example.com/a");
+      expect(validatorFor(compiled)("foo")).to.equal(true);
+      expect(validatorFor(compiled)(42)).to.equal(false);
     });
 
     test("a schema without an $id is identified by its retrieval URI", async () => {
       const registry = new SchemaRegistry().with(v1({ type: "string" }), { retrievalUri: "https://example.com/a" });
 
-      expect((await compile(registry, "https://example.com/a")).validate(42)).to.equal(false);
+      expect(validatorFor(await compile(registry, "https://example.com/a"))(42)).to.equal(false);
     });
 
     test("a relative $id is resolved against the retrieval URI", async () => {
       const registry = new SchemaRegistry().with(v1({ $id: "b", type: "string" }), { retrievalUri: "https://example.com/a" });
 
-      expect((await compile(registry, "https://example.com/b")).validate(42)).to.equal(false);
+      expect(validatorFor(await compile(registry, "https://example.com/b"))(42)).to.equal(false);
     });
 
     test("a schema with an $id is also found by its retrieval URI", async () => {
@@ -54,7 +57,7 @@ describe("SchemaRegistry", () => {
 
       const node = await jsonSchema.session({ registry }).get("https://example.com/a");
       expect(node.location).to.equal("https://example.com/b#");
-      expect((await compile(registry, "https://example.com/a")).validate(42)).to.equal(false);
+      expect(validatorFor(await compile(registry, "https://example.com/a"))(42)).to.equal(false);
     });
 
     test("a retrieval URI that's another schema's $id is an error when it's looked up", async () => {
@@ -70,13 +73,13 @@ describe("SchemaRegistry", () => {
     test("JSON text", async () => {
       const registry = registryOf(`{ "$schema": "${v1DialectUri}", "$id": "https://example.com/a", "type": "string" }`);
 
-      expect((await compile(registry, "https://example.com/a")).validate(42)).to.equal(false);
+      expect(validatorFor(await compile(registry, "https://example.com/a"))(42)).to.equal(false);
     });
 
     test("the dialect option is for a schema without $schema", async () => {
       const registry = new SchemaRegistry().with({ $id: "https://example.com/a", type: "string" }, { dialectUri: v1DialectUri });
 
-      expect((await compile(registry, "https://example.com/a")).validate(42)).to.equal(false);
+      expect(validatorFor(await compile(registry, "https://example.com/a"))(42)).to.equal(false);
     });
 
     test("a schema without an $id or a retrieval URI is reported when a lookup fails", async () => {
@@ -119,7 +122,7 @@ describe("SchemaRegistry", () => {
         v1({ $id: "https://example.com/b", type: "string" })
       );
 
-      expect((await compile(registry, "https://example.com/a")).validate(42)).to.equal(false);
+      expect(validatorFor(await compile(registry, "https://example.com/a"))(42)).to.equal(false);
     });
   });
 
@@ -149,7 +152,7 @@ describe("SchemaRegistry", () => {
       const registry = new SchemaRegistry().with(schema, { retrievalUri: "https://example.com/a" });
       schema.type = "number";
 
-      expect((await compile(registry, "https://example.com/a")).validate("foo")).to.equal(true);
+      expect(validatorFor(await compile(registry, "https://example.com/a"))("foo")).to.equal(true);
     });
 
     test("a schema that isn't JSON is an error when it's added", () => {
@@ -166,7 +169,7 @@ describe("SchemaRegistry", () => {
         .without("https://example.com/a")
         .with(v1({ type: "number" }), { retrievalUri: "https://example.com/a" });
 
-      expect((await compile(registry, "https://example.com/a")).validate(42)).to.equal(true);
+      expect(validatorFor(await compile(registry, "https://example.com/a"))(42)).to.equal(true);
     });
 
     test("removing a retrieval URI that isn't in the registry does nothing", () => {
@@ -181,7 +184,7 @@ describe("SchemaRegistry", () => {
       const registry = registryOf(v1({ $id: "https://example.com/a", $ref: "b" }))
         .concat(registryOf(v1({ $id: "https://example.com/b", type: "string" })));
 
-      expect((await compile(registry, "https://example.com/a")).validate(42)).to.equal(false);
+      expect(validatorFor(await compile(registry, "https://example.com/a"))(42)).to.equal(false);
     });
 
     test("concat shares schemas, so a schema two registries share is in it once", () => {
@@ -230,23 +233,23 @@ describe("SchemaRegistry", () => {
         .with(v1({}), { retrievalUri: "https://example.com/b" });
       const after = jsonSchema.session({ registry: edited });
 
-      expect((await before.compile("https://example.com/a")).validate(42)).to.equal(false);
-      await expect(before.compile("https://example.com/b")).rejects.toThrow(RetrievalNotAllowedError);
-      expect((await after.compile("https://example.com/a")).validate(42)).to.equal(true);
-      await expect(after.compile("https://example.com/b")).resolves.toBeDefined();
+      expect(validatorFor(await compileSchema(before, "https://example.com/a"))(42)).to.equal(false);
+      await expect(compileSchema(before, "https://example.com/b")).rejects.toThrow(RetrievalNotAllowedError);
+      expect(validatorFor(await compileSchema(after, "https://example.com/a"))(42)).to.equal(true);
+      await expect(compileSchema(after, "https://example.com/b")).resolves.toBeDefined();
     });
 
     test("a session registry is only seen by that session", async () => {
       const registry = registryOf(v1({ $id: "https://example.com/a", type: "string" }));
 
-      expect((await compile(registry, "https://example.com/a")).validate(42)).to.equal(false);
-      await expect(jsonSchema.compile("https://example.com/a")).rejects.toThrow(RetrievalNotAllowedError);
+      expect(validatorFor(await compile(registry, "https://example.com/a"))(42)).to.equal(false);
+      await expect(compileSchema(jsonSchema, "https://example.com/a")).rejects.toThrow(RetrievalNotAllowedError);
     });
 
     test("the JsonSchema's registry", async () => {
       jsonSchema.registry = registryOf(v1({ $id: "https://example.com/a" }));
 
-      await expect(jsonSchema.compile("https://example.com/a")).resolves.toBeDefined();
+      await expect(compileSchema(jsonSchema, "https://example.com/a")).resolves.toBeDefined();
     });
 
     test("a session sees the JsonSchema's registry as it was when the session was created", async () => {
@@ -254,8 +257,8 @@ describe("SchemaRegistry", () => {
       const before = jsonSchema.session();
       jsonSchema.registry = new SchemaRegistry();
 
-      await expect(before.compile("https://example.com/a")).resolves.toBeDefined();
-      await expect(jsonSchema.compile("https://example.com/a")).rejects.toThrow(RetrievalNotAllowedError);
+      await expect(compileSchema(before, "https://example.com/a")).resolves.toBeDefined();
+      await expect(compileSchema(jsonSchema, "https://example.com/a")).rejects.toThrow(RetrievalNotAllowedError);
     });
 
     test("a URI in both the session's registry and the JsonSchema's is an error", async () => {
@@ -312,7 +315,7 @@ describe("SchemaRegistry", () => {
       const registry = registryOf({ $schema: dialectUri, $id: "https://example.com/a" });
       const other = offline({ dialects: [v1Dialect, dialect] });
 
-      await expect(other.compile("https://example.com/a", { registry })).resolves.toBeDefined();
+      await expect(compileSchema(other, "https://example.com/a", { registry })).resolves.toBeDefined();
       await expect(compile(registry, "https://example.com/a")).rejects.toThrow(RetrievalError);
     });
 
@@ -347,14 +350,14 @@ describe("SchemaRegistry", () => {
       test("a schema is identified with the dialect its meta-schema defines", async () => {
         const registry = registryOf(metaSchema(), schema);
 
-        expect((await compile(registry, "https://example.com/a")).validate(42)).to.equal(false);
+        expect(validatorFor(await compile(registry, "https://example.com/a"))(42)).to.equal(false);
       });
 
       test("a schema added before its meta-schema", async () => {
         const before = registryOf(schema);
         const registry = before.with(metaSchema());
 
-        expect((await compile(registry, "https://example.com/a")).validate(42)).to.equal(false);
+        expect(validatorFor(await compile(registry, "https://example.com/a"))(42)).to.equal(false);
         // The schema can't be identified without the meta-schema
         await expect(compile(before, "https://example.com/a")).rejects.toThrow(RetrievalError);
       });
@@ -367,7 +370,7 @@ describe("SchemaRegistry", () => {
         await expect(compile(registry.without(dialectUri), "https://example.com/a")).rejects.toMatchObject({
           cause: { message: expect.stringContaining(dialectUri) }
         });
-        expect((await compile(registry, "https://example.com/a")).validate(42)).to.equal(false);
+        expect(validatorFor(await compile(registry, "https://example.com/a"))(42)).to.equal(false);
       });
 
       test("replacing the meta-schema", async () => {
@@ -377,14 +380,14 @@ describe("SchemaRegistry", () => {
           .without(dialectUri)
           .with(metaSchema(), { retrievalUri: dialectUri });
 
-        expect((await compile(registry, "https://example.com/a")).validate(42)).to.equal(false);
+        expect(validatorFor(await compile(registry, "https://example.com/a"))(42)).to.equal(false);
       });
 
       test("a meta-schema in the JsonSchema's registry identifies the session's schemas", async () => {
         jsonSchema.registry = registryOf(metaSchema());
         const registry = registryOf(schema);
 
-        expect((await compile(registry, "https://example.com/a")).validate(42)).to.equal(false);
+        expect(validatorFor(await compile(registry, "https://example.com/a"))(42)).to.equal(false);
       });
 
       test("a meta-schema replaced in the JsonSchema's registry", async () => {
@@ -393,7 +396,7 @@ describe("SchemaRegistry", () => {
         await expect(compile(registry, "https://example.com/a")).rejects.toThrow(RetrievalError);
 
         jsonSchema.registry = registryOf(metaSchema());
-        expect((await compile(registry, "https://example.com/a")).validate(42)).to.equal(false);
+        expect(validatorFor(await compile(registry, "https://example.com/a"))(42)).to.equal(false);
       });
 
       test("a meta-schema in the session's registry doesn't identify the JsonSchema's schemas", async () => {
@@ -403,7 +406,7 @@ describe("SchemaRegistry", () => {
         await expect(compile(registry, "https://example.com/a")).rejects.toThrow(RetrievalError);
 
         // It's found by its retrieval URI, and resolving it finds the meta-schema
-        expect((await compile(registry, "https://example.com/b")).validate(42)).to.equal(false);
+        expect(validatorFor(await compile(registry, "https://example.com/b"))(42)).to.equal(false);
       });
 
       test("a meta-schema that requires a vocabulary that isn't supported can't be found", async () => {

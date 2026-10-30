@@ -7,7 +7,7 @@ It's v1's bundler and keeps its options (`alwaysIncludeDialect`,
 `definitionNamingStrategy`, `externalSchemas`). A new kind of bundle is
 being considered (see [Open questions](../specs/keyword/README.md#open-questions)).
 
-- Like `compile`, `JsonSchema.bundle` creates a session for it, and its
+- Like `compile`, `bundle` (`src/operations/bundle.js`) creates a session for it, and its
   options include `SessionOptions`, so the session's registry and
   `allowRetrieval` decide what can be bundled. It's implemented in
   `src/bundle/bundle.js`, which isn't exported.

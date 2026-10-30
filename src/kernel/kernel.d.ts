@@ -146,7 +146,7 @@ export type KeywordGroup = {
  * A boolean schema, or an object schema's keyword groups, in the order
  * they're evaluated, and the URI of the schema resource it belongs to
  */
-export type CompiledSchema = boolean | {
+export type KernelSchema = boolean | {
   resource: string;
   keywords: KeywordGroup[];
 
@@ -169,7 +169,7 @@ export type Kernel = {
   /** The schema evaluation starts from */
   uri: Handle;
 
-  schemas: Record<Handle, CompiledSchema>;
+  schemas: Record<Handle, KernelSchema>;
 
   /**
    * The dynamic anchors of every schema resource a compiled schema belongs
@@ -180,7 +180,7 @@ export type Kernel = {
   /**
    * The schemas with a keyword group that reads each kind of evaluation
    * state, so evaluators and optimizations know what to track without
-   * reading every expression. `restoreValidator` works it out again.
+   * reading every expression. `restore` works it out again.
    */
   reads: Record<EvaluationState, Handle[]>;
 };
@@ -201,7 +201,7 @@ export const mapSubexpressions: (expression: Expression, map: (subexpression: Ex
 export const readsDynamicScope: (expression: Expression) => boolean;
 
 /** The kinds of evaluation state a schema's keyword groups read */
-export const schemaReads: (schema: CompiledSchema) => EvaluationState[];
+export const schemaReads: (schema: KernelSchema) => EvaluationState[];
 
 /** The item expressions in an item pattern */
 export const patternItems: (pattern: ItemPattern) => Expression[];

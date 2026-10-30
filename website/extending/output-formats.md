@@ -39,7 +39,7 @@ const MESSAGES = () => {
   };
 };
 
-validator.validate({ age: -1 }, { output: MESSAGES });
+await validate(jsonSchema, "https://example.com/person", { age: -1 }, { output: MESSAGES });
 ```
 
 ```json
@@ -88,6 +88,6 @@ const MESSAGES: OutputFormat<{ valid: boolean; messages: string[] }> = () => {
   // ...
 };
 
-const result = validator.validate({ age: -1 }, { output: MESSAGES });
+const result = await validate(jsonSchema, "https://example.com/person", { age: -1 }, { output: MESSAGES });
 result.messages; // string[]
 ```

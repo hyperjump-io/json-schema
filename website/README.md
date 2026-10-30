@@ -20,20 +20,18 @@ A JSON Schema validator and linter for JavaScript, for Node.js and browsers.
   retrieve whatever it references.
 
 ```typescript
-import { JsonSchema, SchemaRegistry } from "@hyperjump/json-schema";
+import { JsonSchema, validator } from "@hyperjump/json-schema";
 import { v1Dialect } from "@hyperjump/json-schema/v1";
 
 const jsonSchema = new JsonSchema({ dialects: [v1Dialect] });
-jsonSchema.registry = new SchemaRegistry().with({
+
+const isPerson = await validator(jsonSchema, {
   $schema: "https://json-schema.org/v1",
-  $id: "https://example.com/person",
   type: "object",
   properties: { name: { type: "string" } },
   required: ["name"]
 });
-
-const validator = await jsonSchema.compile("https://example.com/person");
-validator.validate({ name: "Jason" }); // true
+isPerson({ name: "Jason" }); // true
 ```
 
 Using version 1.x? Its docs are in the

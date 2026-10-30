@@ -5,11 +5,13 @@ evaluated, whether each passed, and every annotation. Plugins can't change
 the result. The output formats are plugins, and tools like language servers
 use them to see what applied to each part of a document.
 
-Pass plugins to any validation method:
+Pass plugins to `validate`, `validator`, `annotate`, or `annotator`. A
+validator's plugins are chosen when it's made, so each value it validates
+is evaluated with the same plugin objects.
 
 ```typescript
 const keywords = new Set();
-validator.validate(instance, {
+await validate(jsonSchema, uri, instance, {
   plugins: [{
     afterKeyword(keyword, at, valid) {
       keywords.add(keyword.absoluteKeywordLocation);
@@ -46,7 +48,8 @@ which aren't kept in the result. A language server can use it to show a
 ```typescript
 const description = "https://json-schema.org/keyword/description";
 const descriptions = new Map();
-validator.validateJson(json, {
+await validate(jsonSchema, uri, json, {
+  input: "json",
   plugins: [{
     annotation(keyword, at, value) {
       if (keyword.keywordUri === description) {

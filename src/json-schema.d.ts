@@ -1,20 +1,11 @@
 import type { Hyperjump, HyperjumpConfig } from "@hyperjump/browser";
-import type {
-  Json,
-  JsonErrorNode,
-  JsonNode,
-  JsonParseStatus,
-  ReadonlyJson
-} from "@hyperjump/browser/json";
+import type { Json } from "@hyperjump/browser/json";
 import type { JsonSchemaNode } from "./schema/schema-ast.d.ts";
 import type { Keyword } from "./keyword.d.ts";
 import type { Dialect, DialectConfig, DialectExtension, Vocabulary, VocabularyConfig } from "./dialect.d.ts";
 import type { Format } from "./format.d.ts";
-import type { EvaluationPlugin } from "./kernel/evaluation-plugin.d.ts";
 import type { SchemaRegistry } from "./registry/schema-registry.d.ts";
-import type { BundleOptions, JsonSchemaSession, LintOptions, SessionOptions } from "./session.d.ts";
-import type { SchemaMessage } from "./schema/schema-error.d.ts";
-import type { OutputFormat } from "./output/output-format.d.ts";
+import type { JsonSchemaSession, SessionOptions } from "./session.d.ts";
 
 export { outputErrorMessage, toVFileMessage } from "./output/validation-error.js";
 export { SchemaError } from "./schema/schema-error.js";
@@ -133,162 +124,7 @@ export class JsonSchema extends Hyperjump<JsonSchemaNode> {
    * its definitions named by URI
    */
   getVocabulary(uri: string): Vocabulary | undefined;
-
-  /**
-   * Compile a schema into a {@link Validator} that can be used for any
-   * number of instances, in a new session.
-   *
-   * @throws SchemaError if a schema has problems. It has every problem in
-   * the first document found to have any.
-   * @throws RetrievalError from `@hyperjump/browser` if a schema can't be
-   * retrieved.
-   */
-  compile(uri: string, options?: SessionOptions): Promise<Validator>;
-
-  /**
-   * Bundle a schema and every schema it references into one schema, in a
-   * new session. See {@link JsonSchemaSession.bundle}. The session's
-   * registries and `allowRetrieval` decide what can be bundled.
-   */
-  bundle(uri: string, options?: SessionOptions & BundleOptions): Promise<Json>;
-
-  /**
-   * Lint a schema document, in a new session. See
-   * {@link JsonSchemaSession.lint}. The session's registries and
-   * `allowRetrieval` decide what rules can see in other documents.
-   */
-  lint(uri: string, options?: SessionOptions & LintOptions): Promise<SchemaMessage[]>;
-
-  /**
-   * Restore a validator from {@link Validator.serialize}. It doesn't
-   * retrieve anything, but it needs the same keywords to have been added.
-   *
-   * A schema in a file is serialized with its `file:` URIs relative to it.
-   * `uri` is where it is now, like `pathToFileURL("schemas/person.json")`,
-   * which they're resolved against, so its locations in output and plugins
-   * are its files. Without it, they stay relative.
-   *
-   * @throws Error if the compiled schema is in a kernel version other than
-   * this library's (`kernel: 1`), or if a keyword or asserting format in it
-   * isn't in the config.
-   */
-  restoreValidator(compiled: ReadonlyJson, options?: RestoreOptions): Validator;
-
-  /** A shortcut for `(await compile(uri)).validate(instance, options)` */
-  validate<R = boolean>(uri: string, instance: ReadonlyJson, options?: ValidationOptions<R>): Promise<R>;
-
-  /** A shortcut for `(await compile(uri)).validateJson(json, options)` */
-  validateJson<R = boolean>(uri: string, json: string, options?: ValidationOptions<R>): Promise<R>;
-
-  /** A shortcut for `(await compile(uri)).annotate(instance, options)` */
-  annotate<R = boolean>(uri: string, instance: ReadonlyJson, options?: ValidationOptions<R>): Promise<AnnotationResult<R>>;
-
-  /** A shortcut for `(await compile(uri)).annotateJson(json, options)` */
-  annotateJson<R = boolean>(uri: string, json: string, options?: ValidationOptions<R>): Promise<AnnotationResult<R>>;
 }
-
-/**
- * A compiled schema. There are two ways to use it:
- *
- * - `validate` only tells you whether an instance is valid and why not. It
- *   never builds an AST.
- * - `annotate` validates and also returns the instance as an AST with
- *   annotations attached to its nodes.
- *
- * Each has a `Json` variant that takes JSON text instead of a value. A JSON
- * string is also a valid instance, so the two can't share a function. With
- * text, syntax errors are reported in `errors` along with validation errors,
- * and every error has a position. Each also has a `Node` variant that takes a
- * JSON AST you already have.
- */
-export type Validator = {
-  /** The URI of the compiled schema */
-  uri: string;
-
-  validate<R = boolean>(instance: ReadonlyJson, options?: ValidationOptions<R>): R;
-
-  /**
-   * Parse and validate JSON text. Any syntax error makes the instance
-   * invalid, even one the parser could recover from like a trailing comma,
-   * but the instance is still validated as far as it could be parsed so all
-   * the problems are reported at once.
-   */
-  validateJson<R = boolean>(json: string, options?: ValidationOptions<R>): R;
-
-  /**
-   * Validate a JSON AST, such as a value in a schema AST. Errors have the
-   * nodes' positions. Values that couldn't be parsed (`json-missing` and
-   * `json-invalid` nodes) aren't evaluated.
-   */
-  validateNode<R = boolean>(node: JsonNode<unknown, JsonErrorNode> | JsonErrorNode, options?: ValidationOptions<R>): R;
-
-  annotate<R = boolean>(instance: ReadonlyJson, options?: ValidationOptions<R>): AnnotationResult<R>;
-
-  /**
-   * Parse, validate, and annotate JSON text. The parse is error-tolerant, so
-   * you get an AST even if the text has syntax errors. Values that couldn't
-   * be parsed are {@link JsonErrorNode}s. Keywords don't evaluate those
-   * nodes, so the syntax error is the only error reported for them.
-   */
-  annotateJson<R = boolean>(json: string, options?: ValidationOptions<R>): AnnotationResult<R>;
-
-  /**
-   * Validate and annotate a JSON AST, such as a value in a schema AST. The
-   * annotations are attached to the node you pass, so annotating the same
-   * node again adds to them. Values that couldn't be parsed (`json-missing`
-   * and `json-invalid` nodes) aren't evaluated.
-   */
-  annotateNode<R = boolean>(node: JsonNode<unknown, JsonErrorNode> | JsonErrorNode, options?: ValidationOptions<R>): R;
-
-  /**
-   * The compiled schema as JSON, to be restored with
-   * {@link JsonSchema.restoreValidator} without compiling again. For a
-   * schema in a file, its `file:` URIs are relative to it: `#/properties/a`
-   * in its own document and `common/address.json#/type` in another. So it
-   * doesn't say where the files are, and it can be restored on another
-   * machine. Other URIs are absolute.
-   */
-  serialize(): Json;
-};
-
-export type RestoreOptions = {
-  /**
-   * Where the schema that was serialized is now, to resolve its relative
-   * `file:` URIs against
-   */
-  uri?: string;
-};
-
-export type ValidationOptions<R = unknown> = {
-  /**
-   * The output format, like `BASIC`.
-   * It's `FLAG` by default.
-   */
-  output?: OutputFormat<R>;
-
-  /**
-   * Plugins to run during this evaluation. With any plugin, the instance is
-   * evaluated once and nothing stops early, which is slower.
-   */
-  plugins?: EvaluationPlugin[];
-};
-
-/**
- * The validation output is a separate property because the FLAG output is a
- * boolean and can't be combined with the other properties.
- */
-export type AnnotationResult<R> = {
-  output: R;
-
-  /** Always `"success"` for `annotate`. */
-  status: JsonParseStatus;
-
-  /**
-   * The annotated instance. It's a {@link JsonErrorNode} if the text was so
-   * malformed that it has no value at all.
-   */
-  node: JsonNode<{ type: "json" }, JsonErrorNode> | JsonErrorNode;
-};
 
 declare module "unist" {
   interface Data {

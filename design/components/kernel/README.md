@@ -10,7 +10,7 @@ be traded away for speed.
 
 There are two phases:
 
-1. **Lower** (async, once per `Validator`, `lower.js`). Walk the schema AST
+1. **Lower** (async, once per compiled schema, `lower.js`). Walk the schema AST
    from the entry URI, retrieving referenced schemas with `get`. Each
    keyword's value is parsed by its shape, with the schemas in it compiled,
    and given to its `lower` with the siblings it declares. The result is a
@@ -21,14 +21,14 @@ There are two phases:
 2. **Build evaluators** (sync, lazy). The kernel is optimized for what an
    evaluation can observe (see [Optimizations](optimizations/README.md)) and turned into closures.
    Each evaluator is built the first time it's needed and cached on the
-   `Validator`. No `eval`. Bytecode run by one interpreter loop was tried
+   compiled schema (`Validator`, which isn't exported). No `eval`. Bytecode run by one interpreter loop was tried
    instead of closures and wasn't faster (see
    [the benchmarks](../../benchmarks/README.md)).
 
 The kernel is JSON, so a compiled schema can be serialized
-(`Validator.serialize`, `JsonSchema.restoreValidator`). It's serialized as
+(`serialize` and `restore`). It's serialized as
 lowered, before any optimization. It has `kernel: 1`, and
-`restoreValidator` rejects any other version. Restoring also looks up every
+`restore` rejects any other version. Restoring also looks up every
 keyword, asserting format, and escape hatch's `evaluate` the kernel needs,
 so a definition that's missing from the `JsonSchema` fails there, not on
 the first evaluation.
@@ -38,7 +38,7 @@ relative to the entry's document (`src/kernel/kernel-uris.js`), so it
 doesn't say where the files are and can be restored on another machine. A
 URI in the entry's own document is only its fragment (`#/properties/a`),
 so the document can be renamed too, and another file is a relative path
-(`common/address.json#/type`). `restoreValidator(compiled, { uri })`
+(`common/address.json#/type`). `restore(jsonSchema, serialized, { uri })`
 resolves them against where the entry is now. Without `uri`, they stay
 relative, which still works as handles, because handles are only
 compared. Other URIs are absolute. It didn't change the version, because
@@ -47,8 +47,8 @@ URIs restores as it is. Rejected: relative to the working directory, like
 messages, which would only restore from the same working directory, and a
 deployed application often runs from another.
 
-`validateJson` and `annotateJson` parse with browser's error-tolerant
-`fromJson` and then evaluate the AST. Validating while parsing is a possible
+JSON text (`input: "json"`) is parsed with browser's error-tolerant
+`fromJson`, and then the AST is evaluated. Validating while parsing is a possible
 optimization later. The two phases don't rule it out.
 
 ## Contents

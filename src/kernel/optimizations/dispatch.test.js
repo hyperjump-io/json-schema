@@ -7,10 +7,12 @@ import { astInstance, jsInstance } from "../instance.js";
 import { instrumented } from "../instrumented.js";
 import dispatch from "./dispatch.js";
 import { BASIC } from "../../output/index.js";
+import { compile as compileSchema, restore, serialize } from "../../operations/compile.js";
+import { validatorFor } from "../../operations/validate.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
- * @import { CompiledSchema, Expression, Handle, Kernel } from "../kernel.d.ts"
+ * @import { KernelSchema, Expression, Handle, Kernel } from "../kernel.d.ts"
  * @import { Mode } from "../optimize.js"
  */
 
@@ -106,7 +108,7 @@ describe("dispatch", () => {
       resources: { "https://example.com/opaque": { dynamicAnchors: {} } },
       reads: { evaluated: [], dynamicScope: [] }
     };
-    const root = /** @type Exclude<CompiledSchema, boolean> */ (dispatch.optimize(kernel, fast).get(kernel.uri));
+    const root = /** @type Exclude<KernelSchema, boolean> */ (dispatch.optimize(kernel, fast).get(kernel.uri));
     const opaque = /** @type Extract<Expression, { op: "opaque" }> */ (root.keywords[0].expression);
     expect(opaque.schemas[0]).to.include({ op: "typeSwitch" });
   });
@@ -250,10 +252,10 @@ describe("dispatch", () => {
      * @type (schema: Record<string, Json>, json: string) => Promise<[boolean, boolean]>
      */
     const both = async (schema, json) => {
-      const validator = await compile(schema);
-      const kernel = /** @type Kernel */ (validator.serialize());
+      const compiled = await compile(schema);
+      const kernel = /** @type Kernel */ (serialize(compiled));
       // Dispatching doesn't remove schemas
-      const replaced = /** @type Map<Handle, CompiledSchema> */ (dispatch.optimize(kernel, fast));
+      const replaced = /** @type Map<Handle, KernelSchema> */ (dispatch.optimize(kernel, fast));
       expect(replaced.size).to.be.greaterThan(0);
       const after = { ...kernel, schemas: { ...kernel.schemas, ...Object.fromEntries(replaced) } };
       const options = { instance: astInstance, isAst: true, annotating: false, instrumented: false };
@@ -271,14 +273,14 @@ describe("dispatch", () => {
     };
 
     test("a tag gets the result of the schemas that can pass it", async () => {
-      const validator = await compile(tags);
+      const compiled = await compile(tags);
       /** @type Json[] */
       const instances = [{ kind: "a", a: 1 }, { kind: "a", a: "x" }, { kind: "b", b: 1 }, { kind: "c" }, { a: 1 }, "x", 1];
-      expect(instances.map((instance) => validator.validate(instance))).to.eql([true, false, true, false, false, true, false]);
+      expect(instances.map((instance) => validatorFor(compiled)(instance))).to.eql([true, false, true, false, false, true, false]);
     });
 
     test("a tag is compared as JSON", async () => {
-      const validator = await compile({
+      const compiled = await compile({
         oneOf: [
           { type: "object", required: ["kind"], properties: { kind: { const: 1 } }, maxProperties: 1 },
           { type: "object", required: ["kind"], properties: { kind: { const: "1" } }, minProperties: 2 }
@@ -286,7 +288,7 @@ describe("dispatch", () => {
       });
       /** @type Json[] */
       const instances = [{ kind: 1.0 }, { kind: "1" }, { kind: "1", more: true }, { kind: true }];
-      expect(instances.map((instance) => validator.validate(instance))).to.eql([true, false, true, false]);
+      expect(instances.map((instance) => validatorFor(compiled)(instance))).to.eql([true, false, true, false]);
     });
 
     test("a tag that couldn't be parsed gets every schema, as before", async () => {
@@ -307,7 +309,7 @@ describe("dispatch", () => {
     });
 
     test("the switches mean the same to every evaluator", async () => {
-      const kernel = /** @type Kernel */ ((await compile({ type: "object" })).serialize());
+      const kernel = /** @type Kernel */ (serialize((await compile({ type: "object" }))));
       /** @type (expression: Expression) => Kernel */
       const withRoot = (expression) => {
         const root = /** @type Exclude<Kernel["schemas"][string], boolean> */ (kernel.schemas[kernel.uri]);
@@ -317,7 +319,7 @@ describe("dispatch", () => {
       const results = (expression, jsons) => {
         const parsed = jsons.filter((json) => !/: [,}]/.test(json));
         const evaluations = [
-          parsed.map((json) => jsonSchema.restoreValidator(withRoot(expression)).validate(JSON.parse(json)))
+          parsed.map((json) => validatorFor(restore(jsonSchema, withRoot(expression)))(JSON.parse(json)))
         ];
         for (const [instance, isAst] of /** @type const */ ([[astInstance, true], [jsInstance, false]])) {
           const evaluate = instrumented(jsonSchema, withRoot(expression), /** @type any */ ({ instance, isAst, annotating: false, instrumented: false }));
@@ -360,40 +362,40 @@ describe("dispatch", () => {
     });
 
     test("keeps the marks of the schema for the tag", async () => {
-      const validator = await compile({ ...tags, unevaluatedProperties: false });
+      const compiled = await compile({ ...tags, unevaluatedProperties: false });
       /** @type Json[] */
       const instances = [{ kind: "a", a: 1 }, { kind: "a", b: 1 }];
-      expect(instances.map((instance) => validator.validate(instance))).to.eql([true, false]);
+      expect(instances.map((instance) => validatorFor(compiled)(instance))).to.eql([true, false]);
     });
 
     test("BASIC has the errors of the schema for the tag", async () => {
-      const validator = await compile(tags);
-      const result = validator.validate({ kind: "b", b: "x" }, { output: BASIC });
+      const compiled = await compile(tags);
+      const result = validatorFor(compiled, { output: BASIC })({ kind: "b", b: "x" });
       expect(result.errors.map((error) => /** @type any */ (error).absoluteKeywordLocation.replace(/.*#/, ""))).to.eql(["/oneOf", "/oneOf/1/properties/b/type"]);
     });
 
     test("each type gets its own schema's result", async () => {
-      const validator = await compile({ oneOf: [{ type: "integer" }, { type: "string", maxLength: 1 }] });
-      expect([1, 1.5, "a", "ab", null, {}].map((instance) => validator.validate(instance))).to.eql([true, false, true, false, false, false]);
+      const compiled = await compile({ oneOf: [{ type: "integer" }, { type: "string", maxLength: 1 }] });
+      expect([1, 1.5, "a", "ab", null, {}].map((instance) => validatorFor(compiled)(instance))).to.eql([true, false, true, false, false, false]);
     });
 
     test("keeps the marks of the schema for the type", async () => {
-      const validator = await compile({
+      const compiled = await compile({
         oneOf: [{ type: "string" }, { type: "object", properties: { foo: true } }],
         unevaluatedProperties: false
       });
       /** @type Json[] */
       const instances = [{ foo: 1 }, { bar: 1 }, "a"];
-      expect(instances.map((instance) => validator.validate(instance))).to.eql([true, false, true]);
+      expect(instances.map((instance) => validatorFor(compiled)(instance))).to.eql([true, false, true]);
     });
   });
 });
 
-/** @type (schema: Record<string, Json>) => Promise<import("../../json-schema.d.ts").Validator> */
+/** @type (schema: Record<string, Json>) => Promise<import("../../operations/compile.d.ts").CompiledSchema> */
 const compile = async (schema) => {
   const uri = `https://example.com/schema-${count++}`;
   const registry = new SchemaRegistry([{ schema, retrievalUri: uri, dialectUri: v1DialectUri }]);
-  return jsonSchema.compile(uri, { registry });
+  return compileSchema(jsonSchema, uri, { registry });
 };
 
 /**
@@ -403,7 +405,7 @@ const compile = async (schema) => {
  * @type (schema: Record<string, Json>, keyword: string, mode?: Mode) => Promise<Json>
  */
 const optimized = async (schema, keyword, mode = fast) => {
-  const kernel = /** @type Kernel */ ((await compile(schema)).serialize());
+  const kernel = /** @type Kernel */ (serialize((await compile(schema))));
   const root = dispatch.optimize(kernel, mode).get(kernel.uri) ?? kernel.schemas[kernel.uri];
   if (typeof root === "boolean") {
     throw Error("Expected an object schema");

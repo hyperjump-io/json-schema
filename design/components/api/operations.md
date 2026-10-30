@@ -1,8 +1,8 @@
 # Operations
 
-Part of [The API as functions](README.md). Decided 2026-10-29. Output
-formats as values were built the same day (stage 3). The rest isn't built
-yet. The CLI doesn't choose an output format, so it didn't need a name map.
+Part of [The API as functions](README.md). Decided 2026-10-29, and built
+the same day (output formats in stage 3, the rest in stage 4). How it
+works is in [Validation API](../validation-api/README.md). The CLI doesn't choose an output format, so it didn't need a name map.
 
 ```ts
 type Context = JsonSchema | JsonSchemaSession;
@@ -48,8 +48,9 @@ the source of truth once they're written.
   format and plugins are set when it's made, so the evaluator for them is
   chosen once.
 - `compile`, `serialize`, and `restore` are for keeping a compiled schema.
-  A `CompiledSchema` is opaque. A function to get a validator from one is
-  part of building this (`validatorFor` was the working name).
+  A `CompiledSchema` is opaque. `validatorFor` and `annotatorFor` get
+  functions from one. The kernel format's own `CompiledSchema` (one schema
+  in a `Kernel`) was renamed `KernelSchema`.
 - Instances come in three forms, chosen with `input`, not three functions
   for each operation. A JSON string is also a valid instance, so the form
   can't be detected, which is why there were `validateJson` and

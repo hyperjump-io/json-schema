@@ -7,7 +7,7 @@ import { readsMarks } from "./kernel.js";
  * @import { Json } from "@hyperjump/browser/json"
  * @import { JsonSchema } from "../json-schema.d.ts"
  * @import { EvaluateContext, Keyword } from "../keyword.d.ts"
- * @import { CompiledSchema, Expression, Handle, ItemPattern, JsonTypeName, Kernel, Selector, TypeName } from "./kernel.d.ts"
+ * @import { KernelSchema, Expression, Handle, ItemPattern, JsonTypeName, Kernel, Selector, TypeName } from "./kernel.d.ts"
  */
 
 /**
@@ -77,7 +77,7 @@ export const fast = (jsonSchema, kernel) => {
     return evaluator;
   };
 
-  /** @type (compiled: CompiledSchema) => Evaluator */
+  /** @type (compiled: KernelSchema) => Evaluator */
   const buildSchema = (compiled) => {
     if (typeof compiled === "boolean") {
       return () => compiled;
@@ -763,7 +763,7 @@ export const fast = (jsonSchema, kernel) => {
    */
   const onlyTypes = (expression) => {
     if (expression.op === "apply" && typeof kernel.schemas[expression.schema] === "object") {
-      const compiled = /** @type Exclude<CompiledSchema, boolean> */ (kernel.schemas[expression.schema]);
+      const compiled = /** @type Exclude<KernelSchema, boolean> */ (kernel.schemas[expression.schema]);
       const expressions = compiled.keywords.map((group) => group.expression).filter((subexpression) => !isInert(subexpression));
       return expressions.length === 1 && expressions[0].op === "typeIs" ? expressions[0].types : undefined;
     }

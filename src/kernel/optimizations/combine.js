@@ -1,9 +1,9 @@
 import { mapSubexpressions, subexpressions } from "../kernel.js";
 import { normalForm } from "../normalize.js";
-import { isInert } from "../optimize.js";
+import { isInert } from "../inert.js";
 
 /**
- * @import { CompiledSchema, Expression, Handle, Kernel, KeywordGroup, TypeName } from "../kernel.d.ts"
+ * @import { KernelSchema, Expression, Handle, Kernel, KeywordGroup, TypeName } from "../kernel.d.ts"
  * @import { Mode, Optimization } from "../optimize.js"
  */
 
@@ -58,10 +58,10 @@ export default {
 /**
  * Each schema with what it applies inlined and combined, as one group
  *
- * @type (kernel: Kernel, isInlinable: Inlinable, readsMarks: Set<Handle>) => Map<Handle, CompiledSchema>
+ * @type (kernel: Kernel, isInlinable: Inlinable, readsMarks: Set<Handle>) => Map<Handle, KernelSchema>
  */
 const combined = (kernel, isInlinable, readsMarks) => {
-  /** @type Map<Handle, CompiledSchema> */
+  /** @type Map<Handle, KernelSchema> */
   const replaced = new Map();
 
   /**
@@ -76,7 +76,7 @@ const combined = (kernel, isInlinable, readsMarks) => {
   /** @type Set<Handle> */
   const inProgress = new Set();
 
-  /** @type (handle: Handle, schema: Exclude<CompiledSchema, boolean>) => { conjunction: Expression[]; changed: boolean } */
+  /** @type (handle: Handle, schema: Exclude<KernelSchema, boolean>) => { conjunction: Expression[]; changed: boolean } */
   const conjunctionOf = (handle, schema) => {
     let result = conjunctions.get(handle);
     if (result !== undefined) {
@@ -136,10 +136,10 @@ const combined = (kernel, isInlinable, readsMarks) => {
  * applied schemas' groups. Groups nothing in the mode can see are left out
  * of an `inline`, as `drop-groups` leaves them out of a schema.
  *
- * @type (kernel: Kernel, mode: Mode, isInlinable: Inlinable, readsMarks: Set<Handle>) => Map<Handle, CompiledSchema>
+ * @type (kernel: Kernel, mode: Mode, isInlinable: Inlinable, readsMarks: Set<Handle>) => Map<Handle, KernelSchema>
  */
 const nested = (kernel, mode, isInlinable, readsMarks) => {
-  /** @type Map<Handle, CompiledSchema> */
+  /** @type Map<Handle, KernelSchema> */
   const replaced = new Map();
 
   /**
@@ -153,7 +153,7 @@ const nested = (kernel, mode, isInlinable, readsMarks) => {
   /** @type Set<Handle> */
   const inProgress = new Set();
 
-  /** @type (handle: Handle, schema: Exclude<CompiledSchema, boolean>) => { keywords: KeywordGroup[]; changed: boolean } */
+  /** @type (handle: Handle, schema: Exclude<KernelSchema, boolean>) => { keywords: KeywordGroup[]; changed: boolean } */
   const keywordsOf = (handle, schema) => {
     let result = inlined.get(handle);
     if (result !== undefined) {

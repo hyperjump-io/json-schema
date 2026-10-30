@@ -2,6 +2,7 @@ import { describe, test, expect } from "vitest";
 import { JsonSchema, SchemaError, toVFileMessage } from "../json-schema.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
+import { compile } from "../operations/compile.js";
 
 describe("SchemaError", () => {
   test("its message describes the first problem", async () => {
@@ -41,7 +42,7 @@ const schemaError = async (schema) => {
   jsonSchema.registry = new SchemaRegistry().with(schema);
 
   try {
-    await jsonSchema.compile("https://example.com/bad");
+    await compile(jsonSchema, "https://example.com/bad");
   } catch (error) {
     if (error instanceof SchemaError) {
       return error;

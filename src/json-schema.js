@@ -1,16 +1,12 @@
 import { Hyperjump } from "@hyperjump/browser";
 import { toAbsoluteIri } from "@hyperjump/uri";
 import { JsonSchemaMediaTypePlugin } from "./schema/media-type-plugin.js";
-import { withResolvedUris } from "./kernel/kernel-uris.js";
 import { JsonOrSchemaMediaTypePlugin } from "./schema/json-media-type-plugin.js";
 import { JsonSchemaSession } from "./session.js";
 import { SchemaRegistry } from "./registry/schema-registry.js";
 import schemaKeyword from "./keywords/schema.js";
-import unknownKeyword, { keywordDefinitionUri } from "./keywords/unknown.js";
+import unknownKeyword from "./keywords/unknown.js";
 import { assertNoReservedKeywords } from "./dialects/extend-dialect.js";
-import { Validator } from "./kernel/validator.js";
-import { schemaReads, subexpressions } from "./kernel/kernel.js";
-import { keywordEvaluate } from "./kernel/fast.js";
 
 export { outputErrorMessage, toVFileMessage } from "./output/validation-error.js";
 export { SchemaError } from "./schema/schema-error.js";
@@ -21,7 +17,6 @@ export { extendDialect } from "./dialects/extend-dialect.js";
  * @import { Keyword } from "./keyword.d.ts"
  * @import { Format } from "./format.d.ts"
  * @import { Dialect, DialectConfig, Vocabulary, VocabularyConfig } from "./dialect.d.ts"
- * @import { Expression, Kernel } from "./kernel/kernel.d.ts"
  * @import { JsonSchemaNode } from "./schema/schema-ast.d.ts"
  * @import * as API from "./json-schema.d.ts"
  */
@@ -243,81 +238,5 @@ export class JsonSchema extends Hyperjump {
         throw Error(`The ${definedIn} has no definition for the '${keywords[name]}' keyword. Add it to the dialect or the 'keywords' config.`);
       }
     }
-  }
-
-  /** @type API.JsonSchema["compile"] */
-  async compile(uri, options) {
-    return this.session(options).compile(uri);
-  }
-
-  /** @type API.JsonSchema["bundle"] */
-  async bundle(uri, options) {
-    return this.session(options).bundle(uri, options);
-  }
-
-  /** @type API.JsonSchema["lint"] */
-  async lint(uri, options) {
-    return this.session(options).lint(uri, options);
-  }
-
-  /** @type API.JsonSchema["restoreValidator"] */
-  restoreValidator(compiled, options = {}) {
-    const kernel = /** @type Kernel */ (compiled);
-    const version = typeof compiled === "object" && compiled !== null && !Array.isArray(compiled) ? kernel.kernel : undefined;
-    if (version !== 1) {
-      throw Error(`Can't restore a compiled schema in kernel version ${JSON.stringify(version)}. This version of the library only supports version 1.`);
-    }
-
-    // Plugins see each keyword's definition, asserting formats are
-    // validated with theirs, and escape hatches by their keyword's
-    // `evaluate`
-    /** @type (expression: Expression) => void */
-    const checkDefinitions = (expression) => {
-      if (expression.op === "format" && expression.assert) {
-        this.getFormat(/** @type string */ (expression.uri));
-      } else if (expression.op === "predicate" || expression.op === "opaque") {
-        keywordEvaluate(this, expression.keyword);
-      }
-      subexpressions(expression).forEach(checkDefinitions);
-    };
-
-    // What's read is worked out again rather than trusted, because an
-    // evaluator that doesn't track what an expression reads fails
-    /** @type Kernel["reads"] */
-    const reads = { evaluated: [], dynamicScope: [] };
-    for (const handle in kernel.schemas) {
-      const schema = kernel.schemas[handle];
-      if (typeof schema !== "boolean") {
-        for (const { keywordUri, expression } of schema.keywords) {
-          this.getKeyword(keywordDefinitionUri(keywordUri));
-          checkDefinitions(expression);
-        }
-      }
-      for (const state of schemaReads(schema)) {
-        reads[state].push(handle);
-      }
-    }
-
-    return new Validator(this, withResolvedUris({ ...kernel, reads }, options.uri));
-  }
-
-  /** @type API.JsonSchema["validate"] */
-  async validate(uri, instance, options) {
-    return (await this.compile(uri)).validate(instance, options);
-  }
-
-  /** @type API.JsonSchema["validateJson"] */
-  async validateJson(uri, json, options) {
-    return (await this.compile(uri)).validateJson(json, options);
-  }
-
-  /** @type API.JsonSchema["annotate"] */
-  async annotate(uri, instance, options) {
-    return (await this.compile(uri)).annotate(instance, options);
-  }
-
-  /** @type API.JsonSchema["annotateJson"] */
-  async annotateJson(uri, json, options) {
-    return (await this.compile(uri)).annotateJson(json, options);
   }
 }

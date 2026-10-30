@@ -8,11 +8,11 @@
 - One `JsonSchema` runs every test case of a release. Each test case's
   schema and `externalSchemas` are in a session registry, which keeps test
   cases from seeing each other's schemas, and `http(s):` is removed so
-  nothing is retrieved. Each test is checked with `validate`,
-  `validateJson`, BASIC, and `annotate`. Test cases tagged
+  nothing is retrieved. Each test is checked as a value, as JSON
+  text, with BASIC, and annotated. Test cases tagged
   `format-assertion` run with `validateFormats`.
 - The suite's annotation tests run in each directory's
-  `annotation-test-suite.test.js` with `annotate` and `annotateJson`. Only
+  `annotation-test-suite.test.js`, annotating values and JSON text. Only
   annotation values are compared, in any order, because annotations don't
   record the schema they came from.
 - The runners share `describeValidationTestSuite` and

@@ -18,16 +18,18 @@ Start one yourself to:
 ```typescript
 const session = jsonSchema.session({ registry });
 
-const person = await session.compile("https://example.com/person");
-const address = await session.compile("https://example.com/address");
+const isPerson = await validator(session, "https://example.com/person");
+const isAddress = await validator(session, "https://example.com/address");
 
 const name = await session.get(
   "https://example.com/person#/properties/name"
 );
 ```
 
-A session takes the same `registry` and `allowRetrieval` options as
-`compile`. A validator doesn't need its session after it's compiled.
+Every operation takes a session in place of the `JsonSchema`, so they share
+what it retrieved. A session takes the same `registry` and
+`allowRetrieval` options as an operation, and an operation given a session
+can't take them. A validator doesn't need its session after it's compiled.
 
 A session sees documents as they were when it first retrieved them, so
 start a new one to see changes. Responses from HTTP are cached across

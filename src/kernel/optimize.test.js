@@ -3,6 +3,7 @@ import { JsonSchema } from "../json-schema.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import { optimize } from "./optimize.js";
+import { compile as compileSchema, serialize } from "../operations/compile.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
@@ -33,6 +34,6 @@ describe("optimize", () => {
 const compile = async (schema) => {
   const uri = `https://example.com/schema-${count++}`;
   const registry = new SchemaRegistry([{ schema, retrievalUri: uri, dialectUri: v1DialectUri }]);
-  const validator = await jsonSchema.compile(uri, { registry });
-  return /** @type Kernel */ (validator.serialize());
+  const compiled = await compileSchema(jsonSchema, uri, { registry });
+  return /** @type Kernel */ (serialize(compiled));
 };

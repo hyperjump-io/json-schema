@@ -1,12 +1,10 @@
 import type { DocumentNode, GetOptions, Session } from "@hyperjump/browser";
 import type { Json } from "@hyperjump/browser/json";
 import type { Data } from "unist";
-import type { PluggableList } from "unified";
-import type { SchemaMessage } from "./schema/schema-error.d.ts";
 import type { JsonSchemaNode } from "./schema/schema-ast.d.ts";
 import type { Dialect } from "./dialect.d.ts";
 import type { SchemaRegistry } from "./registry/schema-registry.d.ts";
-import type { JsonSchema, Validator } from "./json-schema.d.ts";
+import type { JsonSchema } from "./json-schema.d.ts";
 import type { SchemaError } from "./schema/schema-error.d.ts";
 
 export type SessionOptions = {
@@ -28,54 +26,11 @@ export type SessionOptions = {
   allowRetrieval?: string[];
 };
 
-export type BundleOptions = {
-  /**
-   * Give every embedded schema `$schema`. By default, only one whose dialect
-   * is different from the main schema's has it.
-   */
-  alwaysIncludeDialect?: boolean;
-
-  /**
-   * The name of an embedded schema in the definitions: its identifier
-   * (`uri`, the default) or a random UUID (`uuid`).
-   */
-  definitionNamingStrategy?: DefinitionNamingStrategy;
-
-  /**
-   * Schemas that will be available where the bundle is used, so they aren't
-   * embedded, and neither is anything only they reference.
-   */
-  externalSchemas?: string[];
-
-  /**
-   * The main schema's identifier, for a main schema from a file, like
-   * `https://example.com/schemas/person.schema.json`. A schema can't be
-   * identified by a file, so each embedded file is identified relative to
-   * it, where the file is relative to the main schema
-   * (`https://example.com/schemas/common/address.schema.json`), and
-   * references between them find the same schemas. It's needed to embed a
-   * file that doesn't have an `$id` of its own. A schema that isn't a file,
-   * or has an `$id`, keeps it. It has to be an absolute URI that isn't a
-   * file, without a fragment.
-   */
-  id?: string;
-};
-
-export type DefinitionNamingStrategy = "uri" | "uuid";
-
-export type LintOptions = {
-  /**
-   * The lint plugins, in the shape of `.hyperjumprc`'s: rules and presets,
-   * each optionally with its config (`[recommended, [rule, ["error"]]]`).
-   * The default is `lint/recommended`.
-   */
-  plugins?: PluggableList;
-};
-
 /**
- * Retrieves, browses, and compiles schemas. Everything resolved belongs to
- * the session: the documents it retrieves and the dialects it builds from
- * meta-schemas. Create one with {@link JsonSchema.session}.
+ * Retrieves and browses schemas. Everything resolved belongs to the session:
+ * the documents it retrieves and the dialects it builds from meta-schemas.
+ * Create one with {@link JsonSchema.session}, and pass it to operations, like
+ * `validator` and `bundle`, so they share what it retrieved.
  */
 export class JsonSchemaSession extends Session<JsonSchemaNode> {
   constructor(jsonSchema: JsonSchema, options?: SessionOptions);
@@ -103,7 +58,8 @@ export class JsonSchemaSession extends Session<JsonSchemaNode> {
    * `JsonSchemaDocumentNode.definedDialect`). That's `$vocabulary` in 2019-09
    * and 2020-12. The meta-schema must be a schema (`application/schema+json`
    * or a `.schema.json` file). A JSON document isn't used even if it has a
-   * `$vocabulary`. A self-describing meta-schema's dialect has to be added.
+   * `$vocabulary`. A self-describing meta-schema's dialect has to be in the
+   * config.
    *
    * @throws Error if the meta-schema can't be retrieved, isn't a schema,
    * doesn't define a dialect, or depends on a meta-schema that depends on
@@ -111,75 +67,14 @@ export class JsonSchemaSession extends Session<JsonSchemaNode> {
    */
   getDialect(uri: string, options?: GetDialectOptions): Promise<Dialect>;
 
-  /** Whether a dialect has been added to the {@link JsonSchema} or built in this session */
+  /** Whether a dialect is in the {@link JsonSchema}'s config or was built in this session */
   hasDialect(uri: string): boolean;
 
   /**
-   * Compile a schema into a {@link Validator}. The validator doesn't need
-   * the session after it's compiled.
-   *
-   * @throws SchemaError if a schema has problems. It has every problem in
-   * the first document found to have any.
-   * @throws RetrievalError from `@hyperjump/browser` if a schema can't be
-   * retrieved.
-   */
-  compile(uri: string): Promise<Validator>;
-
-  /**
-   * Bundle a schema and every schema it references into one compound schema
-   * document, the way the 2020-12 specification describes, in any dialect.
-   * Each referenced document is embedded in the main schema's definitions
-   * (`$defs`, or `definitions` in draft-04 through draft-07) with its
-   * identifier, so references find it without being changed, and the bundle
-   * gives the same output as the schemas it was made from.
-   *
-   * The whole document `uri` is in is bundled. References are `$ref` and
-   * 2020-12's `$dynamicRef`, including ones in definitions nothing uses.
-   * Meta-schemas aren't bundled.
-   *
-   * The main schema always has `$schema`. It's identified by its URI, unless
-   * it's a file. A schema can't be identified by a file, so a main schema
-   * from a file is identified by the `id` option, and each embedded file is
-   * identified where it is relative to the main schema, resolved against
-   * `id`, so references between them find the same schemas. A file with an
-   * `$id` of its own, and anything that isn't a file, keeps its URI. A main
-   * schema from a file that embeds nothing doesn't need `id`, and isn't
-   * given an identifier without it.
-   *
-   * @throws Error if a schema can't be embedded: a reference finds a schema
-   * that's identified by a different URI, the root of a referenced schema is
-   * a `$ref` that replaces the whole object (draft-04 through draft-07),
-   * which would ignore its identifier, a file would be embedded without
-   * `id`, or the main schema's dialect has nowhere to put it. Also if `id`
-   * isn't an absolute URI, is a file, or has a fragment.
-   * @throws SchemaError if a schema has problems.
-   * @throws RetrievalError from `@hyperjump/browser` if a schema can't be
-   * found.
-   */
-  bundle(uri: string, options?: BundleOptions): Promise<Json>;
-
-  /**
-   * Lint the whole document `uri` is in: every schema in it, including
-   * definitions nothing references, as a file is linted in a unified
-   * pipeline. The documents it references aren't linted, but rules can look
-   * at them, through this session.
-   *
-   * It returns each message as plain data, with its `severity`: `"error"`
-   * if the rule is configured as an error, and `"warn"` otherwise. A
-   * document with schema problems can't be linted, so its problems are
-   * returned instead of thrown.
-   *
-   * @throws Error if `uri` isn't a schema.
-   * @throws RetrievalError from `@hyperjump/browser` if the document can't
-   * be retrieved.
-   */
-  lint(uri: string, options?: LintOptions): Promise<SchemaMessage[]>;
-
-  /**
    * The values a keyword annotated a node with, one for every schema
-   * location where it applied, from `annotate`, `annotateJson`, or
-   * `annotateNode`. The node can be a property name, which `propertyNames`
-   * annotates. A node the keyword didn't annotate has none.
+   * location where it applied, from `annotate` or `annotator`. The node can
+   * be a property name, which `propertyNames` annotates. A node the keyword
+   * didn't annotate has none.
    *
    * The keyword is a keyword URI, if a keyword with that URI has been added,
    * or a name in the dialect, which is v1 by default. A name that isn't a

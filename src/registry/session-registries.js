@@ -2,15 +2,31 @@ import { RetrievalError } from "@hyperjump/browser";
 import { toAbsoluteIri } from "@hyperjump/uri";
 import { resolveSchemaText } from "../schema/resolve-text.js";
 import { RegistryIndex } from "./registry-index.js";
+import { SchemaRegistry } from "./schema-registry.js";
 
 /**
  * @import { JsonSchema } from "../json-schema.d.ts"
  * @import { JsonSchemaSession } from "../session.d.ts"
  * @import { JsonSchemaDocumentNode } from "../schema/schema-ast.d.ts"
- * @import { SchemaRegistry } from "./schema-registry.d.ts"
+ * @import { ReadonlyJson } from "@hyperjump/browser/json"
  * @import { RegistryEntry } from "./registry-entries.js"
  * @import { IndexedEntry } from "./registry-index.js"
  */
+
+/**
+ * Each session's registries, for operations that give a session a schema as
+ * a value
+ *
+ * @type WeakMap<JsonSchemaSession, SessionRegistries>
+ */
+const sessionRegistries = new WeakMap();
+
+/**
+ * Add a schema to a session as a value, and get the URI it's found by
+ *
+ * @type (session: JsonSchemaSession, schema: ReadonlyJson) => string
+ */
+export const addSchemaValue = (session, schema) => /** @type SessionRegistries */ (sessionRegistries.get(session)).addValue(schema);
 
 /**
  * The schemas a session finds in the registries it sees
@@ -36,6 +52,14 @@ export class SessionRegistries {
   #indexes;
 
   /**
+   * Schemas operations were given as values, each in a registry of its own,
+   * checked before the others
+   *
+   * @type RegistryIndex[]
+   */
+  #values;
+
+  /**
    * Registry entries resolved in this session, for the ones that can't be
    * shared with other sessions
    *
@@ -53,6 +77,32 @@ export class SessionRegistries {
     this.#session = session;
     this.#documents = new Map();
     this.#registries = [sessionRegistry === instanceRegistry ? undefined : sessionRegistry, instanceRegistry];
+    this.#values = [];
+    sessionRegistries.set(session, this);
+  }
+
+  /**
+   * Add a schema given as a value. It's found by a new `urn:uuid:` URI,
+   * which identifies it if it doesn't have an `$id`. One whose `$id` a
+   * registry the session sees also has is an error, even if they're
+   * identical, so a value can't replace a schema from a registry.
+   *
+   * @type (schema: ReadonlyJson) => string
+   * @throws RetrievalError if a registry has a schema identified by its `$id`
+   */
+  addValue(schema) {
+    const uri = `urn:uuid:${crypto.randomUUID()}`;
+    const jsonSchema = this.#session.jsonSchema;
+    const instanceIndex = registryIndex(jsonSchema, this.#registries[1]);
+    const index = new RegistryIndex(jsonSchema, new SchemaRegistry().with(schema, { retrievalUri: uri }), instanceIndex);
+    this.#values.push(index);
+
+    const id = index.lookup(uri)?.uri;
+    if (id !== undefined && id !== uri) {
+      this.#registryEntry(id);
+    }
+
+    return uri;
   }
 
   /** @type () => RegistryIndex[] */
@@ -63,7 +113,7 @@ export class SessionRegistries {
       const instanceIndex = registryIndex(jsonSchema, instanceRegistry);
       this.#indexes = sessionRegistry ? [registryIndex(jsonSchema, sessionRegistry, instanceIndex), instanceIndex] : [instanceIndex];
     }
-    return this.#indexes;
+    return this.#values.length === 0 ? this.#indexes : [...this.#values, ...this.#indexes];
   }
 
   /**

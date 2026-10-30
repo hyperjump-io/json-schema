@@ -5,7 +5,9 @@ lint schemas in a tool of your own, or to check schemas your users give you
 before accepting them.
 
 ```typescript
-const results = await jsonSchema.lint("https://example.com/person");
+import { lint } from "@hyperjump/json-schema";
+
+const results = await lint(jsonSchema, "https://example.com/person");
 
 for (const result of results) {
   console.log(`${result.severity}: ${result.message} (${result.url})`);
@@ -64,7 +66,7 @@ import recommended from "@hyperjump/json-schema/lint/recommended";
 import thenElseWithoutIf from
   "@hyperjump/json-schema/lint/rules/then-else-without-if";
 
-const results = await jsonSchema.lint("https://example.com/person", {
+const results = await lint(jsonSchema, "https://example.com/person", {
   plugins: [recommended, [thenElseWithoutIf, ["error"]]]
 });
 results[0].severity; // "error"

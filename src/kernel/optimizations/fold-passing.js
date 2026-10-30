@@ -1,9 +1,9 @@
 import { mapSubexpressions } from "../kernel.js";
 import { normalForm } from "../normalize.js";
-import { isInert } from "../optimize.js";
+import { isInert } from "../inert.js";
 
 /**
- * @import { CompiledSchema, Expression, Handle } from "../kernel.d.ts"
+ * @import { KernelSchema, Expression, Handle } from "../kernel.d.ts"
  * @import { Optimization } from "../optimize.js"
  */
 
@@ -26,15 +26,15 @@ export default {
     const marksAreRead = kernel.reads.evaluated.length > 0;
 
     // A table of every schema is faster in an object than in a `Map`
-    /** @type Record<Handle, CompiledSchema> */
+    /** @type Record<Handle, KernelSchema> */
     const optimized = {};
-    /** @type Map<Handle, CompiledSchema> */
+    /** @type Map<Handle, KernelSchema> */
     const replaced = new Map();
 
     /** @type Set<Handle> */
     const inProgress = new Set();
 
-    /** @type (handle: Handle) => CompiledSchema */
+    /** @type (handle: Handle) => KernelSchema */
     const schema = (handle) => {
       if (handle in optimized) {
         return optimized[handle];

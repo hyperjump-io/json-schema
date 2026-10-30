@@ -6,7 +6,8 @@ import { visitReferences } from "../lint/utilities.js";
 /**
  * @import { Json } from "@hyperjump/browser/json"
  * @import { Dialect } from "../dialect.d.ts"
- * @import { BundleOptions, JsonSchemaSession } from "../session.d.ts"
+ * @import { JsonSchemaSession } from "../session.d.ts"
+ * @import { BundleOptions } from "../operations/bundle.d.ts"
  * @import { JsonSchemaDocumentNode, JsonSchemaNode } from "../schema/schema-ast.d.ts"
  */
 

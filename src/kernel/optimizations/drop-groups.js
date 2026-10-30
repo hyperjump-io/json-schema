@@ -1,7 +1,7 @@
-import { isInert } from "../optimize.js";
+import { isInert } from "../inert.js";
 
 /**
- * @import { CompiledSchema, Handle } from "../kernel.d.ts"
+ * @import { KernelSchema, Handle } from "../kernel.d.ts"
  * @import { Optimization } from "../optimize.js"
  */
 
@@ -19,7 +19,7 @@ import { isInert } from "../optimize.js";
  */
 export default {
   optimize(kernel, mode) {
-    /** @type Map<Handle, CompiledSchema> */
+    /** @type Map<Handle, KernelSchema> */
     const replaced = new Map();
     if (!mode.plugins) {
       return replaced;

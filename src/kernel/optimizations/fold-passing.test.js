@@ -3,6 +3,8 @@ import { JsonSchema } from "../../json-schema.js";
 import { SchemaRegistry } from "../../registry/schema-registry.js";
 import { v1Dialect, v1DialectUri } from "../../dialects/v1/index.js";
 import foldPassing from "./fold-passing.js";
+import { compile as compileSchema, serialize } from "../../operations/compile.js";
+import { validatorFor } from "../../operations/validate.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
@@ -31,18 +33,18 @@ describe("fold-passing", () => {
   });
 
   test("an item pattern with a folded item means the same", async () => {
-    const validator = await compile({ itemPattern: [{}, { type: "string" }, "*"] });
+    const compiled = await compile({ itemPattern: [{}, { type: "string" }, "*"] });
     /** @type Json[] */
     const instances = [[1], [1, "a", "b"], [1, 2], []];
-    expect(instances.map((instance) => validator.validate(instance))).to.eql([true, true, false, false]);
+    expect(instances.map((instance) => validatorFor(compiled)(instance))).to.eql([true, true, false, false]);
   });
 });
 
-/** @type (schema: Record<string, Json>) => Promise<import("../../json-schema.d.ts").Validator> */
+/** @type (schema: Record<string, Json>) => Promise<import("../../operations/compile.d.ts").CompiledSchema> */
 const compile = async (schema) => {
   const uri = `https://example.com/schema-${count++}`;
   const registry = new SchemaRegistry([{ schema, retrievalUri: uri, dialectUri: v1DialectUri }]);
-  return jsonSchema.compile(uri, { registry });
+  return compileSchema(jsonSchema, uri, { registry });
 };
 
 /**
@@ -52,7 +54,7 @@ const compile = async (schema) => {
  * @type (schema: Record<string, Json>, keyword: string, mode?: Mode) => Promise<Json>
  */
 const optimized = async (schema, keyword, mode = fast) => {
-  const kernel = /** @type Kernel */ ((await compile(schema)).serialize());
+  const kernel = /** @type Kernel */ (serialize((await compile(schema))));
   const root = foldPassing.optimize(kernel, mode).get(kernel.uri) ?? kernel.schemas[kernel.uri];
   if (typeof root === "boolean") {
     throw Error("Expected an object schema");

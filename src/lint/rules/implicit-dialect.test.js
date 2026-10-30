@@ -9,6 +9,7 @@ import { draft07Dialect } from "../../dialects/draft-07/index.js";
 import { draft202012Dialect } from "../../dialects/draft-2020-12/index.js";
 import { linter } from "../test-linter.js";
 import implicitDialect from "./implicit-dialect.js";
+import { lint as lintSchema } from "../../operations/lint.js";
 
 const draft07 = "http://json-schema.org/draft-07/schema";
 const draft202012 = "https://json-schema.org/draft/2020-12/schema";
@@ -83,7 +84,7 @@ describe("implicit-dialect", () => {
         retrievalUri: "https://example.com/a",
         dialectUri: draft202012
       }]);
-      const results = await jsonSchema.lint("https://example.com/a", { plugins: [implicitDialect] });
+      const results = await lintSchema(jsonSchema, "https://example.com/a", { plugins: [implicitDialect] });
 
       expect(results.map((result) => result.ruleId)).to.eql(["implicit-dialect"]);
     });
@@ -94,7 +95,7 @@ describe("implicit-dialect", () => {
         schema: `{ "type": "string" }`,
         retrievalUri: "https://example.com/a"
       }]);
-      const results = await jsonSchema.lint("https://example.com/a", { plugins: [implicitDialect] });
+      const results = await lintSchema(jsonSchema, "https://example.com/a", { plugins: [implicitDialect] });
 
       expect(results.map((result) => result.ruleId)).to.eql(["implicit-dialect"]);
     });

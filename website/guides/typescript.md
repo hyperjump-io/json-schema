@@ -123,7 +123,7 @@ const person = {
 jsonSchema.registry = new SchemaRegistry<V1Schema>().with(person);
 
 const jason = { name: "Jason" } as const;
-await jsonSchema.validate("https://example.com/person", jason); // true
+await validate(jsonSchema, "https://example.com/person", jason); // true
 ```
 
 ## Custom keywords

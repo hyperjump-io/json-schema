@@ -15,7 +15,7 @@ jsonSchema.registry = new SchemaRegistry().with(`{
 }`);
 
 try {
-  await jsonSchema.compile("https://example.com/bad");
+  await compile(jsonSchema, "https://example.com/bad");
 } catch (error) {
   if (!(error instanceof SchemaError)) {
     throw error;

@@ -53,11 +53,11 @@ absolute ones.
 
 ## Different rules for different requests
 
-A session can have its own list. It replaces the config instead of adding
+A call, or a session, can have its own list. It replaces the config instead of adding
 to it, so a session can allow less.
 
 ```typescript
-const validator = await jsonSchema.compile(uri, {
+const isPerson = await validator(jsonSchema, uri, {
   allowRetrieval: ["./schemas/"]
 });
 

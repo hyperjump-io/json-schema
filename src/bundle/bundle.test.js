@@ -12,13 +12,17 @@ import { draft07Dialect, draft07DialectUri } from "../dialects/draft-07/index.js
 import { draft06Dialect, draft06DialectUri } from "../dialects/draft-06/index.js";
 import { draft04Dialect, draft04DialectUri } from "../dialects/draft-04/index.js";
 import { DETAILED } from "../output/index.js";
+import { compile } from "../operations/compile.js";
+import { bundle } from "../operations/bundle.js";
+import { validatorFor, annotatorFor } from "../operations/validate.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
  * @import { Node } from "unist"
- * @import { JsonSchemaConfig, Validator } from "../json-schema.d.ts"
+ * @import { JsonSchemaConfig } from "../json-schema.d.ts"
+ * @import { CompiledSchema } from "../operations/compile.d.ts"
  * @import { DetailedValidationError } from "../output/validation-error.d.ts"
- * @import { BundleOptions } from "../session.d.ts"
+ * @import { BundleOptions } from "../operations/bundle.d.ts"
  */
 
 /**
@@ -70,19 +74,19 @@ describe("bundle", () => {
         describe(testCase.description, () => {
           for (const options of configs) {
             describe(JSON.stringify(options), () => {
-              /** @type Validator */
+              /** @type CompiledSchema */
               let unbundled;
 
-              /** @type Validator */
+              /** @type CompiledSchema */
               let bundled;
 
               beforeAll(async () => {
                 const registry = registryOf({ ...fixtures, ...testCase.externalSchemas, [mainUri]: testCase.schema }, dialectUri);
-                unbundled = await jsonSchema.compile(mainUri, { registry });
+                unbundled = await compile(jsonSchema, mainUri, { registry });
 
-                const schema = await jsonSchema.bundle(mainUri, { registry, ...options });
+                const schema = await bundle(jsonSchema, mainUri, { registry, ...options });
                 const bundleRegistry = new SchemaRegistry([{ schema, retrievalUri: mainUri }]);
-                bundled = await jsonSchema.compile(mainUri, { registry: bundleRegistry });
+                bundled = await compile(jsonSchema, mainUri, { registry: bundleRegistry });
               });
 
               for (const { description, instance } of testCase.tests) {
@@ -101,7 +105,7 @@ describe("bundle", () => {
     /** @type (schemas: Record<string, Json>, options?: BundleOptions) => Promise<Json> */
     const bundleOf = (schemas, options) => {
       const registry = registryOf(schemas, draft202012DialectUri);
-      return jsonSchema.bundle(mainUri, { registry, ...options });
+      return bundle(jsonSchema, mainUri, { registry, ...options });
     };
 
     test("the main schema has $schema and is identified by its URI", async () => {
@@ -185,7 +189,7 @@ describe("bundle", () => {
         [mainUri]: { items: { $ref: "/foo" } },
         [`${testDomain}/foo`]: { id: "/foo#bar", type: "string" }
       }, draft04DialectUri);
-      const bundled = /** @type Record<string, Json> */ (await jsonSchema.bundle(mainUri, { registry }));
+      const bundled = /** @type Record<string, Json> */ (await bundle(jsonSchema, mainUri, { registry }));
 
       expect(bundled).to.eql({
         $schema: `${draft04DialectUri}#`,
@@ -204,13 +208,13 @@ describe("bundle", () => {
         [`${testDomain}/foo`]: { $ref: "/string" }
       }, draft07DialectUri);
 
-      await expect(jsonSchema.bundle(mainUri, { registry })).rejects.toThrow("its root is a '$ref'");
+      await expect(bundle(jsonSchema, mainUri, { registry })).rejects.toThrow("its root is a '$ref'");
     });
 
     test("a schema can't be embedded in a draft-07 schema whose root is a $ref", async () => {
       const registry = registryOf({ ...fixtures, [mainUri]: { $ref: "/string" } }, draft07DialectUri);
 
-      await expect(jsonSchema.bundle(mainUri, { registry })).rejects.toThrow("its root is a '$ref'");
+      await expect(bundle(jsonSchema, mainUri, { registry })).rejects.toThrow("its root is a '$ref'");
     });
 
     test("a schema referenced by a URI it isn't identified by can't be embedded", async () => {
@@ -232,7 +236,7 @@ describe("bundle", () => {
     /** @type (dialectUri: string, options: BundleOptions) => Promise<Record<string, Json>> */
     const bundleOf = async (dialectUri, options) => {
       const registry = registryOf(schemas, dialectUri);
-      return /** @type Record<string, Json> */ (await jsonSchema.bundle(mainUri, { registry, ...options }));
+      return /** @type Record<string, Json> */ (await bundle(jsonSchema, mainUri, { registry, ...options }));
     };
 
     test("externalSchemas aren't embedded", async () => {
@@ -285,7 +289,7 @@ describe("bundle", () => {
     // A schema can't be identified by a file, so the bundle needs an
     // identifier, and its files are identified relative to it
     test("a file's bundle is identified by 'id', and embedded files relative to it", async () => {
-      const bundled = await fileJsonSchema.bundle(fileUri("main.schema.json"), { id });
+      const bundled = await bundle(fileJsonSchema, fileUri("main.schema.json"), { id });
 
       expect(bundled).to.eql({
         $schema: draft202012DialectUri,
@@ -305,30 +309,30 @@ describe("bundle", () => {
     });
 
     test("a file's bundle validates like its files", async () => {
-      const bundled = await fileJsonSchema.bundle(fileUri("main.schema.json"), { id });
-      const validator = await fileJsonSchema.compile(id, { registry: new SchemaRegistry().with(bundled) });
+      const bundled = await bundle(fileJsonSchema, fileUri("main.schema.json"), { id });
+      const compiled = await compile(fileJsonSchema, id, { registry: new SchemaRegistry().with(bundled) });
 
-      expect(validator.validate({ foo: "a" })).to.equal(true);
-      expect(validator.validate({ foo: 1 })).to.equal(false);
+      expect(validatorFor(compiled)({ foo: "a" })).to.equal(true);
+      expect(validatorFor(compiled)({ foo: 1 })).to.equal(false);
     });
 
     test("embedding a file without 'id' is an error", async () => {
-      await expect(fileJsonSchema.bundle(fileUri("main.schema.json"))).rejects.toThrow("Give the bundle an identifier with the 'id' option");
+      await expect(bundle(fileJsonSchema, fileUri("main.schema.json"))).rejects.toThrow("Give the bundle an identifier with the 'id' option");
     });
 
     test("a file that embeds nothing doesn't need 'id'", async () => {
-      expect(await fileJsonSchema.bundle(fileUri("string.schema.json"))).to.eql({ $schema: draft202012DialectUri, type: "string" });
+      expect(await bundle(fileJsonSchema, fileUri("string.schema.json"))).to.eql({ $schema: draft202012DialectUri, type: "string" });
     });
 
     test("'id' can't be a file, relative, or have a fragment", async () => {
-      await expect(fileJsonSchema.bundle(fileUri("main.schema.json"), { id: "file:///schemas/main.schema.json" })).rejects.toThrow("isn't a file");
-      await expect(fileJsonSchema.bundle(fileUri("main.schema.json"), { id: "main.schema.json" })).rejects.toThrow("absolute URI");
-      await expect(fileJsonSchema.bundle(fileUri("main.schema.json"), { id: `${id}#foo` })).rejects.toThrow("without a fragment");
+      await expect(bundle(fileJsonSchema, fileUri("main.schema.json"), { id: "file:///schemas/main.schema.json" })).rejects.toThrow("isn't a file");
+      await expect(bundle(fileJsonSchema, fileUri("main.schema.json"), { id: "main.schema.json" })).rejects.toThrow("absolute URI");
+      await expect(bundle(fileJsonSchema, fileUri("main.schema.json"), { id: `${id}#foo` })).rejects.toThrow("without a fragment");
     });
 
     test("schemas that aren't files keep their identifiers in a file's bundle", async () => {
       const registry = registryOf({ [`${testDomain}/number`]: { type: "number" } }, draft202012DialectUri);
-      const bundled = /** @type Record<string, Json> */ (await fileJsonSchema.bundle(fileUri("mixed-schemes.schema.json"), { registry, id }));
+      const bundled = /** @type Record<string, Json> */ (await bundle(fileJsonSchema, fileUri("mixed-schemes.schema.json"), { registry, id }));
 
       expect(Object.keys(/** @type object */ (bundled.$defs))).to.eql(["https://example.com/schemas/string.schema.json", `${testDomain}/number`]);
     });
@@ -351,13 +355,13 @@ const registryOf = (schemas, dialectUri) => new SchemaRegistry(Object.entries(sc
   .map(([retrievalUri, schema]) => ({ schema, retrievalUri: retrievalUri || undefined, dialectUri })));
 
 /**
- * What a validator says about an instance: its DETAILED errors and the
+ * What a compiled says about an instance: its DETAILED errors and the
  * annotations of every node, in document order
  *
- * @type (validator: Validator, instance: Json) => Json
+ * @type (compiled: CompiledSchema, instance: Json) => Json
  */
-const outputOf = (validator, instance) => {
-  const { output } = validator.annotate(instance, { output: DETAILED });
+const outputOf = (compiled, instance) => {
+  const { output } = annotatorFor(compiled, { output: DETAILED })(instance);
 
   /** @type Json[] */
   const annotations = [];
@@ -366,7 +370,7 @@ const outputOf = (validator, instance) => {
     annotations.push([...node.data?.annotations ?? []]);
     node.children?.forEach(visit);
   };
-  visit(validator.annotate(instance).node);
+  visit(annotatorFor(compiled)(instance).node);
 
   // Only JSON text has syntax errors
   /** @type (error: DetailedValidationError) => Json */

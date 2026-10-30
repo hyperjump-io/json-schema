@@ -12,7 +12,7 @@ an internal meta-schema.
 - Every problem with a schema is found while it's resolved, and a schema is
   always checked. There's no option to skip it. A trusted schema that has
   to start fast can be compiled once and restored with
-  `JsonSchema.restoreValidator`, which doesn't resolve anything.
+  `restore`, which doesn't resolve anything.
 - The shape describes a keyword's structure, and the resolver reports a
   value that doesn't fit it (see [Keywords](../specs/keyword/README.md)).
 - A keyword's `check` reports everything else about its value. It's code,

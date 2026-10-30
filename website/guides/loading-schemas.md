@@ -101,15 +101,16 @@ jsonSchema.registry = jsonSchema.registry.without("https://example.com/name");
 `without` removes a schema by the `retrievalUri` it was added with. A schema
 added without one can't be removed.
 
-### A registry for one compilation
+### A registry for one call
 
-A registry you pass to `compile` is only used for that compilation. It's
+A registry you pass to `validator`, or any other operation, is only used
+for that call. It's
 checked before the `JsonSchema`'s. A URI that a schema in each of them is
 identified by is an error, so it can't replace a schema the `JsonSchema`'s
 registry has.
 
 ```typescript
-const validator = await jsonSchema.compile("https://example.com/person", {
+const isPerson = await validator(jsonSchema, "https://example.com/person", {
   registry
 });
 ```
@@ -124,7 +125,7 @@ and generated ones. The schemas are shared, not copied. Two different
 schemas with the same `retrievalUri` throw.
 
 ```typescript
-const validator = await jsonSchema.compile("https://example.com/person", {
+const isPerson = await validator(jsonSchema, "https://example.com/person", {
   registry: registry.concat(generated)
 });
 ```
@@ -150,7 +151,7 @@ meta-schema in a file needs an `$id`, and is found by it from a
 import { pathToFileURL } from "node:url";
 
 const uri = pathToFileURL("./schemas/person.schema.json").href;
-const validator = await jsonSchema.compile(uri);
+const isPerson = await validator(jsonSchema, uri);
 ```
 
 A `.json` file is a schema if its `$schema` is a dialect, like
@@ -174,7 +175,7 @@ const jsonSchema = new JsonSchema({
 });
 
 const uri = "https://schemas.example.com/person";
-const validator = await jsonSchema.compile(uri);
+const isPerson = await validator(jsonSchema, uri);
 ```
 
 The response must be `application/schema+json`, or `application/json`

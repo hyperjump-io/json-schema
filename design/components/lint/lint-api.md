@@ -1,7 +1,10 @@
 # Linting from code
 
-Linting needs a unified pipeline today, outside of the CLI. `lint(uri)` on
-`JsonSchema` and `JsonSchemaSession` lints a schema document without one.
+Linting needs a unified pipeline today, outside of the CLI.
+`lint(context, uri)` (`src/operations/lint.js`), with a `JsonSchema` or a
+session, lints a schema document without one. It takes a URI, not a schema
+as a value, because it lints a document, and a value's document would only
+be the value.
 
 - It lints the whole document `uri` is in, the way `bundle` takes the
   whole document, including definitions nothing in it references. A rule
