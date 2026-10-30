@@ -10,7 +10,7 @@ import type { JsonSchemaDocumentNode } from "../../schema/schema-ast.d.ts";
  *
  * A `format` is reported if its definition says which types it applies to
  * (`types`), as every format JSON Schema defines does. A format the dialect
- * doesn't support, whose definition hasn't been added, or that doesn't say,
+ * doesn't support, whose definition isn't in the config, or that doesn't say,
  * could apply to any type, so it isn't. It only
  * looks at `type` in the same schema, not in another schema that
  * applies to the same value, such as one in an `allOf`. It has no options.

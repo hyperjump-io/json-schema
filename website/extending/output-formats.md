@@ -1,7 +1,8 @@
 # Custom output formats
 
 An output format decides what validation returns when you ask for it with
-the `output` option. Add one with `addOutputFormat`. It's useful for
+the `output` option. A format is a value, like the built-in `BASIC`, so
+yours is used the same way. It's useful for
 errors in the shape your application or API already uses, or with your own
 messages.
 
@@ -10,6 +11,7 @@ every error. This one turns them into messages:
 
 ```typescript
 import { jsonSyntaxErrorMessage } from "@hyperjump/browser/json";
+import { BASIC } from "@hyperjump/json-schema";
 
 const messages = {
   "https://json-schema.org/keyword/minimum": "is too small",
@@ -26,8 +28,8 @@ const describe = (error) => {
   return `${where} ${messages[error.ruleId] ?? "is invalid"}`;
 };
 
-jsonSchema.addOutputFormat("MESSAGES", () => {
-  const basic = jsonSchema.getOutputFormat("BASIC")();
+const MESSAGES = () => {
+  const basic = BASIC();
   return {
     plugin: basic.plugin,
     output: (valid, syntaxErrors) => {
@@ -35,9 +37,9 @@ jsonSchema.addOutputFormat("MESSAGES", () => {
       return { valid, messages: errors.map(describe) };
     }
   };
-});
+};
 
-validator.validate({ age: -1 }, { output: "MESSAGES" });
+validator.validate({ age: -1 }, { output: MESSAGES });
 ```
 
 ```json
@@ -49,8 +51,7 @@ validator.validate({ age: -1 }, { output: "MESSAGES" });
 
 ## How it works
 
-The definition is a function that's called for each validation that uses
-the format. It returns:
+A format is a function that's called for each validation that uses it. It returns:
 
 - `plugin`: an [evaluation plugin](plugins.md) that collects what the format
   needs while the value is evaluated.
@@ -77,16 +78,16 @@ the plugin having seen anything.
 
 ## Types
 
-In TypeScript, declare the format's result so `validate` returns the right
-type:
+In TypeScript, a format is an `OutputFormat<R>`, where `R` is its result,
+and `validate` returns `R`:
 
 ```typescript
-declare module "@hyperjump/json-schema" {
-  interface OutputFormats {
-    MESSAGES: { valid: boolean; messages: string[] };
-  }
-}
-```
+import type { OutputFormat } from "@hyperjump/json-schema";
 
-`BASIC` and `DETAILED` can be replaced with `addOutputFormat` too. `FLAG`
-can't.
+const MESSAGES: OutputFormat<{ valid: boolean; messages: string[] }> = () => {
+  // ...
+};
+
+const result = validator.validate({ age: -1 }, { output: MESSAGES });
+result.messages; // string[]
+```

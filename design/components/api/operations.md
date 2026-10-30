@@ -1,6 +1,8 @@
 # Operations
 
-Part of [The API as functions](README.md). Decided 2026-10-29, not built.
+Part of [The API as functions](README.md). Decided 2026-10-29. Output
+formats as values were built the same day (stage 3). The rest isn't built
+yet. The CLI doesn't choose an output format, so it didn't need a name map.
 
 ```ts
 type Context = JsonSchema | JsonSchemaSession;
@@ -59,8 +61,10 @@ the source of truth once they're written.
 
 ## Output formats are values
 
-- A format is imported from `@hyperjump/json-schema/output` (`FLAG`,
-  `BASIC`, `DETAILED`) and passed as `output`. Its type is its result type,
+- A format is imported from `@hyperjump/json-schema` (`FLAG`, `BASIC`,
+  `DETAILED`) and passed as `output`. A separate `/output` entry point was
+  the first design, and was dropped because unused named exports are
+  tree-shaken either way. Its type is its result type,
   so the `OutputFormats` interface and its declaration merging are
   removed, along with `addOutputFormat` and `getOutputFormat`. A custom
   format is another value of the same type.

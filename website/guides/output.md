@@ -1,17 +1,22 @@
 # Output and errors
 
 By default, validation only says whether a value is valid. To find out why
-it isn't, ask for an output format with the `output` option.
+it isn't, pass an output format as the `output` option.
 
 ```typescript
-const result = validator.validate({ age: -1 }, { output: "BASIC" });
+import { BASIC } from "@hyperjump/json-schema";
+
+const result = validator.validate({ age: -1 }, { output: BASIC });
 ```
 
 | Output | Result | Use it for |
 | --- | --- | --- |
-| `"FLAG"` (the default) | `true` or `false` | Only whether it's valid. It's the fastest. |
-| `"BASIC"` | `{ valid, errors }`, with a flat list of errors | Reporting each problem |
-| `"DETAILED"` | `{ valid, errors }`, with errors nested by schema structure | Explaining how a failure in a subschema made its parent fail |
+| `FLAG` (the default) | `true` or `false` | Only whether it's valid. It's the fastest. |
+| `BASIC` | `{ valid, errors }`, with a flat list of errors | Reporting each problem |
+| `DETAILED` | `{ valid, errors }`, with errors nested by schema structure | Explaining how a failure in a subschema made its parent fail |
+
+A format you don't import isn't in your bundle, so code that only uses
+`FLAG` doesn't load what's needed to find errors.
 
 Asking for errors doesn't slow down valid values. A value is checked the
 fast way first, and its errors are only worked out if it's invalid.
@@ -43,7 +48,7 @@ The results below show only each error's `absoluteKeywordLocation` and
 A list of every keyword that failed, in document order.
 
 ```typescript
-const result = validator.validate({ age: -1 }, { output: "BASIC" });
+const result = validator.validate({ age: -1 }, { output: BASIC });
 ```
 
 ```json wrap
@@ -72,7 +77,7 @@ The same errors, nested under the keywords that applied them. Here,
 `minimum` is under the `properties` that applied its schema to `/age`.
 
 ```typescript
-const result = validator.validate({ age: -1 }, { output: "DETAILED" });
+const result = validator.validate({ age: -1 }, { output: DETAILED });
 ```
 
 ```json wrap

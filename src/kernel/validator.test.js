@@ -10,6 +10,7 @@ import { JsonSchema, outputErrorMessage, toVFileMessage } from "../json-schema.j
 import idKeyword from "../keywords/id.js";
 import anchorKeyword from "../keywords/anchor.js";
 import dynamicAnchorKeyword from "../keywords/dynamicAnchor.js";
+import { BASIC, DETAILED, FLAG } from "../output/index.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
@@ -18,6 +19,7 @@ import dynamicAnchorKeyword from "../keywords/dynamicAnchor.js";
  * @import { EvaluationLocation, EvaluationPlugin } from "./evaluation-plugin.d.ts"
  * @import { DetailedValidationError, ValidationError } from "../output/validation-error.d.ts"
  * @import { DialectConfig } from "../dialect.d.ts"
+ * @import { OutputFormat } from "../output/output-format.d.ts"
  */
 
 const dialectUri = "https://example.com/dialect";
@@ -447,7 +449,7 @@ describe("Validator", () => {
         expect(validator.validateJson(`{ "other": true }`, options)).to.equal(false);
       }
 
-      const result = validator.validate({ name: "a" }, { output: "BASIC" });
+      const result = validator.validate({ name: "a" }, { output: BASIC });
       expect(result.valid).to.equal(false);
       expect(result.errors.map((error) => locations(/** @type ValidationError */ (error)).ruleId)).to.eql([requiredKeyword.uri]);
     });
@@ -600,7 +602,7 @@ describe("Validator", () => {
         $defs: { number: { type: "number", minimum: 3 } }
       }));
 
-      const result = validator.validate({ foo: "bar" }, { output: "BASIC" });
+      const result = validator.validate({ foo: "bar" }, { output: BASIC });
 
       expect(result.valid).to.equal(false);
       expect(result.errors.map((error) => locations(/** @type ValidationError */ (error)))).to.eql([
@@ -630,13 +632,13 @@ describe("Validator", () => {
       const mainPath = relative(cwd(), fileURLToPath(main));
       const otherPath = relative(cwd(), fileURLToPath(other));
 
-      const basic = validator.validate({ foo: "x", bar: "y" }, { output: "BASIC" });
+      const basic = validator.validate({ foo: "x", bar: "y" }, { output: BASIC });
       expect(basic.errors.map((error) => /** @type ValidationError */ (error).absoluteKeywordLocation)).to.eql([
         `${mainPath}#/properties/foo/type`,
         `${otherPath}#/type`
       ]);
 
-      const detailed = validator.validate({ bar: "y" }, { output: "DETAILED" });
+      const detailed = validator.validate({ bar: "y" }, { output: DETAILED });
       expect(detailed.errors).to.eql([{
         source: "json-schema",
         ruleId: "https://example.com/keyword/properties",
@@ -661,7 +663,7 @@ describe("Validator", () => {
       });
       const validator = await jsonSchema.compile(main);
 
-      const result = validator.validate({ foo: "x", bar: "y" }, { output: "BASIC" });
+      const result = validator.validate({ foo: "x", bar: "y" }, { output: BASIC });
       expect(result.errors.map((error) => /** @type ValidationError */ (error).absoluteKeywordLocation)).to.eql([
         "https://example.com/mixed#/type",
         `${relative(cwd(), fileURLToPath(main))}#/properties/bar/type`
@@ -673,7 +675,7 @@ describe("Validator", () => {
         properties: { foo: { $id: "https://example.com/embedded", type: "number" } }
       }));
 
-      const result = validator.validate({ foo: "bar" }, { output: "BASIC" });
+      const result = validator.validate({ foo: "bar" }, { output: BASIC });
       expect(result.errors.map((error) => locations(/** @type ValidationError */ (error)))).to.eql([
         {
           ruleId: typeKeyword.uri,
@@ -690,7 +692,7 @@ describe("Validator", () => {
         then: { minimum: 3, allOf: [{ $id: "https://example.com/sibling-embedded", type: "number" }] }
       }));
 
-      const result = validator.validate("foo", { output: "BASIC" });
+      const result = validator.validate("foo", { output: BASIC });
       expect(result.errors.map((error) => locations(/** @type ValidationError */ (error)))).to.eql([
         {
           ruleId: typeKeyword.uri,
@@ -707,7 +709,7 @@ describe("Validator", () => {
         $defs: { "c d": { type: "number" } }
       }));
 
-      const result = validator.validate({ "a^b": "x" }, { output: "BASIC" });
+      const result = validator.validate({ "a^b": "x" }, { output: BASIC });
       expect(result.errors.map((error) => locations(/** @type ValidationError */ (error)))).to.eql([
         {
           ruleId: typeKeyword.uri,
@@ -723,14 +725,14 @@ describe("Validator", () => {
         properties: { foo: { type: "number" } }
       }));
 
-      const [error] = validator.validate({ foo: "bar" }, { output: "BASIC" }).errors;
+      const [error] = validator.validate({ foo: "bar" }, { output: BASIC }).errors;
       expect(outputErrorMessage(error)).to.equal("'/foo' fails the constraint at 'https://example.com/message#/properties/foo/type'");
     });
 
     test("an error for the whole instance is described as the instance", async () => {
       const validator = await jsonSchema.compile(await schemaFile({ $id: "https://example.com/root-message", type: "number" }));
 
-      const [error] = validator.validate("foo", { output: "BASIC" }).errors;
+      const [error] = validator.validate("foo", { output: BASIC }).errors;
       expect(outputErrorMessage(error)).to.equal("The instance fails the constraint at 'https://example.com/root-message#/type'");
     });
 
@@ -738,7 +740,7 @@ describe("Validator", () => {
       const validator = await jsonSchema.compile(await schemaFile({ $id: "https://example.com/vfile", type: "number" }));
       const stackTraceLimit = Error.stackTraceLimit;
 
-      const [error] = validator.validate("foo", { output: "BASIC" }).errors;
+      const [error] = validator.validate("foo", { output: BASIC }).errors;
       const message = toVFileMessage(error);
       expect(message).to.be.instanceOf(VFileMessage);
       expect(message.reason).to.equal("The instance fails the constraint at 'https://example.com/vfile#/type'");
@@ -750,7 +752,7 @@ describe("Validator", () => {
     test("BASIC for a valid instance", async () => {
       const validator = await jsonSchema.compile(await schemaFile({ type: "number" }));
 
-      expect(validator.validate(1, { output: "BASIC" })).to.eql({ valid: true, errors: [] });
+      expect(validator.validate(1, { output: BASIC })).to.eql({ valid: true, errors: [] });
     });
 
     test("BASIC drops errors from subschemas that don't matter", async () => {
@@ -760,9 +762,9 @@ describe("Validator", () => {
         properties: { foo: false }
       }));
 
-      expect(validator.validate("foo", { output: "BASIC" })).to.eql({ valid: true, errors: [] });
+      expect(validator.validate("foo", { output: BASIC })).to.eql({ valid: true, errors: [] });
 
-      const result = validator.validate({ foo: 1 }, { output: "BASIC" });
+      const result = validator.validate({ foo: 1 }, { output: BASIC });
       expect(result.errors.map((error) => locations(/** @type ValidationError */ (error)))).to.eql([
         {
           ruleId: anyOfKeyword.uri,
@@ -793,7 +795,7 @@ describe("Validator", () => {
         properties: { foo: { type: "number" } }
       }));
 
-      const result = validator.validate({ foo: "bar" }, { output: "DETAILED" });
+      const result = validator.validate({ foo: "bar" }, { output: DETAILED });
       expect(result.errors.map((error) => detailedLocations(/** @type DetailedValidationError */ (error)))).to.eql([
         {
           ruleId: propertiesKeyword.uri,
@@ -811,27 +813,27 @@ describe("Validator", () => {
     });
 
     test("a custom output format", async () => {
-      jsonSchema.addOutputFormat(/** @type any */ ("COUNT"), () => {
+      /** @type OutputFormat<number> */
+      const COUNT = () => {
         let count = 0;
         return {
           plugin: { afterKeyword: (_keyword, _at, valid) => count += valid ? 0 : 1 },
-          output: () => /** @type any */ (count)
+          output: () => count
         };
-      });
+      };
       const validator = await jsonSchema.compile(await schemaFile({ type: "number", minimum: 3 }));
 
-      expect(validator.validate("foo", { output: /** @type any */ ("COUNT") })).to.equal(1);
-      expect(validator.validate(1, { output: /** @type any */ ("COUNT") })).to.equal(1);
-      expect(validator.validate(5, { output: /** @type any */ ("COUNT") })).to.equal(0);
+      expect(validator.validate("foo", { output: COUNT })).to.equal(1);
+      expect(validator.validate(1, { output: COUNT })).to.equal(1);
+      expect(validator.validate(5, { output: COUNT })).to.equal(0);
     });
 
-    test("FLAG can't be replaced", () => {
-      expect(() => jsonSchema.addOutputFormat("FLAG", () => ({ output: () => true }))).to.throw("built in");
-    });
+    test("FLAG is the default", async () => {
+      const validator = await jsonSchema.compile(await schemaFile({ type: "number" }));
 
-    test("an unknown output format", async () => {
-      const validator = await jsonSchema.compile(await schemaFile({}));
-      expect(() => validator.validate(1, { output: /** @type any */ ("NOPE") })).to.throw("isn't supported");
+      expect(validator.validate("foo", { output: FLAG })).to.equal(false);
+      expect(validator.validateJson("1,", { output: FLAG })).to.equal(false);
+      expect(validator.validate(1, {})).to.equal(true);
     });
   });
 
@@ -841,7 +843,7 @@ describe("Validator", () => {
         properties: { "a/b": { items: { allOf: [{ properties: { "c~d": { type: "number" } } }] } } }
       }));
 
-      const result = validator.validate({ "a/b": [{ "c~d": 1 }, { "c~d": "x" }] }, { output: "BASIC" });
+      const result = validator.validate({ "a/b": [{ "c~d": 1 }, { "c~d": "x" }] }, { output: BASIC });
       expect(result.errors.map((error) => /** @type ValidationError */ (error).instanceLocation)).to.eql(["/a~1b/1/c~0d"]);
     });
   });
@@ -852,7 +854,7 @@ describe("Validator", () => {
         properties: { "a/b": { properties: { "c~d": { properties: { "%41 é": { type: "number" } } } } } }
       }));
 
-      const result = validator.validateJson(`{ "a/b": { "c~d": { "%41 é": "x" } } }`, { output: "BASIC" });
+      const result = validator.validateJson(`{ "a/b": { "c~d": { "%41 é": "x" } } }`, { output: BASIC });
       expect(result.errors.map((error) => /** @type ValidationError */ (error).instanceLocation)).to.eql(["/a~1b/c~0d/%41 é"]);
     });
 
@@ -861,14 +863,14 @@ describe("Validator", () => {
       const document = fromJson(`{ "foo": { "bar": "x" } }`, "https://example.com/document");
       const node = /** @type any */ (document.node).children[0].children[1];
 
-      const result = validator.validateNode(node, { output: "BASIC" });
+      const result = validator.validateNode(node, { output: BASIC });
       expect(result.errors.map((error) => /** @type ValidationError */ (error).instanceLocation)).to.eql(["/bar"]);
     });
 
     test("errors have positions", async () => {
       const validator = await jsonSchema.compile(await schemaFile({ properties: { foo: { type: "number" } } }));
 
-      const result = validator.validateJson(`{\n  "foo": "bar"\n}`, { output: "BASIC" });
+      const result = validator.validateJson(`{\n  "foo": "bar"\n}`, { output: BASIC });
       expect(result.valid).to.equal(false);
       expect(result.errors[0].place).to.eql({
         start: { line: 2, column: 10, offset: 11 },
@@ -882,14 +884,14 @@ describe("Validator", () => {
         properties: { foo: { type: "number" } }
       }));
 
-      const [error] = validator.validateJson(`{ "foo": "bar" }`, { output: "BASIC" }).errors;
+      const [error] = validator.validateJson(`{ "foo": "bar" }`, { output: BASIC }).errors;
       expect(String(toVFileMessage(error))).to.equal("1:10-1:15: Fails the constraint at 'https://example.com/positioned#/properties/foo/type'");
     });
 
     test("a syntax error converts to a VFileMessage", async () => {
       const validator = await jsonSchema.compile(await schemaFile({}));
 
-      const [error] = validator.validateJson(`[True]`, { output: "BASIC" }).errors;
+      const [error] = validator.validateJson(`[True]`, { output: BASIC }).errors;
       const message = toVFileMessage(error);
       expect(String(message)).to.equal("1:2-1:6: 'True' is not a valid value");
       expect(message.ruleId).to.equal("invalid-literal");
@@ -902,14 +904,14 @@ describe("Validator", () => {
 
       expect(validator.validateJson(`{ "foo": 1, }`)).to.equal(false);
 
-      const result = validator.validateJson(`{ "bar": 1, "foo": "x", }`, { output: "BASIC" });
+      const result = validator.validateJson(`{ "bar": 1, "foo": "x", }`, { output: BASIC });
       expect(result.errors.map((error) => error.ruleId)).to.eql([typeKeyword.uri, "trailing-comma"]);
     });
 
     test("values that couldn't be parsed aren't evaluated", async () => {
       const validator = await jsonSchema.compile(await schemaFile({ properties: { foo: { type: "number" } } }));
 
-      const result = validator.validateJson(`{ "foo": }`, { output: "BASIC" });
+      const result = validator.validateJson(`{ "foo": }`, { output: BASIC });
       expect(result.errors.map((error) => error.ruleId)).to.eql(["value-expected"]);
     });
   });
@@ -939,7 +941,7 @@ describe("Validator", () => {
     test("an invalid instance has no annotations", async () => {
       const validator = await jsonSchema.compile(await schemaFile({ title: "root", type: "number" }));
 
-      const { output, node } = validator.annotate("foo", { output: "BASIC" });
+      const { output, node } = validator.annotate("foo", { output: BASIC });
       expect(output.valid).to.equal(false);
       expect(node.data?.annotations).to.equal(undefined);
     });
@@ -1133,7 +1135,7 @@ describe("Validator", () => {
       const aCalls = [];
       /** @type string[] */
       const bCalls = [];
-      const result = validator.validate({ foo: "bar" }, { output: "BASIC", plugins: [namedPlugin("a", aCalls), namedPlugin("b", bCalls)] });
+      const result = validator.validate({ foo: "bar" }, { output: BASIC, plugins: [namedPlugin("a", aCalls), namedPlugin("b", bCalls)] });
 
       expect(result.errors.map((error) => error.ruleId)).to.eql([typeKeyword.uri]);
       expect(aCalls).to.eql([
@@ -1266,7 +1268,7 @@ describe("Validator", () => {
       /** @type EvaluationPlugin */
       const plugin = { afterKeyword: () => count++ };
 
-      const result = validator.validate(1, { output: "BASIC", plugins: [plugin] });
+      const result = validator.validate(1, { output: BASIC, plugins: [plugin] });
       expect(result.valid).to.equal(true);
       expect(count).to.equal(3);
     });
@@ -1287,12 +1289,12 @@ describe("Validator", () => {
         afterKeyword: (keyword) => {
           if (keyword.keywordUri === typeKeyword.uri && nestedResults.length === 0) {
             // The same specialization as the outer evaluation
-            nestedResults.push(validator.annotate({ foo: 1 }, { output: "BASIC", plugins: [{}] }).output);
+            nestedResults.push(validator.annotate({ foo: 1 }, { output: BASIC, plugins: [{}] }).output);
           }
         }
       };
 
-      const result = validator.annotate({ foo: "bar" }, { output: "BASIC", plugins: [plugin] });
+      const result = validator.annotate({ foo: "bar" }, { output: BASIC, plugins: [plugin] });
       expect(nestedResults).to.eql([{ valid: true, errors: [] }]);
       expect(result.output.errors.map((error) => locations(/** @type ValidationError */ (error)))).to.eql([
         {
@@ -1318,7 +1320,7 @@ describe("Validator", () => {
     test("an error is for the keyword", async () => {
       const validator = await jsonSchema.compile(await schemaFile({ $id: "https://example.com/sorted", sorted: "descending" }));
 
-      const result = validator.validate([1, 2], { output: "BASIC" });
+      const result = validator.validate([1, 2], { output: BASIC });
       expect(result.errors.map((error) => locations(/** @type ValidationError */ (error)))).to.eql([
         { ruleId: sortedKeyword.uri, absoluteKeywordLocation: "https://example.com/sorted#/sorted", instanceLocation: "" }
       ]);
@@ -1343,7 +1345,7 @@ describe("Validator", () => {
         propertiesByType: { number: { minimum: 0 } }
       }));
 
-      for (const result of [validator.validate({ a: 1, b: -1, c: -2 }, { output: "BASIC" }), validator.validateJson(`{ "a": 1, "b": -1, "c": -2 }`, { output: "BASIC" })]) {
+      for (const result of [validator.validate({ a: 1, b: -1, c: -2 }, { output: BASIC }), validator.validateJson(`{ "a": 1, "b": -1, "c": -2 }`, { output: BASIC })]) {
         expect(result.errors.map((error) => locations(/** @type ValidationError */ (error)))).to.eql([
           { ruleId: minimumKeyword.uri, absoluteKeywordLocation: "https://example.com/by-type#/propertiesByType/number/minimum", instanceLocation: "/b" },
           { ruleId: minimumKeyword.uri, absoluteKeywordLocation: "https://example.com/by-type#/propertiesByType/number/minimum", instanceLocation: "/c" }
@@ -1362,7 +1364,7 @@ describe("Validator", () => {
     test("an opaque operation that doesn't explain its failure has an error of its own", async () => {
       const validator = await jsonSchema.compile(await schemaFile({ $id: "https://example.com/max-unevaluated", maxUnevaluated: 0 }));
 
-      const result = validator.validate({ a: 1 }, { output: "BASIC" });
+      const result = validator.validate({ a: 1 }, { output: BASIC });
       expect(result.errors.map((error) => locations(/** @type ValidationError */ (error)))).to.eql([
         { ruleId: maxUnevaluatedKeyword.uri, absoluteKeywordLocation: "https://example.com/max-unevaluated#/maxUnevaluated", instanceLocation: "" }
       ]);
@@ -1402,7 +1404,7 @@ describe("Validator", () => {
 
       for (const validate of [
         (/** @type Json */ instance) => validator.validate(instance),
-        (/** @type Json */ instance) => validator.validate(instance, { output: "BASIC" }).valid,
+        (/** @type Json */ instance) => validator.validate(instance, { output: BASIC }).valid,
         (/** @type Json */ instance) => validator.validateJson(JSON.stringify(instance))
       ]) {
         expect(validate({ foo: "a", bar: 1 })).to.equal(true);
@@ -1534,7 +1536,7 @@ describe("Validator", () => {
       const moved = pathToFileURL(join(cwd(), "moved", "person.schema.json")).href;
       const restored = jsonSchema.restoreValidator(serialized, { uri: moved });
       expect(restored.uri).to.equal(`${moved}#`);
-      const result = restored.validate({ foo: "x" }, { output: "BASIC" });
+      const result = restored.validate({ foo: "x" }, { output: BASIC });
       expect(result.errors.map((error) => /** @type ValidationError */ (error).absoluteKeywordLocation)).to.eql([`${join("moved", otherName)}#/type`]);
     });
 
@@ -1543,7 +1545,7 @@ describe("Validator", () => {
       const restored = jsonSchema.restoreValidator(JSON.parse(JSON.stringify(validator.serialize())));
 
       expect(restored.uri).to.equal("#");
-      expect(restored.validate({ foo: "x" }, { output: "BASIC" }).errors.map((error) => /** @type ValidationError */ (error).absoluteKeywordLocation)).to.eql(["#/properties/foo/type"]);
+      expect(restored.validate({ foo: "x" }, { output: BASIC }).errors.map((error) => /** @type ValidationError */ (error).absoluteKeywordLocation)).to.eql(["#/properties/foo/type"]);
     });
 
     test("a schema that isn't a file is serialized as it is", async () => {

@@ -11,9 +11,8 @@ bundling, and linting, is a function that takes a `JsonSchema` or a
 `JsonSchemaSession`.
 
 ```js
-import { JsonSchema, SchemaRegistry, validate, validator } from "@hyperjump/json-schema";
+import { BASIC, JsonSchema, SchemaRegistry, validate, validator } from "@hyperjump/json-schema";
 import { v1Dialect } from "@hyperjump/json-schema/v1";
-import { BASIC } from "@hyperjump/json-schema/output";
 
 const jsonSchema = new JsonSchema({ dialects: [v1Dialect] });
 

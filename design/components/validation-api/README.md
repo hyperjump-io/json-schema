@@ -11,8 +11,8 @@ Implemented in `src/kernel/validator.js`.
   A JSON string is also a valid instance, so the variants can't share a
   function.
 - FLAG output is a plain `boolean` to avoid allocating. BASIC and DETAILED are
-  `{ valid, errors }`. Output formats are typed with an augmentable
-  `OutputFormats` interface. A new output format spec is in progress and
+  `{ valid, errors }`. An output format is a value (`OutputFormat<R>`)
+  passed as `output`, and its type is its result's. A new output format spec is in progress and
   should be supported eventually.
 - Problems that are returned are plain data, and problems that are thrown
   are `Error`s. Validation errors and syntax errors are returned, so

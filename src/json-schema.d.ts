@@ -14,14 +14,14 @@ import type { EvaluationPlugin } from "./kernel/evaluation-plugin.d.ts";
 import type { SchemaRegistry } from "./registry/schema-registry.d.ts";
 import type { BundleOptions, JsonSchemaSession, LintOptions, SessionOptions } from "./session.d.ts";
 import type { SchemaMessage } from "./schema/schema-error.d.ts";
-import type { OutputFormat, OutputFormatDefinition, ValidationResult } from "./output/output-format.d.ts";
+import type { OutputFormat } from "./output/output-format.d.ts";
 
 export { outputErrorMessage, toVFileMessage } from "./output/validation-error.js";
 export { SchemaError } from "./schema/schema-error.js";
 export { RetrievalNotAllowedError } from "@hyperjump/browser";
 export type { ValidationError, DetailedValidationError } from "./output/validation-error.js";
 export type { SchemaMessage } from "./schema/schema-error.js";
-export type { OutputError, OutputFormat, OutputFormatDefinition, OutputFormats, JsonSyntaxError, ValidationResult } from "./output/output-format.d.ts";
+export type { BasicOutput, DetailedOutput, OutputError, OutputFormat, JsonSyntaxError } from "./output/output-format.d.ts";
 
 export type JsonSchemaConfig = HyperjumpConfig & {
   /**
@@ -101,7 +101,7 @@ export class JsonSchema extends Hyperjump<JsonSchemaNode> {
   /**
    * Get a keyword definition.
    *
-   * @throws Error if the keyword hasn't been added.
+   * @throws Error if the keyword isn't in the config or a dialect.
    */
   getKeyword(uri: string): Keyword;
 
@@ -111,7 +111,7 @@ export class JsonSchema extends Hyperjump<JsonSchemaNode> {
   /**
    * Get a format definition.
    *
-   * @throws Error if the format hasn't been added.
+   * @throws Error if the format isn't in the config or a dialect.
    */
   getFormat(uri: string): Format;
 
@@ -170,37 +170,21 @@ export class JsonSchema extends Hyperjump<JsonSchemaNode> {
    *
    * @throws Error if the compiled schema is in a kernel version other than
    * this library's (`kernel: 1`), or if a keyword or asserting format in it
-   * hasn't been added.
+   * isn't in the config.
    */
   restoreValidator(compiled: ReadonlyJson, options?: RestoreOptions): Validator;
 
-  /**
-   * Add an output format. BASIC and DETAILED are added by default and can be
-   * replaced.
-   *
-   * @throws Error for FLAG, which is built in.
-   */
-  addOutputFormat<F extends OutputFormat>(name: F, definition: OutputFormatDefinition<F>): void;
-
-  /**
-   * Get an output format's definition.
-   *
-   * @throws Error if the output format hasn't been added. FLAG doesn't have
-   * a definition.
-   */
-  getOutputFormat<F extends OutputFormat>(name: F): OutputFormatDefinition<F>;
-
   /** A shortcut for `(await compile(uri)).validate(instance, options)` */
-  validate<F extends OutputFormat = "FLAG">(uri: string, instance: ReadonlyJson, options?: ValidationOptions<F>): Promise<ValidationResult<F>>;
+  validate<R = boolean>(uri: string, instance: ReadonlyJson, options?: ValidationOptions<R>): Promise<R>;
 
   /** A shortcut for `(await compile(uri)).validateJson(json, options)` */
-  validateJson<F extends OutputFormat = "FLAG">(uri: string, json: string, options?: ValidationOptions<F>): Promise<ValidationResult<F>>;
+  validateJson<R = boolean>(uri: string, json: string, options?: ValidationOptions<R>): Promise<R>;
 
   /** A shortcut for `(await compile(uri)).annotate(instance, options)` */
-  annotate<F extends OutputFormat = "FLAG">(uri: string, instance: ReadonlyJson, options?: ValidationOptions<F>): Promise<AnnotationResult<F>>;
+  annotate<R = boolean>(uri: string, instance: ReadonlyJson, options?: ValidationOptions<R>): Promise<AnnotationResult<R>>;
 
   /** A shortcut for `(await compile(uri)).annotateJson(json, options)` */
-  annotateJson<F extends OutputFormat = "FLAG">(uri: string, json: string, options?: ValidationOptions<F>): Promise<AnnotationResult<F>>;
+  annotateJson<R = boolean>(uri: string, json: string, options?: ValidationOptions<R>): Promise<AnnotationResult<R>>;
 }
 
 /**
@@ -221,7 +205,7 @@ export type Validator = {
   /** The URI of the compiled schema */
   uri: string;
 
-  validate<F extends OutputFormat = "FLAG">(instance: ReadonlyJson, options?: ValidationOptions<F>): ValidationResult<F>;
+  validate<R = boolean>(instance: ReadonlyJson, options?: ValidationOptions<R>): R;
 
   /**
    * Parse and validate JSON text. Any syntax error makes the instance
@@ -229,16 +213,16 @@ export type Validator = {
    * but the instance is still validated as far as it could be parsed so all
    * the problems are reported at once.
    */
-  validateJson<F extends OutputFormat = "FLAG">(json: string, options?: ValidationOptions<F>): ValidationResult<F>;
+  validateJson<R = boolean>(json: string, options?: ValidationOptions<R>): R;
 
   /**
    * Validate a JSON AST, such as a value in a schema AST. Errors have the
    * nodes' positions. Values that couldn't be parsed (`json-missing` and
    * `json-invalid` nodes) aren't evaluated.
    */
-  validateNode<F extends OutputFormat = "FLAG">(node: JsonNode<unknown, JsonErrorNode> | JsonErrorNode, options?: ValidationOptions<F>): ValidationResult<F>;
+  validateNode<R = boolean>(node: JsonNode<unknown, JsonErrorNode> | JsonErrorNode, options?: ValidationOptions<R>): R;
 
-  annotate<F extends OutputFormat = "FLAG">(instance: ReadonlyJson, options?: ValidationOptions<F>): AnnotationResult<F>;
+  annotate<R = boolean>(instance: ReadonlyJson, options?: ValidationOptions<R>): AnnotationResult<R>;
 
   /**
    * Parse, validate, and annotate JSON text. The parse is error-tolerant, so
@@ -246,7 +230,7 @@ export type Validator = {
    * be parsed are {@link JsonErrorNode}s. Keywords don't evaluate those
    * nodes, so the syntax error is the only error reported for them.
    */
-  annotateJson<F extends OutputFormat = "FLAG">(json: string, options?: ValidationOptions<F>): AnnotationResult<F>;
+  annotateJson<R = boolean>(json: string, options?: ValidationOptions<R>): AnnotationResult<R>;
 
   /**
    * Validate and annotate a JSON AST, such as a value in a schema AST. The
@@ -254,7 +238,7 @@ export type Validator = {
    * node again adds to them. Values that couldn't be parsed (`json-missing`
    * and `json-invalid` nodes) aren't evaluated.
    */
-  annotateNode<F extends OutputFormat = "FLAG">(node: JsonNode<unknown, JsonErrorNode> | JsonErrorNode, options?: ValidationOptions<F>): ValidationResult<F>;
+  annotateNode<R = boolean>(node: JsonNode<unknown, JsonErrorNode> | JsonErrorNode, options?: ValidationOptions<R>): R;
 
   /**
    * The compiled schema as JSON, to be restored with
@@ -275,8 +259,12 @@ export type RestoreOptions = {
   uri?: string;
 };
 
-export type ValidationOptions<F extends OutputFormat = OutputFormat> = {
-  output?: F;
+export type ValidationOptions<R = unknown> = {
+  /**
+   * The output format, like `BASIC`.
+   * It's `FLAG` by default.
+   */
+  output?: OutputFormat<R>;
 
   /**
    * Plugins to run during this evaluation. With any plugin, the instance is
@@ -289,8 +277,8 @@ export type ValidationOptions<F extends OutputFormat = OutputFormat> = {
  * The validation output is a separate property because the FLAG output is a
  * boolean and can't be combined with the other properties.
  */
-export type AnnotationResult<F extends OutputFormat> = {
-  output: ValidationResult<F>;
+export type AnnotationResult<R> = {
+  output: R;
 
   /** Always `"success"` for `annotate`. */
   status: JsonParseStatus;

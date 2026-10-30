@@ -3,6 +3,7 @@ import { JsonSchema } from "../../json-schema.js";
 import { SchemaRegistry } from "../../registry/schema-registry.js";
 import { v1Dialect, v1DialectUri } from "../../dialects/v1/index.js";
 import combine from "./combine.js";
+import { BASIC } from "../../output/index.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
@@ -120,7 +121,7 @@ describe("combine", () => {
 
   test("with plugins, each inlined group has its own errors", async () => {
     const validator = await compile({ type: "number", allOf: [{ type: "string" }, { minLength: 2 }] });
-    const result = validator.validate("a", { output: "BASIC" });
+    const result = validator.validate("a", { output: BASIC });
     expect(result.errors.map((error) => /** @type {{ absoluteKeywordLocation: string }} */ (error).absoluteKeywordLocation.replace(/.*#/, ""))).to.eql([
       "/type",
       "/allOf/1/minLength"

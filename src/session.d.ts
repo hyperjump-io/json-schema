@@ -96,7 +96,7 @@ export class JsonSchemaSession extends Session<JsonSchemaNode> {
   getDocument(uri: string, options?: GetOptions): Promise<DocumentNode<JsonSchemaNode>>;
 
   /**
-   * Get a dialect. If it hasn't been added to the {@link JsonSchema} or
+   * Get a dialect. If it isn't in the {@link JsonSchema}'s config or
    * built in this session, its meta-schema is found with
    * {@link getDocument}, which can find it in a registry, and the dialect is
    * the one the meta-schema defines (see

@@ -4,11 +4,12 @@ import { astInstance, jsInstance } from "./instance.js";
 import { optimize } from "./optimize.js";
 import { fast } from "./fast.js";
 import { instrumented } from "./instrumented.js";
+import { FLAG } from "../output/flag.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
  * @import * as API from "../json-schema.d.ts"
- * @import { JsonSyntaxError, OutputFormat, ValidationResult } from "../output/output-format.d.ts"
+ * @import { JsonSyntaxError, OutputFormat } from "../output/output-format.d.ts"
  * @import { EvaluationPlugin } from "./evaluation-plugin.d.ts"
  * @import { InstanceOps } from "../keyword.d.ts"
  * @import { Kernel } from "./kernel.d.ts"
@@ -74,7 +75,7 @@ export class Validator {
     const instance = /** @type Json */ (readonlyInstance);
     if (options === undefined) {
       this.#jsFlag ??= fast(this.#jsonSchema, optimize(this.#kernel, { fast: true, plugins: false, annotations: false }));
-      return /** @type ValidationResult<any> */ (this.#jsFlag(instance));
+      return /** @type any */ (this.#jsFlag(instance));
     }
 
     return this.#evaluate(this.#jsEvaluator, instance, false, options, noSyntaxErrors);
@@ -130,12 +131,12 @@ export class Validator {
   }
 
   /**
-   * @template {OutputFormat} F
+   * @template R
    * @param {InstanceNode} node
    * @param {boolean} annotating
-   * @param {API.ValidationOptions<F> | undefined} options
+   * @param {API.ValidationOptions<R> | undefined} options
    * @param {JsonSyntaxError[]} syntaxErrors
-   * @returns {ValidationResult<F>}
+   * @returns {R}
    */
   #evaluateAst(node, annotating, options, syntaxErrors) {
     return this.#evaluate(this.#astEvaluator, node, annotating, options, syntaxErrors);
@@ -167,25 +168,26 @@ export class Validator {
    * so no plugin sees the instance twice.
    *
    * @template I
-   * @template {OutputFormat} F
+   * @template R
    * @param {(annotating: boolean, plugins: EvaluationPlugin[]) => Evaluate<I>} evaluatorFor
    * @param {I} instance
    * @param {boolean} annotating
-   * @param {API.ValidationOptions<F> | undefined} options
+   * @param {API.ValidationOptions<R> | undefined} options
    * @param {JsonSyntaxError[]} syntaxErrors
-   * @returns {ValidationResult<F>}
+   * @returns {R}
    */
   #evaluate(evaluatorFor, instance, annotating, options, syntaxErrors) {
-    const format = options?.output ?? "FLAG";
+    const format = /** @type OutputFormat<R> */ (options?.output ?? FLAG);
     const plugins = options?.plugins ?? [];
     const isParsed = syntaxErrors.length === 0;
 
-    if (format === "FLAG") {
+    // FLAG doesn't need anything from its format, so it isn't called
+    if (format === FLAG) {
       const valid = evaluatorFor(annotating, plugins)(instance, plugins);
-      return /** @type ValidationResult<F> */ (valid && isParsed);
+      return /** @type R */ (valid && isParsed);
     }
 
-    const { plugin, output } = this.#jsonSchema.getOutputFormat(format)();
+    const { plugin, output } = format();
 
     let valid;
     if (plugins.length === 0) {

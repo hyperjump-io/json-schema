@@ -6,6 +6,7 @@ import { draft202012Dialect, draft202012DialectUri } from "../../dialects/draft-
 import { hasOp } from "../kernel.js";
 import { optimize } from "../optimize.js";
 import staticDynamicScope from "./static-dynamic-scope.js";
+import { BASIC } from "../../output/index.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
@@ -189,7 +190,7 @@ describe("staticDynamicScope", () => {
       const { base } = validator;
       /** @type (instance: Json) => [string, string][] */
       const errors = (instance) => {
-        const output = validator.validate(instance, { output: "BASIC" });
+        const output = validator.validate(instance, { output: BASIC });
         return output.errors.map((error) => {
           const { absoluteKeywordLocation, instanceLocation } = /** @type ValidationError */ (error);
           return [absoluteKeywordLocation.replace(base, ""), instanceLocation];

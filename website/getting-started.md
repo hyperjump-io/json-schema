@@ -78,10 +78,12 @@ validation. Validating is fast.
 ## Find out what's wrong
 
 By default, `validate` only says whether a value is valid. Ask for the
-`BASIC` output to get a list of errors.
+`BASIC` output format to get a list of errors.
 
 ```typescript
-const result = validator.validate({ age: -1 }, { output: "BASIC" });
+import { BASIC } from "@hyperjump/json-schema";
+
+const result = validator.validate({ age: -1 }, { output: BASIC });
 
 result.valid; // false
 result.errors.length; // 2
@@ -139,7 +141,7 @@ const file = new VFile({
   path: "person.json",
   value: `{ "name": "Jason", "age": -1, }`
 });
-const result = validator.validateJson(String(file), { output: "BASIC" });
+const result = validator.validateJson(String(file), { output: BASIC });
 
 for (const error of result.errors) {
   const message = file.message(outputErrorMessage(error), {

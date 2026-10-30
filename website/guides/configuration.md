@@ -30,7 +30,6 @@ What schemas can use is decided by the config, and can't change after the
 | Method | What it adds | See |
 | --- | --- | --- |
 | `addUriSchemePlugin(plugin)` | A way to retrieve URIs, or a replacement HTTP plugin | [Controlling retrieval](retrieval.md#sending-credentials) |
-| `addOutputFormat(name, definition)` | An output format | [Custom output formats](../extending/output-formats.md) |
 
 Schemas that aren't retrieved go in its `registry` property, which starts
 empty (see [Loading schemas](loading-schemas.md#registries)).
@@ -51,5 +50,5 @@ The validator's methods take:
 
 | Option | Default | What it does |
 | --- | --- | --- |
-| `output` | `"FLAG"` | `"FLAG"`, `"BASIC"`, `"DETAILED"`, or one you added. See [Output and errors](output.md). |
+| `output` | `FLAG` | `FLAG`, `BASIC`, `DETAILED`, or one of your own. See [Output and errors](output.md). |
 | `plugins` | None | [Evaluation plugins](../extending/plugins.md) that observe the evaluation |

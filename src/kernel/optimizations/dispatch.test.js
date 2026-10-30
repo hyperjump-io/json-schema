@@ -6,6 +6,7 @@ import { v1Dialect, v1DialectUri } from "../../dialects/v1/index.js";
 import { astInstance, jsInstance } from "../instance.js";
 import { instrumented } from "../instrumented.js";
 import dispatch from "./dispatch.js";
+import { BASIC } from "../../output/index.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
@@ -367,7 +368,7 @@ describe("dispatch", () => {
 
     test("BASIC has the errors of the schema for the tag", async () => {
       const validator = await compile(tags);
-      const result = validator.validate({ kind: "b", b: "x" }, { output: "BASIC" });
+      const result = validator.validate({ kind: "b", b: "x" }, { output: BASIC });
       expect(result.errors.map((error) => /** @type any */ (error).absoluteKeywordLocation.replace(/.*#/, ""))).to.eql(["/oneOf", "/oneOf/1/properties/b/type"]);
     });
 

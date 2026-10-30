@@ -39,7 +39,7 @@ where it can, so the rest of the text is still validated.
 
 ```typescript
 const json = `{ "name": "Jason", "age": -1, }`;
-const result = validator.validateJson(json, { output: "BASIC" });
+const result = validator.validateJson(json, { output: BASIC });
 ```
 
 `result.errors` has a validation error and a syntax error, in the order
@@ -78,11 +78,13 @@ validator.validateNode(node); // true
 
 ## Asking why
 
-Every method takes an `output` option. The default, `"FLAG"`, is only a
-boolean. `"BASIC"` and `"DETAILED"` return the errors.
+Every method takes an `output` option. The default, `FLAG`, is only a
+boolean. `BASIC` and `DETAILED` return the errors.
 
 ```typescript
-validator.validate({ age: -1 }, { output: "BASIC" });
+import { BASIC } from "@hyperjump/json-schema";
+
+validator.validate({ age: -1 }, { output: BASIC });
 // { valid: false, errors: [...] }
 ```
 

@@ -1,12 +1,24 @@
 # Output formats
 
-- FLAG is built in. It runs the fast closures and allocates nothing.
-- Every other format is an `OutputFormatDefinition` registered with
-  `addOutputFormat` and typed through the `OutputFormats` interface. It
-  returns a plugin and an `output(valid, syntaxErrors)` function for each
-  evaluation, so every format can include syntax errors. BASIC
-  and DETAILED are registered by default. The output format being developed
-  for the next spec release will be another one.
+- Output formats are values, exported from `@hyperjump/json-schema`
+  (`FLAG`, `BASIC`, `DETAILED`, in `src/output/`) and passed as `output`.
+  They aren't a separate entry point (`@hyperjump/json-schema/output`, as
+  first designed), because bundlers drop the named exports that aren't
+  imported either way. A
+  format is an `OutputFormat<R>`, a function that returns a plugin and an
+  `output(valid, syntaxErrors)` function for each evaluation, so every
+  format can include syntax errors. `R` is its result, so `validate`'s
+  return type comes from the format, and a custom format is typed the same
+  way. The output format being developed for the next spec release will be
+  another one.
+- FLAG is the default. The validator recognizes it and runs the fast
+  closures without calling it, so it allocates nothing, and code that only
+  uses FLAG never imports BASIC or DETAILED.
+- Before 2026-10-29, formats were registered by name on the `JsonSchema`
+  (`addOutputFormat`, `getOutputFormat`) and typed through an augmentable
+  `OutputFormats` interface. Every registered format stayed in a bundle,
+  and a custom one needed declaration merging. FLAG couldn't be replaced;
+  now there's nothing to replace.
 - Without user plugins, an instance is evaluated with the fast closures
   first, and the format's plugin only runs on a second evaluation if the
   instance is invalid. Valid instances never pay for error collection. With

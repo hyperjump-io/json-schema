@@ -5,6 +5,7 @@ import { pathToFileURL } from "node:url";
 import { describe, test, beforeAll, afterAll, expect } from "vitest";
 import { JsonSchema } from "../json-schema.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
+import { BASIC } from "../output/index.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
@@ -61,7 +62,7 @@ describe("validation keywords with syntax errors", () => {
     test(description, async () => {
       const validator = await jsonSchema.compile(await schemaFile(schema));
 
-      const result = validator.validateJson(json, { output: "BASIC" });
+      const result = validator.validateJson(json, { output: BASIC });
       expect(result.errors.map((error) => error.ruleId)).to.eql(ruleIds);
     });
   }

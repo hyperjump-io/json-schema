@@ -6,9 +6,9 @@ has a message, the position if there is one, the `ruleId`, and the
 `source`, so it prints like the messages of other unified tools.
 
 ```typescript
-import { toVFileMessage } from "@hyperjump/json-schema";
+import { BASIC, toVFileMessage } from "@hyperjump/json-schema";
 
-const result = validator.validateJson(json, { output: "BASIC" });
+const result = validator.validateJson(json, { output: BASIC });
 
 for (const error of result.errors) {
   console.log(String(toVFileMessage(error)));

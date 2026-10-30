@@ -11,6 +11,7 @@ import { draft201909Dialect, draft201909DialectUri } from "../dialects/draft-201
 import { draft07Dialect, draft07DialectUri } from "../dialects/draft-07/index.js";
 import { draft06Dialect, draft06DialectUri } from "../dialects/draft-06/index.js";
 import { draft04Dialect, draft04DialectUri } from "../dialects/draft-04/index.js";
+import { DETAILED } from "../output/index.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
@@ -356,7 +357,7 @@ const registryOf = (schemas, dialectUri) => new SchemaRegistry(Object.entries(sc
  * @type (validator: Validator, instance: Json) => Json
  */
 const outputOf = (validator, instance) => {
-  const { output } = validator.annotate(instance, { output: "DETAILED" });
+  const { output } = validator.annotate(instance, { output: DETAILED });
 
   /** @type Json[] */
   const annotations = [];

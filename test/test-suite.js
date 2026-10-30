@@ -6,6 +6,7 @@ import { resolveIri, toAbsoluteIri } from "@hyperjump/uri";
 import { JsonSchema } from "../src/json-schema.js";
 import { SchemaRegistry } from "../src/registry/schema-registry.js";
 import { fullFormats } from "../src/formats/full.js";
+import { BASIC } from "../src/output/index.js";
 
 /**
  * @import { Json, JsonNode } from "@hyperjump/browser/json"
@@ -235,7 +236,7 @@ export const describeValidationTestSuite = (options) => {
                 expect({
                   validate: validator.validate(data),
                   validateJson: validator.validateJson(JSON.stringify(data)),
-                  basic: validator.validate(data, { output: "BASIC" }).valid,
+                  basic: validator.validate(data, { output: BASIC }).valid,
                   annotate: validator.annotate(data).output
                 }).to.eql({
                   validate: valid,

@@ -33,7 +33,7 @@ export type JsonSchemaResolveOptions = {
  * (`fatal: true`), because a schema with a problem can't be used. They
  * aren't thrown, so every problem in the document is reported.
  *
- * It's asynchronous because a dialect that hasn't been added has to be
+ * It's asynchronous because a dialect that isn't in the config has to be
  * retrieved from its meta-schema. It doesn't validate the document against
  * its meta-schema.
  *

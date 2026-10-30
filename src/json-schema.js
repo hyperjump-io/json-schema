@@ -11,8 +11,6 @@ import { assertNoReservedKeywords } from "./dialects/extend-dialect.js";
 import { Validator } from "./kernel/validator.js";
 import { schemaReads, subexpressions } from "./kernel/kernel.js";
 import { keywordEvaluate } from "./kernel/fast.js";
-import { basicOutputFormat } from "./output/basic.js";
-import { detailedOutputFormat } from "./output/detailed.js";
 
 export { outputErrorMessage, toVFileMessage } from "./output/validation-error.js";
 export { SchemaError } from "./schema/schema-error.js";
@@ -26,7 +24,6 @@ export { extendDialect } from "./dialects/extend-dialect.js";
  * @import { Expression, Kernel } from "./kernel/kernel.d.ts"
  * @import { JsonSchemaNode } from "./schema/schema-ast.d.ts"
  * @import * as API from "./json-schema.d.ts"
- * @import { OutputFormat, OutputFormatDefinition } from "./output/output-format.d.ts"
  */
 
 /**
@@ -49,9 +46,6 @@ export class JsonSchema extends Hyperjump {
   /** @type Record<string, Vocabulary> */
   #vocabularies;
 
-  /** @type Partial<{ [F in OutputFormat]: OutputFormatDefinition<F> }> */
-  #outputFormats;
-
   /** @type API.JsonSchema["registry"] */
   registry;
 
@@ -66,7 +60,6 @@ export class JsonSchema extends Hyperjump {
     this.#formats = {};
     this.#dialects = {};
     this.#vocabularies = {};
-    this.#outputFormats = {};
     this.registry = new SchemaRegistry();
 
     // The config's definitions come first, so one that replaces a
@@ -100,9 +93,6 @@ export class JsonSchema extends Hyperjump {
 
     this.addMediaTypePlugin(new JsonSchemaMediaTypePlugin());
     this.addMediaTypePlugin(new JsonOrSchemaMediaTypePlugin());
-
-    this.addOutputFormat("BASIC", basicOutputFormat);
-    this.addOutputFormat("DETAILED", detailedOutputFormat);
   }
 
   get config() {
@@ -268,25 +258,6 @@ export class JsonSchema extends Hyperjump {
   /** @type API.JsonSchema["lint"] */
   async lint(uri, options) {
     return this.session(options).lint(uri, options);
-  }
-
-  /** @type API.JsonSchema["addOutputFormat"] */
-  addOutputFormat(name, definition) {
-    if (name === "FLAG") {
-      throw Error("The FLAG output format is built in and can't be replaced");
-    }
-
-    this.#outputFormats[name] = /** @type any */ (definition);
-  }
-
-  /** @type API.JsonSchema["getOutputFormat"] */
-  getOutputFormat(name) {
-    const definition = this.#outputFormats[name];
-    if (!definition) {
-      throw Error(`The '${name}' output format isn't supported. Use the 'addOutputFormat' function to add support for it.`);
-    }
-
-    return definition;
   }
 
   /** @type API.JsonSchema["restoreValidator"] */

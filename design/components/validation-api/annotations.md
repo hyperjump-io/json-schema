@@ -4,7 +4,7 @@
   `node.data.annotations`, a `Map` of annotation keyword URI to values.
 - Annotations are read with `annotation(node, keyword, dialectUri)` on
   `JsonSchemaSession`, like the other AST operations, as in v1. The keyword
-  is a keyword URI if a keyword with that URI has been added (without the
+  is a keyword URI if a keyword with that URI is defined (without the
   fragment, for unknown keywords), so a URI doesn't need the dialect.
   Otherwise it's a name in the dialect (v1 by default), and a name that
   isn't in the dialect is an unknown keyword. The dialect is looked up

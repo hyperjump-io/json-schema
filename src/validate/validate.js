@@ -1,4 +1,5 @@
 import { outputErrorMessage } from "../output/validation-error.js";
+import { BASIC } from "../output/basic.js";
 
 /**
  * @import * as API from "./validate.d.ts"
@@ -13,7 +14,7 @@ export function jsonSchemaValidate(options) {
       return;
     }
 
-    const { errors } = options.validator.validateNode(node, { output: "BASIC" });
+    const { errors } = options.validator.validateNode(node, { output: BASIC });
     for (const error of errors) {
       const message = file.message(outputErrorMessage(error), {
         place: error.place,

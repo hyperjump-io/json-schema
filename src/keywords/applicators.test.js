@@ -5,6 +5,7 @@ import { pathToFileURL } from "node:url";
 import { describe, test, beforeAll, afterAll, expect } from "vitest";
 import { JsonSchema } from "../json-schema.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
+import { BASIC, DETAILED } from "../output/index.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
@@ -47,8 +48,8 @@ describe("applicator errors", () => {
     test("then has its own keyword location", async () => {
       const validator = await jsonSchema.compile(await schemaFile(schema));
 
-      expect(validator.validate("abc", { output: "BASIC" }).errors.map(keywordPointers)).to.eql(["/then/maxLength"]);
-      expect(validator.validate("abc", { output: "DETAILED" }).errors.map(keywordPointers)).to.eql([
+      expect(validator.validate("abc", { output: BASIC }).errors.map(keywordPointers)).to.eql(["/then/maxLength"]);
+      expect(validator.validate("abc", { output: DETAILED }).errors.map(keywordPointers)).to.eql([
         { "/if": ["/then/maxLength"] }
       ]);
     });
@@ -56,8 +57,8 @@ describe("applicator errors", () => {
     test("a failing condition isn't an error", async () => {
       const validator = await jsonSchema.compile(await schemaFile(schema));
 
-      expect(validator.validate(5, { output: "BASIC" }).errors.map(keywordPointers)).to.eql(["/else/minimum"]);
-      expect(validator.validate(5, { output: "DETAILED" }).errors.map(keywordPointers)).to.eql([
+      expect(validator.validate(5, { output: BASIC }).errors.map(keywordPointers)).to.eql(["/else/minimum"]);
+      expect(validator.validate(5, { output: DETAILED }).errors.map(keywordPointers)).to.eql([
         { "/if": ["/else/minimum"] }
       ]);
     });
@@ -65,7 +66,7 @@ describe("applicator errors", () => {
     test("DETAILED gives if's errors as a plain array", async () => {
       const validator = await jsonSchema.compile(await schemaFile(schema));
 
-      const [error] = validator.validate("abc", { output: "DETAILED" }).errors;
+      const [error] = validator.validate("abc", { output: DETAILED }).errors;
       expect(Object.keys(/** @type DetailedValidationError */ (error).errors ?? {})).to.eql(["0"]);
     });
   });
@@ -77,7 +78,7 @@ describe("applicator errors", () => {
         $defs: { number: { type: "number" } }
       }));
 
-      expect(validator.validate({ foo: "x" }, { output: "BASIC" }).errors.map(locations)).to.eql([
+      expect(validator.validate({ foo: "x" }, { output: BASIC }).errors.map(locations)).to.eql([
         { absoluteKeywordLocation: "#/$defs/number/type", instanceLocation: "/foo" }
       ]);
     });
@@ -90,7 +91,7 @@ describe("applicator errors", () => {
         $defs: { item: { $dynamicAnchor: "item", type: "string" } }
       }));
 
-      expect(validator.validate([1], { output: "BASIC" }).errors.map(locations)).to.eql([
+      expect(validator.validate([1], { output: BASIC }).errors.map(locations)).to.eql([
         { absoluteKeywordLocation: "#/$defs/item/type", instanceLocation: "/0" }
       ]);
     });
@@ -109,7 +110,7 @@ describe("applicator errors", () => {
         unevaluatedProperties: false
       }));
 
-      expect(validator.validate({ foo: 1, bar: 2 }, { output: "BASIC" }).errors.map(locations)).to.eql([
+      expect(validator.validate({ foo: 1, bar: 2 }, { output: BASIC }).errors.map(locations)).to.eql([
         { absoluteKeywordLocation: "#/unevaluatedProperties", instanceLocation: "/bar" }
       ]);
     });
@@ -122,7 +123,7 @@ describe("applicator errors", () => {
         unevaluatedItems: { type: "string" }
       }));
 
-      expect(validator.validate([1, 2], { output: "BASIC" }).errors.map(locations)).to.eql([
+      expect(validator.validate([1, 2], { output: BASIC }).errors.map(locations)).to.eql([
         { absoluteKeywordLocation: "#/unevaluatedItems/type", instanceLocation: "/1" }
       ]);
     });
@@ -141,7 +142,7 @@ describe("applicator errors", () => {
     test("failing conditions aren't errors", async () => {
       const validator = await jsonSchema.compile(await schemaFile(schema));
 
-      expect(validator.validate(5, { output: "BASIC" }).errors.map(keywordPointers)).to.eql([
+      expect(validator.validate(5, { output: BASIC }).errors.map(keywordPointers)).to.eql([
         "/conditional/2/1/minimum"
       ]);
     });
@@ -149,7 +150,7 @@ describe("applicator errors", () => {
     test("the fallback's errors are errors", async () => {
       const validator = await jsonSchema.compile(await schemaFile(schema));
 
-      expect(validator.validate(true, { output: "BASIC" }).errors.map(keywordPointers)).to.eql([
+      expect(validator.validate(true, { output: BASIC }).errors.map(keywordPointers)).to.eql([
         "/conditional/3/const"
       ]);
     });
@@ -162,7 +163,7 @@ describe("applicator errors", () => {
         oneOf: [{ minimum: 10 }]
       }));
 
-      expect(validator.validate(5, { output: "BASIC" }).errors.map(keywordPointers)).to.eql([
+      expect(validator.validate(5, { output: BASIC }).errors.map(keywordPointers)).to.eql([
         "/anyOf/0/type",
         "/oneOf/0/minimum"
       ]);
@@ -174,7 +175,7 @@ describe("applicator errors", () => {
         oneOf: [{ minimum: 10 }, { maximum: 0 }]
       }));
 
-      expect(validator.validate(5, { output: "BASIC" }).errors.map(keywordPointers)).to.eql([
+      expect(validator.validate(5, { output: BASIC }).errors.map(keywordPointers)).to.eql([
         "/anyOf",
         "/anyOf/0/type",
         "/anyOf/1/type",
@@ -190,7 +191,7 @@ describe("applicator errors", () => {
       const validator = await jsonSchema.compile(await schemaFile({ properties: { foo: { propertyNames: { maxLength: 2 } } } }));
 
       const json = `{ "foo": { "bar": 1 } }`;
-      for (const result of [validator.validate(JSON.parse(json), { output: "BASIC" }), validator.validateJson(json, { output: "BASIC" })]) {
+      for (const result of [validator.validate(JSON.parse(json), { output: BASIC }), validator.validateJson(json, { output: BASIC })]) {
         expect(result.errors.map(locations)).to.eql([
           { absoluteKeywordLocation: "#/properties/foo/propertyNames/maxLength", instanceLocation: "/foo" }
         ]);

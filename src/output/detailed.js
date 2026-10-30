@@ -2,7 +2,7 @@ import { falseSchemaRuleId, inDocumentOrder, isCondition, keywordStart, startOf,
 
 /**
  * @import { EvaluationPlugin } from "../kernel/evaluation-plugin.d.ts"
- * @import { OutputFormatDefinition } from "./output-format.d.ts"
+ * @import { DetailedOutput, OutputFormat } from "./output-format.d.ts"
  * @import { DetailedValidationError } from "./validation-error.d.ts"
  * @import { KeywordStart } from "./utilities.js"
  */
@@ -74,8 +74,8 @@ export class DetailedOutputPlugin {
   }
 }
 
-/** @type OutputFormatDefinition<"DETAILED"> */
-export const detailedOutputFormat = () => {
+/** @type OutputFormat<DetailedOutput> */
+export const DETAILED = () => {
   const plugin = new DetailedOutputPlugin();
   return {
     plugin,
