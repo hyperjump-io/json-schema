@@ -37,3 +37,4 @@ were written for one-off investigations.
   - [Reading a property's value first](kernel-in-src/property-values-first.md)
   - [String lengths without counting](kernel-in-src/string-lengths.md)
   - [The root without a wrapper](kernel-in-src/root-without-a-wrapper.md)
+- [Bundle size](bundle-size.md) (2026-10-29)
