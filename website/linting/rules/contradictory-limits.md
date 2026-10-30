@@ -2,27 +2,31 @@
 
 In `recommended`, as a warning.
 
-A lower limit above its upper limit, so no value of the type they limit
-is valid. Values of other types still are, so the schema doesn't fail
+A lower limit above its upper limit. No value of the type they limit is
+valid. Values of other types still are, so the schema doesn't reject
 everything, but it's rarely what's meant.
 
-- Numbers: the tightest of `minimum` and `exclusiveMinimum` against the
-  tightest of `maximum` and `exclusiveMaximum`, in draft-04's form, where
-  `exclusiveMinimum` and `exclusiveMaximum` are booleans, and later ones,
-  where they're numbers. Equal limits are reported if either is
-  exclusive.
-- Strings, arrays, and objects: `minLength` and `maxLength`, `minItems`
-  and `maxItems`, and `minProperties` and `maxProperties`.
-- More required properties than `maxProperties` allows. They're the
-  distinct properties that `required`, or any keyword that requires
-  properties (v1's `requireAllExcept`), requires, with what
-  `dependentRequired` and `dependencies` add for those properties, and
-  what schemas that have to pass (`allOf`, `$ref`, and dependent schemas)
-  require. There's a message on `maxProperties` and on each keyword in
-  the schema that requires some of them, which names the others.
-- `minContains` and `maxContains`, if there's a `contains`. Without one,
-  they have no effect, which `min-max-contains-without-contains`
-  reports.
+It checks these limits:
+
+- **Numbers.** The tightest of `minimum` and `exclusiveMinimum` against
+  the tightest of `maximum` and `exclusiveMaximum`. This works both in
+  draft-04, where `exclusiveMinimum` and `exclusiveMaximum` are booleans,
+  and in later drafts, where they're numbers. Equal limits are reported if
+  either one is exclusive.
+- **Strings, arrays, and objects.** `minLength` and `maxLength`,
+  `minItems` and `maxItems`, and `minProperties` and `maxProperties`.
+- **More required properties than `maxProperties` allows.** It counts the
+  distinct properties that are required. That includes properties from
+  `required` and from any other keyword that requires properties, like
+  v1's `requireAllExcept`. It adds what `dependentRequired` and
+  `dependencies` require for those properties. It also adds what schemas
+  that have to pass require, such as `allOf`, `$ref`, and dependent
+  schemas. There's a message on `maxProperties`. There's also one on each
+  keyword in the schema that requires some of the properties, and it names
+  the others.
+- **`minContains` and `maxContains`** when there's a `contains`. Without
+  `contains` they have no effect, which
+  `min-max-contains-without-contains` reports.
 
 Otherwise, it only compares limits in the same schema. It has no options.
 

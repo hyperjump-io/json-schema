@@ -2,16 +2,16 @@
 
 In `recommended`, as a warning.
 
-`minimum` and `maximum` with the same value, where `type` only allows
-numbers, so that value is the only one that's valid. `const` says it more
-directly, or a single-value `enum` in draft-04, which doesn't have
-`const`. The schema's other keywords stay as they are, so replacing the
+`minimum` and `maximum` with the same value when `type` only allows
+numbers. That value is the only valid one, and `const` says so more
+directly. In draft-04, which doesn't have `const`, a single-value `enum`
+does. The schema's other keywords stay as they are, so replacing the
 limits doesn't change what's valid.
 
-Without `type`, or where `type` allows other types, values of those types
-are valid too, which `const` wouldn't allow, so it isn't reported. With
-an exclusive limit, nothing is valid, which `contradictory-limits`
-reports. It has no options.
+Without `type`, or when `type` allows other types, values of those types
+are valid too. `const` wouldn't allow them, so it isn't reported. With an
+exclusive limit nothing is valid, which `contradictory-limits` reports. It
+has no options.
 
 ## Examples
 

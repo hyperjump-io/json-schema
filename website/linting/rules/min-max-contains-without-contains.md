@@ -5,8 +5,8 @@ In `recommended`, as a warning.
 `minContains` or `maxContains` without a sibling `contains`. They count the
 items that pass `contains`, so neither does anything on its own.
 
-It finds the keywords by URI, so it works in every dialect with
-`minContains`, whatever they're named. It has no options.
+It finds the keywords by URI, so it works in every dialect that has
+`minContains`, whatever the keywords are named. It has no options.
 
 ## Examples
 

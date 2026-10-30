@@ -7,14 +7,14 @@ add each one.
 ## Everything has a URI
 
 Keywords, formats, and dialects are identified by URI, not by name. A
-dialect maps names to URIs: in v1, `minimum` is
+dialect maps names to URIs. For example, in v1, `minimum` is
 `https://json-schema.org/keyword/minimum`. The same keyword can have
-different names in different dialects, and two dialects can use the same
+different names in different dialects. Two dialects can also use the same
 name for different keywords.
 
-So a keyword is defined with its URI, and given a name in a dialect.
-Dialects carry their definitions, and `extendDialect` makes a dialect with
-more of them, which goes in the config.
+That's why a keyword is defined with its URI and then given a name in a
+dialect. Dialects carry their keyword definitions. `extendDialect` makes a
+new dialect with more definitions, and that dialect goes in the config.
 
 ```typescript
 const evenKeyword = { uri: "https://example.com/keyword/even", ... };
@@ -24,33 +24,35 @@ const jsonSchema = new JsonSchema({
 });
 ```
 
-Use a domain you control in your URIs, so they don't conflict with anyone
+Use a domain you control in your URIs so they don't conflict with anyone
 else's.
 
-Errors and annotations say which keyword they're from by URI too
-(`ruleId`), and lint rules find keywords by URI, so they work in every
-dialect that has the keyword.
+Errors and annotations also identify their keyword by URI, in `ruleId`.
+Lint rules find keywords by URI too. That's why they work in every dialect
+that has the keyword.
 
 ## Keywords say what they mean with the kernel
 
-A keyword doesn't validate values itself. It lowers its value to an
-expression in the kernel, a small language of operations like
-`{ op: "range", min: 0 }` and `{ op: "property", name: "age", of: ... }`.
-Every built-in keyword works this way.
+A keyword doesn't validate values itself. Instead, it lowers its value to
+an expression in the kernel. The kernel is a small language of operations
+like `{ op: "range", min: 0 }` and
+`{ op: "property", name: "age", of: ... }`. Every built-in keyword works
+this way.
 
-That's what lets one keyword definition work with everything: validation,
-the output formats, annotations, the optimizer, bundling, and lint rules
-that need to know what a keyword means, like
+That's what lets one keyword definition work with everything. That
+includes validation, the output formats, annotations, the optimizer, and
+bundling. It also includes lint rules that need to know what a keyword
+means, like
 [`keyword-without-effect`](../linting/rules/keyword-without-effect.md).
 
-For what the kernel can't express, there are escape hatches, where your
-keyword evaluates values with its own code. See
+For things the kernel can't express, there are escape hatches. They let
+your keyword evaluate values with its own code. See
 [Custom keywords](keywords.md).
 
 ## The API
 
-Every part of the API has TypeScript declarations, so your editor shows
-each method and type as you use it.
+Every part of the API has TypeScript declarations. Your editor shows each
+method and type as you use it.
 
 - [Custom keywords](keywords.md)
 - [Custom formats](formats.md)

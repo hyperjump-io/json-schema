@@ -2,21 +2,27 @@
 
 In `recommended`, as a warning.
 
-A root schema without `$schema` whose dialect came from somewhere else:
-the `dialectUri` option of `jsonSchemaResolve`, such as a `schema` media
-type parameter, or the `defaultDialectUri` config. Other tools, and this
-one loaded differently, don't know the dialect, or assume a different
-one. Every spec from draft-06 on says `$schema` SHOULD be in the root
-schema. draft-04 doesn't say, but the same problem applies.
+A root schema without `$schema` whose dialect came from somewhere else.
+That can be the `dialectUri` option of `jsonSchemaResolve`, such as from a
+`schema` media type parameter, or the `defaultDialectUri` config. Other
+tools won't know the dialect, or they'll assume a different one. So will
+this tool if it's loaded differently. Every spec from draft-06 on says
+`$schema` SHOULD be in the root schema. draft-04 doesn't say, but the same
+problem applies.
 
-A root without `$schema` whose dialect can't be determined is an error
-from the resolver instead. The CLI has no default dialect, so it never
-reports this rule: a `.schema.json` file without `$schema` is that error,
-and a `.json` file without one is an instance. It's reported when linting
-from code, for a schema whose dialect is a registry entry's `dialectUri`,
-the `defaultDialectUri` config, or a media type parameter. A boolean root schema can't have `$schema`, so
-it isn't reported, and neither is a draft-04–07 root with `$ref`, because
-the resolver doesn't give that document a dialect. It has no options.
+If a root schema has no `$schema` and its dialect can't be determined, the
+resolver reports an error instead.
+
+The CLI has no default dialect, so it never reports this rule. In the CLI,
+a `.schema.json` file without `$schema` gets that error, and a `.json`
+file without one is treated as an instance. This rule is reported when
+linting from code. It applies when a schema's dialect comes from a
+registry entry's `dialectUri`, the `defaultDialectUri` config, or a media
+type parameter.
+
+A boolean root schema can't have `$schema`, so it isn't reported. Neither
+is a draft-04–07 root with `$ref`, because the resolver doesn't give that
+document a dialect. It has no options.
 
 ## Examples
 

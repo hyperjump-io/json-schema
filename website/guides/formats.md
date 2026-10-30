@@ -8,7 +8,7 @@
 | v1, draft-04 to draft-07 | Validates |
 | 2019-09, 2020-12 | Only annotates. A value that isn't an email is still valid. |
 
-The `validateFormats` config overrides the dialect, for every schema:
+The `validateFormats` config overrides the dialect for every schema:
 
 ```typescript
 const jsonSchema = new JsonSchema({ validateFormats: true });
@@ -20,10 +20,10 @@ string.
 
 ## Which formats there are
 
-Each dialect comes with the formats its spec defines, except three:
-`hostname`, `idn-hostname`, and `idn-email`. Checking them correctly takes
-large tables of Unicode data, so they're only loaded if you ask for them.
-draft-04 and draft-06 have a simpler `hostname` of their own, which is
+Each dialect comes with the formats its spec defines, with three
+exceptions: `hostname`, `idn-hostname`, and `idn-email`. Checking them
+correctly takes large tables of Unicode data, so they're only loaded if you
+ask for them. draft-04 and draft-06 have their own simpler `hostname`. It's
 always loaded.
 
 ```typescript
@@ -47,10 +47,10 @@ loads every format.
 When formats are validated, `compile` throws if a schema uses a format that
 can't be checked:
 
-- One of the three formats above, without `fullFormats`.
+- One of the three formats above when `fullFormats` isn't loaded.
 - In v1, 2019-09, and 2020-12, a format the dialect doesn't define, like
-  `"phone"`. A schema that asks for a check that can't be made would
-  otherwise pass everything. draft-04 to draft-07 ignore formats they don't
+  `"phone"`. Otherwise a schema that asks for a check that can't be made
+  would pass everything. draft-04 to draft-07 ignore formats they don't
   define.
 
 To support a format of your own, see

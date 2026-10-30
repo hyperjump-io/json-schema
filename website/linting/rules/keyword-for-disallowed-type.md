@@ -2,18 +2,22 @@
 
 In `recommended`, as a warning.
 
-A keyword that applies only to one type of value, like `minimum` to
-numbers or `properties` to objects, in a schema whose `type` doesn't allow
-that type. Any value it would apply to is invalid anyway, so it never
-does anything. It's likely a typo in `type` or a keyword in the wrong
-schema. `integer` allows the keywords for numbers.
+A keyword that only applies to one type of value, in a schema whose `type`
+doesn't allow that type. For example, `minimum` only applies to numbers
+and `properties` only applies to objects. Any value the keyword would apply
+to is invalid anyway, so the keyword never does anything. It's probably a
+typo in `type` or a keyword in the wrong schema. `integer` allows the
+keywords for numbers.
 
 A `format` is reported if its definition says which types it applies to
-(`types`), as every format JSON Schema defines does. A format the dialect
-doesn't support, whose definition isn't in the config, or that doesn't say,
-could apply to any type, so it isn't. It only
-looks at `type` in the same schema, not in another schema that
-applies to the same value, such as one in an `allOf`. It has no options.
+with `types`. Every format JSON Schema defines does. Some formats could
+apply to any type, so they aren't reported. That includes a format the
+dialect doesn't support, one whose definition isn't in the config, and one
+whose definition doesn't say.
+
+It only looks at `type` in the same schema. It doesn't look at other
+schemas that apply to the same value, like one in an `allOf`. It has no
+options.
 
 ## Examples
 

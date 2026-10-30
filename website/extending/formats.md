@@ -1,7 +1,7 @@
 # Custom formats
 
 A format is a plain object with a URI. Give it a name in a dialect with
-`extendDialect`, and put the dialect it returns in the config.
+`extendDialect`. Then put the dialect it returns in the config.
 
 ```typescript
 import { JsonSchema, extendDialect } from "@hyperjump/json-schema";
@@ -28,22 +28,22 @@ const jsonSchema = new JsonSchema({
 }
 ```
 
-`types` lists the types of value the format applies to. A value of any
-other type is valid, and `validate` isn't called for it, as the spec says.
+`types` lists the types of value the format applies to. As the spec says, a
+value of any other type is valid, and `validate` isn't called for it.
 Without `types`, a format applies to every type.
 
-`validate` can get the instance being validated itself, not a copy, so its
-type is readonly: a `ReadonlyJson`. `types` doesn't narrow it, so check the
+`validate` may get the instance itself rather than a copy, so its type is
+readonly: a `ReadonlyJson`. `types` doesn't narrow the type, so check the
 type before using the value.
 
-There's no `integer` type for formats, because formats apply to the types in
-JSON's data model. A format for integers applies to numbers, and checks
-that they're integers in `validate`.
+There's no `integer` type for formats, because formats apply to the types
+in JSON's data model. A format for integers applies to numbers. Its
+`validate` checks that they're integers.
 
-Whether a format validates or is only an annotation is up to the dialect
-and the `validateFormats` config, like the built-in formats. See
+As with the built-in formats, the dialect and the `validateFormats` config
+decide whether a format validates or only annotates. See
 [Formats](../guides/formats.md).
 
-To use a format in several dialects, extend each one. To replace a
-built-in format, add one with its URI, like
+To use a format in several dialects, extend each one. To replace a built-in
+format, add one with the same URI, like
 `https://json-schema.org/format/email`.

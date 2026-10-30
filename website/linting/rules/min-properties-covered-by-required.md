@@ -3,17 +3,20 @@
 In `recommended`, as a warning.
 
 `minProperties` that's no more than the number of properties the schema's
-other keywords already require. An object that passes them already has
-that many, so `minProperties` never fails on its own. It's likely out of
-date, or meant to count properties beyond the required ones, which it
-doesn't. More required properties than `maxProperties` allows is reported
-by `contradictory-limits`.
+other keywords already require. An object that passes those keywords
+already has that many properties, so `minProperties` never fails on its
+own. It's probably out of date. Or it was meant to count properties beyond
+the required ones, which it doesn't. If more properties are required than
+`maxProperties` allows, `contradictory-limits` reports it.
 
-Each required property is counted once. What's required includes
-`required` in an `allOf` or in a schema a `$ref` applies, the fewest an
-`anyOf` or `oneOf` branch requires, and v1's `requireAllExcept`. A
-dependency, like `dependentRequired`, only requires its properties of
-some objects, so they aren't counted. It has no options.
+Each required property is counted once. Required properties include:
+
+- `required` in an `allOf` or in a schema that a `$ref` applies
+- The fewest properties any `anyOf` or `oneOf` branch requires
+- v1's `requireAllExcept`
+
+A dependency like `dependentRequired` only requires its properties for
+some objects, so those aren't counted. It has no options.
 
 ## Examples
 

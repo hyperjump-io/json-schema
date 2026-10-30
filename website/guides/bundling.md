@@ -1,8 +1,8 @@
 # Bundling
 
 `bundle` combines a schema and every schema it references into one
-document. Use it to publish a schema that works without its files, or to
-give one to a tool that can't follow references between documents.
+document. Use it to publish a schema that works without its files. You can
+also use it for a tool that can't follow references between documents.
 
 ```typescript
 import { pathToFileURL } from "node:url";
@@ -14,11 +14,11 @@ const bundled = await bundle(jsonSchema, uri, {
 });
 ```
 
-Each referenced document is embedded in the main schema's `$defs`
-(`definitions` in draft-04 to draft-07), under its identifier. The
-references themselves aren't changed. They find the embedded schema by its
-`$id`, the way the 2020-12 spec describes bundling, so the bundle validates
-exactly like the schemas it was made from.
+Each referenced document is embedded in the main schema's `$defs` under its
+identifier. In draft-04 to draft-07 it's `definitions`. The references
+themselves aren't changed. They find the embedded schema by its `$id`, the
+way the 2020-12 spec describes bundling. The bundle validates exactly like
+the schemas it was made from.
 
 For these two files:
 
@@ -67,20 +67,24 @@ the bundle is:
 }
 ```
 
-A schema can't be identified by a file, so a bundle of files needs an
-identifier, which `id` gives the main schema. Each file in it is identified
-where it is relative to the main schema, resolved against `id`, so
-`./address.schema.json` finds it. Use the URL the schemas will be published
-at. A file with an `$id` of its own keeps it, and so does a schema with a
-URL. A file that references nothing doesn't need `id`.
+A schema in a bundle can't be identified by its file, so a bundle of files
+needs an identifier. The `id` option gives the main schema one. Each other
+file gets an identifier from its path relative to the main schema, resolved
+against `id`. That's why `./address.schema.json` still finds it. Use the URL
+where the schemas will be published.
+
+A file with its own `$id` keeps it, and so does a schema with a URL. A file
+that doesn't reference anything doesn't need `id`.
 
 What's bundled:
 
-- The whole document the URI is in, and every document it references with
-  `$ref` (and `$dynamicRef` in 2020-12), even from definitions nothing uses.
-- Not meta-schemas.
+- The whole document the URI is in.
+- Every document it references with `$ref`, or `$dynamicRef` in 2020-12.
+  This includes references from definitions that nothing uses.
 - Schemas in any dialect. A schema whose dialect is different from the main
   schema's keeps its `$schema`.
+
+Meta-schemas aren't bundled.
 
 ## Options
 
@@ -94,13 +98,13 @@ await bundle(jsonSchema, uri, {
 
 | Option | What it does |
 | --- | --- |
-| `id` | The main schema's identifier, for a bundle of files. Each file is identified relative to it. It has to be an absolute URL that isn't a file. |
-| `externalSchemas` | Schemas that will be available where the bundle is used. They aren't embedded, and neither is anything only they reference. |
-| `alwaysIncludeDialect` | Give every embedded schema `$schema`, not only the ones in a different dialect |
-| `definitionNamingStrategy` | Name embedded schemas by their identifier (`"uri"`, the default) or by a random UUID (`"uuid"`) |
+| `id` | The main schema's identifier for a bundle of files. Each file is identified relative to it. It has to be an absolute URL that isn't a `file:` URL. |
+| `externalSchemas` | Schemas that will be available where the bundle is used. They aren't embedded. Neither is anything that only they reference. |
+| `alwaysIncludeDialect` | Give every embedded schema a `$schema`, not only the ones in a different dialect |
+| `definitionNamingStrategy` | How embedded schemas are named. `"uri"` uses their identifier and is the default. `"uuid"` uses a random UUID. |
 
-`bundle` also takes `registry` and `allowRetrieval`, like `validator`, and
-a schema can be given as a value.
+Like `validator`, `bundle` also takes `registry` and `allowRetrieval`. The
+schema can be given as a value.
 
 ## When a schema can't be bundled
 
@@ -108,11 +112,11 @@ a schema can be given as a value.
 means:
 
 - A reference finds a schema that's identified by a different URI.
-- In draft-04 to draft-07, the root of a referenced schema is a `$ref`,
-  which replaces the whole object, so its `$id` would be ignored.
+- In draft-04 to draft-07, the root of a referenced schema is a `$ref`. The
+  `$ref` replaces the whole object, so its `$id` would be ignored.
 - The main schema's dialect has no `$defs` or `definitions` to put it in.
 - A file without an `$id` would be embedded, and there's no `id` to
   identify it by.
 
-It throws a `SchemaError` for a schema with problems, and a `RetrievalError`
-for one that can't be found, like `compile`.
+Like `compile`, it throws a `SchemaError` for a schema with problems and a
+`RetrievalError` for a schema that can't be found.

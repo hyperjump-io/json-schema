@@ -2,22 +2,28 @@
 
 In `recommended`, as a warning.
 
-A keyword next to `const` or `enum` that allows the `const` value or
-every value in `enum`, like `minLength: 3` next to `enum: ["one", "two"]`,
-so it has no effect. Only those values can be valid, and it allows all of
-them.
+A keyword next to `const` or `enum` that allows the `const` value or every
+value in `enum`, so it has no effect. For example, `minLength: 3` next to
+`enum: ["one", "two"]`. Only those values can be valid, and the keyword
+allows all of them.
 
-Each keyword is evaluated on the values from what it lowers to
-(`evaluatorForLint`), including keywords that apply schemas, like `allOf`
-and `properties`. One that annotates a value has an effect, like an
-`allOf` with a `title`, so `format` is never reported. So does one that
-marks a property or an item as evaluated, if `unevaluatedProperties` or
-`unevaluatedItems` might read it. A keyword with no effect at all, like
-`minLength: 0`, is reported too. `type` is left to
-`type-implied-by-const-or-enum`, so that rule can be turned off on its
-own. In a schema with both `const` and `enum`, `enum` is a keyword next
-to `const`. A keyword that rejects a value is reported by
-`const-or-enum-value-rejected`, and one that might isn't reported.
+Each keyword is evaluated against the values using what it lowers to,
+with `evaluatorForLint`. That includes keywords that apply schemas, like
+`allOf` and `properties`.
+
+Some keywords still have an effect even when they allow every value:
+
+- A keyword that annotates a value, like an `allOf` with a `title`. That's
+  why `format` is never reported.
+- A keyword that marks a property or item as evaluated, if
+  `unevaluatedProperties` or `unevaluatedItems` might read it.
+
+A keyword with no effect at all, like `minLength: 0`, is reported too.
+`type` is left to `type-implied-by-const-or-enum` so that rule can be
+turned off on its own. In a schema with both `const` and `enum`, `enum`
+counts as a keyword next to `const`. A keyword that rejects a value is
+reported by `const-or-enum-value-rejected`. A keyword that only might
+reject a value isn't reported.
 
 It has no options.
 

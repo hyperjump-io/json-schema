@@ -2,22 +2,27 @@
 
 In `recommended`, as a warning.
 
-A keyword that nothing is valid against, so the schema it's in fails
-every instance. That's what `false` is for, so it's more likely
-something that's missing or a mistake: an empty `enum` or `type`, or
-`allOf` with a schema that allows nothing, like `false` or
-`{ "type": "string", "const": 1 }`, or `anyOf` whose every schema does.
-It's found from what the keyword lowers to, so custom keywords are
-covered too.
+A keyword that nothing is valid against, so the schema it's in fails every
+instance. That's what `false` is for, so this is more likely a mistake or
+something missing. Examples are:
 
-Only the schemas in the keyword's own value are followed, so a `$ref` to
-a schema that allows nothing, which is often on purpose, isn't reported.
+- An empty `enum` or `type`
+- `allOf` with a schema that allows nothing, like `false` or
+  `{ "type": "string", "const": 1 }`
+- `anyOf` where every schema allows nothing
+
+It's found from what the keyword lowers to, so custom keywords are covered
+too.
+
+Only the schemas in the keyword's own value are followed. A `$ref` to a
+schema that allows nothing is often on purpose, so it isn't reported.
 Neither is a keyword that only rejects some properties or items, like
-`items: false` or `additionalProperties: false`, or `not: {}`, a common
-way to say "nothing" on purpose. The specs say `enum` should have at
-least one value. Draft-04 says it must, and v1 doesn't allow an empty
-`type`, so there they're problems with the schema, which this rule
-doesn't report. It has no options.
+`items: false` or `additionalProperties: false`. `not: {}` isn't reported
+either, because it's a common way to say "nothing" on purpose.
+
+The specs say `enum` should have at least one value. Draft-04 says it
+must, and v1 doesn't allow an empty `type`. In those cases it's a problem
+with the schema, which this rule doesn't report. It has no options.
 
 ## Examples
 

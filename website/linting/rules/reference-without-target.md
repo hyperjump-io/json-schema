@@ -2,17 +2,19 @@
 
 In `recommended`, as an error.
 
-A reference that doesn't find a schema: a file that doesn't exist, a
-JSON Pointer or anchor that isn't in the document, or something that
-isn't a schema. It checks every static reference (`$ref`), in the same
-document or another one, in every dialect.
+A reference that doesn't find a schema. It might point to a file that
+doesn't exist, a JSON Pointer or anchor that isn't in the document, or
+something that isn't a schema. It checks every static reference (`$ref`)
+in every dialect, whether it points into the same document or another
+one.
 
-Only what's certainly missing is reported. A reference to something that
-can't be retrieved, such as a URL `allowRetrieval` refuses, or to a schema
-that has problems of its own, isn't. See `findSchema`.
+Only targets that are certainly missing are reported. Some targets can't
+be checked, so they aren't reported. That includes a URL that
+`allowRetrieval` refuses and a schema that has problems of its own. See
+`findSchema`.
 
-It needs the schema to be resolved first (`jsonSchemaResolve`), and
-otherwise does nothing. It has no options.
+It needs the schema to be resolved first with `jsonSchemaResolve`.
+Otherwise it does nothing. It has no options.
 
 ## Examples
 

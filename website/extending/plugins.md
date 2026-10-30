@@ -1,13 +1,14 @@
 # Evaluation plugins
 
-An evaluation plugin observes an evaluation: every schema and keyword that's
-evaluated, whether each passed, and every annotation. Plugins can't change
-the result. The output formats are plugins, and tools like language servers
-use them to see what applied to each part of a document.
+An evaluation plugin observes an evaluation. It sees every schema and
+keyword that's evaluated, whether each one passed, and every annotation.
+Plugins can't change the result. The output formats are plugins. Tools like
+language servers use plugins to see what applied to each part of a
+document.
 
 Pass plugins to `validate`, `validator`, `annotate`, or `annotator`. A
-validator's plugins are chosen when it's made, so each value it validates
-is evaluated with the same plugin objects.
+validator's plugins are chosen when it's made. Each value it validates is
+evaluated with the same plugin objects.
 
 ```typescript
 const keywords = new Set<string>();
@@ -30,19 +31,21 @@ await validate(jsonSchema, uri, instance, {
 | `afterKeyword(keyword, at, valid, state, schema)` | After a keyword is evaluated |
 | `annotation(keyword, at, value, state)` | When a keyword annotates the value |
 
-`at` is where in the instance: its `instanceLocation`, and its `node` when
-validating JSON text or annotating. `keyword` has the keyword's
-`keywordUri`, its `absoluteKeywordLocation`, and what it lowered to.
+`at` says where in the instance the evaluation is. It has the
+`instanceLocation`. When validating JSON text or annotating, it also has the
+`node`. `keyword` has the keyword's `keywordUri`, its
+`absoluteKeywordLocation`, and what it lowered to.
 
-Plugins don't share a context object. Each `before` hook returns the
-plugin's state for that schema or keyword, and it's passed to the matching
-`after` hook and to the hooks of what's evaluated inside it. That's enough
-to build nested results, like the `DETAILED` output.
+Plugins don't share a context object. Instead, each `before` hook returns
+the plugin's state for that schema or keyword. That state is passed to the
+matching `after` hook and to the hooks of everything evaluated inside it.
+That's enough to build nested results, like the `DETAILED` output.
 
-A plugin is an `EvaluationPlugin<S, K>`, where `S` is the type of the
-state `beforeSchema` returns and `K` the type of the state `beforeKeyword`
-returns. A plugin written in the `plugins` option gets its hooks'
-parameter types from it. Declare one written elsewhere with `satisfies`:
+A plugin is an `EvaluationPlugin<S, K>`. `S` is the type of the state
+`beforeSchema` returns, and `K` is the type of the state `beforeKeyword`
+returns. A plugin written inline in the `plugins` option gets its hooks'
+parameter types from the option. Declare a plugin written elsewhere with
+`satisfies`:
 
 ```typescript
 import type { EvaluationPlugin } from "@hyperjump/json-schema";
@@ -55,9 +58,9 @@ const depth = {
 
 ## Every annotation
 
-`annotation` is called for every annotation, even from schemas that fail,
-which aren't kept in the result. A language server can use it to show a
-`description` in a document that has errors.
+`annotation` is called for every annotation, even ones from schemas that
+fail. Those aren't kept in the result. A language server can use this hook
+to show a `description` in a document that has errors.
 
 ```typescript
 import type { Json } from "@hyperjump/browser/json";
@@ -76,15 +79,15 @@ await validate(jsonSchema, uri, json, {
 });
 ```
 
-`afterKeyword` and `afterSchema` say what passed, if you need to tell them
-apart.
+If you need to tell which annotations come from passing schemas, use
+`afterKeyword` and `afterSchema`. They say what passed.
 
 ## Performance
 
-With any plugin, the value is evaluated once, completely, and nothing stops
-early, so it's slower than validating without plugins.
+With any plugin, the value is evaluated completely in one pass. Nothing
+stops early, so it's slower than validating without plugins.
 
 What plugins see can depend on optimizations, but it's never wrong. A
-schema that always passes, like `{}`, might not be evaluated as a schema of
-its own, and a keyword that only annotates is left out for plugins without
-an `annotation` hook.
+schema that always passes, like `{}`, might not be evaluated as a separate
+schema. A keyword that only annotates is skipped for plugins that don't
+have an `annotation` hook.

@@ -2,9 +2,9 @@
 
 In `recommended`, as a warning.
 
-`type` that's an array of one type, like `["string"]`, which is the same
-as the type on its own, `"string"`. Turn it off if you write arrays
-everywhere so adding a type is a smaller change. It has no options.
+`type` that's an array of one type, like `["string"]`. That's the same as
+the type on its own, `"string"`. Turn the rule off if you write arrays
+everywhere so that adding a type is a smaller change. It has no options.
 
 ## Examples
 

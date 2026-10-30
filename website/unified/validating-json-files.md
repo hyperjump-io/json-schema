@@ -1,7 +1,7 @@
 # Validating JSON files
 
 `jsonSchemaValidate` validates a JSON file against a compiled schema. You
-compile the schema, so you decide where schemas come from.
+compile the schema yourself, so you decide where schemas come from.
 
 For this `alice.json`:
 
@@ -39,13 +39,13 @@ alice.json
 2 messages (✖ 1 error, ⚠ 1 warning)
 ```
 
-Validation errors are added as errors (`fatal: true`), with the position of
-the value that failed, a generic message, the keyword's URI as `ruleId`, and
-`json-schema` as `source`. The tree isn't changed.
+Validation errors are added as errors with `fatal: true`. Each one has the
+position of the value that failed, a generic message, the keyword's URI as
+`ruleId`, and `json-schema` as `source`. The tree isn't changed.
 
-Syntax errors are reported by the parser. A file the parser recovered from
-is validated as far as it could be parsed. Values that couldn't be parsed
+The parser reports syntax errors. If the parser recovered, the file is
+validated as far as it could be parsed. Values that couldn't be parsed
 aren't validated, so they only have their syntax error.
 
 Without `accept: "recovered"`, any syntax error stops the file before it's
-validated, and `process` rejects with it.
+validated. `process` rejects with that error.

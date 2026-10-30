@@ -2,17 +2,22 @@
 
 In `recommended`, as a warning.
 
-A schema in `oneOf` that's the same as one before it. A value that
-matches it matches both, so it fails `oneOf`, which needs exactly one to
+A schema in `oneOf` that's the same as one before it. A value that matches
+it matches both. Then it fails `oneOf`, which needs exactly one schema to
 match. That's rarely what's meant.
 
-Schemas are the same if they mean the same, even written differently:
-`true` and `{}`, `"type": "string"` and `"type": ["string"]`, keywords
-in a different order, and references to the same schema. Their
-subschemas are compared the same way. Annotations have to be the same,
-from the same keywords, so schemas that differ only in `title` aren't
-the same. A schema in another document is the same only as a reference
-to the same place. It has no options.
+Schemas are the same if they mean the same thing, even if they're written
+differently. For example:
+
+- `true` and `{}`
+- `"type": "string"` and `"type": ["string"]`
+- The same keywords in a different order
+- References to the same schema
+
+Subschemas are compared the same way. Annotations have to match and come
+from the same keywords, so schemas that differ only in `title` aren't the
+same. A schema in another document only matches a reference to the same
+place. It has no options.
 
 ## Examples
 

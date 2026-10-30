@@ -3,16 +3,17 @@
 In `recommended`, as a warning.
 
 `then` or `else` that every value is valid against and that does nothing
-else: no annotations, and nothing marked as evaluated, like `true`, `{}`,
-a schema with nothing but `$comment`, or one whose keywords do nothing,
-like `properties: {}`. A reference to such a schema is too. It never fails
-and adds nothing, so it's likely unfinished. A schema with annotations,
-like `description`, isn't reported, because the annotations apply only
-when the branch does.
+else. It has no annotations and doesn't mark anything as evaluated.
+Examples are `true`, `{}`, a schema with nothing but `$comment`, or a
+schema whose keywords do nothing, like `properties: {}`. A reference to
+such a schema counts too. The branch never fails and adds nothing, so
+it's probably unfinished. A schema with annotations, like `description`,
+isn't reported, because the annotations only apply when that branch
+does.
 
-It's the same for any schema that's applied when a condition passes, or
-when none does: v1's `conditional`, and `dependentSchemas`. Those are
-reported as "this schema". Without `if`, `then` and `else` aren't
+The same goes for any schema that's applied when a condition passes or
+when none does. That covers v1's `conditional` and `dependentSchemas`.
+Those are reported as "this schema". Without `if`, `then` and `else` aren't
 branches, and `then-else-without-if` reports them. It has no options.
 
 ## Examples

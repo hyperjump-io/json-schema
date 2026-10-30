@@ -2,16 +2,21 @@
 
 In `recommended`, as a warning.
 
-A `$schema` with a fragment that isn't empty, one that isn't normalized,
-like `HTTP://json-schema.org/…`, or one for draft-04 through 2020-12 that
-doesn't match the URI its meta-schema uses: with the empty fragment for
-draft-04 through draft-07 (`http://json-schema.org/draft-07/schema#`),
-and without it for 2019-09 and 2020-12. This implementation recovers, but
-implementations that compare dialect URIs as strings won't recognize the
-dialect. See [Dialects](../../../design/components/dialects/README.md) for why.
+A `$schema` that other implementations might not recognize. That's one
+that:
 
-In v1, where a fragment or a URI that isn't normalized is invalid,
-`invalid-dialect-uri` reports it too, as an error. It has no options.
+- Has a fragment that isn't empty.
+- Isn't normalized, like `HTTP://json-schema.org/…`.
+- Is for draft-04 through 2020-12 and doesn't match the URI its
+  meta-schema uses. draft-04 through draft-07 use the empty fragment, like
+  `http://json-schema.org/draft-07/schema#`. 2019-09 and 2020-12 don't.
+
+This implementation recovers, but implementations that compare dialect
+URIs as strings won't recognize the dialect. See
+[Dialects](../../../design/components/dialects/README.md) for why.
+
+In v1, a fragment or a URI that isn't normalized is invalid, so
+`invalid-dialect-uri` also reports it as an error. It has no options.
 
 ## Examples
 

@@ -3,11 +3,12 @@
 In `recommended`, as a warning.
 
 A `const` value or a value in `enum` whose type the sibling `type` doesn't
-allow, so it's never valid. For `const`, that means nothing is valid. It's
-often a value that's quoted when it shouldn't be, like `"1"` for an
-integer, or `null` in an `enum` when `type` doesn't include `"null"`.
-Types are decided as the `type` keyword decides them, so `1.0` is an
-integer. Each value is reported.
+allow. That value is never valid. For `const`, it means nothing is valid.
+
+Often the value is quoted when it shouldn't be, like `"1"` for an integer.
+Another common case is `null` in an `enum` when `type` doesn't include
+`"null"`. Types are decided the same way the `type` keyword decides them,
+so `1.0` is an integer. Each value is reported.
 
 It only looks at `type` in the same schema. It has no options.
 

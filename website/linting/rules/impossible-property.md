@@ -2,15 +2,16 @@
 
 In `recommended`, as a warning.
 
-A property that no valid object can have, because an object with it
-needs more properties than `maxProperties` allows, though objects without
-it are valid. It's usually a dependency, like `dependentRequired` with
-`"a": ["b", "c"]` and `maxProperties: 2`, or a property in `properties`
-when the required properties already use up `maxProperties`.
+A property that no valid object can have, even though objects without it
+are valid. An object with the property needs more properties than
+`maxProperties` allows. Usually it's a dependency, like `dependentRequired`
+with `"a": ["b", "c"]` and `maxProperties: 2`. It can also be a property
+in `properties` when the required properties already use up
+`maxProperties`.
 
-The properties it checks are the ones a keyword in the schema applies a
-schema to or makes something depend on. What an object needs counts
-everything `contradictory-limits` counts: required properties,
+It checks the properties that a keyword in the schema applies a schema to
+or makes something depend on. To work out what an object needs, it counts
+everything `contradictory-limits` counts. That's required properties,
 dependencies, and schemas that apply to the same object. If no object is
 valid at all, `contradictory-limits` reports it instead. The message is on
 `maxProperties` and on the property's entry in each keyword that names

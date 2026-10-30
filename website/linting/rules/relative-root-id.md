@@ -2,22 +2,25 @@
 
 In `recommended`, as a warning.
 
-A relative `$id` (`id` in draft-04) on the root schema of a document, like
-`/user` or `user.schema.json`. It's resolved against the URI the schema was
-retrieved from, so the same schema has a different identifier in each
-place it's served or saved, references to it by that identifier break
-when it moves, and bundling can't keep it. The spec says the root SHOULD
-have an absolute one in draft-06 through v1. draft-04 doesn't say, but the
-same problems apply.
+A relative `$id` on the root schema of a document, like `/user` or
+`user.schema.json`. In draft-04 the keyword is `id`. A relative `$id` is
+resolved against the URI the schema was retrieved from. So the same schema
+gets a different identifier in each place it's served or saved. References
+to it by that identifier break when it moves, and bundling can't keep it.
+From draft-06 through v1, the spec says the root SHOULD have an absolute
+`$id`. draft-04 doesn't say, but the same problems apply.
 
-A root without `$id`, or with a fragment-only draft-04–07 `$id`, which is
-an anchor, isn't reported: a schema identified by where it lives is common,
-and nothing about it is ambiguous. A relative `$id` on an embedded resource
-is resolved against the resource it's in, so it isn't reported either. An
-`$id` that isn't a valid URI reference is reported by the resolver. In a
-file, a relative root `$id` resolves to a `file:` URI, which the resolver
-reports too, because a schema can't be identified by a file. It has no
-options.
+These aren't reported:
+
+- A root without `$id`. Identifying a schema by where it lives is common,
+  and it isn't ambiguous.
+- A fragment-only draft-04–07 `$id`, which is an anchor.
+- A relative `$id` on an embedded resource. It's resolved against the
+  resource it's in.
+
+The resolver reports an `$id` that isn't a valid URI reference. In a file,
+a relative root `$id` resolves to a `file:` URI. The resolver reports that
+too, because a schema can't be identified by a file. It has no options.
 
 ## Examples
 

@@ -1,9 +1,9 @@
 # Reporting errors
 
 `toVFileMessage` turns a validation error, a syntax error, or a schema
-problem into a [`VFileMessage`](https://github.com/vfile/vfile-message). It
-has a message, the position if there is one, the `ruleId`, and the
-`source`, so it prints like the messages of other unified tools.
+problem into a [`VFileMessage`](https://github.com/vfile/vfile-message). The
+message includes the text, the position if there is one, the `ruleId`, and
+the `source`. It prints like the messages of other unified tools.
 
 ```typescript
 import { BASIC, toVFileMessage, validate } from "@hyperjump/json-schema";
@@ -20,17 +20,16 @@ for (const error of result.errors) {
 1:29-1:30: Trailing commas are not allowed
 ```
 
-Use it to report errors from validating JSON text, from a `SchemaError`'s
-`messages`, or from [`lint`](../linting/from-code.md) with unified
-tooling, without building a pipeline.
+Use it to report errors with unified tooling without building a pipeline.
+It works on errors from validating JSON text, a `SchemaError`'s `messages`,
+and results from [`lint`](../linting/from-code.md).
 
-The message is from
-[`outputErrorMessage`](../guides/output.md#messages), which is generic. To
-write your own messages, make the `VFileMessage` yourself with the error's
-`place`, `ruleId`, and `source`.
+The text comes from [`outputErrorMessage`](../guides/output.md#messages),
+which is generic. To write your own messages, make the `VFileMessage`
+yourself with the error's `place`, `ruleId`, and `source`.
 
-To add an error to a `VFile`, use `file.message` with those, instead of
-adding the `VFileMessage`:
+To add an error to a `VFile`, call `file.message` with those values instead
+of adding the `VFileMessage`:
 
 ```typescript
 file.message(myMessage(error), {

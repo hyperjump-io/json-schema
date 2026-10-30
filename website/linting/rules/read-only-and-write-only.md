@@ -3,13 +3,13 @@
 In `recommended`, as a warning.
 
 `readOnly` and `writeOnly` both `true` in the same schema. A read-only
-value can't be changed, and a write-only value is never retrieved, so
-the value can't be used at all. One of them is likely a mistake. The
-specs allow it, so it's lint.
+value can't be changed, and a write-only value is never retrieved, so the
+value can't be used at all. One of them is probably a mistake. The specs
+allow it, so this is a lint rule rather than an error.
 
-It only looks at one schema at a time. The annotations also combine
-across schemas that apply to the same value, such as two in an `allOf`,
-but which ones apply depends on the instance. It has no options.
+It only looks at one schema at a time. The annotations also combine across
+schemas that apply to the same value, such as two in an `allOf`. But which
+ones apply depends on the instance. It has no options.
 
 ## Examples
 

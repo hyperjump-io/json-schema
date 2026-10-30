@@ -2,27 +2,33 @@
 
 In `recommended`, as a warning.
 
-A property in `required` that no schema that can apply to the same object
-defines, in `properties` or `patternProperties`. Any value is allowed for
-it, and it's often a typo, like `"nmae"` for `"name"`.
+A property in `required` that isn't defined in `properties` or
+`patternProperties` by any schema that can apply to the same object. Any
+value is allowed for it, and it's often a typo, like `"nmae"` for
+`"name"`.
 
-The schemas that can apply to the same object are the ones connected
-through keywords that apply a schema in place, like `allOf`, `anyOf`, and
-`if`, in either direction, and references, in either direction within
-the document. So `required` in an `anyOf` is defined by `properties` next
-to the `anyOf`, and a schema in `$defs` is defined by the schemas that
-reference it. A reference to another document is followed, but what
-references this one from another document isn't known. So a group of
-schemas that defines no properties, and could be referenced from
-elsewhere, like the root or one in `$defs`, isn't reported, because
-it's likely meant to be combined with one that does.
+The schemas that can apply to the same object are the ones connected to
+it, in either direction, by keywords that apply a schema in place, like
+`allOf`, `anyOf`, and `if`. References connect schemas too, in either
+direction, within the document. So `required` in an `anyOf` is defined by
+`properties` next to the `anyOf`. A schema in `$defs` is defined by the
+schemas that reference it.
+
+References to another document are followed. But references from another
+document to this one aren't known. So some groups of schemas aren't
+reported: ones that define no properties and could be referenced from
+elsewhere, like the root or a schema in `$defs`. They're probably meant to
+be combined with a schema that does define properties.
 
 `additionalProperties` and `unevaluatedProperties` define every property.
-Nothing is reported for a group with a reference that can't be followed,
-like `$dynamicRef` or one to a document that can't be retrieved, or for
-`required` in a `not`, which requires a property to be missing. A required
-property that isn't allowed is reported by `required-property-not-allowed`.
-It has no options.
+These aren't reported:
+
+- A group with a reference that can't be followed, like `$dynamicRef` or a
+  reference to a document that can't be retrieved
+- `required` in a `not`, which requires a property to be missing
+
+A required property that isn't allowed is reported by
+`required-property-not-allowed`. It has no options.
 
 ## Examples
 

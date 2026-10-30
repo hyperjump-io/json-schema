@@ -3,11 +3,11 @@
 In `recommended`, as a warning.
 
 `contentSchema` without a sibling `contentMediaType`. `contentSchema`
-describes a string's content once it's been interpreted as the media
-type, so without one, it isn't an annotation. The specs say it should be
-ignored, so it's lint.
+describes a string's content after it's been interpreted as the media
+type. Without a media type, it isn't an annotation. The specs say it
+should be ignored, so this is a lint rule rather than an error.
 
-It finds the keywords by URI, so it works in every dialect with
+It finds the keywords by URI, so it works in every dialect that has
 `contentSchema` (2019-09 and later). It has no options.
 
 ## Examples

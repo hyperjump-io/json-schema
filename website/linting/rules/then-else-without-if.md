@@ -5,8 +5,8 @@ In `recommended`, as a warning.
 `then` or `else` without a sibling `if`. Neither does anything on its own,
 so the schema doesn't do what it seems to.
 
-It finds the keywords by URI, so it works in every dialect with `if`,
-whatever they're named. It has no options.
+It finds the keywords by URI, so it works in every dialect that has `if`,
+whatever the keywords are named. It has no options.
 
 ## Examples
 

@@ -2,15 +2,16 @@
 
 In `recommended`, as a warning.
 
-A property that a dependency in `dependentRequired`, or `dependencies` in
-draft-04 through draft-07, requires, but that's already required, like
-`b` in `"required": ["b"]` and `"dependentRequired": { "a": ["b"] }`. It's
-always required, so the dependency doesn't add anything for it.
+A property that's already required but that a dependency also requires.
+The dependency can be in `dependentRequired`, or in `dependencies` in
+draft-04 through draft-07. For example, `b` in `"required": ["b"]` and
+`"dependentRequired": { "a": ["b"] }`. `b` is always required, so the
+dependency doesn't add anything for it.
 
 A property is required if every object that passes the schema's other
-keywords has it, so `required` in an `allOf`, or in a schema a `$ref`
-applies, counts too. A dependency on a property that's required is
-reported by `dependency-on-required-property` instead. It has no options.
+keywords has it. That means `required` in an `allOf` or in a schema that a
+`$ref` applies counts too. A dependency on a required property is reported
+by `dependency-on-required-property` instead. It has no options.
 
 ## Examples
 

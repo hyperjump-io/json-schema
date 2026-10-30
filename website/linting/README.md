@@ -22,19 +22,19 @@ can.
 ```
 
 Every rule has a page that explains what it reports, why it matters, and
-how to fix it, with examples. Messages link to them.
+how to fix it. Each page has examples. Messages link to these pages.
 
 ## Running the linter
 
-- **From the command line**, with
+- **From the command line** with
   [Hyperjump CLI](https://github.com/hyperjump-io/cli/blob/main/website/README.md).
-  It lints every schema in your project, and validates your JSON files
-  against their schemas too. This is what most projects want, in an editor
-  workflow or in CI.
-- **From code**, with [`lint`](from-code.md), which returns the problems
-  as data. Use it in a tool of your own, or to lint schemas your users
-  give you.
-- **In a [unified](https://unifiedjs.com/) pipeline**, with
+  It lints every schema in your project and also validates your JSON files
+  against their schemas. This is what most projects want, whether in an
+  editor workflow or in CI.
+- **From code** with [`lint`](from-code.md). It returns the problems as
+  data. Use it in a tool of your own or to lint schemas your users give
+  you.
+- **In a [unified](https://unifiedjs.com/) pipeline** with
   [`jsonSchemaResolve`](../unified/linting-in-a-pipeline.md) and the rules
   as plugins.
 
@@ -42,16 +42,16 @@ All three use the same rules and the same configuration.
 
 ## Errors and warnings
 
-The rules in the recommended preset are warnings, except a few that find
-schemas that can't be compiled or that the spec doesn't allow, like a
-`$ref` that doesn't find a schema. Those are errors.
+Most rules in the recommended preset are warnings. A few are errors. Those
+find schemas that can't be compiled or that the spec doesn't allow, like a
+`$ref` that doesn't find a schema.
 
 Problems that make a schema invalid, like a `minLength` of `-1`, aren't lint
-rules. They're always errors, and they can't be turned off.
+rules. They're always errors and can't be turned off.
 
 ## In this section
 
-- [Rules](rules/README.md): every rule, with examples
+- [Rules](rules/README.md): every rule with examples
 - [Choosing rules](choosing-rules.md): the recommended preset, severities,
   and options
 - [Configuration comments](configuration-comments.md): turning rules off in

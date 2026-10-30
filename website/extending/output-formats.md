@@ -1,13 +1,12 @@
 # Custom output formats
 
-An output format decides what validation returns when you ask for it with
-the `output` option. A format is a value, like the built-in `BASIC`, so
-yours is used the same way. It's useful for
-errors in the shape your application or API already uses, or with your own
-messages.
+An output format decides what validation returns. You choose one with the
+`output` option. A format is a value like the built-in `BASIC`, and yours is
+used the same way. A custom format is useful when you want errors in the
+shape your application or API already uses, or with your own messages.
 
 The easiest way to make one is to build on `BASIC`, which already finds
-every error. This one turns them into messages:
+every error. This one turns the errors into messages:
 
 ```typescript
 import { jsonSyntaxErrorMessage } from "@hyperjump/browser/json";
@@ -46,7 +45,7 @@ const result = await validate(jsonSchema, "https://example.com/person",
   { age: -1 }, { output: MESSAGES });
 ```
 
-A format is an `OutputFormat<R>`, where `R` is its result, and validation
+A format is an `OutputFormat<R>`, where `R` is its result type. Validation
 returns an `R`, so `result` is a `Messages`:
 
 ```json
@@ -58,16 +57,17 @@ returns an `R`, so `result` is a `Messages`:
 
 ## How it works
 
-A format is a function that's called for each validation that uses it. It returns:
+A format is a function. It's called for each validation that uses it, and
+it returns:
 
 - `plugin`: an [evaluation plugin](plugins.md) that collects what the format
   needs while the value is evaluated.
 - `output(valid, syntaxErrors)`: the result. `syntaxErrors` are from parsing
-  JSON text, and empty otherwise.
+  JSON text. Otherwise the list is empty.
 
-A location in a schema that's in a file would say where your files are,
-so `BASIC` and `DETAILED` give it relative to the working directory. If
-your format reports locations from a plugin of its own, do the same with
+A location in a schema file would reveal where your files are. That's why
+`BASIC` and `DETAILED` show it relative to the working directory. If your
+format reports locations from its own plugin, do the same with
 `relativeFileUri`:
 
 ```typescript
@@ -77,8 +77,8 @@ relativeFileUri(keyword.absoluteKeywordLocation);
 // "schemas/person.schema.json#/properties/age/minimum"
 ```
 
-A URI that isn't a `file:` URI is returned as it is.
+A URI that isn't a `file:` URI is returned as is.
 
 A value is evaluated the fast way first, without the plugin. The plugin only
-runs if the value is invalid, so `output(true, [])` can be called without
-the plugin having seen anything.
+runs if the value is invalid. That means `output(true, [])` can be called
+before the plugin has seen anything.

@@ -1,9 +1,10 @@
 # Choosing rules
 
-Rules are configured as a list of plugins: presets and rules, each with an
-optional setting. The list is the same everywhere: in the CLI's
-[`.hyperjumprc`](https://github.com/hyperjump-io/cli/blob/main/website/configuration.md),
-and in the `plugins` option of [`lint`](from-code.md).
+Rules are configured as a list of plugins. The list holds presets and
+rules, and each can have an optional setting. The list looks the same
+everywhere. That includes the CLI's
+[`.hyperjumprc`](https://github.com/hyperjump-io/cli/blob/main/website/configuration.md)
+and the `plugins` option of [`lint`](from-code.md).
 
 ```json
 {
@@ -21,14 +22,14 @@ and in the `plugins` option of [`lint`](from-code.md).
 ## The recommended preset
 
 `@hyperjump/json-schema/lint/recommended` turns on every rule. Start with
-it, and turn off the ones you don't want. The [Rules](rules/README.md)
-page lists them.
+it and turn off the ones you don't want. The [Rules](rules/README.md) page
+lists them.
 
 ## Changing a rule
 
-Each rule is `@hyperjump/json-schema/lint/rules/<name>`. A rule after the
-preset changes what the preset set for it. Its setting is an array, with
-the severity first:
+Each rule is `@hyperjump/json-schema/lint/rules/<name>`. A rule listed after
+the preset overrides the preset's setting for it. Its setting is an array
+with the severity first:
 
 | Severity | Meaning |
 | --- | --- |
@@ -49,8 +50,8 @@ its options.
 ## Turning a rule off in one place
 
 To keep a rule on but allow an exception, use a
-[configuration comment](configuration-comments.md) in the schema instead
-of turning the rule off everywhere.
+[configuration comment](configuration-comments.md) in the schema. That's
+better than turning the rule off everywhere.
 
 ## Your own rules
 

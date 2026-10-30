@@ -2,15 +2,15 @@
 
 In `recommended`, as a warning.
 
-`type` in a `propertyNames` schema. Property names are always strings, so
-a `type` that allows strings, like `"string"`, has no effect, and one
-that doesn't, like `"integer"`, rejects every property name, so only
-objects without properties are valid. A name that looks like a number,
-like `"1"`, is still a string.
+`type` in a `propertyNames` schema. Property names are always strings. A
+`type` that allows strings, like `"string"`, has no effect. A `type` that
+doesn't, like `"integer"`, rejects every property name, so only objects
+without properties are valid. A name that looks like a number, like `"1"`,
+is still a string.
 
-Only `type` in the `propertyNames` schema itself is checked, not in a
-schema it references or combines with `allOf`, which may also apply to
-other values. It has no options.
+Only `type` in the `propertyNames` schema itself is checked. It doesn't
+check a schema it references or combines with `allOf`, because those might
+also apply to other values. It has no options.
 
 ## Examples
 

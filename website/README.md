@@ -1,19 +1,20 @@
 # JSON Schema
 
-A JSON Schema validator and linter for JavaScript, for Node.js and browsers.
+A JSON Schema validator and linter for JavaScript. It works in Node.js and
+browsers.
 
 - **Every dialect.** JSON Schema v1, 2020-12, 2019-09, draft-07, draft-06,
-  and draft-04, in any combination. A schema can reference a schema in
+  and draft-04 in any combination. A schema can reference a schema in
   another dialect.
-- **Errors you can point to.** Validate JSON text, and every error, including
-  a syntax error, comes with its line and column.
+- **Errors you can point to.** When you validate JSON text, every error
+  comes with its line and column. That includes syntax errors.
 - **Schemas checked before they're used.** An invalid schema is reported
-  with every problem in it, not only the first.
+  with every problem in it, not just the first.
 - **A linter.** Lint rules find schemas that work but probably don't mean
   what their author meant, like `then` without `if` or a misspelled
   `required` property.
-- **Typed schemas.** Each dialect has a TypeScript type, so a misspelled
-  keyword in a schema you write in code is a type error, before it runs.
+- **Typed schemas.** Each dialect has a TypeScript type. A misspelled
+  keyword in a schema you write in code is a type error before it runs.
 - **Annotations.** Get the `title`, `description`, `default`, and other
   annotations that apply to each part of a value.
 - **Extensible.** Add keywords, formats, dialects, output formats, and lint
@@ -51,7 +52,7 @@ Using version 1.x? Its docs are in the
 ## Contents
 
 - [Getting started](getting-started.md): install, validate, report errors,
-  and lint, step by step
+  and lint step by step
 - Guides
   - [Loading schemas](guides/loading-schemas.md): registries, files, and
     HTTP
@@ -69,14 +70,14 @@ Using version 1.x? Its docs are in the
   - [Invalid schemas](guides/invalid-schemas.md): what happens when a schema
     has a mistake
   - [Controlling retrieval](guides/retrieval.md): what a schema can make
-    your application retrieve, and sending credentials
-  - [Bundling](guides/bundling.md): a schema and everything it references,
+    your application retrieve and how to send credentials
+  - [Bundling](guides/bundling.md): a schema and everything it references
     in one document
   - [Caching compiled schemas](guides/caching.md): skipping compilation when
     your application starts
-  - [Configuration](guides/configuration.md): every option, in one place
+  - [Configuration](guides/configuration.md): every option in one place
 - [Linting schemas](linting/README.md)
-  - [Rules](linting/rules/README.md): every rule, with examples
+  - [Rules](linting/rules/README.md): every rule with examples
   - [Choosing rules](linting/choosing-rules.md): presets, severities, and
     options
   - [Configuration comments](linting/configuration-comments.md): turning

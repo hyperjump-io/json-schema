@@ -2,26 +2,31 @@
 
 In `recommended`, as a warning.
 
-A keyword that applies only to one type of value, like `properties` to
-objects or `minimum` to numbers, or a format that does, like `date` to
-strings, where nothing says what type the value is. Values of other types are valid, because the keyword ignores them, so
-`{ "properties": { … } }` accepts `"hello"` and `42`. That's rarely what's
-meant.
+A keyword that only applies to one type of value when nothing says what
+type the value is. For example, `properties` only applies to objects and
+`minimum` only applies to numbers. Formats can be the same, like `date`,
+which only applies to strings. The keyword ignores values of other types,
+so they're valid. `{ "properties": { … } }` accepts `"hello"` and `42`.
+That's rarely what's meant.
 
-`type`, `const`, or `enum` in any schema that can apply to the same value
-says what type it is, so `required` in an `anyOf` is fine if `type` is
-next to the `anyOf`, and a schema in `$defs` is fine if what references it
-has a `type`. It's reported once for each group of schemas, on the first
-keyword for one type. A group that nothing in the document applies, like
-a schema in `$defs` that's only used from other documents, isn't
-reported, and neither is one with a reference that can't be followed, a
-keyword in a `not`, where other types are already rejected, or a group
-with a `propertyNames` schema, which only applies to strings.
+`type`, `const`, or `enum` says what type the value is. It can be in any
+schema that applies to the same value. So `required` in an `anyOf` is fine
+if `type` is next to the `anyOf`. A schema in `$defs` is fine if whatever
+references it has a `type`. It's reported once for each group of schemas,
+on the first keyword that's for one type.
 
-A format's types come from its definition (`types`), so a custom format
-that doesn't say, or one the dialect doesn't support, isn't reported.
-A `type` that doesn't allow the keyword's type is reported by
-`keyword-for-disallowed-type`. It has no options.
+These aren't reported:
+
+- A group that nothing in the document applies, like a schema in `$defs`
+  that's only used from other documents
+- A group with a reference that can't be followed
+- A keyword in a `not`, where other types are already rejected
+- A group with a `propertyNames` schema, which only applies to strings
+
+A format's types come from its definition's `types`. A custom format that
+doesn't list them isn't reported, and neither is a format the dialect
+doesn't support. A `type` that doesn't allow the keyword's type is
+reported by `keyword-for-disallowed-type`. It has no options.
 
 ## Examples
 

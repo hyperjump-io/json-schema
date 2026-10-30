@@ -1,20 +1,20 @@
 # Sessions
 
 A session retrieves and browses schemas. Everything it finds belongs to
-it: the documents it retrieves and the dialects it builds from
-meta-schemas. It's thrown away with the session.
+it, including the documents it retrieves and the dialects it builds from
+meta-schemas. All of that is thrown away with the session.
 
 An operation given a `JsonSchema`, like `validator` or `bundle`, starts a
 new session. Start one yourself to:
 
-- **Compile several schemas with the same documents.** Each is retrieved and
-  checked once for the session, instead of once per compilation.
+- **Compile several schemas with the same documents.** Each document is
+  retrieved and checked once per session instead of once per compilation.
 - **Browse schemas** with the
   [`@hyperjump/browser`](https://github.com/hyperjump-io/browser/blob/v2/website/README.md)
-  API, and [follow references](#following-references) in a tool of your
+  API and [follow references](#following-references) in a tool of your
   own.
-- **Read annotations** by keyword name, with `annotation` (see
-  [Annotations](../guides/annotations.md#reading-an-annotation)).
+- **Read annotations** by keyword name with `annotation`. See
+  [Annotations](../guides/annotations.md#reading-an-annotation).
 
 ```typescript
 const session = jsonSchema.session({ registry });
@@ -27,21 +27,22 @@ const name = await session.get(
 );
 ```
 
-Every operation takes a session in place of the `JsonSchema`, so they share
-what it retrieved. A session takes the same `registry` and
-`allowRetrieval` options as an operation, and an operation given a session
-can't take them. A validator doesn't need its session after it's compiled.
+Every operation accepts a session in place of the `JsonSchema`. Operations
+that use the same session share what it retrieved. A session takes the same
+`registry` and `allowRetrieval` options as an operation. An operation given
+a session can't take them. A validator doesn't need its session after it's
+compiled.
 
-A session sees documents as they were when it first retrieved them, so
-start a new one to see changes. Responses from HTTP are cached across
-sessions by their caching headers.
+A session sees documents as they were when it first retrieved them. Start
+a new session to see changes. HTTP responses are cached across sessions
+according to their caching headers.
 
 ## Following references
 
-A tool that follows references itself, like a documentation generator or
-a bundler, finds what a reference points to with the session's
-`getDocument` or `get`. Say where the reference is with `referencedFrom`:
-the URI of the document it's in.
+Some tools follow references themselves, like a documentation generator or
+a bundler. They find what a reference points to with the session's
+`getDocument` or `get`. Use `referencedFrom` to say where the reference is.
+It's the URI of the document the reference is in.
 
 ```typescript
 import type { JsonSchemaDocumentNode } from "@hyperjump/json-schema";
@@ -64,25 +65,26 @@ for (const uri of references) {
 }
 ```
 
-`getDocument` finds any document, like a JSON file, so check that it's a
+`getDocument` finds any document, like a JSON file. Check that it's a
 schema before treating it as one. Its type doesn't narrow, so it needs the
 cast.
 
 `referencedFrom` matters for a schema embedded in the same document, like
-an `$id` in `$defs`. It's only found from the document it's in, so without
-`referencedFrom` it isn't found, or a different schema with the same URI
-is. When the schema making the reference is in more than one document,
-like a schema that's also in a bundle, an embedded schema is only found
-if every one of those documents embeds it. Every other reference is found the usual way: in the registries, then by
-retrieving it.
+an `$id` in `$defs`. An embedded schema is only found from the document
+it's in. Without `referencedFrom`, it isn't found, or a different schema
+with the same URI is found instead. Sometimes the schema making the
+reference is in more than one document, like a schema that's also in a
+bundle. Then an embedded schema is only found if every one of those
+documents embeds it. Every other reference is found the usual way: first in
+the registries, then by retrieving it.
 
-`visitReferences` finds every reference in a document, with the URI it
-refers to: `$ref` in every dialect, 2020-12's `$dynamicRef`, and 2019-09's
-`$recursiveRef`. In the tree, a reference that's a keyword's value is a
-`json` node with the resolved URI as `href`, and a draft-04 to draft-07
-`$ref` is a `reference` node with `href`.
+`visitReferences` finds every reference in a document along with the URI it
+refers to. It finds `$ref` in every dialect, 2020-12's `$dynamicRef`, and
+2019-09's `$recursiveRef`. In the tree, a reference that's a keyword's
+value is a `json` node with the resolved URI as `href`. A draft-04 to
+draft-07 `$ref` is a `reference` node with `href`.
 
-Follow references in the session the document is in, so you only reach
-what its registry and `allowRetrieval` allow. In a lint rule, that's
-`file.data.jsonSchemaSession`, and [`findSchema`](lint-rules.md#looking-at-other-schemas)
-does this for you.
+Follow references in the session the document is in. That way you only
+reach what its registry and `allowRetrieval` allow. In a lint rule, the
+session is `file.data.jsonSchemaSession`.
+[`findSchema`](lint-rules.md#looking-at-other-schemas) does this for you.

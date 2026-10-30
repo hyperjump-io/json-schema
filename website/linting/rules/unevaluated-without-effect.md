@@ -2,20 +2,24 @@
 
 In `recommended`, as a warning.
 
-An `unevaluatedProperties` or `unevaluatedItems` that never sees a property
-or item that isn't evaluated, because the other keywords in its schema
-evaluate every one whenever they pass, like `additionalProperties: false`
+An `unevaluatedProperties` or `unevaluatedItems` that never sees an
+unevaluated property or item. The other keywords in its schema evaluate
+every one whenever they pass. For example, `additionalProperties: false`
 next to `unevaluatedProperties: false`, or an `allOf` schema with `items`.
 It always passes, so it has no effect.
 
-From what they lower to, that's `eachProperty` with an `except` selector
-whose names and patterns are marked too, `eachItem` from an index whose
-items before it are marked, or another `unevaluated` selector. Only what's
-marked whenever the schema passes counts: something every branch of an
-`anyOf`, `oneOf`, or `if` marks does, and something only one of them marks
-doesn't. One with a schema that allows everything, like
-`unevaluatedProperties: true`, is reported by `empty-catch-all-schema`
-too.
+In terms of what they lower to, it's one of these:
+
+- `eachProperty` with an `except` selector whose names and patterns are
+  also marked
+- `eachItem` starting from an index, where the items before it are marked
+- Another `unevaluated` selector
+
+Only what's marked whenever the schema passes counts. Something that every
+branch of an `anyOf`, `oneOf`, or `if` marks counts. Something only one
+branch marks doesn't. A keyword with a schema that allows everything, like
+`unevaluatedProperties: true`, is also reported by
+`empty-catch-all-schema`.
 
 ## Examples
 

@@ -1,24 +1,24 @@
 # Loading schemas
 
-Every schema is identified by a URI, and `compile` takes the URI of the
-schema to compile. This page is about where the schema behind a URI comes
-from: a registry you fill yourself, a file, or an HTTP server.
+Every schema is identified by a URI. `compile` takes the URI of the schema
+to compile. This page is about where the schema behind a URI comes from. It
+can come from a registry you fill yourself, a file, or an HTTP server.
 
 When a schema is needed, it's looked for in this order:
 
-1. A schema embedded in the same document, for a reference from inside that
-   document.
-2. The registry passed to `compile` (or another operation), then the
+1. A schema embedded in the same document. This applies to a reference
+   from inside that document.
+2. The registry passed to `compile` or another operation. Then the
    `JsonSchema`'s `registry`.
-3. Retrieval by its URI, for `file:`, `http:`, and `https:` URIs that
-   [`allowRetrieval`](retrieval.md) allows.
+3. Retrieval by its URI. This works for `file:`, `http:`, and `https:` URIs
+   that [`allowRetrieval`](retrieval.md) allows.
 
 ## Registries
 
 A `SchemaRegistry` holds schemas you already have, like ones bundled with
 your application or stored in a database. A schema is found by its `$id`.
-Its type parameter is the type of the schemas it takes, so each one is
-checked as you write it.
+The registry's type parameter is the type of schema it accepts, so each
+schema is checked as you write it.
 
 ```typescript
 import { SchemaRegistry } from "@hyperjump/json-schema";
@@ -42,25 +42,24 @@ const registry = new SchemaRegistry<V1Schema>()
 jsonSchema.registry = registry;
 ```
 
-The `JsonSchema`'s `registry` is seen by everything it compiles. It starts
-empty, with the type of the `JsonSchema`'s dialects' schemas. A registry
-without a type parameter takes any JSON. See
-[Schema types](schema-types.md#in-a-registry) for registries of more than
-one dialect.
+Everything the `JsonSchema` compiles can see its `registry`. The registry
+starts empty. Its type is the schema type of the `JsonSchema`'s dialects. A
+registry without a type parameter accepts any JSON. For registries with
+more than one dialect, see [Schema types](schema-types.md#in-a-registry).
 
-References between schemas in a registry work like references anywhere:
-`/address` is resolved against `https://example.com/person`.
+References between schemas in a registry work like references anywhere
+else. `/address` is resolved against `https://example.com/person`.
 
 ### JSON text or a value
 
-A schema can be a JavaScript value or JSON text. Pass the text when you have
-it, such as a file you read yourself. Then a problem with the schema is
+A schema can be a JavaScript value or JSON text. If you have the text, such
+as a file you read yourself, pass that. Then any problem with the schema is
 reported with its line and column. Text isn't type-checked, because its
 type is `string`.
 
 A value is copied when it's added, so changing it afterward doesn't change
-the registry. A value that can't be JSON, like one with a cycle, throws a
-`TypeError` when it's added.
+the registry. Adding a value that can't be JSON, like one with a cycle,
+throws a `TypeError`.
 
 ```typescript
 const text = await readFile("./person.schema.json", "utf8");
@@ -69,10 +68,10 @@ const registry = new SchemaRegistry().with(text);
 
 ### Schemas without `$id`
 
-A schema without an `$id` needs a `retrievalUri` to be found by. It's also
-the base URI for a relative `$id`. A schema without `$schema` can be given
-its dialect with `dialectUri`. Neither can be a `file:` URL: a schema in a
-file is loaded from the file.
+A schema without an `$id` needs a `retrievalUri` so it can be found. The
+`retrievalUri` is also the base URI for a relative `$id`. To give a schema
+without `$schema` its dialect, use `dialectUri`. Neither option can be a
+`file:` URL, because a schema in a file is loaded from the file.
 
 ```typescript
 const registry = new SchemaRegistry<V1Schema>().with({ type: "string" }, {
@@ -84,8 +83,9 @@ const registry = new SchemaRegistry<V1Schema>().with({ type: "string" }, {
 ### Where a schema came from
 
 `origin` says where a schema came from, like the path of the file you read
-it from. It isn't used to find the schema. Its document has it, and so does
-every problem found in it, so you can show a problem where it is.
+it from. It isn't used to find the schema. The schema's document has it,
+and so does every problem found in the schema. That lets you show each
+problem where it is.
 
 ```typescript
 const registry = new SchemaRegistry().with(text, { origin: "schemas/person.schema.json" });
@@ -93,7 +93,7 @@ const registry = new SchemaRegistry().with(text, { origin: "schemas/person.schem
 
 ### Changing a registry
 
-A registry never changes. `with` and `without` return a new registry, so a
+A registry never changes. `with` and `without` return a new registry. A
 session that's already using a registry keeps seeing what it saw when it
 started. To change what a `JsonSchema` sees, replace its registry.
 
@@ -106,11 +106,10 @@ added without one can't be removed.
 
 ### A registry for one call
 
-A registry you pass to `validator`, or any other operation, is only used
-for that call. It's
-checked before the `JsonSchema`'s. A URI that a schema in each of them is
-identified by is an error, so it can't replace a schema the `JsonSchema`'s
-registry has.
+A registry you pass to `validator` or any other operation is only used for
+that call. It's checked before the `JsonSchema`'s registry. If both
+registries have a schema with the same URI, that's an error. A call's
+registry can't replace a schema in the `JsonSchema`'s registry.
 
 ```typescript
 const isPerson = await validator(jsonSchema, "https://example.com/person", {
@@ -118,14 +117,14 @@ const isPerson = await validator(jsonSchema, "https://example.com/person", {
 });
 ```
 
-A schema in it can use a dialect whose meta-schema is in the `JsonSchema`'s
-registry, so custom meta-schemas only need adding once.
+A schema in a call's registry can use a dialect whose meta-schema is in the
+`JsonSchema`'s registry. Custom meta-schemas only need to be added once.
 
 ### Combining registries
 
-`concat` makes one registry from several, like your application's schemas
-and generated ones. The schemas are shared, not copied. Two different
-schemas with the same `retrievalUri` throw.
+`concat` makes one registry from several. For example, you might combine
+your application's schemas with generated ones. The schemas are shared, not
+copied. Two different schemas with the same `retrievalUri` throw.
 
 ```typescript
 const isPerson = await validator(jsonSchema, "https://example.com/person", {
@@ -133,9 +132,9 @@ const isPerson = await validator(jsonSchema, "https://example.com/person", {
 });
 ```
 
-A registry is iterable, so you can list what's in one or make a registry
-from some of its schemas. Each schema is JSON text, even one added as a
-value.
+A registry is iterable. You can list what's in it or make a new registry
+from some of its schemas. Each schema comes out as JSON text, even if it
+was added as a value.
 
 ```typescript
 const fromFiles = new SchemaRegistry([...registry].filter((entry) => entry.origin?.startsWith("schemas/")));
@@ -146,8 +145,8 @@ const fromFiles = new SchemaRegistry([...registry].filter((entry) => entry.origi
 Compile a schema in a file by its `file:` URL. References in it are
 resolved relative to the file, so a `$ref` of `./address.schema.json` finds
 the file next to it. A reference, an `$id`, or a `$schema` can't be a
-`file:` URL, because it would only find the file on your machine. A custom
-meta-schema in a file needs an `$id`, and is found by it from a
+`file:` URL, because it would only work on your machine. A custom
+meta-schema in a file needs an `$id`. It's found by that `$id` from a
 [registry](#registries).
 
 ```typescript
@@ -158,10 +157,10 @@ const isPerson = await validator(jsonSchema, uri);
 ```
 
 A `.json` file is a schema if its `$schema` is a dialect, like
-`https://json-schema.org/v1`, whatever it's named. One without `$schema`
-is a schema only if its name ends with `.schema.json`. Other files are
-plain JSON, and referencing one is an error. Files aren't available in
-browsers.
+`https://json-schema.org/v1`, no matter what it's named. A file without
+`$schema` is only a schema if its name ends with `.schema.json`. Other
+files are plain JSON, and referencing one is an error. Files aren't
+available in browsers.
 
 By default, only files in the working directory can be retrieved. See
 [Controlling retrieval](retrieval.md) to allow more or less.
@@ -181,9 +180,9 @@ const uri = "https://schemas.example.com/person";
 const isPerson = await validator(jsonSchema, uri);
 ```
 
-The response must be `application/schema+json`, or `application/json`
-with a `$schema` that's a dialect. Responses are cached by
-their caching headers, and a schema retrieved once is reused for the life of
+The response must be `application/schema+json`, or `application/json` with
+a `$schema` that's a dialect. Responses are cached according to their
+caching headers. A schema that's been retrieved is reused for the life of
 the session. To send credentials, see
 [Controlling retrieval](retrieval.md#sending-credentials).
 
@@ -192,8 +191,8 @@ the session. To send credentials, see
 `compile` throws when it can't find a schema:
 
 - A `RetrievalNotAllowedError` when `allowRetrieval` doesn't allow the URI.
-- A `RetrievalError`, from `@hyperjump/browser`, when the URI is allowed but
-  retrieving it fails, like a file that doesn't exist or a `404`. Its
-  `cause` is the error that stopped it.
-- A `SchemaError` when the schema is found but has problems (see
-  [Invalid schemas](invalid-schemas.md)).
+- A `RetrievalError` from `@hyperjump/browser` when the URI is allowed but
+  retrieving it fails. A file that doesn't exist or a `404` are examples.
+  Its `cause` is the error that stopped it.
+- A `SchemaError` when the schema is found but has problems. See
+  [Invalid schemas](invalid-schemas.md).

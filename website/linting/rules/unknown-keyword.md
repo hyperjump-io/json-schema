@@ -2,7 +2,24 @@
 
 In `recommended`, as a warning.
 
-Names of unknown keywords that aren't reported, like `"x-internal"`
+A property of a schema that isn't a keyword in its dialect. It's usually a
+misspelling. When a keyword's name is close, the message suggests it.
+
+In 2019-09 and 2020-12, an unknown keyword is an annotation. In draft-04
+through draft-07 it's ignored. Either way, a misspelled keyword silently
+does nothing. In v1 and other dialects where unknown keywords are errors,
+the resolver already reports them, so this rule doesn't.
+
+These aren't reported:
+
+- `$comment`, in dialects that don't have it
+- `definitions` or `$defs` in a dialect that uses the other one.
+  `misnamed-definitions` reports those.
+- A property next to `$ref` in draft-04 through draft-07.
+  `ignored-ref-siblings` reports those.
+
+It has one option. `ignore` lists names of unknown keywords not to report,
+like `"x-internal"`.
 
 ## Examples
 

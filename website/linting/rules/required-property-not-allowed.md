@@ -3,10 +3,11 @@
 In `recommended`, as a warning.
 
 A required property that the same schema doesn't allow, so no object is
-valid. Its schema in `properties` or a matching `patternProperties`
-allows nothing, like `false` or `{ "type": "string", "const": 1 }`, or
-it's in neither and `additionalProperties` allows nothing. It's often a
-typo in `required` or in `properties`.
+valid. Either its schema in `properties` or a matching
+`patternProperties` allows nothing, like `false` or
+`{ "type": "string", "const": 1 }`. Or it's in neither and
+`additionalProperties` allows nothing. It's often a typo in `required` or
+in `properties`.
 
 It only looks at one schema at a time. `unevaluatedProperties: false`
 isn't considered, because whether another schema evaluates the property

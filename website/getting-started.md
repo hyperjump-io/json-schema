@@ -1,8 +1,8 @@
 # Getting started
 
-This tutorial takes you from installing the library to validating data,
-explaining what's wrong with invalid data, loading schemas from files, and
-linting them. Each step builds on the one before it.
+This tutorial takes you from installing the library to validating data.
+Along the way you'll find out what's wrong with invalid data, load schemas
+from files, and lint them. Each step builds on the one before it.
 
 ## Install
 
@@ -10,15 +10,16 @@ linting them. Each step builds on the one before it.
 npm install @hyperjump/json-schema
 ```
 
-It's an ES module, with TypeScript types. It works in Node.js and in
+It's an ES module with TypeScript types. It works in Node.js and in
 browsers. In a browser, use a bundler that supports the `imports` field of
-`package.json`, like Vite, webpack, esbuild, or Rollup.
+`package.json`. Vite, webpack, esbuild, and Rollup all do.
 
 ## Create a `JsonSchema`
 
-A `JsonSchema` holds everything your application's schemas need: the
-dialects (versions of JSON Schema) it supports, the schemas it knows about,
-and its configuration. Most applications create one and use it everywhere.
+A `JsonSchema` holds everything your application's schemas need. That's the
+dialects it supports, the schemas it knows about, and its configuration. A
+dialect is a version of JSON Schema. Most applications create one
+`JsonSchema` and use it everywhere.
 
 It starts without any dialects, so give it the ones your schemas use. This
 tutorial uses JSON Schema v1. [Dialects](guides/dialects.md) lists the
@@ -34,8 +35,8 @@ const jsonSchema = new JsonSchema({ dialects: [v1Dialect] });
 ## Add a schema
 
 Schemas are identified by URI. The `JsonSchema`'s `registry` holds schemas
-you give it directly, by their `$id`. `with` returns a new registry with
-the schema in it.
+you give it directly. It stores them by their `$id`. `with` returns a new
+registry that includes the schema.
 
 ```typescript
 jsonSchema.registry = jsonSchema.registry.with({
@@ -54,9 +55,9 @@ jsonSchema.registry = jsonSchema.registry.with({
 `$schema` says which dialect the schema is written in. Every schema needs
 one.
 
-The registry takes v1 schemas, because v1 is the dialect the `JsonSchema`
-has, so the schema is checked as you write it. A misspelled keyword is a
-type error:
+The `JsonSchema` has the v1 dialect, so the registry's type only accepts v1
+schemas. That means TypeScript checks the schema as you write it. A
+misspelled keyword is a type error:
 
 ```typescript
 jsonSchema.registry = jsonSchema.registry.with({
@@ -71,13 +72,13 @@ jsonSchema.registry = jsonSchema.registry.with({
 Object literal may only specify known properties, but 'minLenght' does not exist in type ... Did you mean to write 'minLength'?
 ```
 
-[Schema types](guides/schema-types.md) has each dialect's type, and how to
-check schemas that aren't in a registry.
+[Schema types](guides/schema-types.md) lists each dialect's type. It also
+shows how to check schemas that aren't in a registry.
 
 ## Validate
 
-`validator` compiles the schema once and returns a function you can use
-for as many values as you like.
+`validator` compiles the schema once. It returns a function you can call
+on as many values as you like.
 
 ```typescript
 import { validator } from "@hyperjump/json-schema";
@@ -92,8 +93,8 @@ Compiling is the slow part. It finds the schema and everything it
 references, checks that they're valid schemas, and prepares them for
 validation. Validating is fast.
 
-For a one-off check, `validate` does both in one call, and a schema can be
-passed as a value instead of a URI. It compiles every time, so use
+For a one-off check, `validate` compiles and validates in one call. You can
+pass the schema as a value instead of a URI. It compiles every time, so use
 `validator` for anything you validate more than once.
 
 ```typescript
@@ -117,22 +118,23 @@ result.valid; // false
 result.errors.length; // 2
 ```
 
-The output format decides what validation returns, and its type. With
-`BASIC`, `result` is a `BasicOutput`.
+The output format decides what validation returns and what type it has.
+With `BASIC`, `result` is a `BasicOutput`.
 
-Each error says where in the value the problem is (`instanceLocation`, a
-JSON Pointer) and which keyword failed (`absoluteKeywordLocation`):
+Each error says where in the value the problem is and which keyword failed.
+`instanceLocation` is a JSON Pointer to the value. `absoluteKeywordLocation`
+is the keyword:
 
 | Instance location | Absolute keyword location |
 | --- | --- |
 | /age | `https://example.com/person#/properties/age/minimum` |
 | (empty, the whole object) | `https://example.com/person#/required` |
 
-`/age` is less than the `minimum`, and the object as a whole is missing a
+`/age` is less than the `minimum`. The object as a whole is missing a
 `required` property.
 
-Errors are data, not sentences. `outputErrorMessage` gives one a generic
-message:
+Errors are data, not sentences. `outputErrorMessage` turns an error into a
+generic message:
 
 ```typescript
 import { outputErrorMessage } from "@hyperjump/json-schema";
@@ -147,22 +149,22 @@ for (const error of result.errors) {
 The instance fails the constraint at 'https://example.com/person#/required'
 ```
 
-[Output and errors](guides/output.md) has the other output format and
-everything in an error.
+[Output and errors](guides/output.md) covers the other output format and
+everything an error contains.
 
 ## Validate JSON text
 
-When the data is JSON text, such as a file or a request body, say so with
-`input: "json"` instead of parsing it yourself. Errors then have a `place`:
-the line and column of the value that failed. Syntax errors are reported
-too, and the rest of the text is still validated, so you see every problem
-at once.
+When the data is JSON text, like a file or a request body, pass
+`input: "json"` instead of parsing it yourself. Then each error has a
+`place`, which is the line and column of the value that failed. Syntax
+errors are reported too. The rest of the text is still validated, so you
+see every problem at once.
 
-To print them the way unified tools do, add them to a
+To print errors the way unified tools do, add them to a
 [`VFile`](https://github.com/vfile/vfile) and use
-[`vfile-reporter`](https://github.com/vfile/vfile-reporter)
-(`npm install vfile vfile-reporter`). A failed constraint is an error, and
-a syntax error the parser recovered from is a warning.
+[`vfile-reporter`](https://github.com/vfile/vfile-reporter).
+Install them with `npm install vfile vfile-reporter`. A failed constraint
+is an error. A syntax error the parser recovered from is a warning.
 
 ```typescript
 import { VFile } from "vfile";
@@ -195,14 +197,15 @@ person.json
 2 messages (✖ 1 error, ⚠ 1 warning)
 ```
 
-[Reporting errors](unified/reporting-errors.md) has more on making messages
-from errors.
+[Reporting errors](unified/reporting-errors.md) has more on turning errors
+into messages.
 
 ## Load schemas from files
 
-Real schemas usually live in files and reference each other. Compile one by
-its `file:` URL, and its references are found relative to it. A file is a
-schema if its `$schema` is a dialect, or its name ends with `.schema.json`.
+Real schemas usually live in files and reference each other. Compile a
+schema by its `file:` URL, and its references are resolved relative to it.
+A file is a schema if its `$schema` is a dialect or its name ends with
+`.schema.json`.
 
 ```json
 {
@@ -223,17 +226,17 @@ const uri = pathToFileURL("./schemas/person.schema.json").href;
 const isPerson = await validator(jsonSchema, uri);
 ```
 
-By default, only files in the working directory can be retrieved, so a
-schema can't reference a file elsewhere on the machine or a URL on your
-network. [Loading schemas](guides/loading-schemas.md) covers registries,
-files, and HTTP, and [Controlling retrieval](guides/retrieval.md) covers
-what can be retrieved.
+By default, only files in the working directory can be retrieved. A schema
+can't reference a file elsewhere on the machine or a URL on your network.
+[Loading schemas](guides/loading-schemas.md) covers registries, files, and
+HTTP. [Controlling retrieval](guides/retrieval.md) covers what can be
+retrieved.
 
 ## Lint the schema
 
 A schema can be valid and still not do what its author meant. Lint rules
-find those mistakes. `lint` runs the recommended rules on a schema document
-and returns what they find, as `SchemaMessage`s.
+find those mistakes. `lint` runs the recommended rules on a schema document.
+It returns what they find as `SchemaMessage`s.
 
 ```typescript
 import { lint } from "@hyperjump/json-schema";
@@ -260,17 +263,17 @@ https://hyperjump.io/json-schema/linting/rules/required-property-not-defined/
 ```
 
 Every message links to its rule's page, which explains the problem and how
-to fix it. To lint every schema in a project, and check JSON files against
+to fix it. To lint every schema in a project and check JSON files against
 their schemas, use the
 [Hyperjump CLI](https://github.com/hyperjump-io/cli/blob/main/website/README.md).
 
 ## Next steps
 
-- [Dialects](guides/dialects.md), if your schemas use draft-07, 2020-12, or
+- [Dialects](guides/dialects.md) if your schemas use draft-07, 2020-12, or
   another version
-- [Validating](guides/validating.md), for the other ways to validate,
-  including getting annotations
-- [Invalid schemas](guides/invalid-schemas.md), for handling a schema with
+- [Validating](guides/validating.md) for the other ways to validate,
+  including how to get annotations
+- [Invalid schemas](guides/invalid-schemas.md) for handling a schema with
   mistakes
-- [Linting schemas](linting/README.md), for choosing rules and turning them
+- [Linting schemas](linting/README.md) for choosing rules and turning them
   off where you need to

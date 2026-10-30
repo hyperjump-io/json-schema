@@ -2,21 +2,21 @@
 
 In `recommended`, as a warning.
 
-`then` or `else` that allows nothing, where a simpler schema says the
-same thing, or where nothing is valid. It allows nothing if it's `false`,
-or its keywords can't all pass a value of any type, like
+`then` or `else` that allows nothing when a simpler schema would say the
+same thing, or when nothing is valid at all. A branch allows nothing if
+it's `false` or if its keywords can't all pass for any value, like
 `{ "type": "string", "const": 1 }`.
 
-- `if` with a `then` that allows nothing and no `else`: a value is valid
-  only if it fails `if`, which is `not` with the `if` schema.
-- `if` with an `else` that allows nothing and no `then`: a value is valid
-  only if it passes `if`, which is the `if` schema on its own.
-- `then` and `else` both allow nothing: nothing is valid, whatever `if`
+- `if` with a `then` that allows nothing and no `else`. A value is only
+  valid if it fails `if`. That's the same as `not` with the `if` schema.
+- `if` with an `else` that allows nothing and no `then`. A value is only
+  valid if it passes `if`. That's the same as the `if` schema on its own.
+- `then` and `else` both allow nothing. Nothing is valid, whatever `if`
   says.
 
-With the other branch too, the rewrite isn't as simple, so only both
-allowing nothing is reported. Without `if`, `then-else-without-if` reports
-them instead. It has no options.
+When the other branch is present, the rewrite isn't as simple, so only the
+case where both allow nothing is reported. Without `if`,
+`then-else-without-if` reports them instead. It has no options.
 
 ## Examples
 

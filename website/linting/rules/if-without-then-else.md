@@ -2,14 +2,14 @@
 
 In `recommended`, as a warning.
 
-`if` without a sibling `then` or `else`. Whether it passes or fails, the
+`if` without a sibling `then` or `else`. Whether `if` passes or fails, the
 schema's result is the same, so the schema doesn't do what it seems to.
-Its annotations are still collected when it passes, so in 2019-09 and
-later it can make properties or items evaluated for
-`unevaluatedProperties` and `unevaluatedItems`, but that's rarely meant.
+Its annotations are still collected when it passes. In 2019-09 and later,
+that means it can mark properties or items as evaluated for
+`unevaluatedProperties` and `unevaluatedItems`. That's rarely intended.
 
-It finds the keywords by URI, so it works in every dialect with `if`,
-whatever they're named. It has no options.
+It finds the keywords by URI, so it works in every dialect that has `if`,
+whatever the keywords are named. It has no options.
 
 ## Examples
 

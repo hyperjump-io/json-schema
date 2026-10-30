@@ -2,16 +2,18 @@
 
 In `recommended`, as a warning.
 
-A value in `enum` that a keyword next to it rejects, like `5` in
-`enum: [10, 5]` next to `multipleOf: 2`, so it's never valid, or a `const`
-value that one rejects, so nothing is valid. Each value is reported once,
-with every keyword that rejects it.
+A value in `enum` that a keyword next to it rejects, so the value is never
+valid. For example, `5` in `enum: [10, 5]` next to `multipleOf: 2`. It's
+also reported for a `const` value that a keyword rejects, which means
+nothing is valid. Each value is reported once and lists every keyword that
+rejects it.
 
-It checks the same keywords as `keyword-implied-by-const-or-enum`,
-including ones that apply schemas, like `properties` and `anyOf`. A value
-a keyword might reject isn't reported, like one a reference that can't be
-followed decides. A value that `type` doesn't allow is reported by
-`const-or-enum-value-for-disallowed-type`.
+It checks the same keywords as `keyword-implied-by-const-or-enum`. That
+includes keywords that apply schemas, like `properties` and `anyOf`. A
+value that a keyword only might reject isn't reported. That happens when a
+reference that can't be followed decides the result. A value that `type`
+doesn't allow is reported by `const-or-enum-value-for-disallowed-type`
+instead.
 
 It has no options.
 

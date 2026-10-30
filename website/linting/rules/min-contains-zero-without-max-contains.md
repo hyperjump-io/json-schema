@@ -2,11 +2,11 @@
 
 In `recommended`, as a warning.
 
-`minContains: 0` next to `contains`, without `maxContains`. Any number of
+`minContains: 0` next to `contains` without `maxContains`. Any number of
 items can match `contains`, including none, so it never fails. The specs
-say 0 is only useful with `maxContains`. `contains` still marks the items
-that match as evaluated, for `unevaluatedItems`, which may be the point,
-but that's rarely what's meant.
+say 0 is only useful with `maxContains`. `contains` still marks matching
+items as evaluated for `unevaluatedItems`. That might be the point, but
+it's rarely what's meant.
 
 Without `contains`, `min-max-contains-without-contains` reports it
 instead. It has no options.
