@@ -150,6 +150,6 @@ describe("lint", () => {
 const jsonSchemaWith = (...schemas) => {
   const jsonSchema = new JsonSchema();
   addV1(jsonSchema);
-  jsonSchema.addRegistry(new SchemaRegistry(schemas.map((schema) => ({ schema }))));
+  jsonSchema.registry = new SchemaRegistry(schemas.map((schema) => ({ schema })));
   return jsonSchema;
 };

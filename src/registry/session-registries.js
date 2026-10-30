@@ -12,27 +12,6 @@ import { RegistryIndex } from "./registry-index.js";
  * @import { IndexedEntry } from "./registry-index.js"
  */
 
-// Each JsonSchema's registries, for its sessions. They aren't part of the
-// API.
-
-/**
- * The registries added to each JsonSchema
- *
- * @type WeakMap<JsonSchema, SchemaRegistry[]>
- */
-const addedRegistries = new WeakMap();
-
-/** @type (jsonSchema: JsonSchema) => SchemaRegistry[] */
-export const addedRegistriesOf = (jsonSchema) => {
-  let registries = addedRegistries.get(jsonSchema);
-  if (!registries) {
-    registries = [];
-    addedRegistries.set(jsonSchema, registries);
-  }
-
-  return registries;
-};
-
 /**
  * The schemas a session finds in the registries it sees
  */
@@ -41,9 +20,10 @@ export class SessionRegistries {
   #session;
 
   /**
-   * The registries this session sees, session registries first
+   * The registries this session sees: its own, then the JsonSchema's as it
+   * was when the session was created
    *
-   * @type SchemaRegistry[]
+   * @type [SchemaRegistry | undefined, SchemaRegistry]
    */
   #registries;
 
@@ -65,20 +45,24 @@ export class SessionRegistries {
 
   /**
    * @param {JsonSchemaSession} session
-   * @param {SchemaRegistry[]} sessionRegistries
+   * @param {SchemaRegistry} [sessionRegistry]
    */
-  constructor(session, sessionRegistries) {
-    const jsonSchema = session.jsonSchema;
+  constructor(session, sessionRegistry) {
+    const instanceRegistry = session.jsonSchema.registry;
 
     this.#session = session;
     this.#documents = new Map();
-
-    this.#registries = [...new Set([...sessionRegistries, ...addedRegistriesOf(jsonSchema)])];
+    this.#registries = [sessionRegistry === instanceRegistry ? undefined : sessionRegistry, instanceRegistry];
   }
 
   /** @type () => RegistryIndex[] */
   #registryIndexes() {
-    this.#indexes ??= this.#registries.map((registry) => registryIndex(this.#session.jsonSchema, registry));
+    if (!this.#indexes) {
+      const jsonSchema = this.#session.jsonSchema;
+      const [sessionRegistry, instanceRegistry] = this.#registries;
+      const instanceIndex = registryIndex(jsonSchema, instanceRegistry);
+      this.#indexes = sessionRegistry ? [registryIndex(jsonSchema, sessionRegistry, instanceIndex), instanceIndex] : [instanceIndex];
+    }
     return this.#indexes;
   }
 
@@ -202,28 +186,37 @@ export class SessionRegistries {
 }
 
 /**
- * Each JsonSchema's index of each registry it's used with. Both are held
- * weakly, so a registry that was only used for one session can go away.
+ * Each JsonSchema's index of each registry it's used with, by the index of
+ * the JsonSchema's registry whose dialects it can use, if any. They're all
+ * held weakly, so a registry that was only used for one session can go
+ * away.
  *
- * @type WeakMap<JsonSchema, WeakMap<SchemaRegistry, RegistryIndex>>
+ * @type WeakMap<JsonSchema, WeakMap<RegistryIndex | JsonSchema, WeakMap<SchemaRegistry, RegistryIndex>>>
  */
 const registryIndexes = new WeakMap();
 
 /**
  * A registry is indexed the first time a session uses it.
  *
- * @type (jsonSchema: JsonSchema, registry: SchemaRegistry) => RegistryIndex
+ * @type (jsonSchema: JsonSchema, registry: SchemaRegistry, dialectsFrom?: RegistryIndex) => RegistryIndex
  */
-const registryIndex = (jsonSchema, registry) => {
-  let indexes = registryIndexes.get(jsonSchema);
+const registryIndex = (jsonSchema, registry, dialectsFrom) => {
+  let byDialects = registryIndexes.get(jsonSchema);
+  if (!byDialects) {
+    byDialects = new WeakMap();
+    registryIndexes.set(jsonSchema, byDialects);
+  }
+
+  const key = dialectsFrom ?? jsonSchema;
+  let indexes = byDialects.get(key);
   if (!indexes) {
     indexes = new WeakMap();
-    registryIndexes.set(jsonSchema, indexes);
+    byDialects.set(key, indexes);
   }
 
   let index = indexes.get(registry);
   if (!index) {
-    index = new RegistryIndex(jsonSchema, registry);
+    index = new RegistryIndex(jsonSchema, registry, dialectsFrom);
     indexes.set(registry, index);
   }
 

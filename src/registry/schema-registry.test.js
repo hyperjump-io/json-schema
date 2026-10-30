@@ -20,7 +20,7 @@ describe("SchemaRegistry", () => {
   });
 
   /** @type (registry: SchemaRegistry, uri: string) => ReturnType<JsonSchema["compile"]> */
-  const compile = (registry, uri) => jsonSchema.compile(uri, { registries: [registry] });
+  const compile = (registry, uri) => jsonSchema.compile(uri, { registry });
 
   /** @type (...schemas: (Json | string)[]) => SchemaRegistry */
   const registryOf = (...schemas) => new SchemaRegistry(schemas.map((schema) => ({ schema })));
@@ -49,7 +49,7 @@ describe("SchemaRegistry", () => {
     test("a schema with an $id is also found by its retrieval URI", async () => {
       const registry = new SchemaRegistry().with(v1({ $id: "https://example.com/b", type: "string" }), { retrievalUri: "https://example.com/a" });
 
-      const node = await jsonSchema.session({ registries: [registry] }).get("https://example.com/a");
+      const node = await jsonSchema.session({ registry }).get("https://example.com/a");
       expect(node.location).to.equal("https://example.com/b#");
       expect((await compile(registry, "https://example.com/a")).validate(42)).to.equal(false);
     });
@@ -173,15 +173,59 @@ describe("SchemaRegistry", () => {
     });
   });
 
+  describe("combining", () => {
+    test("concat has every registry's schemas", async () => {
+      const registry = registryOf(v1({ $id: "https://example.com/a", $ref: "b" }))
+        .concat(registryOf(v1({ $id: "https://example.com/b", type: "string" })));
+
+      expect((await compile(registry, "https://example.com/a")).validate(42)).to.equal(false);
+    });
+
+    test("concat shares schemas, so a schema two registries share is in it once", () => {
+      const registry = new SchemaRegistry().with(v1({}), { retrievalUri: "https://example.com/a" });
+      const combined = registry.concat(registry.with(v1({}), { retrievalUri: "https://example.com/b" }));
+
+      expect([...combined].map((entry) => entry.retrievalUri)).to.eql(["https://example.com/a", "https://example.com/b"]);
+      expect([...combined][0]).to.equal([...registry][0]);
+    });
+
+    test("concat with different schemas with the same retrieval URI is an error", () => {
+      const registry = new SchemaRegistry().with(v1({}), { retrievalUri: "https://example.com/a" });
+      const other = new SchemaRegistry().with(v1({}), { retrievalUri: "https://example.com/a" });
+
+      expect(() => registry.concat(other)).to.throw("https://example.com/a");
+    });
+
+    test("a registry iterates over its schemas as JSON text", () => {
+      const registry = new SchemaRegistry().with(v1({}), { retrievalUri: "https://example.com/a", origin: "a.schema.json" });
+
+      expect([...registry]).to.eql([{
+        schema: JSON.stringify(v1({}), null, "  "),
+        retrievalUri: "https://example.com/a",
+        dialectUri: undefined,
+        origin: "a.schema.json"
+      }]);
+    });
+
+    test("a registry made from another's entries shares them", async () => {
+      const registry = registryOf(v1({ $id: "https://example.com/a" }));
+      const copy = new SchemaRegistry([...registry]);
+
+      const first = await jsonSchema.session({ registry }).getDocument("https://example.com/a");
+      const second = await jsonSchema.session({ registry: copy }).getDocument("https://example.com/a");
+      expect(second).to.equal(first);
+    });
+  });
+
   describe("sessions", () => {
     test("a session sees the registries it was created with", async () => {
       const registry = new SchemaRegistry().with(v1({ type: "string" }), { retrievalUri: "https://example.com/a" });
-      const before = jsonSchema.session({ registries: [registry] });
+      const before = jsonSchema.session({ registry });
 
       const edited = registry.without("https://example.com/a")
         .with(v1({ type: "number" }), { retrievalUri: "https://example.com/a" })
         .with(v1({}), { retrievalUri: "https://example.com/b" });
-      const after = jsonSchema.session({ registries: [edited] });
+      const after = jsonSchema.session({ registry: edited });
 
       expect((await before.compile("https://example.com/a")).validate(42)).to.equal(false);
       await expect(before.compile("https://example.com/b")).rejects.toThrow(RetrievalNotAllowedError);
@@ -196,38 +240,42 @@ describe("SchemaRegistry", () => {
       await expect(jsonSchema.compile("https://example.com/a")).rejects.toThrow(RetrievalNotAllowedError);
     });
 
-    test("a registry can be added to a JsonSchema", async () => {
-      const registry = registryOf(v1({ $id: "https://example.com/a" }));
-      jsonSchema.addRegistry(registry);
+    test("the JsonSchema's registry", async () => {
+      jsonSchema.registry = registryOf(v1({ $id: "https://example.com/a" }));
 
       await expect(jsonSchema.compile("https://example.com/a")).resolves.toBeDefined();
-      expect(() => jsonSchema.addRegistry(registry)).to.throw("already been added");
     });
 
-    test("a removed registry isn't seen by new sessions", async () => {
-      const registry = registryOf(v1({ $id: "https://example.com/a" }));
-      jsonSchema.addRegistry(registry);
+    test("a session sees the JsonSchema's registry as it was when the session was created", async () => {
+      jsonSchema.registry = registryOf(v1({ $id: "https://example.com/a" }));
       const before = jsonSchema.session();
-      jsonSchema.removeRegistry(registry);
+      jsonSchema.registry = new SchemaRegistry();
 
       await expect(before.compile("https://example.com/a")).resolves.toBeDefined();
       await expect(jsonSchema.compile("https://example.com/a")).rejects.toThrow(RetrievalNotAllowedError);
     });
 
-    test("a URI in more than one registry is an error", async () => {
+    test("a URI in both the session's registry and the JsonSchema's is an error", async () => {
+      jsonSchema.registry = registryOf(v1({ $id: "https://example.com/a" }));
       const registry = registryOf(v1({ $id: "https://example.com/a" }));
-      const other = registryOf(v1({ $id: "https://example.com/a" }));
 
-      await expect(jsonSchema.compile("https://example.com/a", { registries: [registry, other] })).rejects.toMatchObject({
+      await expect(compile(registry, "https://example.com/a")).rejects.toMatchObject({
         cause: { message: expect.stringContaining("More than one registry") }
       });
+    });
+
+    test("the JsonSchema's registry as the session's", async () => {
+      const registry = registryOf(v1({ $id: "https://example.com/a" }));
+      jsonSchema.registry = registry;
+
+      await expect(compile(registry, "https://example.com/a")).resolves.toBeDefined();
     });
 
     test("a schema is resolved once for every session", async () => {
       const registry = registryOf(v1({ $id: "https://example.com/a" }));
 
-      const first = await jsonSchema.session({ registries: [registry] }).getDocument("https://example.com/a");
-      const second = await jsonSchema.session({ registries: [registry] }).getDocument("https://example.com/a");
+      const first = await jsonSchema.session({ registry }).getDocument("https://example.com/a");
+      const second = await jsonSchema.session({ registry }).getDocument("https://example.com/a");
 
       expect(second).to.equal(first);
     });
@@ -236,8 +284,8 @@ describe("SchemaRegistry", () => {
       const registry = registryOf(v1({ $id: "https://example.com/a" }));
       const edited = registry.with(v1({}), { retrievalUri: "https://example.com/b" });
 
-      const first = await jsonSchema.session({ registries: [registry] }).getDocument("https://example.com/a");
-      const second = await jsonSchema.session({ registries: [edited] }).getDocument("https://example.com/a");
+      const first = await jsonSchema.session({ registry }).getDocument("https://example.com/a");
+      const second = await jsonSchema.session({ registry: edited }).getDocument("https://example.com/a");
 
       expect(second).to.equal(first);
     });
@@ -262,7 +310,7 @@ describe("SchemaRegistry", () => {
       const other = offline();
       other.addDialect({ uri: dialectUri, keywords: { $id: "https://json-schema.org/keyword/id" }, unknownKeywords: "error" });
 
-      await expect(other.compile("https://example.com/a", { registries: [registry] })).resolves.toBeDefined();
+      await expect(other.compile("https://example.com/a", { registry })).resolves.toBeDefined();
       await expect(compile(registry, "https://example.com/a")).rejects.toThrow(RetrievalError);
     });
 
@@ -331,15 +379,30 @@ describe("SchemaRegistry", () => {
         expect((await compile(registry, "https://example.com/a")).validate(42)).to.equal(false);
       });
 
-      test("a meta-schema in another registry doesn't identify schemas", async () => {
-        const other = registryOf(metaSchema());
-        const registry = new SchemaRegistry().with(schema, { retrievalUri: "https://example.com/b" });
-        const registries = [registry, other];
+      test("a meta-schema in the JsonSchema's registry identifies the session's schemas", async () => {
+        jsonSchema.registry = registryOf(metaSchema());
+        const registry = registryOf(schema);
 
-        await expect(jsonSchema.compile("https://example.com/a", { registries })).rejects.toThrow(RetrievalError);
+        expect((await compile(registry, "https://example.com/a")).validate(42)).to.equal(false);
+      });
+
+      test("a meta-schema replaced in the JsonSchema's registry", async () => {
+        jsonSchema.registry = registryOf(metaSchema({}));
+        const registry = registryOf(schema);
+        await expect(compile(registry, "https://example.com/a")).rejects.toThrow(RetrievalError);
+
+        jsonSchema.registry = registryOf(metaSchema());
+        expect((await compile(registry, "https://example.com/a")).validate(42)).to.equal(false);
+      });
+
+      test("a meta-schema in the session's registry doesn't identify the JsonSchema's schemas", async () => {
+        jsonSchema.registry = new SchemaRegistry().with(schema, { retrievalUri: "https://example.com/b" });
+        const registry = registryOf(metaSchema());
+
+        await expect(compile(registry, "https://example.com/a")).rejects.toThrow(RetrievalError);
 
         // It's found by its retrieval URI, and resolving it finds the meta-schema
-        expect((await jsonSchema.compile("https://example.com/b", { registries })).validate(42)).to.equal(false);
+        expect((await compile(registry, "https://example.com/b")).validate(42)).to.equal(false);
       });
 
       test("a meta-schema that requires a vocabulary that isn't supported can't be found", async () => {
@@ -372,7 +435,7 @@ describe("SchemaRegistry", () => {
 
     test("the schema's document has its origin", async () => {
       const registry = new SchemaRegistry([{ schema: v1({ $id: "https://example.com/a" }), origin: "schemas/a.schema.json" }]);
-      const session = offline().session({ registries: [registry] });
+      const session = offline().session({ registry });
       const document = await session.getDocument("https://example.com/a");
 
       expect(/** @type JsonSchemaDocumentNode */ (/** @type unknown */ (document)).origin).to.equal("schemas/a.schema.json");

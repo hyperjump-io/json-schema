@@ -151,7 +151,7 @@ const lint = async (json) => {
   const jsonSchema = new JsonSchema();
   addDraft04(jsonSchema);
   addDraft202012(jsonSchema);
-  const session = jsonSchema.session({ registries: [new SchemaRegistry([{ schema: json, retrievalUri: uri }])] });
+  const session = jsonSchema.session({ registry: new SchemaRegistry([{ schema: json, retrievalUri: uri }]) });
 
   const file = new VFile({ path: "/schemas/a.schema.json", value: json });
   const processor = unified()

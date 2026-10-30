@@ -34,6 +34,6 @@ describe("optimize", () => {
 const compile = async (schema) => {
   const uri = `https://example.com/schema-${count++}`;
   const registry = new SchemaRegistry([{ schema, retrievalUri: uri, dialectUri: v1DialectUri }]);
-  const validator = await jsonSchema.compile(uri, { registries: [registry] });
+  const validator = await jsonSchema.compile(uri, { registry });
   return /** @type Kernel */ (validator.serialize());
 };

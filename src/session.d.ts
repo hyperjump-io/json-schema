@@ -11,10 +11,11 @@ import type { SchemaError } from "./schema/schema-error.d.ts";
 
 export type SessionOptions = {
   /**
-   * Registries only this session sees, in addition to the
-   * {@link JsonSchema}'s. They're checked first.
+   * Schemas only this session sees, in addition to the {@link JsonSchema}'s
+   * `registry`. A schema in it can use a dialect defined by a meta-schema
+   * in either. Combine registries with `concat`.
    */
-  registries?: SchemaRegistry<any>[];
+  registry?: SchemaRegistry<any>;
 
   /**
    * What this session can retrieve, instead of the {@link JsonSchema}'s
@@ -84,13 +85,13 @@ export class JsonSchemaSession extends Session<JsonSchemaNode> {
   /**
    * Documents are found in this order: an embedded resource, if the
    * reference is from the document that contains it (`referencedFrom`); a
-   * schema in a session registry, then in one of the {@link JsonSchema}'s
-   * registries; then it's retrieved.
+   * schema in the session's registry, then in the {@link JsonSchema}'s
+   * `registry`; then it's retrieved.
    *
    * @throws SchemaError if the schema has problems. It has every problem in
    * the document.
    * @throws RetrievalError from `@hyperjump/browser` if more than one schema
-   * in the registries is found by the URI.
+   * in the two registries is found by the URI.
    */
   getDocument(uri: string, options?: GetOptions): Promise<DocumentNode<JsonSchemaNode>>;
 

@@ -15,8 +15,8 @@ Both libraries have a long-lived object and sessions created from it, and
 
 | Level | Browser | JSON Schema adds |
 | --- | --- | --- |
-| Long-lived | `Hyperjump`: URI scheme and media type plugins, the HTTP cache | keywords and their schemas, formats, dialects, output formats, instance registries |
-| Session | `Session`: document cache, `get`, `step`, …, following references | session registries, the embedded index, `compile` |
+| Long-lived | `Hyperjump`: URI scheme and media type plugins, the HTTP cache | keywords and their schemas, formats, dialects, output formats, the `registry` every session sees |
+| Session | `Session`: document cache, `get`, `step`, …, following references | its own `registry`, the embedded index, `compile` |
 
 - The long-lived level only has state that doesn't depend on a session.
   Plugins, HTTP responses, and definitions are the same for every session.
@@ -27,7 +27,7 @@ Both libraries have a long-lived object and sessions created from it, and
   create a `JsonSchemaSession`. There's no default session. Browsing
   (`get`, `step`, …) is only on sessions, because a node needs its session to
   follow references.
-- `JsonSchema.compile(uri, { registries })` creates a session for that
+- `JsonSchema.compile(uri, { registry })` creates a session for that
   compilation. Compilations that run at the same time each have their own
   session, so they can't see each other's registries. A `Validator` doesn't
   need its session after compiling, because its kernel is self-contained.

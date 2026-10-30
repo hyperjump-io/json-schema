@@ -25,7 +25,7 @@ describe("addVocabulary", () => {
   const getDialect = async (jsonSchema, schemas, dialectUri) => {
     const registry = new SchemaRegistry(schemas.map((schema) => ({ schema })));
 
-    return jsonSchema.session({ registries: [registry] }).getDialect(dialectUri);
+    return jsonSchema.session({ registry }).getDialect(dialectUri);
   };
 
   test("vocabularies added separately are both supported", async () => {

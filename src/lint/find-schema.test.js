@@ -34,7 +34,7 @@ describe("findSchema", () => {
         embedded: { $id: "https://example.com/embedded", type: "boolean" }
       }
     });
-    session = jsonSchema.session({ registries: [registry] });
+    session = jsonSchema.session({ registry });
   });
 
   describe("found", () => {

@@ -27,9 +27,8 @@ new SchemaRegistry().with({ required: ["name"] } as const);
 
 // A registry of any type can be used
 const jsonSchema = new JsonSchema();
-jsonSchema.addRegistry(registry);
-jsonSchema.removeRegistry(registry);
-jsonSchema.session({ registries: [registry, new SchemaRegistry()] });
+jsonSchema.registry = registry;
+jsonSchema.session({ registry: registry.concat(new SchemaRegistry()) });
 
 // A union takes schemas in more than one dialect. `$schema` says which.
 const both = new SchemaRegistry<V1Schema | Draft202012Schema>()

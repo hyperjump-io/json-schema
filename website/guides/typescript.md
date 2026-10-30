@@ -120,7 +120,7 @@ const person = {
   properties: { name: { type: "string" } }
 } as const satisfies V1Schema;
 
-jsonSchema.addRegistry(new SchemaRegistry<V1Schema>().with(person));
+jsonSchema.registry = new SchemaRegistry<V1Schema>().with(person);
 
 const jason = { name: "Jason" } as const;
 await jsonSchema.validate("https://example.com/person", jason); // true

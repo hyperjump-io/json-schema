@@ -3,8 +3,9 @@
 Creating a session costs nothing for a registry that's been used before,
 and a registry that's one edit away from another is cheap to index.
 
-- An entry never changes, and `with` and `without` carry the same entry
-  objects into the new registry. Everything derived from an entry is cached
+- An entry never changes, and `with`, `without`, and `concat` carry the
+  same entry objects into the new registry, as does the constructor given
+  another registry's entries. Everything derived from an entry is cached
   once per `JsonSchema` (a `WeakMap` keyed by the entry) and shared by every
   registry and session: its identification and, lazily, its resolved
   document. An identification that used a dialect from another entry isn't
@@ -13,6 +14,8 @@ and a registry that's one edit away from another is cheap to index.
   One that used a dialect only its session had belongs to that session.
 - A `JsonSchema` builds an index (URI to entry) for each registry the first
   time a session uses it, and keeps it in a `WeakMap` keyed by the registry.
+  A session's own registry can use dialects from the `JsonSchema`'s
+  registry, so its index is also keyed by that registry's index.
   Sessions point at the indexes. A new registry from `with` or `without`
   gets a new index, which only identifies the new entry. The rest is
   copying cached identifications into a `Map`.

@@ -77,11 +77,11 @@ describe("bundle", () => {
 
               beforeAll(async () => {
                 const registry = registryOf({ ...fixtures, ...testCase.externalSchemas, [mainUri]: testCase.schema }, dialectUri);
-                unbundled = await jsonSchema.compile(mainUri, { registries: [registry] });
+                unbundled = await jsonSchema.compile(mainUri, { registry });
 
-                const schema = await jsonSchema.bundle(mainUri, { registries: [registry], ...options });
+                const schema = await jsonSchema.bundle(mainUri, { registry, ...options });
                 const bundleRegistry = new SchemaRegistry([{ schema, retrievalUri: mainUri }]);
-                bundled = await jsonSchema.compile(mainUri, { registries: [bundleRegistry] });
+                bundled = await jsonSchema.compile(mainUri, { registry: bundleRegistry });
               });
 
               for (const { description, instance } of testCase.tests) {
@@ -100,7 +100,7 @@ describe("bundle", () => {
     /** @type (schemas: Record<string, Json>, options?: BundleOptions) => Promise<Json> */
     const bundleOf = (schemas, options) => {
       const registry = registryOf(schemas, draft202012DialectUri);
-      return jsonSchema.bundle(mainUri, { registries: [registry], ...options });
+      return jsonSchema.bundle(mainUri, { registry, ...options });
     };
 
     test("the main schema has $schema and is identified by its URI", async () => {
@@ -184,7 +184,7 @@ describe("bundle", () => {
         [mainUri]: { items: { $ref: "/foo" } },
         [`${testDomain}/foo`]: { id: "/foo#bar", type: "string" }
       }, draft04DialectUri);
-      const bundled = /** @type Record<string, Json> */ (await jsonSchema.bundle(mainUri, { registries: [registry] }));
+      const bundled = /** @type Record<string, Json> */ (await jsonSchema.bundle(mainUri, { registry }));
 
       expect(bundled).to.eql({
         $schema: `${draft04DialectUri}#`,
@@ -203,13 +203,13 @@ describe("bundle", () => {
         [`${testDomain}/foo`]: { $ref: "/string" }
       }, draft07DialectUri);
 
-      await expect(jsonSchema.bundle(mainUri, { registries: [registry] })).rejects.toThrow("its root is a '$ref'");
+      await expect(jsonSchema.bundle(mainUri, { registry })).rejects.toThrow("its root is a '$ref'");
     });
 
     test("a schema can't be embedded in a draft-07 schema whose root is a $ref", async () => {
       const registry = registryOf({ ...fixtures, [mainUri]: { $ref: "/string" } }, draft07DialectUri);
 
-      await expect(jsonSchema.bundle(mainUri, { registries: [registry] })).rejects.toThrow("its root is a '$ref'");
+      await expect(jsonSchema.bundle(mainUri, { registry })).rejects.toThrow("its root is a '$ref'");
     });
 
     test("a schema referenced by a URI it isn't identified by can't be embedded", async () => {
@@ -231,7 +231,7 @@ describe("bundle", () => {
     /** @type (dialectUri: string, options: BundleOptions) => Promise<Record<string, Json>> */
     const bundleOf = async (dialectUri, options) => {
       const registry = registryOf(schemas, dialectUri);
-      return /** @type Record<string, Json> */ (await jsonSchema.bundle(mainUri, { registries: [registry], ...options }));
+      return /** @type Record<string, Json> */ (await jsonSchema.bundle(mainUri, { registry, ...options }));
     };
 
     test("externalSchemas aren't embedded", async () => {
@@ -305,7 +305,7 @@ describe("bundle", () => {
 
     test("a file's bundle validates like its files", async () => {
       const bundled = await fileJsonSchema.bundle(fileUri("main.schema.json"), { id });
-      const validator = await fileJsonSchema.compile(id, { registries: [new SchemaRegistry().with(bundled)] });
+      const validator = await fileJsonSchema.compile(id, { registry: new SchemaRegistry().with(bundled) });
 
       expect(validator.validate({ foo: "a" })).to.equal(true);
       expect(validator.validate({ foo: 1 })).to.equal(false);
@@ -327,7 +327,7 @@ describe("bundle", () => {
 
     test("schemas that aren't files keep their identifiers in a file's bundle", async () => {
       const registry = registryOf({ [`${testDomain}/number`]: { type: "number" } }, draft202012DialectUri);
-      const bundled = /** @type Record<string, Json> */ (await fileJsonSchema.bundle(fileUri("mixed-schemes.schema.json"), { registries: [registry], id }));
+      const bundled = /** @type Record<string, Json> */ (await fileJsonSchema.bundle(fileUri("mixed-schemes.schema.json"), { registry, id }));
 
       expect(Object.keys(/** @type object */ (bundled.$defs))).to.eql(["https://example.com/schemas/string.schema.json", `${testDomain}/number`]);
     });

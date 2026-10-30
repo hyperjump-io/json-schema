@@ -142,7 +142,7 @@ describe("JsonSchema", () => {
         $id: uri,
         $vocabulary: { "https://example.com/vocab/core": true }
       });
-      const session = jsonSchema.session({ registries: [registry] });
+      const session = jsonSchema.session({ registry });
 
       expect(await session.getDialect(uri)).to.eql({ uri, keywords: { $id: "https://json-schema.org/keyword/id" }, unknownKeywords: "annotation", formats: {}, assertFormats: false });
       expect(session.hasDialect(uri)).to.equal(true);
@@ -213,15 +213,15 @@ describe("JsonSchema", () => {
     });
 
     beforeEach(() => {
-      jsonSchema.addRegistry(trusted);
+      jsonSchema.registry = trusted;
     });
 
     test("a document can't change what a reference in another document finds", async () => {
       const session = jsonSchema.session({
-        registries: [other({
+        registry: other({
           sub: { $id: "https://example.com/trusted-sub" },
           common: { $id: "https://example.com/common", type: "number" }
-        })]
+        })
       });
 
       await expect(session.compile("https://example.com/other")).rejects.toMatchObject({
@@ -236,10 +236,10 @@ describe("JsonSchema", () => {
 
     test("an identical resource can't bring different resources with it", async () => {
       const session = jsonSchema.session({
-        registries: [other({
+        registry: other({
           sub: { $id: "https://example.com/trusted-sub", $ref: "https://example.com/common" },
           common: { $id: "https://example.com/common", type: "number" }
-        })]
+        })
       });
 
       await expect(session.compile("https://example.com/other")).rejects.toMatchObject({
@@ -254,10 +254,10 @@ describe("JsonSchema", () => {
 
     test("an identical resource can be in more than one document", async () => {
       const session = jsonSchema.session({
-        registries: [other({
+        registry: other({
           sub: { $id: "https://example.com/trusted-sub", $ref: "https://example.com/common" },
           common: { $id: "https://example.com/common", type: "string" }
-        })]
+        })
       });
 
       expect((await session.compile("https://example.com/other")).validate(42)).to.equal(false);
@@ -266,14 +266,14 @@ describe("JsonSchema", () => {
 
     test("an embedded resource and a document with the same URI", async () => {
       const session = jsonSchema.session({
-        registries: [new SchemaRegistry().with({
+        registry: new SchemaRegistry().with({
           $schema: v1DialectUri,
           $id: "https://example.com/other",
           $ref: "https://example.com/common",
           $defs: {
             common: { $id: "https://example.com/common", type: "number" }
           }
-        })]
+        })
       });
 
       expect((await session.compile("https://example.com/other")).validate(42)).to.equal(true);
@@ -290,7 +290,7 @@ describe("JsonSchema", () => {
 
   describe("annotations", () => {
     beforeEach(() => {
-      jsonSchema.addRegistry(new SchemaRegistry().with({
+      jsonSchema.registry = new SchemaRegistry().with({
         $schema: v1DialectUri,
         $id: "https://example.com/annotated",
         title: "root",
@@ -300,7 +300,7 @@ describe("JsonSchema", () => {
           bar: { description: "bar" }
         },
         propertyNames: { title: "name" }
-      }));
+      });
     });
 
     test("annotation by name in the v1 dialect", async () => {
@@ -361,17 +361,17 @@ describe("JsonSchema", () => {
 
   describe("fragments", () => {
     test("an anchor", async () => {
-      jsonSchema.addRegistry(new SchemaRegistry().with({
+      jsonSchema.registry = new SchemaRegistry().with({
         $schema: v1DialectUri,
         $id: "https://example.com/anchor",
         $ref: "#foo",
         $defs: { foo: { $anchor: "foo", type: "string" } }
-      }));
+      });
       expect((await jsonSchema.compile("https://example.com/anchor")).validate(42)).to.equal(false);
     });
 
     test("an anchor that isn't in the document", async () => {
-      jsonSchema.addRegistry(new SchemaRegistry().with({ $schema: v1DialectUri, $id: "https://example.com/no-anchor", $ref: "#foo" }));
+      jsonSchema.registry = new SchemaRegistry().with({ $schema: v1DialectUri, $id: "https://example.com/no-anchor", $ref: "#foo" });
       const error = await jsonSchema.compile("https://example.com/no-anchor")
         .catch((/** @type unknown */ error) => error);
       expect(error).to.be.instanceOf(AnchorNotFoundError);
@@ -379,12 +379,12 @@ describe("JsonSchema", () => {
     });
 
     test("a percent-encoded JSON Pointer", async () => {
-      jsonSchema.addRegistry(new SchemaRegistry().with({
+      jsonSchema.registry = new SchemaRegistry().with({
         $schema: v1DialectUri,
         $id: "https://example.com/pointer",
         $ref: "#%2F$defs%2Ffoo",
         $defs: { foo: { type: "string" } }
-      }));
+      });
       expect((await jsonSchema.compile("https://example.com/pointer")).validate(42)).to.equal(false);
     });
   });

@@ -36,7 +36,7 @@ describe("jsonSchemaValidate", () => {
         required: ["name"]
       }
     }]);
-    validator = await jsonSchema.compile(schemaUri, { registries: [registry] });
+    validator = await jsonSchema.compile(schemaUri, { registry });
   });
 
   /** @type (json: string, accept?: JsonParseStatus) => Promise<VFile> */

@@ -98,7 +98,7 @@ await jsonSchema.bundle(uri, {
 | `alwaysIncludeDialect` | Give every embedded schema `$schema`, not only the ones in a different dialect |
 | `definitionNamingStrategy` | Name embedded schemas by their identifier (`"uri"`, the default) or by a random UUID (`"uuid"`) |
 
-`bundle` also takes `registries` and `allowRetrieval`, like `compile`.
+`bundle` also takes `registry` and `allowRetrieval`, like `compile`.
 
 ## When a schema can't be bundled
 

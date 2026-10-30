@@ -259,7 +259,7 @@ const resolve = async (schema) => {
     allOf: [{ properties: { a: {} } }],
     $defs: { b: { properties: { b: {} } } }
   });
-  const session = jsonSchema.session({ registries: [registry] });
+  const session = jsonSchema.session({ registry });
 
   const file = new VFile({ path: "/schemas/a.schema.json", value: JSON.stringify(schema) });
   const processor = unified()

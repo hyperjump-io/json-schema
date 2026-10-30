@@ -17,8 +17,8 @@ export class SchemaRegistry {
     const added = [];
     /** @type Set<string> */
     const retrievalUris = new Set();
-    for (const { schema, ...options } of entries) {
-      const entry = createEntry(schema, options);
+    for (const given of entries) {
+      const entry = createdEntries.has(given) ? /** @type RegistryEntry */ (given) : createEntry(given.schema, given);
       if (entry.retrievalUri !== undefined) {
         if (retrievalUris.has(entry.retrievalUri)) {
           throw Error(`More than one schema has the retrieval URI '${entry.retrievalUri}'`);
@@ -40,6 +40,36 @@ export class SchemaRegistry {
     }
 
     return fromEntries([...entries, entry]);
+  }
+
+  /** @type API.SchemaRegistry["concat"] */
+  concat(...registries) {
+    /** @type Map<string, RegistryEntry> */
+    const retrievalUris = new Map();
+    /** @type Set<RegistryEntry> */
+    const entries = new Set();
+    for (const registry of /** @type API.SchemaRegistry<any>[] */ ([this, ...registries])) {
+      for (const entry of entriesOf(registry)) {
+        // Registries made from the same registry share its entries
+        if (entries.has(entry)) {
+          continue;
+        }
+        if (entry.retrievalUri !== undefined) {
+          if (retrievalUris.has(entry.retrievalUri)) {
+            throw Error(`More than one registry has a schema with the retrieval URI '${entry.retrievalUri}'`);
+          }
+          retrievalUris.set(entry.retrievalUri, entry);
+        }
+        entries.add(entry);
+      }
+    }
+
+    return fromEntries([...entries]);
+  }
+
+  /** @type API.SchemaRegistry[typeof Symbol.iterator] */
+  [Symbol.iterator]() {
+    return entriesOf(this)[Symbol.iterator]();
   }
 
   /** @type API.SchemaRegistry["without"] */
@@ -67,13 +97,23 @@ const createEntry = (schema, options) => {
     throw Error(`A schema in a registry can't have a 'file:' retrieval URI. A schema in a file is retrieved from it. Use 'origin' to say which file a schema came from.`);
   }
 
-  return Object.freeze({
+  const entry = Object.freeze({
     schema: typeof schema === "string" ? schema : JSON.stringify(schema, null, "  "),
     retrievalUri: retrievalUri,
     dialectUri: options.dialectUri === undefined ? undefined : toAbsoluteIri(options.dialectUri),
     origin: options.origin
   });
+  createdEntries.add(entry);
+  return entry;
 };
+
+/**
+ * Entries a registry created, which another registry can share instead of
+ * copying, so what's cached from them carries over
+ *
+ * @type WeakSet<object>
+ */
+const createdEntries = new WeakSet();
 
 /**
  * A registry with entries that were already created and checked

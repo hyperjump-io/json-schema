@@ -154,7 +154,7 @@ export const compileTestCase = async (jsonSchema, dialectUri, uri, schema, exter
     ? toAbsoluteIri(resolveIri(schema.$id, uri))
     : uri;
 
-  return jsonSchema.compile(id, { registries: [registry] });
+  return jsonSchema.compile(id, { registry });
 };
 
 /**

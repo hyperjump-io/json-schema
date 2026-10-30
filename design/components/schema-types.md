@@ -44,10 +44,11 @@ written. Custom keywords are part of the type.
   keyword fits that one.
 - **A registry has the type of the schemas it takes.**
   `SchemaRegistry<S = ReadonlyJson>` checks what `with` and the constructor are
-  given, and the registries `with` and `without` return keep `S`. A union
+  given, and the registries `with` and `without` return keep `S`. `concat`
+  returns a union of its registries' types. A union
   takes more than one dialect. The constructor's entries don't infer `S`
   (`NoInfer`), or a registry made from entries would only take schemas
-  like them. Where a registry is used (`addRegistry`, `registries`), it's
+  like them. Where a registry is used (the `registry` property and option), it's
   `SchemaRegistry<any>`, because a `SchemaRegistry<V1Schema>` isn't a
   `SchemaRegistry<Json>`: neither schema type is assignable to the other.
 - **What's only read is `ReadonlyJson`** (from `@hyperjump/browser/json`):

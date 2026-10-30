@@ -3,13 +3,15 @@
 A registry holds schemas that aren't retrieved from a URI. It's separate
 from `JsonSchema` so one registry can be shared by several `JsonSchema`s and
 sessions. A registry never changes. `with` and `without` return a new one,
-so a session's registries are its snapshot of them.
+so the registries a session sees are its snapshot of them.
 
 ```ts
 class SchemaRegistry<S = ReadonlyJson> {
   constructor(entries?: Iterable<{ schema: S | string; retrievalUri?: string; dialectUri?: string }>);
   with(schema: S | string, options?: { retrievalUri?: string; dialectUri?: string }): SchemaRegistry<S>;
   without(retrievalUri: string): SchemaRegistry<S>;
+  concat<T>(...registries: SchemaRegistry<T>[]): SchemaRegistry<S | T>;
+  [Symbol.iterator](): Iterator<SchemaRegistryEntry>;
 }
 ```
 
@@ -58,15 +60,31 @@ a session finds schemas in the registries it sees is in
   what maps the registry's copy back to its file. Rejected: one document
   for both, which needs a registry entry to be something browser reads, or
   browser's cache to know about registries.
-- Registries are attached two ways: `addRegistry`/`removeRegistry` on
-  `JsonSchema`, which every new session sees, and session registries
-  (`session({ registries })`, `compile(uri, { registries })`). There's no
-  `registries` config, because `addRegistry` covers it.
-- Lookup order is: embedded resources, session registries, instance
-  registries, then browser (the session's cache, the HTTP cache, a URI
-  scheme plugin). Two entries found by the same URI are an
+- A session sees two registries: its own (`session({ registry })`,
+  `compile(uri, { registry })`, and the other operations' options) and the
+  `JsonSchema`'s `registry` property, for schemas every session sees, like
+  custom meta-schemas. The property starts empty, and changing it is
+  replacing it with a new registry. A session has the one it was created
+  with. There's no `registry` config, because the property covers it.
+  Before 2026-10-29, there were lists of both: `addRegistry` and
+  `removeRegistry` on `JsonSchema`, and a `registries` option. Two
+  registries with a schema identified by the same URI were already an
+  error, so a list was one registry split up.
+- `concat` combines registries, like a workspace's and generated ones.
+  Entries are shared, not copied, so what's cached from them carries over,
+  and an entry two of them share (because both were made from one
+  registry with `with`) is in the result once. Two different entries with
+  the same `retrievalUri` throw, like `with`. A registry iterates over its
+  entries, with each schema as JSON text, so a tool can list or filter
+  them, and passing them to the constructor shares them too. Rejected:
+  iteration without `concat`, and `concat` without iteration, which leaves
+  no way to list what's in a registry.
+- Lookup order is: embedded resources, the session's registry, the
+  `JsonSchema`'s registry, then browser (the session's cache, the HTTP
+  cache, a URI scheme plugin). Two entries found by the same URI are an
   error when the URI is looked up, whether they're in one registry or
-  different ones a session sees. A registry can't check that itself,
+  both, so a session's registry can't replace a schema every session
+  sees. A registry can't check that itself,
   because identity depends on the dialect, and it means a language server
   can have two files with the same `$id` for a moment without an
   exception. A resource embedded in another document can only have the

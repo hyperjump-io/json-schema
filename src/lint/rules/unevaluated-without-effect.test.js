@@ -216,7 +216,7 @@ const reasonsWithClosed = async (json) => {
   const file = new VFile({ path: "/schemas/a.schema.json", value: json });
   const processor = unified()
     .use(rejsonParse)
-    .use(jsonSchemaResolve, { session: jsonSchema.session({ registries: [registry] }) })
+    .use(jsonSchemaResolve, { session: jsonSchema.session({ registry }) })
     .use(unevaluatedWithoutEffect);
   await processor.run(processor.parse(file), file);
   return file.messages.map((message) => message.reason);

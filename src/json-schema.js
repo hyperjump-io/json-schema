@@ -4,7 +4,7 @@ import { JsonSchemaMediaTypePlugin } from "./schema/media-type-plugin.js";
 import { withResolvedUris } from "./kernel/kernel-uris.js";
 import { JsonOrSchemaMediaTypePlugin } from "./schema/json-media-type-plugin.js";
 import { JsonSchemaSession } from "./session.js";
-import { addedRegistriesOf } from "./registry/session-registries.js";
+import { SchemaRegistry } from "./registry/schema-registry.js";
 import schemaKeyword from "./keywords/schema.js";
 import unknownKeyword, { keywordDefinitionUri } from "./keywords/unknown.js";
 import { Validator } from "./kernel/validator.js";
@@ -47,6 +47,9 @@ export class JsonSchema extends Hyperjump {
   /** @type Partial<{ [F in OutputFormat]: OutputFormatDefinition<F> }> */
   #outputFormats;
 
+  /** @type API.JsonSchema["registry"] */
+  registry;
+
   /**
    * @param {API.JsonSchemaConfig} [config]
    */
@@ -58,6 +61,7 @@ export class JsonSchema extends Hyperjump {
     this.#formats = {};
     this.#dialects = {};
     this.#outputFormats = {};
+    this.registry = new SchemaRegistry();
 
     // Every dialect has these
     this.addKeyword(schemaKeyword);
@@ -77,25 +81,6 @@ export class JsonSchema extends Hyperjump {
   /** @type API.JsonSchema["session"] */
   session(options) {
     return new JsonSchemaSession(this, options);
-  }
-
-  /** @type API.JsonSchema["addRegistry"] */
-  addRegistry(registry) {
-    const registries = addedRegistriesOf(this);
-    if (registries.includes(registry)) {
-      throw Error("The registry has already been added");
-    }
-
-    registries.push(registry);
-  }
-
-  /** @type API.JsonSchema["removeRegistry"] */
-  removeRegistry(registry) {
-    const registries = addedRegistriesOf(this);
-    const index = registries.indexOf(registry);
-    if (index !== -1) {
-      registries.splice(index, 1);
-    }
   }
 
   /** @type API.JsonSchema["addKeyword"] */

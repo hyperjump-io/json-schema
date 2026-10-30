@@ -25,13 +25,13 @@ import { addV1 } from "@hyperjump/json-schema/v1";
 
 const jsonSchema = new JsonSchema();
 addV1(jsonSchema);
-jsonSchema.addRegistry(new SchemaRegistry().with({
+jsonSchema.registry = new SchemaRegistry().with({
   $schema: "https://json-schema.org/v1",
   $id: "https://example.com/person",
   type: "object",
   properties: { name: { type: "string" } },
   required: ["name"]
-}));
+});
 
 const validator = await jsonSchema.compile("https://example.com/person");
 validator.validate({ name: "Jason" }); // true

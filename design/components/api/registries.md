@@ -1,7 +1,8 @@
 # Registries
 
-Part of [The API as functions](README.md). Decided 2026-10-29, not built.
-How registries work now is in [Registries](../registries/README.md).
+Part of [The API as functions](README.md). Decided 2026-10-29, and built
+the same day (stage 1), except that operations are still methods. How
+registries work is in [Registries](../registries/README.md).
 
 ```js
 const registry = workspace.concat(generated);

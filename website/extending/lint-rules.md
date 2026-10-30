@@ -72,7 +72,7 @@ they're used.
 A rule that needs another schema, such as the target of a `$ref`, finds it
 with `findSchema`. Use the session the schema was resolved in,
 `file.data.jsonSchemaSession`, so the rule only sees what your
-application's registries and `allowRetrieval` allow. Pass the tree as
+application's registry and `allowRetrieval` allow. Pass the tree as
 `document`, so references into the schema being linted find what's in it.
 
 ```typescript

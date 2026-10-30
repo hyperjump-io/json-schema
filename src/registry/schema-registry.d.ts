@@ -56,6 +56,23 @@ export class SchemaRegistry<S = ReadonlyJson> {
    * `retrievalUri`, it's returned unchanged.
    */
   without(retrievalUri: string): SchemaRegistry<S>;
+
+  /**
+   * A registry with this registry's schemas and then theirs. Schemas are
+   * shared, not copied, so what's cached from them carries over, and a
+   * schema two of them share (like registries made from the same one with
+   * `with`) is in it once.
+   *
+   * @throws Error if two different schemas have the same `retrievalUri`
+   */
+  concat<T>(...registries: SchemaRegistry<T>[]): SchemaRegistry<S | T>;
+
+  /**
+   * The schemas in the order they were added. A schema is JSON text, even
+   * one added as a value. Passing entries to the `SchemaRegistry`
+   * constructor shares them, like `concat`.
+   */
+  [Symbol.iterator](): Iterator<Readonly<SchemaRegistryEntry<never>>>;
 }
 
 export type SchemaRegistryAddOptions = {

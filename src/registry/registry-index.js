@@ -27,7 +27,7 @@ import { entriesOf } from "./registry-entries.js";
 
 /**
  * `fromRegistry` is set if the entry was identified with a dialect another
- * entry in the same registry defines.
+ * entry in the same registry, or the JsonSchema's registry, defines.
  *
  * @typedef {{
  *   uri: string;
@@ -42,7 +42,8 @@ import { entriesOf } from "./registry-entries.js";
  */
 
 /**
- * Finds a dialect defined by an entry in the same registry
+ * Finds a dialect defined by an entry in the same registry, or the
+ * JsonSchema's registry
  *
  * @typedef {(dialectUri: string) => DialectDefinition | undefined} RegistryDialects
  */
@@ -60,11 +61,16 @@ const identifications = new WeakMap();
  * A JsonSchema's index of a registry: each entry by the URI it's identified
  * by with the JsonSchema's dialects. A registry never changes, so neither
  * does its index, except that entries waiting for a dialect are identified
- * once the JsonSchema has it.
+ * once the JsonSchema has it. A session's own registry can also use the
+ * dialects defined in the JsonSchema's registry, so its index is made with
+ * that registry's index.
  */
 export class RegistryIndex {
   /** @type JsonSchema */
   #jsonSchema;
+
+  /** @type RegistryIndex | undefined */
+  #dialectsFrom;
 
   /** @type Map<string, IndexedEntry[]> */
   #byUri;
@@ -95,9 +101,11 @@ export class RegistryIndex {
   /**
    * @param {JsonSchema} jsonSchema
    * @param {SchemaRegistry} registry
+   * @param {RegistryIndex} [dialectsFrom]
    */
-  constructor(jsonSchema, registry) {
+  constructor(jsonSchema, registry, dialectsFrom) {
     this.#jsonSchema = jsonSchema;
+    this.#dialectsFrom = dialectsFrom;
     this.#byUri = new Map();
     this.#dialects = new Map();
     this.#waiting = new Map();
@@ -191,7 +199,19 @@ export class RegistryIndex {
   }
 
   /** @type RegistryDialects */
-  #registryDialect = (dialectUri) => this.#dialects.get(dialectUri);
+  #registryDialect = (dialectUri) => this.#dialects.get(dialectUri) ?? this.#dialectsFrom?.dialect(dialectUri);
+
+  /**
+   * The dialect an entry defines, by a URI the entry is found by
+   *
+   * @type RegistryDialects
+   */
+  dialect(dialectUri) {
+    if (!this.#dialects.has(dialectUri) && this.#waiting.size > 0) {
+      this.#identifyWaiting();
+    }
+    return this.#dialects.get(dialectUri);
+  }
 
   /**
    * Identifying an entry can define a dialect another entry is waiting for,
@@ -257,8 +277,9 @@ export class RegistryIndex {
 /**
  * Find the URI an entry is identified by. That depends on the dialect, so
  * only the root's resolve hooks (`$id`, `$vocabulary`) run. Nothing is
- * retrieved, so an entry whose dialect isn't defined by the JsonSchema or
- * another entry in the same registry has to wait for it.
+ * retrieved, so an entry whose dialect isn't defined by the JsonSchema,
+ * another entry in the same registry, or the JsonSchema's registry has to
+ * wait for it.
  *
  * Every entry is identified when a registry is first used, so it's parsed
  * with `JSON.parse`, which is much faster than building a tree with

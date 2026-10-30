@@ -26,7 +26,7 @@ describe("draft-04", () => {
   /** @type (jsonSchema: JsonSchema, schema: Json) => ReturnType<JsonSchema["compile"]> */
   const compile = (jsonSchema, schema) => {
     const registry = new SchemaRegistry([{ schema, retrievalUri: uri }]);
-    return jsonSchema.compile(uri, { registries: [registry] });
+    return jsonSchema.compile(uri, { registry });
   };
 
   /** @type JsonSchema */

@@ -327,7 +327,7 @@ const compile = async (schema, schemas = []) => {
     { schema, retrievalUri: uri, dialectUri: draft202012DialectUri },
     ...schemas.map((each) => ({ schema: each, retrievalUri: each.$id, dialectUri: draft202012DialectUri }))
   ]);
-  return jsonSchema.compile(uri, { registries: [registry] });
+  return jsonSchema.compile(uri, { registry });
 };
 
 /**

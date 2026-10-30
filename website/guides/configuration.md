@@ -22,10 +22,12 @@ const jsonSchema = new JsonSchema({
 | --- | --- | --- |
 | `addV1(jsonSchema)`, `addDraft202012(jsonSchema)`, ... | A dialect | [Dialects](dialects.md) |
 | `addFullFormats(jsonSchema)` | `hostname`, `idn-hostname`, and `idn-email` | [Formats](formats.md) |
-| `addRegistry(registry)` | Schemas that aren't retrieved | [Loading schemas](loading-schemas.md) |
 | `addUriSchemePlugin(plugin)` | A way to retrieve URIs, or a replacement HTTP plugin | [Controlling retrieval](retrieval.md#sending-credentials) |
 | `addKeyword`, `addFormat`, `addDialect`, `extendDialect` | Your own keywords, formats, and dialects | [Extending](../extending/README.md) |
 | `addOutputFormat(name, definition)` | An output format | [Custom output formats](../extending/output-formats.md) |
+
+Schemas that aren't retrieved go in its `registry` property, which starts
+empty (see [Loading schemas](loading-schemas.md#registries)).
 
 ## Per compilation
 
@@ -34,7 +36,7 @@ call only:
 
 | Option | What it does |
 | --- | --- |
-| `registries` | More registries, checked before the `JsonSchema`'s |
+| `registry` | Schemas for this call, checked before the `JsonSchema`'s `registry` |
 | `allowRetrieval` | Replaces the config's `allowRetrieval` |
 
 ## Per validation

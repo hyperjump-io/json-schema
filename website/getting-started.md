@@ -40,7 +40,7 @@ directly, by their `$id`.
 ```typescript
 import { SchemaRegistry } from "@hyperjump/json-schema";
 
-jsonSchema.addRegistry(new SchemaRegistry().with({
+jsonSchema.registry = new SchemaRegistry().with({
   $schema: "https://json-schema.org/v1",
   $id: "https://example.com/person",
   title: "Person",
@@ -50,7 +50,7 @@ jsonSchema.addRegistry(new SchemaRegistry().with({
     age: { type: "integer", minimum: 0 }
   },
   required: ["name"]
-}));
+});
 ```
 
 `$schema` says which dialect the schema is written in. Every schema needs
@@ -203,13 +203,13 @@ find those mistakes. `lint` runs the recommended rules on a schema document
 and returns what they find.
 
 ```typescript
-jsonSchema.addRegistry(new SchemaRegistry().with(`{
+jsonSchema.registry = jsonSchema.registry.with(`{
   "$schema": "https://json-schema.org/v1",
   "$id": "https://example.com/user",
   "type": "object",
   "properties": { "name": { "type": "string" } },
   "required": ["nmae"]
-}`));
+}`);
 
 const results = await jsonSchema.lint("https://example.com/user");
 

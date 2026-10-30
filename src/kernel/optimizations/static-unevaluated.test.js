@@ -166,7 +166,7 @@ describe("staticUnevaluated", () => {
 const compile = async (schema, dialect = { jsonSchema, dialectUri: v1DialectUri }) => {
   const uri = `https://example.com/schema-${count++}`;
   const registry = new SchemaRegistry([{ schema, retrievalUri: uri, dialectUri: dialect.dialectUri }]);
-  const validator = await dialect.jsonSchema.compile(uri, { registries: [registry] });
+  const validator = await dialect.jsonSchema.compile(uri, { registry });
   return /** @type Kernel */ (validator.serialize());
 };
 

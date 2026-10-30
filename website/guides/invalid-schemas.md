@@ -7,12 +7,12 @@ Schemas are validated before they're used. A schema with a mistake, like a
 ```typescript
 import { SchemaError, toVFileMessage } from "@hyperjump/json-schema";
 
-jsonSchema.addRegistry(new SchemaRegistry().with(`{
+jsonSchema.registry = new SchemaRegistry().with(`{
   "$schema": "https://json-schema.org/v1",
   "$id": "https://example.com/bad",
   "minLength": -1,
   "tpye": "string"
-}`));
+}`);
 
 try {
   await jsonSchema.compile("https://example.com/bad");

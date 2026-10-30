@@ -52,15 +52,12 @@ export class JsonSchema extends Hyperjump<JsonSchemaNode> {
   session(options?: SessionOptions): JsonSchemaSession;
 
   /**
-   * Add a registry that every new session sees. Its schemas are identified
-   * the first time a session needs them.
-   *
-   * @throws Error if the registry was already added
+   * Schemas every session sees, like custom meta-schemas, after the
+   * session's own `registry`. It starts empty. Change it by replacing it
+   * with a new registry (`with`, `without`, `concat`). A session sees the
+   * registry this was when the session was created.
    */
-  addRegistry(registry: SchemaRegistry<any>): void;
-
-  /** Sessions that already exist still see the registry. */
-  removeRegistry(registry: SchemaRegistry<any>): void;
+  registry: SchemaRegistry<any>;
 
   /** Add or replace a keyword definition */
   addKeyword(keyword: Keyword): void;

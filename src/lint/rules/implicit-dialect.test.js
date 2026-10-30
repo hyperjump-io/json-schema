@@ -79,11 +79,11 @@ describe("implicit-dialect", () => {
     test("a registry entry's dialectUri", async () => {
       const jsonSchema = new JsonSchema();
       addDraft202012(jsonSchema);
-      jsonSchema.addRegistry(new SchemaRegistry([{
+      jsonSchema.registry = new SchemaRegistry([{
         schema: `{ "type": "string" }`,
         retrievalUri: "https://example.com/a",
         dialectUri: draft202012
-      }]));
+      }]);
       const results = await jsonSchema.lint("https://example.com/a", { plugins: [implicitDialect] });
 
       expect(results.map((result) => result.ruleId)).to.eql(["implicit-dialect"]);
@@ -92,10 +92,10 @@ describe("implicit-dialect", () => {
     test("the default dialect", async () => {
       const jsonSchema = new JsonSchema({ defaultDialectUri: draft202012 });
       addDraft202012(jsonSchema);
-      jsonSchema.addRegistry(new SchemaRegistry([{
+      jsonSchema.registry = new SchemaRegistry([{
         schema: `{ "type": "string" }`,
         retrievalUri: "https://example.com/a"
-      }]));
+      }]);
       const results = await jsonSchema.lint("https://example.com/a", { plugins: [implicitDialect] });
 
       expect(results.map((result) => result.ruleId)).to.eql(["implicit-dialect"]);

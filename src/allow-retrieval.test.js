@@ -75,7 +75,7 @@ describe("allowRetrieval", () => {
   test("registries aren't checked", async () => {
     const jsonSchema = v1({ allowRetrieval: [] });
     const registry = new SchemaRegistry().with(schema, { retrievalUri: "https://example.com/schema" });
-    const validator = await jsonSchema.compile("https://example.com/schema", { registries: [registry] });
+    const validator = await jsonSchema.compile("https://example.com/schema", { registry });
     expect(validator.validate("foo")).to.equal(true);
   });
 });

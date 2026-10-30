@@ -66,7 +66,7 @@ describe("RegistryIndex", () => {
     jsonSchema.addDialect({ uri: "https://example.com/counted", keywords: { $id: "https://example.com/keyword/counted-id" }, unknownKeywords: "ignore" });
     const registry = new SchemaRegistry().with({ $schema: "https://example.com/counted", $id: "https://example.com/counted-schema" });
 
-    const session = jsonSchema.session({ registries: [registry] });
+    const session = jsonSchema.session({ registry });
     expect(identified).to.equal(0);
 
     await session.getDocument("https://example.com/counted-schema");

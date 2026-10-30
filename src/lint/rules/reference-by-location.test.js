@@ -33,18 +33,18 @@ describe("reference-by-location", () => {
 
   /**
    * Lint a file in the directory. Like the CLI, the session has the schemas
-   * with an `$id` in a registry, unless `registries` says otherwise.
+   * with an `$id` in a registry, unless `registry` says otherwise.
    *
-   * @type (json: string, registries?: SchemaRegistry[]) => Promise<VFile>
+   * @type (json: string, registry?: SchemaRegistry) => Promise<VFile>
    */
-  const lint = async (json, registries = [new SchemaRegistry([{ schema: common, origin: join(directory, "common.schema.json") }])]) => {
+  const lint = async (json, registry = new SchemaRegistry([{ schema: common, origin: join(directory, "common.schema.json") }])) => {
     const jsonSchema = new JsonSchema();
     addV1(jsonSchema);
     addDraft07(jsonSchema);
     const file = new VFile({ path: join(directory, "a.schema.json"), value: json });
     const processor = unified()
       .use(rejsonParse)
-      .use(jsonSchemaResolve, { session: jsonSchema.session({ registries }) })
+      .use(jsonSchemaResolve, { session: jsonSchema.session({ registry }) })
       .use(referenceByLocation);
     await processor.run(processor.parse(file), file);
     return file;
@@ -77,7 +77,7 @@ describe("reference-by-location", () => {
   });
 
   test("a file whose schema has an $id that doesn't find it isn't reported", async () => {
-    const file = await lint(`{ "$schema": "${v1}", "$ref": "common.schema.json" }`, []);
+    const file = await lint(`{ "$schema": "${v1}", "$ref": "common.schema.json" }`, new SchemaRegistry());
     expect(file.messages).to.eql([]);
   });
 

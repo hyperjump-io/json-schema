@@ -39,7 +39,7 @@ describe("SchemaError", () => {
 const schemaError = async (schema) => {
   const jsonSchema = new JsonSchema();
   addV1(jsonSchema);
-  jsonSchema.addRegistry(new SchemaRegistry().with(schema));
+  jsonSchema.registry = new SchemaRegistry().with(schema);
 
   try {
     await jsonSchema.compile("https://example.com/bad");

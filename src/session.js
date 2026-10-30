@@ -86,7 +86,7 @@ export class JsonSchemaSession extends Session {
     this.#dialects = {};
     this.#pendingDialects = {};
     this.#loading = new Map();
-    this.#registries = new SessionRegistries(this, options.registries ?? []);
+    this.#registries = new SessionRegistries(this, options.registry);
   }
 
   get jsonSchema() {

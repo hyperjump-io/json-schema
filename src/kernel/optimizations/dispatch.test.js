@@ -393,7 +393,7 @@ describe("dispatch", () => {
 const compile = async (schema) => {
   const uri = `https://example.com/schema-${count++}`;
   const registry = new SchemaRegistry([{ schema, retrievalUri: uri, dialectUri: v1DialectUri }]);
-  return jsonSchema.compile(uri, { registries: [registry] });
+  return jsonSchema.compile(uri, { registry });
 };
 
 /**

@@ -8,7 +8,8 @@ When a schema is needed, it's looked for in this order:
 
 1. A schema embedded in the same document, for a reference from inside that
    document.
-2. The registries of the session, then the registries of the `JsonSchema`.
+2. The registry passed to `compile` (or another operation), then the
+   `JsonSchema`'s `registry`.
 3. Retrieval by its URI, for `file:`, `http:`, and `https:` URIs that
    [`allowRetrieval`](retrieval.md) allows.
 
@@ -35,8 +36,11 @@ const registry = new SchemaRegistry()
     type: "object"
   });
 
-jsonSchema.addRegistry(registry);
+jsonSchema.registry = registry;
 ```
+
+The `JsonSchema`'s `registry` is seen by everything it compiles. It starts
+empty.
 
 In TypeScript, a registry can check the schemas added to it, like
 `new SchemaRegistry<V1Schema>()`. See
@@ -91,23 +95,46 @@ session that's already using a registry keeps seeing what it saw when it
 started. To change what a `JsonSchema` sees, replace its registry.
 
 ```typescript
-jsonSchema.removeRegistry(registry);
-registry = registry.without("https://example.com/name");
-jsonSchema.addRegistry(registry);
+jsonSchema.registry = jsonSchema.registry.without("https://example.com/name");
 ```
 
 `without` removes a schema by the `retrievalUri` it was added with. A schema
 added without one can't be removed.
 
-### Registries for one compilation
+### A registry for one compilation
 
-Registries you pass to `compile` are only used for that compilation. They're
-checked before the `JsonSchema`'s.
+A registry you pass to `compile` is only used for that compilation. It's
+checked before the `JsonSchema`'s. A URI that a schema in each of them is
+identified by is an error, so it can't replace a schema the `JsonSchema`'s
+registry has.
 
 ```typescript
 const validator = await jsonSchema.compile("https://example.com/person", {
-  registries: [registry]
+  registry
 });
+```
+
+A schema in it can use a dialect whose meta-schema is in the `JsonSchema`'s
+registry, so custom meta-schemas only need adding once.
+
+### Combining registries
+
+`concat` makes one registry from several, like your application's schemas
+and generated ones. The schemas are shared, not copied. Two different
+schemas with the same `retrievalUri` throw.
+
+```typescript
+const validator = await jsonSchema.compile("https://example.com/person", {
+  registry: registry.concat(generated)
+});
+```
+
+A registry is iterable, so you can list what's in one or make a registry
+from some of its schemas. Each schema is JSON text, even one added as a
+value.
+
+```typescript
+const fromFiles = new SchemaRegistry([...registry].filter((entry) => entry.origin?.startsWith("schemas/")));
 ```
 
 ## Files

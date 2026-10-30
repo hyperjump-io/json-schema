@@ -16,7 +16,7 @@ Start one yourself to:
   [Annotations](../guides/annotations.md#reading-an-annotation)).
 
 ```typescript
-const session = jsonSchema.session({ registries: [registry] });
+const session = jsonSchema.session({ registry });
 
 const person = await session.compile("https://example.com/person");
 const address = await session.compile("https://example.com/address");
@@ -26,7 +26,7 @@ const name = await session.get(
 );
 ```
 
-A session takes the same `registries` and `allowRetrieval` options as
+A session takes the same `registry` and `allowRetrieval` options as
 `compile`. A validator doesn't need its session after it's compiled.
 
 A session sees documents as they were when it first retrieved them, so

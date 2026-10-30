@@ -22,10 +22,16 @@ entries. Each `JsonSchema` indexes each registry it's used with.
   a lookup misses.
 - An entry's dialect is one added to the `JsonSchema` or one defined by
   another entry in the same registry (its root's `defineDialect` effect).
-  Only the same registry, because an index doesn't depend on which other
-  registries a session sees. A schema in a registry that uses a
-  `$vocabulary` dialect needs that dialect's meta-schema in the same registry
-  or added with `addDialect`.
+  An entry in a session's registry can also use a dialect defined in the
+  `JsonSchema`'s registry, so custom meta-schemas can go there once. The
+  index of a session's registry then depends on the `JsonSchema`'s
+  registry too, so it's cached by both (`WeakMap<instanceIndex,
+  WeakMap<registry, RegistryIndex>>`, under each `JsonSchema`). Replacing
+  the `JsonSchema`'s registry makes new indexes the next time they're
+  used, which should be rare. Entries identified with a dialect from a
+  registry aren't shared between indexes. Rejected: dialects from any
+  registry a session sees, because then an index would depend on all of
+  them.
 - An entry whose dialect isn't defined yet waits in a list by dialect URI.
   Nothing is retrieved to identify an entry. Waiting entries are tried
   again once the rest of the registry is identified and when a lookup
@@ -44,10 +50,9 @@ entries. Each `JsonSchema` indexes each registry it's used with.
 ## Known limitations
 
 - A registry schema can only be identified with a dialect added to the
-  `JsonSchema` or defined by a meta-schema in the same registry, because
-  identification is synchronous and never retrieves. If its dialect is
-  defined by a meta-schema in a different registry or one that's only
-  retrievable, it's found by its `retrievalUri` but not by its `$id`.
-  Identifying entries per session, across all of its registries, would fix
-  that, but then an index would depend on more than its registry, and
-  sessions wouldn't be cheap.
+  `JsonSchema` or defined by a meta-schema in the same registry or the
+  `JsonSchema`'s registry, because identification is synchronous and
+  never retrieves. If its dialect's meta-schema is only retrievable, or a
+  schema in the `JsonSchema`'s registry uses a dialect defined in a
+  session's registry, it's found by its `retrievalUri` but not by its
+  `$id`.
