@@ -11,6 +11,10 @@ being considered (see [Open questions](../specs/keyword/README.md#open-questions
   options include `SessionOptions`, so the session's registry and
   `allowRetrieval` decide what can be bundled. It's implemented in
   `src/bundle/bundle.js`, which isn't exported.
+- Everything is retrieved first: the main document, the documents it
+  references, and their dialects. The bundle is then made from them
+  without retrieving anything (`bundleDocuments`). Before 2026-10-30, the
+  dialects were retrieved as each document was embedded.
 - References are found the way `visitReferences` finds them (`$ref` and
   draft-04–07 reference nodes), plus 2020-12's `$dynamicRef`, in the whole
   tree, so a reference in a definition nothing uses is bundled.

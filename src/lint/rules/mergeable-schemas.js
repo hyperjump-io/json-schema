@@ -90,7 +90,7 @@ const mergeableSchemas = lintRule({ origin: "json-schema-lint:mergeable-schemas"
       /** @type JsonSchemaKeywordNode[] */
       let merged = (/** @type JsonSchemaKeywordNode[] */ (schemaNode.children)).filter((keywordNode) => keywordNode !== allOfNode);
 
-      /** @type (keywordNodes: JsonSchemaKeywordNode[]) => Promise<KeywordGroup[] | undefined> */
+      /** @type (keywordNodes: JsonSchemaKeywordNode[]) => KeywordGroup[] | undefined */
       const lower = (keywordNodes) => lowerSchemaForLint(document, /** @type JsonSchemaNode */ ({ ...schemaNode, children: keywordNodes }));
 
       for (const branch of /** @type JsonSchemaNode[] */ (valueNode.children)) {
@@ -112,8 +112,8 @@ const mergeableSchemas = lintRule({ origin: "json-schema-lint:mergeable-schemas"
         }
 
         const candidate = combine(merged, branchKeywords);
-        const separately = await lower(merged);
-        const together = candidate === undefined ? undefined : await lower(candidate);
+        const separately = lower(merged);
+        const together = candidate === undefined ? undefined : lower(candidate);
         if (candidate === undefined || separately === undefined || together === undefined) {
           continue;
         }

@@ -204,7 +204,7 @@ const lowerDocument = (session, document) => {
 };
 
 /** @type API.lowerSchemaForLint */
-export const lowerSchemaForLint = async (document, schemaNode) => {
+export const lowerSchemaForLint = (document, schemaNode) => {
   if (schemaNode.type !== "json-schema" || schemaNode.jsonType !== "object") {
     return;
   }
@@ -215,7 +215,7 @@ export const lowerSchemaForLint = async (document, schemaNode) => {
   }
 
   const { keywords } = document.definitions;
-  const lowered = await lowerKeywords((uri) => keywords[uri], /** @type ObjectSchemaNode */ (schemaNode), dialect, inputsFor(document.tree), true);
+  const lowered = lowerKeywords((uri) => keywords[uri], /** @type ObjectSchemaNode */ (schemaNode), dialect, inputsFor(document.tree), true);
   return lowered.map(({ group }) => group);
 };
 
@@ -247,7 +247,7 @@ const lower = async (session, tree) => {
 
     const resolved = await dialect;
     if (resolved !== undefined) {
-      const lowered = (await lowerKeywords((uri) => session.jsonSchema.getKeyword(uri), schemaNode, resolved, inputs, true))
+      const lowered = lowerKeywords((uri) => session.jsonSchema.getKeyword(uri), schemaNode, resolved, inputs, true)
         .map((keyword) => /** @type LoweredKeyword */ ({
           group: keyword.group,
           keywordNode: keyword.keywordNode,
@@ -273,10 +273,10 @@ const lower = async (session, tree) => {
 const inputsFor = (tree) => ({
   // A subschema is `apply` of its location, and a schema that's a
   // reference, of the URI it resolves to
-  schema: async (node) => node.type === "reference" ? node.href : node.location,
+  schema: (node) => node.type === "reference" ? /** @type string */ (node.href) : node.location,
 
   // The dynamic anchors are known for a resource in the document
-  reference: async (node) => {
+  reference: (node) => {
     const uri = /** @type {{ href: string }} */ (node).href;
     const resource = tree.embedded[toAbsoluteIri(uri)];
 

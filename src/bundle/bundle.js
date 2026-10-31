@@ -17,17 +17,41 @@ const legacyIdUri = "https://json-schema.org/keyword/draft-07/id";
 const notUri = "https://json-schema.org/keyword/not";
 
 /**
- * See `JsonSchemaSession.bundle`
+ * See `bundle` in `src/operations/bundle.d.ts`. Everything that's retrieved
+ * is retrieved first: the main document, the documents it references, and
+ * their dialects. The bundle is made from them without retrieving anything.
  *
  * @type (session: JsonSchemaSession, uri: string, options?: BundleOptions) => Promise<Json>
  */
 export const bundle = async (session, uri, options = {}) => {
-  const { alwaysIncludeDialect = false, definitionNamingStrategy = "uri" } = options;
   const externalSchemas = new Set(options.externalSchemas?.map((uri) => toAbsoluteIri(uri)));
 
   const main = await schemaDocument(session, toAbsoluteIri(uri));
   const documents = await referencedDocuments(session, main, externalSchemas);
+
+  /** @type Map<string, Dialect> */
+  const dialects = new Map();
+  for (const document of [main, ...documents]) {
+    const dialectUri = document.dialectUri;
+    if (dialectUri !== undefined && !dialects.has(dialectUri)) {
+      dialects.set(dialectUri, await session.getDialect(dialectUri));
+    }
+  }
+
+  return bundleDocuments(main, documents, dialects, options);
+};
+
+/**
+ * A bundle of the main document and the documents it references, with each
+ * document's dialect
+ *
+ * @type (main: JsonSchemaDocumentNode, documents: JsonSchemaDocumentNode[], dialects: Map<string, Dialect>, options: BundleOptions) => Json
+ */
+const bundleDocuments = (main, documents, dialects, options) => {
+  const { alwaysIncludeDialect = false, definitionNamingStrategy = "uri" } = options;
   const identifier = identifierFor(main, documents, options.id);
+  /** @type (document: JsonSchemaDocumentNode) => Dialect */
+  const dialectOf = (document) => /** @type Dialect */ (dialects.get(/** @type string */ (document.dialectUri)));
 
   const mainRoot = /** @type JsonSchemaNode */ (main.children[0]);
   if (mainRoot.type === "reference") {
@@ -43,7 +67,7 @@ export const bundle = async (session, uri, options = {}) => {
     return mainRoot.value;
   }
 
-  const mainDialect = await session.getDialect(/** @type string */ (main.dialectUri));
+  const mainDialect = dialectOf(main);
   const bundled = identify(/** @type Record<string, Json> */ (jsonValue(mainRoot)), mainDialect, identifier(main.uri), true);
   if (documents.length === 0) {
     return bundled;
@@ -61,7 +85,7 @@ export const bundle = async (session, uri, options = {}) => {
   for (const document of documents) {
     const id = /** @type string */ (identifier(document.uri));
     const includeDialect = alwaysIncludeDialect || document.dialectUri !== main.dialectUri;
-    const embedded = await embeddable(session, document, id, includeDialect);
+    const embedded = embeddable(document, dialectOf(document), id, includeDialect);
 
     const name = definitionNamingStrategy === "uuid" ? crypto.randomUUID() : id;
     if (Object.hasOwn(definitions, name)) {
@@ -179,15 +203,13 @@ const references = (document) => {
 /**
  * A referenced document as a schema that can be embedded
  *
- * @type (session: JsonSchemaSession, document: JsonSchemaDocumentNode, id: string, includeDialect: boolean) => Promise<Record<string, Json>>
+ * @type (document: JsonSchemaDocumentNode, dialect: Dialect, id: string, includeDialect: boolean) => Record<string, Json>
  */
-const embeddable = async (session, document, id, includeDialect) => {
+const embeddable = (document, dialect, id, includeDialect) => {
   const root = /** @type JsonSchemaNode */ (document.children[0]);
   if (root.type === "reference") {
     throw Error(`'${relativeFileUri(document.uri)}' can't be embedded, because its root is a '$ref' that replaces the whole object, so an identifier would be ignored`);
   }
-
-  const dialect = await session.getDialect(/** @type string */ (document.dialectUri));
 
   /** @type Record<string, Json> */
   let schema;

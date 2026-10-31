@@ -17,7 +17,18 @@ There are two phases:
    `Kernel`: a table of handles (canonical URIs) to a boolean or the
    schema's keyword groups, and the dynamic anchors of every resource.
    Schemas refer to each other by handle, so cycles are fine. Expressions
-   are in the normal form (`normalize.js`). All I/O happens here.
+   are in the normal form (`normalize.js`). All I/O happens here, but
+   lowering a schema is synchronous (`lowerKeywords`, which lint shares):
+   it lowers every schema it can with what's been retrieved, then
+   retrieves, at the same time, what the rest need (what a reference finds,
+   a resource's dynamic anchors, a dialect), and lowers those, until nothing
+   is missing. A schema that's missing something isn't lowered until it's
+   there. If more than one retrieval fails, the first one's error is
+   thrown, so it's the same every time. Before 2026-10-30, lowering awaited
+   each retrieval as it reached it, so every keyword was async. Fetching
+   every `href` up front was rejected, because it would retrieve what isn't
+   compiled, like references in `$defs` that nothing applies. It compiles
+   the schemastore corpus to the same kernels in the same time.
 2. **Build evaluators** (sync, lazy). The kernel is optimized for what an
    evaluation can observe (see [Optimizations](optimizations/README.md)) and turned into closures.
    Each evaluator is built the first time it's needed and cached on the
