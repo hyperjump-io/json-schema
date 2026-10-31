@@ -1,5 +1,5 @@
 node_modules/
 coverage/
 scratch/
-benchmark/
+benchmark/data/
 TODO*

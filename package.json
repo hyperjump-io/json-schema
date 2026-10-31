@@ -68,6 +68,7 @@
     "lint": "oxlint",
     "test": "vitest run",
     "type-check": "tsc --noEmit",
+    "bundle-size": "node benchmark/bundle-size/measure.ts",
     "version": "node scripts/version-docs.js && git add website"
   },
   "devDependencies": {
@@ -78,6 +79,7 @@
     "oxlint": "*",
     "oxlint-tsgolint": "*",
     "typescript": "*",
+    "vite": "*",
     "vitest": "*"
   },
   "dependencies": {

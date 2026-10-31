@@ -6,16 +6,17 @@ How much of the library a browser app gets for what it uses, before the API
 became functions (see [The API as functions](../components/api/README.md)),
 so the change can be measured against it.
 
-`benchmark/bundle-size/measure.js` bundles each small entry script in
-`benchmark/bundle-size/entries/` on its own with Vite 8.3.4 in library mode,
+`npm run bundle-size` (`benchmark/bundle-size/measure.ts`) bundles each
+small entry script in `benchmark/bundle-size/entries/` on its own with Vite
+8.3.4 in library mode,
 minified, for browsers (so browser's `#` imports resolve to their browser
 files). Nothing is external. "Up front" is the entry chunk and the chunks it
 imports statically. "Total" adds the chunks loaded by `import()`, which is
 how lint's recommended rules are loaded. Gzipped is level 9.
-`benchmark/bundle-size/breakdown.js` lists what a bundle is made of, by
-rendered size before minifying. `benchmark/bundle-size/entries-v1/` has
-the same entries for v1, which `node bundle-size/measure.js entries-v1`
-measures against the v1 worktree `benchmark/link.js` links.
+`benchmark/bundle-size/breakdown.ts` lists what a bundle is made of, by
+rendered size before minifying. The v1 numbers were measured with the same
+entries written for v1, against a worktree of v1. Those entries were
+deleted on 2026-10-31, since v1 isn't changing.
 
 Each entry creates a `JsonSchema`, adds its dialects, and calls one
 operation:

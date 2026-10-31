@@ -27,6 +27,8 @@ A rewrite of `@hyperjump/json-schema` on `@hyperjump/browser` v2 and unified.
 ## Development
 
 - `npm test`, `npm run lint`, `npm run type-check`
+- `npm run bundle-size`, and the A/B harness in `benchmark/ab/` (see
+  `design/benchmarks/README.md`)
 - The API is declared in hand-written `.d.ts` files next to the JS, which is
   typed with JSDoc. Type-checking includes the declaration files.
 - `@hyperjump/browser` is the sibling repo `../browser`, linked with
