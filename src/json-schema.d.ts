@@ -14,7 +14,7 @@ export type { ValidationError, DetailedValidationError } from "./output/validati
 export type { SchemaMessage } from "./schema/schema-error.js";
 export type { BasicOutput, DetailedOutput, OutputError, OutputFormat, JsonSyntaxError } from "./output/output-format.d.ts";
 
-export type JsonSchemaConfig<D extends DialectConfig<any, any, any> = DialectConfig<any, any, any>> = HyperjumpConfig & {
+export type JsonSchemaConfig<D extends DialectConfig<any, any, any> = DialectConfig<any, any, any>> = HyperjumpConfig<JsonSchemaNode> & {
   /**
    * The dialect of a schema that doesn't have `$schema` and doesn't get a
    * dialect from anywhere else, such as a `Content-Type` parameter or the

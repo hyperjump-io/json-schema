@@ -73,14 +73,17 @@ describe("JsonOrSchemaMediaTypePlugin", () => {
       $schema: "https://json-schema.org/draft/2020-12/schema",
       $vocabulary: { "https://json-schema.org/draft/2020-12/vocab/core": true }
     });
-    const jsonSchema = new JsonSchema({ allowRetrieval: ["./", "test:/"], dialects: [v1Dialect, draft202012Dialect] });
-    jsonSchema.addUriSchemePlugin({
-      schemes: ["test"],
-      retrieve: async (uri) => {
-        const response = new Response(metaSchema, { headers: { "Content-Type": "application/json" } });
-        Object.defineProperty(response, "url", { value: uri });
-        return response;
-      }
+    const jsonSchema = new JsonSchema({
+      allowRetrieval: ["./", "test:/"],
+      dialects: [v1Dialect, draft202012Dialect],
+      uriSchemePlugins: [{
+        schemes: ["test"],
+        retrieve: async (uri) => {
+          const response = new Response(metaSchema, { headers: { "Content-Type": "application/json" } });
+          Object.defineProperty(response, "url", { value: uri });
+          return response;
+        }
+      }]
     });
     const uri = await jsonFile("custom.json", { $schema: "test:/meta" });
 

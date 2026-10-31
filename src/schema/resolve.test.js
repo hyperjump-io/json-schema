@@ -1079,9 +1079,9 @@ const testJsonSchema = ({ dialects = [], keywords = [], extension, config } = {}
     allowRetrieval: [pathToFileURL(join(tmpdir(), "/")).href, "test:/"],
     ...config,
     dialects: [extension ? extendDialect(testDialect, extension) : testDialect, legacyDialect, strictDialect, ...dialects],
-    keywords: [...testKeywords, ...keywords]
+    keywords: [...testKeywords, ...keywords],
+    uriSchemePlugins: [{ schemes: ["test"], retrieve: respond }, ...config?.uriSchemePlugins ?? []]
   });
-  jsonSchema.addUriSchemePlugin({ schemes: ["test"], retrieve: respond });
   return jsonSchema;
 };
 

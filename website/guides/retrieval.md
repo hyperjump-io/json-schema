@@ -70,27 +70,27 @@ each tenant might have its own directory of schemas.
 ## Sending credentials
 
 To send headers such as `Authorization` with `http:` and `https:` requests,
-replace the HTTP plugin with one that has a `headers` function. It's called
-with the URL of each request. Any schema can name any URL, so only send
-credentials to the origins they're for.
+configure an HTTP plugin with `headers`. It replaces the default HTTP plugin.
+Any schema can name any URL, so headers are given by URL and only the URLs you
+list get them:
 
 ```typescript
-import {
-  HttpUriSchemePlugin,
-  MemoryHttpCacheStore
-} from "@hyperjump/browser";
+import { HttpUriSchemePlugin } from "@hyperjump/browser";
 
-jsonSchema.addUriSchemePlugin(new HttpUriSchemePlugin({
-  cache: new MemoryHttpCacheStore(),
-  headers: (url) => url.origin === "https://schemas.example.com"
-    ? { Authorization: `Bearer ${process.env.SCHEMAS_TOKEN}` }
-    : undefined
-}));
+const jsonSchema = new JsonSchema({
+  allowRetrieval: ["./", "https://schemas.example.com/"],
+  uriSchemePlugins: [new HttpUriSchemePlugin({
+    headers: {
+      "https://schemas.example.com/": { Authorization: `Bearer ${process.env.SCHEMAS_TOKEN}` }
+    }
+  })]
+});
 ```
 
-`headers` can be async, which lets you refresh a token. Replacing the plugin
-replaces its cache too, so give it a cache. Without one, every compilation
-retrieves its schemas again.
+A URL that ends with `/` gets its headers for everything under it, the same as
+in `allowRetrieval`. A URL's headers can be a function instead, which can be
+async, so you can refresh a token. The plugin keeps the default HTTP cache
+because it wasn't given a different one.
 
 Retrieval comes from `@hyperjump/browser`. These work the same way on a
 `JsonSchema`, and its docs cover them:

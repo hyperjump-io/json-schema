@@ -16,6 +16,13 @@ in browser's [design docs](https://github.com/hyperjump-io/browser/blob/v2/desig
 - `content-type` v3, with the parsed type validated.
 - Methods are declared as methods, not function-valued properties, so a
   subclass can override them.
+- Plugins are only configured in `HyperjumpConfig` (`uriSchemePlugins`,
+  `mediaTypePlugins`), and a later plugin for a scheme or media type
+  replaces an earlier one. `JsonSchema` passes its media type plugins to
+  `super` before the config's, so an application can replace them, and its
+  JSON plugin replaces browser's. `JsonSchemaConfig` is
+  `HyperjumpConfig<JsonSchemaNode>`, so its media type plugins parse
+  schema documents.
 - Sessions, and an HTTP cache in the `http(s):` URI scheme plugin. A media
   type plugin's `parse` gets the session.
 - `allowRetrieval`, in the config and in a session's options, and

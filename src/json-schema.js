@@ -45,7 +45,12 @@ export class JsonSchema extends Hyperjump {
    * @param {API.JsonSchemaConfig} [config]
    */
   constructor(config = {}) {
-    super(config);
+    // Its media types come before the config's, so the config can replace
+    // them. The JSON plugin replaces the default one.
+    super({
+      ...config,
+      mediaTypePlugins: [new JsonSchemaMediaTypePlugin(), new JsonOrSchemaMediaTypePlugin(), ...config.mediaTypePlugins ?? []]
+    });
 
     this.#keywords = {};
     this.#formats = {};
@@ -81,9 +86,6 @@ export class JsonSchema extends Hyperjump {
     for (const uri in this.#vocabularies) {
       this.#assertDefined(this.#vocabularies[uri].keywords, `'${uri}' vocabulary`);
     }
-
-    this.addMediaTypePlugin(new JsonSchemaMediaTypePlugin());
-    this.addMediaTypePlugin(new JsonOrSchemaMediaTypePlugin());
   }
 
   /** @type API.JsonSchema["session"] */

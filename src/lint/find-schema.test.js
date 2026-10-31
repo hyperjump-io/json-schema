@@ -19,8 +19,11 @@ describe("findSchema", () => {
   let session;
 
   beforeEach(() => {
-    const jsonSchema = new JsonSchema({ allowRetrieval: ["test:/", "file:///nothing-here/"], dialects: [v1Dialect] });
-    jsonSchema.addUriSchemePlugin({ schemes: ["test"], retrieve: respond });
+    const jsonSchema = new JsonSchema({
+      allowRetrieval: ["test:/", "file:///nothing-here/"],
+      dialects: [v1Dialect],
+      uriSchemePlugins: [{ schemes: ["test"], retrieve: respond }]
+    });
 
     const registry = new SchemaRegistry().with({
       $schema: v1DialectUri,
