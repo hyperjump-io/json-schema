@@ -1,4 +1,5 @@
 import unknownKeyword, { keywordDefinitionUri } from "../../keywords/unknown.js";
+import { documentForLint } from "../document.js";
 import { lintRule } from "../lint-rule.js";
 import { visitSchemas } from "../utilities.js";
 
@@ -20,8 +21,8 @@ const definitionsNames = new Set(["definitions", "$defs"]);
  * @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, UnknownKeywordOptions | void>
  */
 const unknownKeywordRule = lintRule({ origin: "json-schema-lint:unknown-keyword", url: "https://hyperjump.io/json-schema/linting/rules/unknown-keyword/" }, async (tree, file, options) => {
-  const session = file.data.jsonSchemaSession;
-  if (session === undefined) {
+  const document = await documentForLint(tree, file);
+  if (document === undefined) {
     return;
   }
   const ignore = new Set(options?.ignore ?? []);
@@ -42,18 +43,10 @@ const unknownKeywordRule = lintRule({ origin: "json-schema-lint:unknown-keyword"
     }
   });
 
-  /** @type Map<string, Promise<Dialect | undefined>> */
-  const dialects = new Map();
   for (const [keywordNode, dialectUri] of found) {
-    let dialect = dialects.get(dialectUri);
-    if (dialect === undefined) {
-      // A dialect that can't be found was reported when the schema was
-      // resolved
-      dialect = session.getDialect(dialectUri).catch(() => undefined);
-      dialects.set(dialectUri, dialect);
-    }
-
-    const resolved = await dialect;
+    // A dialect that can't be found was reported when the schema was
+    // resolved
+    const resolved = document.dialects.get(dialectUri);
     const name = keywordNode.children[0].value;
     // The resolver reports unknown keywords where they aren't allowed, and
     // `x-` keywords are allowed there

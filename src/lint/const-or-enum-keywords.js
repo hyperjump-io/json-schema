@@ -1,12 +1,11 @@
 import { jsonValue } from "@hyperjump/browser/json";
 import { isErrorNode } from "../keywords/checks.js";
 import { evaluatorForLint } from "./evaluate.js";
-import { lowerForLint } from "./lower.js";
 import { marksAreRead, schemaGroup } from "./schema-group.js";
 
 /**
- * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode, JsonSchemaTolerantNode } from "../schema/schema-ast.d.ts"
- * @import { JsonSchemaSession } from "../session.d.ts"
+ * @import { JsonSchemaKeywordNode, JsonSchemaNode, JsonSchemaTolerantNode } from "../schema/schema-ast.d.ts"
+ * @import { LintDocument } from "./document.d.ts"
  * @import { LintEvaluation } from "./evaluate.d.ts"
  * @import { LoweredKeyword } from "./lower.d.ts"
  */
@@ -28,9 +27,9 @@ import { marksAreRead, schemaGroup } from "./schema-group.js";
  */
 
 /**
- * Results are found once for each tree, so rules share them
+ * Results are found once for each document, so rules share them
  *
- * @type WeakMap<JsonSchemaDocumentNode, Promise<KeywordResult[]>>
+ * @type WeakMap<LintDocument, KeywordResult[]>
  */
 const cache = new WeakMap();
 
@@ -45,20 +44,20 @@ const cache = new WeakMap();
  * them (`enum`), and the others are keywords next to it, so in a schema
  * with both `const` and `enum`, `enum` is a keyword next to `const`.
  *
- * @type (session: JsonSchemaSession, tree: JsonSchemaDocumentNode) => Promise<KeywordResult[]>
+ * @type (document: LintDocument) => KeywordResult[]
  */
-export const constOrEnumKeywords = (session, tree) => {
-  let results = cache.get(tree);
+export const constOrEnumKeywords = (document) => {
+  let results = cache.get(document);
   if (results === undefined) {
-    results = evaluate(session, tree);
-    cache.set(tree, results);
+    results = evaluate(document);
+    cache.set(document, results);
   }
   return results;
 };
 
-/** @type (session: JsonSchemaSession, tree: JsonSchemaDocumentNode) => Promise<KeywordResult[]> */
-const evaluate = async (session, tree) => {
-  const lowered = await lowerForLint(session, tree);
+/** @type (document: LintDocument) => KeywordResult[] */
+const evaluate = (document) => {
+  const lowered = document.schemas;
 
   /** @type {{ schemaNode: JsonSchemaNode; valuesNode: JsonSchemaKeywordNode; isConst: boolean; valueNodes: JsonSchemaTolerantNode[] }[]} */
   const found = [];
@@ -73,7 +72,7 @@ const evaluate = async (session, tree) => {
     return [];
   }
 
-  const evaluator = await evaluatorForLint(session, tree);
+  const evaluator = evaluatorForLint(document);
 
   /** @type KeywordResult[] */
   const results = [];
@@ -84,7 +83,7 @@ const evaluate = async (session, tree) => {
 
     // Marks are read by a schema that applies to the same instance, which
     // might be one this document doesn't have
-    const marksRead = await marksAreRead(session, tree, await schemaGroup(session, tree, schemaNode));
+    const marksRead = marksAreRead(document, schemaGroup(document, schemaNode));
 
     for (const [index, keyword] of (lowered.get(schemaNode) ?? []).entries()) {
       const { group, keywordNode } = keyword;

@@ -1,7 +1,6 @@
 import { operationsOf, propertyOperations } from "../analysis.js";
+import { documentForLint } from "../document.js";
 import { lintRule } from "../lint-rule.js";
-import { appliedSchemas } from "../applied.js";
-import { lowerForLint } from "../lower.js";
 import { isNegated, schemaGroup } from "../schema-group.js";
 import { nodeFor } from "../utilities.js";
 
@@ -22,12 +21,12 @@ import { nodeFor } from "../utilities.js";
  * @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void>
  */
 const requiredPropertyNotDefined = lintRule({ origin: "json-schema-lint:required-property-not-defined", url: "https://hyperjump.io/json-schema/linting/rules/required-property-not-defined/" }, async (tree, file) => {
-  const session = file.data.jsonSchemaSession;
-  if (session === undefined) {
+  const document = await documentForLint(tree, file);
+  if (document === undefined) {
     return;
   }
 
-  const lowered = await lowerForLint(session, tree);
+  const lowered = document.schemas;
 
   /** @type Required[] */
   const requireds = [];
@@ -41,11 +40,10 @@ const requiredPropertyNotDefined = lintRule({ origin: "json-schema-lint:required
     }
   }
 
-  // A schema in the group can be in another document
-  const applied = await appliedSchemas(session, tree);
-
+  // A schema in the group can be in another document, whose schemas are in
+  // `reached`
   for (const { schemaNode, keywordNode, name } of requireds) {
-    const group = await schemaGroup(session, tree, schemaNode);
+    const group = schemaGroup(document, schemaNode);
 
     // A schema in `not` requires that a property isn't there
     if (group.unknown || isNegated(group, schemaNode)) {
@@ -54,9 +52,9 @@ const requiredPropertyNotDefined = lintRule({ origin: "json-schema-lint:required
 
     // A schema that's a reference (draft-04 through draft-07) ignores what's
     // next to it, so it doesn't define anything
-    const defining = await Promise.all(group.schemas
+    const defining = group.schemas
       .filter((member) => member.type === "json-schema")
-      .map(async (member) => await applied.lowered(member) ?? []));
+      .map((member) => document.reached.get(member) ?? []);
 
     // A group that defines no properties, and could be applied from another
     // document, is likely meant to be combined with one that does

@@ -1,7 +1,7 @@
 import { typeIsOf } from "../analysis.js";
 import { constOrEnumKeywords } from "../const-or-enum-keywords.js";
+import { documentForLint } from "../document.js";
 import { lintRule } from "../lint-rule.js";
-import { lowerForLint } from "../lower.js";
 
 /**
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaTolerantNode } from "../../schema/schema-ast.d.ts"
@@ -26,21 +26,21 @@ const typeDescriptions = {
  * @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void>
  */
 const constOrEnumValueForDisallowedType = lintRule({ origin: "json-schema-lint:const-or-enum-value-for-disallowed-type", url: "https://hyperjump.io/json-schema/linting/rules/const-or-enum-value-for-disallowed-type/" }, async (tree, file) => {
-  const session = file.data.jsonSchemaSession;
-  if (session === undefined) {
+  const document = await documentForLint(tree, file);
+  if (document === undefined) {
     return;
   }
 
   // The types each `typeIs` allows, to say why a value isn't allowed
   /** @type Map<JsonSchemaKeywordNode, Set<TypeName>> */
   const typesOf = new Map();
-  for (const keywords of (await lowerForLint(session, tree)).values()) {
+  for (const keywords of document.schemas.values()) {
     for (const { keywordNode, types } of typeIsOf(keywords)?.keywords ?? []) {
       typesOf.set(keywordNode, types);
     }
   }
 
-  for (const { valuesNode, isConst, keywordNode, isType, results } of await constOrEnumKeywords(session, tree)) {
+  for (const { valuesNode, isConst, keywordNode, isType, results } of constOrEnumKeywords(document)) {
     if (!isType) {
       continue;
     }

@@ -6,6 +6,7 @@ import { JsonSchema, extendDialect } from "../json-schema.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
 import { draft202012Dialect } from "../dialects/draft-2020-12/index.js";
 import { appliesTo, canPass } from "./analysis.js";
+import { documentForLint } from "./document.js";
 import { evaluatorForLint } from "./evaluate.js";
 import { provenance } from "./provenance.js";
 import impossibleProperty from "./rules/impossible-property.js";
@@ -17,6 +18,7 @@ import keywordWithoutEffect from "./rules/keyword-without-effect.js";
  * @import { Keyword } from "../keyword.d.ts"
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode, JsonSchemaTolerantNode } from "../schema/schema-ast.d.ts"
  * @import { LoweredKeyword } from "../kernel/lower.js"
+ * @import { LintDocument } from "./document.d.ts"
  */
 
 /**
@@ -102,7 +104,7 @@ describe("the switches in lint", () => {
     test("a typeSwitch's branch is about its type", () => {
       /** @type Expression */
       const expression = { op: "typeSwitch", cases: { string: { op: "stringLength", min: 1 }, number: { op: "fail" } }, otherwise: { op: "pass" } };
-      expect([...appliesTo(jsonSchema, expression)]).to.eql(["number", "string"]);
+      expect([...appliesTo(noDefinitions, expression)]).to.eql(["number", "string"]);
       expect([...canPass(expression)].toSorted()).to.eql(["array", "boolean", "null", "object", "string"]);
     });
 
@@ -113,7 +115,7 @@ describe("the switches in lint", () => {
         { op: "keySwitch", cases: [["a", isString]], none: { op: "fail" }, unparsed: { op: "fail" } }
       ];
       for (const expression of expressions) {
-        expect([...appliesTo(jsonSchema, expression)]).to.eql(["object"]);
+        expect([...appliesTo(noDefinitions, expression)]).to.eql(["object"]);
         expect([...canPass(expression)].toSorted()).to.eql(["array", "boolean", "null", "number", "string"]);
       }
     });
@@ -144,7 +146,10 @@ describe("the switches in lint", () => {
 /** @type (pairs: [string, Expression][]) => Expression */
 const anyOf = (pairs) => ({ op: "any", of: pairs.map(([, schema]) => schema) });
 
-/** @type (schema: object) => Promise<{ session: ReturnType<JsonSchema["session"]>; tree: JsonSchemaDocumentNode }> */
+// What `appliesTo` reads of a document, for an expression without formats
+const noDefinitions = /** @type LintDocument */ (/** @type unknown */ ({ definitions: { keywords: {}, formats: {} } }));
+
+/** @type (schema: object) => Promise<LintDocument> */
 const resolve = async (schema) => {
   const session = jsonSchema.session();
   const file = new VFile({ path: "/schemas/a.schema.json", value: JSON.stringify({ $schema: draft2020, ...schema }) });
@@ -152,14 +157,14 @@ const resolve = async (schema) => {
     .use(rejsonParse)
     .use(jsonSchemaResolve, { session });
   const tree = /** @type JsonSchemaDocumentNode */ (/** @type unknown */ (await processor.run(processor.parse(file), file)));
-  return { session, tree };
+  return /** @type LintDocument */ (await documentForLint(tree, file));
 };
 
 /** @type (schema: object) => Promise<(value: Json) => boolean | undefined> */
 const evaluatorFor = async (schema) => {
-  const { session, tree } = await resolve(schema);
-  const evaluator = await evaluatorForLint(session, tree);
-  const schemaNode = /** @type JsonSchemaNode */ (tree.children[0]);
+  const document = await resolve(schema);
+  const evaluator = evaluatorForLint(document);
+  const schemaNode = /** @type JsonSchemaNode */ (document.tree.children[0]);
   return (value) => evaluator.schema(schemaNode, /** @type JsonSchemaTolerantNode */ (/** @type unknown */ (fromJs(value)))).valid;
 };
 

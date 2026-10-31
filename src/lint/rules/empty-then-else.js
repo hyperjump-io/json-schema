@@ -1,8 +1,8 @@
 import { operationsOf } from "../analysis.js";
 import { keywordApplying } from "../applied.js";
 import { effectOf } from "../effect.js";
+import { documentForLint } from "../document.js";
 import { lintRule } from "../lint-rule.js";
-import { lowerForLint } from "../lower.js";
 import { visitSchemas } from "../utilities.js";
 
 /**
@@ -18,8 +18,8 @@ import { visitSchemas } from "../utilities.js";
  * @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void>
  */
 const emptyThenElse = lintRule({ origin: "json-schema-lint:empty-then-else", url: "https://hyperjump.io/json-schema/linting/rules/empty-then-else/" }, async (tree, file) => {
-  const session = file.data.jsonSchemaSession;
-  if (session === undefined) {
+  const document = await documentForLint(tree, file);
+  if (document === undefined) {
     return;
   }
 
@@ -29,12 +29,12 @@ const emptyThenElse = lintRule({ origin: "json-schema-lint:empty-then-else", url
     schemaNodes.set(schemaNode.location, schemaNode);
   });
 
-  for (const keywords of (await lowerForLint(session, tree)).values()) {
+  for (const keywords of document.schemas.values()) {
     for (const keyword of keywords) {
       const branches = operationsOf(keyword.group.expression)
         .flatMap((operation) => operation.op === "cases" ? [...operation.cases.map(([, then]) => then), operation.otherwise] : []);
       for (const branch of branches) {
-        if (branch?.op !== "apply" || !schemaNodes.has(branch.schema) || await effectOf(session, tree, keyword, branch.schema) !== "none") {
+        if (branch?.op !== "apply" || !schemaNodes.has(branch.schema) || effectOf(document, keyword, branch.schema) !== "none") {
           continue;
         }
 

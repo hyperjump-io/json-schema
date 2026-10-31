@@ -1,6 +1,6 @@
 import { boundsOf, tightestMax, tightestMin } from "../bounds.js";
+import { documentForLint } from "../document.js";
 import { lintRule } from "../lint-rule.js";
-import { lowerForLint } from "../lower.js";
 
 /**
  * @import { JsonSchemaDocumentNode } from "../../schema/schema-ast.d.ts"
@@ -14,12 +14,12 @@ import { lowerForLint } from "../lower.js";
  * @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void>
  */
 const redundantNumericLimit = lintRule({ origin: "json-schema-lint:redundant-numeric-limit", url: "https://hyperjump.io/json-schema/linting/rules/redundant-numeric-limit/" }, async (tree, file) => {
-  const session = file.data.jsonSchemaSession;
-  if (session === undefined) {
+  const document = await documentForLint(tree, file);
+  if (document === undefined) {
     return;
   }
 
-  for (const keywords of (await lowerForLint(session, tree)).values()) {
+  for (const keywords of document.schemas.values()) {
     const { number } = boundsOf(keywords);
     for (const [bounds, tightest, tighter] of /** @type const */ ([[number.max, tightestMax, "lower"], [number.min, tightestMin, "higher"]])) {
       const limit = tightest(bounds);

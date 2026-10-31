@@ -1,7 +1,7 @@
 import { typeIsOf } from "../analysis.js";
 import { boundsOf, namesOf } from "../bounds.js";
+import { documentForLint } from "../document.js";
 import { lintRule } from "../lint-rule.js";
-import { lowerForLint } from "../lower.js";
 
 /**
  * @import { JsonSchemaDocumentNode } from "../../schema/schema-ast.d.ts"
@@ -16,12 +16,12 @@ import { lowerForLint } from "../lower.js";
  * @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void>
  */
 const fractionalLimitForInteger = lintRule({ origin: "json-schema-lint:fractional-limit-for-integer", url: "https://hyperjump.io/json-schema/linting/rules/fractional-limit-for-integer/" }, async (tree, file) => {
-  const session = file.data.jsonSchemaSession;
-  if (session === undefined) {
+  const document = await documentForLint(tree, file);
+  if (document === undefined) {
     return;
   }
 
-  for (const keywords of (await lowerForLint(session, tree)).values()) {
+  for (const keywords of document.schemas.values()) {
     // Only numbers that are integers are valid
     const type = typeIsOf(keywords);
     if (!type?.types.has("integer") || type.types.has("number")) {

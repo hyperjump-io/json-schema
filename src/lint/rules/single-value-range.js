@@ -1,7 +1,7 @@
 import { typeIsOf } from "../analysis.js";
 import { boundsOf, second, tightestMax, tightestMin } from "../bounds.js";
+import { documentForLint } from "../document.js";
 import { lintRule } from "../lint-rule.js";
-import { lowerForLint } from "../lower.js";
 
 /**
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode } from "../../schema/schema-ast.d.ts"
@@ -20,14 +20,14 @@ const enumUris = [`${keyword}/enum`, `${keyword}/draft-04/enum`];
  * @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void>
  */
 const singleValueRange = lintRule({ origin: "json-schema-lint:single-value-range", url: "https://hyperjump.io/json-schema/linting/rules/single-value-range/" }, async (tree, file) => {
-  const session = file.data.jsonSchemaSession;
-  if (session === undefined) {
+  const document = await documentForLint(tree, file);
+  if (document === undefined) {
     return;
   }
 
   /** @type [string, string, JsonSchemaKeywordNode, number, string][] */
   const found = [];
-  for (const [schemaNode, keywords] of await lowerForLint(session, tree)) {
+  for (const [schemaNode, keywords] of document.schemas) {
     // Values of other types are valid, which `const` wouldn't allow
     const type = typeIsOf(keywords);
     if (schemaNode.type !== "json-schema" || type === undefined || [...type.types].some((name) => name !== "number" && name !== "integer")) {
@@ -45,18 +45,15 @@ const singleValueRange = lintRule({ origin: "json-schema-lint:single-value-range
     found.push([min.label, max.label, second(min.keywordNode, max.keywordNode), min.value, schemaNode.dialectUri]);
   }
 
-  /** @type Map<string, Promise<Dialect>> */
-  const dialects = new Map();
   for (const [minimumLabel, maximumLabel, place, value, dialectUri] of found) {
-    let dialect = dialects.get(dialectUri);
+    const dialect = document.dialects.get(dialectUri);
     if (dialect === undefined) {
-      dialect = session.getDialect(dialectUri);
-      dialects.set(dialectUri, dialect);
+      continue;
     }
 
     // Draft-04 doesn't have `const`
-    const constName = nameOf(await dialect, [constUri]);
-    const enumName = nameOf(await dialect, enumUris);
+    const constName = nameOf(dialect, [constUri]);
+    const enumName = nameOf(dialect, enumUris);
     const replacement = constName !== undefined ? `'${constName}': ${value}` : enumName !== undefined ? `'${enumName}': [${value}]` : undefined;
     if (replacement === undefined) {
       continue;

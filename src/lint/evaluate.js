@@ -1,19 +1,17 @@
-import { availableDefinitions, keywordEvaluate } from "../kernel/definitions.js";
+import { keywordEvaluate } from "../kernel/definitions.js";
 import { addReachable, isClose, itemSequenceStates, selector } from "../kernel/fast.js";
 import { astInstance, jsInstance } from "../kernel/instance.js";
-import { readsMarks, subexpressions } from "../kernel/kernel.js";
+import { readsMarks } from "../kernel/kernel.js";
 import { codePointLengthIsWithin, instanceEqual } from "../keywords/utilities.js";
-import { findSchema } from "./find-schema.js";
-import { lowerForLint } from "./lower.js";
-import { visitReferences, visitSchemas } from "./utilities.js";
+import { schemaAt } from "./document.js";
 
 /**
  * @import { Json, JsonType } from "@hyperjump/browser/json"
  * @import { Expression, ExpressionOf, Handle, ItemPattern, Selector } from "../kernel/kernel.d.ts"
  * @import { State } from "../kernel/fast.js"
  * @import { InstanceNode } from "../kernel/instance.js"
- * @import { JsonSchemaDocumentNode, JsonSchemaNode } from "../schema/schema-ast.d.ts"
- * @import { JsonSchemaSession } from "../session.d.ts"
+ * @import { JsonSchemaNode } from "../schema/schema-ast.d.ts"
+ * @import { LintDocument } from "./document.d.ts"
  * @import { LoweredKeyword } from "./lower.d.ts"
  * @import * as API from "./evaluate.d.ts"
  */
@@ -42,24 +40,18 @@ const fail = { valid: false, annotates: false };
 const unknown = { valid: undefined, annotates: true };
 
 /**
- * Evaluators, by session and document
+ * Evaluators, by document
  *
- * @type WeakMap<JsonSchemaSession, WeakMap<JsonSchemaDocumentNode, Promise<API.LintEvaluator>>>
+ * @type WeakMap<LintDocument, API.LintEvaluator>
  */
 const cache = new WeakMap();
 
 /** @type API.evaluatorForLint */
-export const evaluatorForLint = (session, tree) => {
-  let bySession = cache.get(session);
-  if (bySession === undefined) {
-    bySession = new WeakMap();
-    cache.set(session, bySession);
-  }
-
-  let evaluator = bySession.get(tree);
+export const evaluatorForLint = (document) => {
+  let evaluator = cache.get(document);
   if (evaluator === undefined) {
-    evaluator = buildEvaluator(session, tree);
-    bySession.set(tree, evaluator);
+    evaluator = buildEvaluator(document);
+    cache.set(document, evaluator);
   }
 
   return evaluator;
@@ -145,67 +137,16 @@ const evaluationOrder = (keywords) => [
   ...keywords.filter(({ group }) => readsMarks(group.expression))
 ];
 
-/** @type (session: JsonSchemaSession, tree: JsonSchemaDocumentNode) => Promise<API.LintEvaluator> */
-const buildEvaluator = async (session, tree) => {
-  // What every schema the document can apply lowers to, and the schema each
-  // handle is: a subschema by its location, or what a reference finds.
-  // They're found before evaluating, so evaluating is synchronous.
-  /** @type Map<JsonSchemaNode, LoweredKeyword[]> */
-  const lowered = new Map();
-  /** @type Map<Handle, JsonSchemaNode | undefined> */
-  const handles = new Map();
-  /** @type WeakSet<JsonSchemaDocumentNode> */
-  const documents = new WeakSet();
-  /** @type Handle[] */
-  const pending = [];
-
-  /** @type (expression: Expression) => void */
-  const visit = (expression) => {
-    if (expression.op === "apply" && !handles.has(expression.schema)) {
-      pending.push(expression.schema);
-    }
-    subexpressions(expression).forEach(visit);
-  };
-
-  /** @type (document: JsonSchemaDocumentNode) => Promise<void> */
-  const addDocument = async (document) => {
-    documents.add(document);
-    visitSchemas(document, (schemaNode) => {
-      handles.set(schemaNode.location, schemaNode);
-    });
-    // A schema that's a reference isn't lowered, so what it refers to is
-    // found from the document
-    visitReferences(document, (uri) => {
-      pending.push(uri);
-    });
-    for (const [schemaNode, keywords] of await lowerForLint(session, document)) {
-      lowered.set(schemaNode, keywords);
-      keywords.forEach(({ group }) => visit(group.expression));
-    }
-  };
-
-  await addDocument(tree);
-  for (let handle = pending.pop(); handle !== undefined; handle = pending.pop()) {
-    if (handles.has(handle)) {
-      continue;
-    }
-
-    const result = await findSchema(session, handle, { document: tree });
-    if (result.status !== "found") {
-      handles.set(handle, undefined);
-      continue;
-    }
-
-    handles.set(handle, result.node);
-    if (result.node.type === "reference") {
-      pending.push(/** @type string */ (result.node.href));
-    }
-    if (!documents.has(result.document)) {
-      await addDocument(result.document);
-    }
-  }
-
-  const definitions = availableDefinitions(session.jsonSchema, [...lowered.values()].flatMap((keywords) => keywords.map(({ group }) => group.expression)));
+/**
+ * Everything evaluating needs is in the document, so evaluating is
+ * synchronous: what every schema the document can apply lowers to, and the
+ * schema each handle is, a subschema by its location, or what a reference
+ * finds.
+ *
+ * @type (document: LintDocument) => API.LintEvaluator
+ */
+const buildEvaluator = (document) => {
+  const { reached: lowered, definitions } = document;
 
   /** @type Map<JsonSchemaNode, LoweredKeyword[]> */
   const ordered = new Map();
@@ -241,7 +182,7 @@ const buildEvaluator = async (session, tree) => {
     } else if (schemaNode === undefined) {
       return unknownApplied(marks);
     } else if (schemaNode.type === "reference") {
-      return applyIn(schemaNode, instance, marks, () => evaluateSchema(handles.get(/** @type string */ (schemaNode.href)), instance, marks));
+      return applyIn(schemaNode, instance, marks, () => evaluateSchema(schemaAt(document, /** @type string */ (schemaNode.href)), instance, marks));
     } else if (schemaNode.jsonType === "boolean") {
       return schemaNode.value ? pass : fail;
     }
@@ -402,7 +343,7 @@ const buildEvaluator = async (session, tree) => {
         return evaluate(has ? expression.unparsed : expression.none, instance, marks);
       }
       case "apply":
-        return evaluateSchema(handles.get(expression.schema), instance, marks);
+        return evaluateSchema(schemaAt(document, expression.schema), instance, marks);
       // Only optimizations make it, and lint doesn't optimize
       case "inline":
         return evaluate({ op: "all", of: expression.keywords.map((group) => group.expression) }, instance, marks);

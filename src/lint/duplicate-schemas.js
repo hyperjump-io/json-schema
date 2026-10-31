@@ -1,11 +1,10 @@
-import { lowerForLint } from "./lower.js";
 import { sameExpression } from "./same-schema.js";
 import { visitSchemas } from "./utilities.js";
 
 /**
  * @import { Node } from "unist"
- * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode } from "../schema/schema-ast.d.ts"
- * @import { JsonSchemaSession } from "../session.d.ts"
+ * @import { JsonSchemaKeywordNode, JsonSchemaNode } from "../schema/schema-ast.d.ts"
+ * @import { LintDocument } from "./document.d.ts"
  */
 
 /**
@@ -17,11 +16,9 @@ import { visitSchemas } from "./utilities.js";
  *
  * @typedef {{ op: "all" | "any" | "one"; keywordNode: JsonSchemaKeywordNode; node: Node }} Duplicate
  *
- * @type (session: JsonSchemaSession, tree: JsonSchemaDocumentNode) => Promise<Duplicate[]>
+ * @type (document: LintDocument) => Duplicate[]
  */
-export const duplicateSchemas = async (session, tree) => {
-  const lowered = await lowerForLint(session, tree);
-
+export const duplicateSchemas = ({ tree, schemas: lowered }) => {
   /** @type Map<string, JsonSchemaNode> */
   const schemaNodes = new Map();
   visitSchemas(tree, (schemaNode) => {

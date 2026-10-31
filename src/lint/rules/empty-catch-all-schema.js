@@ -1,6 +1,6 @@
 import { affectsAReader, effectOf } from "../effect.js";
+import { documentForLint } from "../document.js";
 import { lintRule } from "../lint-rule.js";
-import { lowerForLint } from "../lower.js";
 
 /**
  * @import { JsonSchemaDocumentNode } from "../../schema/schema-ast.d.ts"
@@ -12,16 +12,16 @@ import { lowerForLint } from "../lower.js";
  * @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void>
  */
 const emptyCatchAllSchema = lintRule({ origin: "json-schema-lint:empty-catch-all-schema", url: "https://hyperjump.io/json-schema/linting/rules/empty-catch-all-schema/" }, async (tree, file) => {
-  const session = file.data.jsonSchemaSession;
-  if (session === undefined) {
+  const document = await documentForLint(tree, file);
+  if (document === undefined) {
     return;
   }
 
-  const lowered = await lowerForLint(session, tree);
+  const lowered = document.schemas;
   for (const keywords of lowered.values()) {
     for (const keyword of keywords) {
       const { keywordNode } = keyword;
-      if (await effectOf(session, tree, keyword) === "marksAll" && !affectsAReader(keywords, keywordNode)) {
+      if (effectOf(document, keyword) === "marksAll" && !affectsAReader(keywords, keywordNode)) {
         const name = keywordNode.children[0].value;
         file.message(`'${name}' has a schema that allows everything, which is the same as leaving it out`, { place: keywordNode.position });
       }

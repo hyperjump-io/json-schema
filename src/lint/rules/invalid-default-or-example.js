@@ -1,4 +1,5 @@
 import { evaluatorForLint } from "../evaluate.js";
+import { documentForLint } from "../document.js";
 import { lintRule } from "../lint-rule.js";
 import { schemaGroup } from "../schema-group.js";
 import { findKeyword, visitSchemas } from "../utilities.js";
@@ -17,8 +18,8 @@ const examplesUri = "https://json-schema.org/keyword/examples";
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
 const invalidDefaultOrExample = lintRule({ origin: "json-schema-lint:invalid-default-or-example", url: "https://hyperjump.io/json-schema/linting/rules/invalid-default-or-example/" }, async (tree, file) => {
-  const session = file.data.jsonSchemaSession;
-  if (session === undefined) {
+  const document = await documentForLint(tree, file);
+  if (document === undefined) {
     // The schema wasn't resolved, so it can't be evaluated
     return;
   }
@@ -38,9 +39,9 @@ const invalidDefaultOrExample = lintRule({ origin: "json-schema-lint:invalid-def
 
   // A value is reported only if it fails. One that might, like one a
   // reference that can't be followed decides, isn't.
-  const evaluator = await evaluatorForLint(session, tree);
+  const evaluator = evaluatorForLint(document);
   for (const { schemaNode, defaultNode, examplesNode } of annotated) {
-    const group = await schemaGroup(session, tree, schemaNode);
+    const group = schemaGroup(document, schemaNode);
     const outer = outermost(group, schemaNode);
 
     /** @type (valueNode: JsonSchemaTolerantNode, label: string) => void */

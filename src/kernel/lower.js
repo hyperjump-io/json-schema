@@ -11,7 +11,6 @@ import { normalForm } from "./normalize.js";
 /**
  * @import { Json } from "@hyperjump/browser/json"
  * @import { Dialect } from "../dialect.d.ts"
- * @import { JsonSchema } from "../json-schema.d.ts"
  * @import { JsonSchemaSession } from "../session.d.ts"
  * @import { Keyword, LowerInput, Reference, Shape } from "../keyword.d.ts"
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode, JsonSchemaTolerantNode } from "../schema/schema-ast.d.ts"
@@ -76,9 +75,11 @@ export const lower = async (session, uri) => {
  * rejected is left out. Each keyword is also lowered without each sibling
  * it read, so lint knows where each operation came from.
  *
- * @type (jsonSchema: JsonSchema, node: ObjectSchemaNode, dialect: Dialect, inputs: Inputs, tolerant: boolean) => Promise<LoweredKeyword[]>
+ * `keywordOf` is the definition of a keyword by URI.
+ *
+ * @type (keywordOf: (uri: string) => Keyword, node: ObjectSchemaNode, dialect: Dialect, inputs: Inputs, tolerant: boolean) => Promise<LoweredKeyword[]>
  */
-export const lowerKeywords = async (jsonSchema, node, dialect, inputs, tolerant) => {
+export const lowerKeywords = async (keywordOf, node, dialect, inputs, tolerant) => {
   const properties = node.children;
 
   /** @type LoweredKeyword[] */
@@ -88,7 +89,7 @@ export const lowerKeywords = async (jsonSchema, node, dialect, inputs, tolerant)
   for (const keywordNode of properties) {
     const [nameNode, valueNode] = keywordNode.children;
     const keywordUri = keywordNode.keywordUri;
-    const keyword = jsonSchema.getKeyword(keywordDefinitionUri(keywordUri));
+    const keyword = keywordOf(keywordDefinitionUri(keywordUri));
     if (keyword.lower === undefined || (tolerant && !accepts(keyword, valueNode, node))) {
       continue;
     }
@@ -109,7 +110,7 @@ export const lowerKeywords = async (jsonSchema, node, dialect, inputs, tolerant)
           continue;
         }
 
-        const siblingKeyword = jsonSchema.getKeyword(keywordDefinitionUri(siblingUri));
+        const siblingKeyword = keywordOf(keywordDefinitionUri(siblingUri));
         if (tolerant && !accepts(siblingKeyword, sibling.children[1], node)) {
           continue;
         }
@@ -280,7 +281,8 @@ class Lowerer {
     }
 
     const dialect = await this.#dialect(node.dialectUri);
-    const lowered = await lowerKeywords(this.#session.jsonSchema, /** @type ObjectSchemaNode */ (node), dialect, this.#inputs, false);
+    const { jsonSchema } = this.#session;
+    const lowered = await lowerKeywords((uri) => jsonSchema.getKeyword(uri), /** @type ObjectSchemaNode */ (node), dialect, this.#inputs, false);
     const keywords = lowered.map(({ group }) => group);
     this.#schemas[handle] = { resource, keywords };
 

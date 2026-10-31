@@ -70,39 +70,51 @@ for the others. The built-in rules in
 [`src/lint/rules/`](https://github.com/hyperjump-io/json-schema/tree/v2/src/lint/rules)
 show how they're used.
 
+## The document and what it reaches
+
+A rule that needs more than the tree starts with `documentForLint`. It
+gives the document with what rules read about it: what its schemas lower
+to, and the schemas its references reach in other documents. It's found in
+the session the schema was resolved in, so a rule only sees what your
+application's registry and `allowRetrieval` allow. It's `undefined` when
+the schema couldn't be resolved, and then there's nothing to look at.
+
+```typescript
+import { documentForLint } from "@hyperjump/json-schema/lint";
+
+const document = await documentForLint(tree, file);
+if (document === undefined) {
+  return;
+}
+```
+
+It's found once for each file, and every rule shares it. Everything else
+in this section is a function of it, and none of them are async.
+
 ## Looking at other schemas
 
-A rule that needs another schema, such as the target of a `$ref`, finds it
-with `findSchema`. Use the session the schema was resolved in, which is
-`file.data.jsonSchemaSession`. That way the rule only sees what your
-application's registry and `allowRetrieval` allow. The session is
-`undefined` when the schema couldn't be resolved, and then there's nothing
-to look at. Pass the tree as `document` so that references into the schema
-being linted find what's in it.
+A rule that needs another schema, such as the target of a `$ref`, reads
+what the reference found from `document.found`.
 
 ```typescript
 import type { JsonSchemaNode } from "@hyperjump/json-schema";
-import { findSchema, visitReferences } from "@hyperjump/json-schema/lint";
-
-const session = file.data.jsonSchemaSession;
-if (session === undefined) {
-  return;
-}
+import { visitReferences } from "@hyperjump/json-schema/lint";
 
 const references: [string, JsonSchemaNode][] = [];
 visitReferences(tree, (uri, node) => references.push([uri, node]));
 for (const [uri, node] of references) {
-  const result = await findSchema(session, uri, { document: tree });
-  if (result.status === "missing") {
+  const result = document.found.get(uri);
+  if (result?.status === "missing") {
     file.message(result.reason.message, { place: node.position });
   }
 }
 ```
 
 `visitReferences` finds every `$ref` in every dialect along with the URI it
-refers to. `findSchema` says whether the schema is `found`, `missing`, or
+refers to. A result says whether the schema is `found`, `missing`, or
 `unknown`. Only report `missing`. `unknown` means there's no way to tell,
-for example for a URL that `allowRetrieval` doesn't allow.
+for example for a URL that `allowRetrieval` doesn't allow. `schemaAt`
+gives the schema a URI finds, a reference's or a location's.
 
 ## Schemas that apply together
 
@@ -113,8 +125,7 @@ it to look beyond the schema a keyword is in. For example, it can find the
 `properties` next to the `anyOf` that contains a `required`.
 
 ```typescript
-const session = file.data.jsonSchemaSession;
-const group = await schemaGroup(session, tree, schemaNode);
+const group = schemaGroup(document, schemaNode);
 ```
 
 Which keywords connect schemas is worked out from what they lower to, so
@@ -131,9 +142,10 @@ Some rules need to know what a keyword does, not just where it is. Those
 rules read what the keyword lowers to. That way they support every keyword
 that lowers, including custom ones.
 
-- `lowerForLint` lowers every schema in the document without compiling or
-  retrieving anything. It gives each keyword's group along with its node
-  and the nodes of the siblings it read.
+- `document.schemas` is what every schema in the document lowers to,
+  without compiling. It gives each keyword's group along with its node and
+  the nodes of the siblings it read. `document.reached` also has the
+  schemas in the documents its references reach.
 - `keywordAppliesTo` says which types of value a keyword applies to.
 - `assertsOnItsOwn` says whether a keyword can fail without applying a
   schema.
@@ -142,12 +154,9 @@ that lowers, including custom ones.
   type.
 
 ```typescript
-const session = file.data.jsonSchemaSession;
-const schemas = await lowerForLint(session, tree);
-for (const keywords of schemas.values()) {
+for (const keywords of document.schemas.values()) {
   for (const { keywordNode } of keywords) {
-    const { jsonSchema } = session;
-    const types = keywordAppliesTo(jsonSchema, keywords, keywordNode);
+    const types = keywordAppliesTo(document, keywords, keywordNode);
     if (types.length === 0) {
       file.message("This keyword has no effect", {
         place: keywordNode.position
@@ -167,7 +176,7 @@ reference that can't be followed or a `$dynamicRef`. Then `valid` is
 value or mark part of it as evaluated.
 
 ```typescript
-const evaluator = await evaluatorForLint(file.data.jsonSchemaSession, tree);
+const evaluator = evaluatorForLint(document);
 if (evaluator.schema(schemaNode, defaultNode.children[1]).valid === false) {
   file.message("The default isn't valid", { place: defaultNode.position });
 }

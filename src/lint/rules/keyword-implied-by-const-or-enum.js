@@ -1,4 +1,5 @@
 import { constOrEnumKeywords } from "../const-or-enum-keywords.js";
+import { documentForLint } from "../document.js";
 import { lintRule } from "../lint-rule.js";
 
 /**
@@ -7,12 +8,12 @@ import { lintRule } from "../lint-rule.js";
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
 const keywordImpliedByConstOrEnum = lintRule({ origin: "json-schema-lint:keyword-implied-by-const-or-enum", url: "https://hyperjump.io/json-schema/linting/rules/keyword-implied-by-const-or-enum/" }, async (tree, file) => {
-  const session = file.data.jsonSchemaSession;
-  if (session === undefined) {
+  const document = await documentForLint(tree, file);
+  if (document === undefined) {
     return;
   }
 
-  for (const { valuesNode, isConst, keywordNode, isType, results, marksAreRead } of await constOrEnumKeywords(session, tree)) {
+  for (const { valuesNode, isConst, keywordNode, isType, results, marksAreRead } of constOrEnumKeywords(document)) {
     // `type` is type-implied-by-const-or-enum's, so a user whose tools need
     // `type` can turn that rule off without losing the rest
     if (isType) {

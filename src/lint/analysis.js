@@ -36,7 +36,7 @@ const domains = {
 };
 
 /** @type API.appliesTo */
-export const appliesTo = (jsonSchema, expression) => {
+export const appliesTo = (document, expression) => {
   const domain = domains[expression.op];
   if (domain !== undefined) {
     return new Set([domain]);
@@ -48,27 +48,27 @@ export const appliesTo = (jsonSchema, expression) => {
     case "all":
     case "any":
     case "one":
-      return union(expression.of.map((of) => appliesTo(jsonSchema, of)));
+      return union(expression.of.map((of) => appliesTo(document, of)));
     case "cases": {
       // A case does something only where its condition can pass, and
       // `otherwise` wherever the conditions can fail, which is anywhere
       const cases = expression.cases.map(([condition, then]) => {
-        const applies = union([appliesTo(jsonSchema, condition), then === null ? new Set() : appliesTo(jsonSchema, then)]);
+        const applies = union([appliesTo(document, condition), then === null ? new Set() : appliesTo(document, then)]);
         return intersection([canPass(condition), applies]);
       });
-      const otherwise = expression.otherwise === null ? new Set() : appliesTo(jsonSchema, expression.otherwise);
+      const otherwise = expression.otherwise === null ? new Set() : appliesTo(document, expression.otherwise);
       return union([...cases, /** @type Set<JsonType> */ (otherwise)]);
     }
     // A branch applies only to the instances it's for
     case "typeSwitch":
-      return union(jsonTypes.map((type) => intersection([new Set([type]), appliesTo(jsonSchema, expression.cases[type] ?? expression.otherwise)])));
+      return union(jsonTypes.map((type) => intersection([new Set([type]), appliesTo(document, expression.cases[type] ?? expression.otherwise)])));
     case "propertySwitch":
     case "keySwitch":
-      return intersection([new Set(["object"]), union(subexpressions(expression).map((branch) => appliesTo(jsonSchema, branch)))]);
+      return intersection([new Set(["object"]), union(subexpressions(expression).map((branch) => appliesTo(document, branch)))]);
     case "annotate":
       return expression.types === undefined ? all() : jsonTypesOf(expression.types);
     case "format": {
-      const types = expression.uri !== null && jsonSchema.hasFormat(expression.uri) ? jsonSchema.getFormat(expression.uri).types : undefined;
+      const types = expression.uri === null ? undefined : document.definitions.formats[expression.uri]?.types;
       return types === undefined ? all() : new Set(/** @type JsonType[] */ (types));
     }
     case "predicate":
@@ -81,12 +81,12 @@ export const appliesTo = (jsonSchema, expression) => {
 };
 
 /** @type API.keywordAppliesTo */
-export const keywordAppliesTo = (jsonSchema, keywords, keywordNode) => {
+export const keywordAppliesTo = (document, keywords, keywordNode) => {
   /** @type Set<JsonType>[] */
   const types = [];
   for (const { group, keywordNode: groupNode, sourceNodes } of keywords) {
     if (groupNode === keywordNode || sourceNodes.includes(keywordNode)) {
-      types.push(appliesTo(jsonSchema, group.expression));
+      types.push(appliesTo(document, group.expression));
     }
   }
 

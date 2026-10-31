@@ -1,8 +1,9 @@
 # Lowering for lint
 
 Lint runs without compiling, so it lowers each document itself, in the
-normal form, without compiling or retrieving anything (`lowerForLint` in
-`src/lint/lower.js`, which shares `lowerKeywords` with compiling):
+normal form, without compiling or retrieving anything
+(`LintDocument.schemas`, lowered in `src/lint/document.js`, which shares
+`lowerKeywords` with compiling):
 
 - A subschema is `apply` of its location, and a reference is `apply` of
   the URI it resolves to. The dynamic anchors of a resource in the

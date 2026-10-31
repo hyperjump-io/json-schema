@@ -1,6 +1,6 @@
 import { allowsNothing } from "../allows-nothing.js";
+import { documentForLint } from "../document.js";
 import { lintRule } from "../lint-rule.js";
-import { lowerForLint } from "../lower.js";
 import { visitSchemas } from "../utilities.js";
 
 /**
@@ -14,8 +14,8 @@ import { visitSchemas } from "../utilities.js";
  * @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void>
  */
 const keywordAllowsNothing = lintRule({ origin: "json-schema-lint:keyword-allows-nothing", url: "https://hyperjump.io/json-schema/linting/rules/keyword-allows-nothing/" }, async (tree, file) => {
-  const session = file.data.jsonSchemaSession;
-  if (session === undefined) {
+  const document = await documentForLint(tree, file);
+  if (document === undefined) {
     return;
   }
 
@@ -25,7 +25,7 @@ const keywordAllowsNothing = lintRule({ origin: "json-schema-lint:keyword-allows
     schemaNodes.set(schemaNode.location, schemaNode);
   });
 
-  const lowered = await lowerForLint(session, tree);
+  const lowered = document.schemas;
   for (const keywords of lowered.values()) {
     for (const { group, keywordNode } of keywords) {
       if (!allowsNothing(group.expression, schemaNodes, lowered, group.location)) {

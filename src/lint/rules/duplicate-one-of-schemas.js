@@ -1,4 +1,5 @@
 import { duplicateSchemas } from "../duplicate-schemas.js";
+import { documentForLint } from "../document.js";
 import { lintRule } from "../lint-rule.js";
 
 /**
@@ -12,12 +13,12 @@ import { lintRule } from "../lint-rule.js";
  * @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void>
  */
 const duplicateOneOfSchemas = lintRule({ origin: "json-schema-lint:duplicate-one-of-schemas", url: "https://hyperjump.io/json-schema/linting/rules/duplicate-one-of-schemas/" }, async (tree, file) => {
-  const session = file.data.jsonSchemaSession;
-  if (session === undefined) {
+  const document = await documentForLint(tree, file);
+  if (document === undefined) {
     return;
   }
 
-  for (const { op, keywordNode, node } of await duplicateSchemas(session, tree)) {
+  for (const { op, keywordNode, node } of duplicateSchemas(document)) {
     if (op === "one") {
       const name = keywordNode.children[0].value;
       file.message(`This schema is already in '${name}', so a value it matches always fails '${name}'`, { place: node.position });

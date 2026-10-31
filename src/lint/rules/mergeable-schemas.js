@@ -1,13 +1,11 @@
 import { jsonValue } from "@hyperjump/browser/json";
 import { readsMarks } from "../../kernel/kernel.js";
 import { operationsOf } from "../analysis.js";
+import { documentForLint, lowerSchemaForLint } from "../document.js";
 import { lintRule } from "../lint-rule.js";
-import { lowerForLint, lowerSchemaForLint } from "../lower.js";
 
 /**
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode } from "../../schema/schema-ast.d.ts"
- * @import { JsonSchema } from "../../json-schema.d.ts"
- * @import { Keyword } from "../../keyword.d.ts"
  * @import { KeywordGroup } from "../../kernel/kernel.d.ts"
  */
 
@@ -34,13 +32,13 @@ const schemaUri = "https://json-schema.org/keyword/schema";
  * @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void>
  */
 const mergeableSchemas = lintRule({ origin: "json-schema-lint:mergeable-schemas", url: "https://hyperjump.io/json-schema/linting/rules/mergeable-schemas/" }, async (tree, file) => {
-  const session = file.data.jsonSchemaSession;
-  if (session === undefined) {
+  const document = await documentForLint(tree, file);
+  if (document === undefined) {
     return;
   }
 
-  const { jsonSchema } = session;
-  const lowered = await lowerForLint(session, tree);
+  const lowered = document.schemas;
+  const { keywords: definitions } = document.definitions;
 
   /** @type Set<JsonSchemaKeywordNode> */
   const readingMarks = new Set();
@@ -63,12 +61,12 @@ const mergeableSchemas = lintRule({ origin: "json-schema-lint:mergeable-schemas"
    *
    * @type (a: string, b: string) => boolean
    */
-  const interact = (a, b) => Object.values(definitionOf(jsonSchema, a)?.siblings ?? {}).includes(b)
-    || Object.values(definitionOf(jsonSchema, b)?.siblings ?? {}).includes(a);
+  const interact = (a, b) => Object.values(definitions[a]?.siblings ?? {}).includes(b)
+    || Object.values(definitions[b]?.siblings ?? {}).includes(a);
 
   /** @type (keywordNode: JsonSchemaKeywordNode) => boolean */
   const isUnmovable = (keywordNode) => keywordNode.keywordUri === schemaUri
-    || definitionOf(jsonSchema, keywordNode.keywordUri)?.resolve !== undefined
+    || definitions[keywordNode.keywordUri]?.resolve !== undefined
     || readingMarks.has(keywordNode)
     || (!grouped.has(keywordNode) && holdsSchemas(/** @type TreeNode */ (keywordNode.children[1])));
 
@@ -93,7 +91,7 @@ const mergeableSchemas = lintRule({ origin: "json-schema-lint:mergeable-schemas"
       let merged = (/** @type JsonSchemaKeywordNode[] */ (schemaNode.children)).filter((keywordNode) => keywordNode !== allOfNode);
 
       /** @type (keywordNodes: JsonSchemaKeywordNode[]) => Promise<KeywordGroup[] | undefined> */
-      const lower = (keywordNodes) => lowerSchemaForLint(session, tree, /** @type JsonSchemaNode */ ({ ...schemaNode, children: keywordNodes }));
+      const lower = (keywordNodes) => lowerSchemaForLint(document, /** @type JsonSchemaNode */ ({ ...schemaNode, children: keywordNodes }));
 
       for (const branch of /** @type JsonSchemaNode[] */ (valueNode.children)) {
         if (branch.type === "reference") {
@@ -211,6 +209,3 @@ const holdsSchemas = (node) => node.type === "json-schema" || node.type === "ref
 
 /** @type (node: unknown) => string */
 const valueOf = (node) => JSON.stringify(jsonValue(/** @type any */ (node)));
-
-/** @type (jsonSchema: JsonSchema | undefined, uri: string) => Keyword | undefined */
-const definitionOf = (jsonSchema, uri) => jsonSchema?.hasKeyword(uri) ? jsonSchema.getKeyword(uri) : undefined;

@@ -5,10 +5,35 @@ document finds something. They can see what's in registries and what
 `allowRetrieval` allows, and nothing else.
 
 - The resolve step puts the file's session on `file.data.jsonSchemaSession`.
-  Rules use it and never create sessions, so they get the application's
+  Rules never create sessions, so they get the application's
   `allowRetrieval` instead of each rule having to remember a restriction.
+- Rules don't use the session either. `documentForLint(tree, file)`
+  (`src/lint/document.js`) is the one place lint retrieves anything. It
+  follows every static reference in the file and in the documents they
+  reach, transitively, and gives a `LintDocument`: what this document's
+  schemas lower to (`schemas`), what the reached documents' do too
+  (`reached`), what each reference found (`found`), every schema by
+  location, each dialect, and the definitions the documents use. It's
+  found once for each tree and session, and a reached document is lowered
+  once for each session. Every helper (`schemaGroup`, `effectOf`,
+  `marksEvery`, `evaluatorForLint`, `formatTypes`, `keywordAppliesTo`, …)
+  is a synchronous function of it. Before 2026-10-30, rules took
+  `(session, tree)`, each helper followed references itself, as it needed
+  them, with caches keyed by session in five modules, and `effectOf` found
+  references again for every keyword. Following all of them up front
+  retrieves nothing more than `evaluatorForLint` already did, which
+  `recommended` uses, and the schemastore corpus lints with the same
+  messages about 5× faster. Rejected: an object that hides the session and
+  memoizes each helper, which keeps rules depending on something that
+  retrieves.
+- The identifier of what each of the file's references finds is found
+  too, for `reference-by-location`, so no rule needs to find anything
+  itself.
 - `findSchema(session, uri, options)` (`src/lint/find-schema.js`) finds what
-  a reference would, without following a reference it finds. Its result is
+  a reference would, without following a reference it finds. It's what
+  `documentForLint` finds references with, and isn't part of the API, so a
+  rule can't retrieve anything. A rule that needs a URI no reference names
+  gets it by `documentForLint` finding it too, like the identifiers above. Its result is
   `found` with the node, or `missing` or `unknown` with the reason as an
   error, so a rule can say why.
 - Only a definite absence is `missing`: a file that doesn't exist, an HTTP
@@ -35,7 +60,7 @@ document finds something. They can see what's in registries and what
 - A reference back to the linted file from another document goes through
   the session, which retrieves the file. That's the same text for the CLI.
   The language server's `file:` plugin reads open files from their buffers.
-- Rules follow references the way browser does: resolve the reference
+- `documentForLint` follows references the way browser does: resolve the reference
   against its resource's URI and find that. `visitReferences` does the
   first part for every static reference, in every dialect: a `$ref`
   keyword (2019-09 and later), resolved against its schema's location, or
@@ -44,7 +69,7 @@ document finds something. They can see what's in registries and what
   Dynamic references aren't visited, because what they find depends on
   evaluation.
 - `reference-without-target` reports a static reference whose target is
-  `missing`, with `findSchema`'s reason. It covers references within the
+  `missing`, with `findSchema`'s reason (from `found`). It covers references within the
   document as well as to other documents, because both are a schema that
   can't be compiled. It's an error in the recommended preset, where every
   other rule is a warning, because `compile` fails on the same reference.

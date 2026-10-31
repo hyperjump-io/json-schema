@@ -1,11 +1,8 @@
-import { findSchema } from "./find-schema.js";
-import { lowerForLint } from "./lower.js";
-
 /**
  * @import { Expression } from "../kernel/kernel.d.ts"
- * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode } from "../schema/schema-ast.d.ts"
- * @import { JsonSchemaSession } from "../session.d.ts"
- * @import { LintSchemas, LoweredKeyword } from "./lower.d.ts"
+ * @import { JsonSchemaKeywordNode, JsonSchemaNode } from "../schema/schema-ast.d.ts"
+ * @import { LintDocument } from "./document.d.ts"
+ * @import { LoweredKeyword } from "./lower.d.ts"
  */
 
 /**
@@ -15,36 +12,25 @@ import { lowerForLint } from "./lower.js";
 /**
  * @typedef {{
  *   keywordsOf: (node: JsonSchemaNode) => LoweredKeyword[] | undefined;
- *   find: (uri: string) => Promise<JsonSchemaNode | undefined>;
- *   appliedBy: (keyword: LoweredKeyword) => (handle: string) => Promise<JsonSchemaNode | undefined>;
- *   lowered: (node: JsonSchemaNode) => Promise<LoweredKeyword[] | undefined>;
+ *   find: (uri: string) => JsonSchemaNode | undefined;
+ *   appliedBy: (keyword: LoweredKeyword) => (handle: string) => JsonSchemaNode | undefined;
  * }} AppliedSchemas
  */
 
 /**
  * What the schemas a keyword applies lower to, for following `apply`. A
  * subschema is applied by its location, and anything else is a reference,
- * which is found with `findSchema`, into another document too, and is
- * `undefined` if it can't be. `lowered` is what a schema lowers to, in
- * whichever document it's in.
+ * which finds what it finds in the document's `found`, into another
+ * document too, and is `undefined` if it can't be. `keywordsOf` is what a
+ * schema lowers to, in whichever document it's in.
  *
- * @type (session: JsonSchemaSession, tree: JsonSchemaDocumentNode) => Promise<AppliedSchemas>
+ * @type (document: LintDocument) => AppliedSchemas
  */
-export const appliedSchemas = async (session, tree) => {
-  /** @type LintSchemas */
-  const schemas = new Map(await lowerForLint(session, tree));
-
+export const appliedSchemas = (document) => {
   /** @type AppliedSchemas["find"] */
-  const find = async (uri) => {
-    const result = await findSchema(session, uri, { document: tree });
-    if (result.status !== "found") {
-      return undefined;
-    } else if (!schemas.has(result.node)) {
-      for (const [schemaNode, keywords] of await lowerForLint(session, result.document)) {
-        schemas.set(schemaNode, keywords);
-      }
-    }
-    return result.node;
+  const find = (uri) => {
+    const result = document.found.get(uri);
+    return result?.status === "found" ? result.node : undefined;
   };
 
   /** @type AppliedSchemas["appliedBy"] */
@@ -57,18 +43,10 @@ export const appliedSchemas = async (session, tree) => {
       }
     }
 
-    return async (handle) => subschemas.get(handle) ?? await find(handle);
+    return (handle) => subschemas.get(handle) ?? find(handle);
   };
 
-  /** @type AppliedSchemas["lowered"] */
-  const lowered = async (node) => {
-    if (!schemas.has(node)) {
-      await find(node.location);
-    }
-    return schemas.get(node);
-  };
-
-  return { keywordsOf: (node) => schemas.get(node), find, appliedBy, lowered };
+  return { keywordsOf: (node) => document.reached.get(node), find, appliedBy };
 };
 
 /**

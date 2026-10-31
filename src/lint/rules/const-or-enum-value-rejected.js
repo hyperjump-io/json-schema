@@ -1,4 +1,5 @@
 import { constOrEnumKeywords } from "../const-or-enum-keywords.js";
+import { documentForLint } from "../document.js";
 import { lintRule } from "../lint-rule.js";
 
 /**
@@ -7,8 +8,8 @@ import { lintRule } from "../lint-rule.js";
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
 const constOrEnumValueRejected = lintRule({ origin: "json-schema-lint:const-or-enum-value-rejected", url: "https://hyperjump.io/json-schema/linting/rules/const-or-enum-value-rejected/" }, async (tree, file) => {
-  const session = file.data.jsonSchemaSession;
-  if (session === undefined) {
+  const document = await documentForLint(tree, file);
+  if (document === undefined) {
     return;
   }
 
@@ -16,7 +17,7 @@ const constOrEnumValueRejected = lintRule({ origin: "json-schema-lint:const-or-e
   // A value a keyword might reject isn't reported.
   /** @type Map<JsonSchemaTolerantNode, { isConst: boolean; valuesName: string; names: string[] }> */
   const rejected = new Map();
-  for (const { valuesNode, isConst, keywordNode, isType, results } of await constOrEnumKeywords(session, tree)) {
+  for (const { valuesNode, isConst, keywordNode, isType, results } of constOrEnumKeywords(document)) {
     // A value `type` doesn't allow is const-or-enum-value-for-disallowed-type's
     if (isType) {
       continue;

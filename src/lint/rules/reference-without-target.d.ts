@@ -9,7 +9,7 @@ import type { JsonSchemaDocumentNode } from "../../schema/schema-ast.d.ts";
  *
  * Only what's certainly missing is reported. A reference to something that
  * can't be retrieved, such as a URL `allowRetrieval` refuses, or to a schema
- * that has problems of its own, isn't. See `findSchema`.
+ * that has problems of its own, isn't. See `FindSchemaResult`.
  *
  * It needs the schema to be resolved first (`jsonSchemaResolve`), and
  * otherwise does nothing. It has no options.

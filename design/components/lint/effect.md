@@ -6,8 +6,8 @@ value. Whether a keyword does anything comes from what it lowers to.
 or `some`.
 
 - It follows what a group applies, so a schema with no effect counts as
-  `true`. References are followed with `findSchema`, into other documents
-  too. One that can't be followed is `some`.
+  `true`. References are followed to what they found (`LintDocument.found`),
+  into other documents too. One that can't be followed is `some`.
 - Otherwise it's conservative: `any` or `one` with a schema that has an
   effect, and what a schema applied to a property or an item marks, are
   `some`.

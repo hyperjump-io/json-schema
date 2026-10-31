@@ -55,8 +55,8 @@
 - Utilities in `src/lint/` keep rules short: visit every schema, visit every
   keyword by URI, get a sibling keyword, and find what a reference points
   to. They know nothing about particular keywords. A rule that needs to
-  know what a keyword means reads what it lowers to (`lowerForLint`;
-  "Lowering for lint"): which types it applies to and can pass, its
+  know what a keyword means reads what it lowers to
+  (`LintDocument.schemas`; "Lowering for lint"): which types it applies to and can pass, its
   operations, its `typeIs`, and what applies to a property (`analysis.js`),
   its limits (`bounds.js`), the properties every valid object has
   (`required-properties.js`), what it does (`effect.js`), whether a

@@ -1,6 +1,6 @@
 import { operationsOf } from "../analysis.js";
+import { documentForLint } from "../document.js";
 import { lintRule } from "../lint-rule.js";
-import { lowerForLint } from "../lower.js";
 
 /**
  * @import { JsonSchemaDocumentNode } from "../../schema/schema-ast.d.ts"
@@ -13,12 +13,12 @@ import { lowerForLint } from "../lower.js";
  * @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void>
  */
 const minContainsZeroWithoutMaxContains = lintRule({ origin: "json-schema-lint:min-contains-zero-without-max-contains", url: "https://hyperjump.io/json-schema/linting/rules/min-contains-zero-without-max-contains/" }, async (tree, file) => {
-  const session = file.data.jsonSchemaSession;
-  if (session === undefined) {
+  const document = await documentForLint(tree, file);
+  if (document === undefined) {
     return;
   }
 
-  for (const keywords of (await lowerForLint(session, tree)).values()) {
+  for (const keywords of document.schemas.values()) {
     for (const { group, keywordNode, cameFrom } of keywords) {
       for (const operation of operationsOf(group.expression)) {
         if (operation.op !== "contains" || operation.min !== 0 || operation.max !== null) {

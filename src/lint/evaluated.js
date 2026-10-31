@@ -3,8 +3,8 @@ import { appliedSchemas } from "./applied.js";
 
 /**
  * @import { Expression } from "../kernel/kernel.d.ts"
- * @import { JsonSchemaDocumentNode, JsonSchemaNode } from "../schema/schema-ast.d.ts"
- * @import { JsonSchemaSession } from "../session.d.ts"
+ * @import { JsonSchemaNode } from "../schema/schema-ast.d.ts"
+ * @import { LintDocument } from "./document.d.ts"
  * @import { LoweredKeyword } from "./lower.d.ts"
  */
 
@@ -110,21 +110,21 @@ export const marksRead = (expression) => {
  * an `opaque` operation, a dynamic reference, or a reference that can't be
  * followed applies, aren't counted.
  *
- * @type (session: JsonSchemaSession, tree: JsonSchemaDocumentNode, schemaNode: JsonSchemaNode, reader: LoweredKeyword, children: Children) => Promise<boolean>
+ * @type (document: LintDocument, schemaNode: JsonSchemaNode, reader: LoweredKeyword, children: Children) => boolean
  */
-export const marksEvery = async (session, tree, schemaNode, reader, children) => {
-  const { keywordsOf, find, appliedBy } = await appliedSchemas(session, tree);
+export const marksEvery = (document, schemaNode, reader, children) => {
+  const { keywordsOf, find, appliedBy } = appliedSchemas(document);
   const intersect = intersection(children);
 
   /** @type Set<JsonSchemaNode> */
   const following = new Set();
 
-  /** @type (node: JsonSchemaNode | undefined) => Promise<Marked> */
-  const ofSchema = async (node) => {
+  /** @type (node: JsonSchemaNode | undefined) => Marked */
+  const ofSchema = (node) => {
     if (node === undefined) {
       return nothing();
     } else if (node.type === "reference") {
-      return ofSchema(await find(node.href));
+      return ofSchema(find(node.href));
     }
 
     const keywords = keywordsOf(node);
@@ -136,32 +136,32 @@ export const marksEvery = async (session, tree, schemaNode, reader, children) =>
     let marked = nothing();
     for (const keyword of keywords) {
       if (keyword !== reader) {
-        marked = union(marked, await ofKeyword(keyword));
+        marked = union(marked, ofKeyword(keyword));
       }
     }
     following.delete(node);
     return marked;
   };
 
-  /** @type (keyword: LoweredKeyword) => Promise<Marked> */
-  const ofKeyword = async (keyword) => {
+  /** @type (keyword: LoweredKeyword) => Marked */
+  const ofKeyword = (keyword) => {
     const applied = appliedBy(keyword);
 
-    /** @type (expressions: Expression[], combine: (a: Marked, b: Marked) => Marked) => Promise<Marked> */
-    const combined = async (expressions, combine) => {
+    /** @type (expressions: Expression[], combine: (a: Marked, b: Marked) => Marked) => Marked */
+    const combined = (expressions, combine) => {
       if (expressions.length === 0) {
         return nothing();
       }
 
-      let marked = await ofExpression(expressions[0]);
+      let marked = ofExpression(expressions[0]);
       for (const expression of expressions.slice(1)) {
-        marked = combine(marked, await ofExpression(expression));
+        marked = combine(marked, ofExpression(expression));
       }
       return marked;
     };
 
-    /** @type (expression: Expression) => Promise<Marked> */
-    const ofExpression = async (expression) => {
+    /** @type (expression: Expression) => Marked */
+    const ofExpression = (expression) => {
       switch (expression.op) {
         case "all":
           return combined(expression.of, union);
@@ -173,9 +173,9 @@ export const marksEvery = async (session, tree, schemaNode, reader, children) =>
           /** @type Marked[] */
           const branches = [];
           for (const [condition, then] of expression.cases) {
-            branches.push(union(await ofExpression(condition), then === null ? nothing() : await ofExpression(then)));
+            branches.push(union(ofExpression(condition), then === null ? nothing() : ofExpression(then)));
           }
-          branches.push(expression.otherwise === null ? nothing() : await ofExpression(expression.otherwise));
+          branches.push(expression.otherwise === null ? nothing() : ofExpression(expression.otherwise));
           return branches.reduce(intersect);
         }
         case "typeSwitch": {
@@ -186,7 +186,7 @@ export const marksEvery = async (session, tree, schemaNode, reader, children) =>
         case "keySwitch":
           return combined(subexpressions(expression), intersect);
         case "apply":
-          return ofSchema(await applied(expression.schema));
+          return ofSchema(applied(expression.schema));
         case "property":
           return { ...nothing(), names: new Set([expression.name]) };
         case "eachProperty": {
@@ -215,5 +215,5 @@ export const marksEvery = async (session, tree, schemaNode, reader, children) =>
     return ofExpression(keyword.group.expression);
   };
 
-  return isAll(await ofSchema(schemaNode), children);
+  return isAll(ofSchema(schemaNode), children);
 };

@@ -85,6 +85,6 @@ value is a `json` node with the resolved URI as `href`. A draft-04 to
 draft-07 `$ref` is a `reference` node with `href`.
 
 Follow references in the session the document is in. That way you only
-reach what its registry and `allowRetrieval` allow. In a lint rule, the
-session is `file.data.jsonSchemaSession`.
-[`findSchema`](lint-rules.md#looking-at-other-schemas) does this for you.
+reach what its registry and `allowRetrieval` allow. In a lint rule,
+[`documentForLint`](lint-rules.md#the-document-and-what-it-reaches) has
+already followed them for you.

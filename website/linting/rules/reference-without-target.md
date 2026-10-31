@@ -10,8 +10,7 @@ one.
 
 Only targets that are certainly missing are reported. Some targets can't
 be checked, so they aren't reported. That includes a URL that
-`allowRetrieval` refuses and a schema that has problems of its own. See
-`findSchema`.
+`allowRetrieval` refuses and a schema that has problems of its own.
 
 It needs the schema to be resolved first with `jsonSchemaResolve`.
 Otherwise it does nothing. It has no options.

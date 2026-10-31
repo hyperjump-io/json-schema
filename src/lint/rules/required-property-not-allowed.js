@@ -1,7 +1,7 @@
 import { allowsNothing } from "../allows-nothing.js";
 import { operationsOf, propertyOperations } from "../analysis.js";
+import { documentForLint } from "../document.js";
 import { lintRule } from "../lint-rule.js";
-import { lowerForLint } from "../lower.js";
 import { nodeFor, visitSchemas } from "../utilities.js";
 
 /**
@@ -16,12 +16,12 @@ import { nodeFor, visitSchemas } from "../utilities.js";
  * @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void>
  */
 const requiredPropertyNotAllowed = lintRule({ origin: "json-schema-lint:required-property-not-allowed", url: "https://hyperjump.io/json-schema/linting/rules/required-property-not-allowed/" }, async (tree, file) => {
-  const session = file.data.jsonSchemaSession;
-  if (session === undefined) {
+  const document = await documentForLint(tree, file);
+  if (document === undefined) {
     return;
   }
 
-  const lowered = await lowerForLint(session, tree);
+  const lowered = document.schemas;
 
   /** @type Map<string, JsonSchemaNode> */
   const schemaNodes = new Map();

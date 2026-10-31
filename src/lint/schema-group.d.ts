@@ -1,5 +1,5 @@
-import type { JsonSchemaSession } from "../session.d.ts";
-import type { JsonSchemaDocumentNode, JsonSchemaNode } from "../schema/schema-ast.d.ts";
+import type { JsonSchemaNode } from "../schema/schema-ast.d.ts";
+import type { LintDocument } from "./document.d.ts";
 
 /**
  * A schema that applies another to the same instance, found from the
@@ -55,20 +55,17 @@ export type SchemaGroup = {
  * They're the schemas connected to it through keywords that apply a schema
  * in place, like `allOf`, `anyOf`, and `if`, and through references, in
  * either direction. Which keywords do is found from what they lower to
- * (`lowerForLint`): a schema applied by `apply` outside the operations on a
- * property or an item. A schema an `opaque` operation applies isn't linked,
- * because where it applies isn't known. A reference to another document is
- * followed if the session can find it, along with what that schema applies
- * in place. What references a schema from another document isn't known,
- * which is what `open` says.
+ * (`LintDocument.reached`): a schema applied by `apply` outside the
+ * operations on a property or an item. A schema an `opaque` operation
+ * applies isn't linked, because where it applies isn't known. A reference
+ * to another document is followed if it found something, along with what
+ * that schema applies in place. What references a schema from another
+ * document isn't known, which is what `open` says.
  *
- * Pass the session the schema was resolved in
- * (`file.data.jsonSchemaSession`). Without it, nothing is lowered, so the
- * group is only the schema, and `unknown`. What's found for a document is
- * shared by every rule that uses it, and every schema in a group gets the
- * same group.
+ * What's found for a document is shared by every rule that uses it, and
+ * every schema in a group gets the same group.
  */
-export const schemaGroup: (session: JsonSchemaSession | undefined, tree: JsonSchemaDocumentNode, schemaNode: JsonSchemaNode) => Promise<SchemaGroup>;
+export const schemaGroup: (document: LintDocument, schemaNode: JsonSchemaNode) => SchemaGroup;
 
 /**
  * Whether a schema in a group is applied through an odd number of `not`s,
@@ -87,4 +84,4 @@ export const isNegated: (group: SchemaGroup, schemaNode: JsonSchemaNode) => bool
  * applied with an `unevaluated*` from another document too, which this
  * doesn't count.
  */
-export const marksAreRead: (session: JsonSchemaSession, tree: JsonSchemaDocumentNode, group: SchemaGroup) => Promise<boolean>;
+export const marksAreRead: (document: LintDocument, group: SchemaGroup) => boolean;

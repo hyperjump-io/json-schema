@@ -7,12 +7,13 @@ import { SchemaRegistry } from "../registry/schema-registry.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
 import { draft07Dialect } from "../dialects/draft-07/index.js";
 import { draft202012Dialect } from "../dialects/draft-2020-12/index.js";
+import { documentForLint } from "./document.js";
 import { isNegated, schemaGroup } from "./schema-group.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
  * @import { JsonSchemaDocumentNode, JsonSchemaNode } from "../schema/schema-ast.d.ts"
- * @import { JsonSchemaSession } from "../session.d.ts"
+ * @import { LintDocument } from "./document.d.ts"
  * @import { SchemaGroup } from "./schema-group.d.ts"
  * @import { Expression } from "../kernel/kernel.d.ts"
  * @import { Reference } from "../keyword.d.ts"
@@ -24,11 +25,11 @@ const opaqueDialect = "https://example.com/opaque-dialect";
 
 describe("schemaGroup", () => {
   test("schemas applied in place, in both directions", async () => {
-    const { session, tree, at } = await resolve({
+    const { document, at } = await resolve({
       $schema: draft2020,
       properties: { foo: { anyOf: [{ required: ["a"] }, { not: {} }] } }
     });
-    const group = await schemaGroup(session, tree, at("/properties/foo/anyOf/0"));
+    const group = schemaGroup(document, at("/properties/foo/anyOf/0"));
 
     expect(locations(group)).to.eql(["#/properties/foo", "#/properties/foo/anyOf/0", "#/properties/foo/anyOf/1", "#/properties/foo/anyOf/1/not"]);
     expect(group.links).to.have.length(3);
@@ -38,27 +39,27 @@ describe("schemaGroup", () => {
   });
 
   test("a schema in $defs that nothing references isn't applied", async () => {
-    const { session, tree, at } = await resolve({ $schema: draft2020, $defs: { a: { allOf: [true] } } });
-    const group = await schemaGroup(session, tree, at("/$defs/a/allOf/0"));
+    const { document, at } = await resolve({ $schema: draft2020, $defs: { a: { allOf: [true] } } });
+    const group = schemaGroup(document, at("/$defs/a/allOf/0"));
 
     expect(group.open).to.equal(true);
     expect(group.applied).to.equal(false);
   });
 
   test("a schema's children that apply to something else aren't in its group", async () => {
-    const { session, tree, at } = await resolve({ $schema: draft2020, properties: { foo: { items: {} } } });
-    const group = await schemaGroup(session, tree, at("/properties/foo"));
+    const { document, at } = await resolve({ $schema: draft2020, properties: { foo: { items: {} } } });
+    const group = schemaGroup(document, at("/properties/foo"));
 
     expect(locations(group)).to.eql(["#/properties/foo"]);
   });
 
   test("references, in both directions", async () => {
-    const { session, tree, at } = await resolve({
+    const { document, at } = await resolve({
       $schema: draft2020,
       properties: { foo: { $ref: "#/$defs/a" } },
       $defs: { a: { allOf: [true] } }
     });
-    const group = await schemaGroup(session, tree, at("/$defs/a/allOf/0"));
+    const group = schemaGroup(document, at("/$defs/a/allOf/0"));
 
     expect(locations(group)).to.eql(["#/$defs/a", "#/$defs/a/allOf/0", "#/properties/foo"]);
     expect(links(group)).to.eql(["a allOf 0", "foo ref a reference"]);
@@ -67,8 +68,8 @@ describe("schemaGroup", () => {
   });
 
   test("a reference to another document", async () => {
-    const { session, tree, at } = await resolve({ $schema: draft2020, properties: { foo: { $ref: "https://example.com/other" } } });
-    const group = await schemaGroup(session, tree, at("/properties/foo"));
+    const { document, at } = await resolve({ $schema: draft2020, properties: { foo: { $ref: "https://example.com/other" } } });
+    const group = schemaGroup(document, at("/properties/foo"));
 
     expect(group.schemas.map((schemaNode) => schemaNode.location)).to.eql([
       "file:///schemas/a.schema.json#/properties/foo",
@@ -80,51 +81,44 @@ describe("schemaGroup", () => {
   });
 
   test("the root can be applied from another document", async () => {
-    const { session, tree, at } = await resolve({ $schema: draft2020, required: ["a"] });
-    const group = await schemaGroup(session, tree, at(""));
+    const { document, at } = await resolve({ $schema: draft2020, required: ["a"] });
+    const group = schemaGroup(document, at(""));
     expect(group.open).to.equal(true);
     expect(group.applied).to.equal(true);
   });
 
   test("a reference that can't be followed", async () => {
-    const { session, tree, at } = await resolve({ $schema: draft2020, $ref: "https://example.com/nope" });
-    expect((await schemaGroup(session, tree, at(""))).unknown).to.equal(true);
+    const { document, at } = await resolve({ $schema: draft2020, $ref: "https://example.com/nope" });
+    expect(schemaGroup(document, at("")).unknown).to.equal(true);
   });
 
   test("a dynamic reference", async () => {
-    const { session, tree, at } = await resolve({ $schema: draft2020, $dynamicAnchor: "a", $dynamicRef: "#a" });
-    expect((await schemaGroup(session, tree, at(""))).unknown).to.equal(true);
+    const { document, at } = await resolve({ $schema: draft2020, $dynamicAnchor: "a", $dynamicRef: "#a" });
+    expect(schemaGroup(document, at("")).unknown).to.equal(true);
   });
 
   test("a dynamic reference that doesn't use the dynamic scope", async () => {
     // Without a dynamic anchor named by its fragment, it's like `$ref`
-    const { session, tree, at } = await resolve({ $schema: draft2020, $defs: { a: {} }, $dynamicRef: "#/$defs/a" });
-    const group = await schemaGroup(session, tree, at(""));
+    const { document, at } = await resolve({ $schema: draft2020, $defs: { a: {} }, $dynamicRef: "#/$defs/a" });
+    const group = schemaGroup(document, at(""));
     expect(group.unknown).to.equal(false);
     expect(locations(group)).to.eql(["#", "#/$defs/a"]);
   });
 
-  test("without a session, nothing is linked", async () => {
-    const { tree, at } = await resolve({ $schema: draft2020, $defs: { a: {} }, $ref: "#/$defs/a", allOf: [true] });
-    const group = await schemaGroup(undefined, /** @type any */ ({ ...tree }), at(""));
-    expect(locations(group)).to.eql(["#"]);
-    expect(group.unknown).to.equal(true);
-  });
-
   test("a draft-07 reference", async () => {
-    const { session, tree, at } = await resolve({
+    const { document, at } = await resolve({
       $schema: "http://json-schema.org/draft-07/schema#",
       definitions: { a: { type: "string" } },
       properties: { foo: { $ref: "#/definitions/a" } }
     });
-    const group = await schemaGroup(session, tree, at("/properties/foo"));
+    const group = schemaGroup(document, at("/properties/foo"));
 
     expect(locations(group)).to.eql(["#/definitions/a", "#/properties/foo"]);
     expect(group.links.map(({ keywordUri }) => keywordUri)).to.eql([`${keyword}/draft-07/ref`]);
   });
 
   test("which keywords apply schemas in place is found from what they lower to", async () => {
-    const { session, tree, at } = await resolve({
+    const { document, at } = await resolve({
       $schema: draft2020,
       if: true,
       then: true,
@@ -133,7 +127,7 @@ describe("schemaGroup", () => {
       dependentSchemas: { a: true },
       contains: true
     });
-    const group = await schemaGroup(session, tree, at(""));
+    const group = schemaGroup(document, at(""));
 
     // The schema `if` applies as a condition is in `if`, and the ones it
     // applies after it are in `then` and `else`
@@ -142,8 +136,8 @@ describe("schemaGroup", () => {
   });
 
   test("a `then` without an `if` isn't applied", async () => {
-    const { session, tree, at } = await resolve({ $schema: draft2020, then: { required: ["a"] } });
-    const group = await schemaGroup(session, tree, at("/then"));
+    const { document, at } = await resolve({ $schema: draft2020, then: { required: ["a"] } });
+    const group = schemaGroup(document, at("/then"));
 
     expect(locations(group)).to.eql(["#/then"]);
     expect(group.open).to.equal(true);
@@ -151,79 +145,79 @@ describe("schemaGroup", () => {
   });
 
   test("a schema that's only annotated isn't applied", async () => {
-    const { session, tree, at } = await resolve({ $schema: draft2020, contentMediaType: "application/json", contentSchema: { required: ["a"] } });
-    const group = await schemaGroup(session, tree, at("/contentSchema"));
+    const { document, at } = await resolve({ $schema: draft2020, contentMediaType: "application/json", contentSchema: { required: ["a"] } });
+    const group = schemaGroup(document, at("/contentSchema"));
 
     expect(locations(group)).to.eql(["#/contentSchema"]);
     expect(group.applied).to.equal(false);
   });
 
   test("a reference to a schema's own definitions leaves the definition open", async () => {
-    const { session, tree, at } = await resolve({ $schema: draft2020, $ref: "#/$defs/a", $defs: { a: true } });
-    const group = await schemaGroup(session, tree, at("/$defs/a"));
+    const { document, at } = await resolve({ $schema: draft2020, $ref: "#/$defs/a", $defs: { a: true } });
+    const group = schemaGroup(document, at("/$defs/a"));
 
     expect(links(group)).to.eql(["# ref a reference"]);
     expect(group.open).to.equal(true);
   });
 
   test("where an opaque operation applies its schemas isn't known", async () => {
-    const { session, tree, at } = await resolve({
+    const { document, at } = await resolve({
       $schema: opaqueDialect,
       firstOf: [{ required: ["a"] }],
       allOf: [{ firstOf: [{ $ref: "#/$defs/a" }] }],
       $defs: { a: true }
     });
 
-    const root = await schemaGroup(session, tree, at(""));
+    const root = schemaGroup(document, at(""));
     expect(locations(root)).to.eql(["#", "#/allOf/0"]);
     expect(root.unknown).to.equal(false);
 
     // The schema isn't linked to the schema it's in
-    const first = await schemaGroup(session, tree, at("/firstOf/0"));
+    const first = schemaGroup(document, at("/firstOf/0"));
     expect(locations(first)).to.eql(["#/firstOf/0"]);
     expect(first.open).to.equal(true);
 
     // What's in it is still followed
-    const nested = await schemaGroup(session, tree, at("/allOf/0/firstOf/0"));
+    const nested = schemaGroup(document, at("/allOf/0/firstOf/0"));
     expect(locations(nested)).to.eql(["#/$defs/a", "#/allOf/0/firstOf/0"]);
   });
 
   test("a reference an opaque operation applies can't be followed", async () => {
-    const { session, tree, at } = await resolve({ $schema: opaqueDialect, opaqueRef: "#/$defs/a", $defs: { a: true } });
-    const group = await schemaGroup(session, tree, at(""));
+    const { document, at } = await resolve({ $schema: opaqueDialect, opaqueRef: "#/$defs/a", $defs: { a: true } });
+    const group = schemaGroup(document, at(""));
     expect(locations(group)).to.eql(["#"]);
     expect(group.unknown).to.equal(true);
   });
 
   test("every schema in a group gets the same group", async () => {
-    const { session, tree, at } = await resolve({ $schema: draft2020, properties: { foo: { allOf: [true] } } });
-    expect(await schemaGroup(session, tree, at("/properties/foo/allOf/0"))).to.equal(await schemaGroup(session, tree, at("/properties/foo")));
+    const { document, at } = await resolve({ $schema: draft2020, properties: { foo: { allOf: [true] } } });
+    expect(schemaGroup(document, at("/properties/foo/allOf/0"))).to.equal(schemaGroup(document, at("/properties/foo")));
   });
   test("isNegated counts the nots a schema is applied through", async () => {
-    const { session, tree, at } = await resolve({
+    const { document, at } = await resolve({
       $schema: draft2020,
       not: { allOf: [{ not: { anyOf: [true] } }] },
       properties: { foo: { not: true } }
     });
-    const group = await schemaGroup(session, tree, at(""));
+    const group = schemaGroup(document, at(""));
 
     expect(isNegated(group, at(""))).to.equal(false);
     expect(isNegated(group, at("/not/allOf/0"))).to.equal(true);
     expect(isNegated(group, at("/not/allOf/0/not/anyOf/0"))).to.equal(false);
-    expect(isNegated(await schemaGroup(session, tree, at("/properties/foo/not")), at("/properties/foo/not"))).to.equal(true);
+    expect(isNegated(schemaGroup(document, at("/properties/foo/not")), at("/properties/foo/not"))).to.equal(true);
   });
 
   test("isNegated doesn't follow references", async () => {
     // What a reference refers to can be applied from elsewhere too
-    const { session, tree, at } = await resolve({ $schema: draft2020, not: { $ref: "#/$defs/a" }, $defs: { a: true } });
-    const group = await schemaGroup(session, tree, at("/$defs/a"));
+    const { document, at } = await resolve({ $schema: draft2020, not: { $ref: "#/$defs/a" }, $defs: { a: true } });
+    const group = schemaGroup(document, at("/$defs/a"));
 
     expect(isNegated(group, at("/not"))).to.equal(true);
     expect(isNegated(group, at("/$defs/a"))).to.equal(false);
   });
 });
 
-/** @type (schema: Record<string, Json>) => Promise<{ session: JsonSchemaSession; tree: JsonSchemaDocumentNode; at: (pointer: string) => JsonSchemaNode }> */
+/** @type (schema: Record<string, Json>) => Promise<{ document: LintDocument; at: (pointer: string) => JsonSchemaNode }> */
 const resolve = async (schema) => {
   const jsonSchema = new JsonSchema({
     dialects: [draft07Dialect, draft202012Dialect, {
@@ -265,7 +259,8 @@ const resolve = async (schema) => {
     .use(jsonSchemaResolve, { session });
   const tree = /** @type JsonSchemaDocumentNode */ (/** @type unknown */ (await processor.run(processor.parse(file), file)));
   const root = /** @type JsonSchemaNode */ (tree.children[0]);
-  return { session, tree, at: (pointer) => /** @type JsonSchemaNode */ (pointerGet(pointer, root)) };
+  const document = /** @type LintDocument */ (await documentForLint(tree, file));
+  return { document, at: (pointer) => /** @type JsonSchemaNode */ (pointerGet(pointer, root)) };
 };
 
 /** @type (group: SchemaGroup) => string[] */

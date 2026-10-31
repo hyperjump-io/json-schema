@@ -1,8 +1,8 @@
 import { allowsNothing } from "../allows-nothing.js";
 import { keywordApplying } from "../applied.js";
 import { second } from "../bounds.js";
+import { documentForLint } from "../document.js";
 import { lintRule } from "../lint-rule.js";
-import { lowerForLint } from "../lower.js";
 import { visitSchemas } from "../utilities.js";
 
 /**
@@ -18,8 +18,8 @@ import { visitSchemas } from "../utilities.js";
  * @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void>
  */
 const falseThenElse = lintRule({ origin: "json-schema-lint:false-then-else", url: "https://hyperjump.io/json-schema/linting/rules/false-then-else/" }, async (tree, file) => {
-  const session = file.data.jsonSchemaSession;
-  if (session === undefined) {
+  const document = await documentForLint(tree, file);
+  if (document === undefined) {
     return;
   }
 
@@ -29,7 +29,7 @@ const falseThenElse = lintRule({ origin: "json-schema-lint:false-then-else", url
     schemaNodes.set(schemaNode.location, schemaNode);
   });
 
-  const lowered = await lowerForLint(session, tree);
+  const lowered = document.schemas;
   for (const keywords of lowered.values()) {
     for (const keyword of keywords) {
       const { expression } = keyword.group;

@@ -1,28 +1,28 @@
 import type { JsonType } from "@hyperjump/browser/json";
-import type { JsonSchema } from "../json-schema.d.ts";
 import type { Expression, Selector, TypeName } from "../kernel/kernel.d.ts";
 import type { JsonSchemaKeywordNode } from "../schema/schema-ast.d.ts";
+import type { LintDocument } from "./document.d.ts";
 import type { LoweredKeyword } from "./lower.d.ts";
 
 /**
  * The types of value an expression applies to: the ones it can fail, mark,
  * or annotate on. It's what a keyword applies to, from what it lowers to
- * (`lowerForLint`), instead of from its URI. A schema it applies isn't
+ * (`LintDocument.schemas`), instead of from its URI. A schema it applies isn't
  * looked into, so it could be about any type. A case only applies where its
  * condition can pass. A keyword with no effect in its schema, like
  * `uniqueItems: false` or `properties: {}`, applies to nothing. A format
  * applies to the types its definition says, if it's known.
  */
-export const appliesTo: (jsonSchema: JsonSchema, expression: Expression) => Set<JsonType>;
+export const appliesTo: (document: LintDocument, expression: Expression) => Set<JsonType>;
 
 /**
  * The types of value a keyword applies to ({@link appliesTo}), in a schema
- * whose keywords are `keywords` (from `lowerForLint`): what its group applies
+ * whose keywords are `keywords` (from `LintDocument.schemas`): what its group applies
  * to, and what the groups that read it as a sibling do, like draft-04's
  * `exclusiveMaximum`, which `maximum` reads. They're in the order `null`,
  * `boolean`, `number`, `string`, `array`, `object`.
  */
-export const keywordAppliesTo: (jsonSchema: JsonSchema, keywords: LoweredKeyword[], keywordNode: JsonSchemaKeywordNode) => JsonType[];
+export const keywordAppliesTo: (document: LintDocument, keywords: LoweredKeyword[], keywordNode: JsonSchemaKeywordNode) => JsonType[];
 
 /** The types of value an expression can pass, as far as it's known without applying a schema */
 export const canPass: (expression: Expression) => Set<JsonType>;
@@ -39,7 +39,7 @@ export const operationsOf: (expression: Expression) => Expression[];
 
 /**
  * The keywords in a schema whose keywords are `keywords` (from
- * `lowerForLint`) that lower to `typeIs`, each with its types, and the
+ * `LintDocument.schemas`) that lower to `typeIs`, each with its types, and the
  * types they all allow, so a rule about `type` works with any keyword that
  * says the same, and with more than one. `number` allows `integer`, so
  * `number` and `["integer", "string"]` allow `integer`. Keywords that allow
@@ -60,7 +60,7 @@ export const typeIsOf: (keywords: LoweredKeyword[]) => {
 export const selects: (select: Selector, name: string) => boolean | undefined;
 
 /**
- * What the keywords of a schema (from `lowerForLint`) apply to a property
+ * What the keywords of a schema (from `LintDocument.schemas`) apply to a property
  * with the given name: `property` for the name, and `eachProperty` with a
  * selector that selects it, each with its keyword. An `unevaluated`
  * selector isn't included, because what it selects depends on what's

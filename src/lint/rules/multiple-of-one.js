@@ -1,7 +1,7 @@
 import { operationsOf, typeIsOf } from "../analysis.js";
 import { namesOf } from "../bounds.js";
+import { documentForLint } from "../document.js";
 import { lintRule } from "../lint-rule.js";
-import { lowerForLint } from "../lower.js";
 
 /**
  * @import { JsonSchemaDocumentNode } from "../../schema/schema-ast.d.ts"
@@ -15,12 +15,12 @@ import { lowerForLint } from "../lower.js";
  * @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void>
  */
 const multipleOfOne = lintRule({ origin: "json-schema-lint:multiple-of-one", url: "https://hyperjump.io/json-schema/linting/rules/multiple-of-one/" }, async (tree, file) => {
-  const session = file.data.jsonSchemaSession;
-  if (session === undefined) {
+  const document = await documentForLint(tree, file);
+  if (document === undefined) {
     return;
   }
 
-  for (const keywords of (await lowerForLint(session, tree)).values()) {
+  for (const keywords of document.schemas.values()) {
     // Without `type`, other types are valid, so it can't be replaced
     const type = typeIsOf(keywords);
     if (type === undefined) {

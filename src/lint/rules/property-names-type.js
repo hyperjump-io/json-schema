@@ -1,6 +1,6 @@
 import { operationsOf, typeIsOf } from "../analysis.js";
+import { documentForLint } from "../document.js";
 import { lintRule } from "../lint-rule.js";
-import { lowerForLint } from "../lower.js";
 
 /**
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode } from "../../schema/schema-ast.d.ts"
@@ -15,12 +15,12 @@ import { lowerForLint } from "../lower.js";
  * @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void>
  */
 const propertyNamesType = lintRule({ origin: "json-schema-lint:property-names-type", url: "https://hyperjump.io/json-schema/linting/rules/property-names-type/" }, async (tree, file) => {
-  const session = file.data.jsonSchemaSession;
-  if (session === undefined) {
+  const document = await documentForLint(tree, file);
+  if (document === undefined) {
     return;
   }
 
-  const lowered = await lowerForLint(session, tree);
+  const lowered = document.schemas;
 
   /** @type Map<string, LoweredKeyword[]> */
   const schemas = new Map([...lowered].map(([schemaNode, keywords]) => [schemaNode.location, keywords]));

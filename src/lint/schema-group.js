@@ -1,11 +1,10 @@
 import { readsMarks, subexpressions } from "../kernel/kernel.js";
-import { findSchema } from "./find-schema.js";
-import { lowerForLint } from "./lower.js";
+import { appliedSchemas } from "./applied.js";
 
 /**
  * @import { Expression } from "../kernel/kernel.d.ts"
- * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode } from "../schema/schema-ast.d.ts"
- * @import { JsonSchemaSession } from "../session.d.ts"
+ * @import { JsonSchemaKeywordNode, JsonSchemaNode } from "../schema/schema-ast.d.ts"
+ * @import { LintDocument } from "./document.d.ts"
  * @import { LoweredKeyword } from "./lower.d.ts"
  * @import * as API from "./schema-group.d.ts"
  */
@@ -35,41 +34,34 @@ const childOps = new Set(["item", "eachItem", "contains", "property", "eachPrope
  *   positions: Map<JsonSchemaNode, JsonSchemaNode | undefined>;
  *   referrers: Map<JsonSchemaNode, API.SchemaLink[]>;
  *   applications: (schemaNode: JsonSchemaNode) => Applications;
- *   find: (uri: string) => Promise<JsonSchemaNode | undefined>;
- *   groups: Map<JsonSchemaNode, Promise<API.SchemaGroup>>;
+ *   find: (uri: string) => JsonSchemaNode | undefined;
+ *   groups: Map<JsonSchemaNode, API.SchemaGroup>;
  * }} Context
  */
 
 /**
  * Where each schema in a document is, and which schemas in it refer to it.
- * It's found once for each tree, so rules share it.
+ * It's found once for each document, so rules share it.
  *
- * @type WeakMap<JsonSchemaDocumentNode, Promise<Context>>
+ * @type WeakMap<LintDocument, Context>
  */
 const contexts = new WeakMap();
 
 /** @type API.schemaGroup */
-export const schemaGroup = async (session, tree, schemaNode) => {
-  if (session === undefined) {
-    // Without a session, nothing can be lowered, so what the schema applies
-    // isn't known
-    return { schemas: [schemaNode], links: [], open: true, applied: false, unknown: true };
-  }
-
-  let context = contexts.get(tree);
+export const schemaGroup = (document, schemaNode) => {
+  let context = contexts.get(document);
   if (context === undefined) {
-    context = buildContext(session, tree);
-    contexts.set(tree, context);
+    context = buildContext(document);
+    contexts.set(document, context);
   }
-  const resolved = await context;
 
-  let group = resolved.groups.get(schemaNode);
+  let group = context.groups.get(schemaNode);
   if (group === undefined) {
-    group = buildGroup(schemaNode, resolved);
-    resolved.groups.set(schemaNode, group);
-    for (const member of (await group).schemas) {
-      resolved.groups.set(member, group);
+    group = buildGroup(schemaNode, context);
+    for (const member of group.schemas) {
+      context.groups.set(member, group);
     }
+    context.groups.set(schemaNode, group);
   }
 
   return group;
@@ -89,10 +81,9 @@ export const isNegated = (group, schemaNode) => {
 };
 
 /** @type API.marksAreRead */
-export const marksAreRead = async (session, tree, group) => {
-  const lowered = await lowerForLint(session, tree);
+export const marksAreRead = (document, group) => {
   return group.unknown || group.schemas.some((node) => {
-    const keywords = lowered.get(node);
+    const keywords = document.schemas.get(node);
     return keywords === undefined
       ? node.type === "json-schema" && node.jsonType === "object"
       : keywords.some(({ group }) => readsMarks(group.expression));
@@ -192,8 +183,9 @@ const applicationsOf = (schemaNode, lowered) => {
   return applications;
 };
 
-/** @type (session: JsonSchemaSession, tree: JsonSchemaDocumentNode) => Promise<Context> */
-const buildContext = async (session, tree) => {
+/** @type (document: LintDocument) => Context */
+const buildContext = (document) => {
+  const { tree } = document;
   // Each schema's parent schema
   /** @type Map<JsonSchemaNode, JsonSchemaNode | undefined> */
   const positions = new Map();
@@ -218,34 +210,7 @@ const buildContext = async (session, tree) => {
     walk(/** @type TreeNode */ (child), undefined);
   }
 
-  // What every schema lowers to, from this document or the one a reference
-  // found it in
-  /** @type Map<JsonSchemaNode, LoweredKeyword[]> */
-  const lowered = new Map(await lowerForLint(session, tree));
-  /** @type WeakSet<JsonSchemaDocumentNode> */
-  const loweredDocuments = new WeakSet([tree]);
-
-  /** @type Map<string, Promise<JsonSchemaNode | undefined>> */
-  const targets = new Map();
-  /** @type (uri: string) => Promise<JsonSchemaNode | undefined> */
-  const find = (uri) => {
-    let target = targets.get(uri);
-    if (target === undefined) {
-      target = findSchema(session, uri, { document: tree }).then(async (result) => {
-        if (result.status !== "found") {
-          return undefined;
-        } else if (!positions.has(result.node) && !loweredDocuments.has(result.document)) {
-          loweredDocuments.add(result.document);
-          for (const [schemaNode, keywords] of await lowerForLint(session, result.document)) {
-            lowered.set(schemaNode, keywords);
-          }
-        }
-        return result.node;
-      });
-      targets.set(uri, target);
-    }
-    return target;
-  };
+  const { find } = appliedSchemas(document);
 
   /** @type Map<JsonSchemaNode, Applications> */
   const cache = new Map();
@@ -253,7 +218,7 @@ const buildContext = async (session, tree) => {
   const applications = (schemaNode) => {
     let result = cache.get(schemaNode);
     if (result === undefined) {
-      result = applicationsOf(schemaNode, lowered.get(schemaNode));
+      result = applicationsOf(schemaNode, document.reached.get(schemaNode));
       cache.set(schemaNode, result);
     }
     return result;
@@ -263,7 +228,7 @@ const buildContext = async (session, tree) => {
   const referrers = new Map();
   for (const schemaNode of positions.keys()) {
     for (const { uri, ...link } of applications(schemaNode).references) {
-      const target = await find(uri);
+      const target = find(uri);
       if (target !== undefined && positions.has(target)) {
         referrers.set(target, [...referrers.get(target) ?? [], { from: schemaNode, to: target, ...link, reference: true }]);
       }
@@ -273,8 +238,8 @@ const buildContext = async (session, tree) => {
   return { positions, referrers, applications, find, groups: new Map() };
 };
 
-/** @type (start: JsonSchemaNode, context: Context) => Promise<API.SchemaGroup> */
-const buildGroup = async (start, { positions, referrers, applications, find }) => {
+/** @type (start: JsonSchemaNode, context: Context) => API.SchemaGroup */
+const buildGroup = (start, { positions, referrers, applications, find }) => {
   /** @type API.SchemaGroup */
   const group = { schemas: [], links: [], open: false, applied: false, unknown: false };
   const seen = new Set([start]);
@@ -328,7 +293,7 @@ const buildGroup = async (start, { positions, referrers, applications, find }) =
       add(to);
     }
     for (const { uri, ...link } of references) {
-      const target = await find(uri);
+      const target = find(uri);
       if (target === undefined) {
         group.unknown = true;
         continue;

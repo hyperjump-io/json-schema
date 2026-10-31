@@ -6,6 +6,7 @@ import { JsonSchema, extendDialect } from "../json-schema.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
 import { draft202012Dialect } from "../dialects/draft-2020-12/index.js";
 import { v1Dialect } from "../dialects/v1/index.js";
+import { documentForLint } from "./document.js";
 import { evaluatorForLint } from "./evaluate.js";
 
 /**
@@ -13,6 +14,7 @@ import { evaluatorForLint } from "./evaluate.js";
  * @import { Expression } from "../kernel/kernel.d.ts"
  * @import { Keyword } from "../keyword.d.ts"
  * @import { JsonSchemaDocumentNode, JsonSchemaNode, JsonSchemaTolerantNode } from "../schema/schema-ast.d.ts"
+ * @import { LintDocument } from "./document.d.ts"
  * @import { LintEvaluation } from "./evaluate.d.ts"
  */
 
@@ -195,7 +197,7 @@ const evaluatorAt = async (schema, pointer = "") => {
     .use(jsonSchemaResolve, { session });
   const tree = /** @type JsonSchemaDocumentNode */ (/** @type unknown */ (await processor.run(processor.parse(file), file)));
   const schemaNode = /** @type JsonSchemaNode */ (pointerGet(pointer, /** @type JsonSchemaNode */ (tree.children[0])));
-  const evaluator = await evaluatorForLint(session, tree);
+  const evaluator = evaluatorForLint(/** @type LintDocument */ (await documentForLint(tree, file)));
 
   return (value) => evaluator.schema(schemaNode, /** @type JsonSchemaTolerantNode */ (/** @type unknown */ (fromJs(value))));
 };

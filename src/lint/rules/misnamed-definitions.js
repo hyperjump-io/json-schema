@@ -1,10 +1,10 @@
 import { encodeIriFragment } from "@hyperjump/uri";
+import { documentForLint } from "../document.js";
 import { lintRule } from "../lint-rule.js";
 import { visitSchemas } from "../utilities.js";
 
 /**
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode } from "../../schema/schema-ast.d.ts"
- * @import { Dialect } from "../../dialect.d.ts"
  */
 
 const definitionsUri = "https://json-schema.org/keyword/definitions";
@@ -12,8 +12,8 @@ const unknownUris = new Set(["definitions", "$defs"].map((name) => `https://json
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
 const misnamedDefinitions = lintRule({ origin: "json-schema-lint:misnamed-definitions", url: "https://hyperjump.io/json-schema/linting/rules/misnamed-definitions/" }, async (tree, file) => {
-  const session = file.data.jsonSchemaSession;
-  if (session === undefined) {
+  const document = await documentForLint(tree, file);
+  if (document === undefined) {
     return;
   }
 
@@ -32,16 +32,13 @@ const misnamedDefinitions = lintRule({ origin: "json-schema-lint:misnamed-defini
     }
   });
 
-  /** @type Map<string, Promise<Dialect>> */
-  const dialects = new Map();
   for (const [keywordNode, dialectUri] of found) {
-    let dialect = dialects.get(dialectUri);
+    const dialect = document.dialects.get(dialectUri);
     if (dialect === undefined) {
-      dialect = session.getDialect(dialectUri);
-      dialects.set(dialectUri, dialect);
+      continue;
     }
 
-    const { keywords, unknownKeywords } = await dialect;
+    const { keywords, unknownKeywords } = dialect;
     // The resolver reports unknown keywords where they aren't allowed
     const definitionsName = Object.keys(keywords).find((name) => keywords[name] === definitionsUri);
     if (unknownKeywords === "error" || definitionsName === undefined) {

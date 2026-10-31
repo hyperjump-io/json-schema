@@ -3,8 +3,8 @@ import { appliedSchemas } from "./applied.js";
 
 /**
  * @import { Expression, Op } from "../kernel/kernel.d.ts"
- * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode } from "../schema/schema-ast.d.ts"
- * @import { JsonSchemaSession } from "../session.d.ts"
+ * @import { JsonSchemaKeywordNode, JsonSchemaNode } from "../schema/schema-ast.d.ts"
+ * @import { LintDocument } from "./document.d.ts"
  * @import { LoweredKeyword } from "./lower.d.ts"
  */
 
@@ -32,26 +32,26 @@ const order = ["none", "marks", "marksAll", "some"];
 
 /**
  * What a keyword's group does, following the schemas it applies, so a
- * schema with no effect is the same as `true`. A reference is followed with
- * `findSchema`, into another document too, and one that can't be followed
- * has `some`. What a schema applied to a property or an item marks is about
+ * schema with no effect is the same as `true`. A reference is followed to
+ * what it found (`LintDocument.found`), into another document too, and one
+ * that can't be followed has `some`. What a schema applied to a property or an item marks is about
  * that property or item, so it's `some` there. With `handle`, it's what a
  * schema the keyword applies (`apply`) does, like `then`'s for `if`.
  *
- * @type (session: JsonSchemaSession, tree: JsonSchemaDocumentNode, keyword: LoweredKeyword, handle?: string) => Promise<Effect>
+ * @type (document: LintDocument, keyword: LoweredKeyword, handle?: string) => Effect
  */
-export const effectOf = async (session, tree, keyword, handle) => {
-  const { keywordsOf, find, appliedBy } = await appliedSchemas(session, tree);
+export const effectOf = (document, keyword, handle) => {
+  const { keywordsOf, find, appliedBy } = appliedSchemas(document);
 
   /** @type Set<JsonSchemaNode> */
   const following = new Set();
 
-  /** @type (node: JsonSchemaNode | undefined) => Promise<Effect> */
-  const ofSchema = async (node) => {
+  /** @type (node: JsonSchemaNode | undefined) => Effect */
+  const ofSchema = (node) => {
     if (node === undefined) {
       return "some";
     } else if (node.type === "reference") {
-      return ofSchema(await find(node.href));
+      return ofSchema(find(node.href));
     } else if (node.jsonType === "boolean") {
       return node.value ? "none" : "some";
     }
@@ -65,55 +65,55 @@ export const effectOf = async (session, tree, keyword, handle) => {
     /** @type Effect[] */
     const effects = [];
     for (const keyword of keywords) {
-      effects.push(await ofKeyword(keyword));
+      effects.push(ofKeyword(keyword));
     }
     following.delete(node);
     return combine(effects);
   };
 
-  /** @type (keyword: LoweredKeyword) => Promise<Effect> */
-  const ofKeyword = async (keyword) => {
+  /** @type (keyword: LoweredKeyword) => Effect */
+  const ofKeyword = (keyword) => {
     const applied = appliedBy(keyword);
 
-    /** @type (handle: string) => Promise<Effect> */
-    const ofApplied = async (handle) => ofSchema(await applied(handle));
+    /** @type (handle: string) => Effect */
+    const ofApplied = (handle) => ofSchema(applied(handle));
 
-    /** @type (expression: Expression) => Promise<Effect> */
-    const ofChild = async (expression) => await ofExpression(expression) === "none" ? "none" : "some";
+    /** @type (expression: Expression) => Effect */
+    const ofChild = (expression) => ofExpression(expression) === "none" ? "none" : "some";
 
     /**
      * Whether a condition never annotates or marks, whether it passes or
      * not
      *
-     * @type (expression: Expression) => Promise<boolean>
+     * @type (expression: Expression) => boolean
      */
-    const isPure = async (expression) => {
+    const isPure = (expression) => {
       switch (expression.op) {
         case "all":
         case "any":
         case "one":
-          return everyAsync(expression.of, isPure);
+          return expression.of.every(isPure);
         case "not":
           return isPure(expression.of);
         case "cases":
-          return await everyAsync(expression.cases, async ([condition, then]) => await isPure(condition) && (then === null || await isPure(then)))
-            && (expression.otherwise === null || await isPure(expression.otherwise));
+          return expression.cases.every(([condition, then]) => isPure(condition) && (then === null || isPure(then)))
+            && (expression.otherwise === null || isPure(expression.otherwise));
         case "typeSwitch":
         case "propertySwitch":
         case "keySwitch":
-          return everyAsync(subexpressions(expression), isPure);
+          return subexpressions(expression).every(isPure);
         case "apply":
-          return await ofApplied(expression.schema) === "none";
+          return ofApplied(expression.schema) === "none";
         default:
           return assertions.has(expression.op);
       }
     };
 
-    /** @type (expression: Expression) => Promise<boolean> */
-    const isNone = async (expression) => await ofExpression(expression) === "none";
+    /** @type (expression: Expression) => boolean */
+    const isNone = (expression) => ofExpression(expression) === "none";
 
-    /** @type (expression: Expression) => Promise<Effect> */
-    const ofExpression = async (expression) => {
+    /** @type (expression: Expression) => Effect */
+    const ofExpression = (expression) => {
       switch (expression.op) {
         case "pass":
           return "none";
@@ -121,39 +121,39 @@ export const effectOf = async (session, tree, keyword, handle) => {
           /** @type Effect[] */
           const effects = [];
           for (const of of expression.of) {
-            effects.push(await ofExpression(of));
+            effects.push(ofExpression(of));
           }
           return combine(effects);
         }
         case "any":
-          return await everyAsync(expression.of, isNone) ? "none" : "some";
+          return expression.of.every(isNone) ? "none" : "some";
         case "one":
-          return expression.of.length === 1 && await isNone(expression.of[0]) ? "none" : "some";
+          return expression.of.length === 1 && isNone(expression.of[0]) ? "none" : "some";
         case "cases": {
           const branches = [...expression.cases.map(([, then]) => then), expression.otherwise];
-          const conditionsArePure = await everyAsync(expression.cases, ([condition]) => isPure(condition));
-          return conditionsArePure && await everyAsync(branches, async (branch) => branch === null || await isNone(branch)) ? "none" : "some";
+          const conditionsArePure = expression.cases.every(([condition]) => isPure(condition));
+          return conditionsArePure && branches.every((branch) => branch === null || isNone(branch)) ? "none" : "some";
         }
         // The branch for the instance applies, without a condition
         case "typeSwitch":
         case "propertySwitch":
         case "keySwitch":
-          return await everyAsync(subexpressions(expression), isNone) ? "none" : "some";
+          return subexpressions(expression).every(isNone) ? "none" : "some";
         case "apply": {
           // What a schema applied in place marks everywhere is still only
           // some of what this keyword's schema marks
-          const effect = await ofApplied(expression.schema);
+          const effect = ofApplied(expression.schema);
           return effect === "marksAll" ? "marks" : effect;
         }
         case "property":
         case "item":
-          return await ofChild(expression.of) === "none" ? "marks" : "some";
+          return ofChild(expression.of) === "none" ? "marks" : "some";
         case "eachProperty":
-          return await ofChild(expression.of) === "none" ? ("pattern" in expression.select ? "marks" : "marksAll") : "some";
+          return ofChild(expression.of) === "none" ? ("pattern" in expression.select ? "marks" : "marksAll") : "some";
         case "eachItem":
-          return await ofChild(expression.of) === "none" ? "marksAll" : "some";
+          return ofChild(expression.of) === "none" ? "marksAll" : "some";
         case "contains":
-          return expression.min === 0 && expression.max === null && await ofChild(expression.of) === "none" ? "marks" : "some";
+          return expression.min === 0 && expression.max === null && ofChild(expression.of) === "none" ? "marks" : "some";
         case "eachPropertyName":
           return ofChild(expression.of);
         default:
@@ -164,7 +164,7 @@ export const effectOf = async (session, tree, keyword, handle) => {
     return ofExpression(keyword.group.expression);
   };
 
-  return handle === undefined ? ofKeyword(keyword) : ofSchema(await appliedBy(keyword)(handle));
+  return handle === undefined ? ofKeyword(keyword) : ofSchema(appliedBy(keyword)(handle));
 };
 
 /**
@@ -178,18 +178,3 @@ export const affectsAReader = (keywords, keywordNode) => keywords
 
 /** @type (effects: Effect[]) => Effect */
 const combine = (effects) => effects.reduce((a, b) => order.indexOf(a) > order.indexOf(b) ? a : b, /** @type Effect */ ("none"));
-
-/**
- * @template T
- * @param {T[]} items
- * @param {(item: T) => Promise<boolean>} predicate
- * @returns {Promise<boolean>}
- */
-const everyAsync = async (items, predicate) => {
-  for (const item of items) {
-    if (!await predicate(item)) {
-      return false;
-    }
-  }
-  return true;
-};

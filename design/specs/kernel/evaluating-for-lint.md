@@ -5,9 +5,10 @@ Lint evaluates the lowered expressions on values in the document, like a
 (`evaluatorForLint` in `src/lint/evaluate.js`). A result is pass, fail, or
 unknown, so a rule reports only what's sure.
 
-- Before evaluating, every schema the document's expressions apply is
-  found: a subschema by its location, and a reference with `findSchema`,
-  lowering the document it's in. Evaluating is then synchronous.
+- Every schema the document's expressions apply is found before
+  evaluating, by `documentForLint`: a subschema by its location, and a
+  reference by what it found, with the document it's in lowered.
+  Evaluating is synchronous.
 - **Unknown** is a reference that can't be followed, a schema whose dialect
   isn't known, `dynamicApply` (the dynamic scope depends on what applies
   the schema), `opaque`, and a schema applied to an instance it's already

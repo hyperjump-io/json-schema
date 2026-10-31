@@ -1,16 +1,17 @@
 import { toAbsoluteIri } from "@hyperjump/uri";
+import { documentForLint } from "../document.js";
 import { lintRule } from "../lint-rule.js";
-import { findSchema } from "../find-schema.js";
 import { visitReferences } from "../utilities.js";
 
 /**
  * @import { JsonSchemaDocumentNode, JsonSchemaNode } from "../../schema/schema-ast.d.ts"
+ * @import { FindSchemaResult } from "../find-schema.d.ts"
  */
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
 const referenceByLocation = lintRule({ origin: "json-schema-lint:reference-by-location", url: "https://hyperjump.io/json-schema/linting/rules/reference-by-location/" }, async (tree, file) => {
-  const session = file.data.jsonSchemaSession;
-  if (session === undefined) {
+  const document = await documentForLint(tree, file);
+  if (document === undefined) {
     // The schema wasn't resolved, so there's nothing to find references in
     return;
   }
@@ -22,7 +23,7 @@ const referenceByLocation = lintRule({ origin: "json-schema-lint:reference-by-lo
   });
 
   for (const [uri, node] of references) {
-    const result = await findSchema(session, uri, { document: tree });
+    const result = /** @type FindSchemaResult */ (document.found.get(uri));
     if (result.status !== "found") {
       continue;
     }
@@ -35,7 +36,7 @@ const referenceByLocation = lintRule({ origin: "json-schema-lint:reference-by-lo
     }
 
     // Only an identifier that finds the schema is one the reference can use
-    const byIdentifier = await findSchema(session, identifier, { document: tree });
+    const byIdentifier = /** @type FindSchemaResult */ (document.found.get(identifier));
     if (byIdentifier.status !== "found") {
       continue;
     }

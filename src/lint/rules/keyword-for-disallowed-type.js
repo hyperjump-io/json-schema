@@ -1,8 +1,8 @@
 import { keywordAppliesTo, typeIsOf } from "../analysis.js";
 import { namesOf } from "../bounds.js";
 import { formatTypes } from "../format-types.js";
+import { documentForLint } from "../document.js";
 import { lintRule } from "../lint-rule.js";
-import { lowerForLint } from "../lower.js";
 
 /**
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode } from "../../schema/schema-ast.d.ts"
@@ -20,12 +20,12 @@ const plurals = {
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
 const keywordForDisallowedType = lintRule({ origin: "json-schema-lint:keyword-for-disallowed-type", url: "https://hyperjump.io/json-schema/linting/rules/keyword-for-disallowed-type/" }, async (tree, file) => {
-  const session = file.data.jsonSchemaSession;
-  if (session === undefined) {
+  const document = await documentForLint(tree, file);
+  if (document === undefined) {
     return;
   }
 
-  for (const [schemaNode, keywords] of await lowerForLint(session, tree)) {
+  for (const [schemaNode, keywords] of document.schemas) {
     const type = typeIsOf(keywords);
     // If they allow no type together, every keyword would be reported
     if (type === undefined || type.types.size === 0 || schemaNode.jsonType !== "object") {
@@ -46,7 +46,7 @@ const keywordForDisallowedType = lintRule({ origin: "json-schema-lint:keyword-fo
 
     for (const keywordNode of /** @type JsonSchemaKeywordNode[] */ (schemaNode.children)) {
       // A format that could apply to any type isn't reported
-      const types = await formatTypes(session, schemaNode, keywordNode);
+      const types = formatTypes(document, schemaNode, keywordNode);
       const formatNode = keywordNode.children[1];
       if (types !== undefined && formatNode.jsonType === "string") {
         if (!types.some((type) => allowed.has(type))) {
@@ -58,7 +58,7 @@ const keywordForDisallowedType = lintRule({ origin: "json-schema-lint:keyword-fo
       }
 
       // A keyword with no effect applies to nothing, which other rules report
-      const applies = keywordAppliesTo(session.jsonSchema, keywords, keywordNode);
+      const applies = keywordAppliesTo(document, keywords, keywordNode);
       if (applies.length > 0 && !applies.some((type) => allowed.has(type))) {
         const name = keywordNode.children[0].value;
         const typeList = applies.map((type) => plurals[type]).join(" or ");

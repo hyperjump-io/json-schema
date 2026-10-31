@@ -30,7 +30,7 @@ export type FindSchemaOptions = GetOptions & {
   /**
    * The document the reference is in. A resource in it, including its root,
    * is found in it before the session is used, the way a reference finds an
-   * embedded resource. Pass the tree a rule is given, because a document
+   * embedded resource. It's the tree being linted, because a document
    * that's linted wasn't retrieved, so the session doesn't have it.
    */
   document?: JsonSchemaDocumentNode;
@@ -38,9 +38,12 @@ export type FindSchemaOptions = GetOptions & {
 
 /**
  * Find the schema an absolute URI identifies, the way a reference would.
- * Use the session the schema was resolved in (`file.data.jsonSchemaSession`),
+ * It isn't part of the API: `documentForLint` finds every reference with it,
+ * in the session the schema was resolved in (`file.data.jsonSchemaSession`),
  * so only what's in its registries and what `allowRetrieval` allows is
- * seen. Rules never create sessions.
+ * seen, and rules read what it found (`LintDocument.found`). Before
+ * 2026-10-30, rules called it, which was the only way left for a rule to
+ * retrieve something.
  *
  * A reference from the document being linted finds what's in it with the
  * `document` option. Anything else is found through the session, so a

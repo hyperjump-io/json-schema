@@ -9,12 +9,12 @@ import { draft07Dialect } from "../dialects/draft-07/index.js";
 import { draft201909Dialect } from "../dialects/draft-2019-09/index.js";
 import { draft202012Dialect } from "../dialects/draft-2020-12/index.js";
 import { appliesTo, assertsOnItsOwn, keywordAppliesTo } from "./analysis.js";
-import { lowerForLint } from "./lower.js";
+import { documentForLint } from "./document.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode } from "../schema/schema-ast.d.ts"
- * @import { JsonSchemaSession } from "../session.d.ts"
+ * @import { LintDocument } from "./document.d.ts"
  * @import { LoweredKeyword } from "./lower.d.ts"
  * @import { Expression } from "../kernel/kernel.d.ts"
  */
@@ -24,7 +24,7 @@ const draft07 = "http://json-schema.org/draft-07/schema#";
 const draft2019 = "https://json-schema.org/draft/2019-09/schema";
 const draft2020 = "https://json-schema.org/draft/2020-12/schema";
 
-describe("lowerForLint", () => {
+describe("LintDocument.schemas", () => {
   test("keywords are in the order they're in the schema", async () => {
     const { at } = await lower(JSON.stringify({ $schema: draft2020, unevaluatedProperties: false, properties: { a: true } }));
     expect(at("").map(({ keywordNode }) => keywordNode.children[0].value)).to.eql(["unevaluatedProperties", "properties"]);
@@ -167,18 +167,18 @@ describe("lowerForLint", () => {
     expect(cameFrom(group.expression, "of")).to.eql([keyword("", "additionalProperties")]);
   });
 
-  test("a document is lowered once for each session", async () => {
-    const { session, tree } = await lower(JSON.stringify({ $schema: draft2020 }));
-    expect(lowerForLint(session, tree)).to.equal(lowerForLint(session, tree));
+  test("a document is found once for each tree and session", async () => {
+    const { document, file } = await lower(JSON.stringify({ $schema: draft2020 }));
+    expect(await documentForLint(document.tree, file)).to.equal(document);
   });
 });
 
 describe("appliesTo", () => {
   /** @type (schema: Record<string, Json>) => Promise<Record<string, string[]>> */
   const typesOf = async (schema) => {
-    const { session, at } = await lower(JSON.stringify({ $schema: draft2020, ...schema }));
+    const { document, at } = await lower(JSON.stringify({ $schema: draft2020, ...schema }));
     return Object.fromEntries(at("").map(({ keywordNode, group }) => {
-      return [keywordNode.children[0].value, [...appliesTo(session.jsonSchema, group.expression)].sort()];
+      return [keywordNode.children[0].value, [...appliesTo(document, group.expression)].sort()];
     }));
   };
 
@@ -220,14 +220,14 @@ describe("appliesTo", () => {
 
 describe("keywordAppliesTo", () => {
   test("a sibling applies to what the keywords that read it apply to", async () => {
-    const { session, at, keyword } = await lower(JSON.stringify({ $schema: draft04, maximum: 5, exclusiveMaximum: true, minItems: 1 }));
-    expect(keywordAppliesTo(session.jsonSchema, at(""), keyword("", "exclusiveMaximum"))).to.eql(["number"]);
-    expect(keywordAppliesTo(session.jsonSchema, at(""), keyword("", "minItems"))).to.eql(["array"]);
+    const { document, at, keyword } = await lower(JSON.stringify({ $schema: draft04, maximum: 5, exclusiveMaximum: true, minItems: 1 }));
+    expect(keywordAppliesTo(document, at(""), keyword("", "exclusiveMaximum"))).to.eql(["number"]);
+    expect(keywordAppliesTo(document, at(""), keyword("", "minItems"))).to.eql(["array"]);
   });
 
   test("a keyword with no group applies to nothing", async () => {
-    const { session, at, keyword } = await lower(JSON.stringify({ $schema: draft04, exclusiveMaximum: true }));
-    expect(keywordAppliesTo(session.jsonSchema, at(""), keyword("", "exclusiveMaximum"))).to.eql([]);
+    const { document, at, keyword } = await lower(JSON.stringify({ $schema: draft04, exclusiveMaximum: true }));
+    expect(keywordAppliesTo(document, at(""), keyword("", "exclusiveMaximum"))).to.eql([]);
   });
 });
 
@@ -259,8 +259,8 @@ describe("assertsOnItsOwn", () => {
 
 /**
  * @type (json: string) => Promise<{
- *   session: JsonSchemaSession;
- *   tree: JsonSchemaDocumentNode;
+ *   document: LintDocument;
+ *   file: VFile;
  *   at: (pointer: string) => LoweredKeyword[];
  *   keyword: (pointer: string, name: string) => JsonSchemaKeywordNode;
  * }>
@@ -275,13 +275,14 @@ const lower = async (json) => {
     .use(jsonSchemaResolve, { session });
   const tree = /** @type JsonSchemaDocumentNode */ (/** @type unknown */ (await processor.run(processor.parse(file), file)));
   const root = /** @type JsonSchemaNode */ (tree.children[0]);
-  const schemas = await lowerForLint(session, tree);
+  const document = /** @type LintDocument */ (await documentForLint(tree, file));
+  const schemas = document.schemas;
 
   /** @type (pointer: string) => JsonSchemaNode */
   const schemaAt = (pointer) => /** @type JsonSchemaNode */ (pointerGet(pointer, root));
   return {
-    session,
-    tree,
+    document,
+    file,
     at: (pointer) => schemas.get(schemaAt(pointer)) ?? [],
     keyword: (pointer, name) => {
       const schemaNode = /** @type JsonSchemaNode & { children: JsonSchemaKeywordNode[] } */ (schemaAt(pointer));

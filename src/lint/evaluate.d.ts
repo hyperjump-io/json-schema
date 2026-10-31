@@ -1,5 +1,5 @@
-import type { JsonSchemaDocumentNode, JsonSchemaNode, JsonSchemaTolerantNode } from "../schema/schema-ast.d.ts";
-import type { JsonSchemaSession } from "../session.d.ts";
+import type { JsonSchemaNode, JsonSchemaTolerantNode } from "../schema/schema-ast.d.ts";
+import type { LintDocument } from "./document.d.ts";
 import type { LoweredKeyword } from "./lower.d.ts";
 
 /**
@@ -31,17 +31,15 @@ export type LintEvaluator = {
 };
 
 /**
- * Evaluate what a document's schemas lower to (`lowerForLint`) with pass,
- * fail, or unknown. A schema in another document is lowered too, if the
- * session can find it. What isn't known is unknown: a reference that can't
+ * Evaluate what a document's schemas lower to (`LintDocument.schemas`) with
+ * pass, fail, or unknown. A schema in another document is evaluated too, if
+ * a reference found it (`LintDocument.reached`). What isn't known is unknown: a reference that can't
  * be followed, a `dynamicApply`, because the dynamic scope depends on what
  * applies the schema, an `opaque` operation, and a schema whose dialect
  * isn't known. A keyword that wasn't lowered, like one whose value doesn't
  * fit its shape, isn't evaluated, so it passes. A value that couldn't be
  * parsed passes every schema, as it does when validating.
  *
- * Pass the session the schema was resolved in
- * (`file.data.jsonSchemaSession`). The evaluator is built once for each
- * document and session, so rules share it.
+ * The evaluator is built once for each document, so rules share it.
  */
-export const evaluatorForLint: (session: JsonSchemaSession, tree: JsonSchemaDocumentNode) => Promise<LintEvaluator>;
+export const evaluatorForLint: (document: LintDocument) => LintEvaluator;
