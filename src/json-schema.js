@@ -6,7 +6,7 @@ import { JsonSchemaSession } from "./session.js";
 import { SchemaRegistry } from "./registry/schema-registry.js";
 import schemaKeyword from "./keywords/schema.js";
 import unknownKeyword from "./keywords/unknown.js";
-import { assertNoReservedKeywords } from "./dialects/extend-dialect.js";
+import { assertNoReservedKeywords, withValidateFormats } from "./dialects/extend-dialect.js";
 
 export { outputErrorMessage, toVFileMessage } from "./output/validation-error.js";
 export { SchemaError } from "./schema/schema-error.js";
@@ -224,7 +224,7 @@ export class JsonSchema extends Hyperjump {
 
     const { formats, ...rest } = dialect;
     /** @type Dialect */
-    const added = { ...rest, uri, keywords: this.#addKeywords(dialect.keywords) };
+    const added = withValidateFormats({ ...rest, uri, keywords: this.#addKeywords(dialect.keywords) }, this.#config);
     if (formats !== undefined) {
       added.formats = this.#addFormats(formats);
     }

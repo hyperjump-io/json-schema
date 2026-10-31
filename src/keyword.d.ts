@@ -2,9 +2,8 @@ import type { Node } from "unist";
 import type { VFileMessage } from "vfile-message";
 import type { Json, JsonErrorNode, JsonNode, JsonType, ReadonlyJson } from "@hyperjump/browser/json";
 import type { JsonSchemaNode, JsonSchemaTolerantNode } from "./schema/schema-ast.d.ts";
-import type { Dialect, DialectDefinition } from "./dialect.d.ts";
+import type { Dialect, DialectDefinition, Vocabulary } from "./dialect.d.ts";
 import type { Expression, Handle } from "./kernel/kernel.d.ts";
-import type { JsonSchema } from "./json-schema.d.ts";
 
 /**
  * The definition of a keyword. A dialect maps keyword names to these by URI.
@@ -117,18 +116,12 @@ export type EvaluateContext<I> = PredicateContext<I> | OpaqueContext<I>;
 export type PredicateContext<I> = {
   op: "predicate";
 
-  /** The instance evaluating the schema */
-  jsonSchema: JsonSchema;
-
   instance: InstanceOps<I>;
 };
 
 /** For an `opaque` operation, which applies schemas */
 export type OpaqueContext<I> = {
   op: "opaque";
-
-  /** The instance evaluating the schema */
-  jsonSchema: JsonSchema;
 
   instance: InstanceOps<I>;
 
@@ -203,10 +196,10 @@ export type Reference = {
 };
 
 export type LowerContext = {
-  /** The instance compiling the schema */
-  jsonSchema: JsonSchema;
-
-  /** The dialect of the schema the keyword is in */
+  /**
+   * The dialect of the schema the keyword is in. Its `assertFormats` is the
+   * `validateFormats` config, if there is one.
+   */
   dialect: Dialect;
 
   /**
@@ -355,8 +348,11 @@ export type CheckContext = {
 };
 
 export type ResolveContext = {
-  /** The instance resolving the schema */
-  jsonSchema: JsonSchema;
+  /**
+   * A vocabulary from the config or a dialect, by URI, for keywords that
+   * define a dialect, like `$vocabulary`
+   */
+  vocabulary: (uri: string) => Vocabulary | undefined;
 
   /**
    * The base URI the schema is in before any identifier in the schema

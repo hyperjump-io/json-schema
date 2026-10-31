@@ -4,12 +4,13 @@ import { keywordDefinitionUri } from "../keywords/unknown.js";
 import { codePointLengthIsWithin, instanceEqual } from "../keywords/utilities.js";
 import { jsInstance } from "./instance.js";
 import { conditionsOf, explainsFailure, readsMarks, subexpressions } from "./kernel.js";
-import { addDynamicAnchors, addReachable, isClose, itemSequenceStates, keywordEvaluate, selector, typeIndexes } from "./fast.js";
+import { keywordEvaluate } from "./definitions.js";
+import { addDynamicAnchors, addReachable, isClose, itemSequenceStates, selector, typeIndexes } from "./fast.js";
 
 /**
  * @import { Data, Node } from "unist"
  * @import { Json, ReadonlyJson } from "@hyperjump/browser/json"
- * @import { JsonSchema } from "../json-schema.d.ts"
+ * @import { Definitions } from "./definitions.js"
  * @import { EvaluateContext, InstanceOps } from "../keyword.d.ts"
  * @import { EvaluationLocation, EvaluationPlugin, KeywordInfo, SchemaInfo } from "./evaluation-plugin.d.ts"
  * @import { Expression, Handle, ItemPattern, Kernel, KeywordGroup, TypeName } from "./kernel.d.ts"
@@ -107,9 +108,9 @@ const typeBits = { null: 1, boolean: 2, number: 4, string: 8, array: 16, object:
  * another one is in progress, like one a plugin starts, saves the outer
  * one's state and restores it when it's done.
  *
- * @type <I>(jsonSchema: JsonSchema, kernel: Kernel, options: InstrumentedOptions<I>) => Instrumented<I>
+ * @type <I>(definitions: Definitions, kernel: Kernel, options: InstrumentedOptions<I>) => Instrumented<I>
  */
-export const instrumented = (jsonSchema, kernel, options) => {
+export const instrumented = (definitions, kernel, options) => {
   const { instance: ops, isAst, annotating, instrumented: tracking } = options;
 
   const tracksDynamicScope = kernel.reads.dynamicScope.length > 0;
@@ -269,7 +270,7 @@ export const instrumented = (jsonSchema, kernel, options) => {
       info = {
         keywordUri,
         absoluteKeywordLocation: location,
-        keyword: jsonSchema.getKeyword(keywordDefinitionUri(keywordUri)),
+        keyword: definitions.keywords[keywordDefinitionUri(keywordUri)],
         expression,
         sources,
         explainsFailure: explainsFailure(expression),
@@ -878,7 +879,7 @@ export const instrumented = (jsonSchema, kernel, options) => {
         // It annotates every type it passes. It only asserts on the types
         // the format applies to.
         const { name, assert } = expression;
-        const format = assert ? jsonSchema.getFormat(/** @type string */ (expression.uri)) : undefined;
+        const format = assert ? definitions.formats[/** @type string */ (expression.uri)] : undefined;
         return (instance) => {
           const type = ops.typeOf(instance);
           if (format !== undefined && type !== undefined && (format.types === undefined || format.types.includes(type)) && !format.validate(ops.value(instance))) {
@@ -1010,7 +1011,7 @@ export const instrumented = (jsonSchema, kernel, options) => {
       }
 
       case "predicate": {
-        const evaluate = keywordEvaluate(jsonSchema, expression.keyword)(expression.value, { op: "predicate", jsonSchema, instance: ops });
+        const evaluate = keywordEvaluate(definitions, expression.keyword)(expression.value, { op: "predicate", instance: ops });
         const types = new Set(/** @type TypeName[] */ (expression.types));
         return (instance) => {
           return !hasType(types, ops.typeOf(instance), () => Number.isInteger(ops.value(instance))) || evaluate(instance);
@@ -1057,7 +1058,6 @@ export const instrumented = (jsonSchema, kernel, options) => {
     /** @type EvaluateContext<I> */
     const context = {
       op: "opaque",
-      jsonSchema,
       instance: ops,
       exhaustive: true,
       schemas: expression.schemas.map(subschema),
@@ -1078,7 +1078,7 @@ export const instrumented = (jsonSchema, kernel, options) => {
       };
     }
 
-    const evaluate = keywordEvaluate(jsonSchema, expression.keyword)(expression.value, context);
+    const evaluate = keywordEvaluate(definitions, expression.keyword)(expression.value, context);
     return (instance, marks) => {
       const outer = current;
       current = marks;

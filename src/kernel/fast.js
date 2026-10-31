@@ -1,11 +1,12 @@
 import { relativeFileUri } from "@hyperjump/browser";
 import { jsInstance } from "./instance.js";
 import { codePointLengthIsWithin } from "../keywords/utilities.js";
+import { keywordEvaluate } from "./definitions.js";
 import { readsMarks } from "./kernel.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
- * @import { JsonSchema } from "../json-schema.d.ts"
+ * @import { Definitions } from "./definitions.js"
  * @import { EvaluateContext, Keyword } from "../keyword.d.ts"
  * @import { KernelSchema, Expression, Handle, ItemPattern, JsonTypeName, Kernel, Selector, TypeName } from "./kernel.d.ts"
  */
@@ -40,9 +41,9 @@ import { readsMarks } from "./kernel.js";
  * properties. That's what makes real schemas faster than evaluating each
  * operation on its own.
  *
- * @type (jsonSchema: JsonSchema, kernel: Kernel) => (instance: Json) => boolean
+ * @type (definitions: Definitions, kernel: Kernel) => (instance: Json) => boolean
  */
-export const fast = (jsonSchema, kernel) => {
+export const fast = (definitions, kernel) => {
   const tracksDynamicScope = kernel.reads.dynamicScope.length > 0;
 
   // An `opaque` operation can't stop early if it might get marks
@@ -317,7 +318,7 @@ export const fast = (jsonSchema, kernel) => {
         }
 
         // A value of a type the format doesn't apply to is valid
-        const { types, validate } = jsonSchema.getFormat(/** @type string */ (expression.uri));
+        const { types, validate } = definitions.formats[/** @type string */ (expression.uri)];
         return (instance) => {
           const type = /** @type string */ (jsInstance.typeOf(instance));
           return (types !== undefined && !types.includes(/** @type any */ (type))) || validate(instance);
@@ -459,7 +460,7 @@ export const fast = (jsonSchema, kernel) => {
       }
 
       case "predicate": {
-        const evaluate = keywordEvaluate(jsonSchema, expression.keyword)(expression.value, { op: "predicate", jsonSchema, instance: jsInstance });
+        const evaluate = keywordEvaluate(definitions, expression.keyword)(expression.value, { op: "predicate", instance: jsInstance });
         const isOfType = build({ op: "typeIs", types: expression.types });
         return (instance) => !isOfType(instance, undefined) || evaluate(instance);
       }
@@ -591,7 +592,6 @@ export const fast = (jsonSchema, kernel) => {
     /** @type EvaluateContext<Json> */
     const context = {
       op: "opaque",
-      jsonSchema,
       instance: jsInstance,
       exhaustive: marksAreRead,
       schemas: expression.schemas.map(subschema),
@@ -609,7 +609,7 @@ export const fast = (jsonSchema, kernel) => {
       };
     }
 
-    const evaluate = keywordEvaluate(jsonSchema, expression.keyword)(expression.value, context);
+    const evaluate = keywordEvaluate(definitions, expression.keyword)(expression.value, context);
     return (instance, marks) => {
       const outer = current;
       current = marks;
@@ -1026,20 +1026,6 @@ export const fast = (jsonSchema, kernel) => {
       dynamicAnchors = outerAnchors;
     }
   };
-};
-
-/**
- * The `evaluate` of the keyword an escape hatch is for
- *
- * @type (jsonSchema: JsonSchema, uri: string) => NonNullable<Keyword["evaluate"]>
- */
-export const keywordEvaluate = (jsonSchema, uri) => {
-  const { evaluate } = jsonSchema.getKeyword(uri);
-  if (evaluate === undefined) {
-    throw Error(`The '${uri}' keyword lowers to an escape hatch, so it needs 'evaluate'`);
-  }
-
-  return evaluate;
 };
 
 /** @type JsonTypeName[] */

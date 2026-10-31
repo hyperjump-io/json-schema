@@ -126,7 +126,7 @@ export const lowerKeywords = async (jsonSchema, node, dialect, inputs, tolerant)
       }
 
       const lowerKeyword = keyword.lower;
-      const context = { jsonSchema, dialect, keywordName: nameNode.value };
+      const context = { dialect, keywordName: nameNode.value };
       const expression = normalForm(lowerKeyword(value, siblings, context));
       const group = {
         keywordUri,

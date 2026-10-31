@@ -8,7 +8,7 @@ import { FLAG } from "../output/flag.js";
 /**
  * @import { Json } from "@hyperjump/browser/json"
  * @import * as API from "./validator.d.ts"
- * @import { JsonSchema } from "../json-schema.d.ts"
+ * @import { Definitions } from "./definitions.js"
  * @import { EvaluationOptions } from "../operations/validate.d.ts"
  * @import { JsonSyntaxError, OutputFormat } from "../output/output-format.d.ts"
  * @import { EvaluationPlugin } from "./evaluation-plugin.d.ts"
@@ -29,8 +29,8 @@ const noSyntaxErrors = /** @type JsonSyntaxError[] */ (/** @type unknown */ (Obj
 
 /** @implements API.Validator */
 export class Validator {
-  /** @type JsonSchema */
-  #jsonSchema;
+  /** @type Definitions */
+  #definitions;
 
   /** @type Kernel */
   #kernel;
@@ -65,11 +65,11 @@ export class Validator {
   #instrumentedEvaluator;
 
   /**
-   * @param {JsonSchema} jsonSchema
+   * @param {Definitions} definitions
    * @param {Kernel} kernel
    */
-  constructor(jsonSchema, kernel) {
-    this.#jsonSchema = jsonSchema;
+  constructor(definitions, kernel) {
+    this.#definitions = definitions;
     this.#kernel = kernel;
     this.#jsEvaluators = [];
     this.#astEvaluators = [];
@@ -90,7 +90,7 @@ export class Validator {
     // Evaluating only reads the instance
     const instance = /** @type Json */ (readonlyInstance);
     if (options === undefined) {
-      this.#jsFlag ??= fast(this.#jsonSchema, optimize(this.#kernel, { fast: true, plugins: false, annotations: false }));
+      this.#jsFlag ??= fast(this.#definitions, optimize(this.#kernel, { fast: true, plugins: false, annotations: false }));
       return /** @type any */ (this.#jsFlag(instance));
     }
 
@@ -102,7 +102,7 @@ export class Validator {
     if (annotating) {
       throw Error("Annotating needs an AST");
     } else if (plugins.length === 0) {
-      this.#jsFlag ??= fast(this.#jsonSchema, optimize(this.#kernel, { fast: true, plugins: false, annotations: false }));
+      this.#jsFlag ??= fast(this.#definitions, optimize(this.#kernel, { fast: true, plugins: false, annotations: false }));
       return this.#jsFlag;
     }
 
@@ -177,7 +177,7 @@ export class Validator {
     if (!this.#instrumentedEvaluator) {
       throw Error("Evaluating with output, plugins, annotations, or an AST needs the instrumented evaluator, which wasn't loaded");
     }
-    return this.#instrumentedEvaluator(this.#jsonSchema, kernel, { instance: ops, isAst, annotating, instrumented: plugins.length > 0 });
+    return this.#instrumentedEvaluator(this.#definitions, kernel, { instance: ops, isAst, annotating, instrumented: plugins.length > 0 });
   }
 
   /**

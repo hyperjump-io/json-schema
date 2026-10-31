@@ -119,8 +119,9 @@ export type Dialect = {
   formats?: Record<string, string>;
 
   /**
-   * Whether `format` validates by default. The `validateFormats` config
-   * overrides it. It's `true` in v1 and `false` in most other dialects.
+   * Whether `format` validates by default. It's `true` in v1 and `false` in
+   * most other dialects. In a dialect a `JsonSchema` has, it's the
+   * `validateFormats` config, if there is one.
    */
   assertFormats?: boolean;
 };

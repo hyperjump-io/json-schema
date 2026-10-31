@@ -1,15 +1,15 @@
 import type { Json, JsonErrorNode, JsonNode, ReadonlyJson } from "@hyperjump/browser/json";
-import type { JsonSchema } from "../json-schema.d.ts";
 import type { AnnotationResult, EvaluationOptions } from "../operations/validate.d.ts";
 import type { Kernel } from "./kernel.d.ts";
 import type { instrumented } from "./instrumented.js";
+import type { Definitions } from "./definitions.js";
 
 /**
  * A compiled schema's evaluators, which `CompiledSchema` is. It isn't part
  * of the API. Operations evaluate with it (see `validatorFor`).
  */
 export class Validator {
-  constructor(jsonSchema: JsonSchema, kernel: Kernel);
+  constructor(definitions: Definitions, kernel: Kernel);
 
   readonly uri: string;
 

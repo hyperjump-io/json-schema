@@ -30,7 +30,7 @@ text ─ rejsonParse ─▶ JSON AST ─ jsonSchemaResolve ─▶ Schema AST ─
 | `src/session.js` | `JsonSchemaSession` |
 | `src/keyword.d.ts`, `src/dialect.d.ts`, `src/format.d.ts` | What a keyword, dialect, and format are |
 | `src/schema/` | Text to schema AST: the media type plugin, `jsonSchemaResolve`, schema validation, and the schema AST types |
-| `src/kernel/` | Schema AST to results: the kernel's expressions (`kernel.d.ts`), `lower` (compiling), the normal form, `optimize`, the evaluators (`fast.js` for plain values without plugins, `instrumented.js` for everything else), `Validator`, instance operations, and evaluation plugin types. See [the kernel spec](specs/kernel/README.md) |
+| `src/kernel/` | Schema AST to results: the kernel's expressions (`kernel.d.ts`), `lower` (compiling), the normal form, `optimize`, the definitions a kernel uses (`definitions.js`), the evaluators (`fast.js` for plain values without plugins, `instrumented.js` for everything else), `Validator`, instance operations, and evaluation plugin types. See [the kernel spec](specs/kernel/README.md) |
 | `src/kernel/optimizations/` | Optimization passes on kernel expressions, one per file. `index.js` lists them in the order they run |
 | `src/output/` | Output formats and validation errors |
 | `src/registry/` | `SchemaRegistry`, indexing registries, and how a session finds schemas in them |

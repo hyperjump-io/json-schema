@@ -1,4 +1,5 @@
-import { addReachable, isClose, itemSequenceStates, keywordEvaluate, selector } from "../kernel/fast.js";
+import { availableDefinitions, keywordEvaluate } from "../kernel/definitions.js";
+import { addReachable, isClose, itemSequenceStates, selector } from "../kernel/fast.js";
 import { astInstance, jsInstance } from "../kernel/instance.js";
 import { readsMarks, subexpressions } from "../kernel/kernel.js";
 import { codePointLengthIsWithin, instanceEqual } from "../keywords/utilities.js";
@@ -146,8 +147,6 @@ const evaluationOrder = (keywords) => [
 
 /** @type (session: JsonSchemaSession, tree: JsonSchemaDocumentNode) => Promise<API.LintEvaluator> */
 const buildEvaluator = async (session, tree) => {
-  const { jsonSchema } = session;
-
   // What every schema the document can apply lowers to, and the schema each
   // handle is: a subschema by its location, or what a reference finds.
   // They're found before evaluating, so evaluating is synchronous.
@@ -205,6 +204,8 @@ const buildEvaluator = async (session, tree) => {
       await addDocument(result.document);
     }
   }
+
+  const definitions = availableDefinitions(session.jsonSchema, [...lowered.values()].flatMap((keywords) => keywords.map(({ group }) => group.expression)));
 
   /** @type Map<JsonSchemaNode, LoweredKeyword[]> */
   const ordered = new Map();
@@ -444,9 +445,7 @@ const buildEvaluator = async (session, tree) => {
         return type !== "string" || regExp(expression.pattern).test(/** @type string */ (astInstance.value(instance))) ? pass : fail;
       case "format": {
         // It annotates every type, and only asserts on the format's types
-        const format = expression.assert && jsonSchema.hasFormat(/** @type string */ (expression.uri))
-          ? jsonSchema.getFormat(/** @type string */ (expression.uri))
-          : undefined;
+        const format = expression.assert ? definitions.formats[/** @type string */ (expression.uri)] : undefined;
         if (expression.assert && format === undefined) {
           return unknown;
         } else if (format !== undefined && (format.types === undefined || format.types.includes(type)) && !format.validate(astInstance.value(instance))) {
@@ -739,7 +738,7 @@ const buildEvaluator = async (session, tree) => {
   const predicate = (expression) => {
     let evaluatePredicate = predicates.get(expression);
     if (evaluatePredicate === undefined) {
-      evaluatePredicate = keywordEvaluate(jsonSchema, expression.keyword)(expression.value, { op: "predicate", jsonSchema, instance: astInstance });
+      evaluatePredicate = keywordEvaluate(definitions, expression.keyword)(expression.value, { op: "predicate", instance: astInstance });
       predicates.set(expression, evaluatePredicate);
     }
     return evaluatePredicate;

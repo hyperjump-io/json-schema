@@ -3,6 +3,7 @@ import { jsonValue } from "@hyperjump/browser/json";
 import { encodeIriFragment, toAbsoluteIri } from "@hyperjump/uri";
 import { SessionRegistries } from "./registry/session-registries.js";
 import { SchemaError } from "./schema/schema-error.js";
+import { withValidateFormats } from "./dialects/extend-dialect.js";
 import unknownKeyword, { keywordDefinitionUri } from "./keywords/unknown.js";
 
 /**
@@ -282,7 +283,7 @@ export class JsonSchemaSession extends Session {
       }
 
       // The dialect is identified by whichever URI found the meta-schema
-      const dialect = { ...definedDialect, uri };
+      const dialect = withValidateFormats({ ...definedDialect, uri }, this.#jsonSchema.config);
       this.#dialects[uri] = dialect;
       return dialect;
     } finally {

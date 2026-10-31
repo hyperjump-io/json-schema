@@ -66,6 +66,21 @@ describe("vocabularies", () => {
     expect(dialect).to.have.deep.property("formats", { foo: "https://example.com/format/foo", bar: "https://example.com/format/bar" });
   });
 
+  test("the validateFormats config replaces what the vocabularies say", async () => {
+    const jsonSchema = new JsonSchema({
+      dialects: [metaDialect(metaDialectUri)],
+      vocabularies: { [barVocabularyUri]: { keywords: {}, assertFormats: true } },
+      validateFormats: false
+    });
+
+    const dialectUri = "https://example.com/dialect";
+    const dialect = await getDialect(jsonSchema, [
+      metaSchema(dialectUri, metaDialectUri, { [barVocabularyUri]: true })
+    ], dialectUri);
+
+    expect(dialect).to.include({ assertFormats: false });
+  });
+
   test("a vocabulary works in every dialect that uses the keyword", async () => {
     const jsonSchema = withVocabularies({ [fooVocabularyUri]: { keywords: { foo: fooKeyword } } });
 

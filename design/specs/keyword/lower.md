@@ -4,8 +4,10 @@
 [kernel](../kernel/README.md) expression. [Every keyword](../kernel/every-keyword.md)
 lists what each built-in keyword lowers to.
 
-- It's synchronous and only reads its inputs and the context (`jsonSchema`,
-  `dialect`, `keywordName`). The kernel compiles: it compiles the schemas
+- It's synchronous and only reads its inputs and the context (`dialect`
+  and `keywordName`). It doesn't get the `JsonSchema`. Before 2026-10-30
+  it did, and only `format` used it, for the `validateFormats` config and
+  to check that the format's definition exists. The kernel compiles: it compiles the schemas
   in the value and retrieves what references refer to before `lower` is
   called. It isn't called if the value didn't fit its shape.
 - A keyword without `lower` has no keyword group (`$id`, `$defs`, and
@@ -15,8 +17,11 @@ lists what each built-in keyword lowers to.
   unknown keyword that isn't an annotation) lowers to `pass`, so plugins
   see it pass, and the optimizer leaves it out when nothing can see it.
 - `format` decides whether it asserts when it's lowered, from the
-  `JsonSchema`'s configuration, so a serialized expression means the same
-  wherever it's restored.
+  dialect's `assertFormats`, so a serialized expression means the same
+  wherever it's restored. A `JsonSchema` applies the `validateFormats`
+  config to every dialect it has or builds from a meta-schema. That the
+  format's definition exists is checked with the kernel's other
+  definitions (see [Compile and evaluate](../../components/kernel/README.md)).
 
 ## Escape hatches
 

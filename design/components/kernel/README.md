@@ -28,10 +28,20 @@ There are two phases:
 The kernel is JSON, so a compiled schema can be serialized
 (`serialize` and `restore`). It's serialized as
 lowered, before any optimization. It has `kernel: 1`, and
-`restore` rejects any other version. Restoring also looks up every
-keyword, asserting format, and escape hatch's `evaluate` the kernel needs,
-so a definition that's missing from the `JsonSchema` fails there, not on
-the first evaluation.
+`restore` rejects any other version.
+
+A compiled schema is its kernel and the definitions the kernel uses
+(`src/kernel/definitions.js`): each group's keyword, which plugins see,
+the formats that assert, and the keywords of escape hatches, for their
+`evaluate`. Compiling and restoring collect them from the `JsonSchema`,
+so a definition that's missing fails there, not on the first evaluation.
+The evaluators and `Validator` only read the definitions, never the
+`JsonSchema`. Lint's evaluator collects the ones the `JsonSchema` has, and
+treats an asserting format without one as unknown. Before 2026-10-30, the
+evaluators were given the `JsonSchema` to look definitions up in, which
+made a compiled schema depend on a whole client, with its URI scheme
+plugins and HTTP cache, for two lookups, and compiling didn't check
+escape hatches' `evaluate`.
 
 A kernel for a schema in a file is serialized with its `file:` URIs
 relative to the entry's document (`src/kernel/kernel-uris.js`), so it

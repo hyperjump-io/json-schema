@@ -328,7 +328,7 @@ class Resolver {
 
       /** @type ResolveContext */
       const context = {
-        jsonSchema: this.#session.jsonSchema,
+        vocabulary: (uri) => this.#session.jsonSchema.getVocabulary(uri),
         baseUri: resource.uri,
         dialectUri: dialect.uri,
         setBaseUri: (uri) => {

@@ -53,7 +53,7 @@ export default {
         continue;
       }
 
-      const vocabulary = context.jsonSchema.getVocabulary(nameNode.value);
+      const vocabulary = context.vocabulary(nameNode.value);
       if (vocabulary) {
         Object.assign(keywords, vocabulary.keywords);
         Object.assign(formats, vocabulary.formats);

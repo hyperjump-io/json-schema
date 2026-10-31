@@ -4,7 +4,9 @@
   2020-12. The core doesn't know about it or about vocabularies. The
   `$vocabulary` keyword (`src/keywords/vocabulary.js`) finds the
   vocabularies it lists (`{ keywords, formats, assertFormats }`) with
-  `getVocabulary` on the `JsonSchema` in its resolve context.
+  `vocabulary(uri)` in its resolve context. Before 2026-10-30, the context
+  had the `JsonSchema`, and it called `getVocabulary`. That was the only
+  thing a resolving keyword used it for.
   Its hook merges the listed vocabularies into one dialect, with unknown
   keywords as annotations. Formats assert if any listed vocabulary says so,
   which is how 2020-12's format-assertion vocabulary works. A required
@@ -23,5 +25,5 @@
   vocabulary too. With definitions only in the config, that would have been
   a keyword factory passed in `keywords`, and two libraries adding
   vocabularies would have had to chain each other's. Rejected for the
-  config and the resolve context (`ResolveContext.jsonSchema`), which keeps
+  config and the resolve context (`ResolveContext.vocabulary`), which keeps
   the keyword stateless.

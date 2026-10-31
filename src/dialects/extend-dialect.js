@@ -1,4 +1,5 @@
 /**
+ * @import { Dialect } from "../dialect.d.ts"
  * @import * as API from "../json-schema.d.ts"
  */
 
@@ -38,4 +39,14 @@ export const assertNoReservedKeywords = (keywords) => {
       throw Error(`'${name}' can't be a keyword. Keywords starting with 'x-' are reserved for schema authors and must never assert.`);
     }
   }
+};
+
+/**
+ * A dialect as an instance uses it: the `validateFormats` config, if there
+ * is one, decides whether `format` validates, instead of the dialect
+ *
+ * @type (dialect: Dialect, config: API.JsonSchemaConfig) => Dialect
+ */
+export const withValidateFormats = (dialect, config) => {
+  return config.validateFormats === undefined ? dialect : { ...dialect, assertFormats: config.validateFormats };
 };

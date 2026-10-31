@@ -412,7 +412,7 @@ const rootEffects = (jsonSchema, root, dialect, retrievalUri) => {
 
     /** @type ResolveContext */
     const context = {
-      jsonSchema: jsonSchema,
+      vocabulary: (uri) => jsonSchema.getVocabulary(uri),
       baseUri: retrievalUri ?? "",
       dialectUri: dialect.uri,
       setBaseUri: (baseUri) => {

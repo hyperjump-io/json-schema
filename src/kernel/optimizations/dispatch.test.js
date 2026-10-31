@@ -5,6 +5,7 @@ import { SchemaRegistry } from "../../registry/schema-registry.js";
 import { v1Dialect, v1DialectUri } from "../../dialects/v1/index.js";
 import { astInstance, jsInstance } from "../instance.js";
 import { instrumented } from "../instrumented.js";
+import { kernelDefinitions } from "../definitions.js";
 import dispatch from "./dispatch.js";
 import { BASIC } from "../../output/index.js";
 import { compile as compileSchema, restore, serialize } from "../../operations/compile.js";
@@ -260,7 +261,8 @@ describe("dispatch", () => {
       const after = { ...kernel, schemas: { ...kernel.schemas, ...Object.fromEntries(replaced) } };
       const options = { instance: astInstance, isAst: true, annotating: false, instrumented: false };
       const { node } = fromJson(json);
-      return [instrumented(jsonSchema, kernel, options)(node), instrumented(jsonSchema, after, options)(node)];
+      const definitions = kernelDefinitions(jsonSchema, kernel);
+      return [instrumented(definitions, kernel, options)(node), instrumented(definitions, after, options)(node)];
     };
 
     /** @type Record<string, Json> & { oneOf: Json[] } */
@@ -322,7 +324,7 @@ describe("dispatch", () => {
           parsed.map((json) => validatorFor(restore(jsonSchema, withRoot(expression)))(JSON.parse(json)))
         ];
         for (const [instance, isAst] of /** @type const */ ([[astInstance, true], [jsInstance, false]])) {
-          const evaluate = instrumented(jsonSchema, withRoot(expression), /** @type any */ ({ instance, isAst, annotating: false, instrumented: false }));
+          const evaluate = instrumented(kernelDefinitions(jsonSchema, withRoot(expression)), withRoot(expression), /** @type any */ ({ instance, isAst, annotating: false, instrumented: false }));
           evaluations.push((isAst ? jsons : parsed).map((json) => evaluate(isAst ? fromJson(json).node : JSON.parse(json))));
         }
         return evaluations;

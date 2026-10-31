@@ -1581,6 +1581,11 @@ describe("Validator", () => {
       expect(() => restore(other, serialized)).to.throw("needs 'evaluate'");
     });
 
+    test("compiling needs the keywords of escape hatches to have evaluate", async () => {
+      const other = new JsonSchema({ allowRetrieval: [pathToFileURL(join(tmpdir(), "/")).href], dialects: [testDialect], keywords: [...keywords, { ...sortedKeyword, evaluate: undefined }] });
+      await expect(compile(other, await schemaFile({ sorted: "ascending" }))).rejects.toThrow("needs 'evaluate'");
+    });
+
     test("a restored validator works out what its schemas read", async () => {
       const uri = await schemaFile({
         $id: "https://example.com/strict-node",
