@@ -26,9 +26,6 @@ export { extendDialect } from "./dialects/extend-dialect.js";
  * @augments {Hyperjump<JsonSchemaNode>}
  */
 export class JsonSchema extends Hyperjump {
-  /** @type API.JsonSchemaConfig */
-  #config;
-
   /** @type Record<string, Keyword> */
   #keywords;
 
@@ -50,7 +47,6 @@ export class JsonSchema extends Hyperjump {
   constructor(config = {}) {
     super(config);
 
-    this.#config = config;
     this.#keywords = {};
     this.#formats = {};
     this.#dialects = {};
@@ -88,10 +84,6 @@ export class JsonSchema extends Hyperjump {
 
     this.addMediaTypePlugin(new JsonSchemaMediaTypePlugin());
     this.addMediaTypePlugin(new JsonOrSchemaMediaTypePlugin());
-  }
-
-  get config() {
-    return this.#config;
   }
 
   /** @type API.JsonSchema["session"] */
@@ -224,7 +216,7 @@ export class JsonSchema extends Hyperjump {
 
     const { formats, ...rest } = dialect;
     /** @type Dialect */
-    const added = withValidateFormats({ ...rest, uri, keywords: this.#addKeywords(dialect.keywords) }, this.#config);
+    const added = withValidateFormats({ ...rest, uri, keywords: this.#addKeywords(dialect.keywords) }, /** @type API.JsonSchemaConfig */ (this.config));
     if (formats !== undefined) {
       added.formats = this.#addFormats(formats);
     }

@@ -11,10 +11,10 @@ import { annotateFunction, validateFunction, validatorOf } from "./evaluators.js
 
 /** @type API.validatorFor */
 export const validatorFor = (compiled, options = {}) => {
-  return validateFunction(validatorOf(compiled).useInstrumented(instrumented), options);
+  return validateFunction(validatorOf(compiled), options, instrumented);
 };
 
 /** @type API.annotatorFor */
 export const annotatorFor = (compiled, options = {}) => {
-  return annotateFunction(validatorOf(compiled).useInstrumented(instrumented), options);
+  return annotateFunction(validatorOf(compiled), options, instrumented);
 };

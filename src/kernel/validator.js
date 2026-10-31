@@ -56,15 +56,6 @@ export class Validator {
   #jsFlag;
 
   /**
-   * The evaluator for plugins, annotating, and ASTs. It isn't imported here,
-   * so code that only validates values without output doesn't load it. The
-   * operations that need it give it to the validator (see `useInstrumented`).
-   *
-   * @type typeof instrumented | undefined
-   */
-  #instrumentedEvaluator;
-
-  /**
    * @param {Definitions} definitions
    * @param {Kernel} kernel
    */
@@ -79,14 +70,8 @@ export class Validator {
     return this.#kernel.uri;
   }
 
-  /** @type (evaluator: typeof instrumented) => this */
-  useInstrumented(evaluator) {
-    this.#instrumentedEvaluator = evaluator;
-    return this;
-  }
-
   /** @type API.Validator["validate"] */
-  validate(readonlyInstance, options) {
+  validate(readonlyInstance, options, evaluator) {
     // Evaluating only reads the instance
     const instance = /** @type Json */ (readonlyInstance);
     if (options === undefined) {
@@ -94,11 +79,11 @@ export class Validator {
       return /** @type any */ (this.#jsFlag(instance));
     }
 
-    return this.#evaluate(this.#jsEvaluator, instance, false, options, noSyntaxErrors);
+    return this.#evaluate(this.#jsEvaluator, instance, false, options, noSyntaxErrors, evaluator);
   }
 
-  /** @type (annotating: boolean, plugins: EvaluationPlugin[]) => Evaluate<Json> */
-  #jsEvaluator = (annotating, plugins) => {
+  /** @type (annotating: boolean, plugins: EvaluationPlugin[], evaluator: typeof instrumented | undefined) => Evaluate<Json> */
+  #jsEvaluator = (annotating, plugins, evaluator) => {
     if (annotating) {
       throw Error("Annotating needs an AST");
     } else if (plugins.length === 0) {
@@ -107,38 +92,38 @@ export class Validator {
     }
 
     const index = modeIndex(false, plugins);
-    this.#jsEvaluators[index] ??= this.#instrumented(jsInstance, false, false, plugins);
+    this.#jsEvaluators[index] ??= this.#instrumented(evaluator, jsInstance, false, false, plugins);
     return this.#jsEvaluators[index];
   };
 
   /** @type API.Validator["validateJson"] */
-  validateJson(json, options) {
+  validateJson(json, options, evaluator) {
     const result = fromJson(json);
-    return this.#evaluateAst(result.node, false, options, result.errors);
+    return this.#evaluateAst(result.node, false, options, result.errors, evaluator);
   }
 
   /** @type API.Validator["validateNode"] */
-  validateNode(node, options) {
-    return this.#evaluateAst(/** @type InstanceNode */ (node), false, options, noSyntaxErrors);
+  validateNode(node, options, evaluator) {
+    return this.#evaluateAst(/** @type InstanceNode */ (node), false, options, noSyntaxErrors, evaluator);
   }
 
   /** @type API.Validator["annotate"] */
-  annotate(instance, options) {
+  annotate(instance, options, evaluator) {
     const node = fromJs(instance);
-    const output = this.#evaluateAst(node, true, options, noSyntaxErrors);
+    const output = this.#evaluateAst(node, true, options, noSyntaxErrors, evaluator);
     return { output, status: "success", node };
   }
 
   /** @type API.Validator["annotateJson"] */
-  annotateJson(json, options) {
+  annotateJson(json, options, evaluator) {
     const result = fromJson(json);
-    const output = this.#evaluateAst(result.node, true, options, result.errors);
+    const output = this.#evaluateAst(result.node, true, options, result.errors, evaluator);
     return { output, status: result.status, node: result.node };
   }
 
   /** @type API.Validator["annotateNode"] */
-  annotateNode(node, options) {
-    return this.#evaluateAst(/** @type InstanceNode */ (node), true, options, noSyntaxErrors);
+  annotateNode(node, options, evaluator) {
+    return this.#evaluateAst(/** @type InstanceNode */ (node), true, options, noSyntaxErrors, evaluator);
   }
 
   /** @type API.Validator["serialize"] */
@@ -152,16 +137,17 @@ export class Validator {
    * @param {boolean} annotating
    * @param {EvaluationOptions<R> | undefined} options
    * @param {JsonSyntaxError[]} syntaxErrors
+   * @param {typeof instrumented | undefined} evaluator
    * @returns {R}
    */
-  #evaluateAst(node, annotating, options, syntaxErrors) {
-    return this.#evaluate(this.#astEvaluator, node, annotating, options, syntaxErrors);
+  #evaluateAst(node, annotating, options, syntaxErrors, evaluator) {
+    return this.#evaluate(this.#astEvaluator, node, annotating, options, syntaxErrors, evaluator);
   }
 
-  /** @type (annotating: boolean, plugins: EvaluationPlugin[]) => Evaluate<InstanceNode> */
-  #astEvaluator = (annotating, plugins) => {
+  /** @type (annotating: boolean, plugins: EvaluationPlugin[], evaluator: typeof instrumented | undefined) => Evaluate<InstanceNode> */
+  #astEvaluator = (annotating, plugins, evaluator) => {
     const index = modeIndex(annotating, plugins);
-    this.#astEvaluators[index] ??= this.#instrumented(astInstance, true, annotating, plugins);
+    this.#astEvaluators[index] ??= this.#instrumented(evaluator, astInstance, true, annotating, plugins);
     return this.#astEvaluators[index];
   };
 
@@ -169,15 +155,15 @@ export class Validator {
    * An evaluator for plugins, annotating, or ASTs, from the kernel optimized
    * for what the plugins can see
    *
-   * @type <I>(ops: InstanceOps<I>, isAst: boolean, annotating: boolean, plugins: EvaluationPlugin[]) => Instrumented<I>
+   * @type <I>(evaluator: typeof instrumented | undefined, ops: InstanceOps<I>, isAst: boolean, annotating: boolean, plugins: EvaluationPlugin[]) => Instrumented<I>
    */
-  #instrumented(ops, isAst, annotating, plugins) {
+  #instrumented(evaluator, ops, isAst, annotating, plugins) {
+    if (evaluator === undefined) {
+      throw Error("Evaluating with output, plugins, annotations, or an AST needs the instrumented evaluator");
+    }
     const annotations = annotating || plugins.some((plugin) => plugin.annotation !== undefined);
     const kernel = optimize(this.#kernel, { fast: !annotating && plugins.length === 0, plugins: plugins.length > 0, annotations });
-    if (!this.#instrumentedEvaluator) {
-      throw Error("Evaluating with output, plugins, annotations, or an AST needs the instrumented evaluator, which wasn't loaded");
-    }
-    return this.#instrumentedEvaluator(this.#definitions, kernel, { instance: ops, isAst, annotating, instrumented: plugins.length > 0 });
+    return evaluator(this.#definitions, kernel, { instance: ops, isAst, annotating, instrumented: plugins.length > 0 });
   }
 
   /**
@@ -188,21 +174,22 @@ export class Validator {
    *
    * @template I
    * @template R
-   * @param {(annotating: boolean, plugins: EvaluationPlugin[]) => Evaluate<I>} evaluatorFor
+   * @param {(annotating: boolean, plugins: EvaluationPlugin[], evaluator: typeof instrumented | undefined) => Evaluate<I>} evaluatorFor
    * @param {I} instance
    * @param {boolean} annotating
    * @param {EvaluationOptions<R> | undefined} options
    * @param {JsonSyntaxError[]} syntaxErrors
+   * @param {typeof instrumented | undefined} evaluator
    * @returns {R}
    */
-  #evaluate(evaluatorFor, instance, annotating, options, syntaxErrors) {
+  #evaluate(evaluatorFor, instance, annotating, options, syntaxErrors, evaluator) {
     const format = /** @type OutputFormat<R> */ (options?.output ?? FLAG);
     const plugins = options?.plugins ?? [];
     const isParsed = syntaxErrors.length === 0;
 
     // FLAG doesn't need anything from its format, so it isn't called
     if (format === FLAG) {
-      const valid = evaluatorFor(annotating, plugins)(instance, plugins);
+      const valid = evaluatorFor(annotating, plugins, evaluator)(instance, plugins);
       return /** @type R */ (valid && isParsed);
     }
 
@@ -210,14 +197,14 @@ export class Validator {
 
     let valid;
     if (plugins.length === 0) {
-      valid = evaluatorFor(annotating, plugins)(instance);
+      valid = evaluatorFor(annotating, plugins, evaluator)(instance);
       if (!valid && plugin) {
-        evaluatorFor(false, [plugin])(instance, [plugin]);
+        evaluatorFor(false, [plugin], evaluator)(instance, [plugin]);
       }
     } else {
       /** @type EvaluationPlugin[] */
       const allPlugins = plugin ? [...plugins, plugin] : plugins;
-      valid = evaluatorFor(annotating, allPlugins)(instance, allPlugins);
+      valid = evaluatorFor(annotating, allPlugins, evaluator)(instance, allPlugins);
     }
 
     return output(valid && isParsed, syntaxErrors);

@@ -26,8 +26,10 @@ schema are in `src/kernel/validator.js`, which isn't exported.
 - The instrumented evaluator (`src/kernel/instrumented.js`) isn't imported
   by the validator. `validator` and `annotator` load it with `import()`
   when the options need it (output, plugins, annotating, or an input other
-  than a value) and give it to the compiled schema (`useInstrumented`), so
-  code that only validates values with FLAG never loads it. `validatorFor`
+  than a value) and pass it to each evaluation that needs it, so code that
+  only validates values with FLAG never loads it. Before 2026-10-30, it
+  was set on the compiled schema (`useInstrumented`), which every
+  operation shares, so an evaluation before it was set threw. `validatorFor`
   and `annotatorFor` are synchronous, so they import it, in a module of
   their own (`src/operations/validate-compiled.js`). The package is
   `"sideEffects": false`, or bundlers keep every re-exported module (see
@@ -38,7 +40,12 @@ schema are in `src/kernel/validator.js`, which isn't exported.
   without an `$id`. Its `$id` is looked up in the other registries when
   it's added, so one a registry also has throws, even if identical.
   Nothing is cached. A boolean has no `$schema`, so it needs
-  `defaultDialectUri`, like any schema without one.
+  `defaultDialectUri`, like any schema without one. The operation reaches
+  the session's registries through a `WeakMap` in that module, which has
+  no declaration file, so it isn't part of the API. A method on
+  `JsonSchemaSession` would have to be declared in `session.d.ts`, which
+  is. That was considered on 2026-10-30, to make it a parameter, and
+  rejected: the dependency is the same either way.
 - Given a session, an operation uses it, and `registry` or
   `allowRetrieval` in its options is a `TypeError`, because the session
   already has its own and ignoring them would be silent.

@@ -2,6 +2,7 @@ import { FLAG } from "../output/flag.js";
 
 /**
  * @import { Validator } from "../kernel/validator.js"
+ * @import { instrumented } from "../kernel/instrumented.js"
  * @import { CompiledSchema } from "./compile.d.ts"
  * @import { AnnotationResult, EvaluationOptions } from "./validate.d.ts"
  */
@@ -22,33 +23,38 @@ export const needsInstrumented = ({ input, output, plugins }) => {
   return (input ?? "value") !== "value" || (output !== undefined && output !== FLAG) || (plugins?.length ?? 0) > 0;
 };
 
-/** @type (validator: Validator, options: EvaluationOptions<any, any>) => (instance: any) => any */
-export const validateFunction = (validator, options) => {
+/**
+ * `evaluator` is the instrumented evaluator, for evaluations that need it
+ * (`needsInstrumented`)
+ *
+ * @type (validator: Validator, options: EvaluationOptions<any, any>, evaluator?: typeof instrumented) => (instance: any) => any
+ */
+export const validateFunction = (validator, options, evaluator) => {
   const evaluation = evaluationOptions(options);
 
   switch (options.input ?? "value") {
     case "value":
-      return (instance) => validator.validate(instance, evaluation);
+      return (instance) => validator.validate(instance, evaluation, evaluator);
     case "json":
-      return (json) => validator.validateJson(json, evaluation);
+      return (json) => validator.validateJson(json, evaluation, evaluator);
     case "node":
-      return (node) => validator.validateNode(node, evaluation);
+      return (node) => validator.validateNode(node, evaluation, evaluator);
     default:
       throw TypeError(`'${options.input}' isn't an input. It's 'value', 'json', or 'node'.`);
   }
 };
 
-/** @type (validator: Validator, options: EvaluationOptions<any, any>) => (instance: any) => AnnotationResult<any> */
-export const annotateFunction = (validator, options) => {
+/** @type (validator: Validator, options: EvaluationOptions<any, any>, evaluator: typeof instrumented) => (instance: any) => AnnotationResult<any> */
+export const annotateFunction = (validator, options, evaluator) => {
   const evaluation = evaluationOptions(options);
 
   switch (options.input ?? "value") {
     case "value":
-      return (instance) => validator.annotate(instance, evaluation);
+      return (instance) => validator.annotate(instance, evaluation, evaluator);
     case "json":
-      return (json) => validator.annotateJson(json, evaluation);
+      return (json) => validator.annotateJson(json, evaluation, evaluator);
     case "node":
-      return (node) => ({ output: validator.annotateNode(node, evaluation), status: "success", node });
+      return (node) => ({ output: validator.annotateNode(node, evaluation, evaluator), status: "success", node });
     default:
       throw TypeError(`'${options.input}' isn't an input. It's 'value', 'json', or 'node'.`);
   }
