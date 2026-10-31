@@ -80,7 +80,7 @@ import {
   MemoryHttpCacheStore
 } from "@hyperjump/browser";
 
-jsonSchema.addUriSchemePlugin(new HttpUriSchemePlugin(jsonSchema, {
+jsonSchema.addUriSchemePlugin(new HttpUriSchemePlugin({
   cache: new MemoryHttpCacheStore(),
   headers: (url) => url.origin === "https://schemas.example.com"
     ? { Authorization: `Bearer ${process.env.SCHEMAS_TOKEN}` }
