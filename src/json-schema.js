@@ -22,6 +22,13 @@ export { extendDialect } from "./dialects/extend-dialect.js";
  */
 
 /**
+ * @template T
+ * @param {T[] | undefined} array
+ * @returns {T[] | undefined}
+ */
+const frozenCopy = (array) => array && /** @type T[] */ (Object.freeze([...array]));
+
+/**
  * @implements API.JsonSchema
  * @augments {Hyperjump<JsonSchemaNode>}
  */
@@ -46,11 +53,17 @@ export class JsonSchema extends Hyperjump {
    */
   constructor(config = {}) {
     // Its media types come before the config's, so the config can replace
-    // them. The JSON plugin replaces the default one.
-    super({
+    // them. The JSON plugin replaces the default one. The `Hyperjump` keeps
+    // a frozen copy of the config, with frozen copies of its lists, and
+    // these are its lists, so they're copied and frozen here.
+    super(/** @type API.JsonSchemaConfig */ ({
       ...config,
-      mediaTypePlugins: [new JsonSchemaMediaTypePlugin(), new JsonOrSchemaMediaTypePlugin(), ...config.mediaTypePlugins ?? []]
-    });
+      mediaTypePlugins: [new JsonSchemaMediaTypePlugin(), new JsonOrSchemaMediaTypePlugin(), ...config.mediaTypePlugins ?? []],
+      dialects: frozenCopy(config.dialects),
+      keywords: frozenCopy(config.keywords),
+      formats: frozenCopy(config.formats),
+      vocabularies: config.vocabularies && Object.freeze({ ...config.vocabularies })
+    }));
 
     this.#keywords = {};
     this.#formats = {};

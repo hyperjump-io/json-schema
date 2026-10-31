@@ -17,7 +17,7 @@ import { validatorFor } from "./operations/validate-compiled.js";
 
 /**
  * @import { Json } from "@hyperjump/browser/json"
- * @import { Dialect, DialectConfig } from "./dialect.d.ts"
+ * @import { Dialect, DialectConfig, VocabularyConfig } from "./dialect.d.ts"
  * @import { Keyword } from "./keyword.d.ts"
  */
 
@@ -97,6 +97,24 @@ describe("JsonSchema", () => {
       const withFormat = { ...dialect, formats: { bar: "https://example.com/format/bar" } };
 
       expect(() => extendDialect(withFormat, { formats: { bar: "https://example.com/format/other" } })).to.throw("already has");
+    });
+  });
+
+  describe("config", () => {
+    test("its lists are frozen copies", () => {
+      const dialects = [v1Dialect];
+      const keywords = [idKeyword];
+      const vocabularies = /** @type Record<string, VocabularyConfig> */ ({});
+      const config = { dialects, keywords, formats: [], vocabularies };
+      const jsonSchema = new JsonSchema(config);
+
+      expect(jsonSchema.config.dialects).not.to.equal(dialects);
+      expect(jsonSchema.config.keywords).not.to.equal(keywords);
+      expect(jsonSchema.config.vocabularies).not.to.equal(vocabularies);
+      expect(Object.isFrozen(jsonSchema.config.dialects)).to.equal(true);
+      expect(Object.isFrozen(jsonSchema.config.keywords)).to.equal(true);
+      expect(Object.isFrozen(jsonSchema.config.formats)).to.equal(true);
+      expect(Object.isFrozen(jsonSchema.config.vocabularies)).to.equal(true);
     });
   });
 

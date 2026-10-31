@@ -49,6 +49,12 @@
   Now nothing cached from a definition can go stale. Adding a dialect
   later, like one loaded with `import()` when a schema needs it, means
   creating another `JsonSchema`.
+  - `jsonSchema.config` is a frozen copy, and so are its `dialects`,
+    `keywords`, `formats`, and `vocabularies`. The `Hyperjump` copies and
+    freezes the config and its own lists, but only `JsonSchema` knows
+    these are lists. Before 2026-10-31, they were the caller's, so
+    changing one after the `JsonSchema` was created changed what `config`
+    said without changing the `JsonSchema`.
 - There's still no default dialect. One isn't inferred when there's only
   one dialect, because adding a second would change how schemas without
   `$schema` are read. `defaultDialectUri` sets one.
