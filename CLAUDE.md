@@ -12,11 +12,12 @@ A rewrite of `@hyperjump/json-schema` on `@hyperjump/browser` v2 and unified.
   open questions and known limitations, and `benchmarks/` are dated
   measurements.
 - `website/` is the user documentation. Each lint rule has a page in
-  `website/linting/rules/` and a row in its `README.md`.
-  It's built into the site at hyperjump.io from `../hyperjump.io`, whose
-  README has how to write it. A feature that isn't released gets
-  `*Coming soon*` on its own line under its heading. `npm version` replaces
-  it with `*Added in vX.Y.Z*` (`scripts/version-docs.js`).
+  `website/linting/rules/` and a row in its `README.md`. It's built into
+  the site at hyperjump.io from `../hyperjump.io`, where `design/style/`
+  says how to write the prose and the README says how pages are put
+  together. A feature that isn't released gets `*Coming soon*` on its own
+  line under its heading. `npm version` replaces it with
+  `*Added in vX.Y.Z*` (`scripts/version-docs.js`).
 - `TODO.md` is the plan and what's next. It isn't committed.
 - Prefer many small documents that each cover one thing. A change to how
   something works updates its document in the same commit. A decision
