@@ -46,6 +46,21 @@ Both libraries have a long-lived object and sessions created from it, and
   retrieved in (`parse(response, session)`), so the schema media type plugin
   resolves schemas in that session. Retrieving a schema in a plain `Session`
   is an error.
+- Resolving after retrieving was considered on 2026-10-30, to take the
+  session out of browser's `parse`: browser would only parse, and
+  `JsonSchemaSession.getDocument` would resolve what it returns. Rejected,
+  because it moves the dependency instead of removing it. Resolving still
+  needs the session, for dialects, and moving it needs a cache of resolved
+  documents next to browser's, the `Content-Type`'s `schema` and `profile`
+  parameters carried on the parsed document (`getDocument` never sees the
+  response), and the check that a `.json` file is a schema moved into
+  `getDocument`, all to remove one parameter and two `instanceof` checks.
+  `parse` is where the response is, so it's where resolving belongs.
+  Browser's extension point isn't about JSON Schema either: any media type
+  that needs other resources to parse a document, like XML with external
+  entities or JSON-LD contexts, needs the session there. Anchors weren't
+  the cost: fragments go through `fragmentPointer` on whatever
+  `getDocument` returns, which would have been the resolved document.
 
 ## Contents
 

@@ -26,6 +26,14 @@ an internal meta-schema.
   with a fake processor. A keyword's `check` and `resolve` report with
   `context.message`, which returns nothing, so keywords don't depend on
   vfile either.
+- Its one asynchronous step is finding a dialect (`getDialect`), which can
+  retrieve a meta-schema. Resolving in rounds, like compiling (see
+  [Compile and evaluate](kernel/README.md)), was considered on
+  2026-10-30, so the resolver could take dialects instead of the session,
+  and rejected: a schema's dialect decides which of its properties are
+  keywords and where its subschemas are, so a round can't get past a
+  dialect it doesn't have, and rounds would add machinery to remove one
+  `await`. Dialects are few, and a session finds each once.
 - Every problem with a schema is found while it's resolved, and a schema is
   always checked. There's no option to skip it. A trusted schema that has
   to start fast can be compiled once and restored with
