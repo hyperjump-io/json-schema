@@ -29,15 +29,11 @@ operations:
   the rule's tests, run against the port, and `extra.test.ts` has a few
   more. They run with `npx vitest run benchmark/claude/kernel/`.
 
-The v2 it's compared with, the baseline, is a worktree of `2ef89f6` at
-`../json-schema-kernel-baseline`. Its `@hyperjump/browser` has to be the
-browser it was written for, so its `node_modules/@hyperjump/browser` links
-to a worktree of browser `3a964e3` at `../browser-kernel-baseline`, whose
-`node_modules` links to `../browser/node_modules`. Linked to the browser
-repo, it broke when the browser's API changed on 2026-10-30 (plugins only
-in the config). Vitest keeps modules with their imports resolved in
-`node_modules/.vitest-cache`, so after changing a link, delete it in the
-root and in `benchmark/`.
+The v2 it was compared with, the baseline, was a worktree of `2ef89f6` at
+`../json-schema-kernel-baseline`. Its `@hyperjump/browser` had to be the
+browser it was written for, so its `node_modules/@hyperjump/browser` linked
+to a worktree of browser `3a964e3` at `../browser-kernel-baseline`. Both
+worktrees were removed on 2026-10-31, along with the prototype.
 
 Results from 2026-10-23 (`v2` time divided by the prototype's, so more than
 1 is faster):

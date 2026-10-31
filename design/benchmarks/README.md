@@ -3,11 +3,26 @@
 Measurements behind the performance decisions in [the design docs](../README.md),
 one experiment per file, with the date it was first recorded.
 
-The benchmark code is in `benchmark/`, which isn't committed. It compares the
-version checked out here with the other one, which it checks out in a
-worktree next to this repo (see `benchmark/link.js`). The benchmarks in
-`benchmark/benchmarks/` are kept up to date. The ones in `benchmark/claude/`
-were written for one-off investigations.
+Comparisons with other implementations are
+[`jsonschema-benchmark`](https://github.com/sourcemeta-research/jsonschema-benchmark)'s
+job, so its reports are what the entries compare with.
+
+The benchmark code is in `benchmark/`:
+
+- The A/B harness in `ab/` times two revisions of `src/` in one process
+  (`ab.ts`) and checks that they give the same results (`ab-equal.ts`). It
+  runs on real-world schemas and instances in `data/`, which aren't
+  committed. They're built from files on one machine, most of them other
+  projects' files. `CORPORA` gives it others.
+- `npm run bundle-size` measures bundles of small entry scripts in
+  `bundle-size/entries/`.
+
+The rest was deleted on 2026-10-31, along with the worktrees it compared
+with. That includes the scripts written for one-off investigations, the
+benchmarks comparing v2 with v1 and other implementations
+(`test-suite.bench.ts` and `real-world.bench.ts`), and `modes.bench.ts`. So
+when an entry names one, it's saying how its numbers were measured, not
+something that can be run.
 
 - [Bytecode and closures](bytecode-and-closures.md) (2026-10-18)
 - [Modes](modes.md) (2026-10-19)
