@@ -102,6 +102,24 @@ browser without its `rejson` and `jref` processors:
   (`http-cache-semantics` and `content-type`, 23 kB), and `vfile` (10 kB).
 - The other five dialects add 14 kB up front, 2 kB gzipped.
 
+## After the resolver became a plain function
+
+Results from 2026-10-30, after `resolveSchema` (see
+[Schema validation](../components/schema-validation.md)). Schemas are
+parsed with `fromJson` and resolved without a `VFile`, so the entries that
+don't lint no longer bundle `vfile`, `vfile-message`, or `rejsonParse`.
+
+| Entry | Up front | Up front, gzipped | Total | Total, gzipped |
+| --- | --- | --- | --- | --- |
+| all-dialects-validate | 187.2 kB (−8.0) | 49.6 kB (−1.8) | 210.7 kB | 55.0 kB |
+| v1-bundle | 117.8 kB (−8.0) | 33.2 kB (−1.8) | 117.8 kB | 33.2 kB |
+| v1-lint | 131.4 kB (−0.9) | 37.9 kB (+0.2) | 233.5 kB | 61.8 kB |
+| v1-validate-basic | 174.7 kB (−8.1) | 47.9 kB (−1.8) | 198.3 kB | 53.4 kB |
+| v1-validate-flag | 173.3 kB (−8.0) | 47.5 kB (−1.8) | 196.8 kB | 52.9 kB |
+
+The differences are against the commit before, measured the same day.
+Linting still uses unified and vfile, so `v1-lint` is about the same.
+
 ## Compared with v1
 
 Results from 2026-10-30, v1 at 1.18.0 (its `main`, 28a940e, and the npm

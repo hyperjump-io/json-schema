@@ -49,6 +49,11 @@ They aren't thrown, so every problem in the file is reported.
 It's asynchronous because a dialect from a custom meta-schema has to be
 retrieved first.
 
+Outside a pipeline, `resolveSchema(tree, options)` does the same, for a
+JSON AST from browser's `fromJson`. It takes the same options, with `uri`
+required, and returns the schema AST and its problems as data
+(`{ document, messages }`) instead of adding them to a file.
+
 ## Rules
 
 Rules are unified plugins. Each one takes its setting the same way it's

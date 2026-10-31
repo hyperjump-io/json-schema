@@ -1,6 +1,5 @@
-import { VFile } from "vfile";
-import { rejsonParse } from "@hyperjump/browser/json";
-import { jsonSchemaResolve } from "./resolve.js";
+import { fromJson, jsonSyntaxErrorMessage } from "@hyperjump/browser/json";
+import { resolveSchema } from "./resolve.js";
 import { SchemaError } from "./schema-error.js";
 
 /**
@@ -22,44 +21,34 @@ import { SchemaError } from "./schema-error.js";
  * problems can't be used reliably
  */
 export const resolveSchemaText = async (text, session, uri, dialectUri, origin) => {
-  const file = new VFile(text);
+  const { status, node, errors, comments } = fromJson(text);
 
-  /** @type JsonSchemaDocumentNode | undefined */
-  let document;
-  try {
-    // The resolver's transformer doesn't use the processor
-    const resolve = /** @type Function */ (jsonSchemaResolve).call(undefined, { session, uri, dialectUri });
-    document = /** @type JsonSchemaDocumentNode */ (await resolve(parse(file), file));
-  } catch (error) {
-    // A syntax error the parser can't recover from fails the file. Every
-    // syntax error is on the file by then.
-    if (!file.messages.includes(/** @type any */ (error))) {
-      throw error;
+  /** @type SchemaMessage[] */
+  const messages = errors.map((error) => ({
+    source: error.source,
+    ruleId: error.ruleId,
+    severity: "error",
+    uri: uri,
+    place: error.place,
+    message: jsonSyntaxErrorMessage(error)
+  }));
+
+  // A syntax error the parser can't recover from leaves nothing to resolve
+  if (status !== "failure") {
+    /** @type JsonDocumentNode */
+    const tree = { type: "json-document", status, children: node ? [node] : [], comments };
+    const resolved = await resolveSchema(tree, { session, uri, dialectUri });
+    messages.push(...resolved.messages);
+
+    if (messages.length === 0) {
+      if (origin !== undefined) {
+        resolved.document.origin = origin;
+      }
+      return resolved.document;
     }
   }
 
-  if (document === undefined || file.messages.length > 0) {
-    throw schemaError(file, uri, origin);
-  }
-
-  if (origin !== undefined) {
-    document.origin = origin;
-  }
-  return document;
-};
-
-/**
- * Parse a file the way `rejsonParse` does in a pipeline, with what it sets
- * as the parser. A schema is resolved without a unified processor, so code
- * that only loads schemas doesn't load unified.
- *
- * @type (file: VFile) => JsonDocumentNode
- */
-const parse = (file) => {
-  /** @type {{ parser?: (document: string, file: VFile) => JsonDocumentNode }} */
-  const processor = {};
-  rejsonParse.call(/** @type any */ (processor), { accept: "recovered" });
-  return /** @type NonNullable<typeof processor.parser> */ (processor.parser)(String(file), file);
+  throw new SchemaError(origin === undefined ? messages : messages.map((message) => ({ ...message, origin })));
 };
 
 /**
@@ -87,14 +76,4 @@ export const toSchemaMessage = (message, uri, severity, origin) => {
     schemaMessage.origin = origin;
   }
   return schemaMessage;
-};
-
-/**
- * Every message on a file that was resolved as a schema, as a SchemaError. A
- * schema with any problem can't be used, so they're all errors.
- *
- * @type (file: VFile, uri: string, origin: string | undefined) => SchemaError
- */
-const schemaError = (file, uri, origin) => {
-  return new SchemaError(file.messages.map((message) => toSchemaMessage(message, uri, "error", origin)));
 };

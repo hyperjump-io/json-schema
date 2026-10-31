@@ -1,6 +1,5 @@
 import { relativeFileUri } from "@hyperjump/browser";
 import { toAbsoluteIri } from "@hyperjump/uri";
-import { VFileMessage } from "vfile-message";
 import { appendToLocation, jsonValue, pointerGet } from "@hyperjump/browser/json";
 import { isErrorNode } from "../keywords/checks.js";
 import { keywordDefinitionUri } from "../keywords/unknown.js";
@@ -512,9 +511,8 @@ const accepts = (keyword, valueNode, schemaNode) => {
   let accepted = true;
   keyword.check?.(tolerantNode, {
     siblings: siblingValues(/** @type JsonSchemaTolerantNode */ (schemaNode), keyword.siblings),
-    message: (reason) => {
+    message: () => {
       accepted = false;
-      return new VFileMessage(reason);
     }
   });
   return accepted;

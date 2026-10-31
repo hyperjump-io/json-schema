@@ -9,14 +9,23 @@ an internal meta-schema.
   never validated against a meta-schema.
 - Unsupported keywords are reported by the resolver according to the
   dialect's `unknownKeywords`.
-- A retrieved or registry schema is parsed and resolved by
-  `resolveSchemaText` (`src/schema/resolve-text.js`) the way a pipeline of
-  `rejsonParse` (accepting what it recovered from) and `jsonSchemaResolve`
-  would, but without a `unified()` processor: it uses `rejsonParse`'s
-  parser and calls the resolver's transformer, so code that only loads
-  schemas doesn't load `unified` (see
-  [Bundle size](../../benchmarks/bundle-size.md)). Problems are still
-  collected on a `VFile`.
+- The resolver is a plain function, `resolveSchema(tree, options)`
+  (`src/schema/resolve.js`), that returns the schema AST and every problem
+  as a `SchemaMessage`. `jsonSchemaResolve` is a unified plugin over it,
+  the way browser's `rejsonParse` is over `fromJson`: it gets the base URI
+  from the file's path, adds each problem to the file as a fatal message,
+  and puts the session on `file.data`. A retrieved or registry schema is
+  parsed with `fromJson`, accepting what it recovered from, and resolved
+  with `resolveSchema`, by `resolveSchemaText`
+  (`src/schema/resolve-text.js`), so code that only loads schemas loads
+  neither `unified` nor `vfile` (see
+  [Bundle size](../benchmarks/bundle-size.md)). Before 2026-10-30, the
+  resolver was the plugin's transformer and reported on a `VFile`, rolling
+  the file's messages back while it tried a shape's alternatives, and
+  `resolveSchemaText` called the transformer and `rejsonParse`'s parser
+  with a fake processor. A keyword's `check` and `resolve` report with
+  `context.message`, which returns nothing, so keywords don't depend on
+  vfile either.
 - Every problem with a schema is found while it's resolved, and a schema is
   always checked. There's no option to skip it. A trusted schema that has
   to start fast can be compiled once and restored with

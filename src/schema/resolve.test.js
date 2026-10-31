@@ -7,9 +7,9 @@ import { describe, test, beforeEach, beforeAll, afterAll, expect } from "vitest"
 import { unified } from "unified";
 import { VFile } from "vfile";
 import { HttpError, RetrievalNotAllowedError } from "@hyperjump/browser";
-import { pointerGet, rejsonParse } from "@hyperjump/browser/json";
+import { fromJson, pointerGet, rejsonParse } from "@hyperjump/browser/json";
 import { JsonSchema, SchemaError, extendDialect } from "../json-schema.js";
-import { jsonSchemaResolve } from "./resolve.js";
+import { jsonSchemaResolve, resolveSchema } from "./resolve.js";
 import idKeyword from "../keywords/id.js";
 import anchorKeyword from "../keywords/anchor.js";
 import dynamicAnchorKeyword from "../keywords/dynamicAnchor.js";
@@ -19,7 +19,7 @@ import recursiveAnchorKeyword from "../keywords/draft-2019-09/recursiveAnchor.js
 import vocabularyKeyword from "../keywords/vocabulary.js";
 
 /**
- * @import { JsonParseStatus } from "@hyperjump/browser/json"
+ * @import { JsonDocumentNode, JsonParseStatus } from "@hyperjump/browser/json"
  * @import { JsonSchemaConfig } from "../json-schema.d.ts"
  * @import { DialectConfig, DialectExtension } from "../dialect.d.ts"
  * @import { Keyword } from "../keyword.d.ts"
@@ -31,6 +31,28 @@ const dialectUri = "https://example.com/dialect";
 const legacyDialectUri = "https://example.com/legacy";
 const strictDialectUri = "https://example.com/strict";
 const baseUri = "https://example.com/schema";
+
+describe("resolveSchema", () => {
+  test("problems are returned as data, and the tree becomes the schema AST", async () => {
+    const { node } = fromJson(JSON.stringify({ $schema: dialectUri, $id: "#not-absolute" }));
+    const tree = /** @type JsonDocumentNode */ ({ type: "json-document", status: "success", children: [node] });
+    const { document, messages } = await resolveSchema(tree, { session: testJsonSchema().session(), uri: baseUri });
+
+    expect(document.type).to.equal("json-schema-document");
+    expect(document.uri).to.equal(baseUri);
+    expect(messages.map(({ ruleId, severity, uri }) => [ruleId, severity, uri])).to.eql([[idKeyword.uri, "error", baseUri]]);
+  });
+
+  test("messages about keywords that turn out to be ignored are dropped", async () => {
+    // `$schema` that isn't where a resource starts is ignored, and the
+    // schema is read again with its parent's dialect
+    const { node } = fromJson(JSON.stringify({ $schema: dialectUri, properties: { a: { $schema: strictDialectUri, foo: 1 } } }));
+    const tree = /** @type JsonDocumentNode */ ({ type: "json-document", status: "success", children: [node] });
+    const { messages } = await resolveSchema(tree, { session: testJsonSchema().session(), uri: baseUri });
+
+    expect(messages.map(({ ruleId }) => ruleId)).to.eql(["misplaced-dialect"]);
+  });
+});
 
 describe("jsonSchemaResolve", () => {
   /** @type JsonSchema */

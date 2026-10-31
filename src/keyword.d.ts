@@ -1,5 +1,4 @@
 import type { Node } from "unist";
-import type { VFileMessage } from "vfile-message";
 import type { Json, JsonErrorNode, JsonNode, JsonType, ReadonlyJson } from "@hyperjump/browser/json";
 import type { JsonSchemaNode, JsonSchemaTolerantNode } from "./schema/schema-ast.d.ts";
 import type { Dialect, DialectDefinition, Vocabulary } from "./dialect.d.ts";
@@ -344,7 +343,7 @@ export type CheckContext = {
    * messages with the keyword's URI as the `ruleId`. The node defaults to the
    * keyword's value.
    */
-  message: (reason: string, node?: Node) => VFileMessage;
+  message: (reason: string, node?: Node) => void;
 };
 
 export type ResolveContext = {
@@ -401,5 +400,5 @@ export type ResolveContext = {
    * Report a problem with the keyword, such as an invalid identifier. It's
    * added to the file's messages. The node defaults to the keyword's value.
    */
-  message: (reason: string, node?: Node) => VFileMessage;
+  message: (reason: string, node?: Node) => void;
 };

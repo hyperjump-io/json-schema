@@ -1,7 +1,7 @@
 # Architecture
 
 ```text
-text ─ rejsonParse ─▶ JSON AST ─ jsonSchemaResolve ─▶ Schema AST ─ (schema validation) ─▶ lower ─▶ kernel ─ optimize ─▶ kernel ─ fast / instrumented ─▶ closures
+text ─ fromJson ─▶ JSON AST ─ resolveSchema ─▶ Schema AST ─ (schema validation) ─▶ lower ─▶ kernel ─ optimize ─▶ kernel ─ fast / instrumented ─▶ closures
        (browser)                  (async)                                                  (async)                              (sync, lazy)
 ```
 
@@ -9,8 +9,9 @@ text ─ rejsonParse ─▶ JSON AST ─ jsonSchemaResolve ─▶ Schema AST ─
   `JsonSchemaSession` extends its `Session`. Schemas are retrieved, browsed,
   and compiled in a session (see [Sessions and registries](components/sessions/README.md)).
 - Schemas are retrieved with browser's `get`. The schema media type plugin
-  (`application/schema+json`, `.schema.json`) runs `rejsonParse` and
-  `jsonSchemaResolve`. Any message from either is fatal there: it throws a
+  (`application/schema+json`, `.schema.json`) parses with `fromJson` and
+  resolves with `resolveSchema` (`jsonSchemaResolve` is the same as a
+  unified plugin). Any problem from either is fatal there: it throws a
   `SchemaError` with all of them (see [Validation API](components/validation-api/README.md)).
 - A JSON document (`application/json`, `.json`) is a schema if its
   top-level `$schema` is a dialect the session has or can find
@@ -29,7 +30,7 @@ text ─ rejsonParse ─▶ JSON AST ─ jsonSchemaResolve ─▶ Schema AST ─
 | `src/operations/` | The operations: `validate`, `validator`, `annotate`, `annotator`, `compile`, `serialize`, `restore`, `bundle`, `lint`, and what they share (`context.js`, `evaluators.js`). `validatorFor` and `annotatorFor` are in `validate-compiled.js`, apart from the others, because they import the instrumented evaluator |
 | `src/session.js` | `JsonSchemaSession` |
 | `src/keyword.d.ts`, `src/dialect.d.ts`, `src/format.d.ts` | What a keyword, dialect, and format are |
-| `src/schema/` | Text to schema AST: the media type plugin, `jsonSchemaResolve`, schema validation, and the schema AST types |
+| `src/schema/` | Text to schema AST: the media type plugin, `resolveSchema` and `jsonSchemaResolve`, schema validation, and the schema AST types |
 | `src/kernel/` | Schema AST to results: the kernel's expressions (`kernel.d.ts`), `lower` (compiling), the normal form, `optimize`, the definitions a kernel uses (`definitions.js`), the evaluators (`fast.js` for plain values without plugins, `instrumented.js` for everything else), `Validator`, instance operations, and evaluation plugin types. See [the kernel spec](specs/kernel/README.md) |
 | `src/kernel/optimizations/` | Optimization passes on kernel expressions, one per file. `index.js` lists them in the order they run |
 | `src/output/` | Output formats and validation errors |

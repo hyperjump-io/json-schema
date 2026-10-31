@@ -9,9 +9,9 @@ import { siblingValues } from "../keywords/utilities.js";
 /**
  * @import { Node } from "unist"
  * @import { VFile } from "vfile"
- * @import { VFileMessage } from "vfile-message"
  * @import { JsonDocumentNode, JsonErrorNode } from "@hyperjump/browser/json"
  * @import { JsonSchemaSession } from "../session.d.ts"
+ * @import { SchemaMessage } from "./schema-error.d.ts"
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode, JsonSchemaTolerantNode } from "./schema-ast.d.ts"
  * @import { Keyword, ResolveContext, Shape } from "../keyword.d.ts"
  * @import { Dialect, DialectDefinition } from "../dialect.d.ts"
@@ -41,7 +41,19 @@ import { siblingValues } from "../keywords/utilities.js";
  * }} Effects
  */
 
-/** @type API.jsonSchemaResolve */
+/** @type API.resolveSchema */
+export const resolveSchema = async (tree, options) => {
+  const dialectUri = options.dialectUri ?? options.session.jsonSchema.config.defaultDialectUri;
+  const resolver = new Resolver(options.session, tree);
+  return resolver.resolve(toAbsoluteIri(options.uri), dialectUri);
+};
+
+/**
+ * `resolveSchema` as a unified plugin: the base URI can come from the
+ * file's path, and each problem is a message on the file
+ *
+ * @type API.jsonSchemaResolve
+ */
 export function jsonSchemaResolve(options) {
   return async (tree, file) => {
     const uri = options.uri ?? fileUri(file);
@@ -55,9 +67,13 @@ export function jsonSchemaResolve(options) {
     // Lint rules find other schemas in the same session
     file.data.jsonSchemaSession = options.session;
 
-    const dialectUri = options.dialectUri ?? options.session.jsonSchema.config.defaultDialectUri;
-    const resolver = new Resolver(options.session, file, tree);
-    return resolver.resolve(toAbsoluteIri(uri), dialectUri);
+    const { document, messages } = await resolveSchema(tree, { ...options, uri });
+    for (const { message, place, ruleId, source, cause } of messages) {
+      // A schema with a problem can't be used, so every problem is an error.
+      // It's not thrown, so the rest of the document is still checked.
+      file.message(message, { place, ruleId, source, cause: /** @type Error | undefined */ (cause) }).fatal = true;
+    }
+    return document;
   };
 }
 
@@ -78,8 +94,12 @@ class Resolver {
   /** @type JsonSchemaSession */
   #session;
 
-  /** @type VFile */
-  #file;
+  /**
+   * Every problem found, in the order they're found
+   *
+   * @type SchemaMessage[]
+   */
+  #messages;
 
   /** @type JsonDocumentNode */
   #tree;
@@ -92,17 +112,16 @@ class Resolver {
 
   /**
    * @param {JsonSchemaSession} session
-   * @param {VFile} file
    * @param {JsonDocumentNode} tree
    */
-  constructor(session, file, tree) {
+  constructor(session, tree) {
     this.#session = session;
-    this.#file = file;
+    this.#messages = [];
     this.#tree = tree;
     this.#embedded = {};
   }
 
-  /** @type (uri: string, dialectUri: string | undefined) => Promise<JsonSchemaDocumentNode> */
+  /** @type (uri: string, dialectUri: string | undefined) => Promise<{ document: JsonSchemaDocumentNode; messages: SchemaMessage[] }> */
   async resolve(uri, dialectUri) {
     this.#documentUri = uri;
     const root = /** @type TreeNode | undefined */ (this.#tree.children[0]);
@@ -120,7 +139,7 @@ class Resolver {
 
     this.#embedded[document.uri] ??= document;
 
-    return document;
+    return { document, messages: this.#messages };
   }
 
   /**
@@ -176,25 +195,25 @@ class Resolver {
 
     // Messages about this schema's keywords are discarded if the keywords
     // turn out to be interpreted differently or ignored
-    let messageCount = this.#file.messages.length;
+    let messageCount = this.#messages.length;
     let keywords = this.#keywords(node, dialect);
     let effects = this.#collectEffects(keywords, resource, dialect);
 
     // `$schema` is only allowed where a schema resource starts. Anywhere else,
     // it's ignored and the schema is interpreted with its parent's dialect.
     if ($schemaNode && !isDocumentRoot && effects.baseUri === undefined && effects.reference === undefined && dialect !== parentDialect) {
-      this.#file.messages.length = messageCount;
+      this.#messages.length = messageCount;
       this.#message("'$schema' is only allowed at the root of a schema resource. It's ignored.", $schemaNode, "misplaced-dialect");
 
       dialect = /** @type Dialect */ (parentDialect);
-      messageCount = this.#file.messages.length;
+      messageCount = this.#messages.length;
       keywords = this.#keywords(node, dialect);
       effects = this.#collectEffects(keywords, resource, dialect);
     }
 
     if (effects.reference !== undefined) {
       // Problems with the ignored keywords don't matter
-      this.#file.messages.length = messageCount;
+      this.#messages.length = messageCount;
 
       Object.assign(node, { type: "reference", href: effects.reference });
       // The reference replaces the whole object, so nothing else in it means
@@ -549,19 +568,18 @@ class Resolver {
     this.#message(`The '${uri}' meta-schema describes itself, so its dialect has to be in the 'dialects' config.`, node, "unknown-dialect");
   }
 
-  /** @type (reason: string, node: Node, ruleId: string, cause?: Error) => VFileMessage */
+  /**
+   * A schema with a problem can't be used, so every problem is an error
+   *
+   * @type (reason: string, node: Node, ruleId: string, cause?: Error) => void
+   */
   #message(reason, node, ruleId, cause) {
-    const message = this.#file.message(reason, {
-      place: node.position,
-      ruleId: ruleId,
-      source: "json-schema",
-      cause: cause
-    });
-
-    // A schema with a problem can't be used, so every problem is an error.
-    // It's not thrown, so the rest of the document is still checked.
-    message.fatal = true;
-    return message;
+    /** @type SchemaMessage */
+    const message = { source: "json-schema", ruleId, severity: "error", uri: this.#documentUri, place: node.position, message: reason };
+    if (cause !== undefined) {
+      message.cause = cause;
+    }
+    this.#messages.push(message);
   }
 }
 
