@@ -1,7 +1,7 @@
 import { isErrorNode } from "./checks.js";
 
 /**
- * @import { JsonType } from "@hyperjump/browser/json"
+ * @import { JsonType } from "@hyperjump/browser"
  * @import { Keyword } from "../keyword.d.ts"
  */
 

@@ -1,7 +1,7 @@
 import { annotationKeyword } from "./utilities.js";
 
 /**
- * @import { Json } from "@hyperjump/browser/json"
+ * @import { Json } from "@hyperjump/browser"
  * @import { Keyword } from "../keyword.d.ts"
  */
 

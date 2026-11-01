@@ -1,4 +1,4 @@
-import type { Json } from "@hyperjump/browser/json";
+import type { Json } from "@hyperjump/browser";
 import type { SessionOptions } from "../session.d.ts";
 import type { Context, SchemaSource } from "./context.d.ts";
 

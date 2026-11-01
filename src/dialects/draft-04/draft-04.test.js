@@ -6,7 +6,7 @@ import { compile as compileSchema } from "../../operations/compile.js";
 import { annotatorFor, validatorFor } from "../../operations/validate-compiled.js";
 
 /**
- * @import { Json } from "@hyperjump/browser/json"
+ * @import { Json } from "@hyperjump/browser"
  * @import { JsonSchemaConfig } from "../../json-schema.d.ts"
  * @import { CompiledSchema } from "../../operations/compile.d.ts"
  */

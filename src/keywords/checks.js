@@ -1,7 +1,7 @@
 import { isRegex } from "@hyperjump/json-schema-formats";
 
 /**
- * @import { JsonErrorNode } from "@hyperjump/browser/json"
+ * @import { JsonErrorNode } from "@hyperjump/browser"
  * @import { CheckContext } from "../keyword.d.ts"
  * @import { JsonSchemaTolerantNode } from "../schema/schema-ast.d.ts"
  */

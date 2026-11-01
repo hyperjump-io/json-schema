@@ -1,7 +1,7 @@
 import { describe, test, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
-import { rejsonParse } from "@hyperjump/browser/json";
+import { rejsonParse } from "@hyperjump/browser";
 import { linter } from "../test-linter.js";
 import { JsonSchema } from "../../json-schema.js";
 import { SchemaRegistry } from "../../registry/schema-registry.js";

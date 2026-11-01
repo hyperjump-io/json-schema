@@ -1,4 +1,4 @@
-import type { Json } from "@hyperjump/browser/json";
+import type { Json } from "@hyperjump/browser";
 
 /**
  * The kernel: the expressions every keyword lowers to (see `design/specs/kernel/`). The

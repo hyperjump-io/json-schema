@@ -1,5 +1,5 @@
 import type { Plugin } from "unified";
-import type { JsonDocumentNode } from "@hyperjump/browser/json";
+import type { JsonDocumentNode } from "@hyperjump/browser";
 import type { CompiledSchema } from "../operations/compile.d.ts";
 
 export type JsonSchemaValidateOptions = {

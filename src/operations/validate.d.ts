@@ -1,4 +1,4 @@
-import type { JsonErrorNode, JsonNode, JsonParseStatus, ReadonlyJson } from "@hyperjump/browser/json";
+import type { JsonErrorNode, JsonNode, JsonParseStatus, ReadonlyJson } from "@hyperjump/browser";
 import type { EvaluationPlugin } from "../kernel/evaluation-plugin.d.ts";
 import type { OutputFormat } from "../output/output-format.d.ts";
 import type { SessionOptions } from "../session.d.ts";

@@ -1,4 +1,4 @@
-import type { Json, JsonErrorNode, JsonNode, ReadonlyJson } from "@hyperjump/browser/json";
+import type { Json, JsonErrorNode, JsonNode, ReadonlyJson } from "@hyperjump/browser";
 import type { AnnotationResult, EvaluationOptions } from "../operations/validate.d.ts";
 import type { Kernel } from "./kernel.d.ts";
 import type { instrumented } from "./instrumented.js";

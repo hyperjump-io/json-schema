@@ -1,5 +1,5 @@
 /**
- * @import { JsonType } from "@hyperjump/browser/json"
+ * @import { JsonType } from "@hyperjump/browser"
  * @import * as API from "./format-types.d.ts"
  */
 

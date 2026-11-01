@@ -1,4 +1,4 @@
-import type { Json, JsonErrorNode, JsonNode, ReadonlyJson } from "@hyperjump/browser/json";
+import type { Json, JsonErrorNode, JsonNode, ReadonlyJson } from "@hyperjump/browser";
 import type { Keyword } from "../keyword.d.ts";
 import type { Expression, Handle } from "./kernel.d.ts";
 

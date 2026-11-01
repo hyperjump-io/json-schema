@@ -3,7 +3,7 @@ import { normalForm } from "../normalize.js";
 import { isInert } from "../inert.js";
 
 /**
- * @import { Json } from "@hyperjump/browser/json"
+ * @import { Json } from "@hyperjump/browser"
  * @import { KernelSchema, Expression, Handle, KeywordGroup, Scalar, TypeName } from "../kernel.d.ts"
  * @import { Optimization } from "../optimize.js"
  */

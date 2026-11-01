@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { fromJson } from "@hyperjump/browser/json";
+import { fromJson } from "@hyperjump/browser";
 import { JsonSchema } from "../../json-schema.js";
 import { SchemaRegistry } from "../../registry/schema-registry.js";
 import { v1Dialect, v1DialectUri } from "../../dialects/v1/index.js";
@@ -12,7 +12,7 @@ import { compile as compileSchema, restore, serialize } from "../../operations/c
 import { validatorFor } from "../../operations/validate-compiled.js";
 
 /**
- * @import { Json } from "@hyperjump/browser/json"
+ * @import { Json } from "@hyperjump/browser"
  * @import { KernelSchema, Expression, Handle, Kernel } from "../kernel.d.ts"
  * @import { Mode } from "../optimize.js"
  */

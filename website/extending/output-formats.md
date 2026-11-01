@@ -9,7 +9,7 @@ The easiest way to make one is to build on `BASIC`, which already finds
 every error. This one turns the errors into messages:
 
 ```typescript
-import { jsonSyntaxErrorMessage } from "@hyperjump/browser/json";
+import { jsonSyntaxErrorMessage } from "@hyperjump/browser";
 import { BASIC } from "@hyperjump/json-schema";
 import type { OutputError, OutputFormat } from "@hyperjump/json-schema";
 

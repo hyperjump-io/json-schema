@@ -1,6 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { RetrievalError } from "@hyperjump/browser";
-import { fromJs } from "@hyperjump/browser/json";
+import { fromJs, RetrievalError } from "@hyperjump/browser";
 import { JsonSchema } from "../json-schema.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
@@ -12,7 +11,7 @@ import { bundle } from "./bundle.js";
 import { lint } from "./lint.js";
 
 /**
- * @import { Json } from "@hyperjump/browser/json"
+ * @import { Json } from "@hyperjump/browser"
  * @import { BasicOutput } from "../output/output-format.d.ts"
  */
 

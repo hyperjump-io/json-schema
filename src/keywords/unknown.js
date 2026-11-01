@@ -1,5 +1,5 @@
 /**
- * @import { Json } from "@hyperjump/browser/json"
+ * @import { Json } from "@hyperjump/browser"
  * @import { Keyword } from "../keyword.d.ts"
  * @import { JsonSchema } from "../json-schema.d.ts"
  */

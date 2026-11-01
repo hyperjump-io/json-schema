@@ -1,7 +1,7 @@
 import { describe, test, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
-import { fromJs, rejsonParse, rejsonStringify } from "@hyperjump/browser/json";
+import { fromJs, rejsonParse, rejsonStringify } from "@hyperjump/browser";
 import { JsonSchema, extendDialect } from "../json-schema.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
 import { draft202012Dialect } from "../dialects/draft-2020-12/index.js";
@@ -13,7 +13,7 @@ import impossibleProperty from "./rules/impossible-property.js";
 import keywordWithoutEffect from "./rules/keyword-without-effect.js";
 
 /**
- * @import { Json } from "@hyperjump/browser/json"
+ * @import { Json } from "@hyperjump/browser"
  * @import { Expression } from "../kernel/kernel.d.ts"
  * @import { Keyword } from "../keyword.d.ts"
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode, JsonSchemaTolerantNode } from "../schema/schema-ast.d.ts"

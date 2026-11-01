@@ -1,4 +1,4 @@
-import { jsonValue } from "@hyperjump/browser/json";
+import { jsonValue } from "@hyperjump/browser";
 import { readsMarks } from "../../kernel/kernel.js";
 import { operationsOf } from "../analysis.js";
 import { documentForLint, lowerSchemaForLint } from "../document.js";

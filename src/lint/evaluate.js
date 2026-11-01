@@ -6,7 +6,7 @@ import { codePointLengthIsWithin, instanceEqual } from "../keywords/utilities.js
 import { schemaAt } from "./document.js";
 
 /**
- * @import { Json, JsonType } from "@hyperjump/browser/json"
+ * @import { Json, JsonType } from "@hyperjump/browser"
  * @import { Expression, ExpressionOf, Handle, ItemPattern, Selector } from "../kernel/kernel.d.ts"
  * @import { State } from "../kernel/fast.js"
  * @import { InstanceNode } from "../kernel/instance.js"

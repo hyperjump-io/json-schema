@@ -1,7 +1,7 @@
-import { jsonValue } from "@hyperjump/browser/json";
+import { jsonValue } from "@hyperjump/browser";
 
 /**
- * @import { Json, JsonErrorNode, JsonNode, JsonType } from "@hyperjump/browser/json"
+ * @import { Json, JsonErrorNode, JsonNode, JsonType } from "@hyperjump/browser"
  * @import { InstanceOps } from "../keyword.d.ts"
  */
 

@@ -7,7 +7,7 @@ import staticUnevaluated from "./static-unevaluated.js";
 import { compile as compileSchema, serialize } from "../../operations/compile.js";
 
 /**
- * @import { Json } from "@hyperjump/browser/json"
+ * @import { Json } from "@hyperjump/browser"
  * @import { Expression, Kernel } from "../kernel.d.ts"
  */
 

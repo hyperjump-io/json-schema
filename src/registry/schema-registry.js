@@ -2,7 +2,7 @@ import { parseIri, toAbsoluteIri } from "@hyperjump/uri";
 import { entriesOf, setEntries } from "./registry-entries.js";
 
 /**
- * @import { ReadonlyJson } from "@hyperjump/browser/json"
+ * @import { ReadonlyJson } from "@hyperjump/browser"
  * @import { RegistryEntry } from "./registry-entries.js"
  * @import * as API from "./schema-registry.d.ts"
  */

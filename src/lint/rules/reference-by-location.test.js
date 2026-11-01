@@ -4,7 +4,7 @@ import { cwd } from "node:process";
 import { describe, test, beforeAll, afterAll, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
-import { rejsonParse } from "@hyperjump/browser/json";
+import { rejsonParse } from "@hyperjump/browser";
 import { JsonSchema } from "../../json-schema.js";
 import { SchemaRegistry } from "../../registry/schema-registry.js";
 import { jsonSchemaResolve } from "../../schema/resolve.js";

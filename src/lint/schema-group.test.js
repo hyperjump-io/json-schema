@@ -1,7 +1,7 @@
 import { describe, test, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
-import { pointerGet, rejsonParse } from "@hyperjump/browser/json";
+import { pointerGet, rejsonParse } from "@hyperjump/browser";
 import { JsonSchema } from "../json-schema.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
@@ -11,7 +11,7 @@ import { documentForLint } from "./document.js";
 import { isNegated, schemaGroup } from "./schema-group.js";
 
 /**
- * @import { Json } from "@hyperjump/browser/json"
+ * @import { Json } from "@hyperjump/browser"
  * @import { JsonSchemaDocumentNode, JsonSchemaNode } from "../schema/schema-ast.d.ts"
  * @import { LintDocument } from "./document.d.ts"
  * @import { SchemaGroup } from "./schema-group.d.ts"

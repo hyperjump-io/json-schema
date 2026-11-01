@@ -1,7 +1,7 @@
 import { subexpressions } from "../kernel/kernel.js";
 
 /**
- * @import { Json, JsonType } from "@hyperjump/browser/json"
+ * @import { Json, JsonType } from "@hyperjump/browser"
  * @import { Expression, Op, Selector, TypeName } from "../kernel/kernel.d.ts"
  * @import { JsonSchemaKeywordNode } from "../schema/schema-ast.d.ts"
  * @import { LoweredKeyword } from "./lower.d.ts"

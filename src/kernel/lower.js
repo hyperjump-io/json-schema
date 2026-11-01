@@ -1,6 +1,5 @@
-import { relativeFileUri } from "@hyperjump/browser";
+import { appendToLocation, jsonValue, pointerGet, relativeFileUri } from "@hyperjump/browser";
 import { toAbsoluteIri } from "@hyperjump/uri";
-import { appendToLocation, jsonValue, pointerGet } from "@hyperjump/browser/json";
 import { isErrorNode } from "../keywords/checks.js";
 import { keywordDefinitionUri } from "../keywords/unknown.js";
 import { siblingValues } from "../keywords/utilities.js";
@@ -8,7 +7,7 @@ import { readsDynamicScope, readsMarks } from "./kernel.js";
 import { normalForm } from "./normalize.js";
 
 /**
- * @import { Json } from "@hyperjump/browser/json"
+ * @import { Json } from "@hyperjump/browser"
  * @import { Dialect } from "../dialect.d.ts"
  * @import { JsonSchemaSession } from "../session.d.ts"
  * @import { Keyword, LowerInput, Reference, Shape } from "../keyword.d.ts"

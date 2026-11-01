@@ -1,5 +1,5 @@
 import { unified } from "unified";
-import { rejsonParse, rejsonStringify } from "@hyperjump/browser/json";
+import { rejsonParse, rejsonStringify } from "@hyperjump/browser";
 import { JsonSchema } from "../json-schema.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
 import { v1Dialect } from "../dialects/v1/index.js";

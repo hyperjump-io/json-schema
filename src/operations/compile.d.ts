@@ -1,4 +1,4 @@
-import type { Json, ReadonlyJson } from "@hyperjump/browser/json";
+import type { Json, ReadonlyJson } from "@hyperjump/browser";
 import type { JsonSchema } from "../json-schema.d.ts";
 import type { SessionOptions } from "../session.d.ts";
 import type { Context, SchemaSource } from "./context.d.ts";

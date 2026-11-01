@@ -1,7 +1,7 @@
 import { describe, test, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
-import { rejsonParse } from "@hyperjump/browser/json";
+import { rejsonParse } from "@hyperjump/browser";
 import { linter } from "../test-linter.js";
 import { JsonSchema, extendDialect } from "../../json-schema.js";
 import { jsonSchemaResolve } from "../../schema/resolve.js";
@@ -167,7 +167,7 @@ const reasons = async (json) => (await lint(json)).messages.map((message) => mes
  * Lint with a custom format. The CLI's formats can't be changed, so the
  * schema is resolved in a session of a `JsonSchema` that has it.
  *
- * @type (json: string, types?: import("@hyperjump/browser/json").JsonType[]) => Promise<string[]>
+ * @type (json: string, types?: import("@hyperjump/browser").JsonType[]) => Promise<string[]>
  */
 const reasonsWithCustomFormat = async (json, types) => {
   const custom = { uri: "https://example.com/format/custom", types, validate: () => true };

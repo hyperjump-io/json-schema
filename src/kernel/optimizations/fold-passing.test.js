@@ -7,7 +7,7 @@ import { compile as compileSchema, serialize } from "../../operations/compile.js
 import { validatorFor } from "../../operations/validate-compiled.js";
 
 /**
- * @import { Json } from "@hyperjump/browser/json"
+ * @import { Json } from "@hyperjump/browser"
  * @import { Kernel } from "../kernel.d.ts"
  * @import { Mode } from "../optimize.js"
  */

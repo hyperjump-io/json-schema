@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { fromJson } from "@hyperjump/browser/json";
+import { fromJson } from "@hyperjump/browser";
 import { loadCorpora } from "./corpus.ts";
 import { load, noOpPlugin } from "./subject.ts";
 

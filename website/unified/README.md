@@ -8,7 +8,7 @@ JSON files and report every problem at its line and column. The
 [Hyperjump CLI](https://github.com/hyperjump-io/cli/blob/main/website/README.md)
 is built this way.
 
-A pipeline starts with `rejsonParse` from `@hyperjump/browser/json`. It
+A pipeline starts with `rejsonParse` from `@hyperjump/browser`. It
 parses JSON text into a JSON AST. It's error-tolerant. With
 `accept: "recovered"`, a file is still processed if the parser could
 recover from its syntax errors. A trailing comma is an example. Those
@@ -16,11 +16,11 @@ syntax errors are reported as warnings.
 
 | Plugin | From | What it does |
 | --- | --- | --- |
-| `rejsonParse` | `@hyperjump/browser/json` | Parses JSON text into a JSON AST |
+| `rejsonParse` | `@hyperjump/browser` | Parses JSON text into a JSON AST |
 | `jsonSchemaValidate` | `@hyperjump/json-schema` | Validates the JSON against a compiled schema |
 | `jsonSchemaResolve` | `@hyperjump/json-schema` | Turns the JSON AST of a schema into a schema AST and reports its problems |
 | Lint rules and presets | `@hyperjump/json-schema/lint/...` | Lint a schema AST |
-| `rejsonStringify` | `@hyperjump/browser/json` | Turns the tree back into JSON text |
+| `rejsonStringify` | `@hyperjump/browser` | Turns the tree back into JSON text |
 
 Problems are added to the file as
 [vfile](https://github.com/vfile/vfile) messages. Any unified reporter can

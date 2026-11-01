@@ -1,4 +1,4 @@
-import { jsonValue } from "@hyperjump/browser/json";
+import { jsonValue } from "@hyperjump/browser";
 import { isErrorNode } from "../keywords/checks.js";
 import { evaluatorForLint } from "./evaluate.js";
 import { marksAreRead, schemaGroup } from "./schema-group.js";

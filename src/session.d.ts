@@ -1,5 +1,4 @@
-import type { DocumentNode, GetOptions, Session } from "@hyperjump/browser";
-import type { Json } from "@hyperjump/browser/json";
+import type { DocumentNode, GetOptions, Json, Session } from "@hyperjump/browser";
 import type { Data } from "unist";
 import type { JsonSchemaNode } from "./schema/schema-ast.d.ts";
 import type { Dialect } from "./dialect.d.ts";

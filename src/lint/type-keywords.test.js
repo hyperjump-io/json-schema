@@ -1,7 +1,7 @@
 import { describe, test, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
-import { rejsonParse, rejsonStringify } from "@hyperjump/browser/json";
+import { rejsonParse, rejsonStringify } from "@hyperjump/browser";
 import { JsonSchema, extendDialect } from "../json-schema.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
 import { draft202012Dialect } from "../dialects/draft-2020-12/index.js";

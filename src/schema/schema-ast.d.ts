@@ -6,7 +6,7 @@ import type {
   JsonParseStatus,
   JsonPropertyNode,
   JsonStatusChildren
-} from "@hyperjump/browser/json";
+} from "@hyperjump/browser";
 import type { DialectDefinition } from "../dialect.d.ts";
 
 /**

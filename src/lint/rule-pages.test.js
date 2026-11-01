@@ -2,7 +2,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { describe, test, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
-import { rejsonParse } from "@hyperjump/browser/json";
+import { rejsonParse } from "@hyperjump/browser";
 import { JsonSchema } from "../json-schema.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
 import { v1Dialect } from "../dialects/v1/index.js";

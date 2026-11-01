@@ -17,7 +17,7 @@ import { bundle } from "../operations/bundle.js";
 import { validatorFor, annotatorFor } from "../operations/validate-compiled.js";
 
 /**
- * @import { Json } from "@hyperjump/browser/json"
+ * @import { Json } from "@hyperjump/browser"
  * @import { Node } from "unist"
  * @import { JsonSchemaConfig } from "../json-schema.d.ts"
  * @import { CompiledSchema } from "../operations/compile.d.ts"

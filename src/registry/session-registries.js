@@ -8,7 +8,7 @@ import { SchemaRegistry } from "./schema-registry.js";
  * @import { JsonSchema } from "../json-schema.d.ts"
  * @import { JsonSchemaSession } from "../session.d.ts"
  * @import { JsonSchemaDocumentNode } from "../schema/schema-ast.d.ts"
- * @import { ReadonlyJson } from "@hyperjump/browser/json"
+ * @import { ReadonlyJson } from "@hyperjump/browser"
  * @import { RegistryEntry } from "./registry-entries.js"
  * @import { IndexedEntry } from "./registry-index.js"
  */

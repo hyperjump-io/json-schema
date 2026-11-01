@@ -5,7 +5,7 @@ import idKeyword from "./id.js";
 import vocabularyKeyword from "./vocabulary.js";
 
 /**
- * @import { Json } from "@hyperjump/browser/json"
+ * @import { Json } from "@hyperjump/browser"
  * @import { DialectConfig, VocabularyConfig } from "../dialect.d.ts"
  */
 

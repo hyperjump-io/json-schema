@@ -1,5 +1,4 @@
-import { relativeFileUri, RetrievalError, Session } from "@hyperjump/browser";
-import { jsonValue } from "@hyperjump/browser/json";
+import { jsonValue, relativeFileUri, RetrievalError, Session } from "@hyperjump/browser";
 import { encodeIriFragment, toAbsoluteIri } from "@hyperjump/uri";
 import { SessionRegistries } from "./registry/session-registries.js";
 import { SchemaError } from "./schema/schema-error.js";
@@ -7,8 +6,7 @@ import { withValidateFormats } from "./dialects/extend-dialect.js";
 import unknownKeyword, { keywordDefinitionUri } from "./keywords/unknown.js";
 
 /**
- * @import { DocumentNode, GetOptions } from "@hyperjump/browser"
- * @import { Json } from "@hyperjump/browser/json"
+ * @import { DocumentNode, GetOptions, Json } from "@hyperjump/browser"
  * @import { Dialect } from "./dialect.d.ts"
  * @import { JsonSchema } from "./json-schema.d.ts"
  * @import { JsonSchemaDocumentNode, JsonSchemaNode } from "./schema/schema-ast.d.ts"

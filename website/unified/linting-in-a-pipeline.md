@@ -7,7 +7,7 @@ AST with `jsonSchemaResolve`. Then add the lint rules as plugins.
 import { unified } from "unified";
 import { VFile } from "vfile";
 import { reporter } from "vfile-reporter";
-import { rejsonParse, rejsonStringify } from "@hyperjump/browser/json";
+import { rejsonParse, rejsonStringify } from "@hyperjump/browser";
 import { jsonSchemaResolve } from "@hyperjump/json-schema";
 import recommended from "@hyperjump/json-schema/lint/recommended";
 

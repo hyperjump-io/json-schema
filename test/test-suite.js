@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, test, beforeAll, expect } from "vitest";
-import { JsonPointerError, pointerGet } from "@hyperjump/browser/json";
+import { JsonPointerError, pointerGet } from "@hyperjump/browser";
 import { resolveIri, toAbsoluteIri } from "@hyperjump/uri";
 import { JsonSchema } from "../src/json-schema.js";
 import { SchemaRegistry } from "../src/registry/schema-registry.js";
@@ -11,7 +11,7 @@ import { compile } from "../src/operations/compile.js";
 import { annotatorFor, validatorFor } from "../src/operations/validate-compiled.js";
 
 /**
- * @import { Json, JsonNode } from "@hyperjump/browser/json"
+ * @import { Json, JsonNode } from "@hyperjump/browser"
  * @import { JsonSchemaConfig } from "../src/json-schema.d.ts"
  * @import { CompiledSchema } from "../src/operations/compile.d.ts"
  * @import { DialectConfig } from "../src/dialect.d.ts"

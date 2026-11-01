@@ -1,4 +1,4 @@
-import { pointerGet } from "@hyperjump/browser/json";
+import { pointerGet } from "@hyperjump/browser";
 import { toAbsoluteIri } from "@hyperjump/uri";
 import { availableDefinitions } from "../kernel/definitions.js";
 import { lowerKeywords } from "../kernel/lower.js";

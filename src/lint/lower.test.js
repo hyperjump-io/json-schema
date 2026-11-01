@@ -1,7 +1,7 @@
 import { describe, test, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
-import { pointerGet, rejsonParse } from "@hyperjump/browser/json";
+import { pointerGet, rejsonParse } from "@hyperjump/browser";
 import { JsonSchema } from "../json-schema.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
 import { draft04Dialect } from "../dialects/draft-04/index.js";
@@ -12,7 +12,7 @@ import { appliesTo, assertsOnItsOwn, keywordAppliesTo } from "./analysis.js";
 import { documentForLint } from "./document.js";
 
 /**
- * @import { Json } from "@hyperjump/browser/json"
+ * @import { Json } from "@hyperjump/browser"
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode } from "../schema/schema-ast.d.ts"
  * @import { LintDocument } from "./document.d.ts"
  * @import { LoweredKeyword } from "./lower.d.ts"

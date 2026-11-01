@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { pointerGet } from "@hyperjump/browser/json";
+import { pointerGet } from "@hyperjump/browser";
 import { JsonSchema } from "../../json-schema.js";
 import { SchemaRegistry } from "../../registry/schema-registry.js";
 import { draft202012Dialect, draft202012DialectUri } from "../../dialects/draft-2020-12/index.js";
@@ -11,7 +11,7 @@ import { compile as compileSchema, serialize } from "../../operations/compile.js
 import { annotatorFor, validatorFor } from "../../operations/validate-compiled.js";
 
 /**
- * @import { Json } from "@hyperjump/browser/json"
+ * @import { Json } from "@hyperjump/browser"
  * @import { Kernel } from "../kernel.d.ts"
  * @import { CompiledSchema } from "../../operations/compile.d.ts"
  * @import { KeywordInfo, SchemaInfo } from "../evaluation-plugin.d.ts"

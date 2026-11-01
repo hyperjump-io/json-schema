@@ -1,12 +1,11 @@
 import { VFileMessage } from "vfile-message";
-import { relativeFileUri } from "@hyperjump/browser";
-import { fromJs, fromJson } from "@hyperjump/browser/json";
+import { fromJs, fromJson, relativeFileUri } from "@hyperjump/browser";
 import { parseIri, toAbsoluteIri } from "@hyperjump/uri";
 import { toVFileMessage } from "../output/validation-error.js";
 import { entriesOf } from "./registry-entries.js";
 
 /**
- * @import { JsonNode } from "@hyperjump/browser/json"
+ * @import { JsonNode } from "@hyperjump/browser"
  * @import { JsonSchema } from "../json-schema.d.ts"
  * @import { SchemaRegistry } from "./schema-registry.d.ts"
  * @import { RegistryEntry } from "./registry-entries.js"

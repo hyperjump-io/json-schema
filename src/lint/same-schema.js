@@ -1,5 +1,5 @@
 /**
- * @import { Json } from "@hyperjump/browser/json"
+ * @import { Json } from "@hyperjump/browser"
  * @import { Expression } from "../kernel/kernel.d.ts"
  * @import { JsonSchemaNode } from "../schema/schema-ast.d.ts"
  * @import { LintSchemas } from "./lower.d.ts"

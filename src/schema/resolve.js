@@ -9,7 +9,7 @@ import { siblingValues } from "../keywords/utilities.js";
 /**
  * @import { Node } from "unist"
  * @import { VFile } from "vfile"
- * @import { JsonDocumentNode, JsonErrorNode } from "@hyperjump/browser/json"
+ * @import { JsonDocumentNode, JsonErrorNode } from "@hyperjump/browser"
  * @import { JsonSchemaSession } from "../session.d.ts"
  * @import { SchemaMessage } from "./schema-error.d.ts"
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode, JsonSchemaTolerantNode } from "./schema-ast.d.ts"

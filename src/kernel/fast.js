@@ -5,7 +5,7 @@ import { keywordEvaluate } from "./definitions.js";
 import { readsMarks } from "./kernel.js";
 
 /**
- * @import { Json } from "@hyperjump/browser/json"
+ * @import { Json } from "@hyperjump/browser"
  * @import { Definitions } from "./definitions.js"
  * @import { EvaluateContext, Keyword } from "../keyword.d.ts"
  * @import { KernelSchema, Expression, Handle, ItemPattern, JsonTypeName, Kernel, Selector, TypeName } from "./kernel.d.ts"

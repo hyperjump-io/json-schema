@@ -6,7 +6,7 @@ import { optimize } from "./optimize.js";
 import { compile as compileSchema, serialize } from "../operations/compile.js";
 
 /**
- * @import { Json } from "@hyperjump/browser/json"
+ * @import { Json } from "@hyperjump/browser"
  * @import { Kernel } from "./kernel.d.ts"
  */
 

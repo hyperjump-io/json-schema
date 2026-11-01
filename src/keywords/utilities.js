@@ -1,7 +1,7 @@
 import { astInstance } from "../kernel/instance.js";
 
 /**
- * @import { Json } from "@hyperjump/browser/json"
+ * @import { Json } from "@hyperjump/browser"
  * @import { InstanceOps, Keyword } from "../keyword.d.ts"
  * @import { Expression } from "../kernel/kernel.d.ts"
  * @import { JsonSchemaKeywordNode, JsonSchemaNode, JsonSchemaTolerantNode } from "../schema/schema-ast.d.ts"

@@ -1,5 +1,4 @@
-import { FileNotFoundError, HttpError, relativeFileUri, RetrievalError, RetrievalNotAllowedError } from "@hyperjump/browser";
-import { JsonPointerError, pointerGet } from "@hyperjump/browser/json";
+import { FileNotFoundError, HttpError, JsonPointerError, pointerGet, relativeFileUri, RetrievalError, RetrievalNotAllowedError } from "@hyperjump/browser";
 import { parseIri, toAbsoluteIri } from "@hyperjump/uri";
 import { AnchorNotFoundError } from "../schema/media-type-plugin.js";
 import { SchemaError } from "../schema/schema-error.js";

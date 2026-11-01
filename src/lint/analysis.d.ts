@@ -1,4 +1,4 @@
-import type { JsonType } from "@hyperjump/browser/json";
+import type { JsonType } from "@hyperjump/browser";
 import type { Expression, Selector, TypeName } from "../kernel/kernel.d.ts";
 import type { JsonSchemaKeywordNode } from "../schema/schema-ast.d.ts";
 import type { LintDocument } from "./document.d.ts";

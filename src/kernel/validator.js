@@ -1,4 +1,4 @@
-import { fromJs, fromJson } from "@hyperjump/browser/json";
+import { fromJs, fromJson } from "@hyperjump/browser";
 import { withRelativeFileUris } from "./kernel-uris.js";
 import { astInstance, jsInstance } from "./instance.js";
 import { optimize } from "./optimize.js";
@@ -6,7 +6,7 @@ import { fast } from "./fast.js";
 import { FLAG } from "../output/flag.js";
 
 /**
- * @import { Json } from "@hyperjump/browser/json"
+ * @import { Json } from "@hyperjump/browser"
  * @import * as API from "./validator.d.ts"
  * @import { Definitions } from "./definitions.js"
  * @import { EvaluationOptions } from "../operations/validate.d.ts"

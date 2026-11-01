@@ -1,4 +1,4 @@
-import type { ReadonlyJson } from "@hyperjump/browser/json";
+import type { ReadonlyJson } from "@hyperjump/browser";
 
 /**
  * Schemas that aren't retrieved from a URI. A schema is identified the way

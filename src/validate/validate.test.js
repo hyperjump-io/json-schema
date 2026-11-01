@@ -5,7 +5,7 @@ import { pathToFileURL } from "node:url";
 import { describe, test, beforeAll, afterAll, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
-import { rejsonParse, rejsonStringify } from "@hyperjump/browser/json";
+import { rejsonParse, rejsonStringify } from "@hyperjump/browser";
 import { JsonSchema } from "../json-schema.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
 import { v1Dialect } from "../dialects/v1/index.js";
@@ -13,7 +13,7 @@ import { jsonSchemaValidate } from "./validate.js";
 import { compile } from "../operations/compile.js";
 
 /**
- * @import { JsonParseStatus } from "@hyperjump/browser/json"
+ * @import { JsonParseStatus } from "@hyperjump/browser"
  * @import { CompiledSchema } from "../operations/compile.d.ts"
  */
 

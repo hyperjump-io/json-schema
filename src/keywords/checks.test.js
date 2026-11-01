@@ -5,7 +5,7 @@ import { pathToFileURL } from "node:url";
 import { describe, test, beforeEach, beforeAll, afterAll, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
-import { rejsonParse } from "@hyperjump/browser/json";
+import { rejsonParse } from "@hyperjump/browser";
 import { JsonSchema, extendDialect } from "../json-schema.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
@@ -16,7 +16,7 @@ import { draft202012Dialect, draft202012DialectUri } from "../dialects/draft-202
 import { compile } from "../operations/compile.js";
 
 /**
- * @import { JsonParseStatus } from "@hyperjump/browser/json"
+ * @import { JsonParseStatus } from "@hyperjump/browser"
  * @import { Keyword } from "../keyword.d.ts"
  */
 

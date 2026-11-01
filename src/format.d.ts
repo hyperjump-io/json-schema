@@ -1,4 +1,4 @@
-import type { JsonType, ReadonlyJson } from "@hyperjump/browser/json";
+import type { JsonType, ReadonlyJson } from "@hyperjump/browser";
 
 /**
  * The definition of a format for the `format` keyword. A dialect maps format

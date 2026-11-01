@@ -2,7 +2,7 @@ import { annotationKeyword } from "./utilities.js";
 import { array } from "./checks.js";
 
 /**
- * @import { Json } from "@hyperjump/browser/json"
+ * @import { Json } from "@hyperjump/browser"
  * @import { Keyword } from "../keyword.d.ts"
  */
 

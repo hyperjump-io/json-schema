@@ -1,4 +1,4 @@
-import type { Json } from "@hyperjump/browser/json";
+import type { Json } from "@hyperjump/browser";
 import type { JsonSchema } from "../../json-schema.d.ts";
 import type { DialectConfig, SchemaOf } from "../../dialect.d.ts";
 import type { Keyword, Reference } from "../../keyword.d.ts";

@@ -5,7 +5,7 @@ import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import { lower } from "./lower.js";
 
 /**
- * @import { Json } from "@hyperjump/browser/json"
+ * @import { Json } from "@hyperjump/browser"
  * @import { Keyword, Reference } from "../keyword.d.ts"
  */
 

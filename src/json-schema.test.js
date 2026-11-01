@@ -3,8 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { describe, test, beforeEach, expect } from "vitest";
-import { Session } from "@hyperjump/browser";
-import { pointerGet } from "@hyperjump/browser/json";
+import { pointerGet, Session } from "@hyperjump/browser";
 import { JsonSchema, extendDialect } from "./json-schema.js";
 import { v1Dialect, v1DialectUri } from "./dialects/v1/index.js";
 import { SchemaRegistry } from "./registry/schema-registry.js";
@@ -16,7 +15,7 @@ import { annotate } from "./operations/validate.js";
 import { validatorFor } from "./operations/validate-compiled.js";
 
 /**
- * @import { Json } from "@hyperjump/browser/json"
+ * @import { Json } from "@hyperjump/browser"
  * @import { Dialect, DialectConfig, VocabularyConfig } from "./dialect.d.ts"
  * @import { Keyword } from "./keyword.d.ts"
  */

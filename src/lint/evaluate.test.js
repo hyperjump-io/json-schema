@@ -1,7 +1,7 @@
 import { describe, test, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
-import { fromJs, pointerGet, rejsonParse } from "@hyperjump/browser/json";
+import { fromJs, pointerGet, rejsonParse } from "@hyperjump/browser";
 import { JsonSchema, extendDialect } from "../json-schema.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
 import { draft202012Dialect } from "../dialects/draft-2020-12/index.js";
@@ -10,7 +10,7 @@ import { documentForLint } from "./document.js";
 import { evaluatorForLint } from "./evaluate.js";
 
 /**
- * @import { Json } from "@hyperjump/browser/json"
+ * @import { Json } from "@hyperjump/browser"
  * @import { Expression } from "../kernel/kernel.d.ts"
  * @import { Keyword } from "../keyword.d.ts"
  * @import { JsonSchemaDocumentNode, JsonSchemaNode, JsonSchemaTolerantNode } from "../schema/schema-ast.d.ts"

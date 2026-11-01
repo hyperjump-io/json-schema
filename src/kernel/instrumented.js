@@ -9,7 +9,7 @@ import { addDynamicAnchors, addReachable, isClose, itemSequenceStates, selector,
 
 /**
  * @import { Data, Node } from "unist"
- * @import { Json, ReadonlyJson } from "@hyperjump/browser/json"
+ * @import { Json, ReadonlyJson } from "@hyperjump/browser"
  * @import { Definitions } from "./definitions.js"
  * @import { EvaluateContext, InstanceOps } from "../keyword.d.ts"
  * @import { EvaluationLocation, EvaluationPlugin, KeywordInfo, SchemaInfo } from "./evaluation-plugin.d.ts"

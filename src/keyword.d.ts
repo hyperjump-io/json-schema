@@ -1,5 +1,5 @@
 import type { Node } from "unist";
-import type { Json, JsonErrorNode, JsonNode, JsonType, ReadonlyJson } from "@hyperjump/browser/json";
+import type { Json, JsonErrorNode, JsonNode, JsonType, ReadonlyJson } from "@hyperjump/browser";
 import type { JsonSchemaNode, JsonSchemaTolerantNode } from "./schema/schema-ast.d.ts";
 import type { Dialect, DialectDefinition, Vocabulary } from "./dialect.d.ts";
 import type { Expression, Handle } from "./kernel/kernel.d.ts";

@@ -10,7 +10,7 @@ import { compile } from "../operations/compile.js";
 import { annotatorFor, validatorFor } from "../operations/validate-compiled.js";
 
 /**
- * @import { Json } from "@hyperjump/browser/json"
+ * @import { Json } from "@hyperjump/browser"
  * @import { OutputError } from "../output/output-format.d.ts"
  * @import { DetailedValidationError } from "../output/validation-error.d.ts"
  */

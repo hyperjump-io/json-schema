@@ -6,8 +6,7 @@ import { pathToFileURL } from "node:url";
 import { describe, test, beforeEach, beforeAll, afterAll, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
-import { HttpError, RetrievalNotAllowedError } from "@hyperjump/browser";
-import { fromJson, pointerGet, rejsonParse } from "@hyperjump/browser/json";
+import { fromJson, HttpError, pointerGet, rejsonParse, RetrievalNotAllowedError } from "@hyperjump/browser";
 import { JsonSchema, SchemaError, extendDialect } from "../json-schema.js";
 import { jsonSchemaResolve, resolveSchema } from "./resolve.js";
 import idKeyword from "../keywords/id.js";
@@ -19,7 +18,7 @@ import recursiveAnchorKeyword from "../keywords/draft-2019-09/recursiveAnchor.js
 import vocabularyKeyword from "../keywords/vocabulary.js";
 
 /**
- * @import { JsonDocumentNode, JsonParseStatus } from "@hyperjump/browser/json"
+ * @import { JsonDocumentNode, JsonParseStatus } from "@hyperjump/browser"
  * @import { JsonSchemaConfig } from "../json-schema.d.ts"
  * @import { DialectConfig, DialectExtension } from "../dialect.d.ts"
  * @import { Keyword } from "../keyword.d.ts"

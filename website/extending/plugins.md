@@ -63,7 +63,7 @@ fail. Those aren't kept in the result. A language server can use this hook
 to show a `description` in a document that has errors.
 
 ```typescript
-import type { Json } from "@hyperjump/browser/json";
+import type { Json } from "@hyperjump/browser";
 
 const description = "https://json-schema.org/keyword/description";
 const descriptions = new Map<string, Json>();

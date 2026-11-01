@@ -1,5 +1,4 @@
-import type { Hyperjump, HyperjumpConfig } from "@hyperjump/browser";
-import type { Json, ReadonlyJson } from "@hyperjump/browser/json";
+import type { Hyperjump, HyperjumpConfig, Json, ReadonlyJson } from "@hyperjump/browser";
 import type { JsonSchemaNode } from "./schema/schema-ast.d.ts";
 import type { Keyword } from "./keyword.d.ts";
 import type { Dialect, DialectConfig, DialectExtension, DialectKeywords, DialectSchema, UnknownKeywords, Vocabulary, VocabularyConfig } from "./dialect.d.ts";

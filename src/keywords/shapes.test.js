@@ -1,7 +1,7 @@
 import { describe, test, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
-import { pointerGet, rejsonParse } from "@hyperjump/browser/json";
+import { pointerGet, rejsonParse } from "@hyperjump/browser";
 import { JsonSchema } from "../json-schema.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
@@ -12,7 +12,7 @@ import { draft201909Dialect, draft201909DialectUri } from "../dialects/draft-201
 import { draft202012Dialect, draft202012DialectUri } from "../dialects/draft-2020-12/index.js";
 
 /**
- * @import { Json } from "@hyperjump/browser/json"
+ * @import { Json } from "@hyperjump/browser"
  * @import { Shape } from "../keyword.d.ts"
  */
 

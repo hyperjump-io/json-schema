@@ -1,5 +1,5 @@
 import { VFileMessage } from "vfile-message";
-import { jsonSyntaxErrorMessage } from "@hyperjump/browser/json";
+import { jsonSyntaxErrorMessage } from "@hyperjump/browser";
 
 /**
  * @import * as API from "./validation-error.d.ts"

@@ -1,10 +1,9 @@
-import { relativeFileUri } from "@hyperjump/browser";
-import { jsonValue } from "@hyperjump/browser/json";
+import { jsonValue, relativeFileUri } from "@hyperjump/browser";
 import { parseIri, resolveIri, toAbsoluteIri, toRelativeIri } from "@hyperjump/uri";
 import { visitReferences } from "../lint/utilities.js";
 
 /**
- * @import { Json } from "@hyperjump/browser/json"
+ * @import { Json } from "@hyperjump/browser"
  * @import { Dialect } from "../dialect.d.ts"
  * @import { JsonSchemaSession } from "../session.d.ts"
  * @import { BundleOptions } from "../operations/bundle.d.ts"

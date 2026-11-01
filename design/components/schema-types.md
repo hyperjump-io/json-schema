@@ -96,7 +96,7 @@ written. Custom keywords are part of the type.
   the call instead of the schema; and a function that makes a typed empty
   registry (`registryFor(jsonSchema)`), which does nothing at runtime and
   is a second way to make one.
-- **What's only read is `ReadonlyJson`** (from `@hyperjump/browser/json`):
+- **What's only read is `ReadonlyJson`** (from `@hyperjump/browser`):
   a registry's schemas, the instance `validate` and `annotate` get, and
   `restore`'s compiled schema. So is what a format, a keyword's
   `InstanceOps.value`, and a plugin's `value()` get, because for a JS

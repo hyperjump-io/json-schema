@@ -5,7 +5,7 @@ import { cwd } from "node:process";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { describe, test, beforeEach, beforeAll, afterAll, expect } from "vitest";
 import { VFileMessage } from "vfile-message";
-import { fromJson, pointerGet } from "@hyperjump/browser/json";
+import { fromJson, pointerGet } from "@hyperjump/browser";
 import { JsonSchema, outputErrorMessage, toVFileMessage } from "../json-schema.js";
 import idKeyword from "../keywords/id.js";
 import anchorKeyword from "../keywords/anchor.js";
@@ -16,7 +16,7 @@ import { validate } from "../operations/validate.js";
 import { annotatorFor, validatorFor } from "../operations/validate-compiled.js";
 
 /**
- * @import { Json } from "@hyperjump/browser/json"
+ * @import { Json } from "@hyperjump/browser"
  * @import { EvaluateContext, Keyword, OpaqueContext, Reference } from "../keyword.d.ts"
  * @import { Expression, TypeName } from "./kernel.d.ts"
  * @import { EvaluationLocation, EvaluationPlugin } from "./evaluation-plugin.d.ts"

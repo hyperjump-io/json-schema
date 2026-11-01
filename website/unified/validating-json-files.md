@@ -14,7 +14,7 @@ import { readFile } from "node:fs/promises";
 import { unified } from "unified";
 import { VFile } from "vfile";
 import { reporter } from "vfile-reporter";
-import { rejsonParse, rejsonStringify } from "@hyperjump/browser/json";
+import { rejsonParse, rejsonStringify } from "@hyperjump/browser";
 import { compile, jsonSchemaValidate } from "@hyperjump/json-schema";
 
 const compiled = await compile(jsonSchema, "https://example.com/person");

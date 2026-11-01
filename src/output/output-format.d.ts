@@ -1,8 +1,7 @@
-import type { JsonSyntaxError } from "@hyperjump/browser/json";
+import type { JsonSyntaxError, relativeFileUri } from "@hyperjump/browser";
 import type { EvaluationPlugin } from "../kernel/evaluation-plugin.d.ts";
 import type { KeywordInfo } from "../kernel/evaluation-plugin.d.ts";
 import type { DetailedValidationError, toVFileMessage, ValidationError } from "./validation-error.d.ts";
-import type { relativeFileUri } from "@hyperjump/browser";
 
 /**
  * An output format, passed to an evaluation as `output`. `R` is its result.

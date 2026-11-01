@@ -108,12 +108,12 @@ could recover from, like the trailing comma here.
 ### A JSON AST node
 
 Use this for a parsed JSON AST you already have. It might come from the JSON
-parser in `@hyperjump/browser/json` or from a schema AST. For example, a
+parser in `@hyperjump/browser` or from a schema AST. For example, a
 lint rule might check a `default` value this way. Errors have the node's
 positions.
 
 ```typescript
-import { fromJson } from "@hyperjump/browser/json";
+import { fromJson } from "@hyperjump/browser";
 
 const isPersonNode = await validator(jsonSchema, "https://example.com/person", { input: "node" });
 

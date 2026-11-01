@@ -1,10 +1,10 @@
-import { fromJson, jsonSyntaxErrorMessage } from "@hyperjump/browser/json";
+import { fromJson, jsonSyntaxErrorMessage } from "@hyperjump/browser";
 import { resolveSchema } from "./resolve.js";
 import { SchemaError } from "./schema-error.js";
 
 /**
  * @import { VFileMessage } from "vfile-message"
- * @import { JsonDocumentNode } from "@hyperjump/browser/json"
+ * @import { JsonDocumentNode } from "@hyperjump/browser"
  * @import { JsonSchemaSession } from "../session.d.ts"
  * @import { JsonSchemaDocumentNode } from "./schema-ast.d.ts"
  * @import { SchemaMessage } from "./schema-error.d.ts"
