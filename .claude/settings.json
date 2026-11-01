@@ -1,0 +1,16 @@
+{
+  "extraKnownMarketplaces": {
+    "agent-tools": {
+      "source": {
+        "source": "github",
+        "repo": "vale-cli/agent-tools"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "vale@agent-tools": true
+  },
+  "env": {
+    "VALE_HOOK_LEVEL": "suggestion"
+  }
+}

@@ -3,3 +3,6 @@ coverage/
 scratch/
 benchmark/data/
 TODO*
+
+# Downloaded by `vale sync`
+.vale/
