@@ -39,8 +39,7 @@ export const findSchema = async (session, uri, options = {}) => {
   try {
     const { fragment } = parseIri(uri);
     const pointer = fragment === undefined ? "" : session.jsonSchema.fragmentPointer(document, fragment);
-    // The pointer's message says where it is with the document's URI
-    node = pointerGet(pointer, /** @type JsonSchemaNode */ (document.children[0]), document.uri && relativeFileUri(document.uri));
+    node = pointerGet(pointer, /** @type JsonSchemaNode */ (document.children[0]));
   } catch (error) {
     if (error instanceof JsonPointerError || error instanceof AnchorNotFoundError) {
       return { status: "missing", reason: error };
