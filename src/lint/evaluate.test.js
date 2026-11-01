@@ -1,7 +1,7 @@
 import { describe, test, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
-import { fromJs, pointerGet, rejsonParse } from "@hyperjump/browser";
+import { fromJs, jsonPointerGet, rejsonParse } from "@hyperjump/browser";
 import { JsonSchema, extendDialect } from "../json-schema.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
 import { draft202012Dialect } from "../dialects/draft-2020-12/index.js";
@@ -196,7 +196,7 @@ const evaluatorAt = async (schema, pointer = "") => {
     .use(rejsonParse)
     .use(jsonSchemaResolve, { session });
   const tree = /** @type JsonSchemaDocumentNode */ (/** @type unknown */ (await processor.run(processor.parse(file), file)));
-  const schemaNode = /** @type JsonSchemaNode */ (pointerGet(pointer, /** @type JsonSchemaNode */ (tree.children[0])));
+  const schemaNode = /** @type JsonSchemaNode */ (jsonPointerGet(pointer, /** @type JsonSchemaNode */ (tree.children[0])));
   const evaluator = evaluatorForLint(/** @type LintDocument */ (await documentForLint(tree, file)));
 
   return (value) => evaluator.schema(schemaNode, /** @type JsonSchemaTolerantNode */ (/** @type unknown */ (fromJs(value))));

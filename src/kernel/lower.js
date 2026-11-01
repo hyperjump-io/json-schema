@@ -1,4 +1,4 @@
-import { appendToLocation, jsonValue, pointerGet, relativeFileUri } from "@hyperjump/browser";
+import { appendToLocation, jsonValue, jsonPointerGet, relativeFileUri } from "@hyperjump/browser";
 import { toAbsoluteIri } from "@hyperjump/uri";
 import { isErrorNode } from "../keywords/checks.js";
 import { keywordDefinitionUri } from "../keywords/unknown.js";
@@ -371,7 +371,7 @@ class Lowerer {
     const dynamicAnchors = {};
     const root = /** @type JsonSchemaNode */ (document.children[0]);
     for (const name in document.dynamicAnchors) {
-      const anchorNode = /** @type JsonSchemaNode */ (pointerGet(document.dynamicAnchors[name], root));
+      const anchorNode = /** @type JsonSchemaNode */ (jsonPointerGet(document.dynamicAnchors[name], root));
       dynamicAnchors[name] = anchorNode.location;
       this.#schema(anchorNode);
     }

@@ -1,4 +1,4 @@
-import { pointerGet } from "@hyperjump/browser";
+import { jsonPointerGet } from "@hyperjump/browser";
 import { toAbsoluteIri } from "@hyperjump/uri";
 import { availableDefinitions } from "../kernel/definitions.js";
 import { lowerKeywords } from "../kernel/lower.js";
@@ -287,7 +287,7 @@ const inputsFor = (tree) => ({
       const root = /** @type JsonSchemaNode */ (resource.children[0]);
       for (const name in resource.dynamicAnchors) {
         /** @type Handle */
-        const handle = /** @type JsonSchemaNode */ (pointerGet(resource.dynamicAnchors[name], root)).location;
+        const handle = /** @type JsonSchemaNode */ (jsonPointerGet(resource.dynamicAnchors[name], root)).location;
         dynamicAnchors[name] = handle;
       }
     }

@@ -1,7 +1,7 @@
 import { describe, test, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
-import { pointerGet, rejsonParse } from "@hyperjump/browser";
+import { jsonPointerGet, rejsonParse } from "@hyperjump/browser";
 import { JsonSchema } from "../json-schema.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
 import { draft04Dialect } from "../dialects/draft-04/index.js";
@@ -279,7 +279,7 @@ const lower = async (json) => {
   const schemas = document.schemas;
 
   /** @type (pointer: string) => JsonSchemaNode */
-  const schemaAt = (pointer) => /** @type JsonSchemaNode */ (pointerGet(pointer, root));
+  const schemaAt = (pointer) => /** @type JsonSchemaNode */ (jsonPointerGet(pointer, root));
   return {
     document,
     file,

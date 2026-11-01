@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { describe, test, beforeEach, expect } from "vitest";
-import { pointerGet, Session } from "@hyperjump/browser";
+import { jsonPointerGet, Session } from "@hyperjump/browser";
 import { JsonSchema, extendDialect } from "./json-schema.js";
 import { v1Dialect, v1DialectUri } from "./dialects/v1/index.js";
 import { SchemaRegistry } from "./registry/schema-registry.js";
@@ -336,8 +336,8 @@ describe("JsonSchema", () => {
       const session = jsonSchema.session();
 
       expect(session.annotation(node, "title")).to.eql(["root"]);
-      expect(session.annotation(pointerGet("/foo", /** @type any */ (node)), "title")).to.eql(["foo", "also foo"]);
-      expect(session.annotation(pointerGet("/bar", /** @type any */ (node)), "title")).to.eql([]);
+      expect(session.annotation(jsonPointerGet("/foo", /** @type any */ (node)), "title")).to.eql(["foo", "also foo"]);
+      expect(session.annotation(jsonPointerGet("/bar", /** @type any */ (node)), "title")).to.eql([]);
     });
 
     test("annotation by keyword URI", async () => {

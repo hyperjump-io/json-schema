@@ -1,4 +1,4 @@
-import { FileNotFoundError, HttpError, JsonPointerError, pointerGet, relativeFileUri, RetrievalError, RetrievalNotAllowedError } from "@hyperjump/browser";
+import { FileNotFoundError, HttpError, JsonPointerError, jsonPointerGet, relativeFileUri, RetrievalError, RetrievalNotAllowedError } from "@hyperjump/browser";
 import { parseIri, toAbsoluteIri } from "@hyperjump/uri";
 import { AnchorNotFoundError } from "../schema/media-type-plugin.js";
 import { SchemaError } from "../schema/schema-error.js";
@@ -39,7 +39,7 @@ export const findSchema = async (session, uri, options = {}) => {
   try {
     const { fragment } = parseIri(uri);
     const pointer = fragment === undefined ? "" : session.jsonSchema.fragmentPointer(document, fragment);
-    node = pointerGet(pointer, /** @type JsonSchemaNode */ (document.children[0]));
+    node = jsonPointerGet(pointer, /** @type JsonSchemaNode */ (document.children[0]));
   } catch (error) {
     if (error instanceof JsonPointerError || error instanceof AnchorNotFoundError) {
       return { status: "missing", reason: error };

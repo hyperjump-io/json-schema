@@ -1,7 +1,7 @@
 import { describe, test, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
-import { pointerGet, rejsonParse } from "@hyperjump/browser";
+import { jsonPointerGet, rejsonParse } from "@hyperjump/browser";
 import { JsonSchema } from "../json-schema.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
@@ -51,7 +51,7 @@ describe("A keyword's value that doesn't fit its shape is reported once", () => 
         const document = await processor.run(processor.parse(file), file);
 
         const root = /** @type any */ (document.children[0]);
-        const misfit = pointerGet(`/${name}${pointer}`, root).position;
+        const misfit = jsonPointerGet(`/${name}${pointer}`, root).position;
         const ruleId = reportedBy === "schema" ? "invalid-schema" : keywordUri;
         expect(file.messages.map((message) => [message.ruleId, message.place])).to.eql([[ruleId, misfit]]);
       });

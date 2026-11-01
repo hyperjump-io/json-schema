@@ -1,7 +1,7 @@
 import { describe, test, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
-import { pointerGet, rejsonParse } from "@hyperjump/browser";
+import { jsonPointerGet, rejsonParse } from "@hyperjump/browser";
 import { JsonSchema } from "../json-schema.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
@@ -260,7 +260,7 @@ const resolve = async (schema) => {
   const tree = /** @type JsonSchemaDocumentNode */ (/** @type unknown */ (await processor.run(processor.parse(file), file)));
   const root = /** @type JsonSchemaNode */ (tree.children[0]);
   const document = /** @type LintDocument */ (await documentForLint(tree, file));
-  return { document, at: (pointer) => /** @type JsonSchemaNode */ (pointerGet(pointer, root)) };
+  return { document, at: (pointer) => /** @type JsonSchemaNode */ (jsonPointerGet(pointer, root)) };
 };
 
 /** @type (group: SchemaGroup) => string[] */

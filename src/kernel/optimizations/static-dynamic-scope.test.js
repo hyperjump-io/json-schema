@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { pointerGet } from "@hyperjump/browser";
+import { jsonPointerGet } from "@hyperjump/browser";
 import { JsonSchema } from "../../json-schema.js";
 import { SchemaRegistry } from "../../registry/schema-registry.js";
 import { draft202012Dialect, draft202012DialectUri } from "../../dialects/draft-2020-12/index.js";
@@ -231,8 +231,8 @@ describe("staticDynamicScope", () => {
       // `kids` is applied by `properties` and by `if`'s condition, which passes
       const { output, node } = annotatorFor(compiled)({ strict: { data: 1, kids: { data: 1 } } });
       expect(output).to.equal(true);
-      expect(pointerGet("/strict", /** @type any */ (node)).data.annotations.get(titleKeywordUri)).to.eql(["tree"]);
-      expect(pointerGet("/strict/kids", /** @type any */ (node)).data.annotations.get(titleKeywordUri)).to.eql(["tree", "tree"]);
+      expect(jsonPointerGet("/strict", /** @type any */ (node)).data.annotations.get(titleKeywordUri)).to.eql(["tree"]);
+      expect(jsonPointerGet("/strict/kids", /** @type any */ (node)).data.annotations.get(titleKeywordUri)).to.eql(["tree", "tree"]);
       expect(annotatorFor(compiled)({ strict: { data: 1, kids: { data: 1, extra: 1 } } }).output).to.equal(false);
     });
   });

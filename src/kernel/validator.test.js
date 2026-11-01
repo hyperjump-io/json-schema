@@ -5,7 +5,7 @@ import { cwd } from "node:process";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { describe, test, beforeEach, beforeAll, afterAll, expect } from "vitest";
 import { VFileMessage } from "vfile-message";
-import { fromJson, pointerGet } from "@hyperjump/browser";
+import { fromJson, jsonPointerGet } from "@hyperjump/browser";
 import { JsonSchema, outputErrorMessage, toVFileMessage } from "../json-schema.js";
 import idKeyword from "../keywords/id.js";
 import anchorKeyword from "../keywords/anchor.js";
@@ -929,7 +929,7 @@ describe("Validator", () => {
       const { output, node } = annotatorFor(compiled)({ foo: 1 });
       expect(output).to.equal(true);
       expect(node.data?.annotations?.get(titleKeyword.uri)).to.eql(["root"]);
-      expect(pointerGet("/foo", /** @type any */ (node)).data.annotations.get(titleKeyword.uri)).to.eql(["foo", "also foo"]);
+      expect(jsonPointerGet("/foo", /** @type any */ (node)).data.annotations.get(titleKeyword.uri)).to.eql(["foo", "also foo"]);
     });
 
     test("annotations from failing schemas are dropped", async () => {
@@ -980,7 +980,7 @@ describe("Validator", () => {
       const { output, status, node } = annotatorFor(compiled, { input: "json" })(`{ "foo": 1, }`);
       expect(output).to.equal(false);
       expect(status).to.equal("recovered");
-      expect(pointerGet("/foo", /** @type any */ (node)).data.annotations.get(titleKeyword.uri)).to.eql(["foo"]);
+      expect(jsonPointerGet("/foo", /** @type any */ (node)).data.annotations.get(titleKeyword.uri)).to.eql(["foo"]);
     });
 
     test("annotateNode", async () => {
@@ -988,7 +988,7 @@ describe("Validator", () => {
       const { node } = fromJson(`{ "foo": 1 }`);
 
       expect(annotatorFor(compiled, { input: "node" })(node).output).to.equal(true);
-      expect(pointerGet("/foo", /** @type any */ (node)).data.annotations.get(titleKeyword.uri)).to.eql(["foo"]);
+      expect(jsonPointerGet("/foo", /** @type any */ (node)).data.annotations.get(titleKeyword.uri)).to.eql(["foo"]);
     });
   });
 

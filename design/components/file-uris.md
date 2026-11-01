@@ -30,7 +30,7 @@ and the library re-exports the function for output formats and plugins.
   handle, still go through `relativeFileUri`, so one that is a file can't
   say where it is. `relativeFileUri` returns anything else as it is.
 - Messages are made from the URIs, not rewritten afterwards. A pointer's
-  message is from browser's `pointerGet`, which is given the relative
+  message is from browser's `jsonPointerGet`, which is given the relative
   document URI, and a missing file is browser's `FileNotFoundError`.
 - A problem whose message is a thrown error's message gets that error's
   cause as its cause, not the error, which would say it again.

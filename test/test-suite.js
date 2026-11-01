@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, test, beforeAll, expect } from "vitest";
-import { JsonPointerError, pointerGet } from "@hyperjump/browser";
+import { JsonPointerError, jsonPointerGet } from "@hyperjump/browser";
 import { resolveIri, toAbsoluteIri } from "@hyperjump/uri";
 import { JsonSchema } from "../src/json-schema.js";
 import { SchemaRegistry } from "../src/registry/schema-registry.js";
@@ -306,7 +306,7 @@ export const describeAnnotationTestSuite = ({ description, version, dialect, jso
     /** @type JsonNode | undefined */
     let subject;
     try {
-      subject = /** @type JsonNode | undefined */ (pointerGet(location, node));
+      subject = /** @type JsonNode | undefined */ (jsonPointerGet(location, node));
     } catch (error) {
       if (error instanceof JsonPointerError) {
         return [];

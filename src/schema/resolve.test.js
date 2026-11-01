@@ -6,7 +6,7 @@ import { pathToFileURL } from "node:url";
 import { describe, test, beforeEach, beforeAll, afterAll, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
-import { fromJson, HttpError, pointerGet, rejsonParse, RetrievalNotAllowedError } from "@hyperjump/browser";
+import { fromJson, HttpError, jrefStep, jsonPointerGet, rejsonParse, RetrievalNotAllowedError } from "@hyperjump/browser";
 import { JsonSchema, SchemaError, extendDialect } from "../json-schema.js";
 import { jsonSchemaResolve, resolveSchema } from "./resolve.js";
 import idKeyword from "../keywords/id.js";
@@ -930,7 +930,7 @@ describe("jsonSchemaResolve", () => {
       const a = await session.get(`${uri}#/properties/foo`);
       expect(a.location).to.equal("https://example.com/a#");
 
-      const b = await session.step("b", await session.step("properties", a));
+      const b = await jrefStep(session, "b", await jrefStep(session, "properties", a));
       expect(b.location).to.equal("https://example.com/b#");
     });
 
@@ -947,7 +947,7 @@ describe("jsonSchemaResolve", () => {
       });
 
       const c = await session.get(`${uri}#/properties/foo`);
-      const d = await session.step("root", await session.step("properties", c));
+      const d = await jrefStep(session, "root", await jrefStep(session, "properties", c));
       expect(d.location).to.equal("https://example.com/embedding#/definitions/d");
     });
 
@@ -1124,7 +1124,7 @@ const resolve = async (jsonSchema, json, options = {}) => {
 };
 
 /** @type (pointer: string, node: JsonSchemaTolerantNode) => any */
-const at = (pointer, node) => pointerGet(pointer, node);
+const at = (pointer, node) => jsonPointerGet(pointer, node);
 
 /** @type (node: JsonSchemaTolerantNode, name: string) => JsonSchemaKeywordNode<any> */
 const keywordNode = (node, name) => {
