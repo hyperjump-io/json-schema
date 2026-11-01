@@ -227,7 +227,7 @@ export type ContentParameter = {
 export type SchemaParameter = {
   explode?: boolean;
   allowReserved?: boolean;
-  schema: OasSchema32;
+  schema: OasSchema31;
   content?: never;
 } & Examples;
 
