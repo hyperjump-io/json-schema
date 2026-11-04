@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, afterEach } from "vitest";
-import { getSchema, toSchema } from "./experimental.js";
+import { getSchema, toSchema, loadDialect, unloadDialect, defineVocabulary } from "./experimental.js";
 import { registerSchema, unregisterSchema } from "../v1/index.js";
 import "../draft-2020-12/index.js";
 import "../draft-2019-09/index.js";
@@ -363,6 +363,191 @@ describe("JSON Schema - toString", () => {
       $schema: contextDialectId,
       $id: `${testDomain}/schema`,
       $ref: "foo"
+    });
+  });
+
+  describe("boolean schemas", () => {
+    const contextDialectId = "https://json-schema.org/v1";
+
+    test("convert true schema to object when adding metadata", async () => {
+      registerSchema(true, `${testDomain}/schema`, contextDialectId);
+      const schema = await getSchema(`${testDomain}/schema`);
+
+      expect(toSchema(schema)).to.eql({
+        $schema: contextDialectId,
+        $id: `${testDomain}/schema`
+      });
+    });
+
+    test("convert false schema to object when adding metadata", async () => {
+      registerSchema(false, `${testDomain}/schema`, contextDialectId);
+      const schema = await getSchema(`${testDomain}/schema`);
+
+      expect(toSchema(schema)).to.eql({
+        $schema: contextDialectId,
+        $id: `${testDomain}/schema`,
+        not: {}
+      });
+    });
+
+    test("convert false schema with only $id metadata", async () => {
+      registerSchema(false, `${testDomain}/schema`, contextDialectId);
+      const schema = await getSchema(`${testDomain}/schema`);
+
+      expect(toSchema(schema, { contextDialectId })).to.eql({
+        $id: `${testDomain}/schema`,
+        not: {}
+      });
+    });
+
+    test("convert false schema with only $schema metadata", async () => {
+      registerSchema(false, `${testDomain}/schema`, contextDialectId);
+      const schema = await getSchema(`${testDomain}/schema`);
+
+      expect(toSchema(schema, { contextUri: `${testDomain}/schema` })).to.eql({
+        $schema: contextDialectId,
+        not: {}
+      });
+    });
+
+    test("convert true schema with only $id metadata", async () => {
+      registerSchema(true, `${testDomain}/schema`, contextDialectId);
+      const schema = await getSchema(`${testDomain}/schema`);
+
+      expect(toSchema(schema, { contextDialectId })).to.eql({
+        $id: `${testDomain}/schema`
+      });
+    });
+
+    test("convert true schema with only $schema metadata", async () => {
+      registerSchema(true, `${testDomain}/schema`, contextDialectId);
+      const schema = await getSchema(`${testDomain}/schema`);
+
+      expect(toSchema(schema, { contextUri: `${testDomain}/schema` })).to.eql({
+        $schema: contextDialectId
+      });
+    });
+
+    test("preserve boolean true when neither $id nor $schema is added", async () => {
+      registerSchema(true, `${testDomain}/schema`, contextDialectId);
+      const schema = await getSchema(`${testDomain}/schema`);
+
+      expect(toSchema(schema, { contextDialectId, contextUri: `${testDomain}/schema` })).to.equal(true);
+    });
+
+    test("preserve boolean false when neither $id nor $schema is added", async () => {
+      registerSchema(false, `${testDomain}/schema`, contextDialectId);
+      const schema = await getSchema(`${testDomain}/schema`);
+
+      expect(toSchema(schema, { contextDialectId, contextUri: `${testDomain}/schema` })).to.equal(false);
+    });
+
+    test("convert false schema with includeDialect: always", async () => {
+      registerSchema(false, `${testDomain}/schema`, contextDialectId);
+      const schema = await getSchema(`${testDomain}/schema`);
+
+      expect(toSchema(schema, { contextDialectId, includeDialect: "always" })).to.eql({
+        $schema: contextDialectId,
+        $id: `${testDomain}/schema`,
+        not: {}
+      });
+    });
+
+    test("convert false schema with includeDialect: never", async () => {
+      registerSchema(false, `${testDomain}/schema`, contextDialectId);
+      const schema = await getSchema(`${testDomain}/schema`);
+
+      expect(toSchema(schema, { includeDialect: "never" })).to.eql({
+        $id: `${testDomain}/schema`,
+        not: {}
+      });
+    });
+
+    test("convert false schema with draft-07 dialect", async () => {
+      const draft07Dialect = "http://json-schema.org/draft-07/schema";
+      registerSchema(false, `${testDomain}/schema`, draft07Dialect);
+      const schema = await getSchema(`${testDomain}/schema`);
+
+      expect(toSchema(schema)).to.eql({
+        $schema: `${draft07Dialect}#`,
+        $id: `${testDomain}/schema`,
+        not: {}
+      });
+    });
+
+    test("convert true schema with draft-07 dialect", async () => {
+      const draft07Dialect = "http://json-schema.org/draft-07/schema";
+      registerSchema(true, `${testDomain}/schema`, draft07Dialect);
+      const schema = await getSchema(`${testDomain}/schema`);
+
+      expect(toSchema(schema)).to.eql({
+        $schema: `${draft07Dialect}#`,
+        $id: `${testDomain}/schema`
+      });
+    });
+
+    test("throw error when converting false in dialect lacking not keyword", async () => {
+      const noNotDialect = "https://example.com/no-not-dialect";
+      loadDialect(noNotDialect, {
+        "https://json-schema.org/v1/vocab/core": true
+      }, false, false);
+
+      registerSchema(false, `${testDomain}/schema`, noNotDialect);
+      const schema = await getSchema(`${testDomain}/schema`);
+
+      try {
+        expect(() => toSchema(schema)).to.throw(
+          `Dialect '${noNotDialect}' does not support the 'not' keyword required to represent a false schema as an object.`
+        );
+      } finally {
+        unloadDialect(noNotDialect);
+      }
+    });
+
+    test("convert true schema in dialect lacking not keyword without throwing", async () => {
+      const noNotDialect = "https://example.com/no-not-dialect-true";
+      loadDialect(noNotDialect, {
+        "https://json-schema.org/v1/vocab/core": true
+      }, false, false);
+
+      registerSchema(true, `${testDomain}/schema`, noNotDialect);
+      const schema = await getSchema(`${testDomain}/schema`);
+
+      try {
+        expect(toSchema(schema)).to.eql({
+          $schema: noNotDialect,
+          $id: `${testDomain}/schema`
+        });
+      } finally {
+        unloadDialect(noNotDialect);
+      }
+    });
+
+    test("convert false schema using custom keyword name for not", async () => {
+      const customDialectId = "https://example.com/custom-not-dialect";
+      const customVocabId = "https://example.com/custom-not-vocab";
+
+      defineVocabulary(customVocabId, {
+        "$id": "https://json-schema.org/keyword/id",
+        "disallow": "https://json-schema.org/keyword/not"
+      });
+
+      loadDialect(customDialectId, {
+        [customVocabId]: true
+      }, false, false);
+
+      registerSchema(false, `${testDomain}/schema`, customDialectId);
+      const schema = await getSchema(`${testDomain}/schema`);
+
+      try {
+        expect(toSchema(schema)).to.eql({
+          $schema: customDialectId,
+          $id: `${testDomain}/schema`,
+          disallow: {}
+        });
+      } finally {
+        unloadDialect(customDialectId);
+      }
     });
   });
 });
