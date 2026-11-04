@@ -1,569 +1,177 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { bundle, URI, UUID } from "./index.js";
 import { registerSchema, unregisterSchema, validate } from "../lib/index.js";
-import { loadDialect, unloadDialect, defineVocabulary } from "../lib/experimental.js";
+import { getKeywordName } from "../lib/experimental.js";
+import "../v1/index.js";
 import "../draft-2020-12/index.js";
 import "../draft-2019-09/index.js";
 import "../draft-07/index.js";
 import "../draft-06/index.js";
-import "../v1/index.js";
 
 import type { SchemaObject } from "../lib/index.js";
 
 
-describe("bundle - boolean schemas", () => {
-  const testDomain = "https://bundler.hyperjump.io";
-  const mainId = `${testDomain}/main`;
-  const externalId = `${testDomain}/external`;
-
-  afterEach(() => {
-    unregisterSchema(mainId);
-    unregisterSchema(externalId);
-  });
-
-  describe("Issue #139 reproduction", () => {
-    const dialect = "https://json-schema.org/draft/2020-12/schema";
-
-    it("external false schema produces valid: false before and after bundling", async () => {
-      registerSchema(false, externalId, dialect);
-      registerSchema({
-        $id: mainId,
-        $schema: dialect,
-        $ref: externalId
-      }, mainId);
-
-      const beforeValidation = await validate(mainId, 123);
-      expect(beforeValidation.valid).to.equal(false);
-
-      const bundled = await bundle(mainId);
-
-      unregisterSchema(mainId);
-      unregisterSchema(externalId);
-
-      registerSchema(bundled, mainId);
-
-      const afterValidation = await validate(mainId, 123);
-      expect(afterValidation.valid).to.equal(false);
-    });
-
-    it("external true schema produces valid: true before and after bundling", async () => {
-      registerSchema(true, externalId, dialect);
-      registerSchema({
-        $id: mainId,
-        $schema: dialect,
-        $ref: externalId
-      }, mainId);
-
-      const beforeValidation = await validate(mainId, 123);
-      expect(beforeValidation.valid).to.equal(true);
-
-      const bundled = await bundle(mainId);
-
-      unregisterSchema(mainId);
-      unregisterSchema(externalId);
-
-      registerSchema(bundled, mainId);
-
-      const afterValidation = await validate(mainId, 123);
-      expect(afterValidation.valid).to.equal(true);
-    });
-  });
-
-  const dialects = [
-    "https://json-schema.org/v1",
-    "https://json-schema.org/draft/2020-12/schema",
-    "https://json-schema.org/draft/2019-09/schema",
-    "http://json-schema.org/draft-07/schema",
-    "http://json-schema.org/draft-06/schema"
-  ];
-
-  for (const dialect of dialects) {
-    describe(`dialect: ${dialect}`, () => {
-      for (const namingStrategy of [URI, UUID]) {
-        describe(`naming strategy: ${namingStrategy}`, () => {
-          it("bundles external false schema and preserves invalid outcome", async () => {
-            registerSchema(false, externalId, dialect);
-            registerSchema({
-              $id: mainId,
-              $schema: dialect,
-              $ref: externalId
-            }, mainId);
-
-            const before = await validate(mainId, "test-instance");
-            expect(before.valid).to.equal(false);
-
-            const bundled = await bundle(mainId, { definitionNamingStrategy: namingStrategy });
-
-            unregisterSchema(mainId);
-            unregisterSchema(externalId);
-
-            registerSchema(bundled, mainId);
-
-            const after = await validate(mainId, "test-instance");
-            expect(after.valid).to.equal(false);
-          });
-
-          it("bundles external true schema and preserves valid outcome", async () => {
-            registerSchema(true, externalId, dialect);
-            registerSchema({
-              $id: mainId,
-              $schema: dialect,
-              $ref: externalId
-            }, mainId);
-
-            const before = await validate(mainId, "test-instance");
-            expect(before.valid).to.equal(true);
-
-            const bundled = await bundle(mainId, { definitionNamingStrategy: namingStrategy });
-
-            unregisterSchema(mainId);
-            unregisterSchema(externalId);
-
-            registerSchema(bundled, mainId);
-
-            const after = await validate(mainId, "test-instance");
-            expect(after.valid).to.equal(true);
-          });
-        });
-      }
-
-      it("bundles root false schema standalone", async () => {
-        registerSchema(false, mainId, dialect);
-
-        const before = await validate(mainId, 42);
-        expect(before.valid).to.equal(false);
-
-        const bundled = await bundle(mainId);
-
-        unregisterSchema(mainId);
-        registerSchema(bundled, mainId);
-
-        const after = await validate(mainId, 42);
-        expect(after.valid).to.equal(false);
-      });
-
-      it("bundles root true schema standalone", async () => {
-        registerSchema(true, mainId, dialect);
-
-        const before = await validate(mainId, 42);
-        expect(before.valid).to.equal(true);
-
-        const bundled = await bundle(mainId);
-
-        unregisterSchema(mainId);
-        registerSchema(bundled, mainId);
-
-        const after = await validate(mainId, 42);
-        expect(after.valid).to.equal(true);
-      });
-    });
-  }
-
-  describe("dialect lacking not keyword", () => {
-    const noNotDialect = "https://example.com/no-not-bundle-dialect";
-
-    beforeEach(() => {
-      loadDialect(noNotDialect, {
-        "https://json-schema.org/v1/vocab/core": true
-      }, false, false);
-      registerSchema({ $id: noNotDialect }, noNotDialect, "https://json-schema.org/v1");
-    });
-
-    afterEach(() => {
-      unloadDialect(noNotDialect);
-      unregisterSchema(noNotDialect);
-    });
-
-    it("throws a descriptive error when bundling external false schema", async () => {
-      registerSchema(false, externalId, noNotDialect);
-      registerSchema({
-        $id: mainId,
-        $schema: "https://json-schema.org/v1",
-        $ref: externalId
-      }, mainId);
-
-      await expect(bundle(mainId)).rejects.toThrow(
-        `Dialect '${noNotDialect}' does not have a 'not' keyword registered to convert a 'false' schema.`
-      );
-    });
-
-    it("throws a descriptive error when bundling root false schema", async () => {
-      registerSchema(false, mainId, noNotDialect);
-
-      await expect(bundle(mainId)).rejects.toThrow(
-        `Dialect '${noNotDialect}' does not have a 'not' keyword registered to convert a 'false' schema.`
-      );
-    });
-
-    it("successfully bundles external true schema without not keyword", async () => {
-      registerSchema(true, externalId, noNotDialect);
-      registerSchema({
-        $id: mainId,
-        $schema: "https://json-schema.org/v1",
-        $ref: externalId
-      }, mainId);
-
-      const bundled = await bundle(mainId);
-
-      unregisterSchema(mainId);
-      unregisterSchema(externalId);
-
-      registerSchema(bundled, mainId);
-
-      const after = await validate(mainId, "any-instance");
-      expect(after.valid).to.equal(true);
-    });
-  });
-
-  describe("cross-dialect bundling", () => {
-    it("bundles external false schema with different dialect and preserves invalid outcome", async () => {
-      const mainDialect = "https://json-schema.org/draft/2020-12/schema";
-      const externalDialect = "http://json-schema.org/draft-07/schema";
-
-      registerSchema(false, externalId, externalDialect);
-      registerSchema({
-        $id: mainId,
-        $schema: mainDialect,
-        $ref: externalId
-      }, mainId);
-
-      const beforeValidation = await validate(mainId, 123);
-      expect(beforeValidation.valid).to.equal(false);
-
-      const bundled = await bundle(mainId);
-
-      unregisterSchema(mainId);
-      unregisterSchema(externalId);
-
-      registerSchema(bundled, mainId);
-
-      const afterValidation = await validate(mainId, 123);
-      expect(afterValidation.valid).to.equal(false);
-    });
-
-    it("bundles external true schema with different dialect and preserves valid outcome", async () => {
-      const mainDialect = "https://json-schema.org/draft/2020-12/schema";
-      const externalDialect = "http://json-schema.org/draft-07/schema";
-
-      registerSchema(true, externalId, externalDialect);
-      registerSchema({
-        $id: mainId,
-        $schema: mainDialect,
-        $ref: externalId
-      }, mainId);
-
-      const beforeValidation = await validate(mainId, 123);
-      expect(beforeValidation.valid).to.equal(true);
-
-      const bundled = await bundle(mainId);
-
-      unregisterSchema(mainId);
-      unregisterSchema(externalId);
-
-      registerSchema(bundled, mainId);
-
-      const afterValidation = await validate(mainId, 123);
-      expect(afterValidation.valid).to.equal(true);
-    });
-  });
-
-  describe("transitive bundling", () => {
-    const dialect = "https://json-schema.org/draft/2020-12/schema";
-    const middleId = `${testDomain}/middle`;
-    const leafId = `${testDomain}/leaf`;
-
-    afterEach(() => {
-      unregisterSchema(middleId);
-      unregisterSchema(leafId);
-    });
-
-    it("bundles transitive external false schema and preserves invalid outcome", async () => {
-      registerSchema(false, leafId, dialect);
-      registerSchema({
-        $id: middleId,
-        $schema: dialect,
-        $ref: leafId
-      }, middleId);
-      registerSchema({
-        $id: mainId,
-        $schema: dialect,
-        $ref: middleId
-      }, mainId);
-
-      const beforeValidation = await validate(mainId, 123);
-      expect(beforeValidation.valid).to.equal(false);
-
-      const bundled = await bundle(mainId);
-
-      unregisterSchema(mainId);
-      unregisterSchema(middleId);
-      unregisterSchema(leafId);
-
-      registerSchema(bundled, mainId);
-
-      const afterValidation = await validate(mainId, 123);
-      expect(afterValidation.valid).to.equal(false);
-    });
-
-    it("bundles transitive external true schema and preserves valid outcome", async () => {
-      registerSchema(true, leafId, dialect);
-      registerSchema({
-        $id: middleId,
-        $schema: dialect,
-        $ref: leafId
-      }, middleId);
-      registerSchema({
-        $id: mainId,
-        $schema: dialect,
-        $ref: middleId
-      }, mainId);
-
-      const beforeValidation = await validate(mainId, 123);
-      expect(beforeValidation.valid).to.equal(true);
-
-      const bundled = await bundle(mainId);
-
-      unregisterSchema(mainId);
-      unregisterSchema(middleId);
-      unregisterSchema(leafId);
-
-      registerSchema(bundled, mainId);
-
-      const afterValidation = await validate(mainId, 123);
-      expect(afterValidation.valid).to.equal(true);
-    });
-  });
-
-  describe("multiple external boolean schemas", () => {
-    const dialect = "https://json-schema.org/draft/2020-12/schema";
-    const externalFalseId = `${testDomain}/external-false`;
-    const externalTrueId = `${testDomain}/external-true`;
-
-    afterEach(() => {
-      unregisterSchema(externalFalseId);
-      unregisterSchema(externalTrueId);
-    });
-
-    it("bundles both external true and external false schemas", async () => {
-      registerSchema(false, externalFalseId, dialect);
-      registerSchema(true, externalTrueId, dialect);
-      registerSchema({
-        $id: mainId,
-        $schema: dialect,
-        allOf: [
-          { $ref: externalTrueId },
-          { $ref: externalFalseId }
-        ]
-      }, mainId);
-
-      const beforeValidation = await validate(mainId, 123);
-      expect(beforeValidation.valid).to.equal(false);
-
-      const bundled = await bundle(mainId);
-
-      unregisterSchema(mainId);
-      unregisterSchema(externalFalseId);
-      unregisterSchema(externalTrueId);
-
-      registerSchema(bundled, mainId);
-
-      const afterValidation = await validate(mainId, 123);
-      expect(afterValidation.valid).to.equal(false);
-    });
-  });
-
-  describe("custom not keyword dialect bundling", () => {
-    it("bundles external false schema with custom not keyword name", async () => {
-      const customDialect = "https://example.com/bundle-custom-not-dialect";
-      const customVocab = "https://example.com/bundle-custom-not-vocab";
-
-      defineVocabulary(customVocab, {
-        "$id": "https://json-schema.org/keyword/id",
-        "$schema": "https://json-schema.org/keyword/schema",
-        "$defs": "https://json-schema.org/keyword/definitions",
-        "disallow": "https://json-schema.org/keyword/not"
-      });
-
-      loadDialect(customDialect, {
-        [customVocab]: true
-      }, false, false);
-      registerSchema({ $id: customDialect }, customDialect, "https://json-schema.org/draft/2020-12/schema");
-
-      try {
-        registerSchema(false, externalId, customDialect);
+const testDomain = "https://bundler.hyperjump.io";
+
+const testRunner = (dialect: string) => {
+  describe(dialect, () => {
+    const idToken = getKeywordName(dialect, "https://json-schema.org/keyword/id")
+      || getKeywordName(dialect, "https://json-schema.org/keyword/draft-04/id");
+    const definitionsToken = getKeywordName(dialect, "https://json-schema.org/keyword/definitions");
+    const notToken = getKeywordName(dialect, "https://json-schema.org/keyword/not");
+
+    describe("external false schema", () => {
+      beforeEach(() => {
+        registerSchema(false, `${testDomain}/external-false`, dialect);
         registerSchema({
-          $id: mainId,
-          $schema: "https://json-schema.org/draft/2020-12/schema",
-          $ref: externalId
-        }, mainId);
-
-        const bundled = await bundle(mainId);
-        const defs = bundled.$defs as Record<string, SchemaObject>;
-        expect(defs[externalId]).to.haveOwnProperty("disallow");
-        expect(defs[externalId].disallow).to.eql({});
-      } finally {
-        unloadDialect(customDialect);
-        unregisterSchema(customDialect);
-      }
-    });
-  });
-
-  describe("alwaysIncludeDialect option", () => {
-    const dialect = "https://json-schema.org/draft/2020-12/schema";
-
-    it("includes $schema in external false definition and preserves invalid outcome", async () => {
-      registerSchema(false, externalId, dialect);
-      registerSchema({
-        $id: mainId,
-        $schema: dialect,
-        $ref: externalId
-      }, mainId);
-
-      const beforeValidation = await validate(mainId, 123);
-      expect(beforeValidation.valid).to.equal(false);
-
-      const bundled = await bundle(mainId, { alwaysIncludeDialect: true });
-      const defs = bundled.$defs as Record<string, SchemaObject>;
-      expect(defs[externalId]).to.haveOwnProperty("$schema");
-      expect(defs[externalId].$schema).to.equal(dialect);
-
-      unregisterSchema(mainId);
-      unregisterSchema(externalId);
-
-      registerSchema(bundled, mainId);
-
-      const afterValidation = await validate(mainId, 123);
-      expect(afterValidation.valid).to.equal(false);
-    });
-
-    it("includes $schema in external true definition and preserves valid outcome", async () => {
-      registerSchema(true, externalId, dialect);
-      registerSchema({
-        $id: mainId,
-        $schema: dialect,
-        $ref: externalId
-      }, mainId);
-
-      const beforeValidation = await validate(mainId, 123);
-      expect(beforeValidation.valid).to.equal(true);
-
-      const bundled = await bundle(mainId, { alwaysIncludeDialect: true });
-      const defs = bundled.$defs as Record<string, SchemaObject>;
-      expect(defs[externalId]).to.haveOwnProperty("$schema");
-      expect(defs[externalId].$schema).to.equal(dialect);
-
-      unregisterSchema(mainId);
-      unregisterSchema(externalId);
-
-      registerSchema(bundled, mainId);
-
-      const afterValidation = await validate(mainId, 123);
-      expect(afterValidation.valid).to.equal(true);
-    });
-  });
-
-  describe("externalSchemas option", () => {
-    const dialect = "https://json-schema.org/draft/2020-12/schema";
-
-    it("excludes external false schema from bundle", async () => {
-      registerSchema(false, externalId, dialect);
-      registerSchema({
-        $id: mainId,
-        $schema: dialect,
-        $ref: externalId
-      }, mainId);
-
-      const bundled = await bundle(mainId, { externalSchemas: [externalId] });
-      expect(bundled).to.not.haveOwnProperty("$defs");
-
-      unregisterSchema(mainId);
-      // Validate with external schema still available
-      registerSchema(bundled, mainId);
-      const validation = await validate(mainId, 123);
-      expect(validation.valid).to.equal(false);
-    });
-  });
-
-  describe("multiple references to same external boolean schema", () => {
-    const dialect = "https://json-schema.org/draft/2020-12/schema";
-
-    it("bundles single definition entry when referenced multiple times", async () => {
-      registerSchema(false, externalId, dialect);
-      registerSchema({
-        $id: mainId,
-        $schema: dialect,
-        allOf: [
-          { $ref: externalId },
-          { $ref: externalId }
-        ],
-        properties: {
-          field: { $ref: externalId }
-        }
-      }, mainId);
-
-      const beforeValidation = await validate(mainId, 123);
-      expect(beforeValidation.valid).to.equal(false);
-
-      const bundled = await bundle(mainId);
-      const defs = bundled.$defs as Record<string, SchemaObject>;
-      expect(Object.keys(defs)).to.have.lengthOf(1);
-      expect(defs).to.haveOwnProperty(externalId);
-
-      unregisterSchema(mainId);
-      unregisterSchema(externalId);
-
-      registerSchema(bundled, mainId);
-
-      const afterValidation = await validate(mainId, 123);
-      expect(afterValidation.valid).to.equal(false);
-    });
-  });
-
-  describe("file-based bundle with external boolean schema", () => {
-    const httpNumberId = "https://bundler.hyperjump.io/number";
-    const dialect = "https://json-schema.org/draft/2020-12/schema";
-
-    afterEach(() => {
-      unregisterSchema(httpNumberId);
-    });
-
-    it("bundles external http false schema into file-based bundle", async () => {
-      registerSchema(false, httpNumberId, dialect);
-
-      const bundled = await bundle("./bundle/file-schemas/mixed-schemes.schema.json");
-      const defs = bundled.$defs as Record<string, SchemaObject>;
-      expect(defs).to.haveOwnProperty(httpNumberId);
-      expect(defs[httpNumberId]).to.eql({
-        $id: httpNumberId,
-        not: {}
+          type: "object",
+          properties: {
+            foo: { $ref: `${testDomain}/external-false` }
+          }
+        }, `${testDomain}/main-false`, dialect);
       });
 
-      unregisterSchema(httpNumberId);
-      registerSchema(bundled, `${testDomain}/file-bundled`);
-
-      // Fails validation because bar references false schema
-      const result = await validate(`${testDomain}/file-bundled`, { foo: "hello", bar: 42 });
-      expect(result.valid).to.equal(false);
-      unregisterSchema(`${testDomain}/file-bundled`);
-    });
-
-    it("bundles external http true schema into file-based bundle", async () => {
-      registerSchema(true, httpNumberId, dialect);
-
-      const bundled = await bundle("./bundle/file-schemas/mixed-schemes.schema.json");
-      const defs = bundled.$defs as Record<string, SchemaObject>;
-      expect(defs).to.haveOwnProperty(httpNumberId);
-      expect(defs[httpNumberId]).to.eql({
-        $id: httpNumberId
+      afterEach(() => {
+        unregisterSchema(`${testDomain}/main-false`);
+        unregisterSchema(`${testDomain}/external-false`);
       });
 
-      unregisterSchema(httpNumberId);
-      registerSchema(bundled, `${testDomain}/file-bundled`);
+      it("should embed { [idToken]: ..., not: {} } and validate false with URI naming", async () => {
+        const bundled = await bundle(`${testDomain}/main-false`, { definitionNamingStrategy: URI });
+        const definitions = bundled[definitionsToken] as Record<string, SchemaObject>;
 
-      // Passes validation because foo is string and bar is true schema
-      const result = await validate(`${testDomain}/file-bundled`, { foo: "hello", bar: 42 });
-      expect(result.valid).to.equal(true);
-      unregisterSchema(`${testDomain}/file-bundled`);
+        expect(definitions[`${testDomain}/external-false`]).to.eql({
+          [idToken]: `${testDomain}/external-false`,
+          [notToken]: {}
+        });
+
+        unregisterSchema(`${testDomain}/main-false`);
+        unregisterSchema(`${testDomain}/external-false`);
+
+        registerSchema(bundled, `${testDomain}/main-false`, dialect);
+        const result = await validate(`${testDomain}/main-false`, { foo: "anything" });
+        expect(result.valid).to.equal(false);
+      });
+
+      it("should embed { [idToken]: ..., not: {} } and validate false with UUID naming", async () => {
+        const bundled = await bundle(`${testDomain}/main-false`, { definitionNamingStrategy: UUID });
+        const definitions = bundled[definitionsToken] as Record<string, SchemaObject>;
+        const keys = Object.keys(definitions);
+        expect(keys.length).to.equal(1);
+        expect(definitions[keys[0]]).to.eql({
+          [idToken]: `${testDomain}/external-false`,
+          [notToken]: {}
+        });
+
+        unregisterSchema(`${testDomain}/main-false`);
+        unregisterSchema(`${testDomain}/external-false`);
+
+        registerSchema(bundled, `${testDomain}/main-false`, dialect);
+        const result = await validate(`${testDomain}/main-false`, { foo: "anything" });
+        expect(result.valid).to.equal(false);
+      });
+    });
+
+    describe("external true schema", () => {
+      beforeEach(() => {
+        registerSchema(true, `${testDomain}/external-true`, dialect);
+        registerSchema({
+          type: "object",
+          properties: {
+            foo: { $ref: `${testDomain}/external-true` }
+          }
+        }, `${testDomain}/main-true`, dialect);
+      });
+
+      afterEach(() => {
+        unregisterSchema(`${testDomain}/main-true`);
+        unregisterSchema(`${testDomain}/external-true`);
+      });
+
+      it("should embed { [idToken]: ... } and validate true with URI naming", async () => {
+        const bundled = await bundle(`${testDomain}/main-true`, { definitionNamingStrategy: URI });
+        const definitions = bundled[definitionsToken] as Record<string, SchemaObject>;
+
+        expect(definitions[`${testDomain}/external-true`]).to.eql({
+          [idToken]: `${testDomain}/external-true`
+        });
+
+        unregisterSchema(`${testDomain}/main-true`);
+        unregisterSchema(`${testDomain}/external-true`);
+
+        registerSchema(bundled, `${testDomain}/main-true`, dialect);
+        const result = await validate(`${testDomain}/main-true`, { foo: "anything" });
+        expect(result.valid).to.equal(true);
+      });
+
+      it("should embed { [idToken]: ... } and validate true with UUID naming", async () => {
+        const bundled = await bundle(`${testDomain}/main-true`, { definitionNamingStrategy: UUID });
+        const definitions = bundled[definitionsToken] as Record<string, SchemaObject>;
+        const keys = Object.keys(definitions);
+        expect(keys.length).to.equal(1);
+        expect(definitions[keys[0]]).to.eql({
+          [idToken]: `${testDomain}/external-true`
+        });
+
+        unregisterSchema(`${testDomain}/main-true`);
+        unregisterSchema(`${testDomain}/external-true`);
+
+        registerSchema(bundled, `${testDomain}/main-true`, dialect);
+        const result = await validate(`${testDomain}/main-true`, { foo: "anything" });
+        expect(result.valid).to.equal(true);
+      });
+    });
+
+    describe("nested property references to external boolean schemas", () => {
+      beforeEach(() => {
+        registerSchema(false, `${testDomain}/external-nested-false`, dialect);
+        registerSchema(true, `${testDomain}/external-nested-true`, dialect);
+        registerSchema({
+          type: "object",
+          properties: {
+            foo: { $ref: `${testDomain}/external-nested-false` },
+            bar: { $ref: `${testDomain}/external-nested-true` }
+          }
+        }, `${testDomain}/main-nested`, dialect);
+      });
+
+      afterEach(() => {
+        unregisterSchema(`${testDomain}/main-nested`);
+        unregisterSchema(`${testDomain}/external-nested-false`);
+        unregisterSchema(`${testDomain}/external-nested-true`);
+      });
+
+      it("should bundle nested properties referencing boolean schemas", async () => {
+        const bundled = await bundle(`${testDomain}/main-nested`);
+        const definitions = bundled[definitionsToken] as Record<string, SchemaObject>;
+
+        expect(definitions[`${testDomain}/external-nested-false`]).to.eql({
+          [idToken]: `${testDomain}/external-nested-false`,
+          [notToken]: {}
+        });
+        expect(definitions[`${testDomain}/external-nested-true`]).to.eql({
+          [idToken]: `${testDomain}/external-nested-true`
+        });
+
+        unregisterSchema(`${testDomain}/main-nested`);
+        unregisterSchema(`${testDomain}/external-nested-false`);
+        unregisterSchema(`${testDomain}/external-nested-true`);
+
+        registerSchema(bundled, `${testDomain}/main-nested`, dialect);
+        const validResult = await validate(`${testDomain}/main-nested`, { bar: "anything" });
+        expect(validResult.valid).to.equal(true);
+
+        const invalidResult = await validate(`${testDomain}/main-nested`, { foo: "anything" });
+        expect(invalidResult.valid).to.equal(false);
+      });
     });
   });
+};
+
+describe("bundle - boolean schemas", () => {
+  testRunner("https://json-schema.org/v1");
+  testRunner("https://json-schema.org/draft/2020-12/schema");
+  testRunner("https://json-schema.org/draft/2019-09/schema");
+  testRunner("http://json-schema.org/draft-07/schema");
+  testRunner("http://json-schema.org/draft-06/schema");
 });

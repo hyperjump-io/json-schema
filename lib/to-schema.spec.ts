@@ -497,7 +497,7 @@ describe("JSON Schema - toString", () => {
 
       try {
         expect(() => toSchema(schema)).to.throw(
-          `Dialect '${noNotDialect}' does not have a 'not' keyword registered to convert a 'false' schema.`
+          `Dialect '${noNotDialect}' does not support the 'not' keyword required to represent a false schema as an object.`
         );
       } finally {
         unloadDialect(noNotDialect);
