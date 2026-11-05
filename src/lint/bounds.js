@@ -4,6 +4,7 @@ import { operationsOf } from "./analysis.js";
  * @import { Expression } from "../kernel/kernel.d.ts"
  * @import { JsonSchemaKeywordNode } from "../schema/schema-ast.d.ts"
  * @import { LoweredKeyword } from "./lower.d.ts"
+ * @import { MustPass } from "./in-place.js"
  */
 
 /**
@@ -12,6 +13,8 @@ import { operationsOf } from "./analysis.js";
  * `exclusiveMinimum`). `limitNodes` are the keywords its value came from,
  * and `keywordNode` is the last of them. `alone` is whether it's all its
  * keyword lowers to, so the keyword has no effect if the limit doesn't.
+ * `via` is the applied schema it's from, for a limit from
+ * {@link boundsInPlace} that isn't the schema's own.
  *
  * @typedef {{
  *   value: number;
@@ -20,6 +23,7 @@ import { operationsOf } from "./analysis.js";
  *   keywordNode: JsonSchemaKeywordNode;
  *   limitNodes: JsonSchemaKeywordNode[];
  *   alone: boolean;
+ *   via?: string;
  * }} Bound
  */
 
@@ -86,6 +90,47 @@ export const boundsOf = (keywords) => {
 
   return result;
 };
+
+/**
+ * The limits of a schema's keywords and of what it applies that has to
+ * pass (`keywordsThatMustPass`), so a limit in `allOf` or behind `$ref`
+ * counts. A limit from an applied schema is said and placed as the keyword
+ * in the schema that applied it, like "'maximum' in 'allOf'", because the
+ * schema it's in can be anywhere in the document.
+ *
+ * @type (mustPass: MustPass[]) => Record<"number" | "string" | "array" | "object", Bounds>
+ */
+export const boundsInPlace = (mustPass) => {
+  const result = {
+    number: bounds(),
+    string: bounds(),
+    array: bounds(),
+    object: bounds()
+  };
+
+  for (const { keyword, applying, via } of mustPass) {
+    const keywordBounds = boundsOf([keyword]);
+    for (const type of /** @type const */ (["number", "string", "array", "object"])) {
+      for (const field of /** @type const */ (["min", "max"])) {
+        for (const bound of keywordBounds[type][field]) {
+          result[type][field].push(applying === undefined
+            ? bound
+            : { ...bound, label: `${bound.label} in ${namesOf([applying])}`, keywordNode: applying, via });
+        }
+      }
+    }
+  }
+
+  return result;
+};
+
+/**
+ * Whether two limits are from the same applied schema, whose own group has
+ * them both, so it's where something about them is reported
+ *
+ * @type (a: Bound, b: Bound) => boolean
+ */
+export const fromSameApplied = (a, b) => a.via !== undefined && a.via === b.via;
 
 /**
  * The lower limit that allows the least

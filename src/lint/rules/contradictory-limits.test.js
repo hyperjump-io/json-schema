@@ -210,6 +210,49 @@ describe("contradictory-limits", () => {
     expect(await reasons(`{ "$schema": "${v1}", "properties": { "foo": { "minimum": 10, "maximum": 5 } } }`)).to.have.length(1);
   });
 
+  test("a limit in allOf", async () => {
+    const json = `{ "$schema": "${v1}", "minimum": 5, "allOf": [{ "maximum": 3 }] }`;
+    const file = await lint(json);
+    expect(file.messages.map((message) => message.reason)).to.eql(["'minimum' is greater than 'maximum' in 'allOf', so no number is valid"]);
+    expect(/** @type any */ (file.messages[0].place).start.offset).to.equal(json.indexOf(`"allOf"`));
+  });
+
+  test("a limit behind $ref", async () => {
+    expect(await reasons(`{ "$schema": "${v1}", "minimum": 5, "$ref": "#/$defs/max", "$defs": { "max": { "maximum": 3 } } }`))
+      .to.eql(["'minimum' is greater than 'maximum' in '$ref', so no number is valid"]);
+  });
+
+  test("limits in different schemas in allOf", async () => {
+    expect(await reasons(`{ "$schema": "${v1}", "allOf": [{ "minLength": 5 }, { "maxLength": 3 }] }`))
+      .to.eql(["'minLength' in 'allOf' is greater than 'maxLength' in 'allOf', so no string is valid"]);
+  });
+
+  test("a schema applied in allOf through another", async () => {
+    expect(await reasons(`{ "$schema": "${v1}", "minimum": 5, "allOf": [{ "$ref": "#/$defs/max" }], "$defs": { "max": { "maximum": 3 } } }`))
+      .to.eql(["'minimum' is greater than 'maximum' in 'allOf', so no number is valid"]);
+  });
+
+  test("limits in the same applied schema are reported there", async () => {
+    expect(await reasons(`{ "$schema": "${v1}", "allOf": [{ "minimum": 5, "maximum": 3 }] }`))
+      .to.eql(["'minimum' is greater than 'maximum', so no number is valid"]);
+    expect(await reasons(`{ "$schema": "${v1}", "allOf": [{ "minimum": 5, "allOf": [{ "maximum": 3 }] }] }`))
+      .to.eql(["'minimum' is greater than 'maximum' in 'allOf', so no number is valid"]);
+  });
+
+  test("schemas that don't have to pass aren't limits", async () => {
+    expect(await reasons(`{ "$schema": "${v1}", "minimum": 5, "anyOf": [{ "maximum": 3 }, { "type": "string" }] }`)).to.eql([]);
+    expect(await reasons(`{ "$schema": "${v1}", "minimum": 5, "not": { "maximum": 3 } }`)).to.eql([]);
+    expect(await reasons(`{ "$schema": "${v1}", "minimum": 5, "if": { "type": "integer" }, "then": { "maximum": 3 } }`)).to.eql([]);
+  });
+
+  test("a schema that applies itself", async () => {
+    expect(await reasons(`{ "$schema": "${v1}", "minimum": 5, "allOf": [{ "$ref": "#" }] }`)).to.eql([]);
+  });
+
+  test("maxProperties in an applied schema is only compared there", async () => {
+    expect(await reasons(`{ "$schema": "${v1}", "allOf": [{ "maxProperties": 1, "required": ["a", "b"] }] }`)).to.have.length(2);
+  });
+
   test("properties named like limits aren't keywords", async () => {
     expect(await reasons(`{ "$schema": "${v1}", "properties": { "minimum": { "const": 10 }, "maximum": { "const": 5 } } }`)).to.eql([]);
   });

@@ -28,7 +28,15 @@ It checks these limits:
   `contains` they have no effect, which
   `min-max-contains-without-contains` reports.
 
-Otherwise, it only compares limits in the same schema. It has no options.
+The limits come from the schema and from the schemas that have to pass
+with it, like the ones in `allOf` and the one `$ref` refers to. The
+message names a limit from one of those by the keyword that applies it,
+like `'maximum' in '$ref'`. Limits in `anyOf`, `oneOf`, `not`, and
+`if`/`then`/`else` don't count, because those schemas don't always have
+to pass. It compares `maxProperties` only with what its own schema and
+the schemas that schema applies require. It doesn't compare limits in
+different subschemas, like two schemas in `properties`. It has no
+options.
 
 ## Examples
 
@@ -66,6 +74,21 @@ Otherwise, it only compares limits in the same schema. It has no options.
 
 > 'exclusiveMinimum' is greater than 'exclusiveMaximum', so no number is valid
 
+#### A limit in a schema that has to pass
+
+```json
+{
+  "$schema": "https://json-schema.org/v1",
+  "minimum": 5,
+  "$ref": "#/$defs/small",
+  "$defs": {
+    "small": { "maximum": 3 }
+  }
+}
+```
+
+> 'minimum' is greater than 'maximum' in '$ref', so no number is valid
+
 ### Not reported
 
 #### Equal inclusive limits allow one number
@@ -82,5 +105,15 @@ Otherwise, it only compares limits in the same schema. It has no options.
   "minimum": 1,
   "exclusiveMinimum": 0,
   "maximum": 6
+}
+```
+
+#### A limit in a schema that doesn't have to pass
+
+```json
+{
+  "$schema": "https://json-schema.org/v1",
+  "minimum": 5,
+  "anyOf": [{ "maximum": 3 }, { "type": "string" }]
 }
 ```

@@ -73,6 +73,38 @@ describe("required-property-not-allowed", () => {
   test("draft-04", async () => {
     expect(await reasons(`{ "$schema": "http://json-schema.org/draft-04/schema#", "additionalProperties": false, "required": ["a"] }`)).to.have.length(1);
   });
+
+  test("required in allOf", async () => {
+    const json = `{ "$schema": "${draft2020}", "properties": { "a": true }, "additionalProperties": false, "allOf": [{ "required": ["b"] }] }`;
+    const file = await lint(json);
+    expect(file.messages.map((message) => message.reason)).to.eql([
+      "'b' is required in 'allOf', but 'additionalProperties' doesn't allow it, so no object is valid"
+    ]);
+    expect(/** @type any */ (file.messages[0].place).start.offset).to.equal(json.indexOf(`"allOf"`));
+  });
+
+  test("required behind $ref", async () => {
+    expect(await reasons(`{ "$schema": "${draft2020}", "additionalProperties": false, "$ref": "#/$defs/b", "$defs": { "b": { "required": ["b"] } } }`)).to.eql([
+      "'b' is required in '$ref', but 'additionalProperties' doesn't allow it, so no object is valid"
+    ]);
+  });
+
+  test("not allowed in allOf", async () => {
+    expect(await reasons(`{ "$schema": "${draft2020}", "required": ["b"], "allOf": [{ "properties": { "a": true }, "additionalProperties": false }] }`)).to.eql([
+      "'b' is required, but 'additionalProperties' in 'allOf' doesn't allow it, so no object is valid"
+    ]);
+  });
+
+  test("required and not allowed in the same applied schema is reported there", async () => {
+    expect(await reasons(`{ "$schema": "${draft2020}", "allOf": [{ "additionalProperties": false, "required": ["b"] }] }`)).to.eql([
+      "'b' is required, but 'additionalProperties' doesn't allow it, so no object is valid"
+    ]);
+  });
+
+  test("schemas that don't have to pass aren't considered", async () => {
+    expect(await reasons(`{ "$schema": "${draft2020}", "additionalProperties": false, "anyOf": [{ "required": ["b"] }, true] }`)).to.eql([]);
+    expect(await reasons(`{ "$schema": "${draft2020}", "additionalProperties": false, "not": { "required": ["b"] } }`)).to.eql([]);
+  });
 });
 
 /** @type (json: string) => Promise<VFile> */

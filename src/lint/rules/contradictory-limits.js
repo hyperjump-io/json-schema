@@ -1,6 +1,7 @@
 import { operationsOf } from "../analysis.js";
-import { boundsOf, namesOf, second, tightestMax, tightestMin } from "../bounds.js";
+import { boundsInPlace, fromSameApplied, namesOf, second, tightestMax, tightestMin } from "../bounds.js";
 import { documentForLint } from "../document.js";
+import { keywordsThatMustPass } from "../in-place.js";
 import { lintRule } from "../lint-rule.js";
 import { fewestProperties, propertyAlternatives } from "../required-properties.js";
 
@@ -11,7 +12,10 @@ import { fewestProperties, propertyAlternatives } from "../required-properties.j
 /**
  * Limits are what `range`, `stringLength`, `itemCount`, `propertyCount`
  * (`boundsOf`), and `contains` say, from whichever keywords lowered to them,
- * and required properties are `hasProperty`, so no keyword is named.
+ * and required properties are `hasProperty`, so no keyword is named. The
+ * limits of schemas that have to pass with the schema count too
+ * (`boundsInPlace`), except that limits from the same applied schema are
+ * reported there, and `maxProperties` is only compared in its own schema.
  *
  * @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void>
  */
@@ -24,7 +28,7 @@ const contradictoryLimits = lintRule({ origin: "json-schema-lint:contradictory-l
   const lowered = document.schemas;
   const schemas = new Map([...lowered].map(([schemaNode, keywords]) => [schemaNode.location, keywords]));
   for (const [schemaNode, keywords] of lowered) {
-    const bounds = boundsOf(keywords);
+    const bounds = boundsInPlace(keywordsThatMustPass(schemaNode, keywords, schemas));
     /** @type [string, JsonSchemaKeywordNode][] */
     const containsMessages = [];
 
@@ -50,7 +54,7 @@ const contradictoryLimits = lintRule({ origin: "json-schema-lint:contradictory-l
 
     const min = tightestMin(bounds.number.min);
     const max = tightestMax(bounds.number.max);
-    if (min && max) {
+    if (min && max && !fromSameApplied(min, max)) {
       const place = second(min.keywordNode, max.keywordNode).position;
       if (min.value > max.value) {
         file.message(`${min.label} is greater than ${max.label}, so no number is valid`, { place });
@@ -62,7 +66,7 @@ const contradictoryLimits = lintRule({ origin: "json-schema-lint:contradictory-l
     for (const type of /** @type const */ (["string", "array", "object"])) {
       const countMin = tightestMin(bounds[type].min);
       const countMax = tightestMax(bounds[type].max);
-      if (countMin && countMax && countMin.value > countMax.value) {
+      if (countMin && countMax && !fromSameApplied(countMin, countMax) && countMin.value > countMax.value) {
         const place = second(countMin.keywordNode, countMax.keywordNode).position;
         file.message(`${countMin.label} is greater than ${countMax.label}, so no ${type} is valid`, { place });
       }
@@ -76,7 +80,10 @@ const contradictoryLimits = lintRule({ origin: "json-schema-lint:contradictory-l
     // allowed. The message on the limit doesn't name the keywords that
     // require them, and each of those names the others, so it's clear any of
     // them could change.
-    const maxProperties = tightestMax(bounds.object.max);
+    // Only the schema's own `maxProperties`. What's required follows applied
+    // schemas, so one in an applied schema is compared there, and here it
+    // would be reported again
+    const maxProperties = tightestMax(bounds.object.max.filter(({ via }) => via === undefined));
     const alternatives = maxProperties ? propertyAlternatives(schemaNode, keywords, schemas) : [];
     const fewest = alternatives.length > 0 ? fewestProperties(alternatives) : undefined;
     if (maxProperties && fewest && fewest.count > maxProperties.value) {

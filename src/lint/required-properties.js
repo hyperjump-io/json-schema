@@ -1,3 +1,5 @@
+import { creditedKeyword } from "./in-place.js";
+
 /**
  * @import { Expression } from "../kernel/kernel.d.ts"
  * @import { JsonSchemaKeywordNode, JsonSchemaNode } from "../schema/schema-ast.d.ts"
@@ -58,15 +60,10 @@ export const propertyAlternatives = (schemaNode, keywords, schemas, present = []
    */
   const ofKeywords = (keywords, applying) => {
     let alternatives = [empty()];
-    for (const { group, keywordNode, sourceNodes } of keywords) {
+    for (const keyword of keywords) {
       /** @type Credit */
-      const credit = applying === undefined
-        ? (schema) => {
-            const index = schema === undefined ? -1 : group.sources.findIndex((source) => isIn(schema, source));
-            return index === -1 ? keywordNode : sourceNodes[index];
-          }
-        : () => applying;
-      alternatives = both(alternatives, ofExpression(group.expression, credit));
+      const credit = applying === undefined ? (schema) => creditedKeyword(keyword, schema) : () => applying;
+      alternatives = both(alternatives, ofExpression(keyword.group.expression, credit));
     }
     return alternatives;
   };
@@ -169,13 +166,6 @@ export const requiredByOthers = (schemaNode, keywords, schemas, keyword) => {
   const alternatives = propertyAlternatives(schemaNode, keywords.filter((other) => other !== keyword), schemas);
   return alternatives.length === 0 ? undefined : intersection(alternatives.map(({ names }) => names));
 };
-
-/**
- * Whether a location is at or under another
- *
- * @type (location: string, parent: string) => boolean
- */
-const isIn = (location, parent) => location === parent || location.startsWith(`${parent}/`);
 
 /** @type () => Alternative */
 const empty = () => ({ names: new Set(), absent: new Set(), keywordNodes: new Set() });
