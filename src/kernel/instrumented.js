@@ -5,7 +5,7 @@ import { codePointLengthIsWithin, instanceEqual } from "../keywords/utilities.js
 import { jsInstance } from "./instance.js";
 import { conditionsOf, explainsFailure, readsMarks, subexpressions } from "./kernel.js";
 import { keywordEvaluate } from "./definitions.js";
-import { addDynamicAnchors, addReachable, isClose, itemSequenceStates, selector, typeIndexes } from "./fast.js";
+import { addDynamicAnchors, addReachable, isMultipleOf, itemSequenceStates, selector, typeIndexes } from "./fast.js";
 
 /**
  * @import { Data, Node } from "unist"
@@ -857,8 +857,7 @@ export const instrumented = (definitions, kernel, options) => {
           if (ops.typeOf(instance) !== "number") {
             return true;
           }
-          const remainder = /** @type number */ (ops.value(instance)) % divisor;
-          return isClose(remainder, 0) || isClose(remainder, divisor);
+          return isMultipleOf(/** @type number */ (ops.value(instance)), divisor);
         };
       }
 

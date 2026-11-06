@@ -5,8 +5,8 @@ import { positiveNumber } from "./checks.js";
  */
 
 /**
- * `multipleOf`. Floating point division is inexact, so a remainder that's
- * close enough to zero, or to `multipleOf`, counts as none.
+ * `multipleOf`. Floating point division is inexact, so a quotient within a
+ * few units of rounding error of an integer counts as one.
  *
  * @type Keyword<number, "data">
  */

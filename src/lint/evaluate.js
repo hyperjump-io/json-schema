@@ -1,5 +1,5 @@
 import { keywordEvaluate } from "../kernel/definitions.js";
-import { addReachable, isClose, itemSequenceStates, selector } from "../kernel/fast.js";
+import { addReachable, isMultipleOf, itemSequenceStates, selector } from "../kernel/fast.js";
 import { astInstance, jsInstance } from "../kernel/instance.js";
 import { readsMarks } from "../kernel/kernel.js";
 import { codePointLengthIsWithin, instanceEqual } from "../keywords/utilities.js";
@@ -371,8 +371,7 @@ const buildEvaluator = (document) => {
         if (type !== "number") {
           return pass;
         }
-        const remainder = /** @type number */ (astInstance.value(instance)) % expression.divisor;
-        return isClose(remainder, 0) || isClose(remainder, expression.divisor) ? pass : fail;
+        return isMultipleOf(/** @type number */ (astInstance.value(instance)), expression.divisor) ? pass : fail;
       }
 
       case "stringLength": {

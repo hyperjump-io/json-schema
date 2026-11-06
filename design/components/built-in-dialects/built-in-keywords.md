@@ -17,12 +17,18 @@
   `contentMediaType`, and `contentSchema` only annotate strings, and
   `contentSchema` only annotates if there's a `contentMediaType`. Content
   isn't decoded or validated.
+- `multipleOf` divides and allows a few units of rounding error in the
+  quotient, relative to its size (`isMultipleOf` in `src/kernel/fast.js`).
+  JSON numbers are decimals that floating point can't always represent, so
+  `0.3` divided by `0.1` is a little less than 3. A quotient that overflows
+  isn't a multiple.
+- Rejected: v1's fixed tolerance of 1.19e-7 for the remainder. It's larger
+  than a very small divisor like 1e-8, so every number was a multiple of it.
+  Scaling that tolerance by the divisor isn't enough either: the
+  remainder's error grows with the value, so a large integer wasn't a
+  multiple of 1e-8.
 - In v1, `$dynamicRef` is the name of a dynamic anchor, not a URI. It uses
   the outermost schema in the dynamic scope with that anchor, with no
   lexical fallback. If none is in scope, evaluation throws, because that's
   a problem with the schema, not the instance.
 
-## Open questions
-
-- **`multipleOf` precision.** It uses v1's fixed tolerance for the
-  remainder, which is wrong for very small divisors.

@@ -294,8 +294,7 @@ export const fast = (definitions, kernel) => {
           if (typeof instance !== "number") {
             return true;
           }
-          const remainder = instance % divisor;
-          return isClose(remainder, 0) || isClose(remainder, divisor);
+          return isMultipleOf(instance, divisor);
         };
       }
 
@@ -1031,8 +1030,18 @@ export const fast = (definitions, kernel) => {
 /** @type JsonTypeName[] */
 export const typeIndexes = ["null", "boolean", "number", "string", "array", "object"];
 
-/** @type (a: number, b: number) => boolean */
-export const isClose = (a, b) => Math.abs(a - b) < 1.19209290e-7;
+/**
+ * Whether `value` is a multiple of `divisor`. JSON numbers are decimals,
+ * which floating point can't always represent, so the quotient may be a
+ * little off an integer. A few units of rounding error, relative to the
+ * quotient, are allowed. A quotient that overflows isn't a multiple.
+ *
+ * @type (value: number, divisor: number) => boolean
+ */
+export const isMultipleOf = (value, divisor) => {
+  const quotient = value / divisor;
+  return Math.abs(quotient - Math.round(quotient)) <= Math.abs(quotient) * 4 * Number.EPSILON;
+};
 
 /**
  * Add a resource's dynamic anchors to the dynamic scope. The outermost
