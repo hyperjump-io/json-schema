@@ -91,8 +91,7 @@ describe("combine", () => {
   test("with plugins, a false schema isn't inlined", async () => {
     const kernel = await optimizedKernel({ allOf: [false, { type: "string" }] }, plugins);
     const allOf = kernel.keywords.find(({ keywordUri }) => keywordUri.endsWith("/allOf"));
-    expect(allOf?.expression).to.include({ op: "all" });
-    expect(/** @type {{ of: { op: string }[] }} */ (allOf?.expression).of.map(({ op }) => op)).to.eql(["apply", "inline"]);
+    expect(allOf?.expression).toMatchObject({ op: "all", of: [{ op: "apply" }, { op: "inline" }] });
   });
 
   test("with plugins, inlined groups have their hooks in the group that applied them", async () => {
