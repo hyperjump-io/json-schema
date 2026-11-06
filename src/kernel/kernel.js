@@ -2,7 +2,7 @@
  * @import * as API from "./kernel.d.ts"
  */
 
-/** @type API.subexpressions */
+/** @type typeof API.subexpressions */
 export const subexpressions = (expression) => {
   switch (expression.op) {
     case "all":
@@ -48,7 +48,7 @@ export const subexpressions = (expression) => {
   }
 };
 
-/** @type API.mapSubexpressions */
+/** @type typeof API.mapSubexpressions */
 export const mapSubexpressions = (expression, map) => {
   /** @type (subexpression: API.Expression | null) => API.Expression | null */
   const mapNullable = (subexpression) => subexpression && map(subexpression);
@@ -179,7 +179,7 @@ const mapPattern = (pattern, map) => {
   return either === pattern.either ? pattern : { either };
 };
 
-/** @type API.patternItems */
+/** @type typeof API.patternItems */
 export const patternItems = (pattern) => {
   if ("item" in pattern) {
     return [pattern.item];
@@ -190,12 +190,12 @@ export const patternItems = (pattern) => {
   return ("sequence" in pattern ? pattern.sequence : pattern.either).flatMap(patternItems);
 };
 
-/** @type API.hasOp */
+/** @type typeof API.hasOp */
 export const hasOp = (expression, op) => {
   return expression.op === op || subexpressions(expression).some((subexpression) => hasOp(subexpression, op));
 };
 
-/** @type API.readsMarks */
+/** @type typeof API.readsMarks */
 export const readsMarks = (expression) => {
   switch (expression.op) {
     case "eachProperty":
@@ -216,7 +216,7 @@ export const readsMarks = (expression) => {
   }
 };
 
-/** @type API.schemaReads */
+/** @type typeof API.schemaReads */
 export const schemaReads = (schema) => {
   /** @type API.EvaluationState[] */
   const reads = [];
@@ -231,7 +231,7 @@ export const schemaReads = (schema) => {
   return reads;
 };
 
-/** @type API.readsDynamicScope */
+/** @type typeof API.readsDynamicScope */
 export const readsDynamicScope = (expression) => {
   if (expression.op === "dynamicApply") {
     return true;
@@ -242,7 +242,7 @@ export const readsDynamicScope = (expression) => {
   return subexpressions(expression).some(readsDynamicScope);
 };
 
-/** @type API.explainsFailure */
+/** @type typeof API.explainsFailure */
 export const explainsFailure = (expression) => {
   switch (expression.op) {
     case "pass":
@@ -275,7 +275,7 @@ export const explainsFailure = (expression) => {
   }
 };
 
-/** @type API.conditionsOf */
+/** @type typeof API.conditionsOf */
 export const conditionsOf = (expression) => {
   /** @type Set<API.Handle> */
   const handles = new Set();

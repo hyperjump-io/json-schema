@@ -7,7 +7,7 @@ import idnHostnameFormat from "./idn-hostname.js";
  * @import * as API from "./full.d.ts"
  */
 
-/** @type API.fullFormats */
+/** @type typeof API.fullFormats */
 export const fullFormats = [
   ...liteFormats,
   idnEmailFormat,

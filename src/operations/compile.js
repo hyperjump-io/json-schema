@@ -10,17 +10,17 @@ import { schemaUri, sessionOf } from "./context.js";
  * @import * as API from "./compile.d.ts"
  */
 
-/** @type API.compile */
+/** @type typeof API.compile */
 export const compile = async (context, schema, options) => {
   const session = sessionOf(context, options);
   const kernel = await lower(session, schemaUri(session, schema));
   return /** @type any */ (new Validator(kernelDefinitions(session.jsonSchema, kernel), kernel));
 };
 
-/** @type API.serialize */
+/** @type typeof API.serialize */
 export const serialize = (compiled) => /** @type Validator */ (/** @type unknown */ (compiled)).serialize();
 
-/** @type API.restore */
+/** @type typeof API.restore */
 export const restore = (jsonSchema, serialized, options = {}) => {
   const kernel = /** @type Kernel */ (serialized);
   const version = typeof serialized === "object" && serialized !== null && !Array.isArray(serialized) ? kernel.kernel : undefined;

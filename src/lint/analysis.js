@@ -35,7 +35,7 @@ const domains = {
   eachPropertyName: "object"
 };
 
-/** @type API.appliesTo */
+/** @type typeof API.appliesTo */
 export const appliesTo = (document, expression) => {
   const domain = domains[expression.op];
   if (domain !== undefined) {
@@ -80,7 +80,7 @@ export const appliesTo = (document, expression) => {
   }
 };
 
-/** @type API.keywordAppliesTo */
+/** @type typeof API.keywordAppliesTo */
 export const keywordAppliesTo = (document, keywords, keywordNode) => {
   /** @type Set<JsonType>[] */
   const types = [];
@@ -94,7 +94,7 @@ export const keywordAppliesTo = (document, keywords, keywordNode) => {
   return jsonTypes.filter((type) => applies.has(type));
 };
 
-/** @type API.canPass */
+/** @type typeof API.canPass */
 export const canPass = (expression) => {
   switch (expression.op) {
     case "fail":
@@ -134,7 +134,7 @@ const assertions = new Set(/** @type Op[] */ ([
   "predicate"
 ]));
 
-/** @type API.assertsOnItsOwn */
+/** @type typeof API.assertsOnItsOwn */
 export const assertsOnItsOwn = (expression) => {
   let asserts = false;
   let applies = false;
@@ -153,17 +153,17 @@ export const assertsOnItsOwn = (expression) => {
   return asserts && !applies;
 };
 
-/** @type API.operationsOf */
+/** @type typeof API.operationsOf */
 export const operationsOf = (expression) => expression.op === "all" ? expression.of : [expression];
 
-/** @type API.dependsOn */
+/** @type typeof API.dependsOn */
 export const dependsOn = (condition) => {
   const operations = operationsOf(condition)
     .filter((operation) => operation.op !== "typeIs" || operation.types.length !== 1 || operation.types[0] !== "object");
   return operations.length === 1 && operations[0].op === "hasProperty" ? operations[0].name : undefined;
 };
 
-/** @type API.typeIsOf */
+/** @type typeof API.typeIsOf */
 export const typeIsOf = (keywords) => {
   /** @type {{ keywordNode: JsonSchemaKeywordNode; types: Set<TypeName> }[]} */
   const found = [];
@@ -191,7 +191,7 @@ export const typeIsOf = (keywords) => {
  */
 const allowsType = (types, type) => types.has(type) || (type === "integer" && types.has("number"));
 
-/** @type API.selects */
+/** @type typeof API.selects */
 export const selects = (select, name) => {
   if ("pattern" in select) {
     return compilePattern(select.pattern)?.test(name);
@@ -204,9 +204,9 @@ export const selects = (select, name) => {
   }
 };
 
-/** @type API.propertyOperations */
+/** @type typeof API.propertyOperations */
 export const propertyOperations = (keywords, name) => {
-  /** @type ReturnType<API.propertyOperations> */
+  /** @type ReturnType<typeof API.propertyOperations> */
   const result = [];
   for (const keyword of keywords) {
     for (const operation of operationsOf(keyword.group.expression)) {

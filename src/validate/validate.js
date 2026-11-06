@@ -6,7 +6,7 @@ import { validatorFor } from "../operations/validate-compiled.js";
  * @import * as API from "./validate.d.ts"
  */
 
-/** @type API.jsonSchemaValidate */
+/** @type typeof API.jsonSchemaValidate */
 export function jsonSchemaValidate(options) {
   return (tree, file) => {
     // A document without a value has a syntax error from the parser

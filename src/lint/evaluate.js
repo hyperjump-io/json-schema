@@ -46,7 +46,7 @@ const unknown = { valid: undefined, annotates: true };
  */
 const cache = new WeakMap();
 
-/** @type API.evaluatorForLint */
+/** @type typeof API.evaluatorForLint */
 export const evaluatorForLint = (document) => {
   let evaluator = cache.get(document);
   if (evaluator === undefined) {

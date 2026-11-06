@@ -305,7 +305,10 @@ const choices = (n) => {
     $id: `${base}/phi`,
     allOf: Array.from({ length: n }, (_, index) => ({ $dynamicRef: `${base}/t${index + 1}#x${index + 1}` }))
   };
-  /** @type (index: number) => Json */
+  /**
+   * @param {number} index
+   * @returns {Json}
+   */
   const next = (index) => index > n ? { $ref: phi.$id } : { anyOf: [{ $ref: `${base}/t${index}` }, { $ref: `${base}/f${index}` }] };
   /** @type (Record<string, Json> & { $id: string })[] */
   const schemas = [phi];

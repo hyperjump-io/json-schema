@@ -6,7 +6,7 @@ import { jsonSyntaxErrorMessage } from "@hyperjump/browser";
  * @import { OutputError } from "./output-format.d.ts"
  */
 
-/** @type API.outputErrorMessage */
+/** @type typeof API.outputErrorMessage */
 export const outputErrorMessage = (error) => {
   if (error.source === "json") {
     return jsonSyntaxErrorMessage(error);
@@ -22,7 +22,7 @@ export const outputErrorMessage = (error) => {
   return `${instance} fails ${constraint}`;
 };
 
-/** @type API.toVFileMessage */
+/** @type typeof API.toVFileMessage */
 export const toVFileMessage = (error) => {
   // Creating an Error captures a stack trace, which says nothing about the
   // error and is most of what creating it costs

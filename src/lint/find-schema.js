@@ -10,7 +10,7 @@ import { SchemaError } from "../schema/schema-error.js";
  * @import * as API from "./find-schema.d.ts"
  */
 
-/** @type API.findSchema */
+/** @type typeof API.findSchema */
 export const findSchema = async (session, uri, options = {}) => {
   const { document: referencingDocument, ...getOptions } = options;
 

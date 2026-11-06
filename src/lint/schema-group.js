@@ -47,7 +47,7 @@ const childOps = new Set(["item", "eachItem", "contains", "property", "eachPrope
  */
 const contexts = new WeakMap();
 
-/** @type API.schemaGroup */
+/** @type typeof API.schemaGroup */
 export const schemaGroup = (document, schemaNode) => {
   let context = contexts.get(document);
   if (context === undefined) {
@@ -67,7 +67,7 @@ export const schemaGroup = (document, schemaNode) => {
   return group;
 };
 
-/** @type API.isNegated */
+/** @type typeof API.isNegated */
 export const isNegated = (group, schemaNode) => {
   let negated = false;
   for (let node = schemaNode; ;) {
@@ -80,7 +80,7 @@ export const isNegated = (group, schemaNode) => {
   }
 };
 
-/** @type API.marksAreRead */
+/** @type typeof API.marksAreRead */
 export const marksAreRead = (document, group) => {
   return group.unknown || group.schemas.some((node) => {
     const keywords = document.schemas.get(node);

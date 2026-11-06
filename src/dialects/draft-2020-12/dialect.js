@@ -76,7 +76,7 @@ import vocabularyKeyword from "../../keywords/vocabulary.js";
  * @import * as API from "./index.d.ts"
  */
 
-/** @type API.draft202012DialectUri */
+/** @type typeof API.draft202012DialectUri */
 export const draft202012DialectUri = "https://json-schema.org/draft/2020-12/schema";
 
 /** The formats 2020-12 defines */
@@ -205,7 +205,7 @@ const dialectVocabularies = [
   "https://json-schema.org/draft/2020-12/vocab/content"
 ];
 
-/** @type API.draft202012Dialect */
+/** @type typeof API.draft202012Dialect */
 export const draft202012Dialect = {
   uri: draft202012DialectUri,
   keywords: Object.assign({}, ...dialectVocabularies.map((uri) => vocabularies[uri].keywords)),

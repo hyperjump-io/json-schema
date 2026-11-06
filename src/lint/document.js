@@ -29,7 +29,7 @@ import { visitReferences, visitSchemas } from "./utilities.js";
  */
 const lintDocuments = new WeakMap();
 
-/** @type API.documentForLint */
+/** @type typeof API.documentForLint */
 export const documentForLint = (tree, file) => {
   const session = file.data.jsonSchemaSession;
   if (session === undefined) {
@@ -51,7 +51,7 @@ export const documentForLint = (tree, file) => {
   return document;
 };
 
-/** @type API.schemaAt */
+/** @type typeof API.schemaAt */
 export const schemaAt = (document, uri) => {
   const result = document.found.get(uri);
   return result?.status === "found" ? result.node : document.schemaNodes.get(uri);
@@ -203,7 +203,7 @@ const lowerDocument = (session, document) => {
   return schemas;
 };
 
-/** @type API.lowerSchemaForLint */
+/** @type typeof API.lowerSchemaForLint */
 export const lowerSchemaForLint = (document, schemaNode) => {
   if (schemaNode.type !== "json-schema" || schemaNode.jsonType !== "object") {
     return;

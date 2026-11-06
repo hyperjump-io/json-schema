@@ -6,23 +6,23 @@ import { annotateFunction, needsInstrumented, validateFunction, validatorOf } fr
  * @import * as API from "./validate.d.ts"
  */
 
-/** @type API.validate */
+/** @type typeof API.validate */
 export const validate = async (context, schema, instance, options) => {
   return /** @type any */ ((await validator(context, schema, /** @type any */ (options)))(/** @type any */ (instance)));
 };
 
-/** @type API.validator */
+/** @type typeof API.validator */
 export const validator = async (context, schema, options = {}) => {
   const compiled = await compile(context, schema, options);
   return validateFunction(validatorOf(compiled), options, needsInstrumented(options) ? await loadInstrumented() : undefined);
 };
 
-/** @type API.annotate */
+/** @type typeof API.annotate */
 export const annotate = async (context, schema, instance, options) => {
   return /** @type any */ ((await annotator(context, schema, /** @type any */ (options)))(/** @type any */ (instance)));
 };
 
-/** @type API.annotator */
+/** @type typeof API.annotator */
 export const annotator = async (context, schema, options = {}) => {
   const compiled = await compile(context, schema, options);
   return annotateFunction(validatorOf(compiled), options, await loadInstrumented());

@@ -78,10 +78,10 @@ import regexFormat from "../../formats/regex.js";
  * @import * as API from "./index.d.ts"
  */
 
-/** @type API.v1DialectUri */
+/** @type typeof API.v1DialectUri */
 export const v1DialectUri = "https://json-schema.org/v1";
 
-/** @type API.v1Dialect */
+/** @type typeof API.v1Dialect */
 export const v1Dialect = {
   uri: v1DialectUri,
   keywords: {

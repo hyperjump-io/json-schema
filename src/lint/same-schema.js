@@ -90,8 +90,14 @@ const annotates = (value) => {
   return false;
 };
 
-/** @type (value: Json) => value is Record<string, Json> */
+/**
+ * @param {Json} value
+ * @returns {value is Record<string, Json>}
+ */
 const isObject = (value) => typeof value === "object" && value !== null && !Array.isArray(value);
 
-/** @type (value: Json) => value is { op: "apply"; schema: string } */
+/**
+ * @param {Json} value
+ * @returns {value is { op: "apply"; schema: string }}
+ */
 const isApply = (value) => isObject(value) && value.op === "apply" && typeof value.schema === "string";

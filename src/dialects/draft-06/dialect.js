@@ -49,10 +49,10 @@ import jsonPointerFormat from "../../formats/json-pointer.js";
  * @import * as API from "./index.d.ts"
  */
 
-/** @type API.draft06DialectUri */
+/** @type typeof API.draft06DialectUri */
 export const draft06DialectUri = "http://json-schema.org/draft-06/schema";
 
-/** @type API.draft06Dialect */
+/** @type typeof API.draft06Dialect */
 export const draft06Dialect = {
   uri: draft06DialectUri,
   keywords: {

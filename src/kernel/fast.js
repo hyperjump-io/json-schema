@@ -1166,7 +1166,10 @@ export const addReachable = (states, state, reached) => {
   }
 };
 
-/** @type (instance: Json) => instance is JsonObject */
+/**
+ * @param {Json} instance
+ * @returns {instance is JsonObject}
+ */
 const isObject = (instance) => typeof instance === "object" && instance !== null && !Array.isArray(instance);
 
 /** @type (value: Json) => boolean */

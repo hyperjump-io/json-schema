@@ -124,7 +124,7 @@ describe("dispatch", () => {
     const tagged = (kind, more = {}) => ({
       type: "object",
       required: ["kind"],
-      properties: { kind: Array.isArray(kind) ? { enum: kind } : { const: kind } },
+      properties: { kind: { [Array.isArray(kind) ? "enum" : "const"]: kind } },
       ...more
     });
 

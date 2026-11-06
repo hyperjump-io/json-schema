@@ -42,10 +42,10 @@ import uriFormat from "../../formats/uri.js";
  * @import * as API from "./index.d.ts"
  */
 
-/** @type API.draft04DialectUri */
+/** @type typeof API.draft04DialectUri */
 export const draft04DialectUri = "http://json-schema.org/draft-04/schema";
 
-/** @type API.draft04Dialect */
+/** @type typeof API.draft04Dialect */
 export const draft04Dialect = {
   uri: draft04DialectUri,
   keywords: {

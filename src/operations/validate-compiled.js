@@ -9,12 +9,12 @@ import { annotateFunction, validateFunction, validatorOf } from "./evaluators.js
 // it's needed. They're in a module of their own, so code that doesn't use
 // them doesn't load it.
 
-/** @type API.validatorFor */
+/** @type typeof API.validatorFor */
 export const validatorFor = (compiled, options = {}) => {
   return validateFunction(validatorOf(compiled), options, instrumented);
 };
 
-/** @type API.annotatorFor */
+/** @type typeof API.annotatorFor */
 export const annotatorFor = (compiled, options = {}) => {
   return annotateFunction(validatorOf(compiled), options, instrumented);
 };

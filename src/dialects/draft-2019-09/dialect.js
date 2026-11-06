@@ -76,7 +76,7 @@ import vocabularyKeyword from "../../keywords/vocabulary.js";
  * @import * as API from "./index.d.ts"
  */
 
-/** @type API.draft201909DialectUri */
+/** @type typeof API.draft201909DialectUri */
 export const draft201909DialectUri = "https://json-schema.org/draft/2019-09/schema";
 
 /** The formats 2019-09 defines */
@@ -185,7 +185,7 @@ const vocabularies = {
   }
 };
 
-/** @type API.draft201909Dialect */
+/** @type typeof API.draft201909Dialect */
 export const draft201909Dialect = {
   uri: draft201909DialectUri,
   keywords: Object.assign({}, ...Object.values(vocabularies).map((vocabulary) => vocabulary.keywords)),

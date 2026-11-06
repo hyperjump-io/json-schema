@@ -3,7 +3,7 @@
  * @import * as API from "../json-schema.d.ts"
  */
 
-/** @type API.extendDialect */
+/** @type typeof API.extendDialect */
 export const extendDialect = (dialect, { keywords = {}, formats = {} }) => {
   assertNoReservedKeywords(keywords);
 

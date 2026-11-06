@@ -5,7 +5,7 @@
 
 const formatUris = new Set(["https://json-schema.org/keyword/format", "https://json-schema.org/keyword/draft-07/format"]);
 
-/** @type API.formatTypes */
+/** @type typeof API.formatTypes */
 export const formatTypes = (document, schemaNode, keywordNode) => {
   const valueNode = keywordNode.children[1];
   if (schemaNode.type !== "json-schema" || !formatUris.has(keywordNode.keywordUri) || valueNode.jsonType !== "string") {

@@ -19,7 +19,7 @@ import regexFormat from "./regex.js";
  * @import * as API from "./lite.d.ts"
  */
 
-/** @type API.liteFormats */
+/** @type typeof API.liteFormats */
 export const liteFormats = [
   dateTimeFormat,
   dateFormat,

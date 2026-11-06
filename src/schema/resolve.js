@@ -41,7 +41,7 @@ import { siblingValues } from "../keywords/utilities.js";
  * }} Effects
  */
 
-/** @type API.resolveSchema */
+/** @type typeof API.resolveSchema */
 export const resolveSchema = async (tree, options) => {
   const dialectUri = options.dialectUri ?? options.session.jsonSchema.config.defaultDialectUri;
   const resolver = new Resolver(options.session, tree);
@@ -52,7 +52,7 @@ export const resolveSchema = async (tree, options) => {
  * `resolveSchema` as a unified plugin: the base URI can come from the
  * file's path, and each problem is a message on the file
  *
- * @type API.jsonSchemaResolve
+ * @type typeof API.jsonSchemaResolve
  */
 export function jsonSchemaResolve(options) {
   return async (tree, file) => {

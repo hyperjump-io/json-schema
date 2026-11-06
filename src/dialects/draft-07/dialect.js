@@ -62,10 +62,10 @@ import regexFormat from "../../formats/regex.js";
  * @import * as API from "./index.d.ts"
  */
 
-/** @type API.draft07DialectUri */
+/** @type typeof API.draft07DialectUri */
 export const draft07DialectUri = "http://json-schema.org/draft-07/schema";
 
-/** @type API.draft07Dialect */
+/** @type typeof API.draft07Dialect */
 export const draft07Dialect = {
   uri: draft07DialectUri,
   keywords: {

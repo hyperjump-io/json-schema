@@ -151,7 +151,10 @@ export const provenance = ({ group, keywordNode, sourceNodes, withoutSiblings = 
 export const sourcesWithoutEffect = ({ group, sourceNodes, withoutSiblings = [] }) => sourceNodes
   .filter((_sourceNode, index) => withoutSiblings[index] !== undefined && equal(group.expression, withoutSiblings[index]));
 
-/** @type (value: unknown) => value is Expression */
+/**
+ * @param {unknown} value
+ * @returns {value is Expression}
+ */
 const isOperation = (value) => value !== null && typeof value === "object" && !Array.isArray(value)
   && typeof (/** @type Record<string, unknown> */ (value)).op === "string";
 

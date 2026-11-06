@@ -10,7 +10,7 @@ import { sessionOf } from "./context.js";
  * @import * as API from "./lint.d.ts"
  */
 
-/** @type API.lint */
+/** @type typeof API.lint */
 export const lint = async (context, uri, options = {}) => {
   const session = sessionOf(context, options);
 
