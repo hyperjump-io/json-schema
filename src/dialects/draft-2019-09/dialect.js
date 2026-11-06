@@ -53,7 +53,7 @@ import formatKeyword from "../../keywords/format.js";
 import contentEncodingKeyword from "../../keywords/contentEncoding.js";
 import contentMediaTypeKeyword from "../../keywords/contentMediaType.js";
 import contentSchemaKeyword from "../../keywords/contentSchema.js";
-import dateTimeFormat from "../../formats/date-time.js";
+import dateTimeFormat from "../../formats/draft-2020-12/date-time.js";
 import dateFormat from "../../formats/date.js";
 import timeFormat from "../../formats/time.js";
 import durationFormat from "../../formats/duration.js";

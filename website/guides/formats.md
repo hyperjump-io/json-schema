@@ -26,6 +26,10 @@ correctly takes large tables of Unicode data, so they're only loaded if you
 ask for them. draft-04 and draft-06 have their own simpler `hostname`. It's
 always loaded.
 
+In v1, `date-time` allows the time zone and tag suffixes of RFC 9557, like
+`"2022-07-08T00:14:07Z[Europe/London]"`. The other dialects only allow RFC
+3339 date-times.
+
 ```typescript
 import { fullFormats } from "@hyperjump/json-schema/formats/full";
 

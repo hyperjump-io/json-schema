@@ -22,3 +22,11 @@ names the formats it uses, and only brings definitions for ones that
 aren't those three. v1 validates formats by default. `fullFormats`
 (`src/formats/full.js`) has every format, for the config's `formats`. The validators come
 from `@hyperjump/json-schema-formats`.
+
+v1's `date-time` is RFC 9557's `date-time-ext`, which is RFC 3339's
+`date-time` followed by optional suffixes for a time zone
+(`[Europe/London]`) and tags (`[u-ca=chinese]`). draft-04 through 2020-12
+use RFC 3339's (`src/formats/draft-2020-12/date-time.js`). The unprefixed
+format is the latest spec's, as with `hostname`, and the lite and full
+formats have it. The suffix is only checked for syntax, not against the
+IANA time zone database.

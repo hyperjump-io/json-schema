@@ -43,7 +43,7 @@ import titleKeyword from "../../keywords/title.js";
 import typeKeyword from "../../keywords/draft-2020-12/type.js";
 import uniqueItemsKeyword from "../../keywords/uniqueItems.js";
 import writeOnlyKeyword from "../../keywords/writeOnly.js";
-import dateTimeFormat from "../../formats/date-time.js";
+import dateTimeFormat from "../../formats/draft-2020-12/date-time.js";
 import dateFormat from "../../formats/date.js";
 import timeFormat from "../../formats/time.js";
 import emailFormat from "../../formats/email.js";
