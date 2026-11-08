@@ -5,7 +5,7 @@ import { codePointLengthIsWithin, instanceEqual } from "../keywords/utilities.js
 import { jsInstance } from "./instance.js";
 import { conditionsOf, explainsFailure, readsMarks, subexpressions } from "./kernel.js";
 import { keywordEvaluate } from "./definitions.js";
-import { addDynamicAnchors, addReachable, isMultipleOf, itemSequenceStates, selector, typeIndexes } from "./fast.js";
+import { addDynamicAnchors, addReachable, itemSequenceStates, multipleOf, selector, typeIndexes } from "./fast.js";
 
 /**
  * @import { Data, Node } from "unist"
@@ -852,13 +852,8 @@ export const instrumented = (definitions, kernel, options) => {
         };
       }
       case "multipleOf": {
-        const { divisor } = expression;
-        return (instance) => {
-          if (ops.typeOf(instance) !== "number") {
-            return true;
-          }
-          return isMultipleOf(/** @type number */ (ops.value(instance)), divisor);
-        };
+        const isMultiple = multipleOf(expression.divisor);
+        return (instance) => ops.typeOf(instance) !== "number" || isMultiple(/** @type number */ (ops.value(instance)));
       }
 
       case "stringLength": {

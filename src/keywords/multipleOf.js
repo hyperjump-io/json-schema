@@ -5,8 +5,8 @@ import { positiveNumber } from "./checks.js";
  */
 
 /**
- * `multipleOf`. Floating point division is inexact, so a quotient within a
- * few units of rounding error of an integer counts as one.
+ * `multipleOf`. Numbers are compared as the decimals they're written as,
+ * which floating point division can't do exactly (see `multipleOf` in `src/kernel/fast.js`).
  *
  * @type Keyword<number, "data">
  */

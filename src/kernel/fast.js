@@ -289,13 +289,8 @@ export const fast = (definitions, kernel) => {
           || ((exclusiveMin ? instance > min : instance >= min) && (exclusiveMax ? instance < max : instance <= max));
       }
       case "multipleOf": {
-        const { divisor } = expression;
-        return (instance) => {
-          if (typeof instance !== "number") {
-            return true;
-          }
-          return isMultipleOf(instance, divisor);
-        };
+        const isMultiple = multipleOf(expression.divisor);
+        return (instance) => typeof instance !== "number" || isMultiple(instance);
       }
 
       case "stringLength": {
@@ -1031,16 +1026,61 @@ export const fast = (definitions, kernel) => {
 export const typeIndexes = ["null", "boolean", "number", "string", "array", "object"];
 
 /**
- * Whether `value` is a multiple of `divisor`. JSON numbers are decimals,
- * which floating point can't always represent, so the quotient may be a
- * little off an integer. A few units of rounding error, relative to the
- * quotient, are allowed. A quotient that overflows isn't a multiple.
+ * A test of whether a value is a multiple of `divisor`, as the decimals
+ * they're written as. Floating point can't represent most decimals, so
+ * dividing them is inexact. Instead, both are scaled by a power of ten to
+ * integers, with as many decimal places as `divisor` has, and the integers
+ * are divided. A multiple can't have more decimal places than `divisor`.
+ * Scaling multiplies by a power of ten, which is exact up to 1e22, and
+ * rounds. Below 2^50, the multiplication is off by much less than 0.5, so
+ * rounding gives the right integer. Otherwise, the shortest decimals are
+ * compared as `BigInt`s. The divisor's scale is found once, so evaluators
+ * make the test when they're compiled.
  *
- * @type (value: number, divisor: number) => boolean
+ * @type (divisor: number) => (value: number) => boolean
  */
-export const isMultipleOf = (value, divisor) => {
-  const quotient = value / divisor;
-  return Math.abs(quotient - Math.round(quotient)) <= Math.abs(quotient) * 4 * Number.EPSILON;
+export const multipleOf = (divisor) => {
+  let scale = 1;
+  while (Math.round(divisor * scale) / scale !== divisor) {
+    if (scale === 1e22) {
+      return (value) => decimalIsMultipleOf(value, divisor);
+    }
+    scale *= 10;
+  }
+
+  const scaledDivisor = Math.round(divisor * scale);
+  if (scaledDivisor >= 2 ** 50) {
+    return (value) => decimalIsMultipleOf(value, divisor);
+  }
+
+  return (value) => {
+    const scaledValue = Math.round(value * scale);
+    if (Math.abs(scaledValue) >= 2 ** 50) {
+      return decimalIsMultipleOf(value, divisor);
+    }
+    return scaledValue / scale === value && scaledValue % scaledDivisor === 0;
+  };
+};
+
+/** @type (value: number, divisor: number) => boolean */
+const decimalIsMultipleOf = (value, divisor) => {
+  const [valueDigits, valueExponent] = decimal(value);
+  const [divisorDigits, divisorExponent] = decimal(divisor);
+  const exponent = Math.min(valueExponent, divisorExponent);
+  return valueDigits * 10n ** BigInt(valueExponent - exponent)
+    % (divisorDigits * 10n ** BigInt(divisorExponent - exponent)) === 0n;
+};
+
+/**
+ * The digits and exponent of a number's shortest decimal, without its sign.
+ * `1.25e-7` is `[125n, -9]`.
+ *
+ * @type (number: number) => [bigint, number]
+ */
+const decimal = (number) => {
+  const [mantissa, exponent = "0"] = String(Math.abs(number)).split("e");
+  const [whole, fraction = ""] = mantissa.split(".");
+  return [BigInt(whole + fraction), Number(exponent) - fraction.length];
 };
 
 /**
