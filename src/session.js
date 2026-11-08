@@ -1,5 +1,5 @@
 import { jsonValue, relativeFileUri, RetrievalError, Session } from "@hyperjump/browser";
-import { encodeIriFragment } from "@hyperjump/uri";
+import { encodeIriFragment, isIri, normalizeIri, toAbsoluteIri } from "@hyperjump/uri";
 import { toId } from "./identifiers.js";
 import { SessionRegistries } from "./registry/session-registries.js";
 import { SchemaError } from "./schema/schema-error.js";
@@ -98,34 +98,43 @@ export class JsonSchemaSession extends Session {
    * Otherwise, a document could change what a reference in another one
    * finds.
    *
+   * Embedded resources and registries are found by the URI's {@link Id},
+   * worked out once. A URI that isn't an IRI, like a relative one, is left
+   * to the session, which resolves it against the context URI or throws for
+   * it, so it isn't looked for in them.
+   *
    * @param {string} uri
    * @param {GetOptions} [options]
    */
   async getDocument(uri, options = {}) {
+    if (!isIri(uri)) {
+      return this.#getDocument(uri, undefined, options);
+    }
+
+    const id = normalizeIri(toAbsoluteIri(uri));
     if (options.referencedFrom !== undefined) {
-      const id = toId(uri);
       const resources = (this.#embedded.get(toId(options.referencedFrom)) ?? []).map((embedded) => embedded[id]);
       const embeddedDocument = resources.find((resource) => resource !== undefined);
       if (embeddedDocument) {
         if (resources.some((resource) => resource === undefined)) {
-          await this.#getDocument(uri, options);
+          await this.#getDocument(uri, id, options);
         }
         return /** @type DocumentNode<JsonSchemaNode> */ (/** @type unknown */ (embeddedDocument));
       }
     }
 
-    return this.#getDocument(uri, options);
+    return this.#getDocument(uri, id, options);
   }
 
   /**
    * A document from a registry or retrieved
    *
-   * @type (uri: string, options: GetOptions) => Promise<DocumentNode<JsonSchemaNode>>
+   * @type (uri: string, id: Id | undefined, options: GetOptions) => Promise<DocumentNode<JsonSchemaNode>>
    */
-  async #getDocument(uri, options) {
+  async #getDocument(uri, id, options) {
     /** @type DocumentNode<JsonSchemaNode> */
     let document;
-    const registryDocument = this.#registries.get(uri);
+    const registryDocument = id === undefined ? undefined : this.#registries.get(id);
     if (registryDocument) {
       document = /** @type DocumentNode<JsonSchemaNode> */ (/** @type unknown */ (await registryDocument));
     } else {

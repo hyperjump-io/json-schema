@@ -11,6 +11,7 @@ import { SchemaRegistry } from "./schema-registry.js";
  * @import { ReadonlyJson } from "@hyperjump/browser"
  * @import { RegistryEntry } from "./registry-entries.js"
  * @import { IndexedEntry } from "./registry-index.js"
+ * @import { Id } from "../identifiers.js"
  */
 
 /**
@@ -117,12 +118,12 @@ export class SessionRegistries {
   }
 
   /**
-   * The schema document a URI finds in the registries, if any
+   * The schema document an identifier finds in the registries, if any
    *
-   * @type (uri: string) => Promise<JsonSchemaDocumentNode> | undefined
+   * @type (id: Id) => Promise<JsonSchemaDocumentNode> | undefined
    */
-  get(uri) {
-    const indexed = this.#registryEntry(uri);
+  get(id) {
+    const indexed = this.#registryEntry(id);
     if (indexed) {
       return this.#document(indexed);
     }
@@ -165,18 +166,11 @@ export class SessionRegistries {
   }
 
   /**
-   * The registry entry this session sees for a URI
+   * The registry entry this session sees for an identifier
    *
-   * @type (uri: string) => IndexedEntry | undefined
+   * @type (id: Id) => IndexedEntry | undefined
    */
-  #registryEntry(uri) {
-    let id;
-    try {
-      id = toId(uri);
-    } catch (_error) {
-      return;
-    }
-
+  #registryEntry(id) {
     /** @type IndexedEntry | undefined */
     let found;
     for (const index of this.#registryIndexes()) {

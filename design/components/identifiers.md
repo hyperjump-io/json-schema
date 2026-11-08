@@ -51,6 +51,21 @@ because normalizing costs something and changes how it reads.
   than normalizing them again, and a bundle's files are relative to the
   main document's `Id`.
 
+## Looking up a document
+
+`JsonSchemaSession.getDocument` overrides browser's, which every lookup goes
+through, including the references `get` follows. It works out the URI's
+`Id` once and finds embedded resources and registry entries by it. A URI
+that isn't an IRI, like a relative one, goes to browser, which resolves it
+against the context URI or throws the same `InvalidIriError` it would
+without the subclass. Browser checks the URI again, which is one pattern
+test.
+
+- An override point in browser that gets an `Id`, called after browser
+  checks, resolves, and normalizes the URI, was rejected. It's
+  `getDocument` split in two, and the checking would only move to browser,
+  with a second public method to do it.
+
 ## `setBaseUri` takes a reference
 
 A resolve hook gives `setBaseUri` the reference as it's written, and the
@@ -102,3 +117,6 @@ check.
 - A plain-name fragment in `$id` (draft-04 through draft-07) is the anchor
   as it's written. v1 read it from the resolved, normalized IRI, so
   `#%66oo` was the anchor `foo`. It isn't a valid anchor name either way.
+- A relative URI isn't looked for in the registries, because the context
+  URI it's resolved against is browser's. A schema in a registry can't have
+  a `file:` URI, so it only matters in a web page.

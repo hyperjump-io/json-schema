@@ -1,6 +1,7 @@
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, relative } from "node:path";
+import { cwd } from "node:process";
 import { pathToFileURL } from "node:url";
 import { describe, test, beforeEach, expect } from "vitest";
 import { jsonPointerGet, Session } from "@hyperjump/browser";
@@ -213,6 +214,21 @@ describe("JsonSchema", () => {
         await expect(new Session(jsonSchema).get(pathToFileURL(path).toString())).rejects.toMatchObject({
           cause: { message: expect.stringContaining("JsonSchemaSession") }
         });
+      } finally {
+        await rm(directory, { recursive: true });
+      }
+    });
+
+    test("a relative URI is resolved against the working directory, even with referencedFrom", async () => {
+      const directory = await mkdtemp(join(cwd(), ".json-schema-test-"));
+      try {
+        const path = join(directory, "schema.schema.json");
+        await writeFile(path, JSON.stringify({ $schema: v1DialectUri, type: "string" }));
+
+        const session = new JsonSchema({ dialects: [v1Dialect] }).session();
+        const referencedFrom = pathToFileURL(join(directory, "other.schema.json")).href;
+        const document = await session.getDocument(relative(cwd(), path), { referencedFrom });
+        expect(document.uri).to.equal(pathToFileURL(path).href);
       } finally {
         await rm(directory, { recursive: true });
       }
