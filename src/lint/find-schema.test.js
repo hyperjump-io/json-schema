@@ -8,7 +8,7 @@ import { JsonSchema } from "../json-schema.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import { findSchema } from "./find-schema.js";
-import { toNormalizedIri } from "../identifiers.js";
+import { assertIri, normalizeIri } from "@hyperjump/uri";
 
 /**
  * @import { JsonSchemaSession } from "../session.d.ts"
@@ -42,83 +42,83 @@ describe("findSchema", () => {
 
   describe("found", () => {
     test("a document", async () => {
-      const result = await findSchema(session, toNormalizedIri("https://example.com/schema"));
+      const result = await findSchema(session, iri("https://example.com/schema"));
       expect(result.status).to.equal("found");
     });
 
     test("a JSON Pointer fragment", async () => {
-      const result = await findSchema(session, toNormalizedIri("https://example.com/schema#/properties/foo"));
+      const result = await findSchema(session, iri("https://example.com/schema#/properties/foo"));
       expect(result).toMatchObject({ status: "found", node: { type: "json-schema", jsonType: "object" } });
     });
 
     test("an anchor", async () => {
-      const result = await findSchema(session, toNormalizedIri("https://example.com/schema#bar"));
+      const result = await findSchema(session, iri("https://example.com/schema#bar"));
       expect(result).toMatchObject({ status: "found", node: { location: "https://example.com/schema#/$defs/bar" } });
     });
 
     test("an embedded resource, from the document that contains it", async () => {
-      await findSchema(session, toNormalizedIri("https://example.com/schema"));
-      const result = await findSchema(session, toNormalizedIri("https://example.com/embedded"), { referencedFrom: "https://example.com/schema" });
+      await findSchema(session, iri("https://example.com/schema"));
+      const result = await findSchema(session, iri("https://example.com/embedded"), { referencedFrom: "https://example.com/schema" });
       expect(result.status).to.equal("found");
     });
   });
 
   describe("missing", () => {
     test("a file that doesn't exist", async () => {
-      const result = await findSchema(session, toNormalizedIri("file:///nothing-here/a.schema.json"));
+      const result = await findSchema(session, iri("file:///nothing-here/a.schema.json"));
       // Relative to the working directory, so it doesn't reveal where the file is
       expect(result).toMatchObject({ status: "missing", reason: { message: `There's no file at '${relative(cwd(), "/nothing-here/a.schema.json")}'` } });
     });
 
     test("an HTTP resource that doesn't exist", async () => {
-      expect(await findSchema(session, toNormalizedIri("test:/404"))).toMatchObject({ status: "missing", reason: { message: "There's nothing at 'test:/404' (404)" } });
-      expect((await findSchema(session, toNormalizedIri("test:/410"))).status).to.equal("missing");
+      expect(await findSchema(session, iri("test:/404"))).toMatchObject({ status: "missing", reason: { message: "There's nothing at 'test:/404' (404)" } });
+      expect((await findSchema(session, iri("test:/410"))).status).to.equal("missing");
     });
 
     test("a JSON Pointer that doesn't point to anything", async () => {
-      const result = await findSchema(session, toNormalizedIri("https://example.com/schema#/properties/bar"));
+      const result = await findSchema(session, iri("https://example.com/schema#/properties/bar"));
       expect(result.status).to.equal("missing");
     });
 
     test("an anchor that doesn't exist", async () => {
-      const result = await findSchema(session, toNormalizedIri("https://example.com/schema#baz"));
+      const result = await findSchema(session, iri("https://example.com/schema#baz"));
       expect(result).toMatchObject({ status: "missing", reason: { message: "There's no 'baz' anchor in 'https://example.com/schema'" } });
     });
 
     test("something that isn't a schema", async () => {
-      const result = await findSchema(session, toNormalizedIri("https://example.com/schema#/properties"));
+      const result = await findSchema(session, iri("https://example.com/schema#/properties"));
       expect(result).toMatchObject({ status: "missing", reason: { message: "'https://example.com/schema#/properties' isn't a schema" } });
     });
 
     test("a document that isn't a schema", async () => {
-      const result = await findSchema(session, toNormalizedIri("test:/json"));
+      const result = await findSchema(session, iri("test:/json"));
       expect(result).toMatchObject({ status: "missing", reason: { message: "'test:/json' isn't a schema. It's application/json." } });
     });
   });
 
   describe("unknown", () => {
     test("a URL allowRetrieval refuses", async () => {
-      const result = await findSchema(session, toNormalizedIri("https://example.com/other"));
+      const result = await findSchema(session, iri("https://example.com/other"));
       expect(result).toMatchObject({ status: "unknown", reason: { name: "RetrievalNotAllowedError" } });
     });
 
     test("an embedded resource, from another document", async () => {
-      const result = await findSchema(session, toNormalizedIri("https://example.com/embedded"));
+      const result = await findSchema(session, iri("https://example.com/embedded"));
       expect(result.status).to.equal("unknown");
     });
 
     test("an HTTP error that isn't about whether it exists", async () => {
-      expect((await findSchema(session, toNormalizedIri("test:/500"))).status).to.equal("unknown");
-      expect((await findSchema(session, toNormalizedIri("test:/403"))).status).to.equal("unknown");
+      expect((await findSchema(session, iri("test:/500"))).status).to.equal("unknown");
+      expect((await findSchema(session, iri("test:/403"))).status).to.equal("unknown");
     });
 
     test("an unsupported URI scheme", async () => {
-      const result = await findSchema(session, toNormalizedIri("urn:example:schema"));
+      const result = await findSchema(session, iri("urn:example:schema"));
       expect(result.status).to.equal("unknown");
     });
 
     test("a schema with problems", async () => {
-      const result = await findSchema(session, toNormalizedIri("test:/invalid"));
+      const result = await findSchema(session, iri("test:/invalid"));
       expect(result.status).to.equal("unknown");
     });
   });
@@ -139,7 +139,7 @@ describe("findSchema", () => {
         .use(() => async (/** @type JsonSchemaDocumentNode */ tree, file) => {
           for (const uri of uris) {
             const session = /** @type JsonSchemaSession */ (file.data.jsonSchemaSession);
-            const result = await findSchema(session, toNormalizedIri(uri), { document: tree });
+            const result = await findSchema(session, iri(uri), { document: tree });
             statuses.push(result.status);
           }
         })
@@ -162,7 +162,7 @@ describe("findSchema", () => {
       await linter()
         .use(() => async (/** @type JsonSchemaDocumentNode */ _tree, file) => {
           const session = /** @type JsonSchemaSession */ (file.data.jsonSchemaSession);
-          const result = await findSchema(session, toNormalizedIri("file:///nothing-here/a.schema.json#/$defs/foo"));
+          const result = await findSchema(session, iri("file:///nothing-here/a.schema.json#/$defs/foo"));
           statuses.push(result.status);
         })
         .process(file);
@@ -204,4 +204,10 @@ const respond = async (uri) => {
   const response = new Response(body, { headers: { "Content-Type": contentType } });
   Object.defineProperty(response, "url", { value: uri });
   return response;
+};
+
+/** @type (uri: string) => import("@hyperjump/uri").NormalizedIri */
+const iri = (uri) => {
+  assertIri(uri);
+  return normalizeIri(uri);
 };

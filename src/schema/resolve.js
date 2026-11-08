@@ -1,6 +1,6 @@
 import { relativeFileUri } from "@hyperjump/browser";
 import * as JsonPointer from "@hyperjump/json-pointer";
-import { assertIriReference, encodeIriFragment, getScheme, InvalidIriError, isIriReference, normalizeIri, resolveIri, urlToIri } from "@hyperjump/uri";
+import { assertIriReference, encodeIriFragment, getScheme, isIriReference, normalizeIri, resolveIri, urlToIri } from "@hyperjump/uri";
 import { resolveId, toId } from "../identifiers.js";
 import schemaKeyword from "../keywords/schema.js";
 import unknownKeyword from "../keywords/unknown.js";
@@ -15,7 +15,7 @@ import { siblingValues } from "../keywords/utilities.js";
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode, JsonSchemaTolerantNode } from "./schema-ast.d.ts"
  * @import { Keyword, ResolveContext, Shape } from "../keyword.d.ts"
  * @import { Dialect, DialectDefinition } from "../dialect.d.ts"
- * @import { Iri, NormalizedIri } from "@hyperjump/uri"
+ * @import { NormalizedIri } from "@hyperjump/uri"
  * @import { Id } from "../identifiers.js"
  * @import * as API from "./resolve.d.ts"
  */
@@ -360,8 +360,9 @@ class Resolver {
           let baseUri;
           try {
             baseUri = resolveId(reference, resource.uri);
-          } catch (error) {
-            context.message(error instanceof InvalidIriError ? `'${reference}' isn't a valid URI reference` : /** @type Error */ (error).message);
+          } catch (_error) {
+            // There's always a base here, so it's an invalid reference
+            context.message(`'${reference}' isn't a valid URI reference`);
             return;
           }
 

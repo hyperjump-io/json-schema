@@ -9,7 +9,7 @@ import { visitReferences, visitSchemas } from "./utilities.js";
 
 /**
  * @import { VFile } from "vfile"
- * @import { Iri, NormalizedIri } from "@hyperjump/uri"
+ * @import { NormalizedIri } from "@hyperjump/uri"
  * @import { Dialect } from "../dialect.d.ts"
  * @import { Format } from "../format.d.ts"
  * @import { Keyword, Reference } from "../keyword.d.ts"

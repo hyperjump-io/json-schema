@@ -44,16 +44,3 @@ export const resolveId = (reference, base) => {
 
   return normalizeIri(toAbsoluteIri(resolveIri(reference, base)));
 };
-
-/**
- * An IRI from outside json-schema, checked and normalized, for a function
- * that compares IRIs, like `toRelativeIri`. Unlike {@link toId}, it keeps its
- * fragment.
- *
- * @type (uri: string) => NormalizedIri
- * @throws {import("@hyperjump/uri").InvalidIriError} If `uri` isn't an IRI.
- */
-export const toNormalizedIri = (uri) => {
-  assertIri(uri);
-  return normalizeIri(uri);
-};

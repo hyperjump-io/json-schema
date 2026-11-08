@@ -1,19 +1,18 @@
 import { unified } from "unified";
 import { VFile } from "vfile";
 import { relativeFileUri } from "@hyperjump/browser";
-import { assertIriReference } from "@hyperjump/uri";
 import { SchemaError } from "../schema/schema-error.js";
 import { toSchemaMessage } from "../schema/resolve-text.js";
 import { sessionOf } from "./context.js";
 
 /**
+ * @import { IriReference } from "@hyperjump/uri"
  * @import { JsonSchemaDocumentNode } from "../schema/schema-ast.d.ts"
  * @import * as API from "./lint.d.ts"
  */
 
 /** @type typeof API.lint */
 export const lint = async (context, uri, options = {}) => {
-  assertIriReference(uri);
   const session = sessionOf(context, options);
 
   let document;
@@ -28,7 +27,8 @@ export const lint = async (context, uri, options = {}) => {
   }
 
   if (document.type !== "json-schema-document") {
-    throw Error(`'${relativeFileUri(uri)}' isn't a schema. It's ${document.mediaType}.`);
+    // `getDocument` checked it
+    throw Error(`'${relativeFileUri(/** @type IriReference */ (uri))}' isn't a schema. It's ${document.mediaType}.`);
   }
 
   // Loaded when it's needed, so code that never lints never loads the rules

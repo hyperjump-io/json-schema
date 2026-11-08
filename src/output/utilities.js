@@ -1,6 +1,7 @@
-import { handleName } from "../kernel/fast.js";
+import { relativeFileUri } from "@hyperjump/browser";
 
 /**
+ * @import { IriReference } from "@hyperjump/uri"
  * @import { EvaluationLocation, KeywordInfo } from "../kernel/evaluation-plugin.d.ts"
  * @import { JsonSyntaxError, OutputError } from "./output-format.d.ts"
  * @import { DetailedValidationError, ValidationError } from "./validation-error.d.ts"
@@ -46,13 +47,15 @@ export const validationError = (ruleId, absoluteKeywordLocation, at) => ({
  * Says each error's location, and its subschemas' errors' locations, with
  * `relativeFileUri`, so a schema in a file is relative to the working
  * directory. It's done for the errors that are kept, when the output is
- * made, not for each one that's created.
+ * made, not for each one that's created. A keyword's location is its
+ * schema's location and a JSON Pointer, even in a copy an optimization made,
+ * so it's an IRI-reference.
  *
  * @type <E extends DetailedValidationError>(errors: E[]) => E[]
  */
 export const withRelativeLocations = (errors) => {
   for (const error of errors) {
-    error.absoluteKeywordLocation = handleName(error.absoluteKeywordLocation);
+    error.absoluteKeywordLocation = relativeFileUri(/** @type IriReference */ (error.absoluteKeywordLocation));
     if (error.errors !== undefined) {
       withRelativeLocations(error.errors);
     }

@@ -1,9 +1,9 @@
-import { hasScheme, resolveIri, toRelativeIri } from "@hyperjump/uri";
-import { toId, toNormalizedIri } from "../identifiers.js";
+import { hasScheme, resolveIri, toAbsoluteIri, toRelativeIri } from "@hyperjump/uri";
+import { toId } from "../identifiers.js";
 import { mapSubexpressions } from "./kernel.js";
 
 /**
- * @import { IriReference } from "@hyperjump/uri"
+ * @import { IriReference, NormalizedIri } from "@hyperjump/uri"
  * @import { Expression, Kernel } from "./kernel.d.ts"
  */
 
@@ -68,17 +68,19 @@ const mapUris = (kernel, map) => {
  * doesn't say where the files are, and it can be restored wherever they're
  * moved to, as long as they're laid out the same. A URI in the entry's
  * document is only its fragment, like `#/properties/name`, so the entry's
- * document can be renamed too. Other URIs are absolute.
+ * document can be renamed too. Other URIs are absolute. A compiled kernel's
+ * URIs are its schemas' locations, which are normalized IRIs, so they aren't
+ * checked or normalized again.
  *
  * @type (kernel: Kernel) => Kernel
  */
 export const withRelativeFileUris = (kernel) => {
-  const base = toId(kernel.uri);
-  if (!/^file:/i.test(base)) {
+  if (!/^file:/i.test(kernel.uri)) {
     return kernel;
   }
 
-  return mapUris(kernel, (uri) => /^file:/i.test(uri) ? toRelativeIri(toNormalizedIri(uri), base) : uri);
+  const base = toAbsoluteIri(/** @type NormalizedIri */ (kernel.uri));
+  return mapUris(kernel, (uri) => /^file:/i.test(uri) ? toRelativeIri(/** @type NormalizedIri */ (uri), base) : uri);
 };
 
 /**

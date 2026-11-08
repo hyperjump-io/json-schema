@@ -46,9 +46,10 @@ because normalizing costs something and changes how it reads.
     `#` references written as `HTTPS://Example.com/schema.json#…`) came
     from that and stay, since lint has to handle equivalent references
     whichever layer normalizes them.
-- `toRelativeIri` takes normalized identifiers, so a kernel's `file:` URIs
-  are normalized before they're made relative (`kernel-uris.js`), and a
-  bundle's files are relative to the main document's `Id`.
+- `toRelativeIri` takes normalized identifiers. A compiled kernel's URIs
+  are locations, which already are, so `kernel-uris.js` casts them rather
+  than normalizing them again, and a bundle's files are relative to the
+  main document's `Id`.
 
 ## `setBaseUri` takes a reference
 
@@ -80,7 +81,10 @@ placeholder handle while lowering. Optimizations name the copies they make
 with a space (`static-dynamic-scope.js`), so no copy can be a location, and
 a copy isn't an IRI-reference. A message names a handle with `handleName`
 (`src/kernel/fast.js`), which says one that isn't an IRI-reference as it
-is.
+is. A keyword's location isn't a handle: a copy keeps its keywords'
+locations, so an output's `absoluteKeywordLocation` is always an
+IRI-reference, and output formats give it to `relativeFileUri` without a
+check.
 
 - Branding handles was rejected. The only brand that's true of every handle
   is an opaque one, which `@hyperjump/uri` doesn't take, and an
