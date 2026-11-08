@@ -25,11 +25,8 @@ export class JsonOrSchemaMediaTypePlugin {
     const text = await response.text();
     const dialectUri = await schemaDialect(text, response.url, session);
     if (dialectUri === undefined) {
-      // The text has been read, so the JSON plugin gets a new response with
-      // the same URL, which `Response`'s constructor can't set
-      const json = new Response(text, { headers: response.headers });
-      Object.defineProperty(json, "url", { value: response.url });
-      return this.#json.parse(/** @type typeof response */ (json));
+      // The text has been read, so the JSON plugin gets it as it is
+      return this.#json.parse({ text: async () => text, url: response.url });
     }
 
     const contentType = parseContentType(response.headers.get("content-type") ?? "application/json");
