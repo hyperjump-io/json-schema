@@ -7,6 +7,7 @@ import type {
   JsonPropertyNode,
   JsonStatusChildren
 } from "@hyperjump/browser";
+import type { AbsoluteIri, Iri, NormalizedIri } from "@hyperjump/uri";
 import type { DialectDefinition } from "../dialect.d.ts";
 
 /**
@@ -35,20 +36,28 @@ import type { DialectDefinition } from "../dialect.d.ts";
  */
 export type JsonSchemaNode<X = never> = JsonNode<JsonSchemaAnnotations, X, JsonSchemaPropertyAnnotations>;
 
-/** The annotations of value nodes. See {@link JsonSchemaNode}. */
-export type JsonSchemaAnnotations = {
+/**
+ * The annotations of value nodes. See {@link JsonSchemaNode}. Every node's
+ * `location` is an IRI, its resource's URI and a fragment, and it's
+ * normalized like the resource's URI.
+ */
+export type JsonSchemaAnnotations = { location: NormalizedIri } & ({
   type: "json";
-  /** The resolved URI of a value that's a reference */
-  href?: string;
+  /**
+   * The resolved URI of a value that's a reference. It's normalized, so it's
+   * the same as the `location` of the schema it finds, if that's in a
+   * resource with the same URI.
+   */
+  href?: NormalizedIri;
 } | {
   type: "json-schema";
   /** The dialect of the schema resource this schema belongs to */
   dialectUri: string;
 } | {
   type: "reference";
-  /** The resolved URI of the reference */
-  href: string;
-};
+  /** The resolved URI of the reference, normalized like a `json` node's */
+  href: NormalizedIri;
+});
 
 /**
  * The annotations of property nodes. Only the properties of an object schema
@@ -97,8 +106,11 @@ export type JsonSchemaDocumentNode<S extends JsonParseStatus = JsonParseStatus> 
   /** See `JsonDocumentNode` */
   comments: JsonCommentNode[];
 
-  /** The resource's base URI. Always absolute and without a fragment. */
-  uri: string;
+  /**
+   * The resource's base URI, absolute and without a fragment. It's
+   * normalized, because it's how the resource is found.
+   */
+  uri: AbsoluteIri & NormalizedIri;
 
   /**
    * The dialect of the resource. It's undefined if no dialect could be

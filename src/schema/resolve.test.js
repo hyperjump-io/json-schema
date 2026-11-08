@@ -354,6 +354,50 @@ describe("jsonSchemaResolve", () => {
       expect(at("/properties/foo", root).location).to.equal("https://example.com/root#/properties/foo");
     });
 
+    test("an $id that breaks its scheme's rules is reported", async () => {
+      const { file } = await resolve(jsonSchema, `{
+        "$schema": "${dialectUri}",
+        "$defs": {
+          "a": { "$id": "http:///a" },
+          "b": { "$id": "urn:example" }
+        }
+      }`);
+
+      expect(file.messages.map(({ reason, ruleId }) => [reason, ruleId])).to.eql([
+        ["'http:///a' isn't a valid URI reference", idKeyword.uri],
+        ["'urn:example' isn't a valid URI reference", idKeyword.uri]
+      ]);
+    });
+
+    test("a reference that breaks its scheme's rules is reported and has no URI", async () => {
+      const { root, file } = await resolve(jsonSchema, `{
+        "$schema": "${dialectUri}",
+        "$id": "urn:example:a",
+        "$defs": {
+          "a": { "$ref": "http:///a" },
+          "b": { "$ref": "b" }
+        }
+      }`);
+
+      expect(file.messages.map(({ ruleId }) => ruleId)).to.eql([
+        "https://example.com/keyword/ref",
+        "https://example.com/keyword/ref"
+      ]);
+      expect(at("/$defs/a/$ref", root).href).to.equal(undefined);
+      expect(at("/$defs/b/$ref", root).href).to.equal(undefined);
+    });
+
+    test("identifiers and references are normalized", async () => {
+      const { document, root } = await resolve(jsonSchema, `{
+        "$schema": "${dialectUri}",
+        "$id": "HTTPS://Example.com/a/../%7Eroot",
+        "$ref": "HTTPS://Example.com/%7Eother#/$defs/a"
+      }`);
+
+      expect(document.uri).to.equal("https://example.com/~root");
+      expect(at("/$ref", root).href).to.equal("https://example.com/~other#/$defs/a");
+    });
+
     test("the document's URI comes from the file's path", async () => {
       const { document } = await resolve(jsonSchema, `{ "$schema": "${dialectUri}" }`, { path: "/path/to/my schema.json" });
 

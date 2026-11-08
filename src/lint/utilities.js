@@ -1,5 +1,6 @@
 /**
  * @import { Node } from "unist"
+ * @import { NormalizedIri } from "@hyperjump/uri"
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode, JsonSchemaTolerantNode } from "../schema/schema-ast.d.ts"
  */
 
@@ -31,7 +32,7 @@ export const visitSchemas = (tree, visitor) => {
  * the reference. A value that isn't a valid IRI reference is a schema
  * problem, so it isn't visited.
  *
- * @type (tree: JsonSchemaDocumentNode, visitor: (uri: string, node: JsonSchemaNode) => void) => void
+ * @type (tree: JsonSchemaDocumentNode, visitor: (uri: NormalizedIri, node: JsonSchemaNode) => void) => void
  */
 export const visitReferences = (tree, visitor) => {
   visitNodes(tree, (node) => {

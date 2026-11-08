@@ -1,4 +1,4 @@
-import { parseIri, resolveIri, toAbsoluteIri } from "@hyperjump/uri";
+import { isIriReference } from "@hyperjump/uri";
 import { string } from "../checks.js";
 
 /**
@@ -21,19 +21,18 @@ export default {
       return;
     }
 
-    let uri;
-    try {
-      uri = resolveIri(valueNode.value, context.baseUri);
-    } catch (_error) {
-      context.message(`'${valueNode.value}' isn't a valid URI reference`);
+    // `setBaseUri` checks the value. A fragment-only one is only an anchor,
+    // so it's checked here.
+    const value = valueNode.value;
+    if (!value.startsWith("#")) {
+      context.setBaseUri(value);
+    } else if (!isIriReference(value)) {
+      context.message(`'${value}' isn't a valid URI reference`);
       return;
     }
 
-    const { fragment } = parseIri(uri);
-    if (!valueNode.value.startsWith("#")) {
-      context.setBaseUri(toAbsoluteIri(uri));
-    }
-
+    const hash = value.indexOf("#");
+    const fragment = hash === -1 ? "" : value.slice(hash + 1);
     if (fragment) {
       if (fragment.startsWith("/")) {
         context.message("An identifier can't have a JSON Pointer fragment");

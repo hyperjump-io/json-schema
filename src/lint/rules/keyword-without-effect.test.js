@@ -154,6 +154,8 @@ describe("keyword-without-effect", () => {
       "'$ref' has no effect"
     ]);
     expect(await reasons(`{ "$schema": "${draft07}", "allOf": [{ "$ref": "#/definitions/a" }], "definitions": { "a": {} } }`)).to.eql(["'allOf' has no effect"]);
+    expect(await reasons(`{ "$schema": "${draft07}", "allOf": [{ "$ref": "#/definitions/%61" }], "definitions": { "a": {} } }`)).to.eql(["'allOf' has no effect"]);
+    expect(await reasons(`{ "$schema": "${draft07}", "allOf": [{ "$ref": "#/definitions/b" }], "definitions": { "a": {}, "b": { "$ref": "#/definitions/%61" } } }`)).to.eql(["'allOf' has no effect"]);
   });
 
   test("a reference to a schema with an effect", async () => {

@@ -6,6 +6,7 @@ import { visitReferences } from "../utilities.js";
 /**
  * @import { JsonSchemaDocumentNode, JsonSchemaNode } from "../../schema/schema-ast.d.ts"
  * @import { FindSchemaResult } from "../find-schema.d.ts"
+ * @import { NormalizedIri } from "@hyperjump/uri"
  */
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
@@ -16,7 +17,7 @@ const referenceByLocation = lintRule({ origin: "json-schema-lint:reference-by-lo
     return;
   }
 
-  /** @type [string, JsonSchemaNode][] */
+  /** @type [NormalizedIri, JsonSchemaNode][] */
   const references = [];
   visitReferences(tree, (uri, node) => {
     references.push([uri, node]);
@@ -30,7 +31,8 @@ const referenceByLocation = lintRule({ origin: "json-schema-lint:reference-by-lo
 
     // A node's location is its canonical URI, relative to the resource it's
     // in, so a reference that uses another base found it by where it is
-    const identifier = result.node.location.replace(/#$/, "");
+    const { location } = result.node;
+    const identifier = location.endsWith("#") ? toAbsoluteIri(location) : location;
     if (toAbsoluteIri(identifier) === toAbsoluteIri(uri)) {
       continue;
     }

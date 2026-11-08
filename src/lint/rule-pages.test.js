@@ -157,6 +157,18 @@ describe("rule pages", () => {
           }
           expect((await lint(name, rule, example)).sort()).to.eql([...example.messages].sort());
         });
+
+        // A reference's `href` isn't normalized, and locations are, so a
+        // rule that compares them normalizes it. The same reference written
+        // as an equivalent URI is reported the same way. A message can quote
+        // the reference, so only how many there are is compared.
+        const notNormalized = example.code.replaceAll(`"$ref": "#`, `"$ref": "HTTPS://Example.com/schema.json#`);
+        if (notNormalized !== example.code) {
+          test(`${example.section}: ${example.title}, with references that aren't normalized`, async () => {
+            const rule = (await import(new URL(`${name}.js`, rulesUrl).href)).default;
+            expect(await lint(name, rule, { ...example, code: notNormalized })).to.have.length(example.messages.length);
+          });
+        }
       }
     });
   }

@@ -1,7 +1,7 @@
 import { relativeFileUri } from "@hyperjump/browser";
 import * as JsonPointer from "@hyperjump/json-pointer";
-import { isIriReference } from "@hyperjump/json-schema-formats";
-import { encodeIriFragment, parseIri, resolveIri, toAbsoluteIri } from "@hyperjump/uri";
+import { assertIriReference, encodeIriFragment, getScheme, InvalidIriError, isIriReference, normalizeIri, resolveIri, urlToIri } from "@hyperjump/uri";
+import { resolveId, toId } from "../identifiers.js";
 import schemaKeyword from "../keywords/schema.js";
 import unknownKeyword from "../keywords/unknown.js";
 import { siblingValues } from "../keywords/utilities.js";
@@ -15,6 +15,8 @@ import { siblingValues } from "../keywords/utilities.js";
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode, JsonSchemaTolerantNode } from "./schema-ast.d.ts"
  * @import { Keyword, ResolveContext, Shape } from "../keyword.d.ts"
  * @import { Dialect, DialectDefinition } from "../dialect.d.ts"
+ * @import { Iri, NormalizedIri } from "@hyperjump/uri"
+ * @import { Id } from "../identifiers.js"
  * @import * as API from "./resolve.d.ts"
  */
 
@@ -33,10 +35,10 @@ import { siblingValues } from "../keywords/utilities.js";
  * applied until every keyword has been seen, so keyword order doesn't matter.
  *
  * @typedef {{
- *   baseUri?: string;
+ *   baseUri?: Id;
  *   anchors: [string, Node][];
  *   dynamicAnchors: [string, Node][];
- *   reference?: string;
+ *   reference?: NormalizedIri;
  *   dialect?: { definition: DialectDefinition; node: Node; keywordUri: string };
  * }} Effects
  */
@@ -44,8 +46,8 @@ import { siblingValues } from "../keywords/utilities.js";
 /** @type typeof API.resolveSchema */
 export const resolveSchema = async (tree, options) => {
   const dialectUri = options.dialectUri ?? options.session.jsonSchema.config.defaultDialectUri;
-  const resolver = new Resolver(options.session, tree);
-  return resolver.resolve(toAbsoluteIri(options.uri), dialectUri);
+  const resolver = new Resolver(options.session, tree, toId(options.uri));
+  return resolver.resolve(dialectUri);
 };
 
 /**
@@ -87,7 +89,7 @@ const fileUri = (file) => {
   const encodePath = (path) => path.split("/")
     .map(encodeURIComponent)
     .join("/");
-  return new URL(encodePath(file.path), `file://${encodePath(file.cwd)}/`).href;
+  return urlToIri(new URL(encodePath(file.path), `file://${encodePath(file.cwd)}/`));
 };
 
 class Resolver {
@@ -107,25 +109,30 @@ class Resolver {
   /** @type Record<string, JsonSchemaDocumentNode> */
   #embedded;
 
-  /** The URI the document was retrieved from, before any `$id` */
-  #documentUri = "";
+  /**
+   * The URI the document was retrieved from, before any `$id`
+   *
+   * @type Id
+   */
+  #documentUri;
 
   /**
    * @param {JsonSchemaSession} session
    * @param {JsonDocumentNode} tree
+   * @param {Id} uri
    */
-  constructor(session, tree) {
+  constructor(session, tree, uri) {
+    this.#documentUri = uri;
     this.#session = session;
     this.#messages = [];
     this.#tree = tree;
     this.#embedded = {};
   }
 
-  /** @type (uri: string, dialectUri: string | undefined) => Promise<{ document: JsonSchemaDocumentNode; messages: SchemaMessage[] }> */
-  async resolve(uri, dialectUri) {
-    this.#documentUri = uri;
+  /** @type (dialectUri: string | undefined) => Promise<{ document: JsonSchemaDocumentNode; messages: SchemaMessage[] }> */
+  async resolve(dialectUri) {
     const root = /** @type TreeNode | undefined */ (this.#tree.children[0]);
-    const document = this.#createResource(uri, root);
+    const document = this.#createResource(this.#documentUri, root);
 
     if (root) {
       let dialect;
@@ -321,7 +328,7 @@ class Resolver {
    * Add the anchors a schema defines to its resource. A name can only be
    * defined once in a resource.
    *
-   * @type (found: [string, Node][], anchors: Record<string, string>, resourceUri: string, pointer: string, label: string) => void
+   * @type (found: [string, Node][], anchors: Record<string, string>, resourceUri: Id, pointer: string, label: string) => void
    */
   #addAnchors(found, anchors, resourceUri, pointer, label) {
     for (const [name, anchorNode] of found) {
@@ -348,14 +355,13 @@ class Resolver {
       /** @type ResolveContext */
       const context = {
         vocabulary: (uri) => this.#session.jsonSchema.getVocabulary(uri),
-        baseUri: resource.uri,
         dialectUri: dialect.uri,
-        setBaseUri: (uri) => {
+        setBaseUri: (reference) => {
           let baseUri;
           try {
-            baseUri = toAbsoluteIri(uri);
-          } catch (_error) {
-            context.message(`'${uri}' isn't an absolute URI`);
+            baseUri = resolveId(reference, resource.uri);
+          } catch (error) {
+            context.message(error instanceof InvalidIriError ? `'${reference}' isn't a valid URI reference` : /** @type Error */ (error).message);
             return;
           }
 
@@ -364,9 +370,9 @@ class Resolver {
           // same on another machine, and in a document that wasn't read from
           // the filesystem, its references would be resolved as if it were a
           // file, which would give it access to the filesystem.
-          if (parseIri(baseUri).scheme === "file") {
+          if (getScheme(baseUri) === "file") {
             // It's said as it's written, which is in the document already
-            const written = valueNode.type === "json" && valueNode.jsonType === "string" ? valueNode.value : uri;
+            const written = valueNode.type === "json" && valueNode.jsonType === "string" ? valueNode.value : reference;
             this.#message(`'${written}' identifies the schema by a 'file:' URI. Give it an absolute URI that isn't a file, or no identifier.`, valueNode, "file-uri-not-allowed");
             return;
           }
@@ -386,7 +392,8 @@ class Resolver {
           }
 
           try {
-            effects.reference = resolveIri(href, resource.uri);
+            assertIriReference(href);
+            effects.reference = normalizeIri(resolveIri(href, resource.uri));
           } catch (_error) {
             context.message(`'${href}' isn't a valid URI reference`);
           }
@@ -430,16 +437,10 @@ class Resolver {
       await this.#schema(node, resource, pointer, dialect, false);
     } else if (shape === "data") {
       this.#data(node, resource, pointer);
+    } else if (shape === "reference") {
+      this.#reference(node, keywordUri, resource, pointer);
     } else if (!matchesShape(shape, node)) {
       this.#mismatch(node, shape, keywordUri, resource, pointer);
-    } else if (shape === "reference") {
-      this.#data(node, resource, pointer);
-      const referenceNode = /** @type TreeNode & { type: "json"; jsonType: "string"; value: string; href?: string } */ (node);
-      if (isFileUri(referenceNode.value)) {
-        this.#fileReference(referenceNode.value, node);
-      } else {
-        referenceNode.href = resolveIri(referenceNode.value, resource.uri);
-      }
     } else if ("array" in shape && !isErrorNode(node) && node.jsonType === "array") {
       node.location = location(resource, pointer);
       let index = 0;
@@ -452,6 +453,32 @@ class Resolver {
         const [nameNode, valueNode] = property.children;
         await this.#shape(valueNode, shape.map, keywordUri, resource, JsonPointer.append(nameNode.value, pointer), dialect);
       }
+    }
+  }
+
+  /**
+   * A value whose shape is a reference, which has the URI it resolves to as
+   * `href`, normalized so it's the same as the `location` it finds. It's
+   * checked here, rather than with `matchesShape`, so it's checked once.
+   *
+   * @type (node: TreeNode, keywordUri: string, resource: JsonSchemaDocumentNode, pointer: string) => void
+   */
+  #reference(node, keywordUri, resource, pointer) {
+    if (isErrorNode(node) || node.jsonType !== "string" || !isIriReference(node.value)) {
+      this.#mismatch(node, "reference", keywordUri, resource, pointer);
+      return;
+    }
+
+    this.#data(node, resource, pointer);
+    if (isFileUri(node.value)) {
+      this.#fileReference(node.value, node);
+      return;
+    }
+
+    try {
+      /** @type TreeNode & { href?: NormalizedIri } */ (node).href = normalizeIri(resolveIri(node.value, resource.uri));
+    } catch (error) {
+      this.#message(/** @type Error */ (error).message, node, keywordUri);
     }
   }
 
@@ -508,7 +535,7 @@ class Resolver {
     }
   }
 
-  /** @type (uri: string, node: TreeNode | undefined) => JsonSchemaDocumentNode */
+  /** @type (uri: Id, node: TreeNode | undefined) => JsonSchemaDocumentNode */
   #createResource(uri, node) {
     const root = /** @type JsonSchemaTolerantNode | undefined */ (node);
     return {
@@ -527,7 +554,7 @@ class Resolver {
   /** @type (uri: string, node: Node) => Promise<Dialect | undefined> */
   async #getDialect(uri, node) {
     try {
-      return await this.#session.getDialect(toAbsoluteIri(uri), { referencedFrom: this.#documentUri });
+      return await this.#session.getDialect(uri, { referencedFrom: this.#documentUri });
     } catch (error) {
       // The error's message is the message, so what caused it is the cause
       const { message, cause } = /** @type Error */ (error);
@@ -545,7 +572,7 @@ class Resolver {
    */
   #isSelfDescribing(dialectUri) {
     try {
-      return toAbsoluteIri(dialectUri) === this.#documentUri;
+      return toId(dialectUri) === this.#documentUri;
     } catch (_error) {
       return false;
     }
@@ -559,8 +586,8 @@ class Resolver {
    *
    * @type (uri: string, node: Node) => Dialect | undefined
    */
-  #selfDescribingDialect(uri, node) {
-    uri = toAbsoluteIri(uri);
+  #selfDescribingDialect(dialectUri, node) {
+    const uri = toId(dialectUri);
     if (this.#session.jsonSchema.hasDialect(uri)) {
       return this.#session.jsonSchema.getDialect(uri);
     }
@@ -586,8 +613,13 @@ class Resolver {
 /** @type (keywords: Record<string, string>) => string | undefined */
 const reservedKeyword = (keywords) => Object.keys(keywords).find((name) => name.startsWith("x-"));
 
-/** @type (resource: JsonSchemaDocumentNode, pointer: string) => string */
-const location = (resource, pointer) => `${resource.uri}#${encodeIriFragment(pointer)}`;
+/**
+ * The resource's URI is normalized and has no fragment, and the pointer is
+ * encoded for one, which leaves it normalized, so it's a normalized IRI
+ *
+ * @type (resource: JsonSchemaDocumentNode, pointer: string) => NormalizedIri
+ */
+const location = (resource, pointer) => /** @type NormalizedIri */ (`${resource.uri}#${encodeIriFragment(pointer)}`);
 
 /** @type (node: TreeNode) => node is JsonErrorNode */
 const isErrorNode = (node) => node.type === "json-invalid" || node.type === "json-missing";

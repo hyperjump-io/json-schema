@@ -1,3 +1,4 @@
+import type { Iri } from "@hyperjump/uri";
 import type { Point, Position } from "unist";
 import type { toVFileMessage } from "../output/validation-error.d.ts";
 
@@ -23,7 +24,7 @@ export type SchemaMessage = {
   severity: "error" | "warn";
 
   /** The URI of the document it's in */
-  uri: string;
+  uri: Iri;
 
   /**
    * Where the document came from, for a schema from a registry with an

@@ -1,5 +1,6 @@
 import type { Node } from "unist";
 import type { Json, JsonErrorNode, JsonNode, JsonType, ReadonlyJson } from "@hyperjump/browser";
+import type { Iri } from "@hyperjump/uri";
 import type { JsonSchemaNode, JsonSchemaTolerantNode } from "./schema/schema-ast.d.ts";
 import type { Dialect, DialectDefinition, Vocabulary } from "./dialect.d.ts";
 import type { Expression, Handle } from "./kernel/kernel.d.ts";
@@ -177,7 +178,7 @@ export type LowerInput = Expression | Reference | Json | LowerInput[] | [string,
 /** A reference, as `lower` gets it: where it resolved to, and what's known about that */
 export type Reference = {
   /** The absolute URI it resolves to */
-  uri: string;
+  uri: Iri;
 
   /** The schema it refers to (`{ op: "apply", schema: handle }`) */
   schema: Expression;
@@ -353,21 +354,18 @@ export type ResolveContext = {
    */
   vocabulary: (uri: string) => Vocabulary | undefined;
 
-  /**
-   * The base URI the schema is in before any identifier in the schema
-   * applies.
-   */
-  baseUri: string;
-
   /** The dialect of the schema */
   dialectUri: string;
 
   /**
-   * Make the schema the root of a new schema resource with the given URI.
-   * The URI must be absolute and without a fragment. Its dialect is
-   * determined again, so `$schema` can change it.
+   * Make the schema the root of a new schema resource, identified by
+   * `reference` resolved against the base URI the schema is in. Its
+   * fragment is ignored, so a keyword that doesn't allow one reports it.
+   * Its dialect is determined again, so `$schema` can change it. A
+   * reference that isn't an IRI-reference, or that's relative where
+   * there's no base URI, is reported.
    */
-  setBaseUri: (uri: string) => void;
+  setBaseUri: (reference: string) => void;
 
   /** Add a plain-name fragment that identifies the schema */
   addAnchor: (name: string) => void;
@@ -381,7 +379,8 @@ export type ResolveContext = {
    * is for `$ref` in dialects where it replaces the whole object, such as
    * draft-04 through draft-07.
    *
-   * @param href - Resolved against `baseUri` if it's relative
+   * @param href - Resolved against the base URI the schema is in, like
+   *   `setBaseUri`'s reference
    */
   setReference: (href: string) => void;
 

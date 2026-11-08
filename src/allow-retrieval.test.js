@@ -5,7 +5,8 @@ import { cwd } from "node:process";
 import { pathToFileURL } from "node:url";
 import { describe, test, beforeAll, afterAll, expect } from "vitest";
 import { RetrievalError } from "@hyperjump/browser";
-import { toRelativeIri } from "@hyperjump/uri";
+import { toRelativeIri, urlToIri } from "@hyperjump/uri";
+import { toId, toNormalizedIri } from "./identifiers.js";
 import { JsonSchema, RetrievalNotAllowedError } from "./json-schema.js";
 import { v1Dialect, v1DialectUri } from "./dialects/v1/index.js";
 import { SchemaRegistry } from "./registry/schema-registry.js";
@@ -34,7 +35,7 @@ describe("allowRetrieval", () => {
     await writeFile(join(outside, "outside.schema.json"), schema);
     await writeFile(join(inside, "refers-outside.schema.json"), JSON.stringify({
       $schema: v1DialectUri,
-      $ref: toRelativeIri(pathToFileURL(join(inside, "refers-outside.schema.json")).href, pathToFileURL(join(outside, "outside.schema.json")).href)
+      $ref: toRelativeIri(toNormalizedIri(urlToIri(pathToFileURL(join(outside, "outside.schema.json")))), toId(urlToIri(pathToFileURL(join(inside, "refers-outside.schema.json")))))
     }));
   });
 

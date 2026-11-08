@@ -1,5 +1,5 @@
-import { RetrievalError } from "@hyperjump/browser";
-import { toAbsoluteIri } from "@hyperjump/uri";
+import { RetrievalError, RetrievalNotAllowedError } from "@hyperjump/browser";
+import { toId } from "../identifiers.js";
 import { resolveSchemaText } from "../schema/resolve-text.js";
 import { RegistryIndex } from "./registry-index.js";
 import { SchemaRegistry } from "./schema-registry.js";
@@ -91,7 +91,7 @@ export class SessionRegistries {
    * @throws RetrievalError if a registry has a schema identified by its `$id`
    */
   addValue(schema) {
-    const uri = `urn:uuid:${crypto.randomUUID()}`;
+    const uri = toId(`urn:uuid:${crypto.randomUUID()}`);
     const jsonSchema = this.#session.jsonSchema;
     const instanceIndex = registryIndex(jsonSchema, this.#registries[1]);
     const index = new RegistryIndex(jsonSchema, new SchemaRegistry().with(schema, { retrievalUri: uri }), instanceIndex);
@@ -133,9 +133,9 @@ export class SessionRegistries {
    * identified might be the one that was asked for, so a failure to retrieve
    * a URI says so.
    *
-   * @type (uri: string, error: unknown) => unknown
+   * @type (error: unknown) => unknown
    */
-  retrievalError(uri, error) {
+  retrievalError(error) {
     /** @type Set<string> */
     const dialects = new Set();
     /** @type Error[] */
@@ -156,11 +156,12 @@ export class SessionRegistries {
     if (unidentified.length > 0) {
       reasons.push(new AggregateError(unidentified, "Some schemas in registries can't be identified"));
     }
-    if (reasons.length === 0) {
+    // The error says which URI was retrieved, normalized
+    if (reasons.length === 0 || !(error instanceof RetrievalError || error instanceof RetrievalNotAllowedError)) {
       return error;
     }
 
-    return new RetrievalError(uri, { cause: new AggregateError([error, ...reasons], reasons[0].message) });
+    return new RetrievalError(error.uri, { cause: new AggregateError([error, ...reasons], reasons[0].message) });
   }
 
   /**
@@ -171,7 +172,7 @@ export class SessionRegistries {
   #registryEntry(uri) {
     let id;
     try {
-      id = toAbsoluteIri(uri);
+      id = toId(uri);
     } catch (_error) {
       return;
     }
@@ -183,10 +184,10 @@ export class SessionRegistries {
       try {
         indexed = index.lookup(id);
       } catch (error) {
-        throw new RetrievalError(uri, { cause: error });
+        throw new RetrievalError(id, { cause: error });
       }
       if (indexed && found && indexed.entry !== found.entry) {
-        throw new RetrievalError(uri, {
+        throw new RetrievalError(id, {
           cause: Error(`More than one registry has a schema identified as '${id}'`)
         });
       }

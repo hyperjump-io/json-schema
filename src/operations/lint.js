@@ -1,6 +1,7 @@
 import { unified } from "unified";
 import { VFile } from "vfile";
 import { relativeFileUri } from "@hyperjump/browser";
+import { assertIriReference } from "@hyperjump/uri";
 import { SchemaError } from "../schema/schema-error.js";
 import { toSchemaMessage } from "../schema/resolve-text.js";
 import { sessionOf } from "./context.js";
@@ -12,6 +13,7 @@ import { sessionOf } from "./context.js";
 
 /** @type typeof API.lint */
 export const lint = async (context, uri, options = {}) => {
+  assertIriReference(uri);
   const session = sessionOf(context, options);
 
   let document;

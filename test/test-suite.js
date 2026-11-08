@@ -2,7 +2,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, test, beforeAll, expect } from "vitest";
 import { JsonPointerError, jsonPointerGet } from "@hyperjump/browser";
-import { resolveIri, toAbsoluteIri } from "@hyperjump/uri";
+import { resolveId, toId } from "../src/identifiers.js";
 import { JsonSchema } from "../src/json-schema.js";
 import { SchemaRegistry } from "../src/registry/schema-registry.js";
 import { fullFormats } from "../src/formats/full.js";
@@ -154,7 +154,7 @@ export const compileTestCase = async (jsonSchema, dialectUri, uri, schema, exter
   // A schema is identified by its `$id`, which is relative to the URI it was
   // retrieved from
   const id = typeof schema === "object" && schema !== null && !Array.isArray(schema) && typeof schema.$id === "string"
-    ? toAbsoluteIri(resolveIri(schema.$id, uri))
+    ? resolveId(schema.$id, toId(uri))
     : uri;
 
   return compile(jsonSchema, id, { registry });

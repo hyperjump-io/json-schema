@@ -1,5 +1,6 @@
 import { jsonValue, relativeFileUri } from "@hyperjump/browser";
-import { parseIri, resolveIri, toAbsoluteIri, toRelativeIri } from "@hyperjump/uri";
+import { getFragment, getScheme, isIri, isIriReference, normalizeIri, resolveIri, toAbsoluteIri, toRelativeIri } from "@hyperjump/uri";
+import { toId } from "../identifiers.js";
 import { visitReferences } from "../lint/utilities.js";
 
 /**
@@ -8,6 +9,8 @@ import { visitReferences } from "../lint/utilities.js";
  * @import { JsonSchemaSession } from "../session.d.ts"
  * @import { BundleOptions } from "../operations/bundle.d.ts"
  * @import { JsonSchemaDocumentNode, JsonSchemaNode } from "../schema/schema-ast.d.ts"
+ * @import { NormalizedIri } from "@hyperjump/uri"
+ * @import { Id } from "../identifiers.js"
  */
 
 const definitionsUri = "https://json-schema.org/keyword/definitions";
@@ -23,9 +26,9 @@ const notUri = "https://json-schema.org/keyword/not";
  * @type (session: JsonSchemaSession, uri: string, options?: BundleOptions) => Promise<Json>
  */
 export const bundle = async (session, uri, options = {}) => {
-  const externalSchemas = new Set(options.externalSchemas?.map((uri) => toAbsoluteIri(uri)));
+  const externalSchemas = new Set(options.externalSchemas?.map((uri) => toId(uri)));
 
-  const main = await schemaDocument(session, toAbsoluteIri(uri));
+  const main = await schemaDocument(session, toId(uri));
   const documents = await referencedDocuments(session, main, externalSchemas);
 
   /** @type Map<string, Dialect> */
@@ -106,10 +109,10 @@ const bundleDocuments = (main, documents, dialects, options) => {
  * a file that embeds nothing isn't given one. Anything that isn't a file
  * keeps its URI.
  *
- * @type (main: JsonSchemaDocumentNode, documents: JsonSchemaDocumentNode[], id: string | undefined) => (uri: string) => string | undefined
+ * @type (main: JsonSchemaDocumentNode, documents: JsonSchemaDocumentNode[], id: string | undefined) => (uri: Id) => string | undefined
  */
 const identifierFor = (main, documents, id) => {
-  const isFile = (/** @type string */ uri) => parseIri(uri).scheme === "file";
+  const isFile = (/** @type Id */ uri) => getScheme(uri) === "file";
   if (!isFile(main.uri)) {
     return (uri) => uri;
   }
@@ -122,24 +125,22 @@ const identifierFor = (main, documents, id) => {
     return (uri) => isFile(uri) ? undefined : uri;
   }
 
-  let base;
-  try {
-    base = toAbsoluteIri(id);
-  } catch {
+  if (!isIri(id)) {
     throw Error(`The bundle's 'id' has to be an absolute URI: '${id}'`);
   }
-  if (isFile(base) || parseIri(id).fragment !== undefined) {
+  const base = normalizeIri(toAbsoluteIri(id));
+  if (isFile(base) || getFragment(id) !== undefined) {
     throw Error(`The bundle's 'id' has to be an absolute URI that isn't a file, without a fragment: '${id}'`);
   }
 
-  return (uri) => isFile(uri) ? resolveIri(toRelativeIri(main.uri, uri) || base, base) : uri;
+  return (uri) => isFile(uri) ? resolveIri(toRelativeIri(uri, main.uri) || base, base) : uri;
 };
 
 /**
  * Only a registry or retrieval finds a document without `referencedFrom`, so
  * this is always a whole document, never a resource embedded in one.
  *
- * @type (session: JsonSchemaSession, uri: string) => Promise<JsonSchemaDocumentNode>
+ * @type (session: JsonSchemaSession, uri: Id) => Promise<JsonSchemaDocumentNode>
  */
 const schemaDocument = async (session, uri) => {
   const document = await session.getDocument(uri);
@@ -155,7 +156,7 @@ const schemaDocument = async (session, uri) => {
  * reference. A reference to a resource that's already in the bundle,
  * embedded or not, finds it there.
  *
- * @type (session: JsonSchemaSession, main: JsonSchemaDocumentNode, externalSchemas: Set<string>) => Promise<JsonSchemaDocumentNode[]>
+ * @type (session: JsonSchemaSession, main: JsonSchemaDocumentNode, externalSchemas: Set<Id>) => Promise<JsonSchemaDocumentNode[]>
  */
 const referencedDocuments = async (session, main, externalSchemas) => {
   const resources = new Set(Object.keys(main.embedded));
@@ -187,10 +188,10 @@ const referencedDocuments = async (session, main, externalSchemas) => {
  * The URIs a document references. v1's `$dynamicRef` is a name, so it never
  * references another document.
  *
- * @type (document: JsonSchemaDocumentNode) => string[]
+ * @type (document: JsonSchemaDocumentNode) => NormalizedIri[]
  */
 const references = (document) => {
-  /** @type string[] */
+  /** @type NormalizedIri[] */
   const uris = [];
   visitReferences(document, (uri) => {
     uris.push(uri);
@@ -256,7 +257,7 @@ const identify = (schema, dialect, id, includeDialect) => {
 
     const previous = keywords[idName];
     delete keywords[idName];
-    const fragment = typeof previous === "string" ? parseIri(resolveIri(previous, id)).fragment : undefined;
+    const fragment = typeof previous === "string" && isIriReference(previous) ? getFragment(previous) : undefined;
     identified[idName] = fragment ? `${id}#${fragment}` : id;
   }
 

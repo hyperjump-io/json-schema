@@ -1,4 +1,4 @@
-import { parseIri } from "@hyperjump/uri";
+import { getFragment } from "@hyperjump/uri";
 
 /**
  * @import { Keyword, Reference } from "../../keyword.d.ts"
@@ -20,7 +20,7 @@ export default {
     // A plain-name fragment identifies the schema it resolved to, so the
     // schema has the dynamic anchor if its resource does. If the resource's
     // anchors aren't known (lint), it might.
-    const { fragment } = parseIri(uri);
+    const fragment = getFragment(uri);
     return fragment && !fragment.startsWith("/") && (dynamicAnchors === undefined || Object.hasOwn(dynamicAnchors, fragment))
       ? { op: "dynamicApply", anchor: fragment, fallback: handle }
       : schema;

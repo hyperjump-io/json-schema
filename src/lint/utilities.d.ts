@@ -1,4 +1,5 @@
 import type { Node } from "unist";
+import type { NormalizedIri } from "@hyperjump/uri";
 import type { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode, JsonSchemaTolerantNode } from "../schema/schema-ast.d.ts";
 
 /**
@@ -37,7 +38,7 @@ export const visitKeywords: (
  */
 export const visitReferences: (
   tree: JsonSchemaDocumentNode,
-  visitor: (uri: string, node: JsonSchemaNode) => void
+  visitor: (uri: NormalizedIri, node: JsonSchemaNode) => void
 ) => void;
 
 /**

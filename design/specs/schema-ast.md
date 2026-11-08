@@ -14,7 +14,9 @@ its position.
   keyword, so browser follows it and it never has a keyword location. Its
   other properties are plain JSON.
 - A node's `location` is its canonical URI: relative to the schema resource
-  that contains it, not the document.
+  that contains it, not the document. A resource's URI, a `location`, and
+  a `href` are normalized, so a `href` is the same string as the `location`
+  it finds (see [Identifiers](../components/identifiers.md)).
 - Embedded resources stay in the tree. Each resource gets a
   `JsonSchemaDocumentNode` whose root is the same node object. Every resource
   in a document shares one `embedded` map that includes all of them,

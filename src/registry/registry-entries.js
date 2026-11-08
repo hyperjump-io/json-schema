@@ -1,5 +1,6 @@
 /**
  * @import { SchemaRegistry } from "./schema-registry.d.ts"
+ * @import { Id } from "../identifiers.js"
  */
 
 // Each SchemaRegistry's entries, for the modules that index registries.
@@ -11,8 +12,8 @@
  *
  * @typedef {{
  *   schema: string;
- *   retrievalUri?: string;
- *   dialectUri?: string;
+ *   retrievalUri?: Id;
+ *   dialectUri?: Id;
  *   origin?: string;
  * }} RegistryEntry
  */

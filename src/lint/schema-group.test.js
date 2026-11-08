@@ -117,6 +117,35 @@ describe("schemaGroup", () => {
     expect(group.links.map(({ keywordUri }) => keywordUri)).to.eql([`${keyword}/draft-07/ref`]);
   });
 
+  test("a draft-07 reference that isn't normalized", async () => {
+    const { document, at } = await resolve({
+      $schema: "http://json-schema.org/draft-07/schema#",
+      definitions: { a: { type: "string" } },
+      properties: { foo: { $ref: "#/definitions/%61" } }
+    });
+    const group = schemaGroup(document, at("/properties/foo"));
+
+    expect(locations(group)).to.eql(["#/definitions/a", "#/properties/foo"]);
+  });
+
+  test("a draft-07 reference that isn't normalized, in place", async () => {
+    const { document, at } = await resolve({
+      $schema: "http://json-schema.org/draft-07/schema#",
+      definitions: { a: { type: "string" } },
+      allOf: [{ $ref: "#/definitions/%61" }]
+    });
+
+    const group = schemaGroup(document, at(""));
+    /** @type (location: string) => string */
+    const fragment = (location) => location.slice(location.indexOf("#"));
+
+    expect(locations(group)).to.eql(["#", "#/allOf/0", "#/definitions/a"]);
+    expect(group.links.map(({ from, to, reference }) => [fragment(from.location), fragment(to.location), reference])).to.eql([
+      ["#", "#/allOf/0", false],
+      ["#/allOf/0", "#/definitions/a", true]
+    ]);
+  });
+
   test("which keywords apply schemas in place is found from what they lower to", async () => {
     const { document, at } = await resolve({
       $schema: draft2020,

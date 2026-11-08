@@ -1,4 +1,4 @@
-import { normalizeIri, parseIri, toAbsoluteIri } from "@hyperjump/uri";
+import { getFragment, isIri, normalizeIri, toAbsoluteIri } from "@hyperjump/uri";
 import { lintRule } from "../lint-rule.js";
 import { visitDialectUris } from "../utilities.js";
 
@@ -11,14 +11,14 @@ const v1Uri = "https://json-schema.org/v1";
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
 const invalidDialectUri = lintRule({ origin: "json-schema-lint:invalid-dialect-uri", url: "https://hyperjump.io/json-schema/linting/rules/invalid-dialect-uri/" }, (tree, file) => {
   visitDialectUris(tree, (valueNode) => {
-    let absolute, hasFragment;
-    try {
-      absolute = toAbsoluteIri(normalizeIri(valueNode.value));
-      hasFragment = parseIri(valueNode.value).fragment !== undefined;
-    } catch (_error) {
-      // It isn't a dialect, which is a problem with the schema
+    // One that isn't an IRI isn't a dialect, which is a problem with the
+    // schema
+    if (!isIri(valueNode.value)) {
       return;
     }
+
+    const absolute = toAbsoluteIri(normalizeIri(valueNode.value));
+    const hasFragment = getFragment(valueNode.value) !== undefined;
 
     if (absolute !== v1Uri) {
       return;

@@ -1,11 +1,13 @@
 import { JsonMediaTypePlugin } from "@hyperjump/browser";
 import { parse as parseContentType } from "content-type";
-import { resolveIri, toAbsoluteIri } from "@hyperjump/uri";
+import { normalizeIri } from "@hyperjump/uri";
+import { resolveId } from "../identifiers.js";
 import { resolveSchemaText } from "./resolve-text.js";
 import { JsonSchemaSession } from "../session.js";
 
 /**
  * @import { DocumentNode, MediaTypePlugin } from "@hyperjump/browser"
+ * @import { AbsoluteIri } from "@hyperjump/uri"
  * @import * as API from "./json-media-type-plugin.d.ts"
  */
 
@@ -42,7 +44,7 @@ export class JsonOrSchemaMediaTypePlugin {
  * that doesn't mention `$schema` isn't parsed. A meta-schema whose `$schema`
  * is itself describes itself, so it's a schema. A dialect can't be a file.
  *
- * @type (text: string, url: string, session: unknown) => Promise<string | undefined>
+ * @type (text: string, url: AbsoluteIri, session: unknown) => Promise<string | undefined>
  */
 const schemaDialect = async (text, url, session) => {
   if (!(session instanceof JsonSchemaSession) || !text.includes(`"$schema"`)) {
@@ -55,7 +57,7 @@ const schemaDialect = async (text, url, session) => {
     if (typeof json !== "object" || json === null || !("$schema" in json) || typeof json.$schema !== "string") {
       return;
     }
-    dialectUri = toAbsoluteIri(resolveIri(json.$schema, url));
+    dialectUri = resolveId(json.$schema, url);
   } catch {
     return;
   }
@@ -66,7 +68,7 @@ const schemaDialect = async (text, url, session) => {
     return;
   }
 
-  if (dialectUri === toAbsoluteIri(url) || session.hasDialect(dialectUri)) {
+  if (dialectUri === normalizeIri(url) || session.hasDialect(dialectUri)) {
     return dialectUri;
   }
 

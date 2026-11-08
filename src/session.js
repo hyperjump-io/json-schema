@@ -1,5 +1,6 @@
 import { jsonValue, relativeFileUri, RetrievalError, Session } from "@hyperjump/browser";
-import { encodeIriFragment, toAbsoluteIri } from "@hyperjump/uri";
+import { encodeIriFragment } from "@hyperjump/uri";
+import { toId } from "./identifiers.js";
 import { SessionRegistries } from "./registry/session-registries.js";
 import { SchemaError } from "./schema/schema-error.js";
 import { withValidateFormats } from "./dialects/extend-dialect.js";
@@ -11,6 +12,7 @@ import unknownKeyword, { keywordDefinitionUri } from "./keywords/unknown.js";
  * @import { JsonSchema } from "./json-schema.d.ts"
  * @import { JsonSchemaDocumentNode, JsonSchemaNode } from "./schema/schema-ast.d.ts"
  * @import { SchemaMessage } from "./schema/schema-error.d.ts"
+ * @import { Id } from "./identifiers.js"
  * @import * as API from "./session.d.ts"
  */
 
@@ -30,7 +32,7 @@ export class JsonSchemaSession extends Session {
    * object they share, so a reference from any of them can find the others.
    * A URI is only in more than one document if its resources are identical.
    *
-   * @type Map<string, Record<string, JsonSchemaDocumentNode>[]>
+   * @type Map<Id, Record<string, JsonSchemaDocumentNode>[]>
    */
   #embedded;
 
@@ -62,7 +64,7 @@ export class JsonSchemaSession extends Session {
    * Dialects whose meta-schemas are being retrieved, mapped to the dialects
    * their meta-schemas are waiting on.
    *
-   * @type Map<string, Set<string>>
+   * @type Map<Id, Set<Id>>
    */
   #loading;
 
@@ -101,8 +103,8 @@ export class JsonSchemaSession extends Session {
    */
   async getDocument(uri, options = {}) {
     if (options.referencedFrom !== undefined) {
-      const id = toAbsoluteIri(uri);
-      const resources = (this.#embedded.get(options.referencedFrom) ?? []).map((embedded) => embedded[id]);
+      const id = toId(uri);
+      const resources = (this.#embedded.get(toId(options.referencedFrom)) ?? []).map((embedded) => embedded[id]);
       const embeddedDocument = resources.find((resource) => resource !== undefined);
       if (embeddedDocument) {
         if (resources.some((resource) => resource === undefined)) {
@@ -135,7 +137,7 @@ export class JsonSchemaSession extends Session {
         if (error instanceof RetrievalError && error.cause instanceof SchemaError) {
           throw error.cause;
         }
-        throw this.#registries.retrievalError(uri, error);
+        throw this.#registries.retrievalError(error);
       }
     }
 
@@ -161,7 +163,7 @@ export class JsonSchemaSession extends Session {
 
     /** @type SchemaMessage[] */
     const messages = [];
-    for (const uri in embedded) {
+    for (const { uri } of Object.values(embedded)) {
       const otherEmbedded = this.#embedded.get(uri)?.[0];
       if (otherEmbedded && !sameResource(otherEmbedded[uri], embedded[uri])) {
         const otherDocument = /** @type JsonSchemaDocumentNode */ (this.#documents.get(otherEmbedded));
@@ -184,7 +186,7 @@ export class JsonSchemaSession extends Session {
       throw new SchemaError(messages);
     }
 
-    for (const uri of new Set([document.uri, ...Object.keys(embedded)])) {
+    for (const uri of new Set([document.uri, ...Object.values(embedded).map((resource) => resource.uri)])) {
       const documents = this.#embedded.get(uri);
       if (documents) {
         documents.push(embedded);
@@ -197,17 +199,17 @@ export class JsonSchemaSession extends Session {
 
   /** @type API.JsonSchemaSession["hasDialect"] */
   hasDialect(uri) {
-    return this.#dialect(toAbsoluteIri(uri)) !== undefined;
+    return this.#dialect(toId(uri)) !== undefined;
   }
 
-  /** @type (uri: string) => Dialect | undefined */
+  /** @type (uri: Id) => Dialect | undefined */
   #dialect(uri) {
     return this.#jsonSchema.hasDialect(uri) ? this.#jsonSchema.getDialect(uri) : this.#dialects[uri];
   }
 
   /** @type API.JsonSchemaSession["getDialect"] */
-  async getDialect(uri, options = {}) {
-    uri = toAbsoluteIri(uri);
+  async getDialect(dialectUri, options = {}) {
+    const uri = toId(dialectUri);
 
     const dialect = this.#dialect(uri);
     if (dialect) {
@@ -215,7 +217,7 @@ export class JsonSchemaSession extends Session {
     }
 
     if (options.referencedFrom !== undefined) {
-      this.#waitOn(toAbsoluteIri(options.referencedFrom), uri);
+      this.#waitOn(toId(options.referencedFrom), uri);
     }
 
     this.#pendingDialects[uri] ??= this.#loadDialect(uri).finally(() => {
@@ -230,7 +232,7 @@ export class JsonSchemaSession extends Session {
    * dialect, that dialect is waiting on the one it asked for. If that one is
    * waiting on this one, neither will ever finish.
    *
-   * @type (referencedFrom: string, uri: string) => void
+   * @type (referencedFrom: Id, uri: Id) => void
    */
   #waitOn(referencedFrom, uri) {
     const waitingOn = this.#loading.get(referencedFrom);
@@ -244,7 +246,7 @@ export class JsonSchemaSession extends Session {
     waitingOn.add(uri);
   }
 
-  /** @type (uri: string, target: string, visited?: Set<string>) => boolean */
+  /** @type (uri: Id, target: Id, visited?: Set<Id>) => boolean */
   #isWaitingOn(uri, target, visited = new Set()) {
     if (uri === target) {
       return true;
@@ -260,7 +262,7 @@ export class JsonSchemaSession extends Session {
     return false;
   }
 
-  /** @type (uri: string) => Promise<Dialect> */
+  /** @type (uri: Id) => Promise<Dialect> */
   async #loadDialect(uri) {
     this.#loading.set(uri, new Set());
     try {
@@ -308,9 +310,10 @@ export class JsonSchemaSession extends Session {
       return keyword;
     }
 
-    const dialect = this.#dialect(toAbsoluteIri(dialectUri));
+    const id = toId(dialectUri);
+    const dialect = this.#dialect(id);
     if (!dialect) {
-      throw Error(`The '${relativeFileUri(dialectUri)}' dialect isn't defined in this session`);
+      throw Error(`The '${relativeFileUri(id)}' dialect isn't defined in this session`);
     }
 
     return Object.hasOwn(dialect.keywords, keyword)

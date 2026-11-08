@@ -1,4 +1,4 @@
-import { normalizeIri, parseIri, toAbsoluteIri } from "@hyperjump/uri";
+import { getFragment, isIri, normalizeIri, toAbsoluteIri } from "@hyperjump/uri";
 import { lintRule } from "../lint-rule.js";
 import { canonicalDialectUri, visitDialectUris } from "../utilities.js";
 
@@ -9,16 +9,15 @@ import { canonicalDialectUri, visitDialectUris } from "../utilities.js";
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
 const nonCanonicalDialectUri = lintRule({ origin: "json-schema-lint:non-canonical-dialect-uri", url: "https://hyperjump.io/json-schema/linting/rules/non-canonical-dialect-uri/" }, (tree, file) => {
   visitDialectUris(tree, (valueNode) => {
-    let normalized;
-    try {
-      normalized = normalizeIri(valueNode.value);
-    } catch (_error) {
-      // It isn't a dialect, which is a problem with the schema
+    // One that isn't an IRI isn't a dialect, which is a problem with the
+    // schema
+    if (!isIri(valueNode.value)) {
       return;
     }
 
+    const normalized = normalizeIri(valueNode.value);
     const absolute = toAbsoluteIri(normalized);
-    const fragment = parseIri(normalized).fragment;
+    const fragment = getFragment(normalized);
     const expected = canonicalDialectUri(absolute) ?? (fragment ? absolute : normalized);
     if (fragment) {
       file.message(`The fragment '#${fragment}' isn't part of the dialect. Use '${expected}'.`, { place: valueNode.position });

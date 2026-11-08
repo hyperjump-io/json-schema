@@ -1,4 +1,5 @@
 import type { MediaTypePlugin } from "@hyperjump/browser";
+import type { Iri } from "@hyperjump/uri";
 import type { JsonSchema } from "../json-schema.d.ts";
 import type { JsonSchemaDocumentNode } from "./schema-ast.d.ts";
 
@@ -37,7 +38,7 @@ export class AnchorNotFoundError extends Error {
   anchor: string;
 
   /** The URI of the schema resource that doesn't have the anchor */
-  uri: string;
+  uri: Iri;
 
-  constructor(anchor: string, uri: string);
+  constructor(anchor: string, uri: Iri);
 }

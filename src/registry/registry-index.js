@@ -1,6 +1,7 @@
 import { VFileMessage } from "vfile-message";
 import { fromJs, fromJson, relativeFileUri } from "@hyperjump/browser";
-import { parseIri, toAbsoluteIri } from "@hyperjump/uri";
+import { getScheme } from "@hyperjump/uri";
+import { resolveId, toId } from "../identifiers.js";
 import { toVFileMessage } from "../output/validation-error.js";
 import { entriesOf } from "./registry-entries.js";
 
@@ -11,6 +12,7 @@ import { entriesOf } from "./registry-entries.js";
  * @import { RegistryEntry } from "./registry-entries.js"
  * @import { Dialect, DialectDefinition } from "../dialect.d.ts"
  * @import { ResolveContext } from "../keyword.d.ts"
+ * @import { Id } from "../identifiers.js"
  */
 
 /**
@@ -19,7 +21,7 @@ import { entriesOf } from "./registry-entries.js";
  *
  * @typedef {{
  *   entry: RegistryEntry;
- *   uri: string;
+ *   uri: Id;
  *   error?: Error;
  * }} IndexedEntry
  */
@@ -29,14 +31,14 @@ import { entriesOf } from "./registry-entries.js";
  * entry in the same registry, or the JsonSchema's registry, defines.
  *
  * @typedef {{
- *   uri: string;
+ *   uri: Id;
  *   definedDialect?: DialectDefinition;
  *   fromRegistry?: true;
  * } | {
  *   error: Error;
  *   fromRegistry?: true;
  * } | {
- *   waitingFor: string;
+ *   waitingFor: Id;
  * }} Identification
  */
 
@@ -44,7 +46,7 @@ import { entriesOf } from "./registry-entries.js";
  * Finds a dialect defined by an entry in the same registry, or the
  * JsonSchema's registry
  *
- * @typedef {(dialectUri: string) => DialectDefinition | undefined} RegistryDialects
+ * @typedef {(dialectUri: Id) => DialectDefinition | undefined} RegistryDialects
  */
 
 /**
@@ -70,13 +72,13 @@ export class RegistryIndex {
   /** @type RegistryIndex | undefined */
   #dialectsFrom;
 
-  /** @type Map<string, IndexedEntry[]> */
+  /** @type Map<Id, IndexedEntry[]> */
   #byUri;
 
   /**
    * The dialects entries define, by each URI the entry is found by
    *
-   * @type Map<string, DialectDefinition>
+   * @type Map<Id, DialectDefinition>
    */
   #dialects;
 
@@ -84,7 +86,7 @@ export class RegistryIndex {
    * Entries whose dialect isn't defined yet, with the dialect they're
    * waiting for
    *
-   * @type Map<RegistryEntry, string>
+   * @type Map<RegistryEntry, Id>
    */
   #waiting;
 
@@ -176,7 +178,7 @@ export class RegistryIndex {
     return true;
   }
 
-  /** @type (key: string, indexed: IndexedEntry) => void */
+  /** @type (key: Id, indexed: IndexedEntry) => void */
   #add(key, indexed) {
     const entries = this.#byUri.get(key);
     if (entries) {
@@ -186,7 +188,7 @@ export class RegistryIndex {
     }
   }
 
-  /** @type (key: string, entry: RegistryEntry) => void */
+  /** @type (key: Id, entry: RegistryEntry) => void */
   #remove(key, entry) {
     const entries = /** @type IndexedEntry[] */ (this.#byUri.get(key)).filter((indexed) => indexed.entry !== entry);
     if (entries.length === 0) {
@@ -225,7 +227,7 @@ export class RegistryIndex {
   /**
    * The entry found by a URI
    *
-   * @type (uri: string) => IndexedEntry | undefined
+   * @type (uri: Id) => IndexedEntry | undefined
    * @throws Error if more than one entry is found by the URI
    */
   lookup(uri) {
@@ -346,7 +348,7 @@ const identifyRoot = (jsonSchema, entry, registryDialect, root) => {
   if (root.isObject && dialectUri !== undefined) {
     let absoluteDialectUri;
     try {
-      absoluteDialectUri = toAbsoluteIri(dialectUri);
+      absoluteDialectUri = toId(dialectUri);
     } catch (error) {
       return { error: /** @type Error */ (error) };
     }
@@ -375,8 +377,7 @@ const identifyRoot = (jsonSchema, entry, registryDialect, root) => {
       throw Error("A schema in a registry needs an '$id' or a retrieval URI");
     }
 
-    uri = toAbsoluteIri(uri);
-    if (parseIri(uri).scheme === "file") {
+    if (getScheme(uri) === "file") {
       throw Error(`A schema in a registry can't be identified by a 'file:' URI: ${relativeFileUri(uri)}`);
     }
 
@@ -391,10 +392,10 @@ const identifyRoot = (jsonSchema, entry, registryDialect, root) => {
  * defines. A root that's a reference (draft-04 through draft-07 `$ref`)
  * ignores both.
  *
- * @type (jsonSchema: JsonSchema, root: Root, dialect: Dialect, retrievalUri: string | undefined) => { uri?: string; definedDialect?: DialectDefinition }
+ * @type (jsonSchema: JsonSchema, root: Root, dialect: Dialect, retrievalUri: Id | undefined) => { uri?: Id; definedDialect?: DialectDefinition }
  */
 const rootEffects = (jsonSchema, root, dialect, retrievalUri) => {
-  /** @type string | undefined */
+  /** @type Id | undefined */
   let uri;
   /** @type DialectDefinition | undefined */
   let definedDialect;
@@ -412,10 +413,13 @@ const rootEffects = (jsonSchema, root, dialect, retrievalUri) => {
     /** @type ResolveContext */
     const context = {
       vocabulary: (uri) => jsonSchema.getVocabulary(uri),
-      baseUri: retrievalUri ?? "",
       dialectUri: dialect.uri,
-      setBaseUri: (baseUri) => {
-        uri = baseUri;
+      setBaseUri: (reference) => {
+        try {
+          uri = resolveId(reference, retrievalUri);
+        } catch (error) {
+          context.message(/** @type Error */ (error).message);
+        }
       },
       addAnchor: () => {},
       addDynamicAnchor: () => {},

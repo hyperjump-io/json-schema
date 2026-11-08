@@ -182,7 +182,7 @@ const buildEvaluator = (document) => {
     } else if (schemaNode === undefined) {
       return unknownApplied(marks);
     } else if (schemaNode.type === "reference") {
-      return applyIn(schemaNode, instance, marks, () => evaluateSchema(schemaAt(document, /** @type string */ (schemaNode.href)), instance, marks));
+      return applyIn(schemaNode, instance, marks, () => evaluateSchema(schemaAt(document, schemaNode.href), instance, marks));
     } else if (schemaNode.jsonType === "boolean") {
       return schemaNode.value ? pass : fail;
     }

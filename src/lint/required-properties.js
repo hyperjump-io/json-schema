@@ -48,6 +48,7 @@ const limit = 64;
  */
 export const propertyAlternatives = (schemaNode, keywords, schemas, present = []) => {
   // The schemas being followed, so a schema that applies itself stops
+  /** @type Set<string> */
   const following = new Set([schemaNode.location]);
 
   /**

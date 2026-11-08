@@ -30,6 +30,7 @@ import { operationsOf } from "./analysis.js";
 export const keywordsThatMustPass = (schemaNode, keywords, schemas) => {
   /** @type MustPass[] */
   const result = [];
+  /** @type Set<string> */
   const followed = new Set([schemaNode.location]);
 
   /** @type (keywords: LoweredKeyword[], applying?: JsonSchemaKeywordNode, via?: string) => void */

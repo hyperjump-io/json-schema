@@ -9,3 +9,7 @@ dialects (`$vocabulary`).
   the schema has been seen, so keyword order doesn't matter.
 - `setReference` makes the schema a reference node and discards everything
   else in it, including messages.
+- `setBaseUri` and `setReference` take a reference as it's written. The
+  resolver resolves it against the base the schema is in and reports one
+  that isn't valid, so a hook doesn't need the base URI (see
+  [Identifiers](../../components/identifiers.md)).

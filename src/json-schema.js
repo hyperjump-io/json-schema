@@ -1,5 +1,5 @@
 import { Hyperjump } from "@hyperjump/browser";
-import { toAbsoluteIri } from "@hyperjump/uri";
+import { toId } from "./identifiers.js";
 import { JsonSchemaMediaTypePlugin } from "./schema/media-type-plugin.js";
 import { JsonOrSchemaMediaTypePlugin } from "./schema/json-media-type-plugin.js";
 import { JsonSchemaSession } from "./session.js";
@@ -85,7 +85,7 @@ export class JsonSchema extends Hyperjump {
     this.#addKeyword(unknownKeyword);
 
     for (const uri in config.vocabularies) {
-      this.#vocabularies[toAbsoluteIri(uri)] = this.#addVocabulary(config.vocabularies[uri]);
+      this.#vocabularies[toId(uri)] = this.#addVocabulary(config.vocabularies[uri]);
     }
     for (const dialect of config.dialects ?? []) {
       this.#addDialect(dialect);
@@ -136,12 +136,12 @@ export class JsonSchema extends Hyperjump {
 
   /** @type API.JsonSchema["hasDialect"] */
   hasDialect(uri) {
-    return toAbsoluteIri(uri) in this.#dialects;
+    return toId(uri) in this.#dialects;
   }
 
   /** @type API.JsonSchema["getDialect"] */
   getDialect(uri) {
-    uri = toAbsoluteIri(uri);
+    uri = toId(uri);
     if (!(uri in this.#dialects)) {
       throw Error(`The '${uri}' dialect isn't defined`);
     }
@@ -151,7 +151,7 @@ export class JsonSchema extends Hyperjump {
 
   /** @type API.JsonSchema["getVocabulary"] */
   getVocabulary(uri) {
-    return this.#vocabularies[toAbsoluteIri(uri)];
+    return this.#vocabularies[toId(uri)];
   }
 
   /**
@@ -219,14 +219,14 @@ export class JsonSchema extends Hyperjump {
    * @type (dialect: DialectConfig) => void
    */
   #addDialect({ vocabularies, ...dialect }) {
-    const uri = toAbsoluteIri(dialect.uri);
+    const uri = toId(dialect.uri);
     if (uri in this.#dialects) {
       throw Error(`The '${uri}' dialect is in the config more than once`);
     }
     assertNoReservedKeywords(dialect.keywords);
 
     for (const vocabularyUri in vocabularies) {
-      this.#vocabularies[toAbsoluteIri(vocabularyUri)] ??= this.#addVocabulary(vocabularies[vocabularyUri]);
+      this.#vocabularies[toId(vocabularyUri)] ??= this.#addVocabulary(vocabularies[vocabularyUri]);
     }
 
     const { formats, ...rest } = dialect;

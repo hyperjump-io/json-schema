@@ -1,10 +1,11 @@
 import { FileNotFoundError, HttpError, JsonPointerError, jsonPointerGet, relativeFileUri, RetrievalError, RetrievalNotAllowedError } from "@hyperjump/browser";
-import { parseIri, toAbsoluteIri } from "@hyperjump/uri";
+import { getFragment, toAbsoluteIri } from "@hyperjump/uri";
 import { AnchorNotFoundError } from "../schema/media-type-plugin.js";
 import { SchemaError } from "../schema/schema-error.js";
 
 /**
  * @import { DocumentNode } from "@hyperjump/browser"
+ * @import { Iri } from "@hyperjump/uri"
  * @import { JsonSchemaSession } from "../session.d.ts"
  * @import { JsonSchemaDocumentNode, JsonSchemaNode } from "../schema/schema-ast.d.ts"
  * @import * as API from "./find-schema.d.ts"
@@ -24,7 +25,7 @@ export const findSchema = async (session, uri, options = {}) => {
     if (error instanceof RetrievalNotAllowedError || error instanceof SchemaError) {
       return { status: "unknown", reason: error };
     } else if (error instanceof RetrievalError) {
-      const reason = absence(toAbsoluteIri(uri), error.cause);
+      const reason = absence(error.uri, error.cause);
       return reason ? { status: "missing", reason } : { status: "unknown", reason: error };
     }
     throw error;
@@ -37,7 +38,7 @@ export const findSchema = async (session, uri, options = {}) => {
   /** @type JsonSchemaNode */
   let node;
   try {
-    const { fragment } = parseIri(uri);
+    const fragment = getFragment(uri);
     const pointer = fragment === undefined ? "" : session.jsonSchema.fragmentPointer(document, fragment);
     node = jsonPointerGet(pointer, /** @type JsonSchemaNode */ (document.children[0]));
   } catch (error) {
@@ -58,7 +59,7 @@ export const findSchema = async (session, uri, options = {}) => {
  * Why there's nothing at a URI, if a retrieval failed because there's
  * nothing there, rather than because it couldn't be told
  *
- * @type (uri: string, error: unknown) => Error | undefined
+ * @type (uri: Iri, error: unknown) => Error | undefined
  */
 const absence = (uri, error) => {
   if (error instanceof FileNotFoundError) {

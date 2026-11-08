@@ -6,6 +6,7 @@ import { JsonSchema, extendDialect } from "../json-schema.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
 import { draft202012Dialect } from "../dialects/draft-2020-12/index.js";
 import { v1Dialect } from "../dialects/v1/index.js";
+import { draft07Dialect } from "../dialects/draft-07/index.js";
 import { documentForLint } from "./document.js";
 import { evaluatorForLint } from "./evaluate.js";
 
@@ -69,6 +70,14 @@ describe("evaluatorForLint", () => {
     const schema = { $schema: draft2020, $defs: { a: { type: "string" } }, properties: { a: { $ref: "#/$defs/a" } } };
     expect(await valid(schema, { a: "x" })).to.equal(true);
     expect(await valid(schema, { a: 1 })).to.equal(false);
+  });
+
+  test("a draft-07 reference that isn't normalized", async () => {
+    const schema = { $schema: "http://json-schema.org/draft-07/schema#", definitions: { a: { type: "string" } }, properties: { a: { $ref: "#/definitions/%61" } } };
+    expect(await valid(schema, { a: "x" })).to.equal(true);
+    expect(await valid(schema, { a: 1 })).to.equal(false);
+    expect(await valid(schema, "x", "/properties/a")).to.equal(true);
+    expect(await valid(schema, 1, "/properties/a")).to.equal(false);
   });
 
   test("a schema that applies itself to the same instance is unknown there", async () => {
@@ -187,7 +196,7 @@ describe("evaluatorForLint", () => {
  */
 const evaluatorAt = async (schema, pointer = "") => {
   const jsonSchema = new JsonSchema({
-    dialects: [extendDialect(draft202012Dialect, { keywords: { lowercase: lowercaseKeyword, wrap: wrapKeyword } }), v1Dialect]
+    dialects: [extendDialect(draft202012Dialect, { keywords: { lowercase: lowercaseKeyword, wrap: wrapKeyword } }), v1Dialect, draft07Dialect]
   });
   const session = jsonSchema.session();
 

@@ -6,6 +6,7 @@ import { JsonSchemaSession } from "../session.js";
 /**
  * @import { MediaTypePlugin } from "@hyperjump/browser"
  * @import { JsonSchemaDocumentNode } from "./schema-ast.d.ts"
+ * @import { Iri } from "@hyperjump/uri"
  * @import * as API from "./media-type-plugin.d.ts"
  */
 
@@ -56,7 +57,7 @@ export class JsonSchemaMediaTypePlugin {
 export class AnchorNotFoundError extends Error {
   /**
    * @param {string} anchor
-   * @param {string} uri
+   * @param {Iri} uri
    */
   constructor(anchor, uri) {
     super(`There's no '${anchor}' anchor in '${relativeFileUri(uri)}'`);

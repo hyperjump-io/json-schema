@@ -41,6 +41,11 @@ describe("LintDocument.schemas", () => {
     expect(expressions(at(""))).to.eql([["not", { op: "not", of: { op: "apply", schema: "file:///schemas/a.schema.json#/definitions/a" } }]]);
   });
 
+  test("a schema that's a reference that isn't normalized is apply of its target's location", async () => {
+    const { at } = await lower(JSON.stringify({ $schema: draft07, not: { $ref: "#/definitions/%61" }, definitions: { a: {} } }));
+    expect(expressions(at(""))).to.eql([["not", { op: "not", of: { op: "apply", schema: "file:///schemas/a.schema.json#/definitions/a" } }]]);
+  });
+
   test("a dynamic reference into a resource in the document", async () => {
     const { at } = await lower(JSON.stringify({
       $schema: draft2020,

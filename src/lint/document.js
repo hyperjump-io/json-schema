@@ -9,6 +9,7 @@ import { visitReferences, visitSchemas } from "./utilities.js";
 
 /**
  * @import { VFile } from "vfile"
+ * @import { Iri, NormalizedIri } from "@hyperjump/uri"
  * @import { Dialect } from "../dialect.d.ts"
  * @import { Format } from "../format.d.ts"
  * @import { Keyword, Reference } from "../keyword.d.ts"
@@ -77,7 +78,7 @@ const gather = async (session, tree) => {
   const keywords = {};
   /** @type Set<JsonSchemaDocumentNode> */
   const documents = new Set();
-  /** @type string[] */
+  /** @type NormalizedIri[] */
   const pending = [];
 
   /** @type (document: JsonSchemaDocumentNode) => Promise<LintSchemas> */
@@ -135,7 +136,10 @@ const gather = async (session, tree) => {
       await addDocument(result.document);
     }
     if (fromTree.has(uri)) {
-      const identifier = result.node.location.replace(/#$/, "");
+      // A location ends with `#` at a resource's root, which is the same
+      // resource without it
+      const { location } = result.node;
+      const identifier = location.endsWith("#") ? toAbsoluteIri(location) : location;
       if (toAbsoluteIri(identifier) !== toAbsoluteIri(uri)) {
         pending.push(identifier);
       }
@@ -273,11 +277,11 @@ const lower = async (session, tree) => {
 const inputsFor = (tree) => ({
   // A subschema is `apply` of its location, and a schema that's a
   // reference, of the URI it resolves to
-  schema: (node) => node.type === "reference" ? /** @type string */ (node.href) : node.location,
+  schema: (node) => node.type === "reference" ? /** @type NormalizedIri */ (node.href) : node.location,
 
   // The dynamic anchors are known for a resource in the document
   reference: (node) => {
-    const uri = /** @type {{ href: string }} */ (node).href;
+    const uri = /** @type {{ href: NormalizedIri }} */ (node).href;
     const resource = tree.embedded[toAbsoluteIri(uri)];
 
     /** @type Reference["dynamicAnchors"] */

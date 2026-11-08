@@ -2,6 +2,7 @@ import { describe, test, expect } from "vitest";
 import { JsonSchema } from "../json-schema.js";
 import { SchemaRegistry } from "./schema-registry.js";
 import { RegistryIndex } from "./registry-index.js";
+import { toId } from "../identifiers.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 
 describe("RegistryIndex", () => {
@@ -10,7 +11,7 @@ describe("RegistryIndex", () => {
   test("an entry is found by the URI it's identified by", () => {
     const registry = new SchemaRegistry().with({ $schema: v1DialectUri }, { retrievalUri: uri });
 
-    expect(new RegistryIndex(v1(), registry).lookup(uri)).to.include({ uri });
+    expect(new RegistryIndex(v1(), registry).lookup(toId(uri))).to.include({ uri });
   });
 
   test("two entries found by the same URI are an error when it's looked up", () => {
@@ -19,8 +20,8 @@ describe("RegistryIndex", () => {
       .with({ $schema: v1DialectUri, $id: uri }, { retrievalUri: "https://example.com/b" });
     const index = new RegistryIndex(v1(), registry);
 
-    expect(() => index.lookup(uri)).to.throw("More than one schema");
-    expect(index.lookup("https://example.com/b")).to.include({ uri });
+    expect(() => index.lookup(toId(uri))).to.throw("More than one schema");
+    expect(index.lookup(toId("https://example.com/b"))).to.include({ uri });
   });
 
   test("a problem identifying an entry has its position", () => {
@@ -30,7 +31,7 @@ describe("RegistryIndex", () => {
 }`, { retrievalUri: uri });
     const index = new RegistryIndex(v1(), registry);
 
-    expect(index.lookup(uri)?.error).toMatchObject({
+    expect(index.lookup(toId(uri))?.error).toMatchObject({
       reason: expect.stringContaining("can't have a fragment"),
       place: { start: { line: 3, column: 10, offset: 54 }, end: { line: 3, column: 37, offset: 81 } }
     });
@@ -40,7 +41,7 @@ describe("RegistryIndex", () => {
     const registry = new SchemaRegistry().with(`{ "$schema": "${v1DialectUri}", }`, { retrievalUri: uri });
     const index = new RegistryIndex(v1(), registry);
 
-    expect(index.lookup(uri)?.error?.message).to.contain("isn't valid JSON");
+    expect(index.lookup(toId(uri))?.error?.message).to.contain("isn't valid JSON");
   });
 
   test("text and values are identified the same way", () => {
@@ -48,8 +49,8 @@ describe("RegistryIndex", () => {
     const fromText = new RegistryIndex(v1(), new SchemaRegistry().with(JSON.stringify(schema)));
     const fromValue = new RegistryIndex(v1(), new SchemaRegistry().with(schema));
 
-    expect(fromText.lookup("https://example.com/id")).to.include({ uri: "https://example.com/id" });
-    expect(fromValue.lookup("https://example.com/id")).to.include({ uri: "https://example.com/id" });
+    expect(fromText.lookup(toId("https://example.com/id"))).to.include({ uri: "https://example.com/id" });
+    expect(fromValue.lookup(toId("https://example.com/id"))).to.include({ uri: "https://example.com/id" });
   });
 
   test("a session doesn't identify entries until it looks for a schema", async () => {

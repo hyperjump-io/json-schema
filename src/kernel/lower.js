@@ -1,5 +1,4 @@
 import { appendToLocation, jsonValue, jsonPointerGet, relativeFileUri } from "@hyperjump/browser";
-import { toAbsoluteIri } from "@hyperjump/uri";
 import { isErrorNode } from "../keywords/checks.js";
 import { keywordDefinitionUri } from "../keywords/unknown.js";
 import { siblingValues } from "../keywords/utilities.js";
@@ -8,6 +7,7 @@ import { normalForm } from "./normalize.js";
 
 /**
  * @import { Json } from "@hyperjump/browser"
+ * @import { Iri } from "@hyperjump/uri"
  * @import { Dialect } from "../dialect.d.ts"
  * @import { JsonSchemaSession } from "../session.d.ts"
  * @import { Keyword, LowerInput, Reference, Shape } from "../keyword.d.ts"
@@ -236,9 +236,6 @@ class Lowerer {
   // Lowering asks for the same few things over and over, like a schema's
   // resource, so they're only worked out once
 
-  /** @type Map<string, string> */
-  #absoluteIris;
-
   /**
    * @param {JsonSchemaSession} session
    */
@@ -253,11 +250,10 @@ class Lowerer {
     this.#queue = [];
     this.#queued = new Set();
     this.#needs = new Map();
-    this.#absoluteIris = new Map();
     this.#inputs = {
       schema: (node) => this.#handle(node),
       reference: (node) => {
-        const uri = /** @type {{ href: string }} */ (node).href;
+        const uri = /** @type {{ href: Iri }} */ (node).href;
         const target = this.#target(uri, this.#absoluteIri(node.location));
         if (target === undefined) {
           return { uri, schema: { op: "apply", schema: "" }, handle: "", dynamicAnchors: undefined };
@@ -407,7 +403,7 @@ class Lowerer {
       return this.#schema(node);
     }
 
-    const target = this.#target(/** @type string */ (node.href), this.#absoluteIri(node.location));
+    const target = this.#target(/** @type Iri */ (node.href), this.#absoluteIri(node.location));
     return target === undefined ? "" : this.#schema(target);
   }
 
@@ -426,20 +422,14 @@ class Lowerer {
   }
 
   /**
-   * The absolute IRI of a location, worked out once for each part before the
-   * fragment, so once for each resource
+   * The URI of the resource a location is in. A location is its resource's
+   * URI, which is absolute and normalized, and a fragment.
    *
    * @type (location: string) => string
    */
   #absoluteIri(location) {
     const position = location.indexOf("#");
-    const prefix = position === -1 ? location : location.slice(0, position);
-    let absoluteIri = this.#absoluteIris.get(prefix);
-    if (absoluteIri === undefined) {
-      absoluteIri = toAbsoluteIri(prefix);
-      this.#absoluteIris.set(prefix, absoluteIri);
-    }
-    return absoluteIri;
+    return position === -1 ? location : location.slice(0, position);
   }
 
   /**

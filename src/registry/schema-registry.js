@@ -1,4 +1,5 @@
-import { parseIri, toAbsoluteIri } from "@hyperjump/uri";
+import { getScheme } from "@hyperjump/uri";
+import { toId } from "../identifiers.js";
 import { entriesOf, setEntries } from "./registry-entries.js";
 
 /**
@@ -74,7 +75,7 @@ export class SchemaRegistry {
 
   /** @type API.SchemaRegistry["without"] */
   without(retrievalUri) {
-    const uri = toAbsoluteIri(retrievalUri);
+    const uri = toId(retrievalUri);
     const entries = entriesOf(this);
     const kept = entries.filter((entry) => entry.retrievalUri !== uri);
     return kept.length === entries.length ? this : fromEntries(kept);
@@ -89,18 +90,18 @@ export class SchemaRegistry {
  * @type (schema: ReadonlyJson | string, options: API.SchemaRegistryAddOptions) => RegistryEntry
  */
 const createEntry = (schema, options) => {
-  const retrievalUri = options.retrievalUri === undefined ? undefined : toAbsoluteIri(options.retrievalUri);
+  const retrievalUri = options.retrievalUri === undefined ? undefined : toId(options.retrievalUri);
 
   // A schema in a file is retrieved from the file. A registry identifying
   // one would be a way to read files that nothing retrieved.
-  if (retrievalUri !== undefined && parseIri(retrievalUri).scheme === "file") {
+  if (retrievalUri !== undefined && getScheme(retrievalUri) === "file") {
     throw Error(`A schema in a registry can't have a 'file:' retrieval URI. A schema in a file is retrieved from it. Use 'origin' to say which file a schema came from.`);
   }
 
   const entry = Object.freeze({
     schema: typeof schema === "string" ? schema : JSON.stringify(schema, null, "  "),
     retrievalUri: retrievalUri,
-    dialectUri: options.dialectUri === undefined ? undefined : toAbsoluteIri(options.dialectUri),
+    dialectUri: options.dialectUri === undefined ? undefined : toId(options.dialectUri),
     origin: options.origin
   });
   createdEntries.add(entry);

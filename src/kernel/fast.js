@@ -1,4 +1,5 @@
 import { relativeFileUri } from "@hyperjump/browser";
+import { isIriReference } from "@hyperjump/uri";
 import { jsInstance } from "./instance.js";
 import { codePointLengthIsWithin } from "../keywords/utilities.js";
 import { keywordEvaluate } from "./definitions.js";
@@ -62,7 +63,7 @@ export const fast = (definitions, kernel) => {
     let evaluator = evaluators.get(handle);
     if (evaluator === undefined) {
       if (!(handle in kernel.schemas)) {
-        throw Error(`The '${relativeFileUri(handle)}' schema wasn't compiled`);
+        throw Error(`The '${handleName(handle)}' schema wasn't compiled`);
       }
 
       // Schemas can refer to themselves, so it's built after it's cached
@@ -1401,3 +1402,11 @@ const every = (of) => {
     return true;
   };
 };
+
+/**
+ * A handle as a message says it. A kernel is data, so its handles aren't
+ * checked, and one that isn't an IRI-reference is said as it is.
+ *
+ * @type (handle: Handle) => string
+ */
+export const handleName = (handle) => isIriReference(handle) ? relativeFileUri(handle) : handle;

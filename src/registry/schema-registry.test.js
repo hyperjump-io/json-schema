@@ -46,6 +46,31 @@ describe("SchemaRegistry", () => {
       expect(validatorFor(await compile(registry, "https://example.com/a"))(42)).to.equal(false);
     });
 
+    test("a schema is found by an identifier equivalent to its $id", async () => {
+      const registry = registryOf(v1({ $id: "HTTPS://Example.com/a/./%7Eb", type: "string" }));
+
+      expect(validatorFor(await compile(registry, "https://example.com/a/~b"))(42)).to.equal(false);
+    });
+
+    test("a reference finds a schema by an equivalent identifier", async () => {
+      const registry = registryOf(
+        v1({ $id: "https://example.com/~b", type: "string" }),
+        v1({ $id: "https://example.com/a", $ref: "HTTPS://Example.com/x/../%7Eb" })
+      );
+
+      expect(validatorFor(await compile(registry, "https://example.com/a"))(42)).to.equal(false);
+    });
+
+    test("a reference finds an embedded schema by an equivalent identifier", async () => {
+      const registry = registryOf(v1({
+        $id: "https://example.com/a",
+        $ref: "HTTPS://Example.com/%7Eb",
+        $defs: { b: { $id: "https://example.com/~b", type: "string" } }
+      }));
+
+      expect(validatorFor(await compile(registry, "https://example.com/a"))(42)).to.equal(false);
+    });
+
     test("a relative $id is resolved against the retrieval URI", async () => {
       const registry = new SchemaRegistry().with(v1({ $id: "b", type: "string" }), { retrievalUri: "https://example.com/a" });
 

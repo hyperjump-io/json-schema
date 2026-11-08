@@ -1,4 +1,4 @@
-import { relativeFileUri } from "@hyperjump/browser";
+import { handleName } from "../kernel/fast.js";
 
 /**
  * @import { EvaluationLocation, KeywordInfo } from "../kernel/evaluation-plugin.d.ts"
@@ -52,7 +52,7 @@ export const validationError = (ruleId, absoluteKeywordLocation, at) => ({
  */
 export const withRelativeLocations = (errors) => {
   for (const error of errors) {
-    error.absoluteKeywordLocation = relativeFileUri(error.absoluteKeywordLocation);
+    error.absoluteKeywordLocation = handleName(error.absoluteKeywordLocation);
     if (error.errors !== undefined) {
       withRelativeLocations(error.errors);
     }

@@ -1,4 +1,5 @@
 import type { GetOptions } from "@hyperjump/browser";
+import type { NormalizedIri } from "@hyperjump/uri";
 import type { JsonSchemaSession } from "../session.d.ts";
 import type { JsonSchemaDocumentNode, JsonSchemaNode } from "../schema/schema-ast.d.ts";
 
@@ -53,4 +54,4 @@ export type FindSchemaOptions = GetOptions & {
  * @throws Error that isn't about finding the schema, such as a bug in a
  * plugin.
  */
-export const findSchema: (session: JsonSchemaSession, uri: string, options?: FindSchemaOptions) => Promise<FindSchemaResult>;
+export const findSchema: (session: JsonSchemaSession, uri: NormalizedIri, options?: FindSchemaOptions) => Promise<FindSchemaResult>;

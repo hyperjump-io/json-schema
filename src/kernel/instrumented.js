@@ -1,11 +1,10 @@
-import { relativeFileUri } from "@hyperjump/browser";
 import * as JsonPointer from "@hyperjump/json-pointer";
 import { keywordDefinitionUri } from "../keywords/unknown.js";
 import { codePointLengthIsWithin, instanceEqual } from "../keywords/utilities.js";
 import { jsInstance } from "./instance.js";
 import { conditionsOf, explainsFailure, readsMarks, subexpressions } from "./kernel.js";
 import { keywordEvaluate } from "./definitions.js";
-import { addDynamicAnchors, addReachable, itemSequenceStates, multipleOf, selector, typeIndexes } from "./fast.js";
+import { addDynamicAnchors, addReachable, handleName, itemSequenceStates, multipleOf, selector, typeIndexes } from "./fast.js";
 
 /**
  * @import { Data, Node } from "unist"
@@ -228,7 +227,7 @@ export const instrumented = (definitions, kernel, options) => {
     let evaluator = evaluators.get(handle);
     if (evaluator === undefined) {
       if (!(handle in kernel.schemas)) {
-        throw Error(`The '${relativeFileUri(handle)}' schema wasn't compiled`);
+        throw Error(`The '${handleName(handle)}' schema wasn't compiled`);
       }
 
       // Schemas can refer to themselves, so it's built after it's cached

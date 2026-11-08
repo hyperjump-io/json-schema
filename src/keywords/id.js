@@ -1,4 +1,3 @@
-import { parseIri, resolveIri } from "@hyperjump/uri";
 import { string } from "./checks.js";
 
 /**
@@ -20,19 +19,13 @@ export default {
       return;
     }
 
-    let uri;
-    try {
-      uri = resolveIri(valueNode.value, context.baseUri);
-    } catch (_error) {
-      context.message(`'${valueNode.value}' isn't a valid URI reference`);
-      return;
-    }
-
-    if (parseIri(uri).fragment) {
+    // `setBaseUri` checks the value, so the fragment is read as it's written
+    const hash = valueNode.value.indexOf("#");
+    if (hash !== -1 && hash < valueNode.value.length - 1) {
       context.message("'$id' can't have a fragment. Use '$anchor' to identify a schema with a fragment.");
       return;
     }
 
-    context.setBaseUri(uri);
+    context.setBaseUri(valueNode.value);
   }
 };

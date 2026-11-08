@@ -51,6 +51,24 @@ describe("unevaluated-without-effect", () => {
     }`)).to.eql([reason("unevaluatedProperties", "property")]);
   });
 
+  test("additionalProperties behind a draft-07 reference that isn't normalized", async () => {
+    expect(await reasons(`{
+      "$schema": "${draft202012}",
+      "$ref": "https://example.com/old#/definitions/b",
+      "unevaluatedProperties": false,
+      "$defs": {
+        "old": {
+          "$schema": "${draft07}",
+          "$id": "https://example.com/old",
+          "definitions": {
+            "a": { "additionalProperties": false },
+            "b": { "$ref": "#/definitions/%61" }
+          }
+        }
+      }
+    }`)).to.eql([reason("unevaluatedProperties", "property")]);
+  });
+
   test("unevaluatedProperties in allOf", async () => {
     expect(await reasons(`{
       "$schema": "${draft202012}",

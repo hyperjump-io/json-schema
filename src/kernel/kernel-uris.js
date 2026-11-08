@@ -1,7 +1,9 @@
-import { resolveIri, toAbsoluteIri, toRelativeIri } from "@hyperjump/uri";
+import { hasScheme, resolveIri, toRelativeIri } from "@hyperjump/uri";
+import { toId, toNormalizedIri } from "../identifiers.js";
 import { mapSubexpressions } from "./kernel.js";
 
 /**
+ * @import { IriReference } from "@hyperjump/uri"
  * @import { Expression, Kernel } from "./kernel.d.ts"
  */
 
@@ -71,18 +73,20 @@ const mapUris = (kernel, map) => {
  * @type (kernel: Kernel) => Kernel
  */
 export const withRelativeFileUris = (kernel) => {
-  const base = toAbsoluteIri(kernel.uri);
+  const base = toId(kernel.uri);
   if (!/^file:/i.test(base)) {
     return kernel;
   }
 
-  return mapUris(kernel, (uri) => /^file:/i.test(uri) ? toRelativeIri(base, uri) : uri);
+  return mapUris(kernel, (uri) => /^file:/i.test(uri) ? toRelativeIri(toNormalizedIri(uri), base) : uri);
 };
 
 /**
  * A kernel with its relative URIs resolved against where the entry's
  * document is now. Without it, they stay relative, which is still a
- * consistent set of handles to evaluate with.
+ * consistent set of handles to evaluate with. A serialized kernel's handles
+ * are its locations, some made relative, so each is an IRI-reference.
+ * They aren't checked, because `restore` trusts the rest of the kernel too.
  *
  * @type (kernel: Kernel, uri: string | undefined) => Kernel
  */
@@ -91,6 +95,9 @@ export const withResolvedUris = (kernel, uri) => {
     return kernel;
   }
 
-  const base = toAbsoluteIri(uri);
-  return mapUris(kernel, (handle) => /^[a-z][a-z0-9+.-]*:/i.test(handle) ? handle : resolveIri(handle, base));
+  const base = toId(uri);
+  return mapUris(kernel, (handle) => {
+    const reference = /** @type IriReference */ (handle);
+    return hasScheme(reference) ? reference : resolveIri(reference, base);
+  });
 };
