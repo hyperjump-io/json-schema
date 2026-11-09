@@ -4,6 +4,7 @@ import { astInstance, jsInstance } from "./instance.js";
 import { optimize } from "./optimize.js";
 import { fast } from "./fast.js";
 import { FLAG } from "../output/flag.js";
+import { noUrl } from "../identifiers.js";
 
 /**
  * @import { Json } from "@hyperjump/browser"
@@ -98,7 +99,7 @@ export class Validator {
 
   /** @type API.Validator["validateJson"] */
   validateJson(json, options, evaluator) {
-    const result = fromJson(json);
+    const result = fromJson(json, noUrl);
     return this.#evaluateAst(result.node, false, options, result.errors, evaluator);
   }
 
@@ -109,14 +110,14 @@ export class Validator {
 
   /** @type API.Validator["annotate"] */
   annotate(instance, options, evaluator) {
-    const node = fromJs(instance);
+    const node = fromJs(instance, noUrl);
     const output = this.#evaluateAst(node, true, options, noSyntaxErrors, evaluator);
     return { output, status: "success", node };
   }
 
   /** @type API.Validator["annotateJson"] */
   annotateJson(json, options, evaluator) {
-    const result = fromJson(json);
+    const result = fromJson(json, noUrl);
     const output = this.#evaluateAst(result.node, true, options, result.errors, evaluator);
     return { output, status: result.status, node: result.node };
   }

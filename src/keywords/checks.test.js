@@ -276,8 +276,8 @@ describe("a schema with an invalid keyword value", () => {
 const check = async (jsonSchema, json, accept) => {
   const file = new VFile(json);
   const processor = unified()
-    .use(rejsonParse, { accept })
-    .use(jsonSchemaResolve, { session: jsonSchema.session(), uri: baseUri });
+    .use(rejsonParse, { accept, url: baseUri })
+    .use(jsonSchemaResolve, { session: jsonSchema.session() });
   await processor.run(processor.parse(file), file);
 
   return file.messages.map(({ reason, ruleId, place }) => {

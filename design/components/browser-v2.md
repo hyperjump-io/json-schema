@@ -16,17 +16,24 @@ in browser's [design docs](https://github.com/hyperjump-io/browser/blob/v2/desig
 - `content-type` v3, with the parsed type validated.
 - Methods are declared as methods, not function-valued properties, so a
   subclass can override them.
-- Plugins are only configured in `HyperjumpConfig` (`uriSchemePlugins`,
+- Plugins are only configured in `HyperjumpConfig` (`urlSchemePlugins`,
   `mediaTypePlugins`), and a later plugin for a scheme or media type
   replaces an earlier one. `JsonSchema` passes its media type plugins to
   `super` before the config's, so an application can replace them, and its
   JSON plugin replaces browser's. `JsonSchemaConfig` is
   `HyperjumpConfig<JsonSchemaNode>`, so its media type plugins parse
   schema documents.
-- Sessions, and an HTTP cache in the `http(s):` URI scheme plugin. A media
-  type plugin's `parse` gets the session.
-- `allowRetrieval`, in the config and in a session's options, and
-  `RetrievalNotAllowedError` (see [What can be retrieved](sessions/allow-retrieval.md)).
+- Sessions, and an HTTP cache every session from a `Hyperjump` shares
+  (`httpCache`). A media type plugin's `parse` gets the session.
+- Browser's identifiers are WHATWG URLs and json-schema's are IRIs, so
+  json-schema converts where they meet: the media type plugins turn a
+  response's URL into an IRI (`urlToIri`), and a schema document's `url`
+  is its `uri` as a URL. JSON that isn't from anywhere, like an instance,
+  gets a placeholder URL (`noUrl`), because a browser document has to have
+  one, and nothing reads it.
+- `allowRetrieval`, in the config and in a session's options. A refusal is
+  a `RetrievalError` whose cause is an `HttpError` for a `403` (see
+  [What can be retrieved](sessions/allow-retrieval.md)).
 - `jsonValue` supports arrays and objects. `Session.value` doesn't, because
   it would need to follow references.
 - `fromJson` returns syntax errors as plain objects in `errors`, and

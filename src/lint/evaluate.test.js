@@ -9,6 +9,7 @@ import { v1Dialect } from "../dialects/v1/index.js";
 import { draft07Dialect } from "../dialects/draft-07/index.js";
 import { documentForLint } from "./document.js";
 import { evaluatorForLint } from "./evaluate.js";
+import { noUrl } from "../identifiers.js";
 
 /**
  * @import { Json } from "@hyperjump/browser"
@@ -208,7 +209,7 @@ const evaluatorAt = async (schema, pointer = "") => {
   const schemaNode = /** @type JsonSchemaNode */ (jsonPointerGet(pointer, /** @type JsonSchemaNode */ (tree.children[0])));
   const evaluator = evaluatorForLint(/** @type LintDocument */ (await documentForLint(tree, file)));
 
-  return (value) => evaluator.schema(schemaNode, /** @type JsonSchemaTolerantNode */ (/** @type unknown */ (fromJs(value))));
+  return (value) => evaluator.schema(schemaNode, /** @type JsonSchemaTolerantNode */ (/** @type unknown */ (fromJs(value, noUrl))));
 };
 
 /** @type (schema: object, value: Json, pointer?: string) => Promise<boolean | undefined> */

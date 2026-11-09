@@ -10,7 +10,7 @@ export * from "./operations/validate-compiled.js";
 export * from "./operations/compile.js";
 export * from "./operations/bundle.js";
 export * from "./operations/lint.js";
-export { relativeFileUri } from "@hyperjump/browser";
+export { relativeFileUrl } from "@hyperjump/browser";
 export type * from "./schema/schema-ast.d.ts";
 export type * from "./keyword.d.ts";
 export type * from "./dialect.d.ts";

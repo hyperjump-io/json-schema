@@ -6,7 +6,7 @@ import { pathToFileURL } from "node:url";
 import { describe, test, beforeEach, beforeAll, afterAll, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
-import { fromJson, HttpError, jrefStep, jsonPointerGet, rejsonParse, RetrievalNotAllowedError } from "@hyperjump/browser";
+import { fromJson, jrefStep, jsonPointerGet, rejsonParse } from "@hyperjump/browser";
 import { JsonSchema, SchemaError, extendDialect } from "../json-schema.js";
 import { jsonSchemaResolve, resolveSchema } from "./resolve.js";
 import idKeyword from "../keywords/id.js";
@@ -16,6 +16,7 @@ import legacyIdKeyword from "../keywords/draft-07/id.js";
 import legacyRefKeyword from "../keywords/draft-07/ref.js";
 import recursiveAnchorKeyword from "../keywords/draft-2019-09/recursiveAnchor.js";
 import vocabularyKeyword from "../keywords/vocabulary.js";
+import { noUrl } from "../identifiers.js";
 
 /**
  * @import { JsonDocumentNode, JsonParseStatus } from "@hyperjump/browser"
@@ -33,7 +34,7 @@ const baseUri = "https://example.com/schema";
 
 describe("resolveSchema", () => {
   test("problems are returned as data, and the tree becomes the schema AST", async () => {
-    const { node } = fromJson(JSON.stringify({ $schema: dialectUri, $id: "#not-absolute" }));
+    const { node } = fromJson(JSON.stringify({ $schema: dialectUri, $id: "#not-absolute" }), noUrl);
     const tree = /** @type JsonDocumentNode */ ({ type: "json-document", status: "success", children: [node] });
     const { document, messages } = await resolveSchema(tree, { session: testJsonSchema().session(), uri: baseUri });
 
@@ -45,7 +46,7 @@ describe("resolveSchema", () => {
   test("messages about keywords that turn out to be ignored are dropped", async () => {
     // `$schema` that isn't where a resource starts is ignored, and the
     // schema is read again with its parent's dialect
-    const { node } = fromJson(JSON.stringify({ $schema: dialectUri, properties: { a: { $schema: strictDialectUri, foo: 1 } } }));
+    const { node } = fromJson(JSON.stringify({ $schema: dialectUri, properties: { a: { $schema: strictDialectUri, foo: 1 } } }), noUrl);
     const tree = /** @type JsonDocumentNode */ ({ type: "json-document", status: "success", children: [node] });
     const { messages } = await resolveSchema(tree, { session: testJsonSchema().session(), uri: baseUri });
 
@@ -1004,8 +1005,8 @@ describe("jsonSchemaResolve", () => {
       });
 
       await session.get(uri);
-      expect((await session.getDocument(embeddedUri, { referencedFrom: uri })).uri).to.equal(embeddedUri);
-      await expect(session.get(embeddedUri)).rejects.toThrow(RetrievalNotAllowedError);
+      expect(/** @type import("./schema-ast.d.ts").JsonSchemaDocumentNode */ (/** @type unknown */ (await session.getDocument(embeddedUri, { referencedFrom: uri }))).uri).to.equal(embeddedUri);
+      await expect(session.get(embeddedUri)).rejects.toMatchObject({ name: "RetrievalError", cause: { name: "HttpError", response: { status: 403 } } });
     });
 
     test("a schema with problems can't be retrieved", async () => {
@@ -1123,7 +1124,7 @@ const testJsonSchema = ({ dialects = [], keywords = [], extension, config } = {}
     ...config,
     dialects: [extension ? extendDialect(testDialect, extension) : testDialect, legacyDialect, strictDialect, ...dialects],
     keywords: [...testKeywords, ...keywords],
-    uriSchemePlugins: [{ schemes: ["test"], retrieve: respond }, ...config?.uriSchemePlugins ?? []]
+    urlSchemePlugins: [{ schemes: ["test"], retrieve: respond }, ...config?.urlSchemePlugins ?? []]
   });
   return jsonSchema;
 };
@@ -1138,11 +1139,11 @@ const serve = (name, json, contentType = "application/schema+json") => {
   return uri;
 };
 
-/** @type (uri: string) => Promise<Response> */
-const respond = async (uri) => {
+/** @type (request: Request) => Promise<Response> */
+const respond = async ({ url: uri }) => {
   const resource = served.get(uri);
   if (resource === undefined) {
-    throw new HttpError(new Response(null, { status: 404 }));
+    return new Response(null, { status: 404 });
   }
 
   const [body, contentType] = resource;
@@ -1154,14 +1155,14 @@ const respond = async (uri) => {
 /**
  * @param {JsonSchema} jsonSchema
  * @param {string} json
- * @param {Partial<JsonSchemaResolveOptions> & { accept?: JsonParseStatus, path?: string }} [options]
+ * @param {Partial<JsonSchemaResolveOptions> & { accept?: JsonParseStatus, path?: string, uri?: string }} [options]
  */
 const resolve = async (jsonSchema, json, options = {}) => {
-  const { accept, path, ...resolveOptions } = options;
+  const { accept, path, uri, ...resolveOptions } = options;
   const file = new VFile({ value: json, path });
   const processor = unified()
-    .use(rejsonParse, { accept })
-    .use(jsonSchemaResolve, { session: jsonSchema.session(), uri: path ? undefined : baseUri, ...resolveOptions });
+    .use(rejsonParse, { accept, ...path === undefined && { url: uri ?? baseUri } })
+    .use(jsonSchemaResolve, { session: jsonSchema.session(), ...resolveOptions });
   const document = await processor.run(processor.parse(file), file);
 
   return { document, file, root: /** @type JsonSchemaTolerantNode */ (document.children[0]) };

@@ -2,7 +2,6 @@ import { relative } from "node:path";
 import { cwd } from "node:process";
 import { describe, test, beforeEach, expect } from "vitest";
 import { VFile } from "vfile";
-import { HttpError } from "@hyperjump/browser";
 import { linter } from "./test-linter.js";
 import { JsonSchema } from "../json-schema.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
@@ -23,7 +22,7 @@ describe("findSchema", () => {
     const jsonSchema = new JsonSchema({
       allowRetrieval: ["test:/", "file:///nothing-here/"],
       dialects: [v1Dialect],
-      uriSchemePlugins: [{ schemes: ["test"], retrieve: respond }]
+      urlSchemePlugins: [{ schemes: ["test"], retrieve: respond }]
     });
 
     const registry = new SchemaRegistry().with({
@@ -99,7 +98,7 @@ describe("findSchema", () => {
   describe("unknown", () => {
     test("a URL allowRetrieval refuses", async () => {
       const result = await findSchema(session, iri("https://example.com/other"));
-      expect(result).toMatchObject({ status: "unknown", reason: { name: "RetrievalNotAllowedError" } });
+      expect(result).toMatchObject({ status: "unknown", reason: { name: "RetrievalError", cause: { response: { status: 403 } } } });
     });
 
     test("an embedded resource, from another document", async () => {
@@ -190,12 +189,12 @@ describe("findSchema", () => {
  * code, `json` for a plain JSON document, or `invalid` for a schema with a
  * problem.
  *
- * @type (uri: string) => Promise<Response>
+ * @type (request: Request) => Promise<Response>
  */
-const respond = async (uri) => {
+const respond = async ({ url: uri }) => {
   const path = uri.slice("test:/".length);
   if (/^\d+$/.test(path)) {
-    throw new HttpError(new Response(null, { status: Number(path) }));
+    return new Response(null, { status: Number(path) });
   }
 
   const [body, contentType] = path === "json"

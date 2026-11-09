@@ -1,4 +1,4 @@
-import { relativeFileUri } from "@hyperjump/browser";
+import { relativeFileUrl } from "@hyperjump/browser";
 import * as JsonPointer from "@hyperjump/json-pointer";
 import { assertIriReference, encodeIriFragment, getScheme, isIriReference, normalizeIri, resolveIri, urlToIri } from "@hyperjump/uri";
 import { resolveId, toId } from "../identifiers.js";
@@ -58,13 +58,9 @@ export const resolveSchema = async (tree, options) => {
  */
 export function jsonSchemaResolve(options) {
   return async (tree, file) => {
-    const uri = options.uri ?? fileUri(file);
-    if (uri === undefined) {
-      return file.fail("Unable to determine the base URI of the document. Use the `uri` option or give the file a path.", {
-        ruleId: "missing-base-uri",
-        source: "json-schema"
-      });
-    }
+    // The parser gives the document its URL, from the file's path or its
+    // `url` option, and a schema's identifiers are IRIs
+    const uri = urlToIri(new URL(tree.url));
 
     // Lint rules find other schemas in the same session
     file.data.jsonSchemaSession = options.session;
@@ -78,19 +74,6 @@ export function jsonSchemaResolve(options) {
     return document;
   };
 }
-
-/** @type (file: VFile) => string | undefined */
-const fileUri = (file) => {
-  if (file.path === undefined) {
-    return;
-  }
-
-  /** @type (path: string) => string */
-  const encodePath = (path) => path.split("/")
-    .map(encodeURIComponent)
-    .join("/");
-  return urlToIri(new URL(encodePath(file.path), `file://${encodePath(file.cwd)}/`));
-};
 
 class Resolver {
   /** @type JsonSchemaSession */
@@ -241,7 +224,7 @@ class Resolver {
     if (isDocumentRoot || effects.baseUri !== undefined) {
       resource.dialectUri = dialect.uri;
       if (resource.uri in this.#embedded) {
-        this.#message(`There is already a schema resource identified as '${relativeFileUri(resource.uri)}'`, node, "duplicate-id");
+        this.#message(`There is already a schema resource identified as '${relativeFileUrl(resource.uri)}'`, node, "duplicate-id");
       } else {
         this.#embedded[resource.uri] = resource;
       }
@@ -333,7 +316,7 @@ class Resolver {
   #addAnchors(found, anchors, resourceUri, pointer, label) {
     for (const [name, anchorNode] of found) {
       if (name in anchors) {
-        this.#message(`The '${name}' ${label} is already defined in '${relativeFileUri(resourceUri)}'`, anchorNode, "duplicate-anchor");
+        this.#message(`The '${name}' ${label} is already defined in '${relativeFileUrl(resourceUri)}'`, anchorNode, "duplicate-anchor");
       } else {
         anchors[name] = pointer;
       }
@@ -545,6 +528,7 @@ class Resolver {
       children: root ? [root] : [],
       comments: this.#tree.comments,
       uri: uri,
+      url: new URL(uri).href,
       mediaType: "application/schema+json",
       anchors: {},
       dynamicAnchors: {},

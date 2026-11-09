@@ -151,10 +151,10 @@ const lint = async (json) => {
   const jsonSchema = new JsonSchema({ dialects: [draft04Dialect, draft202012Dialect] });
   const session = jsonSchema.session({ registry: new SchemaRegistry([{ schema: json, retrievalUri: uri }]) });
 
-  const file = new VFile({ path: "/schemas/a.schema.json", value: json });
+  const file = new VFile(json);
   const processor = unified()
-    .use(rejsonParse)
-    .use(jsonSchemaResolve, { session, uri })
+    .use(rejsonParse, { url: uri })
+    .use(jsonSchemaResolve, { session })
     .use(invalidDefaultOrExample);
   await processor.run(processor.parse(file), file);
   return file;

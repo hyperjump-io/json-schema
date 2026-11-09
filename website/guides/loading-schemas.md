@@ -190,9 +190,9 @@ the session. To send credentials, see
 
 `compile` throws when it can't find a schema:
 
-- A `RetrievalNotAllowedError` when `allowRetrieval` doesn't allow the URI.
-- A `RetrievalError` from `@hyperjump/browser` when the URI is allowed but
-  retrieving it fails. A file that doesn't exist or a `404` are examples.
-  Its `cause` is the error that stopped it.
+- A `RetrievalError` from `@hyperjump/browser` when retrieving it fails. Its
+  `cause` is the error that stopped it. When `allowRetrieval` doesn't allow
+  the URI, the `cause` is an `HttpError` for a `403`. A file that doesn't
+  exist and a `404` are other examples.
 - A `SchemaError` when the schema is found but has problems. See
   [Invalid schemas](invalid-schemas.md).

@@ -1,4 +1,4 @@
-import { RetrievalError, RetrievalNotAllowedError } from "@hyperjump/browser";
+import { RetrievalError } from "@hyperjump/browser";
 import { toId } from "../identifiers.js";
 import { resolveSchemaText } from "../schema/resolve-text.js";
 import { RegistryIndex } from "./registry-index.js";
@@ -158,11 +158,11 @@ export class SessionRegistries {
       reasons.push(new AggregateError(unidentified, "Some schemas in registries can't be identified"));
     }
     // The error says which URI was retrieved, normalized
-    if (reasons.length === 0 || !(error instanceof RetrievalError || error instanceof RetrievalNotAllowedError)) {
+    if (reasons.length === 0 || !(error instanceof RetrievalError)) {
       return error;
     }
 
-    return new RetrievalError(error.uri, { cause: new AggregateError([error, ...reasons], reasons[0].message) });
+    return new RetrievalError(error.url, { cause: new AggregateError([error, ...reasons], reasons[0].message) });
   }
 
   /**

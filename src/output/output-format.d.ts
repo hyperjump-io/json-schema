@@ -1,4 +1,4 @@
-import type { JsonSyntaxError, relativeFileUri } from "@hyperjump/browser";
+import type { JsonSyntaxError, relativeFileUrl } from "@hyperjump/browser";
 import type { EvaluationPlugin } from "../kernel/evaluation-plugin.d.ts";
 import type { KeywordInfo } from "../kernel/evaluation-plugin.d.ts";
 import type { DetailedValidationError, toVFileMessage, ValidationError } from "./validation-error.d.ts";
@@ -6,7 +6,7 @@ import type { DetailedValidationError, toVFileMessage, ValidationError } from ".
 /**
  * An output format, passed to an evaluation as `output`. `R` is its result.
  * It's called for each evaluation that uses it. Say a location with
- * {@link relativeFileUri}, so a `file:` URI doesn't reveal where the schemas
+ * {@link relativeFileUrl}, so a `file:` URI doesn't reveal where the schemas
  * are on the machine.
  *
  * Evaluation without plugins is fastest, so an instance is evaluated without

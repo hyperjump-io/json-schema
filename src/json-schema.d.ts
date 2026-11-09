@@ -8,7 +8,6 @@ import type { JsonSchemaSession, SessionOptions } from "./session.d.ts";
 
 export { outputErrorMessage, toVFileMessage } from "./output/validation-error.js";
 export { SchemaError } from "./schema/schema-error.js";
-export { RetrievalNotAllowedError } from "@hyperjump/browser";
 export type { ValidationError, DetailedValidationError } from "./output/validation-error.js";
 export type { SchemaMessage } from "./schema/schema-error.js";
 export type { BasicOutput, DetailedOutput, OutputError, OutputFormat, JsonSyntaxError } from "./output/output-format.d.ts";

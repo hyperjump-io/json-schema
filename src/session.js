@@ -1,4 +1,4 @@
-import { jsonValue, relativeFileUri, RetrievalError, Session } from "@hyperjump/browser";
+import { jsonValue, relativeFileUrl, RetrievalError, Session } from "@hyperjump/browser";
 import { encodeIriFragment, isIri, normalizeIri, toAbsoluteIri } from "@hyperjump/uri";
 import { toId } from "./identifiers.js";
 import { SessionRegistries } from "./registry/session-registries.js";
@@ -183,7 +183,7 @@ export class JsonSchemaSession extends Session {
           severity: "error",
           uri: document.uri,
           place: embedded[uri].children[0]?.position,
-          message: `'${relativeFileUri(otherDocument.uri)}' has a different schema resource identified as '${relativeFileUri(uri)}'`
+          message: `'${relativeFileUrl(otherDocument.uri)}' has a different schema resource identified as '${relativeFileUrl(uri)}'`
         };
         if (document.origin !== undefined) {
           message.origin = document.origin;
@@ -250,7 +250,7 @@ export class JsonSchemaSession extends Session {
     }
 
     if (this.#isWaitingOn(uri, referencedFrom)) {
-      throw Error(`The meta-schemas for the '${relativeFileUri(referencedFrom)}' and '${relativeFileUri(uri)}' dialects depend on each other`);
+      throw Error(`The meta-schemas for the '${relativeFileUrl(referencedFrom)}' and '${relativeFileUrl(uri)}' dialects depend on each other`);
     }
     waitingOn.add(uri);
   }
@@ -279,16 +279,16 @@ export class JsonSchemaSession extends Session {
       try {
         metaSchema = await this.getDocument(uri);
       } catch (error) {
-        throw Error(`Unable to retrieve the meta-schema for the '${relativeFileUri(uri)}' dialect`, { cause: error });
+        throw Error(`Unable to retrieve the meta-schema for the '${relativeFileUrl(uri)}' dialect`, { cause: error });
       }
 
       if (metaSchema.type !== "json-schema-document") {
-        throw Error(`The meta-schema for the '${relativeFileUri(uri)}' dialect isn't a schema. It needs to be retrieved as 'application/schema+json' or from a '.schema.json' file.`);
+        throw Error(`The meta-schema for the '${relativeFileUrl(uri)}' dialect isn't a schema. It needs to be retrieved as 'application/schema+json' or from a '.schema.json' file.`);
       }
 
       const { definedDialect } = /** @type JsonSchemaDocumentNode */ (/** @type unknown */ (metaSchema));
       if (!definedDialect) {
-        throw Error(`The meta-schema for the '${relativeFileUri(uri)}' dialect doesn't define a dialect (with '$vocabulary', for example). Add it to the 'dialects' config.`);
+        throw Error(`The meta-schema for the '${relativeFileUrl(uri)}' dialect doesn't define a dialect (with '$vocabulary', for example). Add it to the 'dialects' config.`);
       }
 
       // The dialect is identified by whichever URI found the meta-schema
@@ -322,7 +322,7 @@ export class JsonSchemaSession extends Session {
     const id = toId(dialectUri);
     const dialect = this.#dialect(id);
     if (!dialect) {
-      throw Error(`The '${relativeFileUri(id)}' dialect isn't defined in this session`);
+      throw Error(`The '${relativeFileUrl(id)}' dialect isn't defined in this session`);
     }
 
     return Object.hasOwn(dialect.keywords, keyword)

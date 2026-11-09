@@ -11,6 +11,7 @@ import { evaluatorForLint } from "./evaluate.js";
 import { provenance } from "./provenance.js";
 import impossibleProperty from "./rules/impossible-property.js";
 import keywordWithoutEffect from "./rules/keyword-without-effect.js";
+import { noUrl } from "../identifiers.js";
 
 /**
  * @import { Json } from "@hyperjump/browser"
@@ -165,7 +166,7 @@ const evaluatorFor = async (schema) => {
   const document = await resolve(schema);
   const evaluator = evaluatorForLint(document);
   const schemaNode = /** @type JsonSchemaNode */ (document.tree.children[0]);
-  return (value) => evaluator.schema(schemaNode, /** @type JsonSchemaTolerantNode */ (/** @type unknown */ (fromJs(value)))).valid;
+  return (value) => evaluator.schema(schemaNode, /** @type JsonSchemaTolerantNode */ (/** @type unknown */ (fromJs(value, noUrl)))).valid;
 };
 
 /** @type (rule: any, json: string) => Promise<string[]> */

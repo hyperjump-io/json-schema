@@ -3,7 +3,7 @@
 A message, an error, or an output that names a `file:` URI says where the
 files are on the machine, wherever it ends up: a CI log, an issue, a
 documentation page, an error reporter. So a `file:` URI is said relative to
-the working directory, with browser's `relativeFileUri`, everywhere one
+the working directory, with browser's `relativeFileUrl`, everywhere one
 leaves the library as text or output (see
 [No local paths in output](../principles/no-local-paths.md)). Browser's own
 errors do the same (see its
@@ -27,8 +27,8 @@ and the library re-exports the function for output formats and plugins.
   it's in the schema already. Before 2026-10-28, it was relative to the
   working directory.
 - Messages that say a URI that's usually not a file, like a dialect's or a
-  handle, still go through `relativeFileUri`, so one that is a file can't
-  say where it is. `relativeFileUri` returns anything else as it is.
+  handle, still go through `relativeFileUrl`, so one that is a file can't
+  say where it is. `relativeFileUrl` returns anything else as it is.
 - Messages are made from the URIs, not rewritten afterwards. A pointer's
   message is from browser's `jsonPointerGet`, which is given the relative
   document URI, and a missing file is browser's `FileNotFoundError`.

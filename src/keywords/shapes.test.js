@@ -46,8 +46,8 @@ describe("A keyword's value that doesn't fit its shape is reported once", () => 
       test(`${name} (${keywordUri}): ${JSON.stringify(value)}`, async () => {
         const file = new VFile(JSON.stringify({ $schema: dialectUri, [name]: value }));
         const processor = unified()
-          .use(rejsonParse)
-          .use(jsonSchemaResolve, { session: jsonSchema.session(), uri: "https://example.com/schema" });
+          .use(rejsonParse, { url: "https://example.com/schema" })
+          .use(jsonSchemaResolve, { session: jsonSchema.session() });
         const document = await processor.run(processor.parse(file), file);
 
         const root = /** @type any */ (document.children[0]);

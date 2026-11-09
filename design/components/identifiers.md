@@ -98,7 +98,7 @@ a copy isn't an IRI-reference. A message names a handle with `handleName`
 (`src/kernel/fast.js`), which says one that isn't an IRI-reference as it
 is. A keyword's location isn't a handle: a copy keeps its keywords'
 locations, so an output's `absoluteKeywordLocation` is always an
-IRI-reference, and output formats give it to `relativeFileUri` without a
+IRI-reference, and output formats give it to `relativeFileUrl` without a
 check.
 
 - Branding handles was rejected. The only brand that's true of every handle

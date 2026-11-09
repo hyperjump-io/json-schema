@@ -1,6 +1,6 @@
 import { unified } from "unified";
 import { VFile } from "vfile";
-import { relativeFileUri } from "@hyperjump/browser";
+import { relativeFileUrl } from "@hyperjump/browser";
 import { SchemaError } from "../schema/schema-error.js";
 import { toSchemaMessage } from "../schema/resolve-text.js";
 import { sessionOf } from "./context.js";
@@ -28,7 +28,7 @@ export const lint = async (context, uri, options = {}) => {
 
   if (document.type !== "json-schema-document") {
     // `getDocument` checked it
-    throw Error(`'${relativeFileUri(/** @type IriReference */ (uri))}' isn't a schema. It's ${document.mediaType}.`);
+    throw Error(`'${relativeFileUrl(/** @type IriReference */ (uri))}' isn't a schema. It's ${document.mediaType}.`);
   }
 
   // Loaded when it's needed, so code that never lints never loads the rules

@@ -1,4 +1,5 @@
-import { relativeFileUri } from "@hyperjump/browser";
+import { relativeFileUrl } from "@hyperjump/browser";
+import { toAbsoluteIri, urlToIri } from "@hyperjump/uri";
 import { parse as parseContentType } from "content-type";
 import { resolveSchemaText } from "./resolve-text.js";
 import { JsonSchemaSession } from "../session.js";
@@ -28,7 +29,9 @@ export class JsonSchemaMediaTypePlugin {
     const contentType = parseContentType(response.headers.get("content-type") ?? "");
     const dialectUri = contentType.parameters.schema ?? contentType.parameters.profile;
 
-    const document = await resolveSchemaText(await response.text(), session, response.url, dialectUri);
+    // A schema's identifiers are IRIs, so the response's URL is converted
+    // where it comes in
+    const document = await resolveSchemaText(await response.text(), session, toAbsoluteIri(urlToIri(new URL(response.url))), dialectUri);
     return /** @type JsonSchemaDocumentNode<"success"> */ (document);
   }
 
@@ -60,7 +63,7 @@ export class AnchorNotFoundError extends Error {
    * @param {Iri} uri
    */
   constructor(anchor, uri) {
-    super(`There's no '${anchor}' anchor in '${relativeFileUri(uri)}'`);
+    super(`There's no '${anchor}' anchor in '${relativeFileUrl(uri)}'`);
     this.name = this.constructor.name;
     this.anchor = anchor;
     this.uri = uri;

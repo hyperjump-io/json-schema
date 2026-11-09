@@ -228,7 +228,7 @@ describe("JsonSchema", () => {
         const session = new JsonSchema({ dialects: [v1Dialect] }).session();
         const referencedFrom = pathToFileURL(join(directory, "other.schema.json")).href;
         const document = await session.getDocument(relative(cwd(), path), { referencedFrom });
-        expect(document.uri).to.equal(pathToFileURL(path).href);
+        expect(/** @type import("./schema/schema-ast.d.ts").JsonSchemaDocumentNode */ (/** @type unknown */ (document)).uri).to.equal(pathToFileURL(path).href);
       } finally {
         await rm(directory, { recursive: true });
       }

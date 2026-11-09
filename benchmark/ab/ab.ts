@@ -72,7 +72,7 @@ for (const corpus of corpora) {
 
   const values = corpus.instances;
   const jsons = values.map((value) => JSON.stringify(value));
-  const nodes = jsons.map((json) => (fromJson(json) as { node: unknown }).node);
+  const nodes = jsons.map((json) => (fromJson(json, "urn:hyperjump:none") as { node: unknown }).node);
   const runs = await Promise.all(subjects.map(async ({ api, compile }) => {
     const compiled = await compile(corpus);
     const validator = (options = {}) => api.validatorFor(compiled, options);

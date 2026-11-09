@@ -12,8 +12,9 @@ an internal meta-schema.
 - The resolver is a plain function, `resolveSchema(tree, options)`
   (`src/schema/resolve.js`), that returns the schema AST and every problem
   as a `SchemaMessage`. `jsonSchemaResolve` is a unified plugin over it,
-  the way browser's `rejsonParse` is over `fromJson`: it gets the base URI
-  from the file's path, adds each problem to the file as a fatal message,
+  the way browser's `rejsonParse` is over `fromJson`: its base URI is the
+  document's URL, which the parser gives it from the file's path or its
+  `url` option, adds each problem to the file as a fatal message,
   and puts the session on `file.data`. A retrieved or registry schema is
   parsed with `fromJson`, accepting what it recovered from, and resolved
   with `resolveSchema`, by `resolveSchemaText`

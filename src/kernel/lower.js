@@ -1,4 +1,4 @@
-import { appendToLocation, jsonValue, jsonPointerGet, relativeFileUri } from "@hyperjump/browser";
+import { appendToLocation, jsonValue, jsonPointerGet, relativeFileUrl } from "@hyperjump/browser";
 import { isErrorNode } from "../keywords/checks.js";
 import { keywordDefinitionUri } from "../keywords/unknown.js";
 import { siblingValues } from "../keywords/utilities.js";
@@ -348,7 +348,7 @@ class Lowerer {
         await this.#retrieve(needs);
       }
     } else if (need.kind === "resource") {
-      const document = /** @type JsonSchemaDocumentNode */ (await this.#session.getDocument(need.uri, { referencedFrom: need.uri }));
+      const document = /** @type JsonSchemaDocumentNode */ (/** @type unknown */ (await this.#session.getDocument(need.uri, { referencedFrom: need.uri })));
       this.#addResource(need.uri, document);
     } else {
       this.#dialects.set(need.uri, await this.#session.getDialect(need.uri));
@@ -410,7 +410,7 @@ class Lowerer {
   /** @type (node: JsonSchemaNode) => Handle */
   #schema(node) {
     if (node.type !== "json-schema") {
-      throw Error(`No schema found at '${relativeFileUri(node.location)}'`);
+      throw Error(`No schema found at '${relativeFileUrl(node.location)}'`);
     }
 
     const handle = node.location;
@@ -441,7 +441,7 @@ class Lowerer {
   #lowerSchema(node) {
     const handle = node.location;
     if (node.jsonType !== "boolean" && node.jsonType !== "object") {
-      throw Error(`No schema found at '${relativeFileUri(handle)}'`);
+      throw Error(`No schema found at '${relativeFileUrl(handle)}'`);
     }
 
     const resource = this.#absoluteIri(handle);

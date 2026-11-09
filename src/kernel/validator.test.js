@@ -14,6 +14,7 @@ import { BASIC, DETAILED, FLAG } from "../output/index.js";
 import { compile, restore, serialize } from "../operations/compile.js";
 import { validate } from "../operations/validate.js";
 import { annotatorFor, validatorFor } from "../operations/validate-compiled.js";
+import { noUrl } from "../identifiers.js";
 
 /**
  * @import { Json } from "@hyperjump/browser"
@@ -572,7 +573,7 @@ describe("Validator", () => {
         for (const length of [3, 20]) {
           const items = plugins(length);
           /** @type (json: string) => boolean */
-          const validate = (json) => /** @type boolean */ (validatorFor(compiled, { input: "node", ...options })(fromJson(json).node));
+          const validate = (json) => /** @type boolean */ (validatorFor(compiled, { input: "node", ...options })(fromJson(json, noUrl).node));
           expect(validate(`[${items}, @, @]`)).to.equal(true);
           expect(validate(`[${items}, { "name": }, { "name": }]`)).to.equal(true);
           expect(validate(`[${items}, { "name": "plugin0", "x": }, { "name": "plugin0", "x": }]`)).to.equal(true);
@@ -985,7 +986,7 @@ describe("Validator", () => {
 
     test("annotateNode", async () => {
       const compiled = await compile(jsonSchema, await schemaFile({ properties: { foo: { title: "foo" } } }));
-      const { node } = fromJson(`{ "foo": 1 }`);
+      const { node } = fromJson(`{ "foo": 1 }`, noUrl);
 
       expect(annotatorFor(compiled, { input: "node" })(node).output).to.equal(true);
       expect(jsonPointerGet("/foo", /** @type any */ (node)).data.annotations.get(titleKeyword.uri)).to.eql(["foo"]);
@@ -1176,7 +1177,7 @@ describe("Validator", () => {
       const plugin = { afterSchema: (_schema, at) => values.push(at.value()) };
 
       validatorFor(compiled, { plugins: [plugin] })({ foo: 1 });
-      validatorFor(compiled, { input: "node", plugins: [plugin] })(fromJson(`{ "foo": 1 }`).node);
+      validatorFor(compiled, { input: "node", plugins: [plugin] })(fromJson(`{ "foo": 1 }`, noUrl).node);
       expect(values).to.eql([1, { foo: 1 }, 1, { foo: 1 }]);
     });
 

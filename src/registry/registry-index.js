@@ -1,7 +1,7 @@
 import { VFileMessage } from "vfile-message";
-import { fromJs, fromJson, relativeFileUri } from "@hyperjump/browser";
+import { fromJs, fromJson, relativeFileUrl } from "@hyperjump/browser";
 import { getScheme } from "@hyperjump/uri";
-import { resolveId, toId } from "../identifiers.js";
+import { noUrl, resolveId, toId } from "../identifiers.js";
 import { toVFileMessage } from "../output/validation-error.js";
 import { entriesOf } from "./registry-entries.js";
 
@@ -289,7 +289,7 @@ export const identify = (jsonSchema, entry, registryDialect) => {
   }
 
   const { retrievalUri } = entry;
-  const result = fromJson(entry.schema);
+  const result = fromJson(entry.schema, noUrl);
   if (result.status !== "success" || result.node === undefined) {
     return { error: Error(`The schema${retrievalUri ? ` at '${retrievalUri}'` : ""} isn't valid JSON`, { cause: toVFileMessage(result.errors[0]) }) };
   }
@@ -318,7 +318,7 @@ const parsedRoot = (entry) => {
   return {
     isObject: true,
     $schema: typeof value.$schema === "string" ? value.$schema : undefined,
-    properties: Object.entries(value).map(([name, propertyValue]) => [name, () => fromJs(propertyValue)])
+    properties: Object.entries(value).map(([name, propertyValue]) => [name, () => fromJs(propertyValue, noUrl)])
   };
 };
 
@@ -378,7 +378,7 @@ const identifyRoot = (jsonSchema, entry, registryDialect, root) => {
     }
 
     if (getScheme(uri) === "file") {
-      throw Error(`A schema in a registry can't be identified by a 'file:' URI: ${relativeFileUri(uri)}`);
+      throw Error(`A schema in a registry can't be identified by a 'file:' URI: ${relativeFileUrl(uri)}`);
     }
 
     return { uri, definedDialect, fromRegistry };

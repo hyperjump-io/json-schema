@@ -76,9 +76,9 @@ describe("JsonOrSchemaMediaTypePlugin", () => {
     const jsonSchema = new JsonSchema({
       allowRetrieval: ["./", "test:/"],
       dialects: [v1Dialect, draft202012Dialect],
-      uriSchemePlugins: [{
+      urlSchemePlugins: [{
         schemes: ["test"],
-        retrieve: async (uri) => {
+        retrieve: async ({ url: uri }) => {
           const response = new Response(metaSchema, { headers: { "Content-Type": "application/json" } });
           Object.defineProperty(response, "url", { value: uri });
           return response;

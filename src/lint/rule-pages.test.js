@@ -96,10 +96,9 @@ const examples = (source) => {
 const lint = async (name, rule, { code, dialectUri }) => {
   const file = new VFile(code);
   const processor = unified()
-    .use(rejsonParse, { accept: "recovered" })
+    .use(rejsonParse, { accept: "recovered", url: "https://example.com/schema.json" })
     .use(jsonSchemaResolve, {
       session: jsonSchema.session({ allowRetrieval: [] }),
-      uri: "https://example.com/schema.json",
       ...dialectUri && { dialectUri }
     })
     .use(rule);

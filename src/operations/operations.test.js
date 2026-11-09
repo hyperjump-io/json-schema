@@ -9,6 +9,7 @@ import { annotate, annotator, validate, validator } from "./validate.js";
 import { annotatorFor, validatorFor } from "./validate-compiled.js";
 import { bundle } from "./bundle.js";
 import { lint } from "./lint.js";
+import { noUrl } from "../identifiers.js";
 
 /**
  * @import { Json } from "@hyperjump/browser"
@@ -116,7 +117,7 @@ describe("operations", () => {
     });
 
     test("a node", async () => {
-      expect(await validate(jsonSchema, schema, fromJs({ a: "b" }), { input: "node" })).to.equal(true);
+      expect(await validate(jsonSchema, schema, fromJs({ a: "b" }, noUrl), { input: "node" })).to.equal(true);
     });
 
     test("an input that isn't one", async () => {
@@ -147,7 +148,7 @@ describe("operations", () => {
     });
 
     test("a node is annotated where it is", async () => {
-      const node = fromJs({});
+      const node = fromJs({}, noUrl);
       const result = annotatorFor(await compile(jsonSchema, schema), { input: "node" })(node);
 
       expect(result).to.include({ output: true, status: "success", node });

@@ -10,7 +10,6 @@ import { assertNoReservedKeywords, withValidateFormats } from "./dialects/extend
 
 export { outputErrorMessage, toVFileMessage } from "./output/validation-error.js";
 export { SchemaError } from "./schema/schema-error.js";
-export { RetrievalNotAllowedError } from "@hyperjump/browser";
 export { extendDialect } from "./dialects/extend-dialect.js";
 
 /**

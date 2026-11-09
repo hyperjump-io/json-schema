@@ -43,7 +43,3 @@ text ─ fromJson ─▶ JSON AST ─ resolveSchema ─▶ Schema AST ─ (schem
 | `src/validate/` | `jsonSchemaValidate`, the unified plugin that validates JSON files |
 | `src/lint/test-linter.js` | The processor lint rule tests use, which resolves like the CLI |
 | `test/test-suite.js` | Runs the JSON Schema Test Suite and the annotation test suite |
-
-## Known limitations
-
-- The base URI from a file's path only handles POSIX paths.

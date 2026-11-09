@@ -17,8 +17,7 @@ JSON Schema uses it.
   URI, run its own `realpath` next to the file plugin's, pass what a
   session allows to `retrieve` disguised as a `GetOptions` field, and
   unwrap the error from browser's `RetrievalError`.
-- `JsonSchemaConfig` gets it from `HyperjumpConfig`, and
-  `RetrievalNotAllowedError` is browser's, re-exported.
+- `JsonSchemaConfig` gets it from `HyperjumpConfig`.
   `SessionOptions.allowRetrieval` replaces the config's for one session,
   and `JsonSchemaSession` passes it to browser's `Session` constructor. The
   CLI uses it for files with different settings.
@@ -26,12 +25,14 @@ JSON Schema uses it.
   cache. That's after embedded resources and registries, because
   `JsonSchemaSession.getDocument` finds those first. So it covers `get`,
   following references, `compile`, and meta-schemas found by `getDialect`.
-- A `RetrievalNotAllowedError` isn't wrapped, so it's what `get` and
-  `compile` throw. A refusal while getting a dialect's meta-schema is the
+- A refusal is browser's `RetrievalError` whose cause is an `HttpError` for
+  a `403`, like a server's, so it's what `get` and `compile` throw. A refusal while getting a dialect's meta-schema is the
   `cause` of `getDialect`'s error.
 - Tools use the difference between a refused URL and one that couldn't be
   retrieved: a refused URL is unknown, a failed one is missing (see
-  [Other schemas](../lint/other-schemas.md)).
+  [Other schemas](../lint/other-schemas.md)). A server's `403` is unknown
+  too, because browser doesn't tell it from a refusal, and a server that
+  refuses doesn't say whether there's anything there either.
 - `[]` allows nothing, so only registries and embedded resources are used.
   The test suite runners and the tests that only use registries use it
   instead of removing the `http(s):` URI scheme plugins. Tests that read

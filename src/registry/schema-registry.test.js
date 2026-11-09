@@ -1,6 +1,6 @@
 import { describe, test, beforeEach, expect } from "vitest";
 import { RetrievalError } from "@hyperjump/browser";
-import { JsonSchema, RetrievalNotAllowedError } from "../json-schema.js";
+import { JsonSchema } from "../json-schema.js";
 import { SchemaRegistry } from "./schema-registry.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import vocabularyKeyword from "../keywords/vocabulary.js";
@@ -138,7 +138,7 @@ describe("SchemaRegistry", () => {
     test("an embedded resource isn't identified", async () => {
       const registry = registryOf(v1({ $id: "https://example.com/a", $defs: { b: { $id: "https://example.com/b" } } }));
 
-      await expect(compile(registry, "https://example.com/b")).rejects.toThrow(RetrievalNotAllowedError);
+      await expect(compile(registry, "https://example.com/b")).rejects.toMatchObject({ name: "RetrievalError", cause: { name: "HttpError", response: { status: 403 } } });
     });
 
     test("references between schemas in registries", async () => {
@@ -167,9 +167,9 @@ describe("SchemaRegistry", () => {
       const added = empty.with(v1({}), { retrievalUri: "https://example.com/a" });
       const removed = added.without("https://example.com/a");
 
-      await expect(compile(empty, "https://example.com/a")).rejects.toThrow(RetrievalNotAllowedError);
+      await expect(compile(empty, "https://example.com/a")).rejects.toMatchObject({ name: "RetrievalError", cause: { name: "HttpError", response: { status: 403 } } });
       await expect(compile(added, "https://example.com/a")).resolves.toBeDefined();
-      await expect(compile(removed, "https://example.com/a")).rejects.toThrow(RetrievalNotAllowedError);
+      await expect(compile(removed, "https://example.com/a")).rejects.toMatchObject({ name: "RetrievalError", cause: { name: "HttpError", response: { status: 403 } } });
     });
 
     test("changing a schema after it's added doesn't change the registry", async () => {
@@ -259,7 +259,7 @@ describe("SchemaRegistry", () => {
       const after = jsonSchema.session({ registry: edited });
 
       expect(validatorFor(await compileSchema(before, "https://example.com/a"))(42)).to.equal(false);
-      await expect(compileSchema(before, "https://example.com/b")).rejects.toThrow(RetrievalNotAllowedError);
+      await expect(compileSchema(before, "https://example.com/b")).rejects.toMatchObject({ name: "RetrievalError", cause: { name: "HttpError", response: { status: 403 } } });
       expect(validatorFor(await compileSchema(after, "https://example.com/a"))(42)).to.equal(true);
       await expect(compileSchema(after, "https://example.com/b")).resolves.toBeDefined();
     });
@@ -268,7 +268,7 @@ describe("SchemaRegistry", () => {
       const registry = registryOf(v1({ $id: "https://example.com/a", type: "string" }));
 
       expect(validatorFor(await compile(registry, "https://example.com/a"))(42)).to.equal(false);
-      await expect(compileSchema(jsonSchema, "https://example.com/a")).rejects.toThrow(RetrievalNotAllowedError);
+      await expect(compileSchema(jsonSchema, "https://example.com/a")).rejects.toMatchObject({ name: "RetrievalError", cause: { name: "HttpError", response: { status: 403 } } });
     });
 
     test("the JsonSchema's registry", async () => {
@@ -283,7 +283,7 @@ describe("SchemaRegistry", () => {
       jsonSchema.registry = new SchemaRegistry();
 
       await expect(compileSchema(before, "https://example.com/a")).resolves.toBeDefined();
-      await expect(compileSchema(jsonSchema, "https://example.com/a")).rejects.toThrow(RetrievalNotAllowedError);
+      await expect(compileSchema(jsonSchema, "https://example.com/a")).rejects.toMatchObject({ name: "RetrievalError", cause: { name: "HttpError", response: { status: 403 } } });
     });
 
     test("a URI in both the session's registry and the JsonSchema's is an error", async () => {

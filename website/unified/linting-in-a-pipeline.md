@@ -43,15 +43,18 @@ They aren't thrown, so every problem in the file is reported.
 | Option | What it is |
 | --- | --- |
 | `session` | A session from your `JsonSchema`. It has the dialects and keywords. Rules use it to find the schemas the document references, so it decides what they can see. See [Controlling retrieval](../guides/retrieval.md). |
-| `uri` | The schema's base URI. The default is the file's path as a `file:` URL. |
 | `dialectUri` | The dialect to use if the schema doesn't have `$schema`. The default is the `JsonSchema`'s `defaultDialectUri`. |
 
 It's asynchronous because a dialect from a custom meta-schema has to be
 retrieved first.
 
+The schema's base URI is its document's URL, which the parser gives it: the
+file's path, or `rejsonParse`'s `url` option for text that isn't a file, like
+`.use(rejsonParse, { url: "https://example.com/schema.json" })`.
+
 Outside a pipeline, `resolveSchema(tree, options)` does the same, for a
-JSON AST from browser's `fromJson`. It takes the same options, with `uri`
-required, and returns the schema AST and its problems as data
+JSON AST from browser's `fromJson`. It takes the same options, with a `uri`
+for the base URI, and returns the schema AST and its problems as data
 (`{ document, messages }`) instead of adding them to a file.
 
 ## Rules

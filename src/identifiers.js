@@ -13,6 +13,15 @@ import { assertIri, assertIriReference, hasScheme, normalizeIri, resolveIri, toA
  */
 
 /**
+ * The URL json-schema gives JSON that isn't from anywhere, like an instance,
+ * or schema text before it's resolved, because browser's documents have to
+ * have one. Nothing reads it: a schema's nodes get their locations from
+ * their resources when it's resolved, and an instance's locations are worked
+ * out as it's evaluated.
+ */
+export const noUrl = "urn:hyperjump:none";
+
+/**
  * The {@link Id} of an identifier from outside json-schema, like an
  * application's or a config's. It's checked here, where it comes in.
  *

@@ -113,6 +113,12 @@ export type JsonSchemaDocumentNode<S extends JsonParseStatus = JsonParseStatus> 
   uri: AbsoluteIri & NormalizedIri;
 
   /**
+   * The resource's URI as a URL, which is what `@hyperjump/browser` calls a
+   * document's identifier
+   */
+  url: string;
+
+  /**
    * The dialect of the resource. It's undefined if no dialect could be
    * determined, in which case nothing in the resource is a schema.
    */

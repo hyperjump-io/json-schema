@@ -68,12 +68,12 @@ it returns:
 A location in a schema file would reveal where your files are. That's why
 `BASIC` and `DETAILED` show it relative to the working directory. If your
 format reports locations from its own plugin, do the same with
-`relativeFileUri`:
+`relativeFileUrl`:
 
 ```typescript
-import { relativeFileUri } from "@hyperjump/json-schema";
+import { relativeFileUrl } from "@hyperjump/json-schema";
 
-relativeFileUri(keyword.absoluteKeywordLocation);
+relativeFileUrl(keyword.absoluteKeywordLocation);
 // "schemas/person.schema.json#/properties/age/minimum"
 ```
 

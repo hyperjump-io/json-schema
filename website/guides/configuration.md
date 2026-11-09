@@ -25,7 +25,8 @@ can't change after the `JsonSchema` is created. Its dialects give the
 | `allowRetrieval` | `["./"]` | The URLs schemas can be retrieved from. See [Controlling retrieval](retrieval.md). |
 | `defaultDialectUri` | None | The dialect of a schema that has no `$schema` and gets no dialect from anywhere else. See [Dialects](dialects.md#schemas-without-schema). |
 | `validateFormats` | The dialect's | Whether `format` validates in every dialect. See [Formats](formats.md). |
-| `uriSchemePlugins` | `http:`, `https:`, and `file:` | More URI schemes, or plugins that replace the defaults, like an HTTP plugin that sends credentials. See [Controlling retrieval](retrieval.md#sending-credentials). |
+| `urlSchemePlugins` | `http:`, `https:`, and `file:` | More URL schemes, or plugins that replace the defaults. See [Adding URL schemes](https://github.com/hyperjump-io/browser/blob/v2/website/url-schemes.md). |
+| `headers` | None | Headers to send with requests, such as credentials, by URL. See [Controlling retrieval](retrieval.md#sending-credentials). |
 | `mediaTypePlugins` | JSON Schema, JSON, and JRef | More media types, or plugins that replace the defaults. See [browser's media types](https://github.com/hyperjump-io/browser/blob/v2/website/media-types.md). |
 
 Schemas that aren't retrieved go in its `registry` property, which starts

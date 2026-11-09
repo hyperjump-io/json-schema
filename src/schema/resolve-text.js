@@ -1,6 +1,7 @@
 import { fromJson, jsonSyntaxErrorMessage } from "@hyperjump/browser";
 import { resolveSchema } from "./resolve.js";
 import { SchemaError } from "./schema-error.js";
+import { noUrl } from "../identifiers.js";
 
 /**
  * @import { VFileMessage } from "vfile-message"
@@ -22,7 +23,7 @@ import { SchemaError } from "./schema-error.js";
  * problems can't be used reliably
  */
 export const resolveSchemaText = async (text, session, uri, dialectUri, origin) => {
-  const { status, node, errors, comments } = fromJson(text);
+  const { status, node, errors, comments } = fromJson(text, noUrl);
 
   /** @type SchemaMessage[] */
   const messages = errors.map((error) => ({
@@ -37,7 +38,7 @@ export const resolveSchemaText = async (text, session, uri, dialectUri, origin) 
   // A syntax error the parser can't recover from leaves nothing to resolve
   if (status !== "failure") {
     /** @type JsonDocumentNode */
-    const tree = { type: "json-document", status, children: node ? [node] : [], comments };
+    const tree = { type: "json-document", status, children: node ? [node] : [], comments, url: noUrl };
     const resolved = await resolveSchema(tree, { session, uri, dialectUri });
     messages.push(...resolved.messages);
 

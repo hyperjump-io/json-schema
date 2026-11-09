@@ -1,6 +1,6 @@
 import { JsonMediaTypePlugin } from "@hyperjump/browser";
 import { parse as parseContentType } from "content-type";
-import { normalizeIri } from "@hyperjump/uri";
+import { normalizeIri, toAbsoluteIri, urlToIri } from "@hyperjump/uri";
 import { resolveId } from "../identifiers.js";
 import { resolveSchemaText } from "./resolve-text.js";
 import { JsonSchemaSession } from "../session.js";
@@ -23,14 +23,17 @@ export class JsonOrSchemaMediaTypePlugin {
   /** @type MediaTypePlugin<DocumentNode>["parse"] */
   async parse(response, session) {
     const text = await response.text();
-    const dialectUri = await schemaDialect(text, response.url, session);
+    // A schema's identifiers are IRIs, so the response's URL is converted
+    // where it comes in
+    const uri = toAbsoluteIri(urlToIri(new URL(response.url)));
+    const dialectUri = await schemaDialect(text, uri, session);
     if (dialectUri === undefined) {
       // The text has been read, so the JSON plugin gets it as it is
       return this.#json.parse({ text: async () => text, url: response.url });
     }
 
     const contentType = parseContentType(response.headers.get("content-type") ?? "application/json");
-    const document = await resolveSchemaText(text, /** @type JsonSchemaSession */ (session), response.url, contentType.parameters.schema);
+    const document = await resolveSchemaText(text, /** @type JsonSchemaSession */ (session), uri, contentType.parameters.schema);
     return /** @type DocumentNode */ (/** @type unknown */ (document));
   }
 }

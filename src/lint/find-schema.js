@@ -1,4 +1,4 @@
-import { FileNotFoundError, HttpError, JsonPointerError, jsonPointerGet, relativeFileUri, RetrievalError, RetrievalNotAllowedError } from "@hyperjump/browser";
+import { FileNotFoundError, HttpError, JsonPointerError, jsonPointerGet, relativeFileUrl, RetrievalError } from "@hyperjump/browser";
 import { getFragment, toAbsoluteIri } from "@hyperjump/uri";
 import { AnchorNotFoundError } from "../schema/media-type-plugin.js";
 import { SchemaError } from "../schema/schema-error.js";
@@ -22,17 +22,17 @@ export const findSchema = async (session, uri, options = {}) => {
   try {
     document ??= await session.getDocument(uri, getOptions);
   } catch (error) {
-    if (error instanceof RetrievalNotAllowedError || error instanceof SchemaError) {
+    if (error instanceof SchemaError || isRefusal(error)) {
       return { status: "unknown", reason: error };
     } else if (error instanceof RetrievalError) {
-      const reason = absence(error.uri, error.cause);
+      const reason = absence(error.url, error.cause);
       return reason ? { status: "missing", reason } : { status: "unknown", reason: error };
     }
     throw error;
   }
 
   if (document.type !== "json-schema-document") {
-    return { status: "missing", reason: Error(`'${relativeFileUri(uri)}' isn't a schema. It's ${document.mediaType}.`) };
+    return { status: "missing", reason: Error(`'${relativeFileUrl(uri)}' isn't a schema. It's ${document.mediaType}.`) };
   }
 
   /** @type JsonSchemaNode */
@@ -49,17 +49,26 @@ export const findSchema = async (session, uri, options = {}) => {
   }
 
   if (node.type !== "json-schema" && node.type !== "reference") {
-    return { status: "missing", reason: Error(`'${relativeFileUri(uri)}' isn't a schema`) };
+    return { status: "missing", reason: Error(`'${relativeFileUrl(uri)}' isn't a schema`) };
   }
 
   return { status: "found", node, document: /** @type JsonSchemaDocumentNode */ (/** @type unknown */ (document)) };
 };
 
 /**
+ * A refusal, like one by `allowRetrieval`, is a 403. It doesn't say whether
+ * there's anything there.
+ *
+ * @param {unknown} error
+ * @returns {error is RetrievalError}
+ */
+const isRefusal = (error) => error instanceof RetrievalError && error.cause instanceof HttpError && error.cause.response.status === 403;
+
+/**
  * Why there's nothing at a URI, if a retrieval failed because there's
  * nothing there, rather than because it couldn't be told
  *
- * @type (uri: Iri, error: unknown) => Error | undefined
+ * @type (uri: string, error: unknown) => Error | undefined
  */
 const absence = (uri, error) => {
   if (error instanceof FileNotFoundError) {

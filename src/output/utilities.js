@@ -1,4 +1,4 @@
-import { relativeFileUri } from "@hyperjump/browser";
+import { relativeFileUrl } from "@hyperjump/browser";
 
 /**
  * @import { IriReference } from "@hyperjump/uri"
@@ -45,7 +45,7 @@ export const validationError = (ruleId, absoluteKeywordLocation, at) => ({
 
 /**
  * Says each error's location, and its subschemas' errors' locations, with
- * `relativeFileUri`, so a schema in a file is relative to the working
+ * `relativeFileUrl`, so a schema in a file is relative to the working
  * directory. It's done for the errors that are kept, when the output is
  * made, not for each one that's created. A keyword's location is its
  * schema's location and a JSON Pointer, even in a copy an optimization made,
@@ -55,7 +55,7 @@ export const validationError = (ruleId, absoluteKeywordLocation, at) => ({
  */
 export const withRelativeLocations = (errors) => {
   for (const error of errors) {
-    error.absoluteKeywordLocation = relativeFileUri(/** @type IriReference */ (error.absoluteKeywordLocation));
+    error.absoluteKeywordLocation = relativeFileUrl(/** @type IriReference */ (error.absoluteKeywordLocation));
     if (error.errors !== undefined) {
       withRelativeLocations(error.errors);
     }

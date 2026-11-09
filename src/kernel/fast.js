@@ -1,4 +1,4 @@
-import { relativeFileUri } from "@hyperjump/browser";
+import { relativeFileUrl } from "@hyperjump/browser";
 import { isIriReference } from "@hyperjump/uri";
 import { jsInstance } from "./instance.js";
 import { codePointLengthIsWithin } from "../keywords/utilities.js";
@@ -1409,4 +1409,4 @@ const every = (of) => {
  *
  * @type (handle: Handle) => string
  */
-export const handleName = (handle) => isIriReference(handle) ? relativeFileUri(handle) : handle;
+export const handleName = (handle) => isIriReference(handle) ? relativeFileUrl(handle) : handle;
