@@ -1,4 +1,5 @@
 import { subexpressions } from "../kernel/kernel.js";
+import { patternRegExp } from "../keywords/utilities.js";
 
 /**
  * @import { Json, JsonType } from "@hyperjump/browser"
@@ -229,7 +230,7 @@ export const propertyOperations = (keywords, name) => {
 const patterns = new Map();
 
 /**
- * A pattern as the kernel compiles it, with the `u` flag. It's null if the
+ * A pattern as the kernel compiles it (`patternRegExp`). It's null if the
  * pattern isn't valid.
  *
  * @type (pattern: string) => RegExp | null
@@ -238,7 +239,7 @@ const compilePattern = (pattern) => {
   let regExp = patterns.get(pattern);
   if (regExp === undefined) {
     try {
-      regExp = new RegExp(pattern, "u");
+      regExp = patternRegExp(pattern);
     } catch {
       regExp = null;
     }

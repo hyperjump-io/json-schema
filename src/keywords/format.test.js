@@ -49,6 +49,13 @@ describe("format", () => {
     expect(validatorFor(compiled)(42)).to.equal(true);
   });
 
+  test("the regex format is a pattern with the u flag, unlike pattern", async () => {
+    const compiled = await compile(v1(), await schemaFile({ format: "regex" }));
+
+    expect(validatorFor(compiled)("^\\p{L}$")).to.equal(true);
+    expect(validatorFor(compiled)("^\\&$")).to.equal(false);
+  });
+
   test("a format that isn't supported is an error", async () => {
     await expect(compile(v1(), await schemaFile({ format: "nope" }))).rejects.toThrow("'nope' format isn't supported");
   });

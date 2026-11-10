@@ -30,6 +30,10 @@ describe("required-property-not-defined", () => {
     expect(await reasons(`{ "$schema": "${draft2020}", "patternProperties": { "^\\\\p{L}$": {} }, "required": ["é", "ab"] }`)).to.eql([message("ab")]);
   });
 
+  test("patternProperties only valid without the u flag", async () => {
+    expect(await reasons(`{ "$schema": "${draft2020}", "patternProperties": { "^\\\\%": {} }, "required": ["%a", "b"] }`)).to.eql([message("b")]);
+  });
+
   test("additionalProperties or unevaluatedProperties defines the rest", async () => {
     expect(await reasons(`{ "$schema": "${draft2020}", "properties": { "a": {} }, "additionalProperties": { "type": "string" }, "required": ["b"] }`)).to.eql([]);
     expect(await reasons(`{ "$schema": "${draft2020}", "properties": { "a": {} }, "unevaluatedProperties": false, "required": ["b"] }`)).to.eql([]);

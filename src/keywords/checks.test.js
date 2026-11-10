@@ -101,6 +101,31 @@ describe("keyword checks", () => {
     expect(messages.map(({ reason, at }) => [reason, at])).to.eql([["Expected a regular expression", `"("`]]);
   });
 
+  test("patterns that are only valid without the u flag, before v1", async () => {
+    for (const dialectUri of [draft04DialectUri, draft07DialectUri, draft201909DialectUri, draft202012DialectUri]) {
+      const messages = await check(jsonSchema, `{
+        "$schema": "${dialectUri}",
+        "pattern": "^[^\\\\&\\\\%]*$",
+        "patternProperties": { "^\\\\%": {}, "(": {} }
+      }`);
+
+      expect(messages.map(({ reason, at }) => [reason, at])).to.eql([["Expected a regular expression", `"("`]]);
+    }
+  });
+
+  test("v1's patterns are only valid with the u flag", async () => {
+    const messages = await check(jsonSchema, `{
+      "$schema": "${v1DialectUri}",
+      "pattern": "^[^\\\\&]*$",
+      "patternProperties": { "^\\\\%": {}, "^\\\\p{L}$": {} }
+    }`);
+
+    expect(messages.map(({ reason, at }) => [reason, at])).to.eql([
+      ["Expected a regular expression", `"^[^\\\\&]*$"`],
+      ["Expected a regular expression", `"^\\\\%"`]
+    ]);
+  });
+
   test("checks of keywords from other dialects", async () => {
     expect(await check(jsonSchema, `{ "$schema": "${draft07DialectUri}", "dependencies": { "a": ["b", 1, "b"], "c": {}, "d": [] } }`)).to.eql([
       { reason: "Expected a string", ruleId: "https://json-schema.org/keyword/draft-07/dependencies", at: "1" },

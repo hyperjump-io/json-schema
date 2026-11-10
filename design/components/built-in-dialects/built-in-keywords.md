@@ -41,6 +41,40 @@
 - Rejected: always comparing as `BigInt`s. It's exact, but it takes about
   0.3µs because it goes through strings, and scaled floats are exact
   for almost every number a schema has.
+- v1's `pattern` and `patternProperties` need a pattern that's valid with
+  the `u` flag, as v1 says. In draft-04 through 2020-12, a pattern that's
+  only valid without the flag is used without it. 2020-12 defines the `u`
+  flag but allows some flexibility in regular expressions. Real schemas
+  escape punctuation
+  that doesn't need it, like `\&` and `\%`, which are identity escapes
+  only without the flag. In `jsonschema-benchmark`, the `krakend` schema
+  (draft-07) has `^\/[^\*\?\&\%]*(\/\*)?$`. blaze, boon, Go's
+  `jsonschema`, corvus-ts, ata-validator, and jsu-js accept it, and v2
+  failed the whole schema. Without the flag, `.` and character classes
+  match code units instead of code points.
+- The difference is only in the keywords' checks. The drafts' `pattern`,
+  `patternProperties`, and `additionalProperties`, whose sibling is
+  `patternProperties`, are in `src/keywords/draft-2020-12/`, as other
+  differences between dialects are. The kernel and lint compile every
+  pattern with `patternRegExp` (`src/keywords/utilities.js`): with the
+  flag, or without it if it's only valid without it. A v1 pattern always
+  gets the flag, because its check only accepts one that's valid with
+  it, and a schema that fails a check can't be compiled or lowered.
+- The `regex` format is still a pattern that's valid with the `u` flag
+  (`isRegex` in `@hyperjump/json-schema-formats`) in every dialect. A
+  format asserts what a string is, and a pattern that needs the fallback
+  isn't an ECMA-262 pattern in Unicode mode.
+- Rejected: the `u` flag only, in every dialect. The keyword check
+  rejected draft-07 schemas that other implementations accept and that
+  their authors meant as plain patterns.
+- Rejected: the fallback in every dialect, v1 too. v1 requires the flag.
+- Rejected: one keyword whose check asks the dialect, through a dialect
+  option or the dialect in `CheckContext`. That would be a new public
+  option for one keyword, where other differences between dialects are
+  keywords of their own.
+- Rejected: never the `u` flag. `\p{…}` and `.` on characters outside
+  the Basic Multilingual Plane need it, and JSON Schema's patterns are
+  meant to be Unicode-aware.
 - In v1, `$dynamicRef` is the name of a dynamic anchor, not a URI. It uses
   the outermost schema in the dynamic scope with that anchor, with no
   lexical fallback. If none is in scope, evaluation throws, because that's

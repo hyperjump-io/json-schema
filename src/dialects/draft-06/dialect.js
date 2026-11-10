@@ -1,5 +1,5 @@
 import additionalItemsKeyword from "../../keywords/draft-2019-09/additionalItems.js";
-import additionalPropertiesKeyword from "../../keywords/additionalProperties.js";
+import additionalPropertiesKeyword from "../../keywords/draft-2020-12/additionalProperties.js";
 import allOfKeyword from "../../keywords/allOf.js";
 import anyOfKeyword from "../../keywords/anyOf.js";
 import constKeyword from "../../keywords/const.js";
@@ -26,8 +26,8 @@ import minPropertiesKeyword from "../../keywords/minProperties.js";
 import multipleOfKeyword from "../../keywords/multipleOf.js";
 import notKeyword from "../../keywords/not.js";
 import oneOfKeyword from "../../keywords/oneOf.js";
-import patternKeyword from "../../keywords/pattern.js";
-import patternPropertiesKeyword from "../../keywords/patternProperties.js";
+import patternKeyword from "../../keywords/draft-2020-12/pattern.js";
+import patternPropertiesKeyword from "../../keywords/draft-2020-12/patternProperties.js";
 import propertiesKeyword from "../../keywords/properties.js";
 import propertyNamesKeyword from "../../keywords/propertyNames.js";
 import refKeyword from "../../keywords/draft-07/ref.js";

@@ -3,7 +3,7 @@
 | Operation | Applies to | Passes when |
 | --- | --- | --- |
 | `{ op: "stringLength", min?: number, max?: number }` | string | its length in code points is within the limits |
-| `{ op: "matches", pattern: string }` | string | the ECMA-262 pattern with the `u` flag matches |
+| `{ op: "matches", pattern: string }` | string | the ECMA-262 pattern matches, with the `u` flag, or without it if the pattern is only valid without it |
 | `{ op: "format", name: string, uri: string \| null, assert: boolean }` | the format's `types` (to assert) | see below |
 
 - **`format`** annotates `name`. If `assert` is true, it also asserts the

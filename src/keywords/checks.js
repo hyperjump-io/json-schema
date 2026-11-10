@@ -1,4 +1,5 @@
 import { isRegex } from "@hyperjump/json-schema-formats";
+import { isPattern } from "./utilities.js";
 
 /**
  * @import { JsonErrorNode } from "@hyperjump/browser"
@@ -37,8 +38,17 @@ export const positiveNumber = expected("a number greater than 0", (node) => {
   return node.jsonType === "number" && node.value > 0;
 });
 
+/** An ECMA-262 regular expression with the `u` flag */
 export const regex = expected("a regular expression", (node) => {
   return node.jsonType === "string" && isRegex(node.value);
+});
+
+/**
+ * An ECMA-262 regular expression, with the `u` flag or, if it's only valid
+ * without it, without it (`isPattern`), for the drafts before v1
+ */
+export const pattern = expected("a regular expression", (node) => {
+  return node.jsonType === "string" && isPattern(node.value);
 });
 
 /** A name for `$anchor`, `$dynamicAnchor`, and v1's `$dynamicRef` */

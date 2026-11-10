@@ -1,5 +1,30 @@
 import { describe, test, expect } from "vitest";
-import { codePointLength, codePointLengthIsWithin } from "./utilities.js";
+import { codePointLength, codePointLengthIsWithin, isPattern, patternRegExp } from "./utilities.js";
+
+describe("patternRegExp", () => {
+  test("has the u flag if the pattern is valid with it", () => {
+    expect(patternRegExp("^\\p{L}$").flags).to.equal("u");
+    expect(patternRegExp("^\\p{L}$").test("é")).to.equal(true);
+    expect(patternRegExp("^.$").test("💩")).to.equal(true);
+  });
+
+  test("doesn't have it if the pattern is only valid without it", () => {
+    // `\&` and `\%` are identity escapes only without the flag
+    const regExp = patternRegExp("^\\/[^\\*\\?\\&\\%]*(\\/\\*)?$");
+    expect(regExp.flags).to.equal("");
+    expect(regExp.test("/users/*")).to.equal(true);
+    expect(regExp.test("/a&b")).to.equal(false);
+    // Without it, `.` is a code unit
+    expect(patternRegExp("^\\&.$").test("&💩")).to.equal(false);
+  });
+
+  test("throws if the pattern isn't valid either way", () => {
+    expect(() => patternRegExp("(")).to.throw(SyntaxError);
+    expect(isPattern("(")).to.equal(false);
+    expect(isPattern("\\&")).to.equal(true);
+    expect(isPattern("\\p{L}")).to.equal(true);
+  });
+});
 
 describe("codePointLengthIsWithin", () => {
   test("counts a code point outside the BMP once", () => {

@@ -74,6 +74,24 @@ In every dialect, the [`unknown-keyword`](../linting/rules/unknown-keyword.md)
 lint rule reports them. It suggests a fix when one looks like a
 misspelling.
 
+## Patterns
+
+`pattern` and `patternProperties` are ECMA-262 regular expressions with the
+`u` flag, so `.` matches a whole character and `\p{L}` matches any letter.
+Some patterns are only valid without the flag, usually because they escape
+punctuation that doesn't need it, like `\&` or `\%`:
+
+| Dialect | A pattern that's only valid without the `u` flag |
+| --- | --- |
+| v1 | Is an error |
+| draft-04 to 2020-12 | Works without the flag |
+
+Without the flag, `.` matches half of a character outside the Basic
+Multilingual Plane, like an emoji.
+
+In every dialect, the `regex` format needs a pattern that's valid with the
+`u` flag.
+
 ## Custom meta-schemas
 
 In 2019-09 and 2020-12, a meta-schema can define its own dialect with

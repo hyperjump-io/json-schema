@@ -1,6 +1,6 @@
 import * as JsonPointer from "@hyperjump/json-pointer";
 import { keywordDefinitionUri } from "../keywords/unknown.js";
-import { codePointLengthIsWithin, instanceEqual } from "../keywords/utilities.js";
+import { codePointLengthIsWithin, instanceEqual, patternRegExp } from "../keywords/utilities.js";
 import { jsInstance } from "./instance.js";
 import { conditionsOf, explainsFailure, readsMarks, subexpressions } from "./kernel.js";
 import { keywordEvaluate } from "./definitions.js";
@@ -962,7 +962,7 @@ export const instrumented = (definitions, kernel, options) => {
         };
       }
       case "matches": {
-        const regExp = new RegExp(expression.pattern, "u");
+        const regExp = patternRegExp(expression.pattern);
         return (instance) => ops.typeOf(instance) !== "string" || regExp.test(/** @type string */ (ops.value(instance)));
       }
       case "format": {
@@ -1414,9 +1414,9 @@ export const instrumented = (definitions, kernel, options) => {
           allNames.add(operation.name);
         } else if (operation.op === "eachProperty" && "pattern" in operation.select) {
           const { pattern } = operation.select;
-          let test = regExps.findIndex((regExp) => regExp.source === new RegExp(pattern, "u").source);
+          let test = regExps.findIndex((regExp) => regExp.source === patternRegExp(pattern).source);
           if (test === -1) {
-            test = regExps.push(new RegExp(pattern, "u")) - 1;
+            test = regExps.push(patternRegExp(pattern)) - 1;
           }
           patterns.push({ slot, evaluate: applyTo(operation.of, info), test });
           allPatterns.add(pattern);

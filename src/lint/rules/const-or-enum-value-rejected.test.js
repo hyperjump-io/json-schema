@@ -27,6 +27,12 @@ describe("const-or-enum-value-rejected", () => {
     ]);
   });
 
+  test("a pattern only valid without the u flag", async () => {
+    expect(await reasons(`{ "$schema": "${draft202012}", "enum": ["ab", "a&b"], "pattern": "^[^\\\\&]*$" }`)).to.eql([
+      "'pattern' rejects this value, so it's never valid"
+    ]);
+  });
+
   test("a const value enum rejects", async () => {
     expect(await reasons(`{ "$schema": "${draft202012}", "const": "c", "enum": ["a", "b"] }`)).to.eql([
       "'enum' rejects the 'const' value, so nothing is valid"

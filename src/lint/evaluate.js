@@ -2,7 +2,7 @@ import { keywordEvaluate } from "../kernel/definitions.js";
 import { addReachable, itemSequenceStates, multipleOf, selector } from "../kernel/fast.js";
 import { astInstance, jsInstance } from "../kernel/instance.js";
 import { readsMarks } from "../kernel/kernel.js";
-import { codePointLengthIsWithin, instanceEqual } from "../keywords/utilities.js";
+import { codePointLengthIsWithin, instanceEqual, patternRegExp } from "../keywords/utilities.js";
 import { schemaAt } from "./document.js";
 
 /**
@@ -642,7 +642,7 @@ const buildEvaluator = (document) => {
   const regExp = (pattern) => {
     let compiled = regExps.get(pattern);
     if (compiled === undefined) {
-      compiled = new RegExp(pattern, "u");
+      compiled = patternRegExp(pattern);
       regExps.set(pattern, compiled);
     }
     return compiled;

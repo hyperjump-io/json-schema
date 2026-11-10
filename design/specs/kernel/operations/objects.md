@@ -11,7 +11,8 @@
 
 `Selector` is:
 
-- `{ pattern: string }`: names the ECMA-262 pattern (`u` flag) matches
+- `{ pattern: string }`: names the ECMA-262 pattern matches, with the `u`
+  flag as in `matches`
 - `{ except: { names: string[]; patterns: string[] } }`: names that aren't
   listed and don't match any of the patterns
 - `{ unevaluated: true }`: names not marked yet

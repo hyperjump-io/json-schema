@@ -172,6 +172,39 @@ export const codePointLengthIsWithin = (value, min, max) => {
 };
 
 /**
+ * A pattern as a `RegExp`: with the `u` flag, or without it if the pattern
+ * isn't valid with it. Real schemas escape punctuation that doesn't need it,
+ * like `\&` and `\%`, which are identity escapes only without the flag.
+ * Throws if the pattern isn't valid either way. Only the drafts' keywords
+ * (`keywords/draft-2020-12/`) accept a pattern that needs the fallback.
+ * v1's checks reject it, so a v1 pattern always has the flag.
+ *
+ * @type (pattern: string) => RegExp
+ */
+export const patternRegExp = (pattern) => {
+  try {
+    return new RegExp(pattern, "u");
+  } catch {
+    return new RegExp(pattern);
+  }
+};
+
+/**
+ * Whether a pattern is valid, with the `u` flag or without it
+ * (`patternRegExp`)
+ *
+ * @type (pattern: string) => boolean
+ */
+export const isPattern = (pattern) => {
+  try {
+    patternRegExp(pattern);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+/**
  * The items of an array node that are equal to an item before them, compared
  * as `instanceEqual` does. Items that couldn't be parsed aren't equal to
  * anything, so they're never duplicates.

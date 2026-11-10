@@ -1,7 +1,7 @@
 import { relativeFileUrl } from "@hyperjump/browser";
 import { isIriReference } from "@hyperjump/uri";
 import { jsInstance } from "./instance.js";
-import { codePointLengthIsWithin } from "../keywords/utilities.js";
+import { codePointLengthIsWithin, patternRegExp } from "../keywords/utilities.js";
 import { keywordEvaluate } from "./definitions.js";
 import { readsMarks } from "./kernel.js";
 
@@ -312,7 +312,7 @@ export const fast = (definitions, kernel) => {
         };
       }
       case "matches": {
-        const regExp = new RegExp(expression.pattern, "u");
+        const regExp = patternRegExp(expression.pattern);
         return (instance) => typeof instance !== "string" || regExp.test(instance);
       }
       case "format": {
@@ -978,7 +978,7 @@ export const fast = (definitions, kernel) => {
       entries[name] ??= { property: false, of: undefined, mask: 0, required: true };
     }
     const requiredCount = required.size;
-    const patterns = patternExpressions.map(([pattern, of]) => /** @type const */ ([new RegExp(pattern, "u"), child(of)]));
+    const patterns = patternExpressions.map(([pattern, of]) => /** @type const */ ([patternRegExp(pattern), child(of)]));
 
     // An `except` that's exactly the names and patterns in the loop (usually
     // `additionalProperties` next to its `properties` and
@@ -1227,11 +1227,11 @@ export const addDynamicAnchors = (resourceAnchors, dynamicAnchors) => {
 /** @type (select: Selector) => (name: string) => boolean */
 export const selector = (select) => {
   if ("pattern" in select) {
-    const regExp = new RegExp(select.pattern, "u");
+    const regExp = patternRegExp(select.pattern);
     return (name) => regExp.test(name);
   } else if ("except" in select) {
     const names = new Set(select.except.names);
-    const regExps = select.except.patterns.map((pattern) => new RegExp(pattern, "u"));
+    const regExps = select.except.patterns.map(patternRegExp);
     return (name) => !names.has(name) && !regExps.some((regExp) => regExp.test(name));
   }
 
