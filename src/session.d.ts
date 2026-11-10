@@ -40,7 +40,7 @@ export class JsonSchemaSession<S = any> extends Session<JsonSchemaNode> {
    * Documents are found in this order: an embedded resource, if the
    * reference is from the document that contains it (`referencedFrom`); a
    * schema in the session's registry, then in the {@link JsonSchema}'s
-   * `registry`; then it's retrieved.
+   * `registry`, which are a layer on {@link fetch}; then it's retrieved.
    *
    * @throws SchemaError if the schema has problems. It has every problem in
    * the document.

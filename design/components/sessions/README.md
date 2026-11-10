@@ -32,8 +32,9 @@ Both libraries have a long-lived object and sessions created from it, and
   have their own session, so they can't see each other's registries. A
   compiled schema doesn't need its session after compiling, because its
   kernel is self-contained.
-- The `getDocument` override and the embedded index (see [Schema AST](../../specs/schema-ast.md)) are
-  on `JsonSchemaSession`.
+- The registries' layer (`fetch`), the `getDocument` override, and the
+  embedded index (see [Schema AST](../../specs/schema-ast.md)) are on
+  `JsonSchemaSession`.
 - An operation given a `JsonSchema` runs in a new session, so each call
   sees changes. Given a session, it runs in that session. Sessions only
   browse; compiling, bundling, and linting are functions (see

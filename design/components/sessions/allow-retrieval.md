@@ -22,8 +22,9 @@ JSON Schema uses it.
   and `JsonSchemaSession` passes it to browser's `Session` constructor. The
   CLI uses it for files with different settings.
 - Browser checks it when a session retrieves a document that isn't in its
-  cache. That's after embedded resources and registries, because
-  `JsonSchemaSession.getDocument` finds those first. So it covers `get`,
+  cache. That's after embedded resources, which browser finds first, and
+  after the registries, a layer on `fetch` above `allowRetrieval`, so a
+  redirect to a schema in a registry isn't checked either. So it covers `get`,
   following references, `compile`, and meta-schemas found by `getDialect`.
 - A refusal is browser's `RetrievalError` whose cause is an `HttpError` for
   a `403`, like a server's, so it's what `get` and `compile` throw. A refusal while getting a dialect's meta-schema is the

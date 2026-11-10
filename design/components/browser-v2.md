@@ -5,9 +5,12 @@ in browser's [design docs](https://github.com/hyperjump-io/browser/blob/v2/desig
 
 - A type parameter for property node annotations, JSON AST utilities that
   are generic over the node type, and a generic `DocumentNode<T>`.
-- Embedding and anchors aren't in browser, because only JSON Schema uses
-  them. Every document lookup, including following references, goes
-  through `getDocument`, which a subclass can override. `getDocument` also
+- Anchors aren't in browser, because only JSON Schema uses them. Embedded
+  documents are: a document's `embedded`, found from the document a
+  reference is in (`referencedIn`). Retrieval is a stack of layers, and
+  `JsonSchemaSession` adds the registries on top by overriding `fetch`.
+  Every document lookup, including following references, goes through
+  `getDocument`, which a subclass can override. `getDocument` also
   gets the document a URI identifies, for what it has beyond its values,
   like a resource's dynamic anchors. A media type plugin's
   `fragmentPointer` defines what fragments identify, and each document

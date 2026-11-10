@@ -91,7 +91,11 @@ export class JsonSchemaSession extends Session {
 
   /**
    * An embedded resource is only found by a reference from the document that
-   * contains it. Registries come next, then the URI is retrieved.
+   * contains it, which browser finds in the `referencedIn` document's
+   * embedded resources. A reference's `referencedFrom` is a resource's URI,
+   * and one URI identifies one resource in a session, so `referencedIn` is
+   * worked out from it: a document that has the resource. The registries
+   * are a layer on `fetch`, so they come next, then the URI is retrieved.
    *
    * A resource that's in more than one document is identical in each, but
    * only some of them might embed what it references. Where one doesn't, the
@@ -99,32 +103,28 @@ export class JsonSchemaSession extends Session {
    * Otherwise, a document could change what a reference in another one
    * finds.
    *
-   * Embedded resources and registries are found by the URI's {@link Id},
-   * worked out once. A URI that isn't an IRI, like a relative one, is left
-   * to the session, which resolves it against the context URI or throws for
-   * it, so it isn't looked for in them.
+   * A URI that isn't an IRI, like a relative one, is left to the session,
+   * which resolves it against the context URI or throws for it.
    *
    * @param {string} uri
    * @param {GetOptions} [options]
    */
   async getDocument(uri, options = {}) {
-    if (!isIri(uri)) {
-      return this.#getDocument(uri, undefined, options);
+    if (!isIri(uri) || options.referencedFrom === undefined || !isIri(options.referencedFrom)) {
+      return this.#getDocument(uri, options);
     }
 
     const id = normalizeIri(toAbsoluteIri(uri));
-    if (options.referencedFrom !== undefined) {
-      const resources = (this.#embedded.get(toId(options.referencedFrom)) ?? []).map((embedded) => embedded[id]);
-      const embeddedDocument = resources.find((resource) => resource !== undefined);
-      if (embeddedDocument) {
-        if (resources.some((resource) => resource === undefined)) {
-          await this.#getDocument(uri, id, options);
-        }
-        return /** @type DocumentNode<JsonSchemaNode> */ (/** @type unknown */ (embeddedDocument));
-      }
+    const containing = this.#embedded.get(toId(options.referencedFrom)) ?? [];
+    const embedding = containing.find((embedded) => embedded[id] !== undefined);
+    if (embedding === undefined) {
+      return this.#getDocument(uri, options);
     }
 
-    return this.#getDocument(uri, id, options);
+    if (containing.some((embedded) => embedded[id] === undefined)) {
+      await this.#getDocument(uri, { referencedFrom: options.referencedFrom });
+    }
+    return this.#getDocument(uri, { ...options, referencedIn: embedding[id] });
   }
 
   /**
@@ -141,11 +141,13 @@ export class JsonSchemaSession extends Session {
   }
 
   /**
-   * A document from a registry or retrieved
+   * A document from browser: embedded, from a registry, or retrieved. Its
+   * resources are added to the ones the session has, so a reference from one
+   * finds the others.
    *
-   * @type (uri: string, id: Id | undefined, options: GetOptions) => Promise<DocumentNode<JsonSchemaNode>>
+   * @type (uri: string, options: GetOptions) => Promise<DocumentNode<JsonSchemaNode>>
    */
-  async #getDocument(uri, id, options) {
+  async #getDocument(uri, options) {
     /** @type DocumentNode<JsonSchemaNode> */
     let document;
     try {

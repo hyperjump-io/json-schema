@@ -24,6 +24,22 @@ entries are in `src/registry/registry-entries.js`, which isn't exported. How
 a session finds schemas in the registries it sees is in
 `src/registry/session-registries.js`.
 
+- The registries are a layer on top of the session's stack
+  (`JsonSchemaSession.fetch`), so a schema in one is found before anything
+  is retrieved or checked by `allowRetrieval`, including where a redirect
+  leads. A registry is keyed by IRI, so the layer works out the `Id` of
+  the request's URL.
+  - It answers with a `DocumentResponse`, a response that has the resolved
+    document (`src/registry/document-response.js`), and the schema media
+    type plugin gives the session that document. An entry is resolved once
+    for every session that can share it (see
+    [Making sessions cheap](cheap-sessions.md)), and its `origin` is on the
+    document, which a response couldn't say.
+  - Plain responses with the entry's text were rejected. Each session
+    would resolve every registry schema it uses again.
+  - It works because the layer is on top, so nothing between it and the
+    plugin makes a new response that wouldn't have the document.
+
 - A schema is identified the way JSON Schema identifies it: by its `$id`
   (or `id` in draft-04), resolved against `retrievalUri`, or by
   `retrievalUri` if it has no `$id`. Only the root resource is indexed.

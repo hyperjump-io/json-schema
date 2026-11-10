@@ -55,7 +55,9 @@ because normalizing costs something and changes how it reads.
 
 `JsonSchemaSession.getDocument` overrides browser's, which every lookup goes
 through, including the references `get` follows. It works out the URI's
-`Id` once and finds embedded resources and registry entries by it. A URI
+`Id` once and finds the document that has the referencing resource by it,
+for browser to find an embedded resource in. The registries are a layer on
+`fetch`, which works out the `Id` of the request's URL (`urlToIri`). A URI
 that isn't an IRI, like a relative one, goes to browser, which resolves it
 against the context URI or throws the same `InvalidIriError` it would
 without the subclass. Browser checks the URI again, which is one pattern
