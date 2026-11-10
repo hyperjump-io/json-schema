@@ -3,6 +3,7 @@ import { toAbsoluteIri, urlToIri } from "@hyperjump/uri";
 import { parse as parseContentType } from "content-type";
 import { resolveSchemaText } from "./resolve-text.js";
 import { JsonSchemaSession } from "../session.js";
+import { DocumentResponse } from "../registry/document-response.js";
 
 /**
  * @import { MediaTypePlugin } from "@hyperjump/browser"
@@ -24,6 +25,11 @@ export class JsonSchemaMediaTypePlugin {
     // to the session
     if (!(session instanceof JsonSchemaSession)) {
       throw Error("A schema can only be retrieved in a JsonSchemaSession. Use the 'session' function of a JsonSchema to create one.");
+    }
+
+    // A registry's schema is resolved already
+    if (response instanceof DocumentResponse) {
+      return /** @type JsonSchemaDocumentNode<"success"> */ (response.document);
     }
 
     const contentType = parseContentType(response.headers.get("content-type") ?? "");

@@ -1,7 +1,8 @@
 import { jsonValue, relativeFileUrl, RetrievalError, Session } from "@hyperjump/browser";
-import { encodeIriFragment, isIri, normalizeIri, toAbsoluteIri } from "@hyperjump/uri";
+import { encodeIriFragment, isIri, normalizeIri, toAbsoluteIri, urlToIri } from "@hyperjump/uri";
 import { toId } from "./identifiers.js";
 import { SessionRegistries } from "./registry/session-registries.js";
+import { DocumentResponse } from "./registry/document-response.js";
 import { SchemaError } from "./schema/schema-error.js";
 import { withValidateFormats } from "./dialects/extend-dialect.js";
 import unknownKeyword, { keywordDefinitionUri } from "./keywords/unknown.js";
@@ -127,6 +128,19 @@ export class JsonSchemaSession extends Session {
   }
 
   /**
+   * The registries are a layer on top of the session's stack, so a schema in
+   * one is found before anything is retrieved or checked by
+   * `allowRetrieval`, including where a redirect leads. A registry is keyed
+   * by IRI, so the request's URL is converted where it comes in.
+   *
+   * @type (request: Request) => Promise<Response>
+   */
+  async fetch(request) {
+    const registryDocument = this.#registries.get(toId(urlToIri(new URL(request.url))));
+    return registryDocument ? new DocumentResponse(await registryDocument) : super.fetch(request);
+  }
+
+  /**
    * A document from a registry or retrieved
    *
    * @type (uri: string, id: Id | undefined, options: GetOptions) => Promise<DocumentNode<JsonSchemaNode>>
@@ -134,20 +148,19 @@ export class JsonSchemaSession extends Session {
   async #getDocument(uri, id, options) {
     /** @type DocumentNode<JsonSchemaNode> */
     let document;
-    const registryDocument = id === undefined ? undefined : this.#registries.get(id);
-    if (registryDocument) {
-      document = /** @type DocumentNode<JsonSchemaNode> */ (/** @type unknown */ (await registryDocument));
-    } else {
-      try {
-        document = await super.getDocument(uri, options);
-      } catch (error) {
-        // A schema with problems was retrieved. It isn't a failure to
-        // retrieve it.
-        if (error instanceof RetrievalError && error.cause instanceof SchemaError) {
-          throw error.cause;
-        }
-        throw this.#registries.retrievalError(error);
+    try {
+      document = await super.getDocument(uri, options);
+    } catch (error) {
+      // A schema with problems was retrieved. It isn't a failure to
+      // retrieve it.
+      if (error instanceof RetrievalError && error.cause instanceof SchemaError) {
+        throw error.cause;
       }
+      // The registry's layer says which entry it couldn't use
+      if (error instanceof RetrievalError && error.cause instanceof RetrievalError) {
+        throw error.cause;
+      }
+      throw this.#registries.retrievalError(error);
     }
 
     if (document.type === "json-schema-document") {
