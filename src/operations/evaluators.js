@@ -33,8 +33,16 @@ export const validateFunction = (validator, options, evaluator) => {
   const evaluation = evaluationOptions(options);
 
   switch (options.input ?? "value") {
-    case "value":
+    case "value": {
+      // The function is only for values, without output or plugins, so its
+      // evaluator is built now, when the function is made, instead of on
+      // its first call
+      if (evaluation === undefined) {
+        const flag = validator.flagEvaluator();
+        return (instance) => flag(instance);
+      }
       return (instance) => validator.validate(instance, evaluation, evaluator);
+    }
     case "json":
       return (json) => validator.validateJson(json, evaluation, evaluator);
     case "node":

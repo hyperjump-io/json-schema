@@ -18,6 +18,12 @@ export class Validator {
 
   readonly uri: string;
 
+  /**
+   * The evaluator for a value with FLAG output and no plugins, built the
+   * first time it's asked for
+   */
+  flagEvaluator(): (instance: Json) => boolean;
+
   validate<R = boolean>(instance: ReadonlyJson, options?: EvaluationOptions<R>, evaluator?: typeof instrumented): R;
   validateJson<R = boolean>(json: string, options?: EvaluationOptions<R>, evaluator?: typeof instrumented): R;
   validateNode<R = boolean>(node: JsonNode<unknown, JsonErrorNode> | JsonErrorNode, options?: EvaluationOptions<R>, evaluator?: typeof instrumented): R;

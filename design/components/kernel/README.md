@@ -35,6 +35,16 @@ There are two phases:
    compiled schema (`Validator`, which isn't exported). No `eval`. Bytecode run by one interpreter loop was tried
    instead of closures and wasn't faster (see
    [the benchmarks](../../benchmarks/README.md)).
+   - A function from `validator` or `validatorFor` without `output` or
+     `plugins` only ever uses the evaluator for a value with FLAG output
+     (`flagEvaluator`), so it's built when the function is made, not on its
+     first call. Building it was most of the first call: a median of 76
+     percent of a first pass over a corpus, and up to 95 (see
+     [Building the flag evaluator first](../../benchmarks/flag-evaluator-first.md)).
+     `compile` doesn't build one, because it doesn't know which will be
+     needed. Other options still build theirs on the first call.
+     Rejected: building every evaluator a function's options could use,
+     which for output or plugins depends on whether the instance is valid.
 
 The kernel is JSON, so a compiled schema can be serialized
 (`serialize` and `restore`). It's serialized as

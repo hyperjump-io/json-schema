@@ -71,13 +71,18 @@ export class Validator {
     return this.#kernel.uri;
   }
 
+  /** @type API.Validator["flagEvaluator"] */
+  flagEvaluator() {
+    this.#jsFlag ??= fast(this.#definitions, optimize(this.#kernel, { fast: true, plugins: false, annotations: false }));
+    return this.#jsFlag;
+  }
+
   /** @type API.Validator["validate"] */
   validate(readonlyInstance, options, evaluator) {
     // Evaluating only reads the instance
     const instance = /** @type Json */ (readonlyInstance);
     if (options === undefined) {
-      this.#jsFlag ??= fast(this.#definitions, optimize(this.#kernel, { fast: true, plugins: false, annotations: false }));
-      return /** @type any */ (this.#jsFlag(instance));
+      return /** @type any */ (this.flagEvaluator()(instance));
     }
 
     return this.#evaluate(this.#jsEvaluator, instance, false, options, noSyntaxErrors, evaluator);
@@ -88,8 +93,7 @@ export class Validator {
     if (annotating) {
       throw Error("Annotating needs an AST");
     } else if (plugins.length === 0) {
-      this.#jsFlag ??= fast(this.#definitions, optimize(this.#kernel, { fast: true, plugins: false, annotations: false }));
-      return this.#jsFlag;
+      return this.flagEvaluator();
     }
 
     const index = modeIndex(false, plugins);
