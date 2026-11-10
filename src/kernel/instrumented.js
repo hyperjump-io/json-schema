@@ -213,6 +213,51 @@ export const instrumented = (definitions, kernel, options) => {
     return mask;
   };
 
+  /**
+   * What an item schema checks, if all it checks is that the item is an
+   * array (or that it isn't anything else), its size, and the type of its
+   * items from `from` on as a mask (`typeOnlyMask`), as in `fast.js`
+   *
+   * @type (of: Expression) => { isArray: boolean; min: number; max: number; from: number; mask: number } | undefined
+   */
+  const typedArrayOnly = (of) => {
+    /** @type Expression[] */
+    let expressions = [of];
+    if (of.op === "apply") {
+      const compiled = kernel.schemas[of.schema];
+      if (typeof compiled !== "object") {
+        return undefined;
+      }
+      expressions = compiled.keywords.map((group) => group.expression);
+    }
+
+    let isArray = false;
+    let min = 0;
+    let max = Infinity;
+    /** @type {{ from: number; mask: number } | undefined} */
+    let items;
+    for (const operation of expressions.flatMap((expression) => expression.op === "all" ? expression.of : [expression])) {
+      if (operation.op === "pass" || operation.op === "annotate") {
+        continue;
+      } else if (operation.op === "typeIs" && operation.types.length === 1 && operation.types[0] === "array") {
+        isArray = true;
+      } else if (operation.op === "itemCount") {
+        min = Math.max(min, operation.min ?? 0);
+        max = Math.min(max, operation.max ?? Infinity);
+      } else if (operation.op === "eachItem" && !("unevaluated" in operation) && items === undefined) {
+        const mask = typeOnlyMask(operation.of);
+        if (mask === 0) {
+          return undefined;
+        }
+        items = { from: operation.from, mask };
+      } else {
+        return undefined;
+      }
+    }
+
+    return items === undefined ? undefined : { isArray, min, max, ...items };
+  };
+
   /** @type (mask: number, instance: I) => boolean */
   const isOfType = (mask, instance) => {
     const type = ops.typeOf(instance);
@@ -539,8 +584,24 @@ export const instrumented = (definitions, kernel, options) => {
     const isArray = type !== undefined;
     const { min = 0, max = Infinity } = count?.op === "itemCount" ? count : {};
     const from = each?.op === "eachItem" && "from" in each ? each.from : 0;
-    const of = each?.op === "eachItem" ? applyTo(each.of, info) : undefined;
     const rest = expressions.filter((expression) => expression !== type && expression !== count && expression !== each);
+
+    const typedArray = each?.op === "eachItem" ? typedArrayOnly(each.of) : undefined;
+    if (typedArray !== undefined) {
+      const items = typedArrayItems(from, typedArray);
+      return {
+        merged: (instance, marks) => {
+          if (ops.typeOf(instance) !== "array") {
+            return !isArray;
+          }
+          const length = ops.length(instance);
+          return length >= min && length <= max && items(instance, marks);
+        },
+        rest
+      };
+    }
+
+    const of = each?.op === "eachItem" ? applyTo(each.of, info) : undefined;
     return {
       merged: (instance, marks) => {
         if (ops.typeOf(instance) !== "array") {
@@ -564,6 +625,42 @@ export const instrumented = (definitions, kernel, options) => {
       },
       rest
     };
+  };
+
+  /**
+   * `eachItem` (not `unevaluated`) on an array, without plugins or
+   * annotating, whose item schema only checks that the item is an array of
+   * a size with items of a type (`typedArrayOnly`), checked in the loop
+   * instead of evaluating the item schema for each item, as in `fast.js`.
+   * An item that couldn't be parsed passes, as it does a schema.
+   *
+   * @type (from: number, typedArray: { isArray: boolean; min: number; max: number; from: number; mask: number }) => (instance: I, marks: Marks) => boolean
+   */
+  const typedArrayItems = (from, { isArray, min, max, from: itemsFrom, mask }) => (instance, marks) => {
+    // Both kinds of instance have their items in an array
+    const items = /** @type I[] */ (ops.items(instance));
+    for (let index = from; index < items.length; index++) {
+      const item = items[index];
+      const type = ops.typeOf(item);
+      if (type !== "array") {
+        if (isArray && type !== undefined) {
+          return false;
+        }
+      } else {
+        const length = ops.length(item);
+        if (length < min || length > max) {
+          return false;
+        }
+        const values = /** @type I[] */ (ops.items(item));
+        for (let at = itemsFrom; at < values.length; at++) {
+          if (!isOfType(mask, values[at])) {
+            return false;
+          }
+        }
+      }
+      marks?.add(index);
+    }
+    return true;
   };
 
   /**
@@ -909,9 +1006,15 @@ export const instrumented = (definitions, kernel, options) => {
         };
       }
       case "eachItem": {
-        const of = applyTo(expression.of, info);
         const unevaluated = "unevaluated" in expression;
         const from = "from" in expression ? expression.from : 0;
+        const typedArray = stopsEarly && !unevaluated ? typedArrayOnly(expression.of) : undefined;
+        if (typedArray !== undefined) {
+          const items = typedArrayItems(from, typedArray);
+          return (instance, marks) => ops.typeOf(instance) !== "array" || items(instance, marks);
+        }
+
+        const of = applyTo(expression.of, info);
         return (instance, marks) => {
           if (ops.typeOf(instance) !== "array") {
             return true;

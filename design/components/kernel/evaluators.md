@@ -31,7 +31,13 @@
   the type checked in the loop with a mask, and its `typeIs` of `array`,
   `itemCount`, and `eachItem` as one evaluator. That made ASTs without
   plugins 31–47% faster. An item schema that only checks the type isn't
-  checked in the loop, as it is in `fast.js`: that was slower on ASTs. The
+  checked in the loop, as it is in `fast.js`: that was slower on ASTs. One
+  that only checks that the item is an array of a size with items of a
+  type is, without plugins or annotating, in a schema like this and in an
+  `eachItem` of its own. That saves evaluating the item schema for each
+  item, and the schema of its items for each of them, and GeoJSON's ASTs
+  take 0.62 times as long
+  ([Arrays of typed arrays](../../benchmarks/kernel-in-src/arrays-of-typed-arrays.md)). The
   loops read an AST object's properties from its children, without
   `entries`, with or without plugins
   ([Evaluating ASTs](../../benchmarks/kernel-in-src/evaluating-asts.md)).
@@ -76,7 +82,8 @@
   ([Arrays of typed arrays](../../benchmarks/kernel-in-src/arrays-of-typed-arrays.md)).
   They aren't passes: the expression is the
   same, and only how `fast.js` runs it changes. `instrumented.js` can't
-  merge them, because each group has its own hook calls.
+  merge them with plugins or annotating, because each group has its own
+  hook calls, and an item schema is evaluated with its own.
 - `fast.js` compares plain values with its own `equal` instead of
   `instanceEqual`, which reads them through `InstanceOps`. `uniqueItems`
   compares every pair of a short array, and in a longer one only the

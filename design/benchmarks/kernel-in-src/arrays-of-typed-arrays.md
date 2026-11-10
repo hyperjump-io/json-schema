@@ -45,3 +45,34 @@ the same loop for it.
   polygon, through the merged evaluator, and the property loop and tag
   dispatch on each object. jsu-js inlines every level and reads named
   properties directly.
+
+## On ASTs
+
+`instrumented.js` does the same without plugins or annotating, where only
+the result and marks can be seen, in a schema evaluated as an `all` of its
+groups' expressions and in an `eachItem` of its own. Each item was an
+evaluation of the item schema, and each of its items one of their schema.
+An item that couldn't be parsed passes, as it does a schema. Checking only
+an item's type in the loop was slower on ASTs
+([Evaluating ASTs](evaluating-asts.md)), but this saves two evaluations
+for each item instead of one call.
+
+`ab.ts` on ASTs (`node`), B/A, against `fast.js` with the change above
+(HEAD then), the same corpora:
+
+| | B/A | A/A |
+| --- | --- | --- |
+| GeoJSON | 0.618–0.642 | 1.007 |
+| `cql2` | 0.966–0.967 | |
+| `cspell` | 0.996–1.016 | |
+| Others | 0.97–1.03 | |
+
+- GeoJSON went from 82.2 ms to 50.7.
+- `fabric-mod` was 1.078 and `babelrc` and `cmake-presets` 1.02 once.
+  None of them has an item schema of this shape. Run again, they were
+  0.986–1.030, and a copy against itself 0.989–1.013.
+- On JSON text, parsing is most of the time (2.1 seconds a pass on
+  GeoJSON), and a copy against itself was 0.77–1.17, so it says nothing
+  either way.
+- `ab-equal.ts` with ten mutants for each instance found no differences on
+  any corpus.

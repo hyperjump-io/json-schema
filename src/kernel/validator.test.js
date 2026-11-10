@@ -613,6 +613,16 @@ describe("Validator", () => {
     });
 
     test("items that are arrays of a size with items of a type", async () => {
+      /** @type EvaluationPlugin */
+      const plugin = {};
+      // Plain values, JSON text (an AST, without plugins), and with a plugin
+      /** @type (compiled: Awaited<ReturnType<typeof compile>>, instance: Json, expected: boolean) => void */
+      const expectValid = (compiled, instance, expected) => {
+        expect(validatorFor(compiled)(instance)).to.equal(expected);
+        expect(validatorFor(compiled, { input: "json" })(JSON.stringify(instance))).to.equal(expected);
+        expect(validatorFor(compiled, { plugins: [plugin] })(instance)).to.equal(expected);
+      };
+
       for (const [items, valid, invalid] of /** @type [Json, Json, Json][] */ ([
         [{ type: "number" }, 1.5, "1"],
         [{ type: "integer" }, 1, 1.5],
@@ -624,21 +634,21 @@ describe("Validator", () => {
           { items: { $ref: "#/$defs/position" }, $defs: { position: { type: "array", minItems: 2, maxItems: 3, items } } }
         ])) {
           const compiled = await compile(jsonSchema, await schemaFile(schema));
-          expect(validatorFor(compiled)([[valid, valid], [valid, valid, valid]])).to.equal(true);
-          expect(validatorFor(compiled)([[valid, valid], [valid, invalid]])).to.equal(false);
-          expect(validatorFor(compiled)([[valid, valid], [valid]])).to.equal(false);
-          expect(validatorFor(compiled)([[valid, valid], [valid, valid, valid, valid]])).to.equal(false);
-          expect(validatorFor(compiled)([[valid, valid], valid])).to.equal(false);
-          expect(validatorFor(compiled)([])).to.equal(true);
-          expect(validatorFor(compiled)("not an array")).to.equal(true);
+          expectValid(compiled, [[valid, valid], [valid, valid, valid]], true);
+          expectValid(compiled, [[valid, valid], [valid, invalid]], false);
+          expectValid(compiled, [[valid, valid], [valid]], false);
+          expectValid(compiled, [[valid, valid], [valid, valid, valid, valid]], false);
+          expectValid(compiled, [[valid, valid], valid], false);
+          expectValid(compiled, [], true);
+          expectValid(compiled, "not an array", true);
         }
       }
 
       // Without `type`, an item that isn't an array passes
       const untyped = await compile(jsonSchema, await schemaFile({ items: { minItems: 2, items: { type: "number" } } }));
-      expect(validatorFor(untyped)([[1, 2], "not an array", [3, 4]])).to.equal(true);
-      expect(validatorFor(untyped)([[1, 2], [3]])).to.equal(false);
-      expect(validatorFor(untyped)([[1, "2"]])).to.equal(false);
+      expectValid(untyped, [[1, 2], "not an array", [3, 4]], true);
+      expectValid(untyped, [[1, 2], [3]], false);
+      expectValid(untyped, [[1, "2"]], false);
 
       // After `prefixItems`, in the array and in each item
       for (const items of /** @type Json[] */ ([{ type: "number" }, { type: ["number", "null"] }])) {
@@ -646,9 +656,28 @@ describe("Validator", () => {
           prefixItems: [true],
           items: { type: "array", minItems: 2, prefixItems: [true], items }
         }));
-        expect(validatorFor(prefixed)(["not an array", ["not a number", 1]])).to.equal(true);
-        expect(validatorFor(prefixed)(["not an array", [1, "not a number"]])).to.equal(false);
-        expect(validatorFor(prefixed)(["not an array", "not an array"])).to.equal(false);
+        expectValid(prefixed, ["not an array", ["not a number", 1]], true);
+        expectValid(prefixed, ["not an array", [1, "not a number"]], false);
+        expectValid(prefixed, ["not an array", "not an array"], false);
+      }
+
+      // With the array's own size checked too
+      const positions = await compile(jsonSchema, await schemaFile({
+        type: "array",
+        maxItems: 2,
+        items: { type: "array", minItems: 2, items: { type: "number" } }
+      }));
+      expectValid(positions, [[1, 2], [3, 4]], true);
+      expectValid(positions, [[1, 2], [3, 4], [5, 6]], false);
+      expectValid(positions, [[1, 2], [3]], false);
+
+      // A value that couldn't be parsed isn't evaluated, so it passes
+      for (const options of [undefined, { plugins: [plugin] }]) {
+        /** @type (json: string) => boolean */
+        const validate = (json) => /** @type boolean */ (validatorFor(positions, { input: "node", ...options })(fromJson(json, noUrl).node));
+        expect(validate("[[1, 2], @]")).to.equal(true);
+        expect(validate("[[1, @], [3, 4]]")).to.equal(true);
+        expect(validate("[[1, @], [3]]")).to.equal(false);
       }
     });
   });
@@ -1124,7 +1153,9 @@ describe("Validator", () => {
         }));
 
         expect(validatorFor(compiled)([[1], [2, 3]])).to.equal(true);
+        expect(validatorFor(compiled, { input: "json" })(JSON.stringify([[1], [2, 3]]))).to.equal(true);
         expect(validatorFor(compiled)([[1], []])).to.equal(false);
+        expect(validatorFor(compiled, { input: "json" })(JSON.stringify([[1], []]))).to.equal(false);
       }
     });
   });
