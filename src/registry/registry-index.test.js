@@ -37,6 +37,15 @@ describe("RegistryIndex", () => {
     });
   });
 
+  test("a problem identifying an entry added as a value has no position", () => {
+    const registry = new SchemaRegistry().with({ $schema: v1DialectUri, $id: "https://example.com/a#foo" }, { retrievalUri: uri });
+    const index = new RegistryIndex(v1(), registry);
+    const error = index.lookup(toId(uri))?.error;
+
+    expect(error).toMatchObject({ reason: expect.stringContaining("can't have a fragment") });
+    expect(/** @type {{ place?: unknown }} */ (error).place).to.equal(undefined);
+  });
+
   test("an entry that isn't valid JSON can't be identified", () => {
     const registry = new SchemaRegistry().with(`{ "$schema": "${v1DialectUri}", }`, { retrievalUri: uri });
     const index = new RegistryIndex(v1(), registry);

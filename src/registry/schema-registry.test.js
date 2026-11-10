@@ -483,6 +483,24 @@ describe("SchemaRegistry", () => {
       });
     });
 
+    test("a problem in a schema added as text has its position", async () => {
+      const registry = registryOf(JSON.stringify(v1({ $id: "https://example.com/a", type: 42 }), null, "  "));
+
+      await expect(compile(registry, "https://example.com/a")).rejects.toMatchObject({
+        messages: [{ ruleId: "https://json-schema.org/keyword/type", place: { start: { line: 4 } } }]
+      });
+    });
+
+    // Its text is made by the registry, so a position in it wouldn't be one
+    // the schema's author could find
+    test("a problem in a schema added as a value has no position", async () => {
+      const registry = registryOf(v1({ $id: "https://example.com/a", type: 42 }));
+
+      const error = await compile(registry, "https://example.com/a").catch((/** @type unknown */ error) => error);
+      expect(error).toMatchObject({ messages: [{ ruleId: "https://json-schema.org/keyword/type" }] });
+      expect(/** @type {{ messages: { place?: unknown }[] }} */ (error).messages[0].place).to.equal(undefined);
+    });
+
     // So a tool can say which file a problem is in
     test("a problem has the schema's origin", async () => {
       const registry = new SchemaRegistry([{ schema: v1({ $id: "https://example.com/a", type: 42 }), origin: "schemas/a.schema.json" }]);

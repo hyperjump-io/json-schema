@@ -98,14 +98,18 @@ const createEntry = (schema, options) => {
     throw Error(`A schema in a registry can't have a 'file:' retrieval URI. A schema in a file is retrieved from it. Use 'origin' to say which file a schema came from.`);
   }
 
-  const entry = Object.freeze({
+  const entry = {
     schema: typeof schema === "string" ? schema : JSON.stringify(schema, null, "  "),
     retrievalUri: retrievalUri,
     dialectUri: options.dialectUri === undefined ? undefined : toId(options.dialectUri),
     origin: options.origin
-  });
+  };
+  // It isn't enumerable, so iterating a registry gives entries as they're
+  // documented
+  Object.defineProperty(entry, "stringified", { value: typeof schema !== "string" });
+  Object.freeze(entry);
   createdEntries.add(entry);
-  return entry;
+  return /** @type RegistryEntry */ (entry);
 };
 
 /**

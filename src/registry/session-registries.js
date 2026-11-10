@@ -1,6 +1,6 @@
 import { RetrievalError } from "@hyperjump/browser";
 import { toId } from "../identifiers.js";
-import { resolveSchemaText } from "../schema/resolve-text.js";
+import { resolveSchemaText, resolveSchemaValue } from "../schema/resolve-text.js";
 import { RegistryIndex } from "./registry-index.js";
 import { SchemaRegistry } from "./schema-registry.js";
 
@@ -278,5 +278,8 @@ const sharedDocuments = new WeakMap();
  * @type (session: JsonSchemaSession, indexed: IndexedEntry) => Promise<JsonSchemaDocumentNode>
  */
 const resolveEntry = async (session, { entry, uri }) => {
-  return resolveSchemaText(entry.schema, session, entry.retrievalUri ?? uri, entry.dialectUri, entry.origin);
+  const documentUri = entry.retrievalUri ?? uri;
+  return entry.stringified
+    ? resolveSchemaValue(JSON.parse(entry.schema), session, documentUri, entry.dialectUri, entry.origin)
+    : resolveSchemaText(entry.schema, session, documentUri, entry.dialectUri, entry.origin);
 };

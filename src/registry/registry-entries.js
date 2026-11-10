@@ -8,10 +8,12 @@
 
 /**
  * A schema as it was added, as JSON text. It never changes, so everything
- * derived from it can be cached.
+ * derived from it can be cached. `stringified` says the text was made from a
+ * value, which is resolved without positions, so its problems have none.
  *
  * @typedef {{
  *   schema: string;
+ *   stringified: boolean;
  *   retrievalUri?: Id;
  *   dialectUri?: Id;
  *   origin?: string;

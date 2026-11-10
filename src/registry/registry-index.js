@@ -274,8 +274,8 @@ export class RegistryIndex {
  *
  * Every entry is identified when a registry is first used, so it's parsed
  * with `JSON.parse`, which is much faster than building a tree with
- * positions. Only a problem needs positions, so the entry is parsed again
- * into a tree if there is one.
+ * positions. Only a problem needs positions, so an entry added as text is
+ * parsed again into a tree if there is one.
  *
  * @type (jsonSchema: JsonSchema, entry: RegistryEntry, registryDialect: RegistryDialects) => Identification
  */
@@ -283,7 +283,8 @@ export const identify = (jsonSchema, entry, registryDialect) => {
   const root = parsedRoot(entry);
   if (root) {
     const identification = identifyRoot(jsonSchema, entry, registryDialect, root);
-    if (!("error" in identification)) {
+    // A value has no positions, so it isn't parsed again for them
+    if (!("error" in identification) || entry.stringified) {
       return identification;
     }
   }

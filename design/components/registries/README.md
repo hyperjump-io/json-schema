@@ -59,10 +59,31 @@ a session finds schemas in the registries it sees is in
   so changing it afterward doesn't change the registry, and everything a
   `JsonSchema` caches from an entry stays right. A value that can't be
   JSON, like one with a cycle, throws then instead of when a session finds
-  it. Resolving a schema always parsed text, so only identifying a value
-  costs more: `JSON.parse` instead of reading the value. Rejected: keeping
-  the value, which a caller could change, and `structuredClone`, which
-  copies a value only to stringify it later.
+  it. Identifying and resolving a value costs a `JSON.parse` of its text
+  instead of reading the value. Rejected: keeping the value, which a caller
+  could change, and `structuredClone`, which copies a value only to
+  stringify it later.
+- A schema added as a value has no positions. Its text is made by the
+  registry, so a line and column in it aren't anywhere the schema's author
+  could find. It's resolved from `JSON.parse` and `fromJs`, a tree without
+  positions, instead of browser's parser, which builds one with them, so
+  neither its problems nor lint's messages about it have a `place`. Text
+  made by `JSON.stringify` is always valid JSON, with no comments or
+  duplicate names, so `JSON.parse` reads it as the parser does. Building
+  the tree is 4 to 10 times as fast, which made compiling a large schema
+  about a quarter faster (see
+  [Registry values](../../benchmarks/registry-values.md)). Text added as
+  text is parsed with positions, as before.
+  - The entry says it was a value with `stringified`, a property that isn't
+    enumerable. Entries are what iterating a registry gives, and
+    `SchemaRegistryEntry` doesn't have it. Rejected: a documented field,
+    which adds to the API only to say how an entry is parsed, and a
+    `WeakSet` of entries beside `createdEntries`, which is state that
+    isn't on the entry it's about.
+  - Rejected: resolving a value without positions, and again from its
+    text if it has a problem, so its problems have positions. They'd be
+    positions in text its author never saw, and the docs say a value's
+    messages have none.
 - A registry entry can't be identified by a `file:` URI: `retrievalUri`
   can't be one, and neither can its `$id`. A schema in a file is retrieved
   from the file, so a `file:` URI only ever comes from browser. Before

@@ -53,3 +53,4 @@ something that can be run.
   - [String lengths without counting](kernel-in-src/string-lengths.md)
   - [The root without a wrapper](kernel-in-src/root-without-a-wrapper.md)
 - [Bundle size](bundle-size.md) (2026-10-29)
+- [Registry values](registry-values.md) (2026-11-10)
