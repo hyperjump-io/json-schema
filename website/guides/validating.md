@@ -42,8 +42,8 @@ its `$id`. If it doesn't have one, it gets a new `urn:uuid:` URI. That URI
 is what its errors' `absoluteKeywordLocation` uses, and relative references
 in the schema are resolved against it.
 
-It can reference schemas in a [registry](loading-schemas.md#registries).
-But its `$id` can't be one that a registry also has, even if the schemas
+It can reference schemas in a [registry](loading-schemas.md#registries),
+but its `$id` can't be one that a registry also has, even if the schemas
 are identical. A boolean schema has no `$schema`, so it needs the
 `defaultDialectUri` config.
 
@@ -91,8 +91,8 @@ order they appear in the text:
 
 | Error | Source | Rule ID | Position |
 | --- | --- | --- | --- |
-| -1 is less than the minimum | json-schema | `https://json-schema.org/keyword/minimum` | 1:27-1:29 |
-| A trailing comma | json | trailing-comma | 1:29-1:30 |
+| -1 is less than the minimum | `json-schema` | `https://json-schema.org/keyword/minimum` | 1:27-1:29 |
+| A trailing comma | `json` | `trailing-comma` | 1:29-1:30 |
 
 The position is the error's `place`. A `place` is a
 [unist position](https://github.com/syntax-tree/unist#position). It has the
