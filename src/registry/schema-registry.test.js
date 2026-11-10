@@ -52,6 +52,26 @@ describe("SchemaRegistry", () => {
       expect(validatorFor(await compile(registry, "https://example.com/a/~b"))(42)).to.equal(false);
     });
 
+    // A request's URL has a non-ASCII host in its ASCII form, and the
+    // registry's identifiers are IRIs, so both forms are one identifier
+    test.each([
+      ["a non-ASCII host, by its ASCII form", "https://exämple.com/a", "https://xn--exmple-cua.com/a"],
+      ["an ASCII form, by the non-ASCII host", "https://xn--exmple-cua.com/a", "https://exämple.com/a"]
+    ])("a schema whose $id has %s is found", async (_name, id, uri) => {
+      const registry = registryOf(v1({ $id: id, type: "string" }));
+
+      expect(validatorFor(await compile(registry, uri))(42)).to.equal(false);
+    });
+
+    test("a reference finds a schema whose $id has a non-ASCII host by its ASCII form", async () => {
+      const registry = registryOf(
+        v1({ $id: "https://exämple.com/b", type: "string" }),
+        v1({ $id: "https://example.com/a", $ref: "https://xn--exmple-cua.com/b" })
+      );
+
+      expect(validatorFor(await compile(registry, "https://example.com/a"))(42)).to.equal(false);
+    });
+
     test("a reference finds a schema by an equivalent identifier", async () => {
       const registry = registryOf(
         v1({ $id: "https://example.com/~b", type: "string" }),
