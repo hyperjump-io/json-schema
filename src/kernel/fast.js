@@ -27,6 +27,14 @@ import { readsMarks } from "./kernel.js";
  */
 
 /**
+ * What an item schema checks, if all it checks is that the item is an array
+ * (`isArray`) of a size from `min` to `max` whose items from `from` on are
+ * of `types`. Without `isArray`, an item that isn't an array passes.
+ *
+ * @typedef {{ isArray: boolean; min: number; max: number; from: number; types: TypeName[] }} TypedArray
+ */
+
+/**
  * Evaluation of plain values without plugins (FLAG). It's written for plain
  * values, which is faster than evaluating through instance operations.
  *
@@ -341,7 +349,7 @@ export const fast = (definitions, kernel) => {
       }
       case "eachItem": {
         const unevaluated = "unevaluated" in expression;
-        if (!unevaluated && onlyTypes(expression.of) !== undefined) {
+        if (!unevaluated && (onlyTypes(expression.of) !== undefined || onlyTypedArray(expression.of) !== undefined)) {
           const items = eachItemLoop(expression);
           return (instance, marks) => !Array.isArray(instance) || items(instance, marks);
         }
@@ -693,13 +701,20 @@ export const fast = (definitions, kernel) => {
   /**
    * `eachItem` (not `unevaluated`) on an array. An item schema that only
    * checks the type is checked in the loop instead of being called for each
-   * item, which was most of the time on arrays of numbers.
+   * item, which was most of the time on arrays of numbers. So is one that
+   * only checks that the item is an array of a size with items of a type
+   * (`typedArrayLoop`).
    *
    * @type (expression: { from: number; of: Expression }) => (instance: Json[], marks: Marks) => boolean
    */
   const eachItemLoop = ({ from, of }) => {
     const types = onlyTypes(of);
     if (types === undefined) {
+      const typedArray = onlyTypedArray(of);
+      if (typedArray !== undefined) {
+        return typedArrayLoop(from, typedArray);
+      }
+
       const evaluate = child(of);
       return (instance, marks) => {
         for (let index = from; index < instance.length; index++) {
@@ -751,6 +766,65 @@ export const fast = (definitions, kernel) => {
   };
 
   /**
+   * `eachItem` (not `unevaluated`) whose item schema only checks that the
+   * item is an array of a size with items of a type, checked in the loop.
+   * The merged array evaluator (`mergeItems`) is a call for each item, and
+   * it makes another to its own loop. On arrays of arrays of numbers, like
+   * GeoJSON's coordinates, those calls were most of the time.
+   *
+   * @type (from: number, typedArray: TypedArray) => (instance: Json[], marks: Marks) => boolean
+   */
+  const typedArrayLoop = (from, { isArray, min, max, from: itemsFrom, types }) => {
+    // `typeof` with a literal is faster than the mask, as in `eachItemLoop`
+    if (types.length === 1 && types[0] === "number") {
+      return (instance, marks) => {
+        for (let index = from; index < instance.length; index++) {
+          const item = instance[index];
+          if (!Array.isArray(item)) {
+            if (isArray) {
+              return false;
+            }
+          } else if (item.length < min || item.length > max) {
+            return false;
+          } else {
+            for (let at = itemsFrom; at < item.length; at++) {
+              if (typeof item[at] !== "number") {
+                return false;
+              }
+            }
+          }
+          marks?.add(index);
+        }
+        return true;
+      };
+    }
+
+    const mask = typeMask(types);
+    const integer = types.includes("integer") && !types.includes("number");
+    return (instance, marks) => {
+      for (let index = from; index < instance.length; index++) {
+        const item = instance[index];
+        if (!Array.isArray(item)) {
+          if (isArray) {
+            return false;
+          }
+        } else if (item.length < min || item.length > max) {
+          return false;
+        } else {
+          for (let at = itemsFrom; at < item.length; at++) {
+            const value = item[at];
+            if ((mask & (1 << typeIndex(value))) === 0 && !(integer && Number.isInteger(value))) {
+              return false;
+            }
+          }
+        }
+        marks?.add(index);
+      }
+      return true;
+    };
+  };
+
+  /**
    * The types an expression checks, if that's all it does, including
    * through applying a schema that only checks the type
    *
@@ -763,6 +837,51 @@ export const fast = (definitions, kernel) => {
       return expressions.length === 1 && expressions[0].op === "typeIs" ? expressions[0].types : undefined;
     }
     return expression.op === "typeIs" ? expression.types : undefined;
+  };
+
+  /**
+   * What an item schema checks, if all it checks is that the item is an
+   * array (or that it isn't anything else), its size, and the type of its
+   * items, including through applying a schema that only checks that
+   *
+   * @type (expression: Expression) => TypedArray | undefined
+   */
+  const onlyTypedArray = (expression) => {
+    /** @type Expression[] */
+    let expressions = [expression];
+    if (expression.op === "apply") {
+      const compiled = kernel.schemas[expression.schema];
+      if (typeof compiled !== "object") {
+        return undefined;
+      }
+      expressions = compiled.keywords.map((group) => group.expression);
+    }
+
+    let isArray = false;
+    let min = 0;
+    let max = Infinity;
+    /** @type {{ from: number; types: TypeName[] } | undefined} */
+    let items;
+    for (const operation of expressions.flatMap((subexpression) => subexpression.op === "all" ? subexpression.of : [subexpression])) {
+      if (isInert(operation)) {
+        continue;
+      } else if (operation.op === "typeIs" && operation.types.length === 1 && operation.types[0] === "array") {
+        isArray = true;
+      } else if (operation.op === "itemCount") {
+        min = Math.max(min, operation.min ?? 0);
+        max = Math.min(max, operation.max ?? Infinity);
+      } else if (operation.op === "eachItem" && !("unevaluated" in operation) && items === undefined) {
+        const types = onlyTypes(operation.of);
+        if (types === undefined) {
+          return undefined;
+        }
+        items = { from: operation.from, types };
+      } else {
+        return undefined;
+      }
+    }
+
+    return items === undefined ? undefined : { isArray, min, max, ...items };
   };
 
   /**

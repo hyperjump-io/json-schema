@@ -68,7 +68,13 @@
   schema only checks the type checks it in the loop instead of calling
   it for each item. A call costs about as much as the check, so on arrays
   of numbers, like GeoJSON's coordinates, calls were most of the time
-  ([Item loops](../../benchmarks/kernel-in-src/item-loops.md)). They aren't passes: the expression is the
+  ([Item loops](../../benchmarks/kernel-in-src/item-loops.md)). An item
+  schema that only checks that the item is an array of a size with items
+  of a type is checked in the loop too, instead of a call to the merged
+  evaluator for each item and its call to its own loop. That was most of
+  the time left on GeoJSON, whose coordinates are arrays of positions
+  ([Arrays of typed arrays](../../benchmarks/kernel-in-src/arrays-of-typed-arrays.md)).
+  They aren't passes: the expression is the
   same, and only how `fast.js` runs it changes. `instrumented.js` can't
   merge them, because each group has its own hook calls.
 - `fast.js` compares plain values with its own `equal` instead of

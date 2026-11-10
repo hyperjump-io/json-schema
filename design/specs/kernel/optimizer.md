@@ -4,7 +4,8 @@ The optimizer rewrites expressions for evaluation. Without plugins,
 anything that keeps the result and the marks is allowed, like inlining
 `apply` or `not` of `not`. What's implemented is merging a schema's
 property operations into one loop and its array operations into one
-evaluator, checking an item schema that only checks the type in the loop
+evaluator, checking an item schema that only checks the type, or only
+that the item is an array of a size with items of a type, in the loop
 over the items, resolving `unevaluated` selectors that
 don't depend on the instance, folding schemas that always pass,
 evaluating only the expressions of an `any` or `one` that can pass the

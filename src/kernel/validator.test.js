@@ -82,11 +82,19 @@ const requiredKeyword = {
   lower: (names) => ({ op: "all", of: names.map((name) => ({ op: "hasProperty", name })) })
 };
 
-/** @type Keyword<Expression> */
+/** @type Keyword<Expression[]> */
+const prefixItemsKeyword = {
+  uri: "https://example.com/keyword/prefixItems",
+  shape: { array: "schema" },
+  lower: (schemas) => ({ op: "all", of: schemas.map((schema, index) => ({ op: "item", index, of: schema })) })
+};
+
+/** @type Keyword<Expression, "schema", { prefixItems?: Expression[] }> */
 const itemsKeyword = {
   uri: "https://example.com/keyword/items",
+  siblings: { prefixItems: prefixItemsKeyword.uri },
   shape: "schema",
-  lower: (schema) => ({ op: "eachItem", from: 0, of: schema })
+  lower: (schema, { prefixItems }) => ({ op: "eachItem", from: prefixItems?.length ?? 0, of: schema })
 };
 
 /** @type Keyword<number> */
@@ -94,6 +102,13 @@ const minItemsKeyword = {
   uri: "https://example.com/keyword/minItems",
   shape: "data",
   lower: (min) => ({ op: "itemCount", min })
+};
+
+/** @type Keyword<number> */
+const maxItemsKeyword = {
+  uri: "https://example.com/keyword/maxItems",
+  shape: "data",
+  lower: (max) => ({ op: "itemCount", max })
 };
 
 /** @type Keyword<boolean> */
@@ -311,8 +326,8 @@ const dynamicPropertiesKeyword = {
 
 /** @type Keyword[] */
 const keywords = [
-  idKeyword, anchorKeyword, dynamicAnchorKeyword, typeKeyword, minimumKeyword, titleKeyword, propertiesKeyword, patternPropertiesKeyword, additionalPropertiesKeyword, requiredKeyword, itemsKeyword,
-  minItemsKeyword, uniqueItemsKeyword, allOfKeyword, anyOfKeyword, refKeyword, dynamicRefKeyword, unevaluatedPropertiesKeyword, unevaluatedItemsKeyword, ifKeyword,
+  idKeyword, anchorKeyword, dynamicAnchorKeyword, typeKeyword, minimumKeyword, titleKeyword, propertiesKeyword, patternPropertiesKeyword, additionalPropertiesKeyword, requiredKeyword, prefixItemsKeyword, itemsKeyword,
+  minItemsKeyword, maxItemsKeyword, uniqueItemsKeyword, allOfKeyword, anyOfKeyword, refKeyword, dynamicRefKeyword, unevaluatedPropertiesKeyword, unevaluatedItemsKeyword, ifKeyword,
   sortedKeyword, propertiesByTypeKeyword, firstOfKeyword, firstOfPropertiesKeyword, sameAsKeyword, maxUnevaluatedKeyword, dynamicPropertiesKeyword,
   { uri: "https://example.com/keyword/defs", shape: { map: "schema" } },
   { uri: "https://example.com/keyword/then", shape: "schema" }
@@ -594,6 +609,46 @@ describe("Validator", () => {
         expect(validatorFor(compiled)([valid, valid])).to.equal(true);
         expect(validatorFor(compiled)([valid, invalid])).to.equal(false);
         expect(validatorFor(compiled)("not an array")).to.equal(true);
+      }
+    });
+
+    test("items that are arrays of a size with items of a type", async () => {
+      for (const [items, valid, invalid] of /** @type [Json, Json, Json][] */ ([
+        [{ type: "number" }, 1.5, "1"],
+        [{ type: "integer" }, 1, 1.5],
+        [{ type: ["integer", "string"] }, "1", 1.5],
+        [{ type: "number", minimum: 0 }, 1, -1]
+      ])) {
+        for (const schema of /** @type Record<string, Json>[] */ ([
+          { items: { type: "array", minItems: 2, maxItems: 3, items } },
+          { items: { $ref: "#/$defs/position" }, $defs: { position: { type: "array", minItems: 2, maxItems: 3, items } } }
+        ])) {
+          const compiled = await compile(jsonSchema, await schemaFile(schema));
+          expect(validatorFor(compiled)([[valid, valid], [valid, valid, valid]])).to.equal(true);
+          expect(validatorFor(compiled)([[valid, valid], [valid, invalid]])).to.equal(false);
+          expect(validatorFor(compiled)([[valid, valid], [valid]])).to.equal(false);
+          expect(validatorFor(compiled)([[valid, valid], [valid, valid, valid, valid]])).to.equal(false);
+          expect(validatorFor(compiled)([[valid, valid], valid])).to.equal(false);
+          expect(validatorFor(compiled)([])).to.equal(true);
+          expect(validatorFor(compiled)("not an array")).to.equal(true);
+        }
+      }
+
+      // Without `type`, an item that isn't an array passes
+      const untyped = await compile(jsonSchema, await schemaFile({ items: { minItems: 2, items: { type: "number" } } }));
+      expect(validatorFor(untyped)([[1, 2], "not an array", [3, 4]])).to.equal(true);
+      expect(validatorFor(untyped)([[1, 2], [3]])).to.equal(false);
+      expect(validatorFor(untyped)([[1, "2"]])).to.equal(false);
+
+      // After `prefixItems`, in the array and in each item
+      for (const items of /** @type Json[] */ ([{ type: "number" }, { type: ["number", "null"] }])) {
+        const prefixed = await compile(jsonSchema, await schemaFile({
+          prefixItems: [true],
+          items: { type: "array", minItems: 2, prefixItems: [true], items }
+        }));
+        expect(validatorFor(prefixed)(["not an array", ["not a number", 1]])).to.equal(true);
+        expect(validatorFor(prefixed)(["not an array", [1, "not a number"]])).to.equal(false);
+        expect(validatorFor(prefixed)(["not an array", "not an array"])).to.equal(false);
       }
     });
   });
@@ -1058,6 +1113,18 @@ describe("Validator", () => {
           expect(validatorFor(compiled)([1, 2])).to.equal(true);
           expect(validatorFor(compiled)([1, true])).to.equal(false);
         }
+      }
+    });
+
+    test("items evaluated by subschemas whose items are arrays of a type", async () => {
+      for (const items of /** @type Json[] */ ([{ type: "number" }, { type: ["number", "string"] }])) {
+        const compiled = await compile(jsonSchema, await schemaFile({
+          anyOf: [{ items: { type: "array", minItems: 1, items } }, { type: "object" }],
+          unevaluatedItems: false
+        }));
+
+        expect(validatorFor(compiled)([[1], [2, 3]])).to.equal(true);
+        expect(validatorFor(compiled)([[1], []])).to.equal(false);
       }
     });
   });
@@ -1652,8 +1719,10 @@ const testDialect = {
     patternProperties: patternPropertiesKeyword.uri,
     additionalProperties: additionalPropertiesKeyword.uri,
     required: requiredKeyword.uri,
+    prefixItems: prefixItemsKeyword.uri,
     items: itemsKeyword.uri,
     minItems: minItemsKeyword.uri,
+    maxItems: maxItemsKeyword.uri,
     uniqueItems: uniqueItemsKeyword.uri,
     allOf: allOfKeyword.uri,
     anyOf: anyOfKeyword.uri,
