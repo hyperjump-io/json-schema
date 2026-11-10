@@ -1,6 +1,6 @@
 import type { DocumentNode, GetOptions, Json, Session } from "@hyperjump/browser";
 import type { Data } from "unist";
-import type { JsonSchemaNode } from "./schema/schema-ast.d.ts";
+import type { JsonSchemaDocumentNode, JsonSchemaNode } from "./schema/schema-ast.d.ts";
 import type { Dialect } from "./dialect.d.ts";
 import type { SchemaRegistry } from "./registry/schema-registry.d.ts";
 import type { JsonSchema } from "./json-schema.d.ts";
@@ -38,16 +38,26 @@ export class JsonSchemaSession<S = any> extends Session<JsonSchemaNode> {
 
   /**
    * Documents are found in this order: an embedded resource, if the
-   * reference is from the document that contains it (`referencedFrom`); a
-   * schema in the session's registry, then in the {@link JsonSchema}'s
-   * `registry`, which are a layer on {@link fetch}; then it's retrieved.
+   * reference is from the document that contains it; a schema in the
+   * session's registry, then in
+   * the {@link JsonSchema}'s `registry`, which are a layer on `fetch`;
+   * then it's retrieved.
    *
-   * @throws SchemaError if the schema has problems. It has every problem in
-   * the document.
-   * @throws RetrievalError from `@hyperjump/browser` if more than one schema
-   * in the two registries is found by the URI.
+   * @throws RetrievalError from `@hyperjump/browser` if it can't be found.
+   * Its `cause` is a SchemaError if the schema has problems, with every
+   * problem in the document, or an error that says more than one schema in
+   * the two registries is found by the URI.
    */
   getDocument(uri: string, options?: GetOptions): Promise<DocumentNode<JsonSchemaNode>>;
+
+  /**
+   * Add a schema document's resources to the ones the session has. The schema
+   * media type plugins do this for every schema document they parse.
+   *
+   * @throws SchemaError if another document the session has has a different
+   * resource with the same URI.
+   */
+  addResources(document: JsonSchemaDocumentNode): void;
 
   /**
    * Get a dialect. If it isn't in the {@link JsonSchema}'s config or

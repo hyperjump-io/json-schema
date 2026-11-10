@@ -132,11 +132,11 @@ export class SessionRegistries {
   /**
    * A schema in a registry that's waiting for its dialect or can't be
    * identified might be the one that was asked for, so a failure to retrieve
-   * a URI says so.
+   * a URI says so. These are the reasons, if there are any.
    *
-   * @type (error: unknown) => unknown
+   * @type () => Error[]
    */
-  retrievalError(error) {
+  missReasons() {
     /** @type Set<string> */
     const dialects = new Set();
     /** @type Error[] */
@@ -157,12 +157,7 @@ export class SessionRegistries {
     if (unidentified.length > 0) {
       reasons.push(new AggregateError(unidentified, "Some schemas in registries can't be identified"));
     }
-    // The error says which URI was retrieved, normalized
-    if (reasons.length === 0 || !(error instanceof RetrievalError)) {
-      return error;
-    }
-
-    return new RetrievalError(error.url, { cause: new AggregateError([error, ...reasons], reasons[0].message) });
+    return reasons;
   }
 
   /**

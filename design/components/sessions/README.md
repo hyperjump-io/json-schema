@@ -32,9 +32,17 @@ Both libraries have a long-lived object and sessions created from it, and
   have their own session, so they can't see each other's registries. A
   compiled schema doesn't need its session after compiling, because its
   kernel is self-contained.
-- The registries' layer (`fetch`), the `getDocument` override, and the
-  embedded index (see [Schema AST](../../specs/schema-ast.md)) are on
-  `JsonSchemaSession`.
+- The registries' layer (`fetch`), `referencingDocument`, and the embedded
+  index (see [Schema AST](../../specs/schema-ast.md)) are on
+  `JsonSchemaSession`. It doesn't override `getDocument`, so browser finds
+  every document, and a resource's document is added to the index when a
+  schema media type plugin parses it (`addResources`), which checks that
+  one URI identifies one resource.
+- The session's `get` and `getDocument` fail with browser's
+  `RetrievalError` for a schema with problems, with the `SchemaError` as its
+  `cause`, because a document that can't be used fails its retrieval. The
+  operations, like `compile`, `bundle`, and `lint`, throw the `SchemaError`
+  itself, because the schema was found (`schemaErrorOf`).
 - An operation given a `JsonSchema` runs in a new session, so each call
   sees changes. Given a session, it runs in that session. Sessions only
   browse; compiling, bundling, and linting are functions (see

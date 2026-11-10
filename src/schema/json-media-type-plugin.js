@@ -34,6 +34,7 @@ export class JsonOrSchemaMediaTypePlugin {
 
     const contentType = parseContentType(response.headers.get("content-type") ?? "application/json");
     const document = await resolveSchemaText(text, /** @type JsonSchemaSession */ (session), uri, contentType.parameters.schema);
+    /** @type JsonSchemaSession */ (session).addResources(document);
     return /** @type DocumentNode */ (/** @type unknown */ (document));
   }
 }

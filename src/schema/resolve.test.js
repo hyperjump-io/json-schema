@@ -1013,8 +1013,11 @@ describe("jsonSchemaResolve", () => {
       const session = jsonSchema.session();
       const uri = await schemaFile("invalid.schema.json", { type: "string" });
 
+      // A schema that can't be used fails its retrieval, with the problems
+      // as the cause
       await expect(session.get(uri)).rejects.toMatchObject({
-        messages: [{ ruleId: "missing-dialect", severity: "error", uri: uri }]
+        name: "RetrievalError",
+        cause: { name: "SchemaError", messages: [{ ruleId: "missing-dialect", severity: "error", uri: uri }] }
       });
     });
 
@@ -1029,12 +1032,14 @@ describe("jsonSchemaResolve", () => {
       const uri = pathToFileURL(path).toString();
 
       await expect(session.get(uri)).rejects.toMatchObject({
-        messages: [
-          { source: "json", ruleId: "trailing-comma", severity: "error", uri: uri, place: { start: { line: 4, column: 24 } } },
-          { source: "json", ruleId: "trailing-comma", place: { start: { line: 4, column: 27 } } },
-          { source: "json-schema", ruleId: idKeyword.uri, place: { start: { line: 3, column: 10 } } },
-          { source: "json-schema", ruleId: "invalid-schema", place: { start: { line: 4, column: 19 } } }
-        ]
+        cause: {
+          messages: [
+            { source: "json", ruleId: "trailing-comma", severity: "error", uri: uri, place: { start: { line: 4, column: 24 } } },
+            { source: "json", ruleId: "trailing-comma", place: { start: { line: 4, column: 27 } } },
+            { source: "json-schema", ruleId: idKeyword.uri, place: { start: { line: 3, column: 10 } } },
+            { source: "json-schema", ruleId: "invalid-schema", place: { start: { line: 4, column: 19 } } }
+          ]
+        }
       });
     });
   });

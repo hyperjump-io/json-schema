@@ -1,5 +1,5 @@
-import { jsonValue, relativeFileUrl, RetrievalError, Session } from "@hyperjump/browser";
-import { encodeIriFragment, isIri, normalizeIri, toAbsoluteIri, urlToIri } from "@hyperjump/uri";
+import { HttpError, jsonValue, relativeFileUrl, RetrievalError, Session } from "@hyperjump/browser";
+import { encodeIriFragment, urlToIri } from "@hyperjump/uri";
 import { toId } from "./identifiers.js";
 import { SessionRegistries } from "./registry/session-registries.js";
 import { DocumentResponse } from "./registry/document-response.js";
@@ -19,6 +19,10 @@ import unknownKeyword, { keywordDefinitionUri } from "./keywords/unknown.js";
 
 // Not imported from the v1 dialect, which would load all of its keywords
 const v1DialectUri = "https://json-schema.org/v1";
+
+/** The statuses whose response is a document, like browser's */
+const successStatuses = new Set([200, 203]);
+const redirectStatuses = new Set([301, 302, 303, 307, 308]);
 
 /**
  * @implements API.JsonSchemaSession
@@ -90,41 +94,36 @@ export class JsonSchemaSession extends Session {
   }
 
   /**
-   * An embedded resource is only found by a reference from the document that
-   * contains it, which browser finds in the `referencedIn` document's
-   * embedded resources. A reference's `referencedFrom` is a resource's URI,
-   * and one URI identifies one resource in a session, so `referencedIn` is
-   * worked out from it: a document that has the resource. The registries
-   * are a layer on `fetch`, so they come next, then the URI is retrieved.
+   * The document a reference is in, for browser to find what it embeds. A
+   * resource's nodes have locations that start with its URI, so a
+   * reference's `referencedFrom` is a resource's URI, and one URI identifies
+   * one resource in a session, so it's a document that has that resource.
+   * A URL that isn't a resource's is browser's to find.
    *
    * A resource that's in more than one document is identical in each, but
    * only some of them might embed what it references. Where one doesn't, the
-   * reference finds a schema the usual way, so that has to be identical too.
-   * Otherwise, a document could change what a reference in another one
-   * finds.
+   * reference finds a schema the usual way, so that has to be identical too,
+   * and it's looked up that way as well. Otherwise, a document could change
+   * what a reference in another one finds.
    *
-   * A URI that isn't an IRI, like a relative one, is left to the session,
-   * which resolves it against the context URI or throws for it.
-   *
-   * @param {string} uri
-   * @param {GetOptions} [options]
+   * @param {string} referencedFrom
+   * @param {string} url
    */
-  async getDocument(uri, options = {}) {
-    if (!isIri(uri) || options.referencedFrom === undefined || !isIri(options.referencedFrom)) {
-      return this.#getDocument(uri, options);
+  async referencingDocument(referencedFrom, url) {
+    const fromId = toId(urlToIri(new URL(referencedFrom)));
+    const containing = this.#embedded.get(fromId);
+    if (!containing) {
+      return super.referencingDocument(referencedFrom, url);
     }
 
-    const id = normalizeIri(toAbsoluteIri(uri));
-    const containing = this.#embedded.get(toId(options.referencedFrom)) ?? [];
+    const id = toId(urlToIri(new URL(url)));
     const embedding = containing.find((embedded) => embedded[id] !== undefined);
-    if (embedding === undefined) {
-      return this.#getDocument(uri, options);
+    if (embedding && containing.some((embedded) => embedded[id] === undefined)) {
+      await this.getDocument(url);
     }
 
-    if (containing.some((embedded) => embedded[id] === undefined)) {
-      await this.#getDocument(uri, { referencedFrom: options.referencedFrom });
-    }
-    return this.#getDocument(uri, { ...options, referencedIn: embedding[id] });
+    const document = (embedding ?? containing[0])[fromId];
+    return /** @type DocumentNode<JsonSchemaNode> */ (/** @type unknown */ (document));
   }
 
   /**
@@ -136,40 +135,29 @@ export class JsonSchemaSession extends Session {
    * @type (request: Request) => Promise<Response>
    */
   async fetch(request) {
-    const registryDocument = this.#registries.get(toId(urlToIri(new URL(request.url))));
-    return registryDocument ? new DocumentResponse(await registryDocument) : super.fetch(request);
-  }
-
-  /**
-   * A document from browser: embedded, from a registry, or retrieved. Its
-   * resources are added to the ones the session has, so a reference from one
-   * finds the others.
-   *
-   * @type (uri: string, options: GetOptions) => Promise<DocumentNode<JsonSchemaNode>>
-   */
-  async #getDocument(uri, options) {
-    /** @type DocumentNode<JsonSchemaNode> */
-    let document;
+    let registryDocument;
     try {
-      document = await super.getDocument(uri, options);
+      registryDocument = this.#registries.get(toId(urlToIri(new URL(request.url))));
+      if (registryDocument) {
+        return new DocumentResponse(await registryDocument);
+      }
     } catch (error) {
-      // A schema with problems was retrieved. It isn't a failure to
-      // retrieve it.
-      if (error instanceof RetrievalError && error.cause instanceof SchemaError) {
-        throw error.cause;
-      }
-      // The registry's layer says which entry it couldn't use
-      if (error instanceof RetrievalError && error.cause instanceof RetrievalError) {
-        throw error.cause;
-      }
-      throw this.#registries.retrievalError(error);
+      // The session's retrieval fails with what kept the registry from
+      // finding it
+      throw error instanceof RetrievalError ? error.cause : error;
     }
 
-    if (document.type === "json-schema-document") {
-      this.#addEmbedded(/** @type JsonSchemaDocumentNode */ (/** @type unknown */ (document)));
+    // A response that isn't a document or a redirect is a failure, which a
+    // schema in a registry that can't be identified yet might explain
+    const response = await super.fetch(request);
+    const failed = !successStatuses.has(response.status) && !(redirectStatuses.has(response.status) && response.headers.has("location"));
+    const reasons = failed ? this.#registries.missReasons() : [];
+    if (reasons.length === 0) {
+      return response;
     }
 
-    return document;
+    await response.body?.cancel();
+    throw new AggregateError([new HttpError(response), ...reasons], reasons[0].message);
   }
 
   /**
@@ -177,9 +165,9 @@ export class JsonSchemaSession extends Session {
    * a resource with the same URI if it's identical in both, like a schema
    * and a bundle that includes it.
    *
-   * @type (document: JsonSchemaDocumentNode) => void
+   * @type API.JsonSchemaSession["addResources"]
    */
-  #addEmbedded(document) {
+  addResources(document) {
     const embedded = document.embedded;
     if (this.#documents.has(embedded)) {
       return;

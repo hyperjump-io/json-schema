@@ -26,3 +26,9 @@ export type SchemaSource<S = AnySchema> = string | S;
 // Used by every operation. They aren't exported from the package.
 export function sessionOf(context: Context, options?: SessionOptions): JsonSchemaSession;
 export function schemaUri(session: JsonSchemaSession, schema: SchemaSource<unknown>): string;
+
+/**
+ * A schema with problems is found, not missing, so an operation throws its
+ * SchemaError rather than the session's RetrievalError that has it.
+ */
+export const schemaErrorOf: (error: unknown) => unknown;

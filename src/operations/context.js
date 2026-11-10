@@ -1,5 +1,7 @@
 import { JsonSchemaSession } from "../session.js";
 import { addSchemaValue } from "../registry/session-registries.js";
+import { RetrievalError } from "@hyperjump/browser";
+import { SchemaError } from "../schema/schema-error.js";
 
 /**
  * @import { JsonSchema } from "../json-schema.d.ts"
@@ -35,3 +37,11 @@ export const sessionOf = (context, options = {}) => {
  * @type (session: JsonSchemaSession, schema: SchemaSource) => string
  */
 export const schemaUri = (session, schema) => typeof schema === "string" ? schema : addSchemaValue(session, schema);
+
+/**
+ * A schema with problems is found, not missing, so an operation throws its
+ * SchemaError rather than the session's RetrievalError that has it
+ *
+ * @type (error: unknown) => unknown
+ */
+export const schemaErrorOf = (error) => error instanceof RetrievalError && error.cause instanceof SchemaError ? error.cause : error;

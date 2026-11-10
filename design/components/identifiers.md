@@ -53,20 +53,16 @@ because normalizing costs something and changes how it reads.
 
 ## Looking up a document
 
-`JsonSchemaSession.getDocument` overrides browser's, which every lookup goes
-through, including the references `get` follows. It works out the URI's
-`Id` once and finds the document that has the referencing resource by it,
-for browser to find an embedded resource in. The registries are a layer on
-`fetch`, which works out the `Id` of the request's URL (`urlToIri`). A URI
-that isn't an IRI, like a relative one, goes to browser, which resolves it
-against the context URI or throws the same `InvalidIriError` it would
-without the subclass. Browser checks the URI again, which is one pattern
-test.
+Browser's `getDocument` does every lookup, including the references `get`
+follows, with the URL it parsed. Where a lookup meets `json-schema`'s
+identifiers, the URL is converted to an `Id` (`urlToIri`, then `toId`):
+the registries' layer on `fetch` converts the request's URL, and
+`referencingDocument` converts a reference's `referencedFrom` and the URL
+it's looking for, to find the document that has the referencing resource.
 
-- An override point in browser that gets an `Id`, called after browser
-  checks, resolves, and normalizes the URI, was rejected. It's
-  `getDocument` split in two, and the checking would only move to browser,
-  with a second public method to do it.
+- Overriding `getDocument` to work out the `Id` before browser does was
+  rejected. Browser parses the URI either way, so it was checked twice, and
+  the override stood between the session and everything it found.
 
 ## `setBaseUri` takes a reference
 

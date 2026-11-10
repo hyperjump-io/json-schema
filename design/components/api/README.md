@@ -6,8 +6,7 @@ Decided and built 2026-10-29, replacing methods on `JsonSchema`,
 [Bundle size](../../benchmarks/bundle-size.md)).
 
 `JsonSchema` keeps what decides how schemas are read: its definitions
-(dialects, keywords, formats), its registry, the `getDocument` override,
-and sessions. Everything done with schemas, like validating, annotating,
+(dialects, keywords, formats), its registry, and sessions. Everything done with schemas, like validating, annotating,
 bundling, and linting, is a function that takes a `JsonSchema` or a
 `JsonSchemaSession`.
 

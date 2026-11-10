@@ -3,7 +3,7 @@ import { VFile } from "vfile";
 import { relativeFileUrl } from "@hyperjump/browser";
 import { SchemaError } from "../schema/schema-error.js";
 import { toSchemaMessage } from "../schema/resolve-text.js";
-import { sessionOf } from "./context.js";
+import { schemaErrorOf, sessionOf } from "./context.js";
 
 /**
  * @import { IriReference } from "@hyperjump/uri"
@@ -20,8 +20,9 @@ export const lint = async (context, uri, options = {}) => {
     document = await session.getDocument(uri);
   } catch (error) {
     // A document with problems has no tree to lint
-    if (error instanceof SchemaError) {
-      return error.messages;
+    const schemaError = schemaErrorOf(error);
+    if (schemaError instanceof SchemaError) {
+      return schemaError.messages;
     }
     throw error;
   }

@@ -27,8 +27,10 @@ export class JsonSchemaMediaTypePlugin {
       throw Error("A schema can only be retrieved in a JsonSchemaSession. Use the 'session' function of a JsonSchema to create one.");
     }
 
-    // A registry's schema is resolved already
+    // A registry's schema is resolved already. Either way, its resources are
+    // added to the session's, so a reference from one finds the others.
     if (response instanceof DocumentResponse) {
+      session.addResources(response.document);
       return /** @type JsonSchemaDocumentNode<"success"> */ (response.document);
     }
 
@@ -38,6 +40,7 @@ export class JsonSchemaMediaTypePlugin {
     // A schema's identifiers are IRIs, so the response's URL is converted
     // where it comes in
     const document = await resolveSchemaText(await response.text(), session, toAbsoluteIri(urlToIri(new URL(response.url))), dialectUri);
+    session.addResources(document);
     return /** @type JsonSchemaDocumentNode<"success"> */ (document);
   }
 

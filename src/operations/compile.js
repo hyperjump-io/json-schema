@@ -3,7 +3,7 @@ import { Validator } from "../kernel/validator.js";
 import { withResolvedUris } from "../kernel/kernel-uris.js";
 import { schemaReads } from "../kernel/kernel.js";
 import { kernelDefinitions } from "../kernel/definitions.js";
-import { schemaUri, sessionOf } from "./context.js";
+import { schemaErrorOf, schemaUri, sessionOf } from "./context.js";
 
 /**
  * @import { Kernel } from "../kernel/kernel.d.ts"
@@ -13,7 +13,12 @@ import { schemaUri, sessionOf } from "./context.js";
 /** @type typeof API.compile */
 export const compile = async (context, schema, options) => {
   const session = sessionOf(context, options);
-  const kernel = await lower(session, schemaUri(session, schema));
+  let kernel;
+  try {
+    kernel = await lower(session, schemaUri(session, schema));
+  } catch (error) {
+    throw schemaErrorOf(error);
+  }
   return /** @type any */ (new Validator(kernelDefinitions(session.jsonSchema, kernel), kernel));
 };
 

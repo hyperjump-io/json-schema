@@ -26,9 +26,9 @@ its position.
   the `embedded` of the document a reference is in (`referencedIn`), which
   doesn't depend on locations, so a resource's nodes keep their canonical
   URIs. A reference's `referencedFrom` is a resource's URI, so
-  `JsonSchemaSession.getDocument` works out `referencedIn` from it: a
-  document that has that resource, which one URI identifying one resource
-  makes any of them. An embedded resource takes precedence over a cached
+  `JsonSchemaSession.referencingDocument` finds the document a reference is
+  in from it: a document that has that resource, which one URI identifying
+  one resource makes any of them. An embedded resource takes precedence over a cached
   document with the same URI.
 - A URI identifies one resource in a session. Two documents with a resource
   identified by the same URI, embedded or not, are an error when the second
