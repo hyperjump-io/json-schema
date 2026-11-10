@@ -72,6 +72,16 @@ describe("SchemaRegistry", () => {
       expect(validatorFor(await compile(registry, "https://example.com/a"))(42)).to.equal(false);
     });
 
+    // A schema's references are resolved as IRIs (RFC 3987), which resolves
+    // an empty reference against a URN. The URL Standard doesn't.
+    test("an empty $ref in a schema identified by a URN refers to the schema", async () => {
+      const registry = registryOf(v1({ $id: "urn:example:a", type: "object", properties: { a: { $ref: "" } } }));
+      const validate = validatorFor(await compile(registry, "urn:example:a"));
+
+      expect(validate({ a: {} })).to.equal(true);
+      expect(validate({ a: 1 })).to.equal(false);
+    });
+
     test("a reference finds a schema by an equivalent identifier", async () => {
       const registry = registryOf(
         v1({ $id: "https://example.com/~b", type: "string" }),
