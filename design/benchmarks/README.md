@@ -53,6 +53,7 @@ something that can be run.
   - [String lengths without counting](kernel-in-src/string-lengths.md)
   - [The root without a wrapper](kernel-in-src/root-without-a-wrapper.md)
   - [Arrays of typed arrays](kernel-in-src/arrays-of-typed-arrays.md)
+  - [One-case conditionals](kernel-in-src/one-case-conditionals.md)
 - [Bundle size](bundle-size.md) (2026-10-29)
 - [Registry values](registry-values.md) (2026-11-10)
 - [Building the flag evaluator first](flag-evaluator-first.md) (2026-11-10)

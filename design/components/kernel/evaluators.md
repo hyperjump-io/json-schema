@@ -121,7 +121,11 @@
 The evaluators also choose how to evaluate an operation, which isn't a
 pass, because it doesn't change the expression. `fast.js` checks more than
 one type with a bit mask, calls two or three keyword groups (or an `all`
-of two or three) without a loop, and builds `typeSwitch` as an array by
+of two or three) without a loop, evaluates a `cases` of one case (an `if`,
+or a dependency on one property) without a loop, and without a set when
+nothing reads marks
+([One-case conditionals](../../benchmarks/kernel-in-src/one-case-conditionals.md)),
+and builds `typeSwitch` as an array by
 type, `propertySwitch` as a `Map` by value (which compares scalars as JSON
 does), and `keySwitch` as a test for each property. `instrumented.js` does the same, except that it evaluates every
 expression of an `all`, and an `apply` is the schema's evaluator without a
