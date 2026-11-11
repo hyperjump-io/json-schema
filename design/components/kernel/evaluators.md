@@ -58,7 +58,12 @@
   looked up once, in a table of entries with the same shape, and a
   property schema that only checks the type is checked in the loop. An
   `except` that applies `false` (`additionalProperties: false`) fails any
-  other name without a call. In `instrumented.js`, the matcher sets a bit
+  other name without a call. Rejected: names by length compared with
+  `===`, which was slower than the lookup, and a property schema that only
+  allows some scalars checked in the loop, which made schemas that barely
+  have them slower, because every loop shares the closures' feedback
+  ([What the property loop doesn't do](../../benchmarks/kernel-in-src/property-loop-rejected.md)).
+  In `instrumented.js`, the matcher sets a bit
   for each required name the instance has (up to 30), and a `required`
   group, with its own hooks, reads its result from them instead of
   looking each name up again, which on an AST is a search of the object's
