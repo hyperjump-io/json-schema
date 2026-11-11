@@ -24,4 +24,4 @@ runTestSuite(6, "http://json-schema.org/draft-06/schema", new Set<string>([
   // Self-identifying with a `file:` URI is not allowed for security reasons.
   "|6|id-legacy.json|$id with file URI still resolves pointers - *nix",
   "|6|id-legacy.json|$id with file URI still resolves pointers - windows"
-]));
+]), { tags: new Set(["format-annotation"]) });

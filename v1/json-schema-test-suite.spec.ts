@@ -7,6 +7,6 @@ runTestSuite(9999, "https://json-schema.org/v1", new Set<string>([
   // Self-identifying with a `file:` URI is not allowed for security reasons.
   "|9999|id.json|$id with file URI still resolves pointers - *nix",
   "|9999|id.json|$id with file URI still resolves pointers - windows"
-]));
+]), { tags: new Set(["format-assertion"]) });
 
-runTestSuite(9999, "https://json-schema.org/v1", new Set<string>(), "./v1/extension-tests");
+runTestSuite(9999, "https://json-schema.org/v1", new Set<string>(), { testSuitePath: "./v1/extension-tests" });

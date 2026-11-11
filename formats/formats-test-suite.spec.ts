@@ -8,11 +8,15 @@ import "../draft-06/index.js";
 import "../draft-04/index.js";
 
 
-const formatTestSuitePath = "./node_modules/json-schema-test-suite/validation/tests/optional/format";
 setShouldValidateFormat(true);
 
-runTestSuite(2020, "https://json-schema.org/draft/2020-12/schema", new Set(["|2020|time-leap-seconds.json"]), formatTestSuitePath);
-runTestSuite(2019, "https://json-schema.org/draft/2019-09/schema", new Set(["|2019|time-leap-seconds.json"]), formatTestSuitePath);
-runTestSuite(7, "http://json-schema.org/draft-07/schema", new Set(["|7|time-leap-seconds.json"]), formatTestSuitePath);
-runTestSuite(6, "http://json-schema.org/draft-06/schema", new Set(["|6|time-leap-seconds.json"]), formatTestSuitePath);
-runTestSuite(4, "http://json-schema.org/draft-04/schema", new Set(["|4|time-leap-seconds.json"]), formatTestSuitePath);
+const options = {
+  include: "format-*.json",
+  tags: new Set(["format-assertion"])
+};
+
+runTestSuite(2020, "https://json-schema.org/draft/2020-12/schema", new Set(), options);
+runTestSuite(2019, "https://json-schema.org/draft/2019-09/schema", new Set(), options);
+runTestSuite(7, "http://json-schema.org/draft-07/schema", new Set(), options);
+runTestSuite(6, "http://json-schema.org/draft-06/schema", new Set(), options);
+runTestSuite(4, "http://json-schema.org/draft-04/schema", new Set(), options);

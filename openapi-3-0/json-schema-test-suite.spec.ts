@@ -54,4 +54,4 @@ runTestSuite(4, "https://spec.openapis.org/oas/3.0/dialect", new Set<string>([
   "|4|uniqueItems.json|uniqueItems with an array of items and additionalItems=false",
   "|4|uniqueItems.json|uniqueItems=false with an array of items",
   "|4|uniqueItems.json|uniqueItems=false with an array of items and additionalItems=false"
-]));
+]), { tags: new Set(["format-annotation"]) });
