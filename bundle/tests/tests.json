@@ -862,5 +862,37 @@
         "instance": [42]
       }
     ]
+  },
+  {
+    "description": "External reference relative to an embedded schema's $id",
+    "compatibility": "2019",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "foo": {
+          "$id": "/nested/",
+          "$ref": "string"
+        }
+      }
+    },
+    "externalSchemas": {
+      "https://bundler.hyperjump.io/nested/string": {
+        "type": "string"
+      }
+    },
+    "tests": [
+      {
+        "description": "valid",
+        "instance": {
+          "foo": "is a string"
+        }
+      },
+      {
+        "description": "invalid",
+        "instance": {
+          "foo": 42
+        }
+      }
+    ]
   }
 ]
