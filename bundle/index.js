@@ -36,7 +36,13 @@ const doBundling = async (schemaUri, bundled, fullOptions, contextSchema, visite
   const schema = await getSchema(schemaUri, contextSchema);
   for (const reference of allReferences(schema.document.root)) {
     const uri = toAbsoluteIri(resolveIri(reference.href, schema.document.baseUri));
-    if (visited.has(uri) || fullOptions.externalSchemas.includes(uri) || (uri in schema.document.embedded && !(uri in schema._cache) && !hasSchema(uri))) {
+    if (visited.has(uri) || fullOptions.externalSchemas.includes(uri)) {
+      continue;
+    }
+
+    if (uri in schema.document.embedded && !(uri in schema._cache) && !hasSchema(uri)) {
+      // Already in the bundle, but it can reference external schemas relative to its own $id
+      bundled = await doBundling(uri, bundled, fullOptions, schema, visited);
       continue;
     }
 
