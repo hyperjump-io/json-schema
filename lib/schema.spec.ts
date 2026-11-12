@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach } from "vitest";
 import { Agent, setGlobalDispatcher } from "undici";
 import { RetrievalError } from "@hyperjump/browser";
-import { registerSchema, unregisterSchema } from "./index.js";
+import { addSchema, registerSchema, unregisterSchema, validate } from "./index.js";
 import { getSchema, hasDialect } from "./experimental.js";
 import "../v1/index.js";
 import "../draft-2020-12/index.js";
@@ -511,6 +511,49 @@ describe("Schema Parsing", () => {
     expect(() => {
       registerSchema(schema, `${testDomain}/schema`);
     }).to.throw(Error, "schema has already been registered");
+  });
+
+  it("duplicate registered schema with a different $id", () => {
+    registerSchema({
+      $schema: "https://json-schema.org/v1",
+      $id: `${testDomain}/a`
+    }, `${testDomain}/schema`);
+
+    expect(() => {
+      registerSchema({
+        $schema: "https://json-schema.org/v1",
+        $id: `${testDomain}/b`
+      }, `${testDomain}/schema`);
+    }).to.throw(Error, "schema has already been registered");
+  });
+
+  it("registered schema with an $id that is already registered", () => {
+    registerSchema({
+      $schema: "https://json-schema.org/v1"
+    }, `${testDomain}/schema`);
+
+    expect(() => {
+      registerSchema({
+        $schema: "https://json-schema.org/v1",
+        $id: `${testDomain}/schema`
+      }, `${testDomain}/relative-schema`);
+    }).to.throw(Error, "schema has already been registered");
+  });
+
+  it("addSchema replaces a schema with a different $id", async () => {
+    addSchema({
+      $schema: "https://json-schema.org/v1",
+      $id: `${testDomain}/a`,
+      type: "string"
+    }, `${testDomain}/schema`);
+    addSchema({
+      $schema: "https://json-schema.org/v1",
+      $id: `${testDomain}/b`,
+      type: "number"
+    }, `${testDomain}/schema`);
+
+    const output = await validate(`${testDomain}/schema`, 42);
+    expect(output.valid).to.equal(true);
   });
 
   it("remove registered schema", async () => {
