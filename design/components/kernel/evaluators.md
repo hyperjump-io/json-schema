@@ -73,6 +73,12 @@
   before anything that uses it. Reading it only where it's used made V8 12.9 and later
   (Node 23+) deoptimize the loop again and again
   ([Reading a property's value first](../../benchmarks/kernel-in-src/property-values-first.md)).
+  An `eachProperty` on its own whose `except` has no names and no patterns
+  (`additionalProperties` without `properties` or `patternProperties`,
+  like a map's values) doesn't test the names, which made `draft-04` and
+  `importmap` take 0.77–0.82 times as long. A loop over `Object.keys`
+  instead of `for...in` was slower
+  ([An `except` that selects every name](../../benchmarks/kernel-in-src/every-name.md)).
 - Arrays are evaluated the same way in `fast.js`. A schema's `typeIs` of
   only `array`, `itemCount`, and `eachItem` are one evaluator that tests
   whether the instance is an array once, and an `eachItem` whose item

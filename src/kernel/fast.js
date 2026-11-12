@@ -455,6 +455,25 @@ export const fast = (definitions, kernel) => {
         const of = child(expression.of);
         const { select } = expression;
         const unevaluated = "unevaluated" in select;
+
+        // An `except` of no names and no patterns (`additionalProperties`
+        // without `properties` or `patternProperties`, like a map's values)
+        // selects every name, so the loop doesn't test them
+        if ("except" in select && select.except.names.length === 0 && select.except.patterns.length === 0) {
+          return (instance, marks) => {
+            if (!isObject(instance)) {
+              return true;
+            }
+            for (const name in instance) {
+              if (!of(instance[name], undefined)) {
+                return false;
+              }
+              marks?.add(name);
+            }
+            return true;
+          };
+        }
+
         const selected = selector(select);
         return (instance, marks) => {
           if (!isObject(instance)) {
