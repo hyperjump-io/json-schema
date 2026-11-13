@@ -22,7 +22,7 @@ depended on it. So state is separated by how long it lives.
   configuration and the stack, and makes a `Hyperjump` for each session
   from them (see [Browser v2](../browser-v2.md)).
 - A session is a plain value: `{ hyperjump, jsonSchema, fetch, state,
-  contextUrl, config }`. It's what browser's `get`, `documentOf`, and
+  contextUrl, config }`. It's what browser's `get`, `getDocument`, and
   `jref*` functions take (a `DocumentSession`), so schemas are browsed
   with browser's own functions.
   - `fetch` asks the registries, then the `Hyperjump`. A registry's schema
@@ -33,7 +33,7 @@ depended on it. So state is separated by how long it lives.
     watching its requests, tracing them, and closing it.
 - What this package adds to browsing is functions of a session:
   `getDialect(session, uri)` and `annotation(session, node, keyword)`.
-  `get` and `documentOf` are browser's, exported from here as they are.
+  `get` and `getDocument` are browser's, exported from here as they are.
 - What a session keeps for schemas is in its state
   (`session.state`): its registries, its resources by URI (see
   [Schema AST](../../specs/schema-ast.md)), and the dialects it built. A
@@ -50,7 +50,7 @@ depended on it. So state is separated by how long it lives.
   browse; compiling, bundling, and linting are functions (see
   [Validation API](../validation-api/README.md)).
 - A schema with problems fails its retrieval with its `SchemaError`, which
-  is what `get` and the operations throw. Nothing wraps it.
+  is what `get`, `getDocument`, and the operations throw. Nothing wraps it.
 - Dialects from the config belong to `JsonSchema`, and its `getDialect`
   only finds those. A dialect built from a meta-schema belongs to the
   session that built it. `getDialect(session, uri)` finds both, and it's
@@ -73,18 +73,18 @@ depended on it. So state is separated by how long it lives.
 
 Rejected:
 
-- `JsonSchemaSession` as a class with `get`, `documentOf`, `getDialect`,
+- `JsonSchemaSession` as a class with `get`, `getDocument`, `getDialect`,
   and `annotation` as methods. It would hold a `Hyperjump` and forward to
   browser's functions, and its `get` would be browser's with another call
   shape.
-- `get` and `documentOf` typed as returning a schema's node or document. A reference
+- `get` and `getDocument` typed as returning a schema's node. A reference
   can lead to a document that isn't a schema, like a JRef or a JSON file,
   so the type would be wrong whenever one did.
 - The config's media types left out of a session's type. A session with a
   media type of the application's could find one of its nodes, which the
   type wouldn't say.
 - Resolving after retrieving, to take the session out of browser's
-  `parse`: browser would only parse, and a `get` of this package's
+  `parse`: browser would only parse, and a `getDocument` of this package's
   would resolve what it returns. It moves the dependency instead of
   removing it. Resolving still needs the session, for dialects, and moving
   it needs a cache of resolved documents next to browser's, the

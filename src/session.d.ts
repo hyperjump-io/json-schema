@@ -66,29 +66,23 @@ export type JsonSchemaSession<S = any, M extends MediaTypePlugin<any> = MediaTyp
 };
 
 /**
- * `@hyperjump/browser`'s `get` and `documentOf`. With a session of a
+ * `@hyperjump/browser`'s `get` and `getDocument`. With a session of a
  * {@link JsonSchema}, a fragment of a schema is an anchor or a JSON Pointer,
  * and documents are found in this order: an embedded resource, if
  * `referencedFrom` is a node of the document that contains it; a schema in
  * the session's registry, then in the `JsonSchema`'s `registry`; then it's
- * retrieved.
- *
- * `documentOf` gives the document a node is in, which is the resource for
- * a node of an embedded one. The document at a URI is the one its root is
- * in: `documentOf(session, await get(session, uri, { follow: false }))`.
- * Without `follow: false`, a schema that's a reference leads to another
- * document.
+ * retrieved. `getDocument` never finds an embedded resource.
  *
  * They throw a `SchemaError` if a schema has problems, with every problem
  * in the document, and an `Error` if more than one schema in the two
  * registries is found by the URI.
  */
-export { documentOf, get } from "@hyperjump/browser";
+export { get, getDocument } from "@hyperjump/browser";
 
 /**
  * Get a dialect. If it isn't in the {@link JsonSchema}'s config or
  * built in this session, its meta-schema is found with
- * {@link get}, which can find it in a registry, and the dialect is
+ * {@link getDocument}, which can find it in a registry, and the dialect is
  * the one the meta-schema defines (see
  * `JsonSchemaDocumentNode.definedDialect`). That's `$vocabulary` in 2019-09
  * and 2020-12. The meta-schema must be a schema (`application/schema+json`
@@ -166,4 +160,4 @@ export const resourceOf: (session: JsonSchemaSession, node: { location: string }
 export const hasDialect: (session: JsonSchemaSession, uri: string) => boolean;
 
 /** The document a resource is in, which is the resource for a document's root */
-export const containerOf: (session: JsonSchemaSession, resource: JsonSchemaDocumentNode) => JsonSchemaDocumentNode | undefined;
+export const documentOf: (session: JsonSchemaSession, resource: JsonSchemaDocumentNode) => JsonSchemaDocumentNode | undefined;

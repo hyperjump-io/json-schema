@@ -10,7 +10,7 @@ import { annotatorFor, validatorFor } from "./validate-compiled.js";
 import { bundle } from "./bundle.js";
 import { lint } from "./lint.js";
 import { noUrl } from "../identifiers.js";
-import { annotation, documentOf, get } from "../session.js";
+import { annotation, getDocument } from "../session.js";
 
 /**
  * @import { Json } from "@hyperjump/browser"
@@ -88,7 +88,7 @@ describe("operations", () => {
 
       expect(await validate(session, "https://example.com/shared", 42)).to.equal(false);
       expect(await validate(session, v1({ $ref: "https://example.com/shared" }), "foo")).to.equal(true);
-      expect(await documentOf(session, await get(session, "https://example.com/shared", { follow: false }))).to.equal(await documentOf(session, await get(session, "https://example.com/shared", { follow: false })));
+      expect(await getDocument(session, "https://example.com/shared")).to.equal(await getDocument(session, "https://example.com/shared"));
     });
 
     test("a session can't be given a registry or allowRetrieval", async () => {

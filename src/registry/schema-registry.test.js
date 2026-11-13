@@ -7,11 +7,10 @@ import idKeyword from "../keywords/id.js";
 import typeKeyword from "../keywords/type.js";
 import { compile as compileSchema } from "../operations/compile.js";
 import { validatorFor } from "../operations/validate-compiled.js";
-import { documentOf, get } from "../session.js";
+import { get, getDocument } from "../session.js";
 
 /**
  * @import { Json } from "@hyperjump/browser"
- * @import { JsonSchemaSession } from "../session.d.ts"
  * @import { JsonSchemaConfig } from "../json-schema.d.ts"
  * @import { DialectConfig } from "../dialect.d.ts"
  * @import { JsonSchemaDocumentNode } from "../schema/schema-ast.d.ts"
@@ -271,8 +270,8 @@ describe("SchemaRegistry", () => {
       const registry = registryOf(v1({ $id: "https://example.com/a" }));
       const copy = new SchemaRegistry([...registry]);
 
-      const first = await documentAt(jsonSchema.session({ registry }), "https://example.com/a");
-      const second = await documentAt(jsonSchema.session({ registry: copy }), "https://example.com/a");
+      const first = await getDocument(jsonSchema.session({ registry }), "https://example.com/a");
+      const second = await getDocument(jsonSchema.session({ registry: copy }), "https://example.com/a");
       expect(second).to.equal(first);
     });
   });
@@ -332,8 +331,8 @@ describe("SchemaRegistry", () => {
     test("a schema is resolved once for every session", async () => {
       const registry = registryOf(v1({ $id: "https://example.com/a" }));
 
-      const first = await documentAt(jsonSchema.session({ registry }), "https://example.com/a");
-      const second = await documentAt(jsonSchema.session({ registry }), "https://example.com/a");
+      const first = await getDocument(jsonSchema.session({ registry }), "https://example.com/a");
+      const second = await getDocument(jsonSchema.session({ registry }), "https://example.com/a");
 
       expect(second).to.equal(first);
     });
@@ -342,8 +341,8 @@ describe("SchemaRegistry", () => {
       const registry = registryOf(v1({ $id: "https://example.com/a" }));
       const edited = registry.with(v1({}), { retrievalUri: "https://example.com/b" });
 
-      const first = await documentAt(jsonSchema.session({ registry }), "https://example.com/a");
-      const second = await documentAt(jsonSchema.session({ registry: edited }), "https://example.com/a");
+      const first = await getDocument(jsonSchema.session({ registry }), "https://example.com/a");
+      const second = await getDocument(jsonSchema.session({ registry: edited }), "https://example.com/a");
 
       expect(second).to.equal(first);
     });
@@ -506,7 +505,7 @@ describe("SchemaRegistry", () => {
     test("the schema's document has its origin", async () => {
       const registry = new SchemaRegistry([{ schema: v1({ $id: "https://example.com/a" }), origin: "schemas/a.schema.json" }]);
       const session = offline().session({ registry });
-      const document = await documentAt(session, "https://example.com/a");
+      const document = await getDocument(session, "https://example.com/a");
 
       expect(/** @type JsonSchemaDocumentNode */ (/** @type unknown */ (document)).origin).to.equal("schemas/a.schema.json");
     });
@@ -537,10 +536,3 @@ const offline = (config) => {
 
 /** @type (properties: Record<string, Json>) => Json */
 const v1 = (properties) => ({ $schema: v1DialectUri, ...properties });
-
-/**
- * The document at a URI, which is the one its root is in
- *
- * @type (session: JsonSchemaSession, uri: string) => Promise<any>
- */
-const documentAt = async (session, uri) => documentOf(session, await get(session, uri, { follow: false }));

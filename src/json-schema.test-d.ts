@@ -14,7 +14,7 @@ import { BASIC } from "./output/index.js";
 import { compile, restore, serialize } from "./operations/compile.js";
 import { annotate, validate, validator } from "./operations/validate.js";
 import { annotatorFor, validatorFor } from "./operations/validate-compiled.js";
-import { documentOf, get } from "./session.js";
+import { get, getDocument } from "./session.js";
 import { isSchemaDocument, isSchemaNode } from "./schema/schema-nodes.js";
 import { jrefStep } from "@hyperjump/browser";
 import type { DocumentNode, FollowedNode, JrefNode, JsonNode, MediaTypePlugin } from "@hyperjump/browser";
@@ -163,8 +163,7 @@ yes<Equal<typeof unknownNode, unknown>>();
 if (isSchemaNode(unknownNode)) {
   unknownNode.dialectUri satisfies string;
 }
-const anySession = jsonSchema.session();
-const anyDocument = await documentOf(anySession, await get(anySession, "https://example.com/schema", { follow: false }));
+const anyDocument = await getDocument(jsonSchema.session(), "https://example.com/schema");
 if (isSchemaDocument(anyDocument)) {
   anyDocument.anchors satisfies Record<string, string>;
 }

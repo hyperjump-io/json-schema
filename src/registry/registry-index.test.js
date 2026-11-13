@@ -4,7 +4,7 @@ import { SchemaRegistry } from "./schema-registry.js";
 import { RegistryIndex } from "./registry-index.js";
 import { toId } from "../identifiers.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
-import { get } from "../session.js";
+import { getDocument } from "../session.js";
 
 describe("RegistryIndex", () => {
   const uri = "https://example.com/a";
@@ -86,7 +86,7 @@ describe("RegistryIndex", () => {
     const session = jsonSchema.session({ registry });
     expect(identified).to.equal(0);
 
-    await get(session, "https://example.com/counted-schema", { follow: false });
+    await getDocument(session, "https://example.com/counted-schema");
     expect(identified).to.be.greaterThan(0);
   });
 });

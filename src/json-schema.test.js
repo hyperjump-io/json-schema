@@ -14,7 +14,7 @@ import idKeyword from "./keywords/id.js";
 import { compile } from "./operations/compile.js";
 import { annotate } from "./operations/validate.js";
 import { validatorFor } from "./operations/validate-compiled.js";
-import { annotation, documentOf, getDialect, hasDialect } from "./session.js";
+import { annotation, getDialect, getDocument, hasDialect } from "./session.js";
 
 /**
  * @import { Json } from "@hyperjump/browser"
@@ -233,8 +233,7 @@ describe("JsonSchema", () => {
       }));
       const withDefaults = new JsonSchema({ dialects: [v1Dialect], allowRetrieval: ["https://example.com/"], stack, mediaTypes: [...defaultMediaTypes] });
 
-      const session = withDefaults.session();
-      expect((await documentOf(session, await get(session, "https://example.com/schema", { follow: false })))?.type).to.equal("json-schema-document");
+      expect((await getDocument(withDefaults.session(), "https://example.com/schema")).type).to.equal("json-schema-document");
     });
 
     test("each compile has its own session, so it sees changes", async () => {
@@ -273,7 +272,7 @@ describe("JsonSchema", () => {
         await writeFile(path, JSON.stringify({ $schema: v1DialectUri, type: "string" }));
 
         const session = new JsonSchema({ dialects: [v1Dialect] }).session();
-        const document = await documentOf(session, await get(session, relative(cwd(), path), { follow: false }));
+        const document = await getDocument(session, relative(cwd(), path));
         expect(/** @type import("./schema/schema-ast.d.ts").JsonSchemaDocumentNode */ (/** @type unknown */ (document)).uri).to.equal(pathToFileURL(path).href);
       } finally {
         await rm(directory, { recursive: true });

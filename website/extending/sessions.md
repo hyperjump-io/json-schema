@@ -45,13 +45,13 @@ sessions according to their caching headers, unless the config has a
 
 A session is a value that the functions of
 [`@hyperjump/browser`](https://github.com/hyperjump-io/browser/blob/v2/website/README.md)
-take, so you browse schemas with them. `get` and `documentOf` are exported
+take, so you browse schemas with them. `get` and `getDocument` are exported
 from this package too:
 
 | Function | What it does |
 | --- | --- |
-| `get(session, uri)` | The node a URI identifies. A fragment is an anchor or a JSON Pointer. It follows a draft-04 to draft-07 `$ref`, unless you pass `follow: false`. |
-| `documentOf(session, node)` | The document a node is in |
+| `get(session, uri)` | The node a URI identifies. A fragment is an anchor or a JSON Pointer. It follows a draft-04 to draft-07 `$ref`. |
+| `getDocument(session, uri)` | The document at a URI, without its fragment |
 | `jrefStep(session, key, node)` and the other `jref` functions | Step into a node, following references. See [browser's browsing](https://github.com/hyperjump-io/browser/blob/v2/website/browsing.md). |
 | `getDialect(session, uri)` | A dialect, from the config or from a meta-schema the session finds |
 | `annotation(session, node, keyword)` | A node's annotations. See [Annotations](../guides/annotations.md#reading-an-annotation). |
@@ -59,19 +59,6 @@ from this package too:
 A schema is found in the session's registry first, then in the
 `JsonSchema`'s, and then it's retrieved. `allowRetrieval` doesn't apply to a
 schema in a registry.
-
-To get the document at a URI, get its root and then the document the root is
-in. Pass `follow: false`, so that a schema that's a `$ref` doesn't lead to
-another document:
-
-```typescript
-import { documentOf, get } from "@hyperjump/json-schema";
-
-const root = await get(session, "https://example.com/person", {
-  follow: false
-});
-const person = await documentOf(session, root);
-```
 
 Tracing a session's requests, watching them, and closing it belong to
 browser's session, which is the session's `hyperjump`:
@@ -86,7 +73,7 @@ const trace = new Trace(session.hyperjump);
 
 A reference can lead to any document the session can read, like a JSON
 file or a JRef document. So a node from `get` or a `jref` function might
-not be a schema, and a document from `documentOf` might not be a schema
+not be a schema, and a document from `getDocument` might not be a schema
 document. Check with `isSchemaNode` and `isSchemaDocument`:
 
 ```typescript
@@ -114,16 +101,13 @@ the reference is in.
 
 ```typescript
 import {
-  documentOf, get, isSchemaDocument, isSchemaNode,
+  get, getDocument, isSchemaDocument, isSchemaNode,
   type JsonSchemaNode
 } from "@hyperjump/json-schema";
 import { visitReferences } from "@hyperjump/json-schema/lint";
 
 const session = jsonSchema.session();
-const root = await get(session, "https://example.com/person", {
-  follow: false
-});
-const person = await documentOf(session, root);
+const person = await getDocument(session, "https://example.com/person");
 if (!isSchemaDocument(person)) {
   throw Error("Not a schema");
 }
@@ -143,7 +127,8 @@ for (const [uri, node] of references) {
 an `$id` in `$defs`. An embedded schema is only found from the document
 it's in. Without `referencedFrom`, it isn't found, or a different schema
 with the same URI is found instead. Every other reference is found the
-usual way: first in the registries, then by retrieving it.
+usual way: first in the registries, then by retrieving it. `getDocument`
+only finds a whole document, never an embedded schema.
 
 `visitReferences` finds every reference in a document along with the URI it
 refers to and its node. It finds `$ref` in every dialect, 2020-12's

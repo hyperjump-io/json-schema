@@ -4,7 +4,7 @@ import { JsonSchema } from "../json-schema.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import { compile } from "../operations/compile.js";
-import { documentOf, get } from "../session.js";
+import { get, getDocument } from "../session.js";
 import { isSchemaDocument, isSchemaNode } from "./schema-nodes.js";
 
 describe("what a session finds that isn't a schema", () => {
@@ -35,9 +35,9 @@ describe("what a session finds that isn't a schema", () => {
   test("isSchemaDocument is only true for a schema document", async () => {
     const session = jsonSchema.session();
 
-    expect(isSchemaDocument(await documentOf(session, await get(session, "https://example.com/schema", { follow: false })))).to.equal(true);
-    expect(isSchemaDocument(await documentOf(session, await get(session, "https://example.com/json", { follow: false })))).to.equal(false);
-    expect(isSchemaDocument(await documentOf(session, await get(session, "https://example.com/jref", { follow: false })))).to.equal(false);
+    expect(isSchemaDocument(await getDocument(session, "https://example.com/schema"))).to.equal(true);
+    expect(isSchemaDocument(await getDocument(session, "https://example.com/json"))).to.equal(false);
+    expect(isSchemaDocument(await getDocument(session, "https://example.com/jref"))).to.equal(false);
   });
 
   test.each(["json", "number", "jref", "schema#/properties"])("a reference to %s isn't compiled", async (target) => {
