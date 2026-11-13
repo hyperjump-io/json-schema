@@ -35,9 +35,8 @@ A rewrite of `@hyperjump/json-schema` on `@hyperjump/browser` v2 and unified.
   `design/benchmarks/README.md`)
 - The API is declared in hand-written `.d.ts` files next to the JS, which is
   typed with JSDoc. Type-checking includes the declaration files.
-- `@hyperjump/browser` is the sibling worktree `../browser-v2`, its `v2`
-  branch, linked with `file:../browser-v2`. Changes there go on that
-  branch.
+- `@hyperjump/browser` is the sibling repo `../browser`, linked with
+  `file:../browser`. Changes there go on its `main` branch.
 
 ## Working agreements
 

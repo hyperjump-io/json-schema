@@ -89,7 +89,7 @@
     "vitest": "*"
   },
   "dependencies": {
-    "@hyperjump/browser": "file:../browser-v2",
+    "@hyperjump/browser": "file:../browser",
     "@hyperjump/json-pointer": "^2.0.1",
     "@hyperjump/json-schema-formats": "^1.0.8",
     "@hyperjump/uri": "file:../uri",
