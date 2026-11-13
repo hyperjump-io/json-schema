@@ -37,7 +37,7 @@ request that's blocked. Its `cause.code` is `"ERR_RETRIEVAL_NOT_ALLOWED"`,
 and its `url` is the URL that was refused:
 
 ```text
-Fetching 'https://example.com/other' isn't allowed. Add it to the session's 'allowRetrieval' to allow it.
+Fetching 'https://example.com/other' isn't allowed. Add it to 'allowRetrieval' to allow it.
 ```
 
 ### What it protects against
