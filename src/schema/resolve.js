@@ -1,5 +1,5 @@
 import { relativeFileUrl } from "@hyperjump/browser";
-import * as JsonPointer from "@hyperjump/json-pointer";
+import { pointerAppend } from "@hyperjump/json-pointer";
 import { assertIriReference, encodeIriFragment, getScheme, isIriReference, normalizeIri, resolveIri, urlToIri } from "@hyperjump/uri";
 import { resolveId, toId } from "../identifiers.js";
 import schemaKeyword from "../keywords/schema.js";
@@ -254,7 +254,7 @@ class Resolver {
     const schemaNode = /** @type JsonSchemaNode */ (node);
     for (const [property, keywordUri, keyword] of keywords) {
       const [nameNode, valueNode] = property.children;
-      await this.#shape(valueNode, keyword.shape, keywordUri, resource, JsonPointer.append(nameNode.value, pointer), dialect);
+      await this.#shape(valueNode, keyword.shape, keywordUri, resource, pointerAppend(nameNode.value, pointer), dialect);
 
       // Checked after its value is annotated, so a check can tell which
       // parts are schemas
@@ -429,13 +429,13 @@ class Resolver {
       node.location = location(resource, pointer);
       let index = 0;
       for (const itemNode of node.children) {
-        await this.#shape(itemNode, shape.array, keywordUri, resource, JsonPointer.append(`${index++}`, pointer), dialect);
+        await this.#shape(itemNode, shape.array, keywordUri, resource, pointerAppend(`${index++}`, pointer), dialect);
       }
     } else if ("map" in shape && !isErrorNode(node) && node.jsonType === "object") {
       node.location = location(resource, pointer);
       for (const property of node.children) {
         const [nameNode, valueNode] = property.children;
-        await this.#shape(valueNode, shape.map, keywordUri, resource, JsonPointer.append(nameNode.value, pointer), dialect);
+        await this.#shape(valueNode, shape.map, keywordUri, resource, pointerAppend(nameNode.value, pointer), dialect);
       }
     }
   }
@@ -509,12 +509,12 @@ class Resolver {
     if (node.jsonType === "array") {
       let index = 0;
       for (const itemNode of node.children) {
-        this.#data(itemNode, resource, JsonPointer.append(`${index++}`, pointer));
+        this.#data(itemNode, resource, pointerAppend(`${index++}`, pointer));
       }
     } else if (node.jsonType === "object") {
       for (const property of node.children) {
         const [nameNode, valueNode] = property.children;
-        this.#data(valueNode, resource, JsonPointer.append(nameNode.value, pointer));
+        this.#data(valueNode, resource, pointerAppend(nameNode.value, pointer));
       }
     }
   }

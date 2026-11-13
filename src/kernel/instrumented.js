@@ -1,4 +1,4 @@
-import * as JsonPointer from "@hyperjump/json-pointer";
+import { pointerAppend } from "@hyperjump/json-pointer";
 import { keywordDefinitionUri } from "../keywords/unknown.js";
 import { codePointLengthIsWithin, instanceEqual, patternRegExp } from "../keywords/utilities.js";
 import { jsInstance } from "./instance.js";
@@ -1661,7 +1661,7 @@ class Location {
       if (segment === undefined) {
         this.#instanceLocation = parent;
       } else {
-        this.#instanceLocation = typeof segment === "number" ? `${parent}/${segment}` : JsonPointer.append(segment, parent);
+        this.#instanceLocation = typeof segment === "number" ? `${parent}/${segment}` : pointerAppend(segment, parent);
       }
     }
     return this.#instanceLocation;
