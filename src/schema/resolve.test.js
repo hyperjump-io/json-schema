@@ -6,7 +6,7 @@ import { pathToFileURL } from "node:url";
 import { describe, test, beforeEach, beforeAll, afterAll, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
-import { fromJson, jrefStep, jsonPointerGet, rejsonParse } from "@hyperjump/browser";
+import { fetcher, fromJson, jrefStep, jsonPointerGet, nodeTransport, rejsonParse } from "@hyperjump/browser";
 import { JsonSchema, SchemaError, extendDialect } from "../json-schema.js";
 import { jsonSchemaResolve, resolveSchema } from "./resolve.js";
 import idKeyword from "../keywords/id.js";
@@ -17,6 +17,7 @@ import legacyRefKeyword from "../keywords/draft-07/ref.js";
 import recursiveAnchorKeyword from "../keywords/draft-2019-09/recursiveAnchor.js";
 import vocabularyKeyword from "../keywords/vocabulary.js";
 import { noUrl } from "../identifiers.js";
+import { get } from "../session.js";
 
 /**
  * @import { JsonDocumentNode, JsonParseStatus } from "@hyperjump/browser"
@@ -24,7 +25,8 @@ import { noUrl } from "../identifiers.js";
  * @import { DialectConfig, DialectExtension } from "../dialect.d.ts"
  * @import { Keyword } from "../keyword.d.ts"
  * @import { JsonSchemaResolveOptions } from "./resolve.d.ts"
- * @import { JsonSchemaKeywordNode, JsonSchemaTolerantNode } from "./schema-ast.d.ts"
+ * @import { FollowedNode } from "@hyperjump/browser"
+ * @import { JsonSchemaKeywordNode, JsonSchemaNode, JsonSchemaTolerantNode } from "./schema-ast.d.ts"
  */
 
 const dialectUri = "https://example.com/dialect";
@@ -339,7 +341,7 @@ describe("jsonSchemaResolve", () => {
     test("the document's URI", async () => {
       const { document } = await resolve(jsonSchema, `{ "$schema": "${dialectUri}" }`);
 
-      expect(document).to.include({ type: "json-schema-document", uri: baseUri, dialectUri: dialectUri, mediaType: "application/schema+json" });
+      expect(document).to.include({ type: "json-schema-document", uri: baseUri, dialectUri: dialectUri });
       expect(document.embedded).to.eql({ [baseUri]: document });
     });
 
@@ -957,7 +959,7 @@ describe("jsonSchemaResolve", () => {
         $defs: { foo: { $anchor: "foo", type: "string" } }
       });
 
-      const foo = await session.get(`${uri}#foo`);
+      const foo = await get(session, `${uri}#foo`);
       expect(foo).to.include({ type: "json-schema", location: `${uri}#/$defs/foo` });
     });
 
@@ -972,10 +974,10 @@ describe("jsonSchemaResolve", () => {
         }
       });
 
-      const a = await session.get(`${uri}#/properties/foo`);
+      const a = schemaNode(await get(session, `${uri}#/properties/foo`));
       expect(a.location).to.equal("https://example.com/a#");
 
-      const b = await jrefStep(session, "b", await jrefStep(session, "properties", a));
+      const b = schemaNode(await jrefStep(session, "b", schemaNode(await jrefStep(session, "properties", a))));
       expect(b.location).to.equal("https://example.com/b#");
     });
 
@@ -991,8 +993,8 @@ describe("jsonSchemaResolve", () => {
         }
       });
 
-      const c = await session.get(`${uri}#/properties/foo`);
-      const d = await jrefStep(session, "root", await jrefStep(session, "properties", c));
+      const c = schemaNode(await get(session, `${uri}#/properties/foo`));
+      const d = schemaNode(await jrefStep(session, "root", schemaNode(await jrefStep(session, "properties", c))));
       expect(d.location).to.equal("https://example.com/embedding#/definitions/d");
     });
 
@@ -1004,20 +1006,19 @@ describe("jsonSchemaResolve", () => {
         definitions: { e: { $id: embeddedUri, type: "string" } }
       });
 
-      await session.get(uri);
-      expect(/** @type import("./schema-ast.d.ts").JsonSchemaDocumentNode */ (/** @type unknown */ (await session.getDocument(embeddedUri, { referencedFrom: uri }))).uri).to.equal(embeddedUri);
-      await expect(session.get(embeddedUri)).rejects.toMatchObject({ name: "RetrievalError", cause: { name: "HttpError", response: { status: 403 } } });
+      const root = schemaNode(await get(session, uri));
+      expect(schemaNode(await get(session, embeddedUri, { referencedFrom: root })).location).to.equal(`${embeddedUri}#`);
+      await expect(get(session, embeddedUri)).rejects.toMatchObject({ cause: { code: "ERR_RETRIEVAL_NOT_ALLOWED" } });
     });
 
     test("a schema with problems can't be retrieved", async () => {
       const session = jsonSchema.session();
       const uri = await schemaFile("invalid.schema.json", { type: "string" });
 
-      // A schema that can't be used fails its retrieval, with the problems
-      // as the cause
-      await expect(session.get(uri)).rejects.toMatchObject({
-        name: "RetrievalError",
-        cause: { name: "SchemaError", messages: [{ ruleId: "missing-dialect", severity: "error", uri: uri }] }
+      // A schema that can't be used fails its retrieval with its problems
+      await expect(get(session, uri)).rejects.toMatchObject({
+        name: "SchemaError",
+        messages: [{ ruleId: "missing-dialect", severity: "error", uri: uri }]
       });
     });
 
@@ -1031,19 +1032,25 @@ describe("jsonSchemaResolve", () => {
 }`);
       const uri = pathToFileURL(path).toString();
 
-      await expect(session.get(uri)).rejects.toMatchObject({
-        cause: {
-          messages: [
-            { source: "json", ruleId: "trailing-comma", severity: "error", uri: uri, place: { start: { line: 4, column: 24 } } },
-            { source: "json", ruleId: "trailing-comma", place: { start: { line: 4, column: 27 } } },
-            { source: "json-schema", ruleId: idKeyword.uri, place: { start: { line: 3, column: 10 } } },
-            { source: "json-schema", ruleId: "invalid-schema", place: { start: { line: 4, column: 19 } } }
-          ]
-        }
+      await expect(get(session, uri)).rejects.toMatchObject({
+        messages: [
+          { source: "json", ruleId: "trailing-comma", severity: "error", uri: uri, place: { start: { line: 4, column: 24 } } },
+          { source: "json", ruleId: "trailing-comma", place: { start: { line: 4, column: 27 } } },
+          { source: "json-schema", ruleId: idKeyword.uri, place: { start: { line: 3, column: 10 } } },
+          { source: "json-schema", ruleId: "invalid-schema", place: { start: { line: 4, column: 19 } } }
+        ]
       });
     });
   });
 });
+
+/**
+ * The tests' sessions don't say their media types, so nothing is known
+ * about what they find. These tests only find schemas.
+ *
+ * @type (node: unknown) => FollowedNode<JsonSchemaNode>
+ */
+const schemaNode = (node) => /** @type FollowedNode<JsonSchemaNode> */ (node);
 
 /** @type Keyword<any, any, any>[] */
 const testKeywords = [
@@ -1129,7 +1136,7 @@ const testJsonSchema = ({ dialects = [], keywords = [], extension, config } = {}
     ...config,
     dialects: [extension ? extendDialect(testDialect, extension) : testDialect, legacyDialect, strictDialect, ...dialects],
     keywords: [...testKeywords, ...keywords],
-    urlSchemePlugins: [{ schemes: ["test"], retrieve: respond }, ...config?.urlSchemePlugins ?? []]
+    stack: nodeTransport({ schemes: { "test:": fetcher(respond) } })
   });
   return jsonSchema;
 };

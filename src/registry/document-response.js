@@ -9,8 +9,8 @@
  * session this document instead of resolving the entry again. It has the
  * entry's `origin`, which a response can't say.
  *
- * The registry's layer is on top of the session's stack, so nothing between
- * it and the plugin makes a new response that wouldn't have the document.
+ * The session's `fetch` answers with it, and browser gives the plugin the
+ * response the session's `fetch` returned, so the plugin gets this one.
  */
 export class DocumentResponse extends Response {
   /** @type JsonSchemaDocumentNode */
@@ -20,6 +20,6 @@ export class DocumentResponse extends Response {
   constructor(document) {
     super(null, { headers: { "content-type": "application/schema+json" } });
     this.document = document;
-    Object.defineProperty(this, "url", { value: document.url });
+    Object.defineProperty(this, "url", { value: document.url, configurable: true });
   }
 }

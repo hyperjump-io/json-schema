@@ -2,6 +2,8 @@ import { jsonValue, relativeFileUrl } from "@hyperjump/browser";
 import { getFragment, getScheme, isIri, isIriReference, normalizeIri, resolveIri, toAbsoluteIri, toRelativeIri } from "@hyperjump/uri";
 import { toId } from "../identifiers.js";
 import { visitReferences } from "../lint/utilities.js";
+import { getDialect, getDocument } from "../session.js";
+import { isSchemaDocument } from "../schema/schema-nodes.js";
 
 /**
  * @import { Json } from "@hyperjump/browser"
@@ -36,7 +38,7 @@ export const bundle = async (session, uri, options = {}) => {
   for (const document of [main, ...documents]) {
     const dialectUri = document.dialectUri;
     if (dialectUri !== undefined && !dialects.has(dialectUri)) {
-      dialects.set(dialectUri, await session.getDialect(dialectUri));
+      dialects.set(dialectUri, await getDialect(session, dialectUri));
     }
   }
 
@@ -137,18 +139,18 @@ const identifierFor = (main, documents, id) => {
 };
 
 /**
- * Only a registry or retrieval finds a document without `referencedFrom`, so
+ * `getDocument` only finds a document in a registry or retrieves it, so
  * this is always a whole document, never a resource embedded in one.
  *
  * @type (session: JsonSchemaSession, uri: Id) => Promise<JsonSchemaDocumentNode>
  */
 const schemaDocument = async (session, uri) => {
-  const document = await session.getDocument(uri);
-  if (document.type !== "json-schema-document") {
+  const document = await getDocument(session, uri);
+  if (!isSchemaDocument(document)) {
     throw Error(`'${relativeFileUrl(uri)}' isn't a schema`);
   }
 
-  return /** @type JsonSchemaDocumentNode */ (/** @type unknown */ (document));
+  return document;
 };
 
 /**

@@ -110,7 +110,7 @@ describe("reference-without-target", () => {
 
   test("a file that doesn't exist", async () => {
     const file = await lint(`{ "$schema": "${v1}", "$ref": "missing.schema.json" }`);
-    expect(reasons(file)).to.eql([`The reference doesn't find a schema. There's no file at '${fromWorkingDirectory("missing.schema.json")}'`]);
+    expect(reasons(file)).to.eql([`The reference doesn't find a schema. '${fromWorkingDirectory("missing.schema.json")}' doesn't exist`]);
   });
 
   test("a JSON Pointer into another file that finds nothing", async () => {
@@ -120,7 +120,7 @@ describe("reference-without-target", () => {
 
   test("a file that isn't a schema", async () => {
     const file = await lint(`{ "$schema": "${v1}", "$ref": "plain.json" }`);
-    expect(reasons(file)).toEqual([expect.stringContaining("isn't a schema. It's application/json.")]);
+    expect(reasons(file)).toEqual([expect.stringContaining("isn't a schema")]);
   });
 
   test("a schema with problems of its own isn't reported", async () => {

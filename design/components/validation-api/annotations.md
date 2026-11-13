@@ -2,8 +2,8 @@
 
 - `annotate` returns `{ output, status, node }`. Annotations are
   `node.data.annotations`, a `Map` of annotation keyword URI to values.
-- Annotations are read with `annotation(node, keyword, dialectUri)` on
-  `JsonSchemaSession`, like the other AST operations, as in v1. The keyword
+- Annotations are read with `annotation(session, node, keyword,
+  dialectUri)`. The keyword
   is a keyword URI if a keyword with that URI is defined (without the
   fragment, for unknown keywords), so a URI doesn't need the dialect.
   Otherwise it's a name in the dialect (v1 by default), and a name that

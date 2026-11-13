@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { fromJs, RetrievalError } from "@hyperjump/browser";
+import { fromJs } from "@hyperjump/browser";
 import { JsonSchema } from "../json-schema.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
@@ -10,6 +10,7 @@ import { annotatorFor, validatorFor } from "./validate-compiled.js";
 import { bundle } from "./bundle.js";
 import { lint } from "./lint.js";
 import { noUrl } from "../identifiers.js";
+import { annotation, getDocument } from "../session.js";
 
 /**
  * @import { Json } from "@hyperjump/browser"
@@ -55,14 +56,14 @@ describe("operations", () => {
       const schema = v1({ $id: "https://example.com/both", type: "string" });
       const registry = new SchemaRegistry().with(schema);
 
-      await expect(validate(jsonSchema, schema, 42, { registry })).rejects.toThrow(RetrievalError);
+      await expect(validate(jsonSchema, schema, 42, { registry })).rejects.toThrow("More than one registry has a schema identified as 'https://example.com/both'");
     });
 
     test("an $id the JsonSchema's registry has is an error", async () => {
       const other = new JsonSchema({ allowRetrieval: [], dialects: [v1Dialect] });
       other.registry = new SchemaRegistry().with(v1({ $id: "https://example.com/both" }));
 
-      await expect(validate(other, v1({ $id: "https://example.com/both" }), 42)).rejects.toThrow(RetrievalError);
+      await expect(validate(other, v1({ $id: "https://example.com/both" }), 42)).rejects.toThrow("More than one registry has a schema identified as 'https://example.com/both'");
     });
 
     test("a schema is copied, so changing it afterward has no effect", async () => {
@@ -87,7 +88,7 @@ describe("operations", () => {
 
       expect(await validate(session, "https://example.com/shared", 42)).to.equal(false);
       expect(await validate(session, v1({ $ref: "https://example.com/shared" }), "foo")).to.equal(true);
-      expect(await session.getDocument("https://example.com/shared")).to.equal(await session.getDocument("https://example.com/shared"));
+      expect(await getDocument(session, "https://example.com/shared")).to.equal(await getDocument(session, "https://example.com/shared"));
     });
 
     test("a session can't be given a registry or allowRetrieval", async () => {
@@ -135,7 +136,7 @@ describe("operations", () => {
 
       expect(output).to.equal(true);
       expect(status).to.equal("success");
-      expect(jsonSchema.session().annotation(node, "title")).to.eql(["root"]);
+      expect(annotation(jsonSchema.session(), node, "title")).to.eql(["root"]);
     });
 
     test("JSON text", async () => {
@@ -144,7 +145,7 @@ describe("operations", () => {
 
       expect(output).to.equal(false);
       expect(status).to.equal("recovered");
-      expect(jsonSchema.session().annotation(node, "title")).to.eql(["root"]);
+      expect(annotation(jsonSchema.session(), node, "title")).to.eql(["root"]);
     });
 
     test("a node is annotated where it is", async () => {
@@ -152,7 +153,7 @@ describe("operations", () => {
       const result = annotatorFor(await compile(jsonSchema, schema), { input: "node" })(node);
 
       expect(result).to.include({ output: true, status: "success", node });
-      expect(jsonSchema.session().annotation(node, "title")).to.eql(["root"]);
+      expect(annotation(jsonSchema.session(), node, "title")).to.eql(["root"]);
     });
   });
 

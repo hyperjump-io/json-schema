@@ -3,7 +3,9 @@ import { VFile } from "vfile";
 import { relativeFileUrl } from "@hyperjump/browser";
 import { SchemaError } from "../schema/schema-error.js";
 import { toSchemaMessage } from "../schema/resolve-text.js";
-import { schemaErrorOf, sessionOf } from "./context.js";
+import { sessionOf } from "./context.js";
+import { getDocument } from "../session.js";
+import { isSchemaDocument } from "../schema/schema-nodes.js";
 
 /**
  * @import { IriReference } from "@hyperjump/uri"
@@ -17,19 +19,18 @@ export const lint = async (context, uri, options = {}) => {
 
   let document;
   try {
-    document = await session.getDocument(uri);
+    document = await getDocument(session, uri);
   } catch (error) {
     // A document with problems has no tree to lint
-    const schemaError = schemaErrorOf(error);
-    if (schemaError instanceof SchemaError) {
-      return schemaError.messages;
+    if (error instanceof SchemaError) {
+      return error.messages;
     }
     throw error;
   }
 
-  if (document.type !== "json-schema-document") {
+  if (!isSchemaDocument(document)) {
     // `getDocument` checked it
-    throw Error(`'${relativeFileUrl(/** @type IriReference */ (uri))}' isn't a schema. It's ${document.mediaType}.`);
+    throw Error(`'${relativeFileUrl(/** @type IriReference */ (uri))}' isn't a schema`);
   }
 
   // Loaded when it's needed, so code that never lints never loads the rules
@@ -37,9 +38,8 @@ export const lint = async (context, uri, options = {}) => {
   const linter = unified()
     .use(plugins)
     .freeze();
-  const tree = /** @type JsonSchemaDocumentNode */ (/** @type unknown */ (document));
   const file = new VFile({ data: { jsonSchemaSession: session } });
-  await linter.run(/** @type any */ (tree), file);
+  await linter.run(/** @type any */ (document), file);
 
-  return file.messages.map((message) => toSchemaMessage(message, tree.uri, message.fatal ? "error" : "warn", tree.origin));
+  return file.messages.map((message) => toSchemaMessage(message, document.uri, message.fatal ? "error" : "warn", document.origin));
 };

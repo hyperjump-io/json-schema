@@ -35,17 +35,14 @@ schema are in `src/kernel/validator.js`, which isn't exported.
   `"sideEffects": false`, or bundlers keep every re-exported module (see
   [Bundle size](../../benchmarks/bundle-size.md)).
 - A schema given as a value is added to the session in a registry of its
-  own (`addSchemaValue` in `src/registry/session-registries.js`), found
+  own (`SessionRegistries.addValue`), found
   first. It's identified by a new `urn:uuid:` URI, which also identifies it
   without an `$id`. Its `$id` is looked up in the other registries when
   it's added, so one a registry also has throws, even if identical.
   Nothing is cached. A boolean has no `$schema`, so it needs
   `defaultDialectUri`, like any schema without one. The operation reaches
-  the session's registries through a `WeakMap` in that module, which has
-  no declaration file, so it isn't part of the API. A method on
-  `JsonSchemaSession` would have to be declared in `session.d.ts`, which
-  is. That was considered on 2026-10-30, to make it a parameter, and
-  rejected: the dependency is the same either way.
+  the session's registries through the session's state (`registriesOf`),
+  which isn't exported from the package.
 - Given a session, an operation uses it, and `registry` or
   `allowRetrieval` in its options is a `TypeError`, because the session
   already has its own and ignoring them would be silent.
@@ -113,10 +110,10 @@ schema are in `src/kernel/validator.js`, which isn't exported.
   stringify on every call. Any cache would also have to be keyed by the
   registry, because the same schema's references can find different
   schemas with a different one.
-- Keeping `compile`, `bundle`, and `lint` as methods on `JsonSchemaSession`
-  too. A session keeps what's about documents and dialects (`get`,
-  `getDocument`, `getDialect`, `hasDialect`, `annotation`), so there's one
-  way to do each operation.
+- `compile`, `bundle`, and `lint` as methods of a session too. There's one
+  way to do each operation, and a session is a value, with what's about
+  documents and dialects as functions of it (`get`, `getDocument`,
+  `getDialect`, `annotation`).
 
 ## Known limitations
 

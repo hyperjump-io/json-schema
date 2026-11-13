@@ -1,7 +1,7 @@
 # Small components
 
 Small packages in their own repositories, linked as siblings
-(`file:../browser`), rather than workspaces or a monorepo.
+(`file:../browser-v2`), rather than workspaces or a monorepo.
 
 - The CLI is its own package, `@hyperjump/cli`, so the libraries don't depend on
   `unified-args` and the engine, and it uses only this package's public API

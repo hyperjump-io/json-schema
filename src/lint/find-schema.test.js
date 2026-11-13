@@ -8,6 +8,7 @@ import { SchemaRegistry } from "../registry/schema-registry.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import { findSchema } from "./find-schema.js";
 import { assertIri, normalizeIri } from "@hyperjump/uri";
+import { fetcher, nodeTransport } from "@hyperjump/browser";
 
 /**
  * @import { JsonSchemaSession } from "../session.d.ts"
@@ -22,7 +23,7 @@ describe("findSchema", () => {
     const jsonSchema = new JsonSchema({
       allowRetrieval: ["test:/", "file:///nothing-here/"],
       dialects: [v1Dialect],
-      urlSchemePlugins: [{ schemes: ["test"], retrieve: respond }]
+      stack: nodeTransport({ schemes: { "test:": fetcher(respond) } })
     });
 
     const registry = new SchemaRegistry().with({
@@ -54,23 +55,17 @@ describe("findSchema", () => {
       const result = await findSchema(session, iri("https://example.com/schema#bar"));
       expect(result).toMatchObject({ status: "found", node: { location: "https://example.com/schema#/$defs/bar" } });
     });
-
-    test("an embedded resource, from the document that contains it", async () => {
-      await findSchema(session, iri("https://example.com/schema"));
-      const result = await findSchema(session, iri("https://example.com/embedded"), { referencedFrom: "https://example.com/schema" });
-      expect(result.status).to.equal("found");
-    });
   });
 
   describe("missing", () => {
     test("a file that doesn't exist", async () => {
       const result = await findSchema(session, iri("file:///nothing-here/a.schema.json"));
       // Relative to the working directory, so it doesn't reveal where the file is
-      expect(result).toMatchObject({ status: "missing", reason: { message: `There's no file at '${relative(cwd(), "/nothing-here/a.schema.json")}'` } });
+      expect(result).toMatchObject({ status: "missing", reason: { message: `'${relative(cwd(), "/nothing-here/a.schema.json")}' doesn't exist` } });
     });
 
     test("an HTTP resource that doesn't exist", async () => {
-      expect(await findSchema(session, iri("test:/404"))).toMatchObject({ status: "missing", reason: { message: "There's nothing at 'test:/404' (404)" } });
+      expect(await findSchema(session, iri("test:/404"))).toMatchObject({ status: "missing", reason: { message: "'test:/404' can't be used, because its response's status is 404" } });
       expect((await findSchema(session, iri("test:/410"))).status).to.equal("missing");
     });
 
@@ -91,14 +86,14 @@ describe("findSchema", () => {
 
     test("a document that isn't a schema", async () => {
       const result = await findSchema(session, iri("test:/json"));
-      expect(result).toMatchObject({ status: "missing", reason: { message: "'test:/json' isn't a schema. It's application/json." } });
+      expect(result).toMatchObject({ status: "missing", reason: { message: "'test:/json' isn't a schema" } });
     });
   });
 
   describe("unknown", () => {
     test("a URL allowRetrieval refuses", async () => {
       const result = await findSchema(session, iri("https://example.com/other"));
-      expect(result).toMatchObject({ status: "unknown", reason: { name: "RetrievalError", cause: { response: { status: 403 } } } });
+      expect(result).toMatchObject({ status: "unknown", reason: { cause: { code: "ERR_RETRIEVAL_NOT_ALLOWED" } } });
     });
 
     test("an embedded resource, from another document", async () => {

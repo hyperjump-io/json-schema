@@ -19,9 +19,9 @@ It's a list of URLs:
 - A relative URL is resolved against the working directory in Node.js and
   against the page in a browser.
 
-The default is `["./"]`. In Node.js that allows files in the working
-directory. In a browser it allows what's in the page's directory. Nothing
-else is allowed, not even another path on the same server.
+The default allows what's local to your application. In Node.js it's
+`["./"]`, which allows files in the working directory. In a browser it's
+`["/"]`, which allows the page's origin. Nothing else is allowed.
 
 ```typescript
 const jsonSchema = new JsonSchema({
@@ -32,22 +32,27 @@ const jsonSchema = new JsonSchema({
 When you set your own list, include `"./"` if you still want to allow local
 files. `[]` allows nothing, so only registries are used.
 
-Retrieving anything else throws a `RetrievalError` whose `cause` is an
-`HttpError` for a `403`, the way a server refuses a request:
+Retrieving anything else throws a `TypeError`, the way `fetch` does for a
+request that's blocked. Its `cause.code` is `"ERR_RETRIEVAL_NOT_ALLOWED"`,
+and its `url` is the URL that was refused:
 
 ```text
-403 Forbidden -- Retrieving 'https://example.com/other' isn't allowed. Use the 'allowRetrieval' config to allow it.
+Fetching 'https://example.com/other' isn't allowed. Add it to the session's 'allowRetrieval' to allow it.
 ```
 
 ### What it protects against
 
 - **Symlinks.** In Node.js, `file:` URLs are compared by their real paths.
   A symlink in an allowed directory can't lead outside it.
-- **Redirects.** A response is checked again against the URL it came from,
-  so a redirect can't lead somewhere you didn't allow. The redirected
-  request is still sent, but its response isn't used.
+- **Redirects.** Where a redirect leads is checked before it's followed,
+  so a server can't make your application send a request to a URL you
+  didn't allow. In a browser, `fetch` follows redirects itself, so the
+  request is sent, but a response from a URL you didn't allow isn't used.
 - **The cache.** The check happens before anything is retrieved, so a
   cached response can't get around it.
+- **Files.** Only a schema from a file can reference a `file:` URL, so a
+  schema from the web can't make your application read one, even one you
+  allow.
 
 In a worker there's no page to resolve relative URLs against, so use
 absolute URLs.
@@ -91,5 +96,6 @@ Retrieval comes from `@hyperjump/browser`. These work the same way on a
 `JsonSchema`, and its docs cover them:
 
 - [HTTP caching](https://github.com/hyperjump-io/browser/blob/v2/website/http-caching.md)
-- [HTTP headers](https://github.com/hyperjump-io/browser/blob/v2/website/http-headers.md)
-- [Adding URL schemes](https://github.com/hyperjump-io/browser/blob/v2/website/url-schemes.md)
+- [Headers](https://github.com/hyperjump-io/browser/blob/v2/website/sessions.md#headers)
+- [Redirects](https://github.com/hyperjump-io/browser/blob/v2/website/redirects.md)
+- [Layers](https://github.com/hyperjump-io/browser/blob/v2/website/layers.md), for a `stack` of your own, such as one with another URL scheme

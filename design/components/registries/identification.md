@@ -42,7 +42,7 @@ entries. Each `JsonSchema` indexes each registry it's used with.
   with `addDialect`. The dialects they're waiting for are in the error when
   the lookup fails.
   Until then, a waiting entry is found by its `retrievalUri`. Resolving it
-  gets its dialect with `JsonSchemaSession.getDialect`, which can find the
+  gets its dialect with `getDialect(session, uri)`, which can find the
   meta-schema anywhere.
 - A session sees a dialect defined by an entry exactly when it sees the
   entry, because the dialect comes from the entry's resolved document. A

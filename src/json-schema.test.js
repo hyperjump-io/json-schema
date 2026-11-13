@@ -4,16 +4,17 @@ import { join, relative } from "node:path";
 import { cwd } from "node:process";
 import { pathToFileURL } from "node:url";
 import { describe, test, beforeEach, expect } from "vitest";
-import { jsonPointerGet, Session } from "@hyperjump/browser";
+import { createServer } from "node:http";
+import { defaultMediaTypes, fetcher, get, Hyperjump, jsonPointerGet } from "@hyperjump/browser";
 import { JsonSchema, extendDialect } from "./json-schema.js";
 import { v1Dialect, v1DialectUri } from "./dialects/v1/index.js";
 import { SchemaRegistry } from "./registry/schema-registry.js";
-import { AnchorNotFoundError } from "./schema/media-type-plugin.js";
 import vocabularyKeyword from "./keywords/vocabulary.js";
 import idKeyword from "./keywords/id.js";
 import { compile } from "./operations/compile.js";
 import { annotate } from "./operations/validate.js";
 import { validatorFor } from "./operations/validate-compiled.js";
+import { annotation, getDialect, getDocument, hasDialect } from "./session.js";
 
 /**
  * @import { Json } from "@hyperjump/browser"
@@ -174,10 +175,10 @@ describe("JsonSchema", () => {
       });
       const session = jsonSchema.session({ registry });
 
-      expect(await session.getDialect(uri)).to.eql({ uri, keywords: { $id: "https://json-schema.org/keyword/id" }, unknownKeywords: "annotation", formats: {}, assertFormats: false });
-      expect(session.hasDialect(uri)).to.equal(true);
+      expect(await getDialect(session, uri)).to.eql({ uri, keywords: { $id: "https://json-schema.org/keyword/id" }, unknownKeywords: "annotation", formats: {}, assertFormats: false });
+      expect(hasDialect(session, uri)).to.equal(true);
       expect(jsonSchema.hasDialect(uri)).to.equal(false);
-      expect(jsonSchema.session().hasDialect(uri)).to.equal(false);
+      expect(hasDialect(jsonSchema.session(), uri)).to.equal(false);
     });
 
     test("a session sees the dialects in its JsonSchema's config", async () => {
@@ -185,8 +186,54 @@ describe("JsonSchema", () => {
       const dialect = { uri: "https://example.com/added-dialect", keywords: {}, unknownKeywords: "annotation" };
       const session = new JsonSchema({ dialects: [dialect] }).session();
 
-      expect(session.hasDialect(dialect.uri)).to.equal(true);
-      expect(await session.getDialect(dialect.uri)).to.eql(dialect);
+      expect(hasDialect(session, dialect.uri)).to.equal(true);
+      expect(await getDialect(session, dialect.uri)).to.eql(dialect);
+    });
+
+    test("sessions share an HTTP cache, so a schema isn't retrieved again", async () => {
+      let requests = 0;
+      const server = createServer((_request, response) => {
+        requests++;
+        response.writeHead(200, { "content-type": "application/schema+json", "cache-control": "max-age=60" });
+        response.end(JSON.stringify({ $schema: v1DialectUri, type: "string" }));
+      });
+      await new Promise((resolve) => server.listen(0, "127.0.0.1", () => resolve(undefined)));
+      try {
+        const { port } = /** @type import("node:net").AddressInfo */ (server.address());
+        const origin = `http://127.0.0.1:${port}/`;
+        const cached = new JsonSchema({ dialects: [v1Dialect], allowRetrieval: [origin] });
+
+        expect(validatorFor(await compile(cached, `${origin}schema`))(42)).to.equal(false);
+        expect(validatorFor(await compile(cached, `${origin}schema`))(42)).to.equal(false);
+        expect(requests).to.equal(1);
+      } finally {
+        server.close();
+      }
+    });
+
+    test("sessions retrieve through the config's stack, as it is", async () => {
+      let requests = 0;
+      const stack = fetcher(() => {
+        requests++;
+        return new Response(JSON.stringify({ $schema: v1DialectUri, type: "string" }), {
+          headers: { "content-type": "application/schema+json", "cache-control": "max-age=60" }
+        });
+      });
+      const uncached = new JsonSchema({ dialects: [v1Dialect], allowRetrieval: ["https://example.com/"], stack });
+
+      expect(uncached.stack).to.equal(stack);
+      expect(validatorFor(await compile(uncached, "https://example.com/schema"))(42)).to.equal(false);
+      expect(validatorFor(await compile(uncached, "https://example.com/schema"))(42)).to.equal(false);
+      expect(requests).to.equal(2);
+    });
+
+    test("JSON is read as a schema even when the config has browser's media types", async () => {
+      const stack = fetcher(() => new Response(JSON.stringify({ $schema: v1DialectUri, type: "string" }), {
+        headers: { "content-type": "application/json" }
+      }));
+      const withDefaults = new JsonSchema({ dialects: [v1Dialect], allowRetrieval: ["https://example.com/"], stack, mediaTypes: [...defaultMediaTypes] });
+
+      expect((await getDocument(withDefaults.session(), "https://example.com/schema")).type).to.equal("json-schema-document");
     });
 
     test("each compile has its own session, so it sees changes", async () => {
@@ -205,29 +252,27 @@ describe("JsonSchema", () => {
       }
     });
 
-    test("a schema can't be retrieved without a JsonSchemaSession", async () => {
+    test("a schema can't be retrieved in a session that isn't a JsonSchema's", async () => {
       const directory = await mkdtemp(join(tmpdir(), "json-schema-"));
       try {
         const path = join(directory, "schema.schema.json");
         await writeFile(path, JSON.stringify({ $schema: v1DialectUri }));
 
-        await expect(new Session(jsonSchema).get(pathToFileURL(path).toString())).rejects.toMatchObject({
-          cause: { message: expect.stringContaining("JsonSchemaSession") }
-        });
+        const session = new Hyperjump({ mediaTypes: jsonSchema.config.mediaTypes, allowRetrieval: [pathToFileURL(join(directory, "/")).href] });
+        await expect(get(session, pathToFileURL(path).toString())).rejects.toThrow("A schema can only be retrieved in a session of a JsonSchema");
       } finally {
         await rm(directory, { recursive: true });
       }
     });
 
-    test("a relative URI is resolved against the working directory, even with referencedFrom", async () => {
+    test("a relative URI is resolved against the working directory", async () => {
       const directory = await mkdtemp(join(cwd(), ".json-schema-test-"));
       try {
         const path = join(directory, "schema.schema.json");
         await writeFile(path, JSON.stringify({ $schema: v1DialectUri, type: "string" }));
 
         const session = new JsonSchema({ dialects: [v1Dialect] }).session();
-        const referencedFrom = pathToFileURL(join(directory, "other.schema.json")).href;
-        const document = await session.getDocument(relative(cwd(), path), { referencedFrom });
+        const document = await getDocument(session, relative(cwd(), path));
         expect(/** @type import("./schema/schema-ast.d.ts").JsonSchemaDocumentNode */ (/** @type unknown */ (document)).uri).to.equal(pathToFileURL(path).href);
       } finally {
         await rm(directory, { recursive: true });
@@ -351,40 +396,40 @@ describe("JsonSchema", () => {
       const { node } = await annotate(jsonSchema, "https://example.com/annotated", { foo: 1, bar: 2 });
       const session = jsonSchema.session();
 
-      expect(session.annotation(node, "title")).to.eql(["root"]);
-      expect(session.annotation(jsonPointerGet("/foo", /** @type any */ (node)), "title")).to.eql(["foo", "also foo"]);
-      expect(session.annotation(jsonPointerGet("/bar", /** @type any */ (node)), "title")).to.eql([]);
+      expect(annotation(session, node, "title")).to.eql(["root"]);
+      expect(annotation(session, jsonPointerGet("/foo", /** @type any */ (node)), "title")).to.eql(["foo", "also foo"]);
+      expect(annotation(session, jsonPointerGet("/bar", /** @type any */ (node)), "title")).to.eql([]);
     });
 
     test("annotation by keyword URI", async () => {
       const { node } = await annotate(jsonSchema, "https://example.com/annotated", {});
 
-      expect(jsonSchema.session().annotation(node, "https://json-schema.org/keyword/title")).to.eql(["root"]);
+      expect(annotation(jsonSchema.session(), node, "https://json-schema.org/keyword/title")).to.eql(["root"]);
     });
 
     test("annotation by unknown keyword name", async () => {
       const { node } = await annotate(jsonSchema, "https://example.com/annotated", {});
 
-      expect(jsonSchema.session().annotation(node, "x-foo")).to.eql(["bar"]);
+      expect(annotation(jsonSchema.session(), node, "x-foo")).to.eql(["bar"]);
     });
 
     test("annotation by unknown keyword URI", async () => {
       const { node } = await annotate(jsonSchema, "https://example.com/annotated", {});
 
-      expect(jsonSchema.session().annotation(node, "https://json-schema.org/keyword/unknown#x-foo")).to.eql(["bar"]);
+      expect(annotation(jsonSchema.session(), node, "https://json-schema.org/keyword/unknown#x-foo")).to.eql(["bar"]);
     });
 
     test("annotation by keyword URI doesn't need the dialect", async () => {
       const { node } = await annotate(jsonSchema, "https://example.com/annotated", {});
 
-      expect(jsonSchema.session().annotation(node, "https://json-schema.org/keyword/title", "https://example.com/dialect")).to.eql(["root"]);
+      expect(annotation(jsonSchema.session(), node, "https://json-schema.org/keyword/title", "https://example.com/dialect")).to.eql(["root"]);
     });
 
     test("annotation by name with property names", async () => {
       const { node } = await annotate(jsonSchema, "https://example.com/annotated", { foo: 1 });
       const nameNode = /** @type any */ (node).children[0].children[0];
 
-      expect(jsonSchema.session().annotation(nameNode, "title")).to.eql(["name"]);
+      expect(annotation(jsonSchema.session(), nameNode, "title")).to.eql(["name"]);
     });
 
     test("annotation by name in another dialect", async () => {
@@ -395,14 +440,14 @@ describe("JsonSchema", () => {
       const { node } = await annotate(other, "https://example.com/annotated", {});
       const session = other.session();
 
-      expect(session.annotation(node, "label", "https://example.com/dialect")).to.eql(["root"]);
-      expect(session.annotation(node, "title", "https://example.com/dialect")).to.eql([]);
+      expect(annotation(session, node, "label", "https://example.com/dialect")).to.eql(["root"]);
+      expect(annotation(session, node, "title", "https://example.com/dialect")).to.eql([]);
     });
 
     test("annotation by name in a dialect that isn't defined", async () => {
       const { node } = await annotate(jsonSchema, "https://example.com/annotated", {});
 
-      expect(() => jsonSchema.session().annotation(node, "title", "https://example.com/dialect")).to.throw("isn't defined");
+      expect(() => annotation(jsonSchema.session(), node, "title", "https://example.com/dialect")).to.throw("isn't defined");
     });
   });
 
@@ -421,8 +466,11 @@ describe("JsonSchema", () => {
       jsonSchema.registry = new SchemaRegistry().with({ $schema: v1DialectUri, $id: "https://example.com/no-anchor", $ref: "#foo" });
       const error = await compile(jsonSchema, "https://example.com/no-anchor")
         .catch((/** @type unknown */ error) => error);
-      expect(error).to.be.instanceOf(AnchorNotFoundError);
-      expect(error).toMatchObject({ anchor: "foo", uri: "https://example.com/no-anchor", message: "There's no 'foo' anchor in 'https://example.com/no-anchor'" });
+      expect(error).toMatchObject({
+        cause: { code: "ERR_ANCHOR_NOT_FOUND", anchor: "foo" },
+        url: "https://example.com/no-anchor",
+        message: "There's no 'foo' anchor in 'https://example.com/no-anchor'"
+      });
     });
 
     test("a percent-encoded JSON Pointer", async () => {

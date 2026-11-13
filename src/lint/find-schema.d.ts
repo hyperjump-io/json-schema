@@ -1,4 +1,3 @@
-import type { GetOptions } from "@hyperjump/browser";
 import type { NormalizedIri } from "@hyperjump/uri";
 import type { JsonSchemaSession } from "../session.d.ts";
 import type { JsonSchemaDocumentNode, JsonSchemaNode } from "../schema/schema-ast.d.ts";
@@ -27,7 +26,7 @@ export type FindSchemaResult = {
   reason: Error;
 };
 
-export type FindSchemaOptions = GetOptions & {
+export type FindSchemaOptions = {
   /**
    * The document the reference is in. A resource in it, including its root,
    * is found in it before the session is used, the way a reference finds an

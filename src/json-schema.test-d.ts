@@ -14,6 +14,11 @@ import { BASIC } from "./output/index.js";
 import { compile, restore, serialize } from "./operations/compile.js";
 import { annotate, validate, validator } from "./operations/validate.js";
 import { annotatorFor, validatorFor } from "./operations/validate-compiled.js";
+import { get, getDocument } from "./session.js";
+import { isSchemaDocument, isSchemaNode } from "./schema/schema-nodes.js";
+import { jrefStep } from "@hyperjump/browser";
+import type { DocumentNode, FollowedNode, JrefNode, JsonNode, MediaTypePlugin } from "@hyperjump/browser";
+import type { JsonSchemaNode } from "./schema/schema-ast.d.ts";
 
 // What's only read can be readonly
 const instance = { tags: ["a", "b"], nested: { list: [1, 2] } } as const;
@@ -132,3 +137,33 @@ v1Only.registry = v1Only.registry.with({ $schema: "https://json-schema.org/v1", 
 v1Only.registry = v1Only.registry.with({ minLenght: 1 });
 v1Only.registry = new SchemaRegistry().with({ anything: [1] });
 v1Only.registry = v1Only.registry.concat(new SchemaRegistry());
+
+// What a session finds is a node of a document in one of its media types:
+// a schema, JRef, JSON, or one of the config's
+type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
+const yes = <T extends true>(_is?: T) => {};
+
+const found = await get(v1Only.session(), "https://example.com/schema");
+yes<Equal<typeof found, FollowedNode<JsonSchemaNode | JrefNode | JsonNode>>>();
+if (found.type === "json-schema") {
+  found satisfies FollowedNode<JsonSchemaNode>;
+  const stepped = await jrefStep(v1Only.session(), "properties", found);
+  yes<Equal<typeof stepped, FollowedNode<JsonSchemaNode | JrefNode | JsonNode>>>();
+}
+
+type OtherNode = JsonNode<{ type: "other" }>;
+declare const otherMediaType: MediaTypePlugin<DocumentNode<OtherNode>>;
+const withOther = new JsonSchema({ dialects: [v1Dialect], mediaTypes: [otherMediaType] });
+const foundOther = await get(withOther.session(), "https://example.com/schema");
+yes<Equal<typeof foundOther, FollowedNode<JsonSchemaNode | JrefNode | JsonNode | OtherNode>>>();
+
+// A session whose type doesn't say its media types could have any
+const unknownNode = await get(jsonSchema.session(), "https://example.com/schema");
+yes<Equal<typeof unknownNode, unknown>>();
+if (isSchemaNode(unknownNode)) {
+  unknownNode.dialectUri satisfies string;
+}
+const anyDocument = await getDocument(jsonSchema.session(), "https://example.com/schema");
+if (isSchemaDocument(anyDocument)) {
+  anyDocument.anchors satisfies Record<string, string>;
+}

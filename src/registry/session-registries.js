@@ -1,4 +1,3 @@
-import { RetrievalError } from "@hyperjump/browser";
 import { toId } from "../identifiers.js";
 import { resolveSchemaText, resolveSchemaValue } from "../schema/resolve-text.js";
 import { RegistryIndex } from "./registry-index.js";
@@ -9,25 +8,11 @@ import { SchemaRegistry } from "./schema-registry.js";
  * @import { JsonSchemaSession } from "../session.d.ts"
  * @import { JsonSchemaDocumentNode } from "../schema/schema-ast.d.ts"
  * @import { ReadonlyJson } from "@hyperjump/browser"
+ * @import { SchemaRegistry as SchemaRegistryType } from "./schema-registry.d.ts"
  * @import { RegistryEntry } from "./registry-entries.js"
  * @import { IndexedEntry } from "./registry-index.js"
  * @import { Id } from "../identifiers.js"
  */
-
-/**
- * Each session's registries, for operations that give a session a schema as
- * a value
- *
- * @type WeakMap<JsonSchemaSession, SessionRegistries>
- */
-const sessionRegistries = new WeakMap();
-
-/**
- * Add a schema to a session as a value, and get the URI it's found by
- *
- * @type (session: JsonSchemaSession, schema: ReadonlyJson) => string
- */
-export const addSchemaValue = (session, schema) => /** @type SessionRegistries */ (sessionRegistries.get(session)).addValue(schema);
 
 /**
  * The schemas a session finds in the registries it sees
@@ -79,7 +64,6 @@ export class SessionRegistries {
     this.#documents = new Map();
     this.#registries = [sessionRegistry === instanceRegistry ? undefined : sessionRegistry, instanceRegistry];
     this.#values = [];
-    sessionRegistries.set(session, this);
   }
 
   /**
@@ -89,7 +73,7 @@ export class SessionRegistries {
    * identical, so a value can't replace a schema from a registry.
    *
    * @type (schema: ReadonlyJson) => string
-   * @throws RetrievalError if a registry has a schema identified by its `$id`
+   * @throws Error if a registry has a schema identified by its `$id`
    */
   addValue(schema) {
     const uri = toId(`urn:uuid:${crypto.randomUUID()}`);
@@ -169,16 +153,9 @@ export class SessionRegistries {
     /** @type IndexedEntry | undefined */
     let found;
     for (const index of this.#registryIndexes()) {
-      let indexed;
-      try {
-        indexed = index.lookup(id);
-      } catch (error) {
-        throw new RetrievalError(id, { cause: error });
-      }
+      const indexed = index.lookup(id);
       if (indexed && found && indexed.entry !== found.entry) {
-        throw new RetrievalError(id, {
-          cause: Error(`More than one registry has a schema identified as '${id}'`)
-        });
+        throw Error(`More than one registry has a schema identified as '${id}'`);
       }
       found ??= indexed;
     }
@@ -210,7 +187,7 @@ export class SessionRegistries {
     if (indexed.error) {
       // Resolving throws the problem that kept the entry from being
       // identified, with any others. If it didn't, it's still a problem.
-      throw new RetrievalError(indexed.uri, { cause: indexed.error });
+      throw indexed.error;
     }
     if (Object.values(document.embedded).every((resource) => resource.dialectUri === undefined || jsonSchema.hasDialect(resource.dialectUri))) {
       let documents = sharedDocuments.get(jsonSchema);

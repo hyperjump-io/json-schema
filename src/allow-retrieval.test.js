@@ -4,7 +4,6 @@ import { join } from "node:path";
 import { cwd } from "node:process";
 import { pathToFileURL } from "node:url";
 import { describe, test, beforeAll, afterAll, expect } from "vitest";
-import { RetrievalError } from "@hyperjump/browser";
 import { normalizeIri, toRelativeIri, urlToIri } from "@hyperjump/uri";
 import { toId } from "./identifiers.js";
 import { JsonSchema } from "./json-schema.js";
@@ -53,14 +52,12 @@ describe("allowRetrieval", () => {
     const uri = pathToFileURL(join(outside, "outside.schema.json")).href;
     const error = await compile(v1(), uri)
       .catch((/** @type unknown */ error) => error);
-    expect(error).to.be.instanceOf(RetrievalError);
-    expect(error).toMatchObject({ name: "RetrievalError", cause: { name: "HttpError", response: { status: 403 } } });
-    expect(/** @type RetrievalError */ (error).url).to.equal(uri);
+    expect(error).toMatchObject({ cause: { code: "ERR_RETRIEVAL_NOT_ALLOWED" }, url: uri });
   });
 
   test("a reference is refused", async () => {
     const uri = pathToFileURL(join(inside, "refers-outside.schema.json")).href;
-    await expect(compile(v1(), uri)).rejects.toMatchObject({ name: "RetrievalError", cause: { name: "HttpError", response: { status: 403 } } });
+    await expect(compile(v1(), uri)).rejects.toMatchObject({ cause: { code: "ERR_RETRIEVAL_NOT_ALLOWED" } });
   });
 
   test("the config replaces the default", async () => {

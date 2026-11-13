@@ -1,6 +1,6 @@
 # Bundling (`src/bundle/`)
 
-`bundle(uri, options)` on `JsonSchema` and `JsonSchemaSession` makes a compound schema document the way
+`bundle(context, uri, options)`, for a `JsonSchema` or a session, makes a compound schema document the way
 2020-12 describes, in any dialect: every referenced document is embedded in
 the main schema's definitions with its identifier, so no reference changes.
 It's v1's bundler and keeps its options (`alwaysIncludeDialect`,
@@ -26,8 +26,8 @@ being considered (see [Open questions](../specs/keyword/README.md#open-questions
 - A reference to a resource that's already in the bundle, including one
   embedded in an embedded document, isn't followed. Each document is
   embedded once.
-- A document is found with `getDocument` and no `referencedFrom`, so it's
-  always a whole document from a registry or retrieval. If its URI isn't
+- A document is found with `getDocument`, so it's always a whole document
+  from a registry or retrieval. If its URI isn't
   the one the reference used, the reference wouldn't find it in the bundle,
   so that's an error rather than a broken bundle.
 - The schema AST stringifies back to the original document, so a document

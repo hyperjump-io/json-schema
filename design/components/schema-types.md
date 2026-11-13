@@ -52,7 +52,8 @@ written. Custom keywords are part of the type.
   `JsonSchema<S>` with the union of their types, and without dialects it's
   `AnySchema`. `extendDialect` returns `DialectConfig<K & E, …>`, so the
   keywords it adds are in the type. A session is a
-  `JsonSchemaSession<S>`.
+  `JsonSchemaSession<S, M>`, where `M` is the config's media types (see
+  [Sessions](sessions/README.md)).
 - **A schema an operation is given as a value is checked.** `validate`,
   `validator`, `annotate`, `annotator`, `compile`, and `bundle` take
   `NoInfer<SchemaSource<S>>`, so `S` comes from the context, not the

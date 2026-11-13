@@ -49,7 +49,7 @@ document finds something. They can see what's in registries and what
   the processor resolves it, so the session doesn't have it. A reference
   from it is found with `findSchema`'s `document` option, which looks in
   the referencing document's `embedded` map before the session, the way
-  `getDocument` does with `referencedFrom`. Rules get the nodes being
+  browser finds what a reference's document contains. Rules get the nodes being
   linted, even when the document has problems, and nothing is read again,
   so stdin and editor buffers work.
 - Adding the linted document to the session was considered: to browser's

@@ -1,8 +1,9 @@
-import { Hyperjump } from "@hyperjump/browser";
+import { jrefMediaType } from "@hyperjump/browser";
+import { defaultStack } from "#default-stack";
 import { toId } from "./identifiers.js";
-import { JsonSchemaMediaTypePlugin } from "./schema/media-type-plugin.js";
-import { JsonOrSchemaMediaTypePlugin } from "./schema/json-media-type-plugin.js";
-import { JsonSchemaSession } from "./session.js";
+import { schemaMediaType } from "./schema/media-type-plugin.js";
+import { jsonOrSchemaMediaType } from "./schema/json-media-type-plugin.js";
+import { createSession } from "./session.js";
 import { SchemaRegistry } from "./registry/schema-registry.js";
 import schemaKeyword from "./keywords/schema.js";
 import unknownKeyword from "./keywords/unknown.js";
@@ -16,7 +17,6 @@ export { extendDialect } from "./dialects/extend-dialect.js";
  * @import { Keyword } from "./keyword.d.ts"
  * @import { Format } from "./format.d.ts"
  * @import { Dialect, DialectConfig, Vocabulary, VocabularyConfig } from "./dialect.d.ts"
- * @import { JsonSchemaNode } from "./schema/schema-ast.d.ts"
  * @import * as API from "./json-schema.d.ts"
  */
 
@@ -27,11 +27,8 @@ export { extendDialect } from "./dialects/extend-dialect.js";
  */
 const frozenCopy = (array) => array && /** @type T[] */ (Object.freeze([...array]));
 
-/**
- * @implements API.JsonSchema
- * @augments {Hyperjump<JsonSchemaNode>}
- */
-export class JsonSchema extends Hyperjump {
+/** @implements API.JsonSchema */
+export class JsonSchema {
   /** @type Record<string, Keyword> */
   #keywords;
 
@@ -47,22 +44,33 @@ export class JsonSchema extends Hyperjump {
   /** @type API.JsonSchema["registry"] */
   registry;
 
+  /** @type API.JsonSchema["config"] */
+  config;
+
+  /** @type API.JsonSchema["stack"] */
+  stack;
+
   /**
    * @param {API.JsonSchemaConfig} [config]
    */
   constructor(config = {}) {
-    // Its media types come before the config's, so the config can replace
-    // them. The JSON plugin replaces the default one. The `Hyperjump` keeps
-    // a frozen copy of the config, with frozen copies of its lists, and
-    // these are its lists, so they're copied and frozen here.
-    super(/** @type API.JsonSchemaConfig */ ({
+    // Its media types come before the config's, and the first plugin wins
+    // a tie, so JSON is always read by the plugin that finds schemas in it,
+    // even when the config has browser's defaults. The config is a frozen
+    // copy, with frozen copies of its lists, so changing the object it was
+    // created with doesn't change it.
+    this.config = Object.freeze({
       ...config,
-      mediaTypePlugins: [new JsonSchemaMediaTypePlugin(), new JsonOrSchemaMediaTypePlugin(), ...config.mediaTypePlugins ?? []],
+      mediaTypes: Object.freeze([schemaMediaType, jsonOrSchemaMediaType, jrefMediaType, ...config.mediaTypes ?? []]),
       dialects: frozenCopy(config.dialects),
       keywords: frozenCopy(config.keywords),
       formats: frozenCopy(config.formats),
       vocabularies: config.vocabularies && Object.freeze({ ...config.vocabularies })
-    }));
+    });
+
+    // Every session shares it, so what one retrieves over HTTP is cached
+    // for the next
+    this.stack = config.stack ?? defaultStack();
 
     this.#keywords = {};
     this.#formats = {};
@@ -102,7 +110,7 @@ export class JsonSchema extends Hyperjump {
 
   /** @type API.JsonSchema["session"] */
   session(options) {
-    return new JsonSchemaSession(this, options);
+    return createSession(this, options);
   }
 
   /** @type API.JsonSchema["hasKeyword"] */
@@ -230,7 +238,7 @@ export class JsonSchema extends Hyperjump {
 
     const { formats, ...rest } = dialect;
     /** @type Dialect */
-    const added = withValidateFormats({ ...rest, uri, keywords: this.#addKeywords(dialect.keywords) }, /** @type API.JsonSchemaConfig */ (this.config));
+    const added = withValidateFormats({ ...rest, uri, keywords: this.#addKeywords(dialect.keywords) }, this.config);
     if (formats !== undefined) {
       added.formats = this.#addFormats(formats);
     }

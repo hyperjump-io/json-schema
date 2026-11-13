@@ -190,9 +190,12 @@ the session. To send credentials, see
 
 `compile` throws when it can't find a schema:
 
-- A `RetrievalError` from `@hyperjump/browser` when retrieving it fails. Its
-  `cause` is the error that stopped it. When `allowRetrieval` doesn't allow
-  the URI, the `cause` is an `HttpError` for a `403`. A file that doesn't
-  exist and a `404` are other examples.
+- An error from `@hyperjump/browser` when retrieving it fails. Its
+  `cause.code` says why, and its `url` is the URL that failed. When
+  `allowRetrieval` doesn't allow the URI, the code is
+  `"ERR_RETRIEVAL_NOT_ALLOWED"`. A file that doesn't exist is `"ENOENT"`,
+  and a response that isn't a success, like a `404`, is
+  `"ERR_HTTP_STATUS"`, with its `status`. See
+  [browser's errors](https://github.com/hyperjump-io/browser/blob/v2/website/errors.md).
 - A `SchemaError` when the schema is found but has problems. See
   [Invalid schemas](invalid-schemas.md).

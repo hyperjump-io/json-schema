@@ -1,44 +1,29 @@
 import type { MediaTypePlugin } from "@hyperjump/browser";
-import type { Iri } from "@hyperjump/uri";
 import type { JsonSchema } from "../json-schema.d.ts";
 import type { JsonSchemaDocumentNode } from "./schema-ast.d.ts";
 
 /**
- * Supports JSON Schema
- * - Media type: application/schema+json
- * - Extensions: .schema.json
+ * Documents are only made for schemas without problems, so their status is
+ * always `success`.
+ */
+export type JsonSchemaMediaTypeDocument = JsonSchemaDocumentNode<"success">;
+
+/**
+ * JSON Schema: `application/schema+json`, and files that end with
+ * `.schema.json`.
  *
  * The `schema` parameter of the media type (or `profile`, which was used
  * before 2020-12) is the dialect of a schema that doesn't have `$schema`.
  *
- * It's added to every {@link JsonSchema}. A schema can only be retrieved in a
- * `JsonSchemaSession`.
+ * A fragment is an anchor, or a JSON Pointer that's percent-encoded.
+ * `fragmentPointer` throws an `Error` whose `cause.code` is
+ * `ERR_ANCHOR_NOT_FOUND`, with the `anchor`, if the fragment isn't an
+ * anchor in the document or a JSON Pointer. Its `url` is the resource's.
+ *
+ * It's in every {@link JsonSchema}'s `mediaTypes`. A schema can only be
+ * retrieved in a session of a `JsonSchema`: `parse` throws in any other.
  */
-export class JsonSchemaMediaTypePlugin implements MediaTypePlugin<JsonSchemaDocumentNode<"success">> {
-  mediaType: string;
-  extensions: string[];
-  parse: MediaTypePlugin<JsonSchemaDocumentNode<"success">>["parse"];
+export const schemaMediaType: Readonly<MediaTypePlugin<JsonSchemaMediaTypeDocument>> & Required<Pick<MediaTypePlugin<JsonSchemaMediaTypeDocument>, "fragmentPointer">>;
 
-  /**
-   * An anchor identifies a JSON Pointer. Otherwise, the fragment is a JSON
-   * Pointer that's percent-encoded.
-   *
-   * @throws AnchorNotFoundError if the fragment isn't an anchor in the
-   * document or a JSON Pointer.
-   */
-  fragmentPointer: NonNullable<MediaTypePlugin<JsonSchemaDocumentNode<"success">>["fragmentPointer"]>;
-}
-
-/**
- * A fragment that isn't a JSON Pointer names an anchor (`$anchor`), and the
- * document doesn't have one by that name.
- */
-export class AnchorNotFoundError extends Error {
-  /** The fragment, which names an anchor */
-  anchor: string;
-
-  /** The URI of the schema resource that doesn't have the anchor */
-  uri: Iri;
-
-  constructor(anchor: string, uri: Iri);
-}
+// Used by the library. It isn't exported from the package.
+export const contentTypeParameters: (response: Response) => Record<string, string | undefined>;

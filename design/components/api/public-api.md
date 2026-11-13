@@ -14,20 +14,24 @@ These stay public, because something users write depends on them.
 | Keyword definitions: the `check`, `resolve`, `lower`, and `evaluate` hooks and their contexts | Custom keywords |
 | Kernel expressions, the `Kernel` format (versioned with `kernel: 1`), and helpers like `subexpressions` | Custom keywords lower to expressions, and `serialize` returns a `Kernel` |
 | `EvaluationPlugin` | Custom output formats, and anything that watches evaluation, like coverage |
-| Schema AST types, `JsonSchemaMediaTypePlugin`, `resolveSchema`, `jsonSchemaResolve`, `jsonSchemaValidate` | Editors and the language server, schemas in other formats, like YAML |
+| Schema AST types, `schemaMediaType`, `isSchemaNode`, `isSchemaDocument`, `resolveSchema`, `jsonSchemaResolve`, `jsonSchemaValidate` | Editors and the language server, schemas in other formats, like YAML |
 | The lint toolkit (`./lint`) | Lint rules |
 | Session browsing: `get`, `getDocument`, `getDialect`, `annotation` | Any operation that walks schemas |
 
 ## Decided
 
-- `getDocument(uri, { referencedFrom })` and `get` are how to follow a
-  reference, documented in the website's
+- `get(session, uri, { referencedFrom })` is how to follow a reference,
+  documented in the website's
   [Sessions](../../../website/extending/sessions.md#following-references)
   page, with `visitReferences` to find them. An embedded resource is only
   found that way, so an operation that follows `$ref` without it, like a
   docs generator or a bundler, gets embedded resources wrong.
-  `referencedFrom` is the URI of the document the reference is in, because
-  every resource in a document shares its index of what it embeds.
+  `referencedFrom` is the reference's node, which is what browser finds
+  the document it's in from. `getDocument` only finds a whole document,
+  from a registry or by retrieving it.
+- `get` and `getDocument` are browser's, exported as they are. What they
+  find might not be a schema, so `isSchemaNode` and `isSchemaDocument` are
+  exported with them.
 - There's no `lower` function. `serialize(await compile(context, uri))`
   is the kernel as it was lowered. The optimization passes run inside a
   validator, once for each evaluation mode, and what they produce is never

@@ -1,16 +1,16 @@
-import { HttpError, jsonValue, relativeFileUrl, RetrievalError, Session } from "@hyperjump/browser";
+import { getDocument, Hyperjump, jsonValue, relativeFileUrl } from "@hyperjump/browser";
 import { encodeIriFragment, urlToIri } from "@hyperjump/uri";
 import { toId } from "./identifiers.js";
 import { SessionRegistries } from "./registry/session-registries.js";
 import { DocumentResponse } from "./registry/document-response.js";
 import { SchemaError } from "./schema/schema-error.js";
+import { isSchemaDocument } from "./schema/schema-nodes.js";
 import { withValidateFormats } from "./dialects/extend-dialect.js";
 import unknownKeyword, { keywordDefinitionUri } from "./keywords/unknown.js";
 
 /**
- * @import { DocumentNode, GetOptions, Json } from "@hyperjump/browser"
+ * @import { Json } from "@hyperjump/browser"
  * @import { Dialect } from "./dialect.d.ts"
- * @import { JsonSchema } from "./json-schema.d.ts"
  * @import { JsonSchemaDocumentNode, JsonSchemaNode } from "./schema/schema-ast.d.ts"
  * @import { SchemaMessage } from "./schema/schema-error.d.ts"
  * @import { Id } from "./identifiers.js"
@@ -20,319 +20,300 @@ import unknownKeyword, { keywordDefinitionUri } from "./keywords/unknown.js";
 // Not imported from the v1 dialect, which would load all of its keywords
 const v1DialectUri = "https://json-schema.org/v1";
 
-/** The statuses whose response is a document, like browser's */
-const successStatuses = new Set([200, 203]);
-const redirectStatuses = new Set([301, 302, 303, 307, 308]);
-
 /**
- * @implements API.JsonSchemaSession
- * @augments {Session<JsonSchemaNode>}
+ * What a session keeps for schemas, in its state
+ *
+ * - `embedded` maps the URI of every resource in a schema document to the
+ *   `embedded` objects that have it, so a node's resource is found from its
+ *   location. A URI is only in more than one document if its resources are
+ *   identical.
+ * - `documents` has the documents in `embedded` by their `embedded` objects.
+ * - `dialects` are the dialects built from meta-schemas in this session.
+ * - `pendingDialects` are the dialects whose meta-schemas are being
+ *   retrieved.
+ * - `loading` maps the dialects whose meta-schemas are being retrieved to
+ *   the dialects their meta-schemas are waiting on.
+ *
+ * @typedef {{
+ *   registries: SessionRegistries,
+ *   embedded: Map<Id, Record<string, JsonSchemaDocumentNode>[]>,
+ *   documents: WeakMap<Record<string, JsonSchemaDocumentNode>, JsonSchemaDocumentNode>,
+ *   dialects: Record<string, Dialect>,
+ *   pendingDialects: Record<string, Promise<Dialect>>,
+ *   loading: Map<Id, Set<Id>>
+ * }} Schemas
  */
-export class JsonSchemaSession extends Session {
-  /** @type JsonSchema */
-  #jsonSchema;
 
-  /**
-   * Maps the URI of every resource in a schema document to the `embedded`
-   * object they share, so a reference from any of them can find the others.
-   * A URI is only in more than one document if its resources are identical.
-   *
-   * @type Map<Id, Record<string, JsonSchemaDocumentNode>[]>
-   */
-  #embedded;
+/** The key of a session's schemas in its state */
+const schemasKey = {};
 
-  /**
-   * The documents in `#embedded` by their `embedded` objects
-   *
-   * @type WeakMap<Record<string, JsonSchemaDocumentNode>, JsonSchemaDocumentNode>
-   */
-  #documents;
+/** @type (session: API.JsonSchemaSession) => Schemas */
+const schemasOf = (session) => session.state(schemasKey, () => {
+  throw Error("A schema can only be retrieved in a session of a JsonSchema. Use its 'session' function to create one.");
+});
 
-  /**
-   * Dialects built from meta-schemas in this session
-   *
-   * @type Record<string, Dialect>
-   */
-  #dialects;
+/** @type typeof API.createSession */
+export const createSession = (jsonSchema, options = {}) => {
+  const allowRetrieval = options.allowRetrieval ?? jsonSchema.config.allowRetrieval;
+  const hyperjump = new Hyperjump({
+    ...jsonSchema.config,
+    stack: jsonSchema.stack,
+    ...allowRetrieval === undefined ? {} : { allowRetrieval }
+  });
 
-  /** @type SessionRegistries */
-  #registries;
+  /** @type API.JsonSchemaSession<any, any> */
+  const session = Object.freeze({
+    hyperjump,
+    jsonSchema,
+    config: hyperjump.config,
+    contextUrl: hyperjump.contextUrl,
+    state: (key, init) => hyperjump.state(key, init),
 
-  /**
-   * Dialects whose meta-schemas are being retrieved
-   *
-   * @type Record<string, Promise<Dialect>>
-   */
-  #pendingDialects;
-
-  /**
-   * Dialects whose meta-schemas are being retrieved, mapped to the dialects
-   * their meta-schemas are waiting on.
-   *
-   * @type Map<Id, Set<Id>>
-   */
-  #loading;
-
-  /**
-   * @param {JsonSchema} jsonSchema
-   * @param {API.SessionOptions} [options]
-   */
-  constructor(jsonSchema, options = {}) {
-    super(jsonSchema, { allowRetrieval: options.allowRetrieval });
-
-    this.#jsonSchema = jsonSchema;
-    this.#embedded = new Map();
-    this.#documents = new WeakMap();
-    this.#dialects = {};
-    this.#pendingDialects = {};
-    this.#loading = new Map();
-    this.#registries = new SessionRegistries(this, options.registry);
-  }
-
-  get jsonSchema() {
-    return this.#jsonSchema;
-  }
-
-  /**
-   * The document a reference is in, for browser to find what it embeds. A
-   * resource's nodes have locations that start with its URI, so a
-   * reference's `referencedFrom` is a resource's URI, and one URI identifies
-   * one resource in a session, so it's a document that has that resource.
-   * A URL that isn't a resource's is browser's to find.
-   *
-   * A resource that's in more than one document is identical in each, but
-   * only some of them might embed what it references. Where one doesn't, the
-   * reference finds a schema the usual way, so that has to be identical too,
-   * and it's looked up that way as well. Otherwise, a document could change
-   * what a reference in another one finds.
-   *
-   * @param {string} referencedFrom
-   * @param {string} url
-   */
-  async referencingDocument(referencedFrom, url) {
-    const fromId = toId(urlToIri(new URL(referencedFrom)));
-    const containing = this.#embedded.get(fromId);
-    if (!containing) {
-      return super.referencingDocument(referencedFrom, url);
-    }
-
-    const id = toId(urlToIri(new URL(url)));
-    const embedding = containing.find((embedded) => embedded[id] !== undefined);
-    if (embedding && containing.some((embedded) => embedded[id] === undefined)) {
-      await this.getDocument(url);
-    }
-
-    const document = (embedding ?? containing[0])[fromId];
-    return /** @type DocumentNode<JsonSchemaNode> */ (/** @type unknown */ (document));
-  }
-
-  /**
-   * The registries are a layer on top of the session's stack, so a schema in
-   * one is found before anything is retrieved or checked by
-   * `allowRetrieval`, including where a redirect leads. A registry is keyed
-   * by IRI, so the request's URL is converted where it comes in.
-   *
-   * @type (request: Request) => Promise<Response>
-   */
-  async fetch(request) {
-    let registryDocument;
-    try {
-      registryDocument = this.#registries.get(toId(urlToIri(new URL(request.url))));
+    // A registry's schema isn't retrieved, so it's found before the
+    // `Hyperjump` is asked, and `allowRetrieval` doesn't apply to it. A
+    // registry is keyed by IRI, so the URL is converted where it comes in.
+    fetch: async (input, init) => {
+      const url = new URL(input instanceof Request ? input.url : input, hyperjump.contextUrl);
+      const { registries } = schemasOf(session);
+      const registryDocument = registries.get(toId(urlToIri(url)));
       if (registryDocument) {
         return new DocumentResponse(await registryDocument);
       }
-    } catch (error) {
-      // The session's retrieval fails with what kept the registry from
-      // finding it
-      throw error instanceof RetrievalError ? error.cause : error;
-    }
 
-    // A response that isn't a document or a redirect is a failure, which a
-    // schema in a registry that can't be identified yet might explain
-    const response = await super.fetch(request);
-    const failed = !successStatuses.has(response.status) && !(redirectStatuses.has(response.status) && response.headers.has("location"));
-    const reasons = failed ? this.#registries.missReasons() : [];
-    if (reasons.length === 0) {
-      return response;
-    }
-
-    await response.body?.cancel();
-    throw new AggregateError([new HttpError(response), ...reasons], reasons[0].message);
-  }
-
-  /**
-   * A URI identifies one resource in a session. Two documents can only have
-   * a resource with the same URI if it's identical in both, like a schema
-   * and a bundle that includes it.
-   *
-   * @type API.JsonSchemaSession["addResources"]
-   */
-  addResources(document) {
-    const embedded = document.embedded;
-    if (this.#documents.has(embedded)) {
-      return;
-    }
-
-    /** @type SchemaMessage[] */
-    const messages = [];
-    for (const { uri } of Object.values(embedded)) {
-      const otherEmbedded = this.#embedded.get(uri)?.[0];
-      if (otherEmbedded && !sameResource(otherEmbedded[uri], embedded[uri])) {
-        const otherDocument = /** @type JsonSchemaDocumentNode */ (this.#documents.get(otherEmbedded));
-        /** @type SchemaMessage */
-        const message = {
-          source: "json-schema",
-          ruleId: "duplicate-id",
-          severity: "error",
-          uri: document.uri,
-          place: embedded[uri].children[0]?.position,
-          message: `'${relativeFileUrl(otherDocument.uri)}' has a different schema resource identified as '${relativeFileUrl(uri)}'`
-        };
-        if (document.origin !== undefined) {
-          message.origin = document.origin;
+      // A failure might be explained by a schema in a registry that can't
+      // be identified yet
+      let response;
+      let failure;
+      try {
+        response = await hyperjump.fetch(input, init);
+        if (response.ok) {
+          return response;
         }
-        messages.push(message);
+        failure = Error(`'${relativeFileUrl(url.href)}' can't be used, because its response's status is ${response.status}`, { cause: { code: "ERR_HTTP_STATUS", status: response.status } });
+      } catch (error) {
+        failure = error;
       }
-    }
-    if (messages.length > 0) {
-      throw new SchemaError(messages);
-    }
 
-    for (const uri of new Set([document.uri, ...Object.values(embedded).map((resource) => resource.uri)])) {
-      const documents = this.#embedded.get(uri);
-      if (documents) {
-        documents.push(embedded);
-      } else {
-        this.#embedded.set(uri, [embedded]);
+      const reasons = registries.missReasons();
+      if (reasons.length === 0) {
+        if (response) {
+          return response;
+        }
+        throw failure;
       }
+
+      await response?.body?.cancel();
+      throw new AggregateError([failure, ...reasons], reasons[0].message);
     }
-    this.#documents.set(embedded, document);
+  });
+
+  hyperjump.state(schemasKey, () => /** @type Schemas */ ({
+    registries: new SessionRegistries(session, options.registry),
+    embedded: new Map(),
+    documents: new WeakMap(),
+    dialects: {},
+    pendingDialects: {},
+    loading: new Map()
+  }));
+
+  return session;
+};
+
+/**
+ * @param {object} context
+ * @returns {context is API.JsonSchemaSession}
+ */
+export const isSession = (context) => "hyperjump" in context;
+
+/** @type typeof API.registriesOf */
+export const registriesOf = (session) => schemasOf(session).registries;
+
+export { get, getDocument } from "@hyperjump/browser";
+
+/**
+ * A URI identifies one resource in a session. Two documents can only have
+ * a resource with the same URI if it's identical in both, like a schema
+ * and a bundle that includes it.
+ *
+ * @type typeof API.addResources
+ */
+export const addResources = (session, document) => {
+  const { embedded: index, documents } = schemasOf(session);
+  const embedded = document.embedded;
+  if (documents.has(embedded)) {
+    return;
   }
 
-  /** @type API.JsonSchemaSession["hasDialect"] */
-  hasDialect(uri) {
-    return this.#dialect(toId(uri)) !== undefined;
+  /** @type SchemaMessage[] */
+  const messages = [];
+  for (const { uri } of Object.values(embedded)) {
+    const otherEmbedded = index.get(uri)?.[0];
+    if (otherEmbedded && !sameResource(otherEmbedded[uri], embedded[uri])) {
+      const otherDocument = /** @type JsonSchemaDocumentNode */ (documents.get(otherEmbedded));
+      /** @type SchemaMessage */
+      const message = {
+        source: "json-schema",
+        ruleId: "duplicate-id",
+        severity: "error",
+        uri: document.uri,
+        place: embedded[uri].children[0]?.position,
+        message: `'${relativeFileUrl(otherDocument.uri)}' has a different schema resource identified as '${relativeFileUrl(uri)}'`
+      };
+      if (document.origin !== undefined) {
+        message.origin = document.origin;
+      }
+      messages.push(message);
+    }
+  }
+  if (messages.length > 0) {
+    throw new SchemaError(messages);
   }
 
-  /** @type (uri: Id) => Dialect | undefined */
-  #dialect(uri) {
-    return this.#jsonSchema.hasDialect(uri) ? this.#jsonSchema.getDialect(uri) : this.#dialects[uri];
+  for (const uri of new Set([document.uri, ...Object.values(embedded).map((resource) => resource.uri)])) {
+    const containing = index.get(uri);
+    if (containing) {
+      containing.push(embedded);
+    } else {
+      index.set(uri, [embedded]);
+    }
+  }
+  documents.set(embedded, document);
+};
+
+/**
+ * A resource's nodes have locations that start with its URI, and one URI
+ * identifies one resource in a session, so any document that has it has
+ * the same resource.
+ *
+ * @type typeof API.resourceOf
+ */
+export const resourceOf = (session, node) => {
+  const uri = toId(node.location);
+  return schemasOf(session).embedded.get(uri)?.[0][uri];
+};
+
+/** @type typeof API.hasDialect */
+export const hasDialect = (session, uri) => dialectOf(session, toId(uri)) !== undefined;
+
+/** @type (session: API.JsonSchemaSession, uri: Id) => Dialect | undefined */
+const dialectOf = (session, uri) => session.jsonSchema.hasDialect(uri) ? session.jsonSchema.getDialect(uri) : schemasOf(session).dialects[uri];
+
+/** @type typeof API.getDialect */
+export const getDialect = async (session, dialectUri, options = {}) => {
+  const uri = toId(dialectUri);
+
+  const dialect = dialectOf(session, uri);
+  if (dialect) {
+    return dialect;
   }
 
-  /** @type API.JsonSchemaSession["getDialect"] */
-  async getDialect(dialectUri, options = {}) {
-    const uri = toId(dialectUri);
-
-    const dialect = this.#dialect(uri);
-    if (dialect) {
-      return dialect;
-    }
-
-    if (options.referencedFrom !== undefined) {
-      this.#waitOn(toId(options.referencedFrom), uri);
-    }
-
-    this.#pendingDialects[uri] ??= this.#loadDialect(uri).finally(() => {
-      delete this.#pendingDialects[uri];
-    });
-
-    return this.#pendingDialects[uri];
+  if (options.referencedFrom !== undefined) {
+    waitOn(session, toId(options.referencedFrom), uri);
   }
 
-  /**
-   * If the reference is from a meta-schema that's being retrieved to build a
-   * dialect, that dialect is waiting on the one it asked for. If that one is
-   * waiting on this one, neither will ever finish.
-   *
-   * @type (referencedFrom: Id, uri: Id) => void
-   */
-  #waitOn(referencedFrom, uri) {
-    const waitingOn = this.#loading.get(referencedFrom);
-    if (!waitingOn) {
-      return;
-    }
+  const { pendingDialects } = schemasOf(session);
+  pendingDialects[uri] ??= loadDialect(session, uri).finally(() => {
+    delete pendingDialects[uri];
+  });
 
-    if (this.#isWaitingOn(uri, referencedFrom)) {
-      throw Error(`The meta-schemas for the '${relativeFileUrl(referencedFrom)}' and '${relativeFileUrl(uri)}' dialects depend on each other`);
-    }
-    waitingOn.add(uri);
+  return pendingDialects[uri];
+};
+
+/**
+ * If the reference is from a meta-schema that's being retrieved to build a
+ * dialect, that dialect is waiting on the one it asked for. If that one is
+ * waiting on this one, neither will ever finish.
+ *
+ * @type (session: API.JsonSchemaSession, referencedFrom: Id, uri: Id) => void
+ */
+const waitOn = (session, referencedFrom, uri) => {
+  const { loading } = schemasOf(session);
+  const waitingOn = loading.get(referencedFrom);
+  if (!waitingOn) {
+    return;
   }
 
-  /** @type (uri: Id, target: Id, visited?: Set<Id>) => boolean */
-  #isWaitingOn(uri, target, visited = new Set()) {
-    if (uri === target) {
+  if (isWaitingOn(loading, uri, referencedFrom)) {
+    throw Error(`The meta-schemas for the '${relativeFileUrl(referencedFrom)}' and '${relativeFileUrl(uri)}' dialects depend on each other`);
+  }
+  waitingOn.add(uri);
+};
+
+/** @type (loading: Map<Id, Set<Id>>, uri: Id, target: Id, visited?: Set<Id>) => boolean */
+const isWaitingOn = (loading, uri, target, visited = new Set()) => {
+  if (uri === target) {
+    return true;
+  }
+
+  visited.add(uri);
+  for (const next of loading.get(uri) ?? []) {
+    if (!visited.has(next) && isWaitingOn(loading, next, target, visited)) {
       return true;
     }
-
-    visited.add(uri);
-    for (const next of this.#loading.get(uri) ?? []) {
-      if (!visited.has(next) && this.#isWaitingOn(next, target, visited)) {
-        return true;
-      }
-    }
-
-    return false;
   }
 
-  /** @type (uri: Id) => Promise<Dialect> */
-  async #loadDialect(uri) {
-    this.#loading.set(uri, new Set());
+  return false;
+};
+
+/** @type (session: API.JsonSchemaSession, uri: Id) => Promise<Dialect> */
+const loadDialect = async (session, uri) => {
+  const { loading, dialects } = schemasOf(session);
+  loading.set(uri, new Set());
+  try {
+    let metaSchema;
     try {
-      let metaSchema;
-      try {
-        metaSchema = await this.getDocument(uri);
-      } catch (error) {
-        throw Error(`Unable to retrieve the meta-schema for the '${relativeFileUrl(uri)}' dialect`, { cause: error });
-      }
-
-      if (metaSchema.type !== "json-schema-document") {
-        throw Error(`The meta-schema for the '${relativeFileUrl(uri)}' dialect isn't a schema. It needs to be retrieved as 'application/schema+json' or from a '.schema.json' file.`);
-      }
-
-      const { definedDialect } = /** @type JsonSchemaDocumentNode */ (/** @type unknown */ (metaSchema));
-      if (!definedDialect) {
-        throw Error(`The meta-schema for the '${relativeFileUrl(uri)}' dialect doesn't define a dialect (with '$vocabulary', for example). Add it to the 'dialects' config.`);
-      }
-
-      // The dialect is identified by whichever URI found the meta-schema
-      const dialect = withValidateFormats({ ...definedDialect, uri }, this.#jsonSchema.config);
-      this.#dialects[uri] = dialect;
-      return dialect;
-    } finally {
-      this.#loading.delete(uri);
-    }
-  }
-
-  /** @type API.JsonSchemaSession["annotation"] */
-  annotation(node, keyword, dialectUri = v1DialectUri) {
-    const values = node.data?.annotations?.get(this.#keywordUri(keyword, dialectUri)) ?? [];
-    return /** @type any[] */ (values);
-  }
-
-  /**
-   * A keyword URI is used as it is, so it doesn't need the dialect. An
-   * unknown keyword's URI has its name as the fragment, and its definition is
-   * registered without it. A name that isn't a keyword in the dialect is an
-   * unknown keyword.
-   *
-   * @type (keyword: string, dialectUri: string) => string
-   */
-  #keywordUri(keyword, dialectUri) {
-    if (this.#jsonSchema.hasKeyword(keywordDefinitionUri(keyword))) {
-      return keyword;
+      metaSchema = await getDocument(session, uri);
+    } catch (error) {
+      throw Error(`Unable to retrieve the meta-schema for the '${relativeFileUrl(uri)}' dialect`, { cause: error });
     }
 
-    const id = toId(dialectUri);
-    const dialect = this.#dialect(id);
-    if (!dialect) {
-      throw Error(`The '${relativeFileUrl(id)}' dialect isn't defined in this session`);
+    if (!isSchemaDocument(metaSchema)) {
+      throw Error(`The meta-schema for the '${relativeFileUrl(uri)}' dialect isn't a schema. It needs to be retrieved as 'application/schema+json' or from a '.schema.json' file.`);
     }
 
-    return Object.hasOwn(dialect.keywords, keyword)
-      ? dialect.keywords[keyword]
-      : `${unknownKeyword.uri}#${encodeIriFragment(keyword)}`;
+    const { definedDialect } = metaSchema;
+    if (!definedDialect) {
+      throw Error(`The meta-schema for the '${relativeFileUrl(uri)}' dialect doesn't define a dialect (with '$vocabulary', for example). Add it to the 'dialects' config.`);
+    }
+
+    // The dialect is identified by whichever URI found the meta-schema
+    const dialect = withValidateFormats({ ...definedDialect, uri }, session.jsonSchema.config);
+    dialects[uri] = dialect;
+    return dialect;
+  } finally {
+    loading.delete(uri);
   }
-}
+};
+
+/** @type typeof API.annotation */
+export const annotation = (session, node, keyword, dialectUri = v1DialectUri) => {
+  const values = node.data?.annotations?.get(keywordUri(session, keyword, dialectUri)) ?? [];
+  return /** @type any[] */ (values);
+};
+
+/**
+ * A keyword URI is used as it is, so it doesn't need the dialect. An
+ * unknown keyword's URI has its name as the fragment, and its definition is
+ * registered without it. A name that isn't a keyword in the dialect is an
+ * unknown keyword.
+ *
+ * @type (session: API.JsonSchemaSession, keyword: string, dialectUri: string) => string
+ */
+const keywordUri = (session, keyword, dialectUri) => {
+  if (session.jsonSchema.hasKeyword(keywordDefinitionUri(keyword))) {
+    return keyword;
+  }
+
+  const id = toId(dialectUri);
+  const dialect = dialectOf(session, id);
+  if (!dialect) {
+    throw Error(`The '${relativeFileUrl(id)}' dialect isn't defined in this session`);
+  }
+
+  return Object.hasOwn(dialect.keywords, keyword)
+    ? dialect.keywords[keyword]
+    : `${unknownKeyword.uri}#${encodeIriFragment(keyword)}`;
+};
 
 /**
  * Resources are the same if they have the same dialect and the same JSON.

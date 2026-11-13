@@ -4,6 +4,8 @@ import { keywordDefinitionUri } from "../keywords/unknown.js";
 import { siblingValues } from "../keywords/utilities.js";
 import { readsDynamicScope, readsMarks } from "./kernel.js";
 import { normalForm } from "./normalize.js";
+import { get, getDialect, resourceOf } from "../session.js";
+import { isSchemaNode } from "../schema/schema-nodes.js";
 
 /**
  * @import { Json } from "@hyperjump/browser"
@@ -171,7 +173,7 @@ export const lowerKeywords = (keywordOf, node, dialect, inputs, tolerant) => {
  * the URI and the resource it's from), a schema resource's document, for
  * its dynamic anchors, and a dialect
  *
- * @typedef {{ kind: "target"; uri: string; referencedFrom: string | undefined }
+ * @typedef {{ kind: "target"; uri: string; referencedFrom: string | undefined; from: JsonSchemaNode | undefined }
  *   | { kind: "resource"; uri: string }
  *   | { kind: "dialect"; uri: string }} Need
  */
@@ -254,7 +256,7 @@ class Lowerer {
       schema: (node) => this.#handle(node),
       reference: (node) => {
         const uri = /** @type {{ href: Iri }} */ (node).href;
-        const target = this.#target(uri, this.#absoluteIri(node.location));
+        const target = this.#target(uri, node);
         if (target === undefined) {
           return { uri, schema: { op: "apply", schema: "" }, handle: "", dynamicAnchors: undefined };
         }
@@ -272,7 +274,7 @@ class Lowerer {
 
   /** @type (uri: string) => Promise<Kernel> */
   async lower(uri) {
-    await this.#retrieve([{ kind: "target", uri, referencedFrom: undefined }]);
+    await this.#retrieve([{ kind: "target", uri, referencedFrom: undefined, from: undefined }]);
     const handle = this.#schema(/** @type JsonSchemaNode */ (this.#target(uri, undefined)));
 
     for (let pending = this.#lowerQueued(); pending.length > 0; pending = this.#lowerQueued()) {
@@ -336,22 +338,25 @@ class Lowerer {
   /** @type (key: string, need: Need) => Promise<void> */
   async #retrieveOnce(key, need) {
     if (need.kind === "target") {
-      const options = need.referencedFrom === undefined ? undefined : { referencedFrom: need.referencedFrom };
-      const target = await this.#session.get(need.uri, options);
-      this.#targets.set(key, target);
-      if (target.type === "json-schema") {
-        /** @type Need[] */
-        const needs = [{ kind: "resource", uri: this.#absoluteIri(target.location) }];
-        if (target.jsonType === "object") {
-          needs.push({ kind: "dialect", uri: target.dialectUri });
-        }
-        await this.#retrieve(needs);
+      // A reference can lead to any document the session can read
+      const target = await get(this.#session, need.uri, need.from === undefined ? undefined : { referencedFrom: need.from });
+      if (!isSchemaNode(target)) {
+        throw Error(`No schema found at '${relativeFileUrl(need.uri)}'`);
       }
+      this.#targets.set(key, target);
+
+      /** @type Need[] */
+      const needs = [{ kind: "resource", uri: this.#absoluteIri(target.location) }];
+      if (target.jsonType === "object") {
+        needs.push({ kind: "dialect", uri: target.dialectUri });
+      }
+      await this.#retrieve(needs);
     } else if (need.kind === "resource") {
-      const document = /** @type JsonSchemaDocumentNode */ (/** @type unknown */ (await this.#session.getDocument(need.uri, { referencedFrom: need.uri })));
-      this.#addResource(need.uri, document);
+      // Its document was retrieved to find a schema in it, so the session
+      // has it
+      this.#addResource(need.uri, /** @type JsonSchemaDocumentNode */ (resourceOf(this.#session, { location: need.uri })));
     } else {
-      this.#dialects.set(need.uri, await this.#session.getDialect(need.uri));
+      this.#dialects.set(need.uri, await getDialect(this.#session, need.uri));
     }
   }
 
@@ -380,14 +385,18 @@ class Lowerer {
   }
 
   /**
-   * The node a reference finds, if it's been retrieved
+   * The node a reference finds, if it's been retrieved. A reference is
+   * followed from its node, so it finds what its document contains. What it
+   * finds is kept by the reference's resource, where every reference to a
+   * URI finds the same thing.
    *
-   * @type (uri: string, referencedFrom: string | undefined) => JsonSchemaNode | undefined
+   * @type (uri: string, from: JsonSchemaNode | undefined) => JsonSchemaNode | undefined
    */
-  #target(uri, referencedFrom) {
+  #target(uri, from) {
+    const referencedFrom = from && this.#absoluteIri(from.location);
     const target = this.#targets.get(`${referencedFrom ?? ""} ${uri}`);
     if (target === undefined) {
-      this.#need({ kind: "target", uri, referencedFrom });
+      this.#need({ kind: "target", uri, referencedFrom, from });
     }
     return target;
   }
@@ -403,7 +412,7 @@ class Lowerer {
       return this.#schema(node);
     }
 
-    const target = this.#target(/** @type Iri */ (node.href), this.#absoluteIri(node.location));
+    const target = this.#target(/** @type Iri */ (node.href), node);
     return target === undefined ? "" : this.#schema(target);
   }
 

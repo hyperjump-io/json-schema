@@ -3,6 +3,7 @@ import { JsonSchema } from "../json-schema.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
 import idKeyword from "./id.js";
 import vocabularyKeyword from "./vocabulary.js";
+import { getDialect as getSessionDialect } from "../session.js";
 
 /**
  * @import { Json } from "@hyperjump/browser"
@@ -28,7 +29,7 @@ describe("vocabularies", () => {
   const getDialect = async (jsonSchema, schemas, dialectUri) => {
     const registry = new SchemaRegistry(schemas.map((schema) => ({ schema })));
 
-    return jsonSchema.session({ registry }).getDialect(dialectUri);
+    return getSessionDialect(jsonSchema.session({ registry }), dialectUri);
   };
 
   test("every vocabulary in the config is supported", async () => {

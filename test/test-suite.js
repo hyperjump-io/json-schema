@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, test, beforeAll, expect } from "vitest";
-import { JsonPointerError, jsonPointerGet } from "@hyperjump/browser";
+import { jsonPointerGet } from "@hyperjump/browser";
 import { resolveId, toId } from "../src/identifiers.js";
 import { JsonSchema } from "../src/json-schema.js";
 import { SchemaRegistry } from "../src/registry/schema-registry.js";
@@ -9,6 +9,7 @@ import { fullFormats } from "../src/formats/full.js";
 import { BASIC } from "../src/output/index.js";
 import { compile } from "../src/operations/compile.js";
 import { annotatorFor, validatorFor } from "../src/operations/validate-compiled.js";
+import { annotation } from "../src/session.js";
 
 /**
  * @import { Json, JsonNode } from "@hyperjump/browser"
@@ -308,13 +309,13 @@ export const describeAnnotationTestSuite = ({ description, version, dialect, jso
     try {
       subject = /** @type JsonNode | undefined */ (jsonPointerGet(location, node));
     } catch (error) {
-      if (error instanceof JsonPointerError) {
+      if (/** @type {{ cause?: { code?: string } }} */ (error).cause?.code?.startsWith("ERR_POINTER_")) {
         return [];
       }
       throw error;
     }
 
-    return subject === undefined ? [] : session.annotation(subject, keyword, dialect.uri);
+    return subject === undefined ? [] : annotation(session, subject, keyword, dialect.uri);
   };
 
   describe(description, () => {

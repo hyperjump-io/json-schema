@@ -25,9 +25,9 @@ can't change after the `JsonSchema` is created. Its dialects give the
 | `allowRetrieval` | `["./"]` | The URLs schemas can be retrieved from. See [Controlling retrieval](retrieval.md). |
 | `defaultDialectUri` | None | The dialect of a schema that has no `$schema` and gets no dialect from anywhere else. See [Dialects](dialects.md#schemas-without-schema). |
 | `validateFormats` | The dialect's | Whether `format` validates in every dialect. See [Formats](formats.md). |
-| `urlSchemePlugins` | `http:`, `https:`, and `file:` | More URL schemes, or plugins that replace the defaults. See [Adding URL schemes](https://github.com/hyperjump-io/browser/blob/v2/website/url-schemes.md). |
+| `stack` | `http:`, `https:`, and `file:`, with an HTTP cache in Node.js | What schemas are retrieved through, such as a transport with more URL schemes or a cache on disk. Every session uses it as it is. See [browser's layers](https://github.com/hyperjump-io/browser/blob/v2/website/layers.md). |
 | `headers` | None | Headers to send with requests, such as credentials, by URL. See [Controlling retrieval](retrieval.md#sending-credentials). |
-| `mediaTypePlugins` | JSON Schema, JSON, and JRef | More media types, or plugins that replace the defaults. See [browser's media types](https://github.com/hyperjump-io/browser/blob/v2/website/media-types.md). |
+| `mediaTypes` | JSON Schema, JSON, and JRef | More media types, after the defaults, which they can't replace. See [browser's media types](https://github.com/hyperjump-io/browser/blob/v2/website/media-types.md). |
 
 Schemas that aren't retrieved go in its `registry` property, which starts
 empty. See [Loading schemas](loading-schemas.md#registries).

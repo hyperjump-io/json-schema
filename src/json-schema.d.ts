@@ -1,10 +1,9 @@
-import type { Hyperjump, HyperjumpConfig, Json, ReadonlyJson } from "@hyperjump/browser";
-import type { JsonSchemaNode } from "./schema/schema-ast.d.ts";
+import type { Fetcher, HyperjumpConfig, Json, MediaTypePlugin, ReadonlyJson } from "@hyperjump/browser";
 import type { Keyword } from "./keyword.d.ts";
 import type { Dialect, DialectConfig, DialectExtension, DialectKeywords, DialectSchema, UnknownKeywords, Vocabulary, VocabularyConfig } from "./dialect.d.ts";
 import type { Format } from "./format.d.ts";
 import type { SchemaRegistry } from "./registry/schema-registry.d.ts";
-import type { JsonSchemaSession, SessionOptions } from "./session.d.ts";
+import type { JsonSchemaSession, SchemaMediaTypes, SessionOptions } from "./session.d.ts";
 
 export { outputErrorMessage, toVFileMessage } from "./output/validation-error.js";
 export { SchemaError } from "./schema/schema-error.js";
@@ -12,7 +11,7 @@ export type { ValidationError, DetailedValidationError } from "./output/validati
 export type { SchemaMessage } from "./schema/schema-error.js";
 export type { BasicOutput, DetailedOutput, OutputError, OutputFormat, JsonSyntaxError } from "./output/output-format.d.ts";
 
-export type JsonSchemaConfig<D extends DialectConfig<any, any, any> = DialectConfig<any, any, any>> = HyperjumpConfig<JsonSchemaNode> & {
+export type JsonSchemaConfig<D extends DialectConfig<any, any, any> = DialectConfig<any, any, any>> = HyperjumpConfig & {
   /**
    * The dialect of a schema that doesn't have `$schema` and doesn't get a
    * dialect from anywhere else, such as a `Content-Type` parameter or the
@@ -93,7 +92,9 @@ export type JsonSchemaConstructor = {
   // Without a default for D, which TypeScript would pick instead of
   // inferring it when a dialect in the config has a function with untyped
   // parameters
-  new<const D extends AnyDialectConfig>(config?: JsonSchemaConfig<D>): JsonSchema<AnyDialectConfig extends D ? AnySchema : DialectSchema<D>>;
+  // `M` is the config's media types, which a session's documents can be
+  // in
+  new<const D extends AnyDialectConfig, M extends MediaTypePlugin<any> = never>(config?: JsonSchemaConfig<D> & { mediaTypes?: readonly M[] }): JsonSchema<AnyDialectConfig extends D ? AnySchema : DialectSchema<D>, M>;
 
   // For `class MyJsonSchema extends JsonSchema`, which needs a signature
   // without type parameters. A subclass's schemas are `any`.
@@ -108,15 +109,31 @@ export const JsonSchema: JsonSchemaConstructor;
  * schemas are retrieved. `S` is the type of its schemas, from its dialects.
  * Operations, like `validate` and `bundle`, are functions that take it.
  */
-export interface JsonSchema<S = any> extends Hyperjump<JsonSchemaNode> {
-  readonly config: JsonSchemaConfig;
+export interface JsonSchema<S = any, M extends MediaTypePlugin<any> = MediaTypePlugin> {
+  /**
+   * The config it was created with. It's a frozen copy, with frozen copies
+   * of its lists, so changing the object it was created with doesn't
+   * change it. Its `mediaTypes` are the ones schemas are read with (JSON
+   * Schema, JSON that can be a schema, and JRef), then the config's. The
+   * first plugin that matches a response as well as another one parses it,
+   * so the config's can't replace those.
+   */
+  readonly config: Readonly<JsonSchemaConfig> & { readonly mediaTypes: readonly (SchemaMediaTypes | M)[] };
+
+  /**
+   * What every session retrieves through: the config's `stack`, or one with
+   * an HTTP cache in Node.js, so a session doesn't retrieve again what an
+   * earlier one did. In a browser, which caches responses itself, it's
+   * `@hyperjump/browser`'s default.
+   */
+  readonly stack: Fetcher;
 
   /**
    * Start a session for retrieving and browsing schemas. Dialects built
    * from meta-schemas belong to the session, like the documents it
    * retrieves. Operations given the session share them.
    */
-  session(options?: SessionOptions): JsonSchemaSession<S>;
+  session(options?: SessionOptions): JsonSchemaSession<S, M>;
 
   /**
    * Schemas every session sees, like custom meta-schemas, after the

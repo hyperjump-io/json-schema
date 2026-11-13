@@ -1,43 +1,51 @@
-import { JsonMediaTypePlugin } from "@hyperjump/browser";
-import { parse as parseContentType } from "content-type";
+import { jsonMediaType } from "@hyperjump/browser";
 import { normalizeIri, toAbsoluteIri, urlToIri } from "@hyperjump/uri";
 import { resolveId } from "../identifiers.js";
 import { resolveSchemaText } from "./resolve-text.js";
-import { JsonSchemaSession } from "../session.js";
+import { contentTypeParameters, schemaMediaType } from "./media-type-plugin.js";
+import { addResources, getDialect, hasDialect, isSession } from "../session.js";
 
 /**
- * @import { DocumentNode, MediaTypePlugin } from "@hyperjump/browser"
+ * @import { DocumentSession } from "@hyperjump/browser"
  * @import { AbsoluteIri } from "@hyperjump/uri"
+ * @import { JsonSchemaSession } from "../session.d.ts"
+ * @import { JsonSchemaMediaTypeDocument } from "./media-type-plugin.d.ts"
  * @import * as API from "./json-media-type-plugin.d.ts"
  */
 
-/** @implements API.JsonOrSchemaMediaTypePlugin */
-export class JsonOrSchemaMediaTypePlugin {
-  #json = new JsonMediaTypePlugin();
+/** @type typeof API.jsonOrSchemaMediaType */
+export const jsonOrSchemaMediaType = Object.freeze({
+  mediaType: "application/json",
+  extensions: [".json"],
 
-  constructor() {
-    this.mediaType = "application/json";
-    this.extensions = [".json"];
-  }
-
-  /** @type MediaTypePlugin<DocumentNode>["parse"] */
-  async parse(response, session) {
+  /** @type typeof API.jsonOrSchemaMediaType.parse */
+  parse: async (response, session) => {
     const text = await response.text();
     // A schema's identifiers are IRIs, so the response's URL is converted
     // where it comes in
     const uri = toAbsoluteIri(urlToIri(new URL(response.url)));
+    // The dialect itself is found again when the schema is resolved
     const dialectUri = await schemaDialect(text, uri, session);
     if (dialectUri === undefined) {
       // The text has been read, so the JSON plugin gets it as it is
-      return this.#json.parse({ text: async () => text, url: response.url });
+      return jsonMediaType.parse({ text: async () => text, url: response.url });
     }
 
-    const contentType = parseContentType(response.headers.get("content-type") ?? "application/json");
-    const document = await resolveSchemaText(text, /** @type JsonSchemaSession */ (session), uri, contentType.parameters.schema);
-    /** @type JsonSchemaSession */ (session).addResources(document);
-    return /** @type DocumentNode */ (/** @type unknown */ (document));
-  }
-}
+    const document = await resolveSchemaText(text, dialectUri.session, uri, contentTypeParameters(response).schema);
+    addResources(dialectUri.session, document);
+    return /** @type JsonSchemaMediaTypeDocument */ (document);
+  },
+
+  /**
+   * A schema's fragments are a schema's, and JSON's identify the whole
+   * document
+   *
+   * @type typeof API.jsonOrSchemaMediaType.fragmentPointer
+   */
+  fragmentPointer: (document, fragment) => document.type === "json-schema-document"
+    ? schemaMediaType.fragmentPointer(/** @type JsonSchemaMediaTypeDocument */ (/** @type unknown */ (document)), fragment)
+    : ""
+});
 
 /**
  * The dialect of JSON text that's a schema: its top-level `$schema`, if the
@@ -45,10 +53,12 @@ export class JsonOrSchemaMediaTypePlugin {
  * that doesn't mention `$schema` isn't parsed. A meta-schema whose `$schema`
  * is itself describes itself, so it's a schema. A dialect can't be a file.
  *
- * @type (text: string, url: AbsoluteIri, session: unknown) => Promise<string | undefined>
+ * It's given with the session, which is a `JsonSchema`'s when there's one.
+ *
+ * @type (text: string, url: AbsoluteIri, session: DocumentSession) => Promise<{ uri: string, session: JsonSchemaSession } | undefined>
  */
 const schemaDialect = async (text, url, session) => {
-  if (!(session instanceof JsonSchemaSession) || !text.includes(`"$schema"`)) {
+  if (!isSession(session) || !text.includes(`"$schema"`)) {
     return;
   }
 
@@ -69,13 +79,13 @@ const schemaDialect = async (text, url, session) => {
     return;
   }
 
-  if (dialectUri === normalizeIri(url) || session.hasDialect(dialectUri)) {
-    return dialectUri;
+  if (dialectUri === normalizeIri(url) || hasDialect(session, dialectUri)) {
+    return { uri: dialectUri, session };
   }
 
   try {
-    await session.getDialect(dialectUri, { referencedFrom: url });
-    return dialectUri;
+    await getDialect(session, dialectUri, { referencedFrom: url });
+    return { uri: dialectUri, session };
   } catch {
     return;
   }

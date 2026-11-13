@@ -31,7 +31,8 @@ and the library re-exports the function for output formats and plugins.
   say where it is. `relativeFileUrl` returns anything else as it is.
 - Messages are made from the URIs, not rewritten afterwards. A pointer's
   message is from browser's `jsonPointerGet`, which is given the relative
-  document URI, and a missing file is browser's `FileNotFoundError`.
+  document URI, and a missing file is browser's network error, whose
+  `cause.code` is `ENOENT`.
 - A problem whose message is a thrown error's message gets that error's
   cause as its cause, not the error, which would say it again.
 - `reference-without-target` doesn't give its message a cause. A missing
@@ -44,7 +45,7 @@ and the library re-exports the function for output formats and plugins.
   instead, so it can be restored wherever the files are moved (see
   [Compile and evaluate](kernel/README.md)).
 - An error keeps the exact URI on a property where code needs it, like
-  browser's `RetrievalError.uri` and `AnchorNotFoundError.uri`.
+  the `url` of browser's errors and of an anchor that isn't found.
   `SchemaMessage.uri` and a `VFileMessage`'s `file` stay absolute too,
   because they identify the document for the code that has it.
 

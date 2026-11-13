@@ -8,7 +8,8 @@ Decided and built 2026-10-29, replacing methods on `JsonSchema`,
 `JsonSchema` keeps what decides how schemas are read: its definitions
 (dialects, keywords, formats), its registry, and sessions. Everything done with schemas, like validating, annotating,
 bundling, and linting, is a function that takes a `JsonSchema` or a
-`JsonSchemaSession`.
+session. A session is a value too, and browsing is functions of it (see
+[Sessions](../sessions/README.md)).
 
 ```js
 import { BASIC, JsonSchema, SchemaRegistry, validate, validator } from "@hyperjump/json-schema";

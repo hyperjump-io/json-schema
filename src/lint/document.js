@@ -4,6 +4,7 @@ import { availableDefinitions } from "../kernel/definitions.js";
 import { lowerKeywords } from "../kernel/lower.js";
 import { keywordDefinitionUri } from "../keywords/unknown.js";
 import { findSchema } from "./find-schema.js";
+import { getDialect } from "../session.js";
 import { provenance, sourcesWithoutEffect } from "./provenance.js";
 import { visitReferences, visitSchemas } from "./utilities.js";
 
@@ -147,7 +148,7 @@ const gather = async (session, tree) => {
   }
 
   for (const uri of dialects.keys()) {
-    dialects.set(uri, await session.getDialect(uri).catch(() => undefined));
+    dialects.set(uri, await getDialect(session, uri).catch(() => undefined));
   }
 
   /** @type Record<string, Format> */
@@ -245,7 +246,7 @@ const lower = async (session, tree) => {
     if (dialect === undefined) {
       // A dialect that can't be found was reported when the schema was
       // resolved
-      dialect = session.getDialect(schemaNode.dialectUri).catch(() => undefined);
+      dialect = getDialect(session, schemaNode.dialectUri).catch(() => undefined);
       dialects.set(schemaNode.dialectUri, dialect);
     }
 

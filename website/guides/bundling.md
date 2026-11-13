@@ -118,5 +118,6 @@ means:
 - A file without an `$id` would be embedded, and there's no `id` to
   identify it by.
 
-Like `compile`, it throws a `SchemaError` for a schema with problems and a
-`RetrievalError` for a schema that can't be found.
+Like `compile`, it throws a `SchemaError` for a schema with problems and
+[browser's error](loading-schemas.md#when-a-schema-isnt-found) for a schema
+that can't be found.

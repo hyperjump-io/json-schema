@@ -24,11 +24,13 @@ entries are in `src/registry/registry-entries.js`, which isn't exported. How
 a session finds schemas in the registries it sees is in
 `src/registry/session-registries.js`.
 
-- The registries are a layer on top of the session's stack
-  (`JsonSchemaSession.fetch`), so a schema in one is found before anything
-  is retrieved or checked by `allowRetrieval`, including where a redirect
-  leads. A registry is keyed by IRI, so the layer works out the `Id` of
-  the request's URL.
+- A registry's schema isn't retrieved, so the registries aren't in the
+  stack. A session's `fetch`, which is what browser's `get` fetches with,
+  asks the registries before the session's `Hyperjump` (see
+  [Sessions](../sessions/README.md)). So a schema in one is found before
+  anything is retrieved, and `allowRetrieval` doesn't apply to it. A
+  registry is keyed by IRI, so `fetch` works out the `Id` of the URL it's
+  asked for.
   - It answers with a `DocumentResponse`, a response that has the resolved
     document (`src/registry/document-response.js`), and the schema media
     type plugin gives the session that document. An entry is resolved once
@@ -37,8 +39,17 @@ a session finds schemas in the registries it sees is in
     document, which a response couldn't say.
   - Plain responses with the entry's text were rejected. Each session
     would resolve every registry schema it uses again.
-  - It works because the layer is on top, so nothing between it and the
-    plugin makes a new response that wouldn't have the document.
+  - It works because browser gives a plugin the response the session's
+    `fetch` returned, not a copy that wouldn't have the document.
+  - A layer on the stack was rejected. Browser checks `allowRetrieval`
+    before the stack, so every URI a registry's schemas are found by
+    would have to be allowed: all of them identified when a session is
+    created, parsed again for each session, and a schema an operation
+    gives an existing session as a value couldn't be added.
+  - When a retrieval fails, the error says so if a schema in a registry
+    is waiting for its dialect or can't be identified, since it might be
+    the one that was asked for. It's an `AggregateError` of the failure
+    and those reasons.
 
 - A schema is identified the way JSON Schema identifies it: by its `$id`
   (or `id` in draft-04), resolved against `retrievalUri`, or by
@@ -117,8 +128,8 @@ a session finds schemas in the registries it sees is in
   iteration without `concat`, and `concat` without iteration, which leaves
   no way to list what's in a registry.
 - Lookup order is: embedded resources, the session's registry, the
-  `JsonSchema`'s registry, then browser (the session's cache, the HTTP
-  cache, a URI scheme plugin). Two entries found by the same URI are an
+  `JsonSchema`'s registry, then browser (the session's documents, then
+  the stack, with its HTTP cache). Two entries found by the same URI are an
   error when the URI is looked up, whether they're in one registry or
   both, so a session's registry can't replace a schema every session
   sees. A registry can't check that itself,

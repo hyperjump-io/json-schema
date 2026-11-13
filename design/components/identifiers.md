@@ -13,8 +13,7 @@ return, and its types say which a string is (`Iri`, `AbsoluteIri`,
   and vocabulary URIs, `$id`, `$ref`, and `$schema` in a schema, and a
   restored kernel's URI.
 - A value the library hands out is branded: a resource's `uri`, a node's
-  `location` and `href`, a `SchemaMessage`'s `uri`, and
-  `AnchorNotFoundError`'s `uri`.
+  `location` and `href`, and a `SchemaMessage`'s `uri`.
 
 ## Normalized where they're keys
 
@@ -56,9 +55,9 @@ because normalizing costs something and changes how it reads.
 Browser's `getDocument` does every lookup, including the references `get`
 follows, with the URL it parsed. Where a lookup meets `json-schema`'s
 identifiers, the URL is converted to an `Id` (`urlToIri`, then `toId`):
-the registries' layer on `fetch` converts the request's URL, and
-`referencingDocument` converts a reference's `referencedFrom` and the URL
-it's looking for, to find the document that has the referencing resource.
+a session's `fetch` converts the URL it's asked for, to look for it in
+the registries, and a node's resource is found by the `Id` of the node's
+location.
 
 - Overriding `getDocument` to work out the `Id` before browser does was
   rejected. Browser parses the URI either way, so it was checked twice, and

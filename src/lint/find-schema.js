@@ -1,49 +1,53 @@
-import { FileNotFoundError, HttpError, JsonPointerError, jsonPointerGet, relativeFileUrl, RetrievalError } from "@hyperjump/browser";
+import { jsonPointerGet, relativeFileUrl } from "@hyperjump/browser";
 import { getFragment, toAbsoluteIri } from "@hyperjump/uri";
-import { AnchorNotFoundError } from "../schema/media-type-plugin.js";
+import { schemaMediaType } from "../schema/media-type-plugin.js";
 import { SchemaError } from "../schema/schema-error.js";
+import { getDocument } from "../session.js";
+import { isSchemaDocument } from "../schema/schema-nodes.js";
 
 /**
  * @import { DocumentNode } from "@hyperjump/browser"
- * @import { Iri } from "@hyperjump/uri"
- * @import { JsonSchemaSession } from "../session.d.ts"
  * @import { JsonSchemaDocumentNode, JsonSchemaNode } from "../schema/schema-ast.d.ts"
+ * @import { JsonSchemaMediaTypeDocument } from "../schema/media-type-plugin.d.ts"
  * @import * as API from "./find-schema.d.ts"
  */
 
 /** @type typeof API.findSchema */
 export const findSchema = async (session, uri, options = {}) => {
-  const { document: referencingDocument, ...getOptions } = options;
-
   // A resource in the document the reference is in is found in that
   // document, which a document that's linted rather than retrieved needs
-  const embedded = referencingDocument?.embedded[toAbsoluteIri(uri)];
-  let document = /** @type DocumentNode<JsonSchemaNode> | undefined */ (/** @type unknown */ (embedded));
+  const embedded = options.document?.embedded[toAbsoluteIri(uri)];
+  /** @type unknown */
+  let document = embedded;
   try {
-    document ??= await session.getDocument(uri, getOptions);
+    // Any document the session can read
+    document ??= await getDocument(session, uri);
   } catch (error) {
-    if (error instanceof SchemaError || isRefusal(error)) {
+    if (error instanceof SchemaError) {
       return { status: "unknown", reason: error };
-    } else if (error instanceof RetrievalError) {
-      const reason = absence(error.url, error.cause);
-      return reason ? { status: "missing", reason } : { status: "unknown", reason: error };
     }
-    throw error;
+
+    const code = codeOf(error);
+    if (code === undefined) {
+      throw error;
+    }
+    return { status: isAbsence(error) ? "missing" : "unknown", reason: /** @type Error */ (error) };
   }
 
-  if (document.type !== "json-schema-document") {
-    return { status: "missing", reason: Error(`'${relativeFileUrl(uri)}' isn't a schema. It's ${document.mediaType}.`) };
+  if (!isSchemaDocument(document)) {
+    return { status: "missing", reason: Error(`'${relativeFileUrl(uri)}' isn't a schema`) };
   }
 
   /** @type JsonSchemaNode */
   let node;
   try {
     const fragment = getFragment(uri);
-    const pointer = fragment === undefined ? "" : session.jsonSchema.fragmentPointer(document, fragment);
+    const pointer = fragment === undefined ? "" : schemaMediaType.fragmentPointer(/** @type JsonSchemaMediaTypeDocument */ (document), fragment);
     node = jsonPointerGet(pointer, /** @type JsonSchemaNode */ (document.children[0]));
   } catch (error) {
-    if (error instanceof JsonPointerError || error instanceof AnchorNotFoundError) {
-      return { status: "missing", reason: error };
+    const code = codeOf(error);
+    if (code === "ERR_ANCHOR_NOT_FOUND" || code?.startsWith("ERR_POINTER_")) {
+      return { status: "missing", reason: /** @type Error */ (error) };
     }
     throw error;
   }
@@ -52,28 +56,30 @@ export const findSchema = async (session, uri, options = {}) => {
     return { status: "missing", reason: Error(`'${relativeFileUrl(uri)}' isn't a schema`) };
   }
 
-  return { status: "found", node, document: /** @type JsonSchemaDocumentNode */ (/** @type unknown */ (document)) };
+  return { status: "found", node, document };
 };
 
 /**
- * A refusal, like one by `allowRetrieval`, is a 403. It doesn't say whether
- * there's anything there.
+ * Why something failed, to code: its `cause.code`, which every failure to
+ * retrieve or read a document has. An error without one isn't about
+ * finding the schema.
  *
- * @param {unknown} error
- * @returns {error is RetrievalError}
+ * @type (error: unknown) => string | undefined
  */
-const isRefusal = (error) => error instanceof RetrievalError && error.cause instanceof HttpError && error.cause.response.status === 403;
+const codeOf = (error) => {
+  const cause = error instanceof Error ? /** @type {{ code?: unknown } | undefined} */ (error.cause) : undefined;
+  return typeof cause?.code === "string" ? cause.code : undefined;
+};
 
 /**
- * Why there's nothing at a URI, if a retrieval failed because there's
- * nothing there, rather than because it couldn't be told
+ * Whether a retrieval failed because there's nothing there, rather than
+ * because it couldn't be told: a file that doesn't exist, or a 404 or 410.
+ * Anything else, like a refusal by `allowRetrieval`, doesn't say whether
+ * there's anything there.
  *
- * @type (uri: string, error: unknown) => Error | undefined
+ * @type (error: unknown) => boolean
  */
-const absence = (uri, error) => {
-  if (error instanceof FileNotFoundError) {
-    return error;
-  } else if (error instanceof HttpError && (error.response.status === 404 || error.response.status === 410)) {
-    return Error(`There's nothing at '${uri}' (${error.response.status})`, { cause: error });
-  }
+const isAbsence = (error) => {
+  const { code, status } = /** @type {{ code: string, status?: number }} */ (/** @type Error */ (error).cause);
+  return code === "ENOENT" || code === "ENOTDIR" || (code === "ERR_HTTP_STATUS" && (status === 404 || status === 410));
 };

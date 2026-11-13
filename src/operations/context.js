@@ -1,11 +1,9 @@
-import { JsonSchemaSession } from "../session.js";
-import { addSchemaValue } from "../registry/session-registries.js";
-import { RetrievalError } from "@hyperjump/browser";
-import { SchemaError } from "../schema/schema-error.js";
+import { isSession, registriesOf } from "../session.js";
 
 /**
  * @import { JsonSchema } from "../json-schema.d.ts"
- * @import { SessionOptions } from "../session.d.ts"
+ * @import { JsonSchemaSession, SessionOptions } from "../session.d.ts"
+ * @import { ReadonlyJson } from "@hyperjump/browser"
  * @import { Context, SchemaSource } from "./context.d.ts"
  */
 
@@ -20,14 +18,14 @@ import { SchemaError } from "../schema/schema-error.js";
  * @type (context: Context, options?: SessionOptions) => JsonSchemaSession
  */
 export const sessionOf = (context, options = {}) => {
-  if (context instanceof JsonSchemaSession) {
+  if (isSession(context)) {
     if (options.registry !== undefined || options.allowRetrieval !== undefined) {
       throw TypeError("A session already has its registry and allowRetrieval. Pass them when creating the session, or pass the JsonSchema instead.");
     }
     return context;
   }
 
-  return /** @type JsonSchema */ (context).session({ registry: options.registry, allowRetrieval: options.allowRetrieval });
+  return context.session({ registry: options.registry, allowRetrieval: options.allowRetrieval });
 };
 
 /**
@@ -36,12 +34,4 @@ export const sessionOf = (context, options = {}) => {
  *
  * @type (session: JsonSchemaSession, schema: SchemaSource) => string
  */
-export const schemaUri = (session, schema) => typeof schema === "string" ? schema : addSchemaValue(session, schema);
-
-/**
- * A schema with problems is found, not missing, so an operation throws its
- * SchemaError rather than the session's RetrievalError that has it
- *
- * @type (error: unknown) => unknown
- */
-export const schemaErrorOf = (error) => error instanceof RetrievalError && error.cause instanceof SchemaError ? error.cause : error;
+export const schemaUri = (session, schema) => typeof schema === "string" ? schema : registriesOf(session).addValue(/** @type ReadonlyJson */ (schema));

@@ -13,29 +13,27 @@ its known limitations are in browser's
 [What can be retrieved](https://github.com/hyperjump-io/browser/blob/v2/design/components/allow-retrieval.md). This is how
 JSON Schema uses it.
 
-- It was in this package first, where it had to copy browser's context
-  URI, run its own `realpath` next to the file plugin's, pass what a
-  session allows to `retrieve` disguised as a `GetOptions` field, and
-  unwrap the error from browser's `RetrievalError`.
 - `JsonSchemaConfig` gets it from `HyperjumpConfig`.
   `SessionOptions.allowRetrieval` replaces the config's for one session,
-  and `JsonSchemaSession` passes it to browser's `Session` constructor. The
-  CLI uses it for files with different settings.
-- Browser checks it when a session retrieves a document that isn't in its
-  cache. That's after embedded resources, which browser finds first, and
-  after the registries, a layer on `fetch` above `allowRetrieval`, so a
-  redirect to a schema in a registry isn't checked either. So it covers `get`,
-  following references, `compile`, and meta-schemas found by `getDialect`.
-- A refusal is browser's `RetrievalError` whose cause is an `HttpError` for
-  a `403`, like a server's, so it's what `get` and `compile` throw. A refusal while getting a dialect's meta-schema is the
-  `cause` of `getDialect`'s error.
+  which is the `allowRetrieval` of the `Hyperjump` the session is made
+  with. The CLI uses it for files with different settings.
+- Browser checks it when a session's `Hyperjump` fetches, for each step of
+  a redirect too. That's after embedded resources, which browser finds
+  first, and after the registries, which the session's `fetch` asks before
+  the `Hyperjump`. So it covers `get`, following references, `compile`,
+  and meta-schemas found by `getDialect`, and it doesn't apply to a
+  registry's schema.
+- A refusal is browser's network error whose `cause.code` is
+  `ERR_RETRIEVAL_NOT_ALLOWED`, so it's what `get` and `compile` throw. A
+  refusal while getting a dialect's meta-schema is the `cause` of
+  `getDialect`'s error.
 - Tools use the difference between a refused URL and one that couldn't be
   retrieved: a refused URL is unknown, a failed one is missing (see
   [Other schemas](../lint/other-schemas.md)). A server's `403` is unknown
-  too, because browser doesn't tell it from a refusal, and a server that
-  refuses doesn't say whether there's anything there either.
+  too, because a server that refuses doesn't say whether there's anything
+  there either.
 - `[]` allows nothing, so only registries and embedded resources are used.
   The test suite runners and the tests that only use registries use it
-  instead of removing the `http(s):` URI scheme plugins. Tests that read
+  instead of a stack that can't fetch. Tests that read
   files from a temporary directory, outside the working directory, allow
   that directory.

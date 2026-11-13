@@ -5,6 +5,7 @@ import { resolveId, toId } from "../identifiers.js";
 import schemaKeyword from "../keywords/schema.js";
 import unknownKeyword from "../keywords/unknown.js";
 import { siblingValues } from "../keywords/utilities.js";
+import { getDialect } from "../session.js";
 
 /**
  * @import { Node } from "unist"
@@ -529,7 +530,6 @@ class Resolver {
       comments: this.#tree.comments,
       uri: uri,
       url: new URL(uri).href,
-      mediaType: "application/schema+json",
       anchors: {},
       dynamicAnchors: {},
       embedded: this.#embedded
@@ -539,7 +539,7 @@ class Resolver {
   /** @type (uri: string, node: Node) => Promise<Dialect | undefined> */
   async #getDialect(uri, node) {
     try {
-      return await this.#session.getDialect(uri, { referencedFrom: this.#documentUri });
+      return await getDialect(this.#session, uri, { referencedFrom: this.#documentUri });
     } catch (error) {
       // The error's message is the message, so what caused it is the cause
       const { message, cause } = /** @type Error */ (error);
