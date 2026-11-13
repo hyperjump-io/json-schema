@@ -2,7 +2,7 @@ import { relativeFileUrl } from "@hyperjump/browser";
 import { toAbsoluteIri, urlToIri } from "@hyperjump/uri";
 import { parse as parseContentType } from "content-type";
 import { resolveSchemaText } from "./resolve-text.js";
-import { addResources, isSession } from "../session.js";
+import { isSession } from "../session.js";
 import { DocumentResponse } from "../registry/document-response.js";
 
 /**
@@ -22,10 +22,8 @@ export const schemaMediaType = Object.freeze({
       throw Error("A schema can only be retrieved in a session of a JsonSchema. Use its 'session' function to create one.");
     }
 
-    // A registry's schema is resolved already. Either way, its resources are
-    // added to the session's, so a node's resource can be found.
+    // A registry's schema is resolved already
     if (response instanceof DocumentResponse) {
-      addResources(session, response.document);
       return /** @type API.JsonSchemaMediaTypeDocument */ (response.document);
     }
 
@@ -33,9 +31,7 @@ export const schemaMediaType = Object.freeze({
     // where it comes in
     const uri = toAbsoluteIri(urlToIri(new URL(response.url)));
     const { schema, profile } = contentTypeParameters(response);
-    const document = await resolveSchemaText(await response.text(), session, uri, schema ?? profile);
-    addResources(session, document);
-    return /** @type API.JsonSchemaMediaTypeDocument */ (document);
+    return /** @type API.JsonSchemaMediaTypeDocument */ (await resolveSchemaText(await response.text(), session, uri, schema ?? profile));
   },
 
   /**

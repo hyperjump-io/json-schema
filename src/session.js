@@ -1,4 +1,4 @@
-import { getDocument, Hyperjump, jsonPointerGet, relativeFileUrl } from "@hyperjump/browser";
+import { getDocument, Hyperjump, relativeFileUrl } from "@hyperjump/browser";
 import { encodeIriFragment, urlToIri } from "@hyperjump/uri";
 import { toId } from "./identifiers.js";
 import { SessionRegistries } from "./registry/session-registries.js";
@@ -20,10 +20,6 @@ const v1DialectUri = "https://json-schema.org/v1";
 /**
  * What a session keeps for schemas, in its state
  *
- * - `embedded` maps the URI of every resource in a schema document to the
- *   `embedded` objects that have it, so a node's resource is found from its
- *   location.
- * - `documents` has the documents in `embedded` by their `embedded` objects.
  * - `dialects` are the dialects built from meta-schemas in this session.
  * - `pendingDialects` are the dialects whose meta-schemas are being
  *   retrieved.
@@ -32,8 +28,6 @@ const v1DialectUri = "https://json-schema.org/v1";
  *
  * @typedef {{
  *   registries: SessionRegistries,
- *   embedded: Map<Id, Record<string, JsonSchemaDocumentNode>[]>,
- *   documents: WeakMap<Record<string, JsonSchemaDocumentNode>, JsonSchemaDocumentNode>,
  *   dialects: Record<string, Dialect>,
  *   pendingDialects: Record<string, Promise<Dialect>>,
  *   loading: Map<Id, Set<Id>>
@@ -105,8 +99,6 @@ export const createSession = (jsonSchema, options = {}) => {
 
   hyperjump.state(schemasKey, () => /** @type Schemas */ ({
     registries: new SessionRegistries(session, options.registry),
-    embedded: new Map(),
-    documents: new WeakMap(),
     dialects: {},
     pendingDialects: {},
     loading: new Map()
@@ -125,58 +117,6 @@ export const isSession = (context) => "hyperjump" in context;
 export const registriesOf = (session) => schemasOf(session).registries;
 
 export { get, getDocument } from "@hyperjump/browser";
-
-/**
- * A session can have documents with different resources for a URI, like a
- * schema and a document that embeds another schema with its `$id`. Browsing
- * doesn't combine documents, so that's only a problem for what does, like
- * compiling, which checks it.
- *
- * @type typeof API.addResources
- */
-export const addResources = (session, document) => {
-  const { embedded: index, documents } = schemasOf(session);
-  const embedded = document.embedded;
-  if (documents.has(embedded)) {
-    return;
-  }
-
-  for (const uri of new Set([document.uri, ...Object.values(embedded).map((resource) => resource.uri)])) {
-    const containing = index.get(uri);
-    if (containing) {
-      containing.push(embedded);
-    } else {
-      index.set(uri, [embedded]);
-    }
-  }
-  documents.set(embedded, document);
-};
-
-/**
- * A resource's nodes have locations that start with its URI. More than one
- * document can have a resource with that URI, so the node's is the one
- * where the location's pointer leads to that node.
- *
- * @type typeof API.resourceOf
- */
-export const resourceOf = (session, node) => {
-  const position = node.location.indexOf("#");
-  const uri = toId(node.location);
-  const pointer = position === -1 ? "" : decodeURIComponent(node.location.slice(position + 1));
-  for (const embedded of schemasOf(session).embedded.get(uri) ?? []) {
-    const resource = embedded[uri];
-    try {
-      if (resource !== undefined && jsonPointerGet(pointer, /** @type JsonSchemaNode */ (resource.children[0])) === node) {
-        return resource;
-      }
-    } catch {
-      // The location isn't in this document
-    }
-  }
-};
-
-/** @type typeof API.documentOf */
-export const documentOf = (session, resource) => schemasOf(session).documents.get(resource.embedded);
 
 /** @type typeof API.hasDialect */
 export const hasDialect = (session, uri) => dialectOf(session, toId(uri)) !== undefined;

@@ -11,7 +11,8 @@ be traded away for speed.
 There are two phases:
 
 1. **Lower** (async, once per compiled schema, `lower.js`). Walk the schema AST
-   from the entry URI, retrieving referenced schemas with `get`. Each
+   from the entry URI, retrieving referenced schemas with `referencedSchema`
+   (see [Referenced schemas](../referenced-schemas.md)). Each
    keyword's value is parsed by its shape, with the schemas in it compiled,
    and given to its `lower` with the siblings it declares. The result is a
    `Kernel`: a table of handles (canonical URIs) to a boolean or the
@@ -38,10 +39,12 @@ There are two phases:
      What's compiled doesn't depend on which document was reached first.
    - What a reference finds is kept by the reference's document and the
      URI, since references from one document to a URI find the same
-     thing. A schema's document is the one it was queued from, and it's
-     only looked for, by a walk of its location, for a schema a reference
-     found. Looking for every schema's made compiling a large schema three
-     times slower.
+     thing. A schema's document is the one it was queued from, and a
+     schema a reference found comes with its document.
+   - A reference to a schema that's a reference itself, like a draft-07
+     `$ref`, finds what that one finds, looked for from the document it's
+     in. References that lead back to one already followed are an error
+     whose `cause.code` is `ERR_REFERENCE_CYCLE`, with the `chain`.
 2. **Build evaluators** (sync, lazy). The kernel is optimized for what an
    evaluation can observe (see [Optimizations](optimizations/README.md)) and turned into closures.
    Each evaluator is built the first time it's needed and cached on the

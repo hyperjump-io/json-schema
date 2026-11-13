@@ -3,7 +3,7 @@ import { normalizeIri, toAbsoluteIri, urlToIri } from "@hyperjump/uri";
 import { resolveId } from "../identifiers.js";
 import { resolveSchemaText } from "./resolve-text.js";
 import { contentTypeParameters, schemaMediaType } from "./media-type-plugin.js";
-import { addResources, getDialect, hasDialect, isSession } from "../session.js";
+import { getDialect, hasDialect, isSession } from "../session.js";
 
 /**
  * @import { DocumentSession } from "@hyperjump/browser"
@@ -31,9 +31,7 @@ export const jsonOrSchemaMediaType = Object.freeze({
       return jsonMediaType.parse({ text: async () => text, url: response.url });
     }
 
-    const document = await resolveSchemaText(text, dialectUri.session, uri, contentTypeParameters(response).schema);
-    addResources(dialectUri.session, document);
-    return /** @type JsonSchemaMediaTypeDocument */ (document);
+    return /** @type JsonSchemaMediaTypeDocument */ (await resolveSchemaText(text, dialectUri.session, uri, contentTypeParameters(response).schema));
   },
 
   /**

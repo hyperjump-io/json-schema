@@ -142,22 +142,5 @@ export const isSession: (context: object) => context is JsonSchemaSession;
 /** The schemas a session finds in the registries it sees */
 export const registriesOf: (session: JsonSchemaSession) => SessionRegistries;
 
-/**
- * Add a schema document's resources to the ones the session has. The schema
- * media type plugins do this for every schema document they parse.
- */
-export const addResources: (session: JsonSchemaSession, document: JsonSchemaDocumentNode) => void;
-
-/**
- * The resource a node is in, for what a resource has beyond its values,
- * like its dynamic anchors. It's found by the node, since more than one
- * document can have a resource with its URI. It's `undefined` for a node
- * that isn't in a schema document the session has.
- */
-export const resourceOf: (session: JsonSchemaSession, node: { location: string }) => JsonSchemaDocumentNode | undefined;
-
 /** Whether a dialect is in the {@link JsonSchema}'s config or was built in this session */
 export const hasDialect: (session: JsonSchemaSession, uri: string) => boolean;
-
-/** The document a resource is in, which is the resource for a document's root */
-export const documentOf: (session: JsonSchemaSession, resource: JsonSchemaDocumentNode) => JsonSchemaDocumentNode | undefined;

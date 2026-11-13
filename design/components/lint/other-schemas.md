@@ -30,7 +30,9 @@ document finds something. They can see what's in registries and what
   too, for `reference-by-location`, so no rule needs to find anything
   itself.
 - `findSchema(session, uri, options)` (`src/lint/find-schema.js`) finds what
-  a reference would, without following a reference it finds. It's what
+  a reference would, without following a reference it finds. It's
+  `referencedSchema` (see [Referenced schemas](../referenced-schemas.md))
+  with a failure as a result. It's what
   `documentForLint` finds references with, and isn't part of the API, so a
   rule can't retrieve anything. A rule that needs a URI no reference names
   gets it by `documentForLint` finding it too, like the identifiers above. Its result is

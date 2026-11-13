@@ -43,6 +43,6 @@ describe("what a session finds that isn't a schema", () => {
   test.each(["json", "number", "jref", "schema#/properties"])("a reference to %s isn't compiled", async (target) => {
     const registry = new SchemaRegistry().with({ $schema: v1DialectUri, $id: "https://example.com/main", $ref: `https://example.com/${target}` });
 
-    await expect(compile(jsonSchema, "https://example.com/main", { registry })).rejects.toThrow(`No schema found at 'https://example.com/${target}'`);
+    await expect(compile(jsonSchema, "https://example.com/main", { registry })).rejects.toThrow(`'https://example.com/${target}' isn't a schema`);
   });
 });

@@ -28,7 +28,9 @@ its position.
   node's location: among the documents the session has and the ones they
   contain, the one where the location's pointer leads to that node. So a
   resource's nodes keep their canonical URIs, and a document can't change
-  what a reference in another document finds.
+  what a reference in another document finds. This package's own code
+  has the reference's document, so it looks in its `embedded` itself (see
+  [Referenced schemas](../components/referenced-schemas.md)).
 - A session can have documents with different resources for a URI, like a
   schema and a document that embeds another schema with its `$id`. Each is
   only found from its own document, so browsing them isn't a problem. What
@@ -44,10 +46,9 @@ its position.
     consistent: a document's identical copy of a resource, reached first,
     had its references followed from that document, and the other
     document's were never loaded to be compared.
-- A node's resource is found by the node (`resourceOf`), for what a
-  resource has beyond its values, like its dynamic anchors: among the
-  session's resources with the URI of the node's location, the one where
-  the location's pointer leads to that node.
+- What finds a schema keeps the resource it found it in, for what a
+  resource has beyond its values, like its dynamic anchors. A node's
+  resource isn't looked up from the node.
 - Anchors and dynamic anchors are recorded per resource as JSON Pointers.
   2019-09's `$recursiveAnchor: true` is a dynamic anchor named `""`. The
   schema media type plugins' `fragmentPointer` looks anchors up, so browser

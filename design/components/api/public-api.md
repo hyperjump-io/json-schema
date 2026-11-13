@@ -28,7 +28,9 @@ These stay public, because something users write depends on them.
   docs generator or a bundler, gets embedded resources wrong.
   `referencedFrom` is the reference's node, which is what browser finds
   the document it's in from. `getDocument` only finds a whole document,
-  from a registry or by retrieving it.
+  from a registry or by retrieving it. This package's own operations
+  don't follow references that way (see
+  [Referenced schemas](../referenced-schemas.md)).
 - `get` and `getDocument` are browser's, exported as they are. What they
   find might not be a schema, so `isSchemaNode` and `isSchemaDocument` are
   exported with them.

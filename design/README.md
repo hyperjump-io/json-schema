@@ -70,6 +70,7 @@ hand and have JSDoc explaining the details. Documentation for users is in
   - [Output formats](components/kernel/output-formats.md)
 - [Bundling](components/bundling.md)
 - [Identifiers](components/identifiers.md)
+- [Referenced schemas](components/referenced-schemas.md)
 - [Local paths in messages and output](components/file-uris.md)
 - [Linting](components/lint/README.md)
   - [Validity and lint](components/lint/validity.md)

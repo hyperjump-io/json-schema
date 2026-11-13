@@ -8,6 +8,7 @@ import { createServer } from "node:http";
 import { defaultMediaTypes, fetcher, get, Hyperjump, jsonPointerGet, jsonValue } from "@hyperjump/browser";
 import { JsonSchema, extendDialect } from "./json-schema.js";
 import { v1Dialect, v1DialectUri } from "./dialects/v1/index.js";
+import { draft07Dialect } from "./dialects/draft-07/index.js";
 import { SchemaRegistry } from "./registry/schema-registry.js";
 import vocabularyKeyword from "./keywords/vocabulary.js";
 import idKeyword from "./keywords/id.js";
@@ -411,6 +412,36 @@ describe("JsonSchema", () => {
 
       expect(validatorFor(await compile(session, "https://example.com/other"))(42)).to.equal(true);
       expect(validatorFor(await compile(session, "https://example.com/common"))(42)).to.equal(false);
+    });
+
+    test("a reference to a schema that's a reference finds what that one finds, from its document", async () => {
+      const draft07 = new JsonSchema({ dialects: [v1Dialect, draft07Dialect] });
+      const registry = new SchemaRegistry()
+        .with({ $schema: v1DialectUri, $id: "https://example.com/main", $ref: "https://example.com/old#/definitions/alias" })
+        .with({
+          $schema: draft07Dialect.uri,
+          $id: "https://example.com/old",
+          definitions: {
+            alias: { $ref: "https://example.com/embedded" },
+            embedded: { $id: "https://example.com/embedded", type: "number" }
+          }
+        })
+        .with({ $schema: v1DialectUri, $id: "https://example.com/embedded", type: "string" });
+
+      const validate = validatorFor(await compile(draft07, "https://example.com/main", { registry }));
+      expect([validate(42), validate("a")]).to.eql([true, false]);
+    });
+
+    test("schemas that are references that lead back to one already followed aren't compiled", async () => {
+      const draft07 = new JsonSchema({ dialects: [v1Dialect, draft07Dialect] });
+      const registry = new SchemaRegistry()
+        .with({ $schema: v1DialectUri, $id: "https://example.com/main", $ref: "https://example.com/a#/definitions/x" })
+        .with({ $schema: draft07Dialect.uri, $id: "https://example.com/a", definitions: { x: { $ref: "https://example.com/b#/definitions/y" } } })
+        .with({ $schema: draft07Dialect.uri, $id: "https://example.com/b", definitions: { y: { $ref: "https://example.com/a#/definitions/x" } } });
+
+      const compiling = compile(draft07, "https://example.com/main", { registry });
+      await expect(compiling).rejects.toThrow("Following references led back to 'https://example.com/a#/definitions/x'");
+      await expect(compiling).rejects.toMatchObject({ cause: { code: "ERR_REFERENCE_CYCLE" } });
     });
 
     test("documents with different resources for a URI can be browsed in one session", async () => {
