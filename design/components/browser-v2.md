@@ -7,7 +7,7 @@ is in browser's [design docs](https://github.com/hyperjump-io/browser/blob/v2/de
   that are generic over the node type, and a generic `DocumentNode<T>`.
 - A session is a `Hyperjump`, made from a configuration that's a plain
   value. Documents are functions of a session: `get(session, url)`,
-  `getDocument(session, url)`, and the `jref*` functions. What they need
+  `documentOf(session, node)`, and the `jref*` functions. What they need
   of one is its `fetch`, `state`, `contextUrl`, and `config`
   (`DocumentSession`), so a `JsonSchema`'s session is a value with those,
   whose `fetch` asks the registries first (see

@@ -112,7 +112,7 @@ schema are in `src/kernel/validator.js`, which isn't exported.
   schemas with a different one.
 - `compile`, `bundle`, and `lint` as methods of a session too. There's one
   way to do each operation, and a session is a value, with what's about
-  documents and dialects as functions of it (`get`, `getDocument`,
+  documents and dialects as functions of it (`get`, `documentOf`,
   `getDialect`, `annotation`).
 
 ## Known limitations

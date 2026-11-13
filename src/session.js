@@ -1,4 +1,4 @@
-import { getDocument, Hyperjump, jsonPointerGet, relativeFileUrl } from "@hyperjump/browser";
+import { documentOf, get, Hyperjump, jsonPointerGet, relativeFileUrl } from "@hyperjump/browser";
 import { encodeIriFragment, urlToIri } from "@hyperjump/uri";
 import { toId } from "./identifiers.js";
 import { SessionRegistries } from "./registry/session-registries.js";
@@ -124,7 +124,7 @@ export const isSession = (context) => "hyperjump" in context;
 /** @type typeof API.registriesOf */
 export const registriesOf = (session) => schemasOf(session).registries;
 
-export { get, getDocument } from "@hyperjump/browser";
+export { documentOf, get };
 
 /**
  * A session can have documents with different resources for a URI, like a
@@ -175,8 +175,8 @@ export const resourceOf = (session, node) => {
   }
 };
 
-/** @type typeof API.documentOf */
-export const documentOf = (session, resource) => schemasOf(session).documents.get(resource.embedded);
+/** @type typeof API.containerOf */
+export const containerOf = (session, resource) => schemasOf(session).documents.get(resource.embedded);
 
 /** @type typeof API.hasDialect */
 export const hasDialect = (session, uri) => dialectOf(session, toId(uri)) !== undefined;
@@ -248,7 +248,9 @@ const loadDialect = async (session, uri) => {
   try {
     let metaSchema;
     try {
-      metaSchema = await getDocument(session, uri);
+      // As it's written, so a meta-schema that's a reference isn't the one
+      // it leads to
+      metaSchema = await documentOf(session, await get(session, uri, { follow: false }));
     } catch (error) {
       throw Error(`Unable to retrieve the meta-schema for the '${relativeFileUrl(uri)}' dialect`, { cause: error });
     }

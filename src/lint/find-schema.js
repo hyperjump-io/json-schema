@@ -2,7 +2,7 @@ import { jsonPointerGet, relativeFileUrl } from "@hyperjump/browser";
 import { getFragment, toAbsoluteIri } from "@hyperjump/uri";
 import { schemaMediaType } from "../schema/media-type-plugin.js";
 import { SchemaError } from "../schema/schema-error.js";
-import { getDocument } from "../session.js";
+import { documentOf, get } from "../session.js";
 import { isSchemaDocument } from "../schema/schema-nodes.js";
 
 /**
@@ -21,7 +21,7 @@ export const findSchema = async (session, uri, options = {}) => {
   let document = embedded;
   try {
     // Any document the session can read
-    document ??= await getDocument(session, uri);
+    document ??= await documentOf(session, await get(session, toAbsoluteIri(uri), { follow: false }));
   } catch (error) {
     if (error instanceof SchemaError) {
       return { status: "unknown", reason: error };

@@ -4,7 +4,7 @@ import { keywordDefinitionUri } from "../keywords/unknown.js";
 import { siblingValues } from "../keywords/utilities.js";
 import { readsDynamicScope, readsMarks } from "./kernel.js";
 import { normalForm } from "./normalize.js";
-import { documentOf, get, getDialect, resourceOf } from "../session.js";
+import { containerOf, get, getDialect, resourceOf } from "../session.js";
 import { differentResources, sameResource } from "../schema/same-resource.js";
 import { isSchemaNode } from "../schema/schema-nodes.js";
 
@@ -408,8 +408,8 @@ class Lowerer {
       this.#resourceDocuments.set(uri, resource);
       this.#addResource(uri, resource);
     } else if (compiled !== resource && !sameResource(compiled, resource)) {
-      const inDocument = documentOf(this.#session, resource) ?? resource;
-      throw differentResources(resource, inDocument, documentOf(this.#session, compiled) ?? compiled);
+      const inDocument = containerOf(this.#session, resource) ?? resource;
+      throw differentResources(resource, inDocument, containerOf(this.#session, compiled) ?? compiled);
     }
   }
 

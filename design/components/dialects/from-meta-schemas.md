@@ -7,8 +7,10 @@
   resource starts. Anywhere else, it's ignored with a message.
 
 - A dialect that isn't defined is the one its meta-schema defines.
-  `getDialect(session, uri)` gets the meta-schema with `getDocument`, so
-  it can come from a registry, and it must be a schema. The dialect is
+  `getDialect(session, uri)` gets the meta-schema with `get` and
+  `documentOf`, so it can come from a registry, and it must be a schema.
+  Its root isn't followed, so a meta-schema that's a reference isn't the
+  one it leads to. The dialect is
   identified by the URI it was asked for, which can be any URI the
   meta-schema is found by. It's cached in each session that uses it, because
   that's where the URI it was asked for is known. A dialect that's already

@@ -2,7 +2,7 @@ import { jsonValue, relativeFileUrl } from "@hyperjump/browser";
 import { getFragment, getScheme, isIri, isIriReference, normalizeIri, resolveIri, toAbsoluteIri, toRelativeIri } from "@hyperjump/uri";
 import { toId } from "../identifiers.js";
 import { visitReferences } from "../lint/utilities.js";
-import { getDialect, getDocument } from "../session.js";
+import { documentOf, get, getDialect } from "../session.js";
 import { isSchemaDocument } from "../schema/schema-nodes.js";
 import { differentResources, sameResource } from "../schema/same-resource.js";
 
@@ -140,13 +140,14 @@ const identifierFor = (main, documents, id) => {
 };
 
 /**
- * `getDocument` only finds a document in a registry or retrieves it, so
- * this is always a whole document, never a resource embedded in one.
+ * Without `referencedFrom`, `get` only finds a document in a registry or
+ * retrieves it, so this is always a whole document, never a resource
+ * embedded in one. Its root isn't followed if it's a reference.
  *
  * @type (session: JsonSchemaSession, uri: Id) => Promise<JsonSchemaDocumentNode>
  */
 const schemaDocument = async (session, uri) => {
-  const document = await getDocument(session, uri);
+  const document = await documentOf(session, await get(session, uri, { follow: false }));
   if (!isSchemaDocument(document)) {
     throw Error(`'${relativeFileUrl(uri)}' isn't a schema`);
   }

@@ -16,7 +16,7 @@ These stay public, because something users write depends on them.
 | `EvaluationPlugin` | Custom output formats, and anything that watches evaluation, like coverage |
 | Schema AST types, `schemaMediaType`, `isSchemaNode`, `isSchemaDocument`, `resolveSchema`, `jsonSchemaResolve`, `jsonSchemaValidate` | Editors and the language server, schemas in other formats, like YAML |
 | The lint toolkit (`./lint`) | Lint rules |
-| Session browsing: `get`, `getDocument`, `getDialect`, `annotation` | Any operation that walks schemas |
+| Session browsing: `get`, `documentOf`, `getDialect`, `annotation` | Any operation that walks schemas |
 
 ## Decided
 
@@ -27,9 +27,16 @@ These stay public, because something users write depends on them.
   found that way, so an operation that follows `$ref` without it, like a
   docs generator or a bundler, gets embedded resources wrong.
   `referencedFrom` is the reference's node, which is what browser finds
-  the document it's in from. `getDocument` only finds a whole document,
-  from a registry or by retrieving it.
-- `get` and `getDocument` are browser's, exported as they are. What they
+  the document it's in from.
+- The document at a URI is the one its root is in:
+  `documentOf(session, await get(session, uri, { follow: false }))`.
+  Without `referencedFrom`, that's a whole document, from a registry or by
+  retrieving it. `follow: false` is what keeps a schema that's a
+  reference, like a draft-07 `$ref`, from leading to another document.
+  Linting, bundling, and `getDialect` get their documents that way. There's
+  no `getDocument`. Browser dropped it, and its design's Documents page
+  says why.
+- `get` and `documentOf` are browser's, exported as they are. What they
   find might not be a schema, so `isSchemaNode` and `isSchemaDocument` are
   exported with them.
 - There's no `lower` function. `serialize(await compile(context, uri))`

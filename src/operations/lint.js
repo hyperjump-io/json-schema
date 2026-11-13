@@ -4,7 +4,7 @@ import { relativeFileUrl } from "@hyperjump/browser";
 import { SchemaError } from "../schema/schema-error.js";
 import { toSchemaMessage } from "../schema/resolve-text.js";
 import { sessionOf } from "./context.js";
-import { getDocument } from "../session.js";
+import { documentOf, get } from "../session.js";
 import { isSchemaDocument } from "../schema/schema-nodes.js";
 
 /**
@@ -19,7 +19,9 @@ export const lint = async (context, uri, options = {}) => {
 
   let document;
   try {
-    document = await getDocument(session, uri);
+    // The root as it's written, so a schema that's a reference is linted
+    // rather than what it leads to
+    document = await documentOf(session, await get(session, uri, { follow: false }));
   } catch (error) {
     // A document with problems has no tree to lint
     if (error instanceof SchemaError) {
@@ -29,7 +31,7 @@ export const lint = async (context, uri, options = {}) => {
   }
 
   if (!isSchemaDocument(document)) {
-    // `getDocument` checked it
+    // `get` checked it
     throw Error(`'${relativeFileUrl(/** @type IriReference */ (uri))}' isn't a schema`);
   }
 
