@@ -32,8 +32,8 @@ The documentation is in [`website/`](website/README.md). Start with
 
 ## Contributing
 
-`@hyperjump/browser` and `@hyperjump/uri` are linked from sibling directories
-(`../browser` on its `main` branch and `../uri`).
+`@hyperjump/browser` is linked from a sibling directory (`../browser` on
+its `main` branch).
 
 ### Tests
 

@@ -92,7 +92,7 @@
     "@hyperjump/browser": "file:../browser",
     "@hyperjump/json-pointer": "^2.0.1",
     "@hyperjump/json-schema-formats": "^1.0.8",
-    "@hyperjump/uri": "file:../uri",
+    "@hyperjump/uri": "^2.0.0",
     "@types/unist": "^3.0.3",
     "content-type": "^3.1.1",
     "unified": "^11.0.5",
