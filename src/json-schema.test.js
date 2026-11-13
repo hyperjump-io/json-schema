@@ -5,7 +5,7 @@ import { cwd } from "node:process";
 import { pathToFileURL } from "node:url";
 import { describe, test, beforeEach, expect } from "vitest";
 import { createServer } from "node:http";
-import { defaultMediaTypes, fetcher, get, Hyperjump, jsonPointerGet } from "@hyperjump/browser";
+import { defaultMediaTypes, fetcher, get, Hyperjump, jsonPointerGet, jsonValue } from "@hyperjump/browser";
 import { JsonSchema, extendDialect } from "./json-schema.js";
 import { v1Dialect, v1DialectUri } from "./dialects/v1/index.js";
 import { SchemaRegistry } from "./registry/schema-registry.js";
@@ -280,7 +280,7 @@ describe("JsonSchema", () => {
     });
   });
 
-  describe("a URI identifies one resource in a session", () => {
+  describe("a compiled schema has one resource for a URI", () => {
     // trusted → trusted-sub → common
     const trusted = new SchemaRegistry()
       .with({
@@ -313,22 +313,66 @@ describe("JsonSchema", () => {
         })
       });
 
+      // What `other` embeds is only found by its own references, and it
+      // doesn't have any to them
+      const validate = validatorFor(await compile(session, "https://example.com/other"));
+      expect(validate("a")).to.equal(true);
+      expect(validate(42)).to.equal(false);
+    });
+
+    test("a document that reaches its own resource, and another document's with the same URI, isn't compiled", async () => {
+      const session = jsonSchema.session({
+        registry: new SchemaRegistry().with({
+          $schema: v1DialectUri,
+          $id: "https://example.com/other",
+          allOf: [{ $ref: "https://example.com/common" }, { $ref: "https://example.com/trusted" }],
+          $defs: {
+            common: { $id: "https://example.com/common", type: "number" }
+          }
+        })
+      });
+
       await expect(compile(session, "https://example.com/other")).rejects.toMatchObject({
         name: "SchemaError",
         messages: [{
           ruleId: "duplicate-id",
-          uri: "https://example.com/trusted",
-          message: "'https://example.com/other' has a different schema resource identified as 'https://example.com/trusted-sub'"
+          uri: "https://example.com/common",
+          message: "'https://example.com/other' has a different schema resource identified as 'https://example.com/common'"
         }]
       });
     });
 
+    /** @type (allOf: Json[]) => SchemaRegistry */
+    const withItsOwnCopy = (allOf) => new SchemaRegistry().with({
+      $schema: v1DialectUri,
+      $id: "https://example.com/other",
+      allOf,
+      $defs: {
+        sub: { $id: "https://example.com/trusted-sub", $ref: "https://example.com/common" },
+        common: { $id: "https://example.com/common", type: "number" }
+      }
+    });
+
     test("an identical resource can't bring different resources with it", async () => {
+      // Its copy of `trusted-sub` is identical, and is reached first, but
+      // its reference finds a different `common` than the trusted one's
       const session = jsonSchema.session({
-        registry: other({
-          sub: { $id: "https://example.com/trusted-sub", $ref: "https://example.com/common" },
-          common: { $id: "https://example.com/common", type: "number" }
-        })
+        registry: withItsOwnCopy([{ $ref: "https://example.com/trusted-sub" }, { $ref: "https://example.com/trusted" }])
+      });
+
+      await expect(compile(session, "https://example.com/other")).rejects.toMatchObject({
+        name: "SchemaError",
+        messages: [{
+          ruleId: "duplicate-id",
+          uri: "https://example.com/common",
+          message: "'https://example.com/other' has a different schema resource identified as 'https://example.com/common'"
+        }]
+      });
+    });
+
+    test("whichever document is reached first", async () => {
+      const session = jsonSchema.session({
+        registry: withItsOwnCopy([{ $ref: "https://example.com/trusted" }, { $ref: "https://example.com/trusted-sub" }])
       });
 
       await expect(compile(session, "https://example.com/other")).rejects.toMatchObject({
@@ -353,7 +397,7 @@ describe("JsonSchema", () => {
       expect(validatorFor(await compile(session, "https://example.com/trusted"))(42)).to.equal(false);
     });
 
-    test("an embedded resource and a document with the same URI", async () => {
+    test("an embedded resource and a document with the same URI are each compiled as they are", async () => {
       const session = jsonSchema.session({
         registry: new SchemaRegistry().with({
           $schema: v1DialectUri,
@@ -366,14 +410,23 @@ describe("JsonSchema", () => {
       });
 
       expect(validatorFor(await compile(session, "https://example.com/other"))(42)).to.equal(true);
-      await expect(compile(session, "https://example.com/common")).rejects.toMatchObject({
-        name: "SchemaError",
-        messages: [{
-          ruleId: "duplicate-id",
-          uri: "https://example.com/common",
-          message: "'https://example.com/other' has a different schema resource identified as 'https://example.com/common'"
-        }]
+      expect(validatorFor(await compile(session, "https://example.com/common"))(42)).to.equal(false);
+    });
+
+    test("documents with different resources for a URI can be browsed in one session", async () => {
+      const session = jsonSchema.session({
+        registry: new SchemaRegistry().with({
+          $schema: v1DialectUri,
+          $id: "https://example.com/other",
+          $defs: {
+            common: { $id: "https://example.com/common", type: "number" }
+          }
+        })
       });
+
+      const embedded = await get(session, "https://example.com/other#/$defs/common/type");
+      const document = await get(session, "https://example.com/common#/type");
+      expect([jsonValue(/** @type any */ (embedded)), jsonValue(/** @type any */ (document))]).to.eql(["number", "string"]);
     });
   });
 

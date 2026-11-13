@@ -38,7 +38,8 @@ depended on it. So state is separated by how long it lives.
   (`session.state`): its registries, its resources by URI (see
   [Schema AST](../../specs/schema-ast.md)), and the dialects it built. A
   resource's document is added when a schema media type plugin parses it
-  (`addResources`), which checks that one URI identifies one resource.
+  (`addResources`). A session can have different resources for a URI,
+  which only what combines documents checks.
 - There's no default session. Browsing needs a session, because a node
   needs one to follow references.
 - An operation given a `JsonSchema` (`compile(jsonSchema, uri, { registry })`)

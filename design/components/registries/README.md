@@ -135,8 +135,10 @@ a session finds schemas in the registries it sees is in
   sees. A registry can't check that itself,
   because identity depends on the dialect, and it means a language server
   can have two files with the same `$id` for a moment without an
-  exception. A resource embedded in another document can only have the
-  same URI if it's identical (see [Schema AST](../../specs/schema-ast.md)).
+  exception. A resource embedded in a document can have the URI of
+  another schema. It's only found from its own document, and what
+  combines the two checks that they're identical (see
+  [Schema AST](../../specs/schema-ast.md)).
 
 ## Known limitations
 

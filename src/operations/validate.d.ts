@@ -10,8 +10,8 @@ import type { Context, SchemaSource } from "./context.d.ts";
  * more than one instance, use {@link validator} once instead.
  *
  * @throws SchemaError if a schema has problems.
- * @throws RetrievalError from `@hyperjump/browser` if a schema can't be
- * retrieved.
+ * @throws An error from `@hyperjump/browser` if a schema can't be
+ * retrieved. Its `cause.code` says why.
  */
 export function validate<S, R = boolean, I extends Input = "value">(context: Context<S>, schema: NoInfer<SchemaSource<S>>, instance: InstanceOf<I>, options?: ValidationOptions<R, I>): Promise<R>;
 
@@ -21,8 +21,8 @@ export function validate<S, R = boolean, I extends Input = "value">(context: Con
  * chosen once.
  *
  * @throws SchemaError if a schema has problems.
- * @throws RetrievalError from `@hyperjump/browser` if a schema can't be
- * retrieved.
+ * @throws An error from `@hyperjump/browser` if a schema can't be
+ * retrieved. Its `cause.code` says why.
  */
 export function validator<S, R = boolean, I extends Input = "value">(context: Context<S>, schema: NoInfer<SchemaSource<S>>, options?: ValidationOptions<R, I>): Promise<(instance: InstanceOf<I>) => R>;
 

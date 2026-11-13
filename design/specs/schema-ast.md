@@ -29,14 +29,25 @@ its position.
   contain, the one where the location's pointer leads to that node. So a
   resource's nodes keep their canonical URIs, and a document can't change
   what a reference in another document finds.
-- A URI identifies one resource in a session. Two documents can only have
-  a resource with the same URI if it's identical in both, like a schema
-  and a bundle that includes it, which is checked when a document's
-  resources are added to the session's. The kernel identifies schemas by
-  location, so two different resources with the same URI can't be compiled
-  together. The session's resources, by URI, are also how a node's
-  resource is found (`resourceOf`), for what a resource has beyond its
-  values, like its dynamic anchors.
+- A session can have documents with different resources for a URI, like a
+  schema and a document that embeds another schema with its `$id`. Each is
+  only found from its own document, so browsing them isn't a problem. What
+  combines documents can only have one resource for a URI, and checks it
+  where it combines them: compiling (see
+  [Compile and evaluate](../components/kernel/README.md)) and bundling
+  (see [Bundling](../components/bundling.md)). An identical resource, with
+  the same dialect and the same JSON, can be in more than one document,
+  like a schema and a bundle that includes it.
+  - A check when a document is added to a session was rejected. A
+    document would make another one fail by being loaded first, even when
+    nothing combined them. It also didn't make a compiled schema
+    consistent: a document's identical copy of a resource, reached first,
+    had its references followed from that document, and the other
+    document's were never loaded to be compared.
+- A node's resource is found by the node (`resourceOf`), for what a
+  resource has beyond its values, like its dynamic anchors: among the
+  session's resources with the URI of the node's location, the one where
+  the location's pointer leads to that node.
 - Anchors and dynamic anchors are recorded per resource as JSON Pointers.
   2019-09's `$recursiveAnchor: true` is a dynamic anchor named `""`. The
   schema media type plugins' `fragmentPointer` looks anchors up, so browser

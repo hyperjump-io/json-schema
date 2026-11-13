@@ -29,9 +29,11 @@ import type { Context, SchemaSource } from "./context.d.ts";
  * which would ignore its identifier, a file would be embedded without
  * `id`, or the main schema's dialect has nowhere to put it. Also if `id`
  * isn't an absolute URI, is a file, or has a fragment.
- * @throws SchemaError if a schema has problems.
- * @throws RetrievalError from `@hyperjump/browser` if a schema can't be
- * found.
+ * @throws SchemaError if a schema has problems. Two documents in the
+ * bundle that have different resources with the same URI are a problem
+ * (`duplicate-id`).
+ * @throws An error from `@hyperjump/browser` if a schema can't be
+ * retrieved. Its `cause.code` says why.
  */
 export function bundle<S>(context: Context<S>, schema: NoInfer<SchemaSource<S>>, options?: SessionOptions & BundleOptions): Promise<Json>;
 

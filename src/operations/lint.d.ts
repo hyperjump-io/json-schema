@@ -15,8 +15,8 @@ import type { Context } from "./context.d.ts";
  * returned instead of thrown.
  *
  * @throws Error if `uri` isn't a schema.
- * @throws RetrievalError from `@hyperjump/browser` if the document can't
- * be retrieved.
+ * @throws An error from `@hyperjump/browser` if the document can't be
+ * retrieved. Its `cause.code` says why.
  */
 export function lint(context: Context, uri: string, options?: SessionOptions & LintOptions): Promise<SchemaMessage[]>;
 

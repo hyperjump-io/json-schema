@@ -266,6 +266,21 @@ describe("bundle", () => {
       expect(definitions[`${testDomain}/string`]).to.not.have.property("$schema");
     });
 
+    test("documents with different resources for a URI can't be bundled together", async () => {
+      /** @type (type: string) => Json */
+      const embedding = (type) => ({ $defs: { shared: { $id: `${testDomain}/shared`, type } } });
+      const main = { $id: mainUri, allOf: [{ $ref: "/a" }, { $ref: "/b" }] };
+
+      const different = registryOf({ "": main, [`${testDomain}/a`]: embedding("string"), [`${testDomain}/b`]: embedding("number") }, v1DialectUri);
+      await expect(bundle(allDialects(), mainUri, { registry: different })).rejects.toMatchObject({
+        name: "SchemaError",
+        messages: [{ ruleId: "duplicate-id", uri: `${testDomain}/b`, message: `'${testDomain}/a' has a different schema resource identified as '${testDomain}/shared'` }]
+      });
+
+      const identical = registryOf({ "": main, [`${testDomain}/a`]: embedding("string"), [`${testDomain}/b`]: embedding("string") }, v1DialectUri);
+      await expect(bundle(allDialects(), mainUri, { registry: identical })).resolves.toBeDefined();
+    });
+
     test("the uuid strategy names definitions with UUIDs", async () => {
       const bundled = await bundleOf(draft202012DialectUri, { definitionNamingStrategy: "uuid" });
       const definitions = /** @type Record<string, Record<string, Json>> */ (bundled.$defs);

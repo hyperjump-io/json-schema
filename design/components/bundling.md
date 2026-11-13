@@ -26,6 +26,9 @@ being considered (see [Open questions](../specs/keyword/README.md#open-questions
 - A reference to a resource that's already in the bundle, including one
   embedded in an embedded document, isn't followed. Each document is
   embedded once.
+- A bundle is one document, so it can only have one resource for a URI.
+  Two of its documents that have a resource with the same URI have to
+  have an identical one, or it's a `duplicate-id` problem.
 - A document is found with `getDocument`, so it's always a whole document
   from a registry or retrieval. If its URI isn't
   the one the reference used, the reference wouldn't find it in the bundle,

@@ -22,9 +22,11 @@ export type CompiledSchema = {
  * simpler when that's all you need.
  *
  * @throws SchemaError if a schema has problems. It has every problem in
- * the first document found to have any.
- * @throws RetrievalError from `@hyperjump/browser` if a schema can't be
- * retrieved.
+ * the first document found to have any. Two documents the schema reaches
+ * that have different resources with the same URI are a problem
+ * (`duplicate-id`), because a compiled schema names a schema by its URI.
+ * @throws An error from `@hyperjump/browser` if a schema can't be
+ * retrieved. Its `cause.code` says why.
  */
 export function compile<S>(context: Context<S>, schema: NoInfer<SchemaSource<S>>, options?: SessionOptions): Promise<CompiledSchema>;
 

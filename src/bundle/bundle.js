@@ -4,6 +4,7 @@ import { toId } from "../identifiers.js";
 import { visitReferences } from "../lint/utilities.js";
 import { getDialect, getDocument } from "../session.js";
 import { isSchemaDocument } from "../schema/schema-nodes.js";
+import { differentResources, sameResource } from "../schema/same-resource.js";
 
 /**
  * @import { Json } from "@hyperjump/browser"
@@ -161,7 +162,9 @@ const schemaDocument = async (session, uri) => {
  * @type (session: JsonSchemaSession, main: JsonSchemaDocumentNode, externalSchemas: Set<Id>) => Promise<JsonSchemaDocumentNode[]>
  */
 const referencedDocuments = async (session, main, externalSchemas) => {
-  const resources = new Set(Object.keys(main.embedded));
+  /** @type Map<string, [resource: JsonSchemaDocumentNode, document: JsonSchemaDocumentNode]> */
+  const resources = new Map();
+  addResources(resources, main);
   const documents = [main];
   for (let index = 0; index < documents.length; index++) {
     for (const reference of references(documents[index])) {
@@ -176,14 +179,33 @@ const referencedDocuments = async (session, main, externalSchemas) => {
         throw Error(`'${relativeFileUrl(uri)}' is identified as '${document.uri}', so a reference to '${relativeFileUrl(uri)}' wouldn't find it in the bundle`);
       }
 
-      for (const resourceUri in document.embedded) {
-        resources.add(resourceUri);
-      }
+      addResources(resources, document);
       documents.push(document);
     }
   }
 
   return documents.slice(1);
+};
+
+/**
+ * Add a document's resources to the bundle's. A bundle is one document, so
+ * it can only have one resource for a URI. A resource another document has
+ * too has to be identical.
+ *
+ * @type (resources: Map<string, [resource: JsonSchemaDocumentNode, document: JsonSchemaDocumentNode]>, document: JsonSchemaDocumentNode) => void
+ * @throws SchemaError if a document already in the bundle has a different
+ * resource with the same URI.
+ */
+const addResources = (resources, document) => {
+  for (const uri in document.embedded) {
+    const resource = document.embedded[uri];
+    const bundled = resources.get(uri);
+    if (bundled === undefined) {
+      resources.set(uri, [resource, document]);
+    } else if (!sameResource(bundled[0], resource)) {
+      throw differentResources(resource, document, bundled[1]);
+    }
+  }
 };
 
 /**

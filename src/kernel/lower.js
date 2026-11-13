@@ -4,7 +4,8 @@ import { keywordDefinitionUri } from "../keywords/unknown.js";
 import { siblingValues } from "../keywords/utilities.js";
 import { readsDynamicScope, readsMarks } from "./kernel.js";
 import { normalForm } from "./normalize.js";
-import { get, getDialect, resourceOf } from "../session.js";
+import { documentOf, get, getDialect, resourceOf } from "../session.js";
+import { differentResources, sameResource } from "../schema/same-resource.js";
 import { isSchemaNode } from "../schema/schema-nodes.js";
 
 /**
@@ -19,6 +20,7 @@ import { isSchemaNode } from "../schema/schema-nodes.js";
 
 /**
  * @typedef {JsonSchemaNode & { type: "json-schema"; dialectUri: string; children: JsonSchemaKeywordNode[] }} ObjectSchemaNode
+ * @typedef {Record<string, JsonSchemaDocumentNode>} Embedded
  * @typedef {{ children: unknown[] }} ContainerNode
  */
 
@@ -170,11 +172,10 @@ export const lowerKeywords = (keywordOf, node, dialect, inputs, tolerant) => {
 
 /**
  * What compiling needs that's retrieved: the node a reference finds (by
- * the URI and the resource it's from), a schema resource's document, for
- * its dynamic anchors, and a dialect
+ * the URI and the document the reference is in, as a number), and a
+ * dialect
  *
- * @typedef {{ kind: "target"; uri: string; referencedFrom: string | undefined; from: JsonSchemaNode | undefined }
- *   | { kind: "resource"; uri: string }
+ * @typedef {{ kind: "target"; uri: string; document: number; from: JsonSchemaNode | undefined }
  *   | { kind: "dialect"; uri: string }} Need
  */
 
@@ -202,11 +203,47 @@ class Lowerer {
 
   /**
    * What's been retrieved: the nodes references found, by
-   * `"<referencedFrom> <uri>"`, and the dialects
+   * `"<document> <uri>"`, and the dialects. Every reference to a URI from
+   * one document finds the same thing, and one from another document might
+   * not, since a document's references find what it contains first.
    *
    * @type Map<string, JsonSchemaNode>
    */
   #targets;
+
+  /**
+   * The document of each resource being compiled, by URI. A kernel names a
+   * schema by its location, so there can only be one resource for a URI.
+   * A resource that's reached in another document has to be identical.
+   *
+   * @type Map<string, JsonSchemaDocumentNode>
+   */
+  #resourceDocuments;
+
+  /**
+   * The document of each schema that's been queued, as the `embedded` its
+   * resources share. A schema in a schema that's being lowered is in its
+   * document, so only the document of a schema a reference finds is looked
+   * for.
+   *
+   * @type Map<JsonSchemaNode, Embedded>
+   */
+  #documents;
+
+  /**
+   * The document of the schema that's being lowered, which its references
+   * are followed from
+   *
+   * @type Embedded | undefined
+   */
+  #current;
+
+  /**
+   * A number for each document, with 0 for no document
+   *
+   * @type Map<Embedded, number>
+   */
+  #documentNumbers;
 
   /** @type Map<string, Dialect> */
   #dialects;
@@ -219,13 +256,13 @@ class Lowerer {
   #retrieving;
 
   /**
-   * Schemas to lower, and the handles of every schema that's been queued
+   * Schemas to lower, and every schema that's been queued
    *
    * @type JsonSchemaNode[]
    */
   #queue;
 
-  /** @type Set<Handle> */
+  /** @type Set<JsonSchemaNode> */
   #queued;
 
   /**
@@ -247,6 +284,9 @@ class Lowerer {
     this.#resources = {};
     this.#reads = { evaluated: [], dynamicScope: [] };
     this.#targets = new Map();
+    this.#resourceDocuments = new Map();
+    this.#documents = new Map();
+    this.#documentNumbers = new Map();
     this.#dialects = new Map();
     this.#retrieving = new Map();
     this.#queue = [];
@@ -261,12 +301,10 @@ class Lowerer {
           return { uri, schema: { op: "apply", schema: "" }, handle: "", dynamicAnchors: undefined };
         }
 
+        // Its resource is added when it's queued
         const handle = this.#schema(target);
         const resource = this.#resources[this.#absoluteIri(handle)];
-        if (resource === undefined) {
-          this.#need({ kind: "resource", uri: this.#absoluteIri(handle) });
-        }
-        return { uri, schema: { op: "apply", schema: handle }, handle, dynamicAnchors: resource?.dynamicAnchors };
+        return { uri, schema: { op: "apply", schema: handle }, handle, dynamicAnchors: resource.dynamicAnchors };
       },
       missing: () => this.#needs.size > 0
     };
@@ -274,8 +312,8 @@ class Lowerer {
 
   /** @type (uri: string) => Promise<Kernel> */
   async lower(uri) {
-    await this.#retrieve([{ kind: "target", uri, referencedFrom: undefined, from: undefined }]);
-    const handle = this.#schema(/** @type JsonSchemaNode */ (this.#target(uri, undefined)));
+    await this.#retrieve([{ kind: "target", uri, document: 0, from: undefined }]);
+    const handle = this.#schema(/** @type JsonSchemaNode */ (this.#targets.get(`0 ${uri}`)));
 
     for (let pending = this.#lowerQueued(); pending.length > 0; pending = this.#lowerQueued()) {
       await this.#retrieve(pending.flatMap(({ needs }) => needs));
@@ -310,8 +348,7 @@ class Lowerer {
 
   /**
    * Retrieve what schemas need, at the same time. A schema a reference
-   * finds needs its resource and its dialect to be lowered, so they're
-   * retrieved with it. If more than one fails, the first one's error is
+   * finds needs its dialect to be lowered, so it's retrieved with it. If more than one fails, the first one's error is
    * thrown, so it's the same every time.
    *
    * @type (needs: Need[]) => Promise<void>
@@ -345,19 +382,63 @@ class Lowerer {
       }
       this.#targets.set(key, target);
 
-      /** @type Need[] */
-      const needs = [{ kind: "resource", uri: this.#absoluteIri(target.location) }];
       if (target.jsonType === "object") {
-        needs.push({ kind: "dialect", uri: target.dialectUri });
+        await this.#retrieve([{ kind: "dialect", uri: target.dialectUri }]);
       }
-      await this.#retrieve(needs);
-    } else if (need.kind === "resource") {
-      // Its document was retrieved to find a schema in it, so the session
-      // has it
-      this.#addResource(need.uri, /** @type JsonSchemaDocumentNode */ (resourceOf(this.#session, { location: need.uri })));
     } else {
       this.#dialects.set(need.uri, await getDialect(this.#session, need.uri));
     }
+  }
+
+  /**
+   * Add the resource a schema is in, in its document. The first schema of a
+   * resource adds it to the kernel. A schema of another document's resource
+   * with the same URI is only compiled if that resource is identical, so
+   * what's compiled doesn't depend on which document was reached first.
+   *
+   * @type (node: JsonSchemaNode, document: Embedded) => void
+   * @throws SchemaError if another document being compiled has a different
+   * resource with the same URI.
+   */
+  #resource(node, document) {
+    const uri = this.#absoluteIri(node.location);
+    const resource = document[uri];
+    const compiled = this.#resourceDocuments.get(uri);
+    if (compiled === undefined) {
+      this.#resourceDocuments.set(uri, resource);
+      this.#addResource(uri, resource);
+    } else if (compiled !== resource && !sameResource(compiled, resource)) {
+      const inDocument = documentOf(this.#session, resource) ?? resource;
+      throw differentResources(resource, inDocument, documentOf(this.#session, compiled) ?? compiled);
+    }
+  }
+
+  /**
+   * The document a schema a reference found is in. Nothing is retrieved: a
+   * node is from a document the session has.
+   *
+   * @type (node: JsonSchemaNode) => Embedded
+   */
+  #documentOf(node) {
+    const resource = resourceOf(this.#session, node);
+    if (resource === undefined) {
+      throw Error(`'${relativeFileUrl(node.location)}' isn't in a schema the session has`);
+    }
+    return resource.embedded;
+  }
+
+  /** @type (document: Embedded | undefined) => number */
+  #documentNumber(document) {
+    if (document === undefined) {
+      return 0;
+    }
+
+    let number = this.#documentNumbers.get(document);
+    if (number === undefined) {
+      number = this.#documentNumbers.size + 1;
+      this.#documentNumbers.set(document, number);
+    }
+    return number;
   }
 
   /**
@@ -374,7 +455,7 @@ class Lowerer {
     for (const name in document.dynamicAnchors) {
       const anchorNode = /** @type JsonSchemaNode */ (jsonPointerGet(document.dynamicAnchors[name], root));
       dynamicAnchors[name] = anchorNode.location;
-      this.#schema(anchorNode);
+      this.#schema(anchorNode, document.embedded);
     }
     this.#resources[uri] = { dynamicAnchors };
   }
@@ -385,18 +466,18 @@ class Lowerer {
   }
 
   /**
-   * The node a reference finds, if it's been retrieved. A reference is
-   * followed from its node, so it finds what its document contains. What it
-   * finds is kept by the reference's resource, where every reference to a
-   * URI finds the same thing.
+   * The node a reference in the schema that's being lowered finds, if it's
+   * been retrieved. A reference is followed from its node, so it finds what
+   * its document contains. What it finds is kept by the reference's
+   * document, where every reference to a URI finds the same thing.
    *
-   * @type (uri: string, from: JsonSchemaNode | undefined) => JsonSchemaNode | undefined
+   * @type (uri: string, from: JsonSchemaNode) => JsonSchemaNode | undefined
    */
   #target(uri, from) {
-    const referencedFrom = from && this.#absoluteIri(from.location);
-    const target = this.#targets.get(`${referencedFrom ?? ""} ${uri}`);
+    const document = this.#documentNumber(this.#current);
+    const target = this.#targets.get(`${document} ${uri}`);
     if (target === undefined) {
-      this.#need({ kind: "target", uri, referencedFrom, from });
+      this.#need({ kind: "target", uri, document, from });
     }
     return target;
   }
@@ -409,25 +490,35 @@ class Lowerer {
    */
   #handle(node) {
     if (node.type !== "reference") {
-      return this.#schema(node);
+      return this.#schema(node, this.#current);
     }
 
     const target = this.#target(/** @type Iri */ (node.href), node);
     return target === undefined ? "" : this.#schema(target);
   }
 
-  /** @type (node: JsonSchemaNode) => Handle */
-  #schema(node) {
+  /**
+   * Queue a schema. `document` is its document, if it's in the one that's
+   * being lowered. Without it, it's one a reference found, and its
+   * document is looked for.
+   *
+   * @type (node: JsonSchemaNode, document?: Embedded) => Handle
+   */
+  #schema(node, document) {
     if (node.type !== "json-schema") {
       throw Error(`No schema found at '${relativeFileUrl(node.location)}'`);
     }
 
-    const handle = node.location;
-    if (!this.#queued.has(handle)) {
-      this.#queued.add(handle);
+    // Queued by node and not by location, so a resource that's in more
+    // than one document has its references followed from each of them
+    if (!this.#queued.has(node)) {
+      this.#queued.add(node);
+      document ??= this.#documentOf(node);
+      this.#documents.set(node, document);
+      this.#resource(node, document);
       this.#queue.push(node);
     }
-    return handle;
+    return node.location;
   }
 
   /**
@@ -448,15 +539,13 @@ class Lowerer {
    * @type (node: JsonSchemaNode) => void
    */
   #lowerSchema(node) {
+    this.#current = this.#documents.get(node);
     const handle = node.location;
     if (node.jsonType !== "boolean" && node.jsonType !== "object") {
       throw Error(`No schema found at '${relativeFileUrl(handle)}'`);
     }
 
     const resource = this.#absoluteIri(handle);
-    if (!(resource in this.#resources)) {
-      this.#need({ kind: "resource", uri: resource });
-    }
     const { dialectUri } = /** @type ObjectSchemaNode */ (node);
     const dialect = node.jsonType === "object" ? this.#dialects.get(dialectUri) : undefined;
     if (node.jsonType === "object" && dialect === undefined) {
@@ -475,6 +564,11 @@ class Lowerer {
       return;
     }
 
+    // The same schema in another document lowers to the same thing
+    if (handle in this.#schemas) {
+      return;
+    }
+
     const keywords = lowered.map(({ group }) => group);
     this.#schemas[handle] = { resource, keywords };
 
@@ -490,7 +584,7 @@ class Lowerer {
 }
 
 /** @type (need: Need) => string */
-const needKey = (need) => need.kind === "target" ? `${need.referencedFrom ?? ""} ${need.uri}` : `${need.kind} ${need.uri}`;
+const needKey = (need) => need.kind === "target" ? `${need.document} ${need.uri}` : `${need.kind} ${need.uri}`;
 
 /** A value that doesn't fit its keyword's shape */
 class Misfit extends Error {}
