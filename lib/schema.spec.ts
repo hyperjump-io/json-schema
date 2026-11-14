@@ -93,6 +93,14 @@ describe("Schema Parsing", () => {
         $schema: "https://json-schema.org/v1",
         $id: "file:///path/to/schema.schema.json"
       });
+    }).to.throw(Error, "can't be identified with a 'file:' URI");
+  });
+
+  it("registering a schema with a file retrieval URI", () => {
+    expect(() => {
+      registerSchema({
+        $schema: "https://json-schema.org/v1"
+      }, "file:///path/to/schema.schema.json");
     }).to.throw(Error, "Registering a schema with a 'file:' URI scheme is not allowed");
   });
 

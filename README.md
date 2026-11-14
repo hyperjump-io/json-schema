@@ -122,8 +122,9 @@ When running on the server, you can also load schemas directly from the
 filesystem. When fetching from the file system, there are limitations for
 security reasons. You can only reference a schema identified by a file URI
 scheme (**file**:///path/to/my/schemas) from another schema identified by a file
-URI scheme. Also, a schema is not allowed to self-identify (`$id`) with a
-`file:` URI scheme.
+URI scheme. Also, a schema that isn't from the filesystem is not allowed to
+identify itself or any of its embedded schemas (`$id`) with a `file:` URI
+scheme.
 
 ```javascript
 const output = await validate(`file://${__dirname}/string.schema.json`, "foo");
