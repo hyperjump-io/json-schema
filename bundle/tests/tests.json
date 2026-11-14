@@ -862,5 +862,51 @@
         "instance": [42]
       }
     ]
+  },
+  {
+    "description": "External false schema",
+    "compatibility": "6",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "foo": { "$ref": "https://test.json-schema.org/false" }
+      }
+    },
+    "externalSchemas": {
+      "https://test.json-schema.org/false": false
+    },
+    "tests": [
+      {
+        "description": "property is absent",
+        "instance": {}
+      },
+      {
+        "description": "property is present",
+        "instance": { "foo": "anything" }
+      }
+    ]
+  },
+  {
+    "description": "External true schema",
+    "compatibility": "6",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "foo": { "$ref": "https://test.json-schema.org/true" }
+      }
+    },
+    "externalSchemas": {
+      "https://test.json-schema.org/true": true
+    },
+    "tests": [
+      {
+        "description": "property is absent",
+        "instance": {}
+      },
+      {
+        "description": "property is present",
+        "instance": { "foo": "anything" }
+      }
+    ]
   }
 ]
