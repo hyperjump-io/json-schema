@@ -63,10 +63,12 @@ export default {
             "then": { "$ref": "#/$defs/itemPattern" },
             "else": { "$dynamicRef": "meta" }
           },
-          { "enum": ["?", "*", "+"] }, "?",
+          { "enum": ["?", "*", "+"] },
+          "?",
           "|",
           { "const": "|" }
-        ], "*"
+        ],
+        "*"
       ]
     }
   }
