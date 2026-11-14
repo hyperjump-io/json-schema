@@ -806,7 +806,7 @@ These are available from the `@hyperjump/json-schema/experimental` export.
 * **canonicalUri**: (schema: Browser) => string
 
     Returns a URI for the schema.
-* **toSchema**: (schema: Browser, options: ToSchemaOptions) => object
+* **toSchema**: (schema: Browser, options: ToSchemaOptions) => object | boolean
 
     Get a raw schema from a Schema Document.
 

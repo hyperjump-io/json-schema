@@ -862,5 +862,40 @@
         "instance": [42]
       }
     ]
+  },
+  {
+    "description": "External false schema",
+    "compatibility": "6",
+    "schema": {
+      "not": { "$ref": "https://test.json-schema.org/false" }
+    },
+    "externalSchemas": {
+      "https://test.json-schema.org/false": false
+    },
+    "tests": [
+      {
+        "description": "false schema still rejects every instance",
+        "instance": "anything"
+      }
+    ]
+  },
+  {
+    "description": "External true schema",
+    "compatibility": "6",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "foo": { "$ref": "https://test.json-schema.org/true" }
+      }
+    },
+    "externalSchemas": {
+      "https://test.json-schema.org/true": true
+    },
+    "tests": [
+      {
+        "description": "true schema still accepts every instance",
+        "instance": { "foo": "anything" }
+      }
+    ]
   }
 ]
