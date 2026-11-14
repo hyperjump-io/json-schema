@@ -867,22 +867,15 @@
     "description": "External false schema",
     "compatibility": "6",
     "schema": {
-      "type": "object",
-      "properties": {
-        "foo": { "$ref": "https://test.json-schema.org/false" }
-      }
+      "not": { "$ref": "https://test.json-schema.org/false" }
     },
     "externalSchemas": {
       "https://test.json-schema.org/false": false
     },
     "tests": [
       {
-        "description": "property is absent",
-        "instance": {}
-      },
-      {
-        "description": "property is present",
-        "instance": { "foo": "anything" }
+        "description": "false schema still rejects every instance",
+        "instance": "anything"
       }
     ]
   },
@@ -900,11 +893,7 @@
     },
     "tests": [
       {
-        "description": "property is absent",
-        "instance": {}
-      },
-      {
-        "description": "property is present",
+        "description": "true schema still accepts every instance",
         "instance": { "foo": "anything" }
       }
     ]

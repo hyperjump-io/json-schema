@@ -55,7 +55,7 @@ export type OutputFormatHandler = (options: ValidationOptions) => {
 export const getSchema: (uri: string, browser?: Browser) => Promise<Browser<SchemaDocument>>;
 export const buildSchemaDocument: (schema: SchemaObject | boolean, retrievalUri?: string, contextDialectId?: string) => SchemaDocument;
 export const canonicalUri: (browser: Browser<SchemaDocument>) => string;
-export const toSchema: (browser: Browser<SchemaDocument>, options?: ToSchemaOptions) => SchemaObject;
+export const toSchema: (browser: Browser<SchemaDocument>, options?: ToSchemaOptions) => SchemaObject | boolean;
 
 export type ToSchemaOptions = {
   contextDialectId?: string;
