@@ -36,9 +36,11 @@ depended on it. So state is separated by how long it lives.
     `{ hyperjump, jsonSchema, fetch, state, contextUrl, config }`, that
     copied some of a `Hyperjump`'s members and reached the rest through
     `hyperjump`.
-- What this package adds to browsing is functions of a session:
-  `getDialect(session, uri)` and `annotation(session, node, keyword)`.
-  `get` and `getDocument` are browser's, exported from here as they are.
+- What this package adds to browsing is a function of a session,
+  `getDialect(session, uri)`. `get` and `getDocument` are browser's,
+  exported from here as they are. `annotation` doesn't need a session: it
+  takes the config (see
+  [Annotations](../validation-api/annotations.md)).
 - What a session keeps for schemas is in its state (`session.state`),
   made the first time it's needed: the dialects it built, and the registry
   entries it resolved that can't be shared. A session

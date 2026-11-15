@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { fromJs, Hyperjump } from "@hyperjump/browser";
+import { fromJs } from "@hyperjump/browser";
 import { jsonSchemaMediaTypes } from "../json-schema.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
@@ -10,7 +10,7 @@ import { annotatorFor, validatorFor } from "./validate-compiled.js";
 import { bundle } from "./bundle.js";
 import { lint } from "./lint.js";
 import { noUrl } from "../identifiers.js";
-import { annotation } from "../session.js";
+import { annotation } from "../annotation.js";
 
 /**
  * @import { Json } from "@hyperjump/browser"
@@ -134,7 +134,7 @@ describe("operations", () => {
 
       expect(output).to.equal(true);
       expect(status).to.equal("success");
-      expect(annotation(new Hyperjump(jsonSchema), node, "title")).to.eql(["root"]);
+      expect(annotation(jsonSchema, node, "title")).to.eql(["root"]);
     });
 
     test("JSON text", async () => {
@@ -143,7 +143,7 @@ describe("operations", () => {
 
       expect(output).to.equal(false);
       expect(status).to.equal("recovered");
-      expect(annotation(new Hyperjump(jsonSchema), node, "title")).to.eql(["root"]);
+      expect(annotation(jsonSchema, node, "title")).to.eql(["root"]);
     });
 
     test("a node is annotated where it is", async () => {
@@ -151,7 +151,7 @@ describe("operations", () => {
       const result = annotatorFor(await compile(jsonSchema, schema), { input: "node" })(node);
 
       expect(result).to.include({ output: true, status: "success", node });
-      expect(annotation(new Hyperjump(jsonSchema), node, "title")).to.eql(["root"]);
+      expect(annotation(jsonSchema, node, "title")).to.eql(["root"]);
     });
   });
 

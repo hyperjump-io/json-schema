@@ -1,5 +1,4 @@
 import type { Hyperjump, Json } from "@hyperjump/browser";
-import type { Data } from "unist";
 import type { JsonSchemaDocumentNode, JsonSchemaNode } from "./schema/schema-ast.d.ts";
 import type { Dialect } from "./dialect.d.ts";
 import type { SchemaRegistry } from "./registry/schema-registry.d.ts";
@@ -27,7 +26,7 @@ export type SessionOptions = {
 // made from a config with the JSON Schema media types,
 // `new Hyperjump(config)`. Everything resolved belongs to it: the documents
 // it retrieves and the dialects it builds from meta-schemas. It's for
-// browsing, `annotation`, and unified pipelines (`jsonSchemaResolve`).
+// browsing and unified pipelines (`jsonSchemaResolve`).
 // Operations, like `validator` and `bundle`, start a session of their own.
 //
 // A config's `registry` is a `SchemaRegistry`, which the session asks before
@@ -80,28 +79,6 @@ export type GetDialectOptions = {
    */
   referencedFrom?: string;
 };
-
-/**
- * The values a keyword annotated a node with, one for every schema
- * location where it applied, from `annotate` or `annotator`. The node can
- * be a property name, which `propertyNames` annotates. A node the keyword
- * didn't annotate has none.
- *
- * The keyword is a keyword URI, if a keyword with that URI has been added,
- * or a name in the dialect, which is v1 by default. A name that isn't a
- * keyword in the dialect is an unknown keyword. An unknown keyword's URI
- * is `https://json-schema.org/keyword/unknown#` followed by its name.
- *
- * The AST is a unist tree, so unist utilities such as `unist-util-visit`
- * can find the nodes that have an annotation.
- *
- * The node doesn't have to be from a schema compiled in this session, but
- * a dialect built from a meta-schema has to have been built in this one.
- *
- * @throws Error if a name is given and the dialect isn't defined in this
- * session.
- */
-export const annotation: <A extends Json = Json>(session: Hyperjump<JsonSchemaConfig>, node: { data?: Data }, keyword: string, dialectUri?: string) => A[];
 
 // What follows is used by the library. It isn't exported from the package.
 

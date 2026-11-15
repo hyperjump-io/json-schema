@@ -13,8 +13,6 @@ a `Hyperjump`, made from your config. Start one yourself with
   [`@hyperjump/browser`](https://github.com/hyperjump-io/browser/blob/v2/website/README.md)
   functions and [follow references](#following-references) in a tool of
   your own. See [Browsing](#browsing).
-- **Read annotations** by keyword name with `annotation`. See
-  [Annotations](../guides/annotations.md#reading-an-annotation).
 
 ```typescript
 import { Hyperjump } from "@hyperjump/browser";
@@ -51,7 +49,6 @@ from this package too:
 | `getDocument(session, uri)` | The document at a URI, without its fragment |
 | `jrefStep(session, key, node)` and the other `jref` functions | Step into a node, following references. See [browser's browsing](https://github.com/hyperjump-io/browser/blob/v2/website/browsing.md). |
 | `getDialect(session, uri)` | A dialect, from the config or from a meta-schema the session finds |
-| `annotation(session, node, keyword)` | A node's annotations. See [Annotations](../guides/annotations.md#reading-an-annotation). |
 
 A schema is found in the config's registry, and otherwise it's
 retrieved. `allowRetrieval` doesn't apply to a schema in a

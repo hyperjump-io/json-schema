@@ -49,15 +49,14 @@ positions. With `input: "node"`, it annotates a node you already have, and
 ## Reading an annotation
 
 Annotations are stored by keyword URI, because the same keyword can have
-different names in different dialects. `annotation` looks them up by name,
-in a session. By default it uses v1's names:
+different names in different dialects. `annotation` looks them up by name
+in the dialects of the config's JSON Schema media types. By default it uses
+v1's names:
 
 ```typescript
-import { Hyperjump } from "@hyperjump/browser";
 import { annotation } from "@hyperjump/json-schema";
 
-const session = new Hyperjump(config);
-annotation(session, node, "title"); // ["Person"]
+annotation(config, node, "title"); // ["Person"]
 ```
 
 It always returns a list. A node can have more than one value for a
@@ -69,7 +68,15 @@ For a schema in another dialect, pass the dialect URI too:
 
 ```typescript
 const draft202012 = "https://json-schema.org/draft/2020-12/schema";
-annotation(session, node, "title", draft202012);
+annotation(config, node, "title", draft202012);
+```
+
+The dialect has to be one you gave `jsonSchemaMediaTypes`. For a dialect a
+custom meta-schema defines, use the keyword's URI, which doesn't need a
+dialect:
+
+```typescript
+annotation(config, node, "https://json-schema.org/keyword/title");
 ```
 
 ## Which annotations are kept

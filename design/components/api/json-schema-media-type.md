@@ -1,7 +1,6 @@
 # JSON Schema as a media type
 
-Decided 2026-11-14. Stages 1 and 2 are built (2026-11-14). Stage 3 isn't
-yet. It's built in the order of its stages (see [Order](#order)).
+Decided and built 2026-11-14, in three stages. It's built in the order of its stages (see [Order](#order)).
 
 Browser already has a model for a kind of document: a session is a
 `Hyperjump`, its config is a plain value, and a media type plugin knows how
@@ -278,6 +277,9 @@ Rejected:
   and it explains every miss, like now.
 
 ## Stage 3: `annotation`
+
+Built 2026-11-14, as below, in `src/annotation.js`, apart from the session's
+module, since it doesn't need one.
 
 `annotation(config, node, keyword, dialectUri?)` looks the name up in the
 plugin's dialects, with v1 as the default. A dialect a meta-schema defines

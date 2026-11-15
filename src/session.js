@@ -1,10 +1,8 @@
 import { getDocument, relativeFileUrl } from "@hyperjump/browser";
-import { encodeIriFragment } from "@hyperjump/uri";
 import { toId } from "./identifiers.js";
 import { definitionsOf } from "./definition-of.js";
 import { isSchemaDocument } from "./schema/schema-nodes.js";
 import { withValidateFormats } from "./dialects/extend-dialect.js";
-import unknownKeyword, { keywordDefinitionUri } from "./keywords/unknown.js";
 
 /**
  * @import { Hyperjump } from "@hyperjump/browser"
@@ -14,9 +12,6 @@ import unknownKeyword, { keywordDefinitionUri } from "./keywords/unknown.js";
  * @import { Id } from "./identifiers.js"
  * @import * as API from "./session.d.ts"
  */
-
-// Not imported from the v1 dialect, which would load all of its keywords
-const v1DialectUri = "https://json-schema.org/v1";
 
 /**
  * What a session keeps for schemas, in its state, made the first time it's
@@ -138,34 +133,4 @@ const loadDialect = async (session, uri) => {
   } finally {
     loading.delete(uri);
   }
-};
-
-/** @type typeof API.annotation */
-export const annotation = (session, node, keyword, dialectUri = v1DialectUri) => {
-  const values = node.data?.annotations?.get(keywordUri(session, keyword, dialectUri)) ?? [];
-  return /** @type any[] */ (values);
-};
-
-/**
- * A keyword URI is used as it is, so it doesn't need the dialect. An
- * unknown keyword's URI has its name as the fragment, and its definition is
- * registered without it. A name that isn't a keyword in the dialect is an
- * unknown keyword.
- *
- * @type (session: Hyperjump<JsonSchemaConfig>, keyword: string, dialectUri: string) => string
- */
-const keywordUri = (session, keyword, dialectUri) => {
-  if (keywordDefinitionUri(keyword) in definitionsOf(session.config).keywords) {
-    return keyword;
-  }
-
-  const id = toId(dialectUri);
-  const dialect = dialectOf(session, id);
-  if (!dialect) {
-    throw Error(`The '${relativeFileUrl(id)}' dialect isn't defined in this session`);
-  }
-
-  return Object.hasOwn(dialect.keywords, keyword)
-    ? dialect.keywords[keyword]
-    : `${unknownKeyword.uri}#${encodeIriFragment(keyword)}`;
 };

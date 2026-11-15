@@ -16,7 +16,8 @@ import idKeyword from "./keywords/id.js";
 import { compile } from "./operations/compile.js";
 import { annotate, validate } from "./operations/validate.js";
 import { validatorFor } from "./operations/validate-compiled.js";
-import { annotation, getDialect, getDocument, hasDialect } from "./session.js";
+import { getDialect, getDocument, hasDialect } from "./session.js";
+import { annotation } from "./annotation.js";
 import { definitionsOf } from "./definition-of.js";
 
 /**
@@ -530,42 +531,41 @@ describe("jsonSchemaMediaTypes", () => {
 
     test("annotation by name in the v1 dialect", async () => {
       const { node } = await annotate(jsonSchema, "https://example.com/annotated", { foo: 1, bar: 2 });
-      const session = new Hyperjump(jsonSchema);
 
-      expect(annotation(session, node, "title")).to.eql(["root"]);
-      expect(annotation(session, jsonPointerGet("/foo", /** @type any */ (node)), "title")).to.eql(["foo", "also foo"]);
-      expect(annotation(session, jsonPointerGet("/bar", /** @type any */ (node)), "title")).to.eql([]);
+      expect(annotation(jsonSchema, node, "title")).to.eql(["root"]);
+      expect(annotation(jsonSchema, jsonPointerGet("/foo", /** @type any */ (node)), "title")).to.eql(["foo", "also foo"]);
+      expect(annotation(jsonSchema, jsonPointerGet("/bar", /** @type any */ (node)), "title")).to.eql([]);
     });
 
     test("annotation by keyword URI", async () => {
       const { node } = await annotate(jsonSchema, "https://example.com/annotated", {});
 
-      expect(annotation(new Hyperjump(jsonSchema), node, "https://json-schema.org/keyword/title")).to.eql(["root"]);
+      expect(annotation(jsonSchema, node, "https://json-schema.org/keyword/title")).to.eql(["root"]);
     });
 
     test("annotation by unknown keyword name", async () => {
       const { node } = await annotate(jsonSchema, "https://example.com/annotated", {});
 
-      expect(annotation(new Hyperjump(jsonSchema), node, "x-foo")).to.eql(["bar"]);
+      expect(annotation(jsonSchema, node, "x-foo")).to.eql(["bar"]);
     });
 
     test("annotation by unknown keyword URI", async () => {
       const { node } = await annotate(jsonSchema, "https://example.com/annotated", {});
 
-      expect(annotation(new Hyperjump(jsonSchema), node, "https://json-schema.org/keyword/unknown#x-foo")).to.eql(["bar"]);
+      expect(annotation(jsonSchema, node, "https://json-schema.org/keyword/unknown#x-foo")).to.eql(["bar"]);
     });
 
     test("annotation by keyword URI doesn't need the dialect", async () => {
       const { node } = await annotate(jsonSchema, "https://example.com/annotated", {});
 
-      expect(annotation(new Hyperjump(jsonSchema), node, "https://json-schema.org/keyword/title", "https://example.com/dialect")).to.eql(["root"]);
+      expect(annotation(jsonSchema, node, "https://json-schema.org/keyword/title", "https://example.com/dialect")).to.eql(["root"]);
     });
 
     test("annotation by name with property names", async () => {
       const { node } = await annotate(jsonSchema, "https://example.com/annotated", { foo: 1 });
       const nameNode = /** @type any */ (node).children[0].children[0];
 
-      expect(annotation(new Hyperjump(jsonSchema), nameNode, "title")).to.eql(["name"]);
+      expect(annotation(jsonSchema, nameNode, "title")).to.eql(["name"]);
     });
 
     test("annotation by name in another dialect", async () => {
@@ -574,16 +574,15 @@ describe("jsonSchemaMediaTypes", () => {
         registry: annotated
       };
       const { node } = await annotate(other, "https://example.com/annotated", {});
-      const session = new Hyperjump(other);
 
-      expect(annotation(session, node, "label", "https://example.com/dialect")).to.eql(["root"]);
-      expect(annotation(session, node, "title", "https://example.com/dialect")).to.eql([]);
+      expect(annotation(other, node, "label", "https://example.com/dialect")).to.eql(["root"]);
+      expect(annotation(other, node, "title", "https://example.com/dialect")).to.eql([]);
     });
 
-    test("annotation by name in a dialect that isn't defined", async () => {
+    test("annotation by name in a dialect the media types weren't made with", async () => {
       const { node } = await annotate(jsonSchema, "https://example.com/annotated", {});
 
-      expect(() => annotation(new Hyperjump(jsonSchema), node, "title", "https://example.com/dialect")).to.throw("isn't defined");
+      expect(() => annotation(jsonSchema, node, "title", "https://example.com/dialect")).to.throw("isn't one the JSON Schema media types were made with");
     });
   });
 

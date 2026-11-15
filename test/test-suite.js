@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, test, beforeAll, expect } from "vitest";
-import { jsonPointerGet, Hyperjump } from "@hyperjump/browser";
+import { jsonPointerGet } from "@hyperjump/browser";
 import { resolveId, toId } from "../src/identifiers.js";
 import { jsonSchemaMediaTypes } from "../src/json-schema.js";
 import { SchemaRegistry } from "../src/registry/schema-registry.js";
@@ -9,7 +9,7 @@ import { fullFormats } from "../src/formats/full.js";
 import { BASIC } from "../src/output/index.js";
 import { compile } from "../src/operations/compile.js";
 import { annotatorFor, validatorFor } from "../src/operations/validate-compiled.js";
-import { annotation } from "../src/session.js";
+import { annotation } from "../src/annotation.js";
 
 /**
  * @import { Json, JsonNode } from "@hyperjump/browser"
@@ -294,8 +294,6 @@ export const describeAnnotationTestSuite = ({ description, version, dialect, jso
     }
   }
 
-  const session = new Hyperjump(jsonSchema);
-
   /**
    * The annotations a keyword added to the node at an instance location. A
    * location that isn't in the instance has none.
@@ -314,7 +312,7 @@ export const describeAnnotationTestSuite = ({ description, version, dialect, jso
       throw error;
     }
 
-    return subject === undefined ? [] : annotation(session, subject, keyword, dialect.uri);
+    return subject === undefined ? [] : annotation(jsonSchema, subject, keyword, dialect.uri);
   };
 
   describe(description, () => {

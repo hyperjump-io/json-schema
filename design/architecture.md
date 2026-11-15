@@ -31,7 +31,8 @@ text ─ fromJson ─▶ JSON AST ─ resolveSchema ─▶ Schema AST ─ (schem
 | --- | --- |
 | `src/json-schema.js` | `jsonSchemaMediaTypes`: the definitions, and the media types that carry them. `src/definition-of.js` finds them in a config |
 | `src/operations/` | The operations: `validate`, `validator`, `annotate`, `annotator`, `compile`, `serialize`, `restore`, `bundle`, `lint`, and what they share (`call-session.js`, `schema-source.js`, `evaluators.js`). `validatorFor` and `annotatorFor` are in `validate-compiled.js`, apart from the others, because they import the instrumented evaluator |
-| `src/session.js` | Sessions: creating one, what one keeps for schemas, `getDialect`, and `annotation` |
+| `src/session.js` | What a session keeps for schemas, and `getDialect` |
+| `src/annotation.js` | `annotation`, which reads an annotation by keyword name |
 | `src/keyword.d.ts`, `src/dialect.d.ts`, `src/format.d.ts` | What a keyword, dialect, and format are |
 | `src/schema/` | Text to schema AST: the media type plugin, `resolveSchema` and `jsonSchemaResolve`, schema validation, and the schema AST types |
 | `src/kernel/` | Schema AST to results: the kernel's expressions (`kernel.d.ts`), `lower` (compiling), the normal form, `optimize`, the definitions a kernel uses (`definitions.js`), the evaluators (`fast.js` for plain values without plugins, `instrumented.js` for everything else), `Validator`, instance operations, and evaluation plugin types. See [the kernel spec](specs/kernel/README.md) |

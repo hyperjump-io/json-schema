@@ -112,8 +112,7 @@ Known limitations:
 
 - [Public API](public-api.md): what third parties can build on
 - [JSON Schema as a media type](json-schema-media-type.md): putting the
-  definitions on the media type plugin and registries in browser, decided
-  and not built yet
+  definitions on the media type plugin and registries in browser
 
 How the parts work is in their components:
 
