@@ -48,7 +48,7 @@ positions. With `input: "node"`, it annotates a node you already have, and
 Annotations are stored by keyword URI, because the same keyword can have
 different names in different dialects. `annotation` looks them up by name
 in the dialects of the config's JSON Schema media types. By default it uses
-v1's names:
+v1's names, so it needs v1 in the config:
 
 ```typescript
 import { annotation } from "@hyperjump/json-schema";
@@ -61,19 +61,29 @@ keyword, one from each schema that applied to it. For example, two schemas
 in an `allOf` might each have a `title`. A node without the annotation gets
 an empty list.
 
-For a schema in another dialect, pass the dialect URI too:
+Most annotation keywords, like `title` and `description`, are the same
+keyword in every dialect, so one dialect's names find them in a schema of
+any dialect. A few names mean a different keyword in another dialect.
+`format` in draft-04 through draft-07 isn't v1's `format`, so for a
+draft-07 schema, pass the dialect's URI too:
 
 ```typescript
-const draft202012 = "https://json-schema.org/draft/2020-12/schema";
-annotation(config, node, "title", draft202012);
+const draft07 = "http://json-schema.org/draft-07/schema#";
+annotation(config, node, "format", draft07); // ["email"]
+annotation(config, node, "format"); // [], because it's v1's format
 ```
 
-The dialect has to be one you gave `jsonSchemaMediaTypes`. For a dialect a
-custom meta-schema defines, use the keyword's URI, which doesn't need a
+Pass a dialect's URI too if the config doesn't have v1, even for `title`.
+
+The dialect has to be one you gave `jsonSchemaMediaTypes`, so it can't be
+one a [custom meta-schema](dialects.md#custom-meta-schemas) defines. For a
+schema in that dialect, pass the dialect its meta-schema is built on, like
+2020-12, whose names it shares. For a keyword from your own vocabulary,
+which no dialect you gave has, use the keyword's URI, which doesn't need a
 dialect:
 
 ```typescript
-annotation(config, node, "https://json-schema.org/keyword/title");
+annotation(config, node, "https://example.com/keyword/units"); // ["kg"]
 ```
 
 ## Finding a node
