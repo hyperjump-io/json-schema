@@ -1,7 +1,7 @@
 # JSON Schema as a media type
 
-Proposed 2026-11-14. Nothing here is built yet. Sharing the HTTP cache is
-decided. The rest isn't.
+Decided 2026-11-14. Nothing here is built yet. It's built in the order of
+its stages (see [Order](#order)).
 
 Browser already has a model for a kind of document: a session is a
 `Hyperjump`, its config is a plain value, and a media type plugin knows how
@@ -144,10 +144,15 @@ What this package's registry does now, and where each part would go:
   a response, or nothing to go on to `allowRetrieval` and the stack. It can
   throw, like any fetch. Browser exports a registry of entries by URL, with
   the entries `f07120c` had.
-- Open: whether a registry's answer is in a trace, as it was in a HAR
-  before `6fdbb40` (`_source: "registry"`), and whether a redirect to a registered
-  URL is answered by the registry, which makes an entry that's a redirect
-  an alias.
+- A registry's answer is in a trace, with `source: "registry"` and no
+  network timing, as it was in a HAR before `6fdbb40`. Whether a document
+  came from the registry or was retrieved is the first thing to find out
+  when a registry doesn't do what's expected.
+- A redirect to a registered URL is retrieved, as it is now: the registry
+  only answers what the session is asked for. A layer could answer a
+  redirect's URL, which made an entry that's a redirect an alias, but
+  `SchemaRegistry` finds an entry by its `retrievalUri` and its `$id`
+  already. It can be added if something needs it.
 
 ### Here
 
@@ -236,16 +241,32 @@ is read by keyword URI. A session isn't needed: since operations have
 sessions of their own, the one `annotate` used, which built any dialect
 from a meta-schema, is gone by the time `annotation` is called anyway.
 
-## Open questions
+## Names and media types
 
-- The names: `jsonSchemaMediaTypes`, and what the docs call a config with
-  it.
-- Whether JRef comes with the factory's plugins, as `configureJsonSchema`
-  adds it now.
-- `file.data.jsonSchemaSession` becomes a plain `Hyperjump`, so lint rules
-  find the definitions the way operations do.
-- Whether stage 1 is worth doing without stage 2. It removes `JsonSchema`,
-  but a session still has to be a `JsonSchemaHyperjump` to see registries.
+- The factory is `jsonSchemaMediaTypes`, because what it returns replaces
+  browser's `defaultMediaTypes` in a config. The docs call what it goes in
+  "the config", as browser does, and name it `config`. The exported
+  `schemaMediaType` and `jsonOrSchemaMediaType` go, because each plugin
+  has its definitions.
+- It returns the schema plugin and the JSON-or-schema plugin, in that
+  order, and nothing else. JSON-or-schema reads JSON that isn't a schema
+  too, so browser's JSON plugin isn't needed. A config with it doesn't
+  read JRef, which browser's `defaultMediaTypes` does. An application that
+  needs it adds it, and other media types, after them:
+  `[...jsonSchemaMediaTypes(…), jrefMediaType]`.
+- `file.data.jsonSchemaSession` keeps its name, and is a `Hyperjump`. A
+  lint rule finds the definitions the way an operation does, from the
+  schema plugin in `session.config.mediaTypes`. A key like
+  `file.data.session` could be another unified plugin's.
+
+## Order
+
+Stage 1, then stage 2, then stage 3, with the tests passing after each.
+After stage 1, a session is still a `JsonSchemaHyperjump`, only for its
+registry `fetch`, so how sessions are made changes twice. v2 isn't
+released, so that's only churn on this branch. Building browser's registry
+first and both of this package's stages together would skip that, as one
+change across two repositories.
 
 ## Rejected
 
@@ -253,3 +274,8 @@ from a meta-schema, is gone by the time `annotation` is called anyway.
   user's problem, even for one validation (see
   [Validation API](../validation-api/README.md)).
 - Registries as a layer on the stack, for the reasons in stage 2.
+- JRef in `jsonSchemaMediaTypes`, as `configureJsonSchema` adds it now. A
+  schema doesn't need it, and adding it after the factory's plugins can't
+  get the order wrong.
+- `jsonSchema(…)` for the factory. Nothing would be named `jsonSchema`
+  anymore, but it doesn't say it's a list of media types.
