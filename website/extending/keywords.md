@@ -5,7 +5,7 @@ A keyword is a plain object with a URI. Give it a name in a dialect with
 config in place of the original.
 
 ```typescript
-import { JsonSchema, extendDialect } from "@hyperjump/json-schema";
+import { configureJsonSchema, extendDialect } from "@hyperjump/json-schema";
 import type { Keyword } from "@hyperjump/json-schema";
 import { v1Dialect } from "@hyperjump/json-schema/v1";
 
@@ -20,7 +20,7 @@ const evenKeyword = {
   lower: (even) => even ? { op: "multipleOf", divisor: 2 } : { op: "pass" }
 } satisfies Keyword<boolean>;
 
-const jsonSchema = new JsonSchema({
+const jsonSchema = configureJsonSchema({
   dialects: [extendDialect(v1Dialect, { keywords: { even: evenKeyword } })]
 });
 ```
@@ -43,7 +43,7 @@ To replace a keyword a dialect has, put a definition with the same URI in
 the `keywords` config. It's used in every dialect that has the keyword.
 
 ```typescript
-const jsonSchema = new JsonSchema({ dialects: [v1Dialect], keywords: [myTypeKeyword] });
+const jsonSchema = configureJsonSchema({ dialects: [v1Dialect], keywords: [myTypeKeyword] });
 ```
 
 ## The parts of a keyword

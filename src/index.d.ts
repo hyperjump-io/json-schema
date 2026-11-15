@@ -1,6 +1,6 @@
 export * from "./json-schema.js";
-export { annotation, get, getDialect, getDocument } from "./session.js";
-export type { GetDialectOptions, JsonSchemaSession, SessionOptions } from "./session.js";
+export { annotation, get, getDialect, getDocument, JsonSchemaHyperjump } from "./session.js";
+export type { GetDialectOptions, SessionOptions } from "./session.js";
 export * from "./schema/resolve.js";
 export * from "./schema/schema-nodes.js";
 export { schemaMediaType } from "./schema/media-type-plugin.js";
@@ -21,4 +21,4 @@ export type * from "./format.d.ts";
 export type * from "./kernel/kernel.d.ts";
 export type * from "./kernel/evaluation-plugin.d.ts";
 export * from "./registry/schema-registry.js";
-export type { Context, SchemaSource } from "./operations/context.d.ts";
+export type { SchemaSource } from "./operations/schema-source.d.ts";

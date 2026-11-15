@@ -1,5 +1,6 @@
 import { describe, test, beforeEach, expect } from "vitest";
-import { JsonSchema } from "../json-schema.js";
+import { configureJsonSchema } from "../json-schema.js";
+import { JsonSchemaHyperjump } from "../session.js";
 import { SchemaRegistry } from "./schema-registry.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import vocabularyKeyword from "../keywords/vocabulary.js";
@@ -15,6 +16,7 @@ import { get, getDocument } from "../session.js";
  * @import { DialectConfig } from "../dialect.d.ts"
  * @import { JsonSchemaDocumentNode } from "../schema/schema-ast.d.ts"
  * @import { CompiledSchema } from "../operations/compile.d.ts"
+ * @import { JsonSchema } from "../json-schema.d.ts"
  */
 
 describe("SchemaRegistry", () => {
@@ -110,7 +112,7 @@ describe("SchemaRegistry", () => {
     test("a schema with an $id is also found by its retrieval URI", async () => {
       const registry = new SchemaRegistry().with(v1({ $id: "https://example.com/b", type: "string" }), { retrievalUri: "https://example.com/a" });
 
-      const node = /** @type {{ location: string }} */ (await get(jsonSchema.session({ registry }), "https://example.com/a"));
+      const node = /** @type {{ location: string }} */ (await get(new JsonSchemaHyperjump(jsonSchema, { registry }), "https://example.com/a"));
       expect(node.location).to.equal("https://example.com/b#");
       expect(validatorFor(await compile(registry, "https://example.com/a"))(42)).to.equal(false);
     });
@@ -270,8 +272,8 @@ describe("SchemaRegistry", () => {
       const registry = registryOf(v1({ $id: "https://example.com/a" }));
       const copy = new SchemaRegistry([...registry]);
 
-      const first = await getDocument(jsonSchema.session({ registry }), "https://example.com/a");
-      const second = await getDocument(jsonSchema.session({ registry: copy }), "https://example.com/a");
+      const first = await getDocument(new JsonSchemaHyperjump(jsonSchema, { registry }), "https://example.com/a");
+      const second = await getDocument(new JsonSchemaHyperjump(jsonSchema, { registry: copy }), "https://example.com/a");
       expect(second).to.equal(first);
     });
   });
@@ -279,17 +281,16 @@ describe("SchemaRegistry", () => {
   describe("sessions", () => {
     test("a session sees the registries it was created with", async () => {
       const registry = new SchemaRegistry().with(v1({ type: "string" }), { retrievalUri: "https://example.com/a" });
-      const before = jsonSchema.session({ registry });
+      const before = new JsonSchemaHyperjump(jsonSchema, { registry });
 
       const edited = registry.without("https://example.com/a")
         .with(v1({ type: "number" }), { retrievalUri: "https://example.com/a" })
         .with(v1({}), { retrievalUri: "https://example.com/b" });
-      const after = jsonSchema.session({ registry: edited });
+      const after = new JsonSchemaHyperjump(jsonSchema, { registry: edited });
 
-      expect(validatorFor(await compileSchema(before, "https://example.com/a"))(42)).to.equal(false);
-      await expect(compileSchema(before, "https://example.com/b")).rejects.toMatchObject({ cause: { code: "ERR_RETRIEVAL_NOT_ALLOWED" } });
-      expect(validatorFor(await compileSchema(after, "https://example.com/a"))(42)).to.equal(true);
-      await expect(compileSchema(after, "https://example.com/b")).resolves.toBeDefined();
+      await expect(getDocument(before, "https://example.com/b")).rejects.toMatchObject({ cause: { code: "ERR_RETRIEVAL_NOT_ALLOWED" } });
+      await expect(getDocument(after, "https://example.com/b")).resolves.toBeDefined();
+      expect(await getDocument(after, "https://example.com/a")).not.to.equal(await getDocument(before, "https://example.com/a"));
     });
 
     test("a session registry is only seen by that session", async () => {
@@ -299,31 +300,22 @@ describe("SchemaRegistry", () => {
       await expect(compileSchema(jsonSchema, "https://example.com/a")).rejects.toMatchObject({ cause: { code: "ERR_RETRIEVAL_NOT_ALLOWED" } });
     });
 
-    test("the JsonSchema's registry", async () => {
-      jsonSchema.registry = registryOf(v1({ $id: "https://example.com/a" }));
+    test("the config's registry", async () => {
+      jsonSchema = offline({ registry: registryOf(v1({ $id: "https://example.com/a" })) });
 
       await expect(compileSchema(jsonSchema, "https://example.com/a")).resolves.toBeDefined();
     });
 
-    test("a session sees the JsonSchema's registry as it was when the session was created", async () => {
-      jsonSchema.registry = registryOf(v1({ $id: "https://example.com/a" }));
-      const before = jsonSchema.session();
-      jsonSchema.registry = new SchemaRegistry();
-
-      await expect(compileSchema(before, "https://example.com/a")).resolves.toBeDefined();
-      await expect(compileSchema(jsonSchema, "https://example.com/a")).rejects.toMatchObject({ cause: { code: "ERR_RETRIEVAL_NOT_ALLOWED" } });
-    });
-
-    test("a URI in both the session's registry and the JsonSchema's is an error", async () => {
-      jsonSchema.registry = registryOf(v1({ $id: "https://example.com/a" }));
+    test("a URI in both the session's registry and the config's is an error", async () => {
+      jsonSchema = offline({ registry: registryOf(v1({ $id: "https://example.com/a" })) });
       const registry = registryOf(v1({ $id: "https://example.com/a" }));
 
-      await expect(compile(registry, "https://example.com/a")).rejects.toThrow("More than one registry");
+      await expect(compile(registry, "https://example.com/a")).rejects.toThrow("More than one schema in the registry is found by 'https://example.com/a'");
     });
 
-    test("the JsonSchema's registry as the session's", async () => {
+    test("the config's registry as the session's", async () => {
       const registry = registryOf(v1({ $id: "https://example.com/a" }));
-      jsonSchema.registry = registry;
+      jsonSchema = offline({ registry });
 
       await expect(compile(registry, "https://example.com/a")).resolves.toBeDefined();
     });
@@ -331,8 +323,8 @@ describe("SchemaRegistry", () => {
     test("a schema is resolved once for every session", async () => {
       const registry = registryOf(v1({ $id: "https://example.com/a" }));
 
-      const first = await getDocument(jsonSchema.session({ registry }), "https://example.com/a");
-      const second = await getDocument(jsonSchema.session({ registry }), "https://example.com/a");
+      const first = await getDocument(new JsonSchemaHyperjump(jsonSchema, { registry }), "https://example.com/a");
+      const second = await getDocument(new JsonSchemaHyperjump(jsonSchema, { registry }), "https://example.com/a");
 
       expect(second).to.equal(first);
     });
@@ -341,8 +333,8 @@ describe("SchemaRegistry", () => {
       const registry = registryOf(v1({ $id: "https://example.com/a" }));
       const edited = registry.with(v1({}), { retrievalUri: "https://example.com/b" });
 
-      const first = await getDocument(jsonSchema.session({ registry }), "https://example.com/a");
-      const second = await getDocument(jsonSchema.session({ registry: edited }), "https://example.com/a");
+      const first = await getDocument(new JsonSchemaHyperjump(jsonSchema, { registry }), "https://example.com/a");
+      const second = await getDocument(new JsonSchemaHyperjump(jsonSchema, { registry: edited }), "https://example.com/a");
 
       expect(second).to.equal(first);
     });
@@ -430,29 +422,27 @@ describe("SchemaRegistry", () => {
         expect(validatorFor(await compile(registry, "https://example.com/a"))(42)).to.equal(false);
       });
 
-      test("a meta-schema in the JsonSchema's registry identifies the session's schemas", async () => {
-        jsonSchema.registry = registryOf(metaSchema());
+      test("a meta-schema in the config's registry identifies the session's schemas", async () => {
+        jsonSchema = offline({ dialects: [v1Dialect, metaDialect], registry: registryOf(metaSchema()) });
         const registry = registryOf(schema);
 
         expect(validatorFor(await compile(registry, "https://example.com/a"))(42)).to.equal(false);
       });
 
-      test("a meta-schema replaced in the JsonSchema's registry", async () => {
-        jsonSchema.registry = registryOf(metaSchema({}));
+      test("a meta-schema replaced in the config's registry", async () => {
+        jsonSchema = offline({ dialects: [v1Dialect, metaDialect], registry: registryOf(metaSchema({})) });
         const registry = registryOf(schema);
         await expect(compile(registry, "https://example.com/a")).rejects.toThrow("Some schemas in registries can't be identified");
 
-        jsonSchema.registry = registryOf(metaSchema());
+        jsonSchema = offline({ dialects: [v1Dialect, metaDialect], registry: registryOf(metaSchema()) });
         expect(validatorFor(await compile(registry, "https://example.com/a"))(42)).to.equal(false);
       });
 
-      test("a meta-schema in the session's registry doesn't identify the JsonSchema's schemas", async () => {
-        jsonSchema.registry = new SchemaRegistry().with(schema, { retrievalUri: "https://example.com/b" });
+      test("a meta-schema in the session's registry identifies the config's schemas", async () => {
+        jsonSchema = offline({ dialects: [v1Dialect, metaDialect], registry: new SchemaRegistry().with(schema, { retrievalUri: "https://example.com/b" }) });
         const registry = registryOf(metaSchema());
 
-        await expect(compile(registry, "https://example.com/a")).rejects.toThrow("can't be identified until these dialects are defined");
-
-        // It's found by its retrieval URI, and resolving it finds the meta-schema
+        expect(validatorFor(await compile(registry, "https://example.com/a"))(42)).to.equal(false);
         expect(validatorFor(await compile(registry, "https://example.com/b"))(42)).to.equal(false);
       });
 
@@ -504,7 +494,7 @@ describe("SchemaRegistry", () => {
 
     test("the schema's document has its origin", async () => {
       const registry = new SchemaRegistry([{ schema: v1({ $id: "https://example.com/a" }), origin: "schemas/a.schema.json" }]);
-      const session = offline().session({ registry });
+      const session = new JsonSchemaHyperjump(offline(), { registry });
       const document = await getDocument(session, "https://example.com/a");
 
       expect(/** @type JsonSchemaDocumentNode */ (/** @type unknown */ (document)).origin).to.equal("schemas/a.schema.json");
@@ -530,8 +520,7 @@ describe("SchemaRegistry", () => {
  * @type (config?: JsonSchemaConfig) => JsonSchema
  */
 const offline = (config) => {
-  const jsonSchema = new JsonSchema({ allowRetrieval: [], dialects: [v1Dialect], ...config });
-  return jsonSchema;
+  return configureJsonSchema({ allowRetrieval: [], dialects: [v1Dialect], ...config });
 };
 
 /** @type (properties: Record<string, Json>) => Json */

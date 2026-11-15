@@ -1,7 +1,7 @@
 import type { Json, ReadonlyJson } from "@hyperjump/browser";
 import type { JsonSchema } from "../json-schema.d.ts";
 import type { SessionOptions } from "../session.d.ts";
-import type { Context, SchemaSource } from "./context.d.ts";
+import type { SchemaSource } from "./schema-source.d.ts";
 
 declare const compiledSchema: unique symbol;
 
@@ -28,7 +28,7 @@ export type CompiledSchema = {
  * @throws An error from `@hyperjump/browser` if a schema can't be
  * retrieved. Its `cause.code` says why.
  */
-export function compile<S>(context: Context<S>, schema: NoInfer<SchemaSource<S>>, options?: SessionOptions): Promise<CompiledSchema>;
+export function compile<S>(jsonSchema: JsonSchema<S>, schema: NoInfer<SchemaSource<S>>, options?: SessionOptions): Promise<CompiledSchema>;
 
 /**
  * The compiled schema as JSON, to be restored with {@link restore} without

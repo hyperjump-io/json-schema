@@ -6,7 +6,7 @@ import { pathToFileURL } from "node:url";
 import { describe, test, beforeAll, afterAll, expect } from "vitest";
 import { normalizeIri, toRelativeIri, urlToIri } from "@hyperjump/uri";
 import { toId } from "./identifiers.js";
-import { JsonSchema } from "./json-schema.js";
+import { configureJsonSchema } from "./json-schema.js";
 import { v1Dialect, v1DialectUri } from "./dialects/v1/index.js";
 import { SchemaRegistry } from "./registry/schema-registry.js";
 import { compile } from "./operations/compile.js";
@@ -14,6 +14,7 @@ import { validatorFor } from "./operations/validate-compiled.js";
 
 /**
  * @import { JsonSchemaConfig } from "./json-schema.d.ts"
+ * @import { JsonSchema } from "./json-schema.d.ts"
  */
 
 const schema = JSON.stringify({ $schema: v1DialectUri, type: "string" });
@@ -66,9 +67,10 @@ describe("allowRetrieval", () => {
     expect(validatorFor(compiled)("foo")).to.equal(true);
   });
 
-  test("a session's list is used instead of the config's", async () => {
-    const session = v1({ allowRetrieval: [] }).session({ allowRetrieval: ["./", pathToFileURL(join(outside, "/")).href] });
-    const compiled = await compile(session, pathToFileURL(join(inside, "refers-outside.schema.json")).href);
+  test("a call's list is used instead of the config's", async () => {
+    const compiled = await compile(v1({ allowRetrieval: [] }), pathToFileURL(join(inside, "refers-outside.schema.json")).href, {
+      allowRetrieval: ["./", pathToFileURL(join(outside, "/")).href]
+    });
     expect(validatorFor(compiled)("foo")).to.equal(true);
   });
 
@@ -82,6 +84,6 @@ describe("allowRetrieval", () => {
 
 /** @type (config?: JsonSchemaConfig) => JsonSchema */
 const v1 = (config) => {
-  const jsonSchema = new JsonSchema({ dialects: [v1Dialect], ...config });
+  const jsonSchema = configureJsonSchema({ dialects: [v1Dialect], ...config });
   return jsonSchema;
 };

@@ -19,7 +19,7 @@ new dialect with more definitions, and that dialect goes in the config.
 ```typescript
 const evenKeyword = { uri: "https://example.com/keyword/even", ... };
 
-const jsonSchema = new JsonSchema({
+const jsonSchema = configureJsonSchema({
   dialects: [extendDialect(v1Dialect, { keywords: { even: evenKeyword } })]
 });
 ```

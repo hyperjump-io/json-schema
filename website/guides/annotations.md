@@ -53,9 +53,9 @@ different names in different dialects. `annotation` looks them up by name,
 in a session. By default it uses v1's names:
 
 ```typescript
-import { annotation } from "@hyperjump/json-schema";
+import { annotation, JsonSchemaHyperjump } from "@hyperjump/json-schema";
 
-const session = jsonSchema.session();
+const session = new JsonSchemaHyperjump(jsonSchema);
 annotation(session, node, "title"); // ["Person"]
 ```
 

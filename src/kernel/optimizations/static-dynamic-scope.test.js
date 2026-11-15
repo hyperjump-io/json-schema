@@ -1,6 +1,6 @@
 import { describe, test, expect } from "vitest";
 import { jsonPointerGet } from "@hyperjump/browser";
-import { JsonSchema } from "../../json-schema.js";
+import { configureJsonSchema } from "../../json-schema.js";
 import { SchemaRegistry } from "../../registry/schema-registry.js";
 import { draft202012Dialect, draft202012DialectUri } from "../../dialects/draft-2020-12/index.js";
 import { hasOp } from "../kernel.js";
@@ -18,7 +18,7 @@ import { annotatorFor, validatorFor } from "../../operations/validate-compiled.j
  * @import { ValidationError } from "../../output/validation-error.d.ts"
  */
 
-const jsonSchema = new JsonSchema({ dialects: [draft202012Dialect] });
+const jsonSchema = configureJsonSchema({ dialects: [draft202012Dialect] });
 
 const fast = { fast: true, plugins: false, annotations: false };
 const plugins = { fast: false, plugins: true, annotations: false };

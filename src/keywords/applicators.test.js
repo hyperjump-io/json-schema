@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { describe, test, beforeAll, afterAll, expect } from "vitest";
-import { JsonSchema } from "../json-schema.js";
+import { configureJsonSchema } from "../json-schema.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import { BASIC, DETAILED } from "../output/index.js";
 import { compile } from "../operations/compile.js";
@@ -13,6 +13,7 @@ import { annotatorFor, validatorFor } from "../operations/validate-compiled.js";
  * @import { Json } from "@hyperjump/browser"
  * @import { OutputError } from "../output/output-format.d.ts"
  * @import { DetailedValidationError } from "../output/validation-error.d.ts"
+ * @import { JsonSchema } from "../json-schema.d.ts"
  */
 
 /**
@@ -36,7 +37,7 @@ describe("applicator errors", () => {
 
   beforeAll(async () => {
     directory = await mkdtemp(join(tmpdir(), "json-schema-"));
-    jsonSchema = new JsonSchema({ allowRetrieval: [pathToFileURL(join(tmpdir(), "/")).href], dialects: [v1Dialect] });
+    jsonSchema = configureJsonSchema({ allowRetrieval: [pathToFileURL(join(tmpdir(), "/")).href], dialects: [v1Dialect] });
   });
 
   afterAll(async () => {

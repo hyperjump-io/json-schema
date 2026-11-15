@@ -1,5 +1,5 @@
 import { describe, test, beforeEach, expect } from "vitest";
-import { JsonSchema } from "../../json-schema.js";
+import { configureJsonSchema } from "../../json-schema.js";
 import { SchemaRegistry } from "../../registry/schema-registry.js";
 import { draft202012Dialect, draft202012DialectUri } from "../draft-2020-12/index.js";
 import { draft201909Dialect, draft201909DialectUri } from "./index.js";
@@ -10,12 +10,13 @@ import { validatorFor } from "../../operations/validate-compiled.js";
  * @import { Json } from "@hyperjump/browser"
  * @import { JsonSchemaConfig } from "../../json-schema.d.ts"
  * @import { CompiledSchema } from "../../operations/compile.d.ts"
+ * @import { JsonSchema } from "../../json-schema.d.ts"
  */
 
 describe("draft-2019-09", () => {
   /** @type (config?: JsonSchemaConfig) => JsonSchema */
   const draft201909 = (config) => {
-    const jsonSchema = new JsonSchema({ allowRetrieval: [], dialects: [draft201909Dialect], ...config });
+    const jsonSchema = configureJsonSchema({ allowRetrieval: [], dialects: [draft201909Dialect], ...config });
     return jsonSchema;
   };
 

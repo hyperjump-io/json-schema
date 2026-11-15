@@ -26,7 +26,7 @@ const myDialect = {
   assertFormats: true
 } satisfies DialectConfig;
 
-const jsonSchema = new JsonSchema({ dialects: [myDialect] });
+const jsonSchema = configureJsonSchema({ dialects: [myDialect] });
 ```
 
 ```json

@@ -34,7 +34,7 @@ These stay public, because something users write depends on them.
 - `get` and `getDocument` are browser's, exported as they are. What they
   find might not be a schema, so `isSchemaNode` and `isSchemaDocument` are
   exported with them.
-- There's no `lower` function. `serialize(await compile(context, uri))`
+- There's no `lower` function. `serialize(await compile(jsonSchema, uri))`
   is the kernel as it was lowered. The optimization passes run inside a
   validator, once for each evaluation mode, and what they produce is never
   returned. The lowered kernel is what tools need: provenance needs

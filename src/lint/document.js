@@ -17,7 +17,7 @@ import { visitReferences, visitSchemas } from "./utilities.js";
  * @import { Handle } from "../kernel/kernel.d.ts"
  * @import { Inputs, ObjectSchemaNode } from "../kernel/lower.js"
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode } from "../schema/schema-ast.d.ts"
- * @import { JsonSchemaSession } from "../session.d.ts"
+ * @import { JsonSchemaHyperjump } from "../session.d.ts"
  * @import { FindSchemaResult } from "./find-schema.d.ts"
  * @import { LintSchemas, LoweredKeyword } from "./lower.d.ts"
  * @import * as API from "./document.d.ts"
@@ -27,7 +27,7 @@ import { visitReferences, visitSchemas } from "./utilities.js";
  * Each tree's document, by session, because sessions can build different
  * dialects for the same URI
  *
- * @type WeakMap<JsonSchemaSession, WeakMap<JsonSchemaDocumentNode, Promise<API.LintDocument>>>
+ * @type WeakMap<JsonSchemaHyperjump, WeakMap<JsonSchemaDocumentNode, Promise<API.LintDocument>>>
  */
 const lintDocuments = new WeakMap();
 
@@ -64,7 +64,7 @@ export const schemaAt = (document, uri) => {
  * reference is found from the tree, so a resource embedded in it is found
  * there.
  *
- * @type (session: JsonSchemaSession, tree: JsonSchemaDocumentNode) => Promise<API.LintDocument>
+ * @type (session: JsonSchemaHyperjump, tree: JsonSchemaDocumentNode) => Promise<API.LintDocument>
  */
 const gather = async (session, tree) => {
   /** @type LintSchemas */
@@ -98,8 +98,8 @@ const gather = async (session, tree) => {
       if (schemaNode.jsonType === "object") {
         for (const { keywordUri } of /** @type JsonSchemaKeywordNode[] */ (schemaNode.children)) {
           const uri = keywordDefinitionUri(keywordUri);
-          if (!(uri in keywords) && session.jsonSchema.hasKeyword(uri)) {
-            keywords[uri] = session.jsonSchema.getKeyword(uri);
+          if (!(uri in keywords) && uri in session.jsonSchema.keywords) {
+            keywords[uri] = session.jsonSchema.keywords[uri];
           }
         }
       }
@@ -155,8 +155,8 @@ const gather = async (session, tree) => {
   const formats = {};
   for (const dialect of dialects.values()) {
     for (const uri of Object.values(dialect?.formats ?? {})) {
-      if (!(uri in formats) && session.jsonSchema.hasFormat(uri)) {
-        formats[uri] = session.jsonSchema.getFormat(uri);
+      if (!(uri in formats) && uri in session.jsonSchema.formats) {
+        formats[uri] = session.jsonSchema.formats[uri];
       }
     }
   }
@@ -182,7 +182,7 @@ const gather = async (session, tree) => {
  * different dialects for the same URI. They're lowered once, so rules share
  * them.
  *
- * @type WeakMap<JsonSchemaSession, WeakMap<JsonSchemaDocumentNode, Promise<LintSchemas>>>
+ * @type WeakMap<JsonSchemaHyperjump, WeakMap<JsonSchemaDocumentNode, Promise<LintSchemas>>>
  */
 const cache = new WeakMap();
 
@@ -190,7 +190,7 @@ const cache = new WeakMap();
  * What every object schema in a document lowers to (see
  * `LintDocument.schemas`)
  *
- * @type (session: JsonSchemaSession, document: JsonSchemaDocumentNode) => Promise<LintSchemas>
+ * @type (session: JsonSchemaHyperjump, document: JsonSchemaDocumentNode) => Promise<LintSchemas>
  */
 const lowerDocument = (session, document) => {
   let bySession = cache.get(session);
@@ -219,12 +219,11 @@ export const lowerSchemaForLint = (document, schemaNode) => {
     return;
   }
 
-  const { keywords } = document.definitions;
-  const lowered = lowerKeywords((uri) => keywords[uri], /** @type ObjectSchemaNode */ (schemaNode), dialect, inputsFor(document.tree), true);
+  const lowered = lowerKeywords(document.definitions.keywords, /** @type ObjectSchemaNode */ (schemaNode), dialect, inputsFor(document.tree), true);
   return lowered.map(({ group }) => group);
 };
 
-/** @type (session: JsonSchemaSession, tree: JsonSchemaDocumentNode) => Promise<LintSchemas> */
+/** @type (session: JsonSchemaHyperjump, tree: JsonSchemaDocumentNode) => Promise<LintSchemas> */
 const lower = async (session, tree) => {
   const inputs = inputsFor(tree);
 
@@ -252,7 +251,7 @@ const lower = async (session, tree) => {
 
     const resolved = await dialect;
     if (resolved !== undefined) {
-      const lowered = lowerKeywords((uri) => session.jsonSchema.getKeyword(uri), schemaNode, resolved, inputs, true)
+      const lowered = lowerKeywords(session.jsonSchema.keywords, schemaNode, resolved, inputs, true)
         .map((keyword) => /** @type LoweredKeyword */ ({
           group: keyword.group,
           keywordNode: keyword.keywordNode,

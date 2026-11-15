@@ -7,7 +7,7 @@ compiled. A `minLength` of `-1` or a misspelled keyword in v1 are examples.
 ```typescript
 import { SchemaError, toVFileMessage } from "@hyperjump/json-schema";
 
-jsonSchema.registry = new SchemaRegistry().with(`{
+const registry = new SchemaRegistry().with(`{
   "$schema": "https://json-schema.org/v1",
   "$id": "https://example.com/bad",
   "minLength": -1,
@@ -15,7 +15,7 @@ jsonSchema.registry = new SchemaRegistry().with(`{
 }`);
 
 try {
-  await compile(jsonSchema, "https://example.com/bad");
+  await compile(jsonSchema, "https://example.com/bad", { registry });
 } catch (error) {
   if (!(error instanceof SchemaError)) {
     throw error;

@@ -1,4 +1,5 @@
-import type { DocumentSession, Hyperjump, jrefMediaType, Json, MediaTypePlugin } from "@hyperjump/browser";
+import { Hyperjump } from "@hyperjump/browser";
+import type { jrefMediaType, Json, MediaTypePlugin } from "@hyperjump/browser";
 import type { Data } from "unist";
 import type { JsonSchemaDocumentNode, JsonSchemaNode } from "./schema/schema-ast.d.ts";
 import type { Dialect } from "./dialect.d.ts";
@@ -10,9 +11,10 @@ import type { SessionRegistries } from "./registry/session-registries.js";
 
 export type SessionOptions = {
   /**
-   * Schemas only this session sees, in addition to the {@link JsonSchema}'s
-   * `registry`. A schema in it can use a dialect defined by a meta-schema
-   * in either. Combine registries with `concat`.
+   * Schemas only this session sees, in addition to the {@link JsonSchema}
+   * config's `registry`. The session sees the two as one registry, so a
+   * schema in either can use a dialect defined by a meta-schema in the
+   * other. Combine registries with `concat`.
    */
   registry?: SchemaRegistry<any>;
 
@@ -34,14 +36,16 @@ export type SessionOptions = {
 export type SchemaMediaTypes = typeof schemaMediaType | typeof jsonOrSchemaMediaType | typeof jrefMediaType;
 
 /**
- * Retrieves and browses schemas. Everything resolved belongs to the session:
- * the documents it retrieves and the dialects it builds from meta-schemas.
- * Create one with {@link JsonSchema.session}, and pass it to operations, like
- * `validator` and `bundle`, so they share what it retrieved.
+ * A session that retrieves and browses schemas. Everything resolved belongs
+ * to it: the documents it retrieves and the dialects it builds from
+ * meta-schemas. It's for browsing, `annotation`, and unified pipelines
+ * (`jsonSchemaResolve`). Operations, like `validator` and `bundle`, start
+ * a session of their own.
  *
- * It's a session for `@hyperjump/browser`'s functions, like `get` and
- * `jrefStep`. Its `fetch` finds a schema in the session's registry, then in
- * the {@link JsonSchema}'s `registry`, before anything is retrieved, so
+ * It's a `Hyperjump`, `@hyperjump/browser`'s session, so browser's
+ * functions, like `get` and `jrefStep`, take it, and it's traced, observed,
+ * and closed like one. Its `fetch` finds a schema in the session's registry and the
+ * {@link JsonSchema} config's before anything is retrieved, so
  * `allowRetrieval` doesn't apply to a registry's schema.
  *
  * A reference can lead to any document the session can read, so what `get`
@@ -49,33 +53,31 @@ export type SchemaMediaTypes = typeof schemaMediaType | typeof jsonOrSchemaMedia
  * document, of a JSON document, or of a document in one of the config's
  * media types (`M`). A schema's node has the `type` `"json-schema"`. A
  * session whose type doesn't say its `JsonSchema`'s media types, like a
- * `JsonSchemaSession` without type arguments, could have any, so nothing
+ * `JsonSchemaHyperjump` without type arguments, could have any, so nothing
  * is known about its nodes.
  */
-export type JsonSchemaSession<S = any, M extends MediaTypePlugin<any> = MediaTypePlugin> = Omit<DocumentSession, "config"> & {
-  /** The {@link JsonSchema}'s config, with the media types documents are read with */
-  readonly config: Readonly<JsonSchemaConfig> & { readonly mediaTypes: readonly (SchemaMediaTypes | M)[] };
-
+export class JsonSchemaHyperjump<S = any, M extends MediaTypePlugin<any> = MediaTypePlugin>
+  extends Hyperjump<JsonSchemaConfig & { readonly mediaTypes: readonly (SchemaMediaTypes | M)[] }> {
   /**
-   * What the session retrieves with. Watching its requests, tracing them,
-   * and closing it are the `Hyperjump`'s.
+   * Its config is the `JsonSchema`'s, with `allowRetrieval` from the
+   * options if they have it.
    */
-  readonly hyperjump: Hyperjump;
+  constructor(jsonSchema: JsonSchema<S, M>, options?: SessionOptions);
 
   readonly jsonSchema: JsonSchema<S, M>;
-};
+}
 
 /**
  * `@hyperjump/browser`'s `get` and `getDocument`. With a session of a
  * {@link JsonSchema}, a fragment of a schema is an anchor or a JSON Pointer,
  * and documents are found in this order: an embedded resource, if
  * `referencedFrom` is a node of the document that contains it; a schema in
- * the session's registry, then in the `JsonSchema`'s `registry`; then it's
+ * the session's registry or the `JsonSchema` config's; then it's
  * retrieved. `getDocument` never finds an embedded resource.
  *
  * They throw a `SchemaError` if a schema has problems, with every problem
- * in the document, and an `Error` if more than one schema in the two
- * registries is found by the URI.
+ * in the document, and an `Error` if more than one schema in the registries
+ * is found by the URI.
  */
 export { get, getDocument } from "@hyperjump/browser";
 
@@ -94,7 +96,7 @@ export { get, getDocument } from "@hyperjump/browser";
  * doesn't define a dialect, or depends on a meta-schema that depends on
  * it.
  */
-export const getDialect: (session: JsonSchemaSession, uri: string, options?: GetDialectOptions) => Promise<Dialect>;
+export const getDialect: (session: JsonSchemaHyperjump, uri: string, options?: GetDialectOptions) => Promise<Dialect>;
 
 export type GetDialectOptions = {
   /**
@@ -126,21 +128,18 @@ export type GetDialectOptions = {
  * @throws Error if a name is given and the dialect isn't defined in this
  * session.
  */
-export const annotation: <A extends Json = Json>(session: JsonSchemaSession, node: { data?: Data }, keyword: string, dialectUri?: string) => A[];
+export const annotation: <A extends Json = Json>(session: JsonSchemaHyperjump, node: { data?: Data }, keyword: string, dialectUri?: string) => A[];
 
 // What follows is used by the library. It isn't exported from the package.
-
-/** Start a session. It's what {@link JsonSchema.session} does. */
-export const createSession: <S, M extends MediaTypePlugin<any>>(jsonSchema: JsonSchema<S, M>, options?: SessionOptions) => JsonSchemaSession<S, M>;
 
 /**
  * Whether something is a session of a {@link JsonSchema}, and not a
  * `JsonSchema` or a session of `@hyperjump/browser`'s
  */
-export const isSession: (context: object) => context is JsonSchemaSession;
+export const isSession: (context: object) => context is JsonSchemaHyperjump;
 
 /** The schemas a session finds in the registries it sees */
-export const registriesOf: (session: JsonSchemaSession) => SessionRegistries;
+export const registriesOf: (session: JsonSchemaHyperjump) => SessionRegistries;
 
 /** Whether a dialect is in the {@link JsonSchema}'s config or was built in this session */
-export const hasDialect: (session: JsonSchemaSession, uri: string) => boolean;
+export const hasDialect: (session: JsonSchemaHyperjump, uri: string) => boolean;

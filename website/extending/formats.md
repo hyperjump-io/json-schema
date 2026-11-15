@@ -4,7 +4,7 @@ A format is a plain object with a URI. Give it a name in a dialect with
 `extendDialect`. Then put the dialect it returns in the config.
 
 ```typescript
-import { JsonSchema, extendDialect } from "@hyperjump/json-schema";
+import { configureJsonSchema, extendDialect } from "@hyperjump/json-schema";
 import type { Format } from "@hyperjump/json-schema";
 import { v1Dialect } from "@hyperjump/json-schema/v1";
 
@@ -15,7 +15,7 @@ const hexFormat = {
     && /^[0-9a-f]+$/i.test(value)
 } satisfies Format;
 
-const jsonSchema = new JsonSchema({
+const jsonSchema = configureJsonSchema({
   dialects: [extendDialect(v1Dialect, { formats: { hex: hexFormat } })]
 });
 ```

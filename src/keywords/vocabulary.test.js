@@ -1,5 +1,7 @@
+import { toId } from "../identifiers.js";
 import { describe, test, expect } from "vitest";
-import { JsonSchema } from "../json-schema.js";
+import { configureJsonSchema } from "../json-schema.js";
+import { JsonSchemaHyperjump } from "../session.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
 import idKeyword from "./id.js";
 import vocabularyKeyword from "./vocabulary.js";
@@ -8,6 +10,7 @@ import { getDialect as getSessionDialect } from "../session.js";
 /**
  * @import { Json } from "@hyperjump/browser"
  * @import { DialectConfig, VocabularyConfig } from "../dialect.d.ts"
+ * @import { JsonSchema } from "../json-schema.d.ts"
  */
 
 const metaDialectUri = "https://example.com/meta-dialect";
@@ -20,7 +23,7 @@ const barKeyword = { uri: "https://example.com/keyword/bar", shape: /** @type co
 
 describe("vocabularies", () => {
   /** @type (vocabularies?: Record<string, VocabularyConfig>, dialectVocabularies?: Record<string, VocabularyConfig>) => JsonSchema */
-  const withVocabularies = (vocabularies, dialectVocabularies) => new JsonSchema({
+  const withVocabularies = (vocabularies, dialectVocabularies) => configureJsonSchema({
     dialects: [metaDialect(metaDialectUri, dialectVocabularies), metaDialect(otherMetaDialectUri)],
     vocabularies
   });
@@ -29,7 +32,7 @@ describe("vocabularies", () => {
   const getDialect = async (jsonSchema, schemas, dialectUri) => {
     const registry = new SchemaRegistry(schemas.map((schema) => ({ schema })));
 
-    return getSessionDialect(jsonSchema.session({ registry }), dialectUri);
+    return getSessionDialect(new JsonSchemaHyperjump(jsonSchema, { registry }), dialectUri);
   };
 
   test("every vocabulary in the config is supported", async () => {
@@ -68,7 +71,7 @@ describe("vocabularies", () => {
   });
 
   test("the validateFormats config replaces what the vocabularies say", async () => {
-    const jsonSchema = new JsonSchema({
+    const jsonSchema = configureJsonSchema({
       dialects: [metaDialect(metaDialectUri)],
       vocabularies: { [barVocabularyUri]: { keywords: {}, assertFormats: true } },
       validateFormats: false
@@ -103,7 +106,7 @@ describe("vocabularies", () => {
     const schemas = [metaSchema(dialectUri, otherMetaDialectUri, { [fooVocabularyUri]: true })];
 
     expect(await getDialect(jsonSchema, schemas, dialectUri)).to.include({ uri: dialectUri });
-    expect(jsonSchema.getKeyword(fooKeyword.uri)).to.equal(fooKeyword);
+    expect(jsonSchema.keywords[fooKeyword.uri]).to.equal(fooKeyword);
   });
 
   test("one in the config replaces a dialect's", () => {
@@ -112,7 +115,7 @@ describe("vocabularies", () => {
       { [fooVocabularyUri]: { keywords: { foo: fooKeyword } } }
     );
 
-    expect(jsonSchema.getVocabulary(fooVocabularyUri)).to.eql({ keywords: { bar: barKeyword.uri } });
+    expect(jsonSchema.vocabularies[toId(fooVocabularyUri)]).to.eql({ keywords: { bar: barKeyword.uri } });
   });
 
   test("a vocabulary is only supported by the JsonSchema it's in the config of", async () => {

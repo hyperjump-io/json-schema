@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { JsonSchema } from "../json-schema.js";
+import { configureJsonSchema } from "../json-schema.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import { optimize } from "./optimize.js";
@@ -10,7 +10,7 @@ import { compile as compileSchema, serialize } from "../operations/compile.js";
  * @import { Kernel } from "./kernel.d.ts"
  */
 
-const jsonSchema = new JsonSchema({ dialects: [v1Dialect] });
+const jsonSchema = configureJsonSchema({ dialects: [v1Dialect] });
 
 let count = 0;
 

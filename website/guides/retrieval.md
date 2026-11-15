@@ -24,7 +24,7 @@ The default allows what's local to your application. In Node.js it's
 `["/"]`, which allows the page's origin. Nothing else is allowed.
 
 ```typescript
-const jsonSchema = new JsonSchema({
+const jsonSchema = configureJsonSchema({
   allowRetrieval: ["./", "https://schemas.example.com/"]
 });
 ```
@@ -67,7 +67,7 @@ const isPerson = await validator(jsonSchema, uri, {
   allowRetrieval: ["./schemas/"]
 });
 
-const session = jsonSchema.session({ allowRetrieval: ["./schemas/"] });
+const session = new JsonSchemaHyperjump(jsonSchema, { allowRetrieval: ["./schemas/"] });
 ```
 
 Use it when parts of your application trust different things. For example,
@@ -80,7 +80,7 @@ config. Any schema can name any URL, so headers are given by URL and only the
 URLs you list get them:
 
 ```typescript
-const jsonSchema = new JsonSchema({
+const jsonSchema = configureJsonSchema({
   allowRetrieval: ["./", "https://schemas.example.com/"],
   headers: {
     "https://schemas.example.com/": { Authorization: `Bearer ${process.env.SCHEMAS_TOKEN}` }

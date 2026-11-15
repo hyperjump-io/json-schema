@@ -5,17 +5,18 @@ Decided and built 2026-10-29, replacing methods on `JsonSchema`,
 `addKeyword`. Bundles shrank as a result (see
 [Bundle size](../../benchmarks/bundle-size.md)).
 
-`JsonSchema` keeps what decides how schemas are read: its definitions
-(dialects, keywords, formats), its registry, and sessions. Everything done with schemas, like validating, annotating,
-bundling, and linting, is a function that takes a `JsonSchema` or a
-session. A session is a value too, and browsing is functions of it (see
-[Sessions](../sessions/README.md)).
+`JsonSchema` is a value of what decides how schemas are read: its
+definitions (dialects, keywords, formats), its registry, the config, and
+the stack. Everything done with schemas, like validating, annotating,
+bundling, and linting, is a function that takes a `JsonSchema`, and
+starts a session of its own. A session is a `Hyperjump`, and browsing is
+functions of it (see [Sessions](../sessions/README.md)).
 
 ```js
-import { BASIC, JsonSchema, SchemaRegistry, validate, validator } from "@hyperjump/json-schema";
+import { BASIC, configureJsonSchema, SchemaRegistry, validate, validator } from "@hyperjump/json-schema";
 import { v1Dialect } from "@hyperjump/json-schema/v1";
 
-const jsonSchema = new JsonSchema({ dialects: [v1Dialect] });
+const jsonSchema = configureJsonSchema({ dialects: [v1Dialect] });
 
 await validate(jsonSchema, schema, data);
 
@@ -35,6 +36,50 @@ isPerson(data);
 - The simple path is short: create a `JsonSchema` with a dialect, then
   validate. A schema can be passed as a value, so a registry is only
   needed for schemas that reference each other.
+
+## `JsonSchema` as a value
+
+Decided and built 2026-11-14. `configureJsonSchema(config)` returns a frozen
+value instead of a class's instance: the config, with its `registry`, the
+stack, and the definitions by URI in `keywords`, `formats`, `dialects`, and
+`vocabularies`. The tables have no prototype, so a URI like
+`constructor` isn't found in them. A session is
+`new JsonSchemaHyperjump(jsonSchema)`.
+
+- The names say what each makes. The argument to `configureJsonSchema` is
+  configuration, not a schema, which `createJsonSchema` made it sound
+  like. A session is a subclass of browser's `Hyperjump` (see
+  [Sessions](../sessions/README.md)), so it's constructed like one, and
+  the class is its type. Rejected: `hyperjump(config)` for the
+  `JsonSchema`, since browser's `Hyperjump` is a session and it isn't one;
+  `configure`, which is too generic; `configureHyperjump`, which suggests
+  it makes a `Hyperjump`; `hyperjumpJsonSchema` with `hyperjumpSession`,
+  which are long; and `createSession` or `startHyperjump`, a function
+  that only calls the constructor, with a separate `JsonSchemaSession`
+  type for the class.
+
+- It removed `session()`, a second way to make a session, and seven
+  `has` and `get` methods that were lookups in those tables. What they
+  added, the error for a keyword or format that isn't defined, is
+  `keywordOf` and `formatOf` (`src/definition-of.js`), used where a
+  missing definition is an error: compiling, restoring, and resolving.
+  `lowerKeywords` takes the keywords instead of a function that finds one.
+- Its type is a generic function instead of a constructor type with a
+  second signature for subclasses (see [Schema types](../schema-types.md)).
+- The registry is in the config, instead of a property that's assigned
+  (see [Registries](../registries/README.md)). Rejected: a `withRegistry`
+  that returns a copy with another registry. What's cached for a
+  `JsonSchema` (registry entries' identifications, registry indexes, and
+  resolved entries) is keyed by it, so each copy would start those caches
+  empty, or they'd have to be keyed by its tables instead.
+- Rejected: functions of a `JsonSchema` in place of the methods
+  (`getKeyword(jsonSchema, uri)`). They'd be the methods moved.
+
+Known limitations:
+
+- `dialects` and `vocabularies` are by `Id`, so a URI from a schema has to
+  be normalized to find one. The library's own code already has an `Id`
+  there. Outside it, `getDialect(session, uri)` normalizes.
 
 ## Rejected
 

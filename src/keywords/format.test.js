@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { describe, test, beforeAll, afterAll, expect } from "vitest";
-import { JsonSchema, extendDialect } from "../json-schema.js";
+import { configureJsonSchema, extendDialect } from "../json-schema.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import { fullFormats } from "../formats/full.js";
 import { compile } from "../operations/compile.js";
@@ -13,6 +13,7 @@ import { annotatorFor, validatorFor } from "../operations/validate-compiled.js";
  * @import { Json, ReadonlyJson } from "@hyperjump/browser"
  * @import { JsonSchemaConfig } from "../json-schema.d.ts"
  * @import { Format } from "../format.d.ts"
+ * @import { JsonSchema } from "../json-schema.d.ts"
  */
 
 describe("format", () => {
@@ -29,7 +30,7 @@ describe("format", () => {
 
   /** @type (config?: JsonSchemaConfig) => JsonSchema */
   const v1 = (config) => {
-    const jsonSchema = new JsonSchema({ allowRetrieval: [pathToFileURL(join(tmpdir(), "/")).href], dialects: [v1Dialect], ...config });
+    const jsonSchema = configureJsonSchema({ allowRetrieval: [pathToFileURL(join(tmpdir(), "/")).href], dialects: [v1Dialect], ...config });
     return jsonSchema;
   };
 

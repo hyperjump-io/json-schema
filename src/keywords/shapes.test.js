@@ -1,8 +1,10 @@
+import { toId } from "../identifiers.js";
 import { describe, test, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
 import { jsonPointerGet, rejsonParse } from "@hyperjump/browser";
-import { JsonSchema } from "../json-schema.js";
+import { configureJsonSchema } from "../json-schema.js";
+import { JsonSchemaHyperjump } from "../session.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import { draft04Dialect, draft04DialectUri } from "../dialects/draft-04/index.js";
@@ -28,14 +30,14 @@ import { draft202012Dialect, draft202012DialectUri } from "../dialects/draft-202
  * @typedef {{ value: Json; pointer: string; reportedBy: "schema" | "shape" | "keyword" }} Case
  */
 
-const jsonSchema = new JsonSchema({ dialects: [v1Dialect, draft04Dialect, draft06Dialect, draft07Dialect, draft201909Dialect, draft202012Dialect] });
+const jsonSchema = configureJsonSchema({ dialects: [v1Dialect, draft04Dialect, draft06Dialect, draft07Dialect, draft201909Dialect, draft202012Dialect] });
 
 /** @type Map<string, { name: string; dialectUri: string; shape: Shape }> */
 const keywords = new Map();
 for (const dialectUri of [v1DialectUri, draft202012DialectUri, draft201909DialectUri, draft07DialectUri, draft06DialectUri, draft04DialectUri]) {
-  for (const [name, keywordUri] of Object.entries(jsonSchema.getDialect(dialectUri).keywords)) {
+  for (const [name, keywordUri] of Object.entries(jsonSchema.dialects[toId(dialectUri)].keywords)) {
     if (!keywords.has(keywordUri)) {
-      keywords.set(keywordUri, { name, dialectUri, shape: jsonSchema.getKeyword(keywordUri).shape });
+      keywords.set(keywordUri, { name, dialectUri, shape: jsonSchema.keywords[keywordUri].shape });
     }
   }
 }
@@ -47,7 +49,7 @@ describe("A keyword's value that doesn't fit its shape is reported once", () => 
         const file = new VFile(JSON.stringify({ $schema: dialectUri, [name]: value }));
         const processor = unified()
           .use(rejsonParse, { url: "https://example.com/schema" })
-          .use(jsonSchemaResolve, { session: jsonSchema.session() });
+          .use(jsonSchemaResolve, { session: new JsonSchemaHyperjump(jsonSchema) });
         const document = await processor.run(processor.parse(file), file);
 
         const root = /** @type any */ (document.children[0]);

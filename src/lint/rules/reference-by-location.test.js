@@ -5,7 +5,8 @@ import { describe, test, beforeAll, afterAll, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
 import { rejsonParse } from "@hyperjump/browser";
-import { JsonSchema } from "../../json-schema.js";
+import { configureJsonSchema } from "../../json-schema.js";
+import { JsonSchemaHyperjump } from "../../session.js";
 import { SchemaRegistry } from "../../registry/schema-registry.js";
 import { jsonSchemaResolve } from "../../schema/resolve.js";
 import { v1Dialect } from "../../dialects/v1/index.js";
@@ -38,11 +39,11 @@ describe("reference-by-location", () => {
    * @type (json: string, registry?: SchemaRegistry) => Promise<VFile>
    */
   const lint = async (json, registry = new SchemaRegistry([{ schema: common, origin: join(directory, "common.schema.json") }])) => {
-    const jsonSchema = new JsonSchema({ dialects: [v1Dialect, draft07Dialect] });
+    const jsonSchema = configureJsonSchema({ dialects: [v1Dialect, draft07Dialect] });
     const file = new VFile({ path: join(directory, "a.schema.json"), value: json });
     const processor = unified()
       .use(rejsonParse)
-      .use(jsonSchemaResolve, { session: jsonSchema.session({ registry }) })
+      .use(jsonSchemaResolve, { session: new JsonSchemaHyperjump(jsonSchema, { registry }) })
       .use(referenceByLocation);
     await processor.run(processor.parse(file), file);
     return file;

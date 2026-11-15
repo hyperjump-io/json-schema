@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { describe, test, beforeAll, afterAll, expect } from "vitest";
-import { JsonSchema } from "../json-schema.js";
+import { configureJsonSchema } from "../json-schema.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import { draft04Dialect, draft04DialectUri } from "../dialects/draft-04/index.js";
 import { draft06Dialect, draft06DialectUri } from "../dialects/draft-06/index.js";
@@ -16,6 +16,7 @@ import { validatorFor } from "../operations/validate-compiled.js";
 /**
  * @import { Json } from "@hyperjump/browser"
  * @import { EvaluationPlugin } from "../kernel/evaluation-plugin.d.ts"
+ * @import { JsonSchema } from "../json-schema.d.ts"
  */
 
 /**
@@ -50,7 +51,7 @@ describe("patterns that are only valid without the u flag", () => {
 
   beforeAll(async () => {
     directory = await mkdtemp(join(tmpdir(), "json-schema-"));
-    jsonSchema = new JsonSchema({
+    jsonSchema = configureJsonSchema({
       allowRetrieval: [pathToFileURL(join(tmpdir(), "/")).href],
       dialects: [draft202012Dialect, draft201909Dialect, draft07Dialect, draft06Dialect, draft04Dialect, v1Dialect]
     });

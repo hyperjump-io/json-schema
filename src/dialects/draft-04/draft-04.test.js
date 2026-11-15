@@ -1,5 +1,5 @@
 import { describe, test, beforeEach, expect } from "vitest";
-import { JsonSchema } from "../../json-schema.js";
+import { configureJsonSchema } from "../../json-schema.js";
 import { SchemaRegistry } from "../../registry/schema-registry.js";
 import { draft04Dialect, draft04DialectUri } from "./index.js";
 import { compile as compileSchema } from "../../operations/compile.js";
@@ -9,12 +9,13 @@ import { annotatorFor, validatorFor } from "../../operations/validate-compiled.j
  * @import { Json } from "@hyperjump/browser"
  * @import { JsonSchemaConfig } from "../../json-schema.d.ts"
  * @import { CompiledSchema } from "../../operations/compile.d.ts"
+ * @import { JsonSchema } from "../../json-schema.d.ts"
  */
 
 describe("draft-04", () => {
   /** @type (config?: JsonSchemaConfig) => JsonSchema */
   const draft04 = (config) => {
-    const jsonSchema = new JsonSchema({ allowRetrieval: [], dialects: [draft04Dialect], ...config });
+    const jsonSchema = configureJsonSchema({ allowRetrieval: [], dialects: [draft04Dialect], ...config });
     return jsonSchema;
   };
 

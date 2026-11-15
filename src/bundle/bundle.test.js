@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { describe, test, beforeAll, expect } from "vitest";
 import { isCompatible } from "../../test/test-suite.js";
-import { JsonSchema } from "../json-schema.js";
+import { configureJsonSchema } from "../json-schema.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import { draft202012Dialect, draft202012DialectUri } from "../dialects/draft-2020-12/index.js";
@@ -23,6 +23,7 @@ import { validatorFor, annotatorFor } from "../operations/validate-compiled.js";
  * @import { CompiledSchema } from "../operations/compile.d.ts"
  * @import { DetailedValidationError } from "../output/validation-error.d.ts"
  * @import { BundleOptions } from "../operations/bundle.d.ts"
+ * @import { JsonSchema } from "../json-schema.d.ts"
  */
 
 /**
@@ -356,7 +357,7 @@ describe("bundle", () => {
 
 /** @type (config?: JsonSchemaConfig) => JsonSchema */
 const allDialects = (config) => {
-  const jsonSchema = new JsonSchema({ dialects: [v1Dialect, draft202012Dialect, draft201909Dialect, draft07Dialect, draft06Dialect, draft04Dialect], ...config });
+  const jsonSchema = configureJsonSchema({ dialects: [v1Dialect, draft202012Dialect, draft201909Dialect, draft07Dialect, draft06Dialect, draft04Dialect], ...config });
   return jsonSchema;
 };
 

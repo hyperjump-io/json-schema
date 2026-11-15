@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { JsonSchema } from "../../json-schema.js";
+import { configureJsonSchema } from "../../json-schema.js";
 import { SchemaRegistry } from "../../registry/schema-registry.js";
 import { v1Dialect, v1DialectUri } from "../../dialects/v1/index.js";
 import { draft201909Dialect, draft201909DialectUri } from "../../dialects/draft-2019-09/index.js";
@@ -9,11 +9,12 @@ import { compile as compileSchema, serialize } from "../../operations/compile.js
 /**
  * @import { Json } from "@hyperjump/browser"
  * @import { Expression, Kernel } from "../kernel.d.ts"
+ * @import { JsonSchema } from "../../json-schema.d.ts"
  */
 
-const jsonSchema = new JsonSchema({ dialects: [v1Dialect] });
+const jsonSchema = configureJsonSchema({ dialects: [v1Dialect] });
 
-const draft201909JsonSchema = new JsonSchema({ dialects: [draft201909Dialect] });
+const draft201909JsonSchema = configureJsonSchema({ dialects: [draft201909Dialect] });
 
 const mode = { fast: true, plugins: false, annotations: false };
 

@@ -3,19 +3,20 @@ import { join } from "node:path";
 import { describe, test, beforeAll, expect } from "vitest";
 import { jsonPointerGet } from "@hyperjump/browser";
 import { resolveId, toId } from "../src/identifiers.js";
-import { JsonSchema } from "../src/json-schema.js";
+import { configureJsonSchema } from "../src/json-schema.js";
 import { SchemaRegistry } from "../src/registry/schema-registry.js";
 import { fullFormats } from "../src/formats/full.js";
 import { BASIC } from "../src/output/index.js";
 import { compile } from "../src/operations/compile.js";
 import { annotatorFor, validatorFor } from "../src/operations/validate-compiled.js";
-import { annotation } from "../src/session.js";
+import { annotation, JsonSchemaHyperjump } from "../src/session.js";
 
 /**
  * @import { Json, JsonNode } from "@hyperjump/browser"
  * @import { JsonSchemaConfig } from "../src/json-schema.d.ts"
  * @import { CompiledSchema } from "../src/operations/compile.d.ts"
  * @import { DialectConfig } from "../src/dialect.d.ts"
+ * @import { JsonSchema } from "../src/json-schema.d.ts"
  */
 
 /**
@@ -134,7 +135,7 @@ export const isSkipped = (skip, path) => {
  * @type (config?: JsonSchemaConfig) => JsonSchema
  */
 export const testSuiteJsonSchema = (config) => {
-  const jsonSchema = new JsonSchema({ allowRetrieval: [], ...config, formats: fullFormats });
+  const jsonSchema = configureJsonSchema({ allowRetrieval: [], ...config, formats: fullFormats });
 
   return jsonSchema;
 };
@@ -295,7 +296,7 @@ export const describeAnnotationTestSuite = ({ description, version, dialect, jso
     }
   }
 
-  const session = jsonSchema.session();
+  const session = new JsonSchemaHyperjump(jsonSchema);
 
   /**
    * The annotations a keyword added to the node at an instance location. A

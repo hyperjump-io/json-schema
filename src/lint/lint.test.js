@@ -3,13 +3,17 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { describe, test, beforeAll, afterAll, expect } from "vitest";
-import { JsonSchema } from "../json-schema.js";
+import { configureJsonSchema } from "../json-schema.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import recommended from "./recommended.js";
 import thenElseWithoutIf from "./rules/then-else-without-if.js";
 import referenceWithoutTarget from "./rules/reference-without-target.js";
 import { lint } from "../operations/lint.js";
+
+/**
+ * @import { JsonSchema } from "../json-schema.d.ts"
+ */
 
 const a = `{
   "$schema": "${v1DialectUri}",
@@ -118,13 +122,6 @@ describe("lint", () => {
     }]);
   });
 
-  test("in a session", async () => {
-    const session = jsonSchemaWith(a).session();
-    const results = await lint(session, "https://example.com/a", { plugins: [thenElseWithoutIf] });
-
-    expect(results).to.have.length(1);
-  });
-
   describe("files", () => {
     /** @type string */
     let directory;
@@ -140,7 +137,7 @@ describe("lint", () => {
     test("a document that isn't a schema", async () => {
       const path = join(directory, "instance.json");
       await writeFile(path, "{}");
-      const jsonSchema = new JsonSchema({ allowRetrieval: [pathToFileURL(join(directory, "/")).href] });
+      const jsonSchema = configureJsonSchema({ allowRetrieval: [pathToFileURL(join(directory, "/")).href] });
 
       await expect(lint(jsonSchema, pathToFileURL(path).href)).rejects.toThrow("isn't a schema");
     });
@@ -149,7 +146,5 @@ describe("lint", () => {
 
 /** @type (...schemas: string[]) => JsonSchema */
 const jsonSchemaWith = (...schemas) => {
-  const jsonSchema = new JsonSchema({ dialects: [v1Dialect] });
-  jsonSchema.registry = new SchemaRegistry(schemas.map((schema) => ({ schema })));
-  return jsonSchema;
+  return configureJsonSchema({ dialects: [v1Dialect], registry: new SchemaRegistry(schemas.map((schema) => ({ schema }))) });
 };

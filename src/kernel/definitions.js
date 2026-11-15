@@ -1,5 +1,6 @@
 import { keywordDefinitionUri } from "../keywords/unknown.js";
 import { subexpressions } from "./kernel.js";
+import { formatOf, keywordOf } from "../definition-of.js";
 
 /**
  * @import { Format } from "../format.d.ts"
@@ -34,7 +35,7 @@ export const kernelDefinitions = (jsonSchema, kernel) => {
     if (typeof schema !== "boolean") {
       for (const { keywordUri, expression } of schema.keywords) {
         const uri = keywordDefinitionUri(keywordUri);
-        definitions.keywords[uri] ??= jsonSchema.getKeyword(uri);
+        definitions.keywords[uri] ??= keywordOf(jsonSchema.keywords, uri);
         addDefinitions(definitions, jsonSchema, expression, false);
       }
     }
@@ -81,12 +82,12 @@ export const keywordEvaluate = (definitions, uri) => {
 const addDefinitions = (definitions, jsonSchema, expression, tolerant) => {
   if (expression.op === "format" && expression.assert) {
     const uri = /** @type string */ (expression.uri);
-    if (!tolerant || jsonSchema.hasFormat(uri)) {
-      definitions.formats[uri] ??= jsonSchema.getFormat(uri);
+    if (!tolerant || uri in jsonSchema.formats) {
+      definitions.formats[uri] ??= formatOf(jsonSchema.formats, uri);
     }
   } else if (expression.op === "predicate" || expression.op === "opaque") {
-    if (!tolerant || jsonSchema.hasKeyword(expression.keyword)) {
-      definitions.keywords[expression.keyword] ??= jsonSchema.getKeyword(expression.keyword);
+    if (!tolerant || expression.keyword in jsonSchema.keywords) {
+      definitions.keywords[expression.keyword] ??= keywordOf(jsonSchema.keywords, expression.keyword);
       if (!tolerant) {
         keywordEvaluate(definitions, expression.keyword);
       }

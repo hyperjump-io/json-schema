@@ -19,7 +19,7 @@ export const schemaMediaType = Object.freeze({
     // Resolving a schema can mean retrieving its meta-schema, which belongs
     // to the session
     if (!isSession(session)) {
-      throw Error("A schema can only be retrieved in a session of a JsonSchema. Use its 'session' function to create one.");
+      throw Error("A schema can only be retrieved in a session of a JsonSchema. Use 'new JsonSchemaHyperjump(jsonSchema)' to start one.");
     }
 
     // A registry's schema is resolved already

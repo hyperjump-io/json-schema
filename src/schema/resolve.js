@@ -2,6 +2,7 @@ import { relativeFileUrl } from "@hyperjump/browser";
 import { pointerAppend } from "@hyperjump/json-pointer";
 import { assertIriReference, encodeIriFragment, getScheme, isIriReference, normalizeIri, resolveIri, urlToIri } from "@hyperjump/uri";
 import { resolveId, toId } from "../identifiers.js";
+import { keywordOf } from "../definition-of.js";
 import schemaKeyword from "../keywords/schema.js";
 import unknownKeyword from "../keywords/unknown.js";
 import { siblingValues } from "../keywords/utilities.js";
@@ -11,7 +12,7 @@ import { getDialect } from "../session.js";
  * @import { Node } from "unist"
  * @import { VFile } from "vfile"
  * @import { JsonDocumentNode, JsonErrorNode } from "@hyperjump/browser"
- * @import { JsonSchemaSession } from "../session.d.ts"
+ * @import { JsonSchemaHyperjump } from "../session.d.ts"
  * @import { SchemaMessage } from "./schema-error.d.ts"
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode, JsonSchemaTolerantNode } from "./schema-ast.d.ts"
  * @import { Keyword, ResolveContext, Shape } from "../keyword.d.ts"
@@ -77,7 +78,7 @@ export function jsonSchemaResolve(options) {
 }
 
 class Resolver {
-  /** @type JsonSchemaSession */
+  /** @type JsonSchemaHyperjump */
   #session;
 
   /**
@@ -101,7 +102,7 @@ class Resolver {
   #documentUri;
 
   /**
-   * @param {JsonSchemaSession} session
+   * @param {JsonSchemaHyperjump} session
    * @param {JsonDocumentNode} tree
    * @param {Id} uri
    */
@@ -290,7 +291,7 @@ class Resolver {
           this.#message(`'${name}' isn't a keyword in the '${dialect.uri}' dialect`, property, "unknown-keyword");
         }
 
-        return [keywordNode, `${unknownKeyword.uri}#${encodeIriFragment(name)}`, this.#session.jsonSchema.getKeyword(unknownKeyword.uri)];
+        return [keywordNode, `${unknownKeyword.uri}#${encodeIriFragment(name)}`, this.#session.jsonSchema.keywords[unknownKeyword.uri]];
       }
 
       const keywordUri = name === "$schema" ? schemaKeyword.uri : dialect.keywords[name];
@@ -298,7 +299,7 @@ class Resolver {
       /** @type Keyword */
       let keyword;
       try {
-        keyword = this.#session.jsonSchema.getKeyword(keywordUri);
+        keyword = keywordOf(this.#session.jsonSchema.keywords, keywordUri);
       } catch (error) {
         this.#message(/** @type Error */ (error).message, property, "unsupported-keyword");
         keyword = { uri: keywordUri, shape: "data" };
@@ -338,7 +339,7 @@ class Resolver {
 
       /** @type ResolveContext */
       const context = {
-        vocabulary: (uri) => this.#session.jsonSchema.getVocabulary(uri),
+        vocabulary: (uri) => this.#session.jsonSchema.vocabularies[toId(uri)],
         dialectUri: dialect.uri,
         setBaseUri: (reference) => {
           let baseUri;
@@ -573,8 +574,9 @@ class Resolver {
    */
   #selfDescribingDialect(dialectUri, node) {
     const uri = toId(dialectUri);
-    if (this.#session.jsonSchema.hasDialect(uri)) {
-      return this.#session.jsonSchema.getDialect(uri);
+    const dialect = this.#session.jsonSchema.dialects[uri];
+    if (dialect) {
+      return dialect;
     }
 
     this.#message(`The '${uri}' meta-schema describes itself, so its dialect has to be in the 'dialects' config.`, node, "unknown-dialect");

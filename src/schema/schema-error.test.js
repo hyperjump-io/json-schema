@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { JsonSchema, SchemaError, toVFileMessage } from "../json-schema.js";
+import { configureJsonSchema, SchemaError, toVFileMessage } from "../json-schema.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import { compile } from "../operations/compile.js";
@@ -38,8 +38,7 @@ describe("SchemaError", () => {
 
 /** @type (schema: string) => Promise<SchemaError> */
 const schemaError = async (schema) => {
-  const jsonSchema = new JsonSchema({ dialects: [v1Dialect] });
-  jsonSchema.registry = new SchemaRegistry().with(schema);
+  const jsonSchema = configureJsonSchema({ dialects: [v1Dialect], registry: new SchemaRegistry().with(schema) });
 
   try {
     await compile(jsonSchema, "https://example.com/bad");

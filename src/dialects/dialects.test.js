@@ -1,5 +1,6 @@
+import { toId } from "../identifiers.js";
 import { describe, test, expect } from "vitest";
-import { JsonSchema } from "../json-schema.js";
+import { configureJsonSchema } from "../json-schema.js";
 import { v1Dialect, v1DialectUri } from "./v1/index.js";
 import { draft04Dialect, draft04DialectUri } from "./draft-04/index.js";
 import { draft06Dialect, draft06DialectUri } from "./draft-06/index.js";
@@ -30,43 +31,43 @@ const fullOnly = new Set([
 
 describe("dialects", () => {
   test("a JsonSchema has no dialects unless they're in its config", () => {
-    const jsonSchema = new JsonSchema();
+    const jsonSchema = configureJsonSchema();
 
     for (const [, , dialectUri] of dialects) {
-      expect(jsonSchema.hasDialect(dialectUri), dialectUri).to.equal(false);
+      expect(toId(dialectUri) in jsonSchema.dialects, dialectUri).to.equal(false);
     }
   });
 
   test("every dialect can be in one config", () => {
-    const jsonSchema = new JsonSchema({ dialects: dialects.map(([, dialect]) => dialect) });
+    const jsonSchema = configureJsonSchema({ dialects: dialects.map(([, dialect]) => dialect) });
 
     for (const [, , dialectUri] of dialects) {
-      expect(jsonSchema.hasDialect(dialectUri), dialectUri).to.equal(true);
+      expect(toId(dialectUri) in jsonSchema.dialects, dialectUri).to.equal(true);
     }
   });
 
   describe.each(dialects)("%s", (_name, dialect, dialectUri) => {
     test("brings every keyword and format it uses", () => {
-      const jsonSchema = new JsonSchema({ dialects: [dialect] });
+      const jsonSchema = configureJsonSchema({ dialects: [dialect] });
 
-      const added = jsonSchema.getDialect(dialectUri);
+      const added = jsonSchema.dialects[toId(dialectUri)];
       for (const uri of Object.values(added.keywords)) {
-        expect(jsonSchema.hasKeyword(uri), uri).to.equal(true);
+        expect(uri in jsonSchema.keywords, uri).to.equal(true);
       }
       for (const uri of Object.values(added.formats ?? {})) {
-        expect(jsonSchema.hasFormat(uri), uri).to.equal(!fullOnly.has(uri));
+        expect(uri in jsonSchema.formats, uri).to.equal(!fullOnly.has(uri));
       }
     });
 
     test("a keyword in the config replaces the dialect's", () => {
       const type = { uri: "https://json-schema.org/keyword/type", shape: /** @type const */ ("data") };
-      const jsonSchema = new JsonSchema({ dialects: [dialect], keywords: [type] });
+      const jsonSchema = configureJsonSchema({ dialects: [dialect], keywords: [type] });
 
-      expect(jsonSchema.getKeyword(type.uri)).to.equal(type);
+      expect(jsonSchema.keywords[type.uri]).to.equal(type);
     });
 
     test("it can't be in the config twice", () => {
-      expect(() => new JsonSchema({ dialects: [dialect, dialect] })).to.throw("more than once");
+      expect(() => configureJsonSchema({ dialects: [dialect, dialect] })).to.throw("more than once");
     });
   });
 });

@@ -17,7 +17,7 @@ browsers. In a browser, use a bundler that supports the `imports` field of
 ## Create a `JsonSchema`
 
 A `JsonSchema` holds everything your application's schemas need. That's the
-dialects it supports, the schemas it knows about, and its configuration. A
+dialects it supports and its configuration. A
 dialect is a version of JSON Schema. Most applications create one
 `JsonSchema` and use it everywhere.
 
@@ -26,20 +26,24 @@ tutorial uses JSON Schema v1. [Dialects](guides/dialects.md) lists the
 others.
 
 ```typescript
-import { JsonSchema } from "@hyperjump/json-schema";
+import { configureJsonSchema } from "@hyperjump/json-schema";
 import { v1Dialect } from "@hyperjump/json-schema/v1";
 
-const jsonSchema = new JsonSchema({ dialects: [v1Dialect] });
+const jsonSchema = configureJsonSchema({ dialects: [v1Dialect] });
 ```
 
 ## Add a schema
 
-Schemas are identified by URI. The `JsonSchema`'s `registry` holds schemas
-you give it directly. It stores them by their `$id`. `with` returns a new
-registry that includes the schema.
+Schemas are identified by URI. A `SchemaRegistry` holds schemas you give
+it directly. It stores them by their `$id`. `with` returns a new registry
+that includes the schema. You'll pass the registry to each call that needs
+its schemas.
 
 ```typescript
-jsonSchema.registry = jsonSchema.registry.with({
+import { SchemaRegistry } from "@hyperjump/json-schema";
+import type { V1Schema } from "@hyperjump/json-schema/v1";
+
+const registry = new SchemaRegistry<V1Schema>().with({
   $schema: "https://json-schema.org/v1",
   $id: "https://example.com/person",
   title: "Person",
@@ -55,12 +59,12 @@ jsonSchema.registry = jsonSchema.registry.with({
 `$schema` says which dialect the schema is written in. Every schema needs
 one.
 
-The `JsonSchema` has the v1 dialect, so the registry's type only accepts v1
-schemas. That means TypeScript checks the schema as you write it. A
-misspelled keyword is a type error:
+The registry's type is `V1Schema`, so it only accepts v1 schemas. That
+means TypeScript checks the schema as you write it. A misspelled keyword is
+a type error:
 
 ```typescript
-jsonSchema.registry = jsonSchema.registry.with({
+new SchemaRegistry<V1Schema>().with({
   $schema: "https://json-schema.org/v1",
   $id: "https://example.com/person",
   type: "object",
@@ -77,13 +81,14 @@ shows how to check schemas that aren't in a registry.
 
 ## Validate
 
-`validator` compiles the schema once. It returns a function you can call
-on as many values as you like.
+`validator` compiles the schema once. It finds the schema in the registry
+you give it. It returns a function you can call on as many values as you
+like.
 
 ```typescript
 import { validator } from "@hyperjump/json-schema";
 
-const isPerson = await validator(jsonSchema, "https://example.com/person");
+const isPerson = await validator(jsonSchema, "https://example.com/person", { registry });
 
 isPerson({ name: "Jason", age: 42 }); // true
 isPerson({ age: -1 }); // false
@@ -111,7 +116,7 @@ By default, a validator only says whether a value is valid. Ask for the
 ```typescript
 import { BASIC } from "@hyperjump/json-schema";
 
-const checkPerson = await validator(jsonSchema, "https://example.com/person", { output: BASIC });
+const checkPerson = await validator(jsonSchema, "https://example.com/person", { registry, output: BASIC });
 const result = checkPerson({ age: -1 });
 
 result.valid; // false
@@ -174,7 +179,7 @@ const file = new VFile({
   path: "person.json",
   value: `{ "name": "Jason", "age": -1, }`
 });
-const checkText = await validator(jsonSchema, "https://example.com/person", { input: "json", output: BASIC });
+const checkText = await validator(jsonSchema, "https://example.com/person", { registry, input: "json", output: BASIC });
 const result = checkText(String(file));
 
 for (const error of result.errors) {
@@ -241,7 +246,7 @@ It returns what they find as `SchemaMessage`s.
 ```typescript
 import { lint } from "@hyperjump/json-schema";
 
-jsonSchema.registry = jsonSchema.registry.with(`{
+const users = new SchemaRegistry().with(`{
   "$schema": "https://json-schema.org/v1",
   "$id": "https://example.com/user",
   "type": "object",
@@ -249,7 +254,7 @@ jsonSchema.registry = jsonSchema.registry.with(`{
   "required": ["nmae"]
 }`);
 
-const results = await lint(jsonSchema, "https://example.com/user");
+const results = await lint(jsonSchema, "https://example.com/user", { registry: users });
 
 for (const result of results) {
   console.log(result.message);

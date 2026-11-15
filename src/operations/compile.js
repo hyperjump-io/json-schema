@@ -3,7 +3,8 @@ import { Validator } from "../kernel/validator.js";
 import { withResolvedUris } from "../kernel/kernel-uris.js";
 import { schemaReads } from "../kernel/kernel.js";
 import { kernelDefinitions } from "../kernel/definitions.js";
-import { schemaUri, sessionOf } from "./context.js";
+import { schemaUri } from "./schema-source.js";
+import { JsonSchemaHyperjump } from "../session.js";
 
 /**
  * @import { Kernel } from "../kernel/kernel.d.ts"
@@ -11,8 +12,8 @@ import { schemaUri, sessionOf } from "./context.js";
  */
 
 /** @type typeof API.compile */
-export const compile = async (context, schema, options) => {
-  const session = sessionOf(context, options);
+export const compile = async (jsonSchema, schema, options) => {
+  const session = new JsonSchemaHyperjump(jsonSchema, options);
   const kernel = await lower(session, schemaUri(session, schema));
   return /** @type any */ (new Validator(kernelDefinitions(session.jsonSchema, kernel), kernel));
 };

@@ -2,7 +2,8 @@ import { describe, test, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
 import { rejsonParse } from "@hyperjump/browser";
-import { JsonSchema } from "../../json-schema.js";
+import { configureJsonSchema } from "../../json-schema.js";
+import { JsonSchemaHyperjump } from "../../session.js";
 import { SchemaRegistry } from "../../registry/schema-registry.js";
 import { jsonSchemaResolve } from "../../schema/resolve.js";
 import { draft04Dialect } from "../../dialects/draft-04/index.js";
@@ -148,8 +149,8 @@ describe("invalid-default-or-example", () => {
  * @type (json: string) => Promise<VFile>
  */
 const lint = async (json) => {
-  const jsonSchema = new JsonSchema({ dialects: [draft04Dialect, draft202012Dialect] });
-  const session = jsonSchema.session({ registry: new SchemaRegistry([{ schema: json, retrievalUri: uri }]) });
+  const jsonSchema = configureJsonSchema({ dialects: [draft04Dialect, draft202012Dialect] });
+  const session = new JsonSchemaHyperjump(jsonSchema, { registry: new SchemaRegistry([{ schema: json, retrievalUri: uri }]) });
 
   const file = new VFile(json);
   const processor = unified()

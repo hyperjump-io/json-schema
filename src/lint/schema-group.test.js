@@ -2,7 +2,8 @@ import { describe, test, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
 import { jsonPointerGet, rejsonParse } from "@hyperjump/browser";
-import { JsonSchema } from "../json-schema.js";
+import { configureJsonSchema } from "../json-schema.js";
+import { JsonSchemaHyperjump } from "../session.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
 import { draft07Dialect } from "../dialects/draft-07/index.js";
@@ -248,7 +249,7 @@ describe("schemaGroup", () => {
 
 /** @type (schema: Record<string, Json>) => Promise<{ document: LintDocument; at: (pointer: string) => JsonSchemaNode }> */
 const resolve = async (schema) => {
-  const jsonSchema = new JsonSchema({
+  const jsonSchema = configureJsonSchema({
     dialects: [draft07Dialect, draft202012Dialect, {
       uri: opaqueDialect,
       keywords: {
@@ -280,7 +281,7 @@ const resolve = async (schema) => {
     allOf: [{ properties: { a: {} } }],
     $defs: { b: { properties: { b: {} } } }
   });
-  const session = jsonSchema.session({ registry });
+  const session = new JsonSchemaHyperjump(jsonSchema, { registry });
 
   const file = new VFile({ path: "/schemas/a.schema.json", value: JSON.stringify(schema) });
   const processor = unified()

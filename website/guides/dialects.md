@@ -12,11 +12,11 @@ Each dialect brings its own keywords and formats. You can't change the
 dialects after the `JsonSchema` is created.
 
 ```typescript
-import { JsonSchema } from "@hyperjump/json-schema";
+import { configureJsonSchema } from "@hyperjump/json-schema";
 import { draft202012Dialect } from "@hyperjump/json-schema/draft-2020-12";
 import { draft07Dialect } from "@hyperjump/json-schema/draft-07";
 
-const jsonSchema = new JsonSchema({ dialects: [draft202012Dialect, draft07Dialect] });
+const jsonSchema = configureJsonSchema({ dialects: [draft202012Dialect, draft07Dialect] });
 ```
 
 | Dialect | Module | Export | Dialect URI |
@@ -49,7 +49,7 @@ it gets its dialect from somewhere else:
   still doesn't have one.
 
 ```typescript
-const jsonSchema = new JsonSchema({
+const jsonSchema = configureJsonSchema({
   dialects: [v1Dialect],
   defaultDialectUri: "https://json-schema.org/v1"
 });
@@ -110,7 +110,7 @@ config by its URI. Its keywords are definitions, just like a dialect's. See
 [Custom keywords](../extending/keywords.md).
 
 ```typescript
-const jsonSchema = new JsonSchema({
+const jsonSchema = configureJsonSchema({
   dialects: [draft202012Dialect],
   vocabularies: {
     "https://example.com/vocab/even": { keywords: { even: evenKeyword } }

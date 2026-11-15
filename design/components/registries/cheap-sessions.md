@@ -12,11 +12,11 @@ and a registry that's one edit away from another is cheap to index.
   cached, because it depends on the registry. A resolved document is only
   shared if every resource in it uses a dialect added to the `JsonSchema`.
   One that used a dialect only its session had belongs to that session.
-- A `JsonSchema` builds an index (URI to entry) for each registry the first
-  time a session uses it, and keeps it in a `WeakMap` keyed by the registry.
-  A session's own registry can use dialects from the `JsonSchema`'s
-  registry, so its index is also keyed by that registry's index.
-  Sessions point at the indexes. A new registry from `with` or `without`
+- A `JsonSchema` builds an index (URI to entry) of the registry a session
+  sees, the config's combined with the session's own, the first time a
+  session uses it. It keeps it in a `WeakMap` keyed by the session's
+  registry, so sessions with the same registry share it without combining
+  them again. Sessions point at the indexes. A new registry from `with` or `without`
   gets a new index, which only identifies the new entry. The rest is
   copying cached identifications into a `Map`.
 - An old registry, its index, and the sessions that use it are garbage

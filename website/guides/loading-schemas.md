@@ -8,8 +8,8 @@ When a schema is needed, it's looked for in this order:
 
 1. A schema embedded in the same document. This applies to a reference
    from inside that document.
-2. The registry passed to `compile` or another operation. Then the
-   `JsonSchema`'s `registry`.
+2. The registry passed to `compile` or another operation, and the
+   [`JsonSchema`'s](#schemas-for-every-call).
 3. Retrieval by its URI. This works for `file:`, `http:`, and `https:` URIs
    that [`allowRetrieval`](retrieval.md) allows.
 
@@ -39,12 +39,14 @@ const registry = new SchemaRegistry<V1Schema>()
     type: "object"
   });
 
-jsonSchema.registry = registry;
+const isPerson = await validator(jsonSchema, "https://example.com/person", { registry });
 ```
 
-Everything the `JsonSchema` compiles can see its `registry`. The registry
-starts empty. Its type is the schema type of the `JsonSchema`'s dialects. A
-registry without a type parameter accepts any JSON. For registries with
+Pass the registry to `validator`, `compile`, `lint`, or any other operation
+that needs its schemas. It's only used for that call. To share one between
+calls, along with what they retrieve, give it to a
+[session](../extending/sessions.md). A registry without a type parameter
+accepts any JSON. For registries with
 more than one dialect, see [Schema types](schema-types.md#in-a-registry).
 
 References between schemas in a registry work like references anywhere
@@ -95,30 +97,33 @@ const registry = new SchemaRegistry().with(text, { origin: "schemas/person.schem
 
 A registry never changes. `with` and `without` return a new registry. A
 session that's already using a registry keeps seeing what it saw when it
-started. To change what a `JsonSchema` sees, replace its registry.
+started.
 
 ```typescript
-jsonSchema.registry = jsonSchema.registry.without("https://example.com/name");
+const withoutName = registry.without("https://example.com/name");
 ```
 
 `without` removes a schema by the `retrievalUri` it was added with. A schema
 added without one can't be removed.
 
-### A registry for one call
+### Schemas for every call
 
-A registry you pass to `validator` or any other operation is only used for
-that call. It's checked before the `JsonSchema`'s registry. If both
-registries have a schema with the same URI, that's an error. A call's
-registry can't replace a schema in the `JsonSchema`'s registry.
+Some schemas belong everywhere, like a
+[custom meta-schema](dialects.md#custom-meta-schemas) that defines a
+dialect your schemas use. Give those to `configureJsonSchema` as its
+`registry`, and every call and session can find them.
 
 ```typescript
-const isPerson = await validator(jsonSchema, "https://example.com/person", {
-  registry
-});
+const metaSchemas = new SchemaRegistry().with(myMetaSchema);
+
+const jsonSchema = configureJsonSchema({ dialects: [draft202012Dialect], registry: metaSchemas });
 ```
 
-A schema in a call's registry can use a dialect whose meta-schema is in the
-`JsonSchema`'s registry. Custom meta-schemas only need to be added once.
+A call combines its own registry with the `JsonSchema`'s. A schema in
+either can use a dialect whose meta-schema is in the other. If both have a
+schema with the same URI, that's an error, so a call's registry can't
+replace a schema in the `JsonSchema`'s. A `JsonSchema`'s registry can't
+change, so keep schemas that change in the registries you pass to calls.
 
 ### Combining registries
 
@@ -171,7 +176,7 @@ A schema at an `http:` or `https:` URL is retrieved if `allowRetrieval`
 allows it. Nothing on the network is allowed by default.
 
 ```typescript
-const jsonSchema = new JsonSchema({
+const jsonSchema = configureJsonSchema({
   dialects: [v1Dialect],
   allowRetrieval: ["./", "https://schemas.example.com/"]
 });

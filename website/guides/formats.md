@@ -11,7 +11,7 @@
 The `validateFormats` config overrides the dialect for every schema:
 
 ```typescript
-const jsonSchema = new JsonSchema({ validateFormats: true });
+const jsonSchema = configureJsonSchema({ validateFormats: true });
 ```
 
 A format only applies to values of its type. `"email"` only checks strings,
@@ -33,7 +33,7 @@ In v1, `date-time` allows the time zone and tag suffixes of RFC 9557, like
 ```typescript
 import { fullFormats } from "@hyperjump/json-schema/formats/full";
 
-const jsonSchema = new JsonSchema({ dialects: [v1Dialect], formats: fullFormats });
+const jsonSchema = configureJsonSchema({ dialects: [v1Dialect], formats: fullFormats });
 ```
 
 | Dialect | Formats |

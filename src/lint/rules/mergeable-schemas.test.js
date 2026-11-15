@@ -3,7 +3,8 @@ import { unified } from "unified";
 import { VFile } from "vfile";
 import { rejsonParse } from "@hyperjump/browser";
 import { linter } from "../test-linter.js";
-import { JsonSchema, extendDialect } from "../../json-schema.js";
+import { configureJsonSchema, extendDialect } from "../../json-schema.js";
+import { JsonSchemaHyperjump } from "../../session.js";
 import { jsonSchemaResolve } from "../../schema/resolve.js";
 import { draft202012Dialect } from "../../dialects/draft-2020-12/index.js";
 import mergeableSchemas from "./mergeable-schemas.js";
@@ -160,14 +161,14 @@ describe("mergeable-schemas", () => {
 
   test("a custom keyword that reads a sibling", async () => {
     const scaleKeyword = { uri: "https://example.com/keyword/scale", shape: /** @type const */ ("data"), siblings: { maximum: "https://json-schema.org/keyword/maximum" } };
-    const jsonSchema = new JsonSchema({ dialects: [extendDialect(draft202012Dialect, { keywords: { scale: scaleKeyword } })] });
+    const jsonSchema = configureJsonSchema({ dialects: [extendDialect(draft202012Dialect, { keywords: { scale: scaleKeyword } })] });
 
     /** @type (json: string) => Promise<string[]> */
     const customReasons = async (json) => {
       const file = new VFile({ path: "/schemas/a.schema.json", value: json });
       const processor = unified()
         .use(rejsonParse)
-        .use(jsonSchemaResolve, { session: jsonSchema.session() })
+        .use(jsonSchemaResolve, { session: new JsonSchemaHyperjump(jsonSchema) })
         .use(mergeableSchemas);
       await processor.run(processor.parse(file), file);
       return file.messages.map((message) => message.reason);

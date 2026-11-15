@@ -9,7 +9,7 @@ import { differentResources, sameResource } from "../schema/same-resource.js";
 /**
  * @import { Json } from "@hyperjump/browser"
  * @import { Dialect } from "../dialect.d.ts"
- * @import { JsonSchemaSession } from "../session.d.ts"
+ * @import { JsonSchemaHyperjump } from "../session.d.ts"
  * @import { BundleOptions } from "../operations/bundle.d.ts"
  * @import { JsonSchemaDocumentNode, JsonSchemaNode } from "../schema/schema-ast.d.ts"
  * @import { NormalizedIri } from "@hyperjump/uri"
@@ -26,7 +26,7 @@ const notUri = "https://json-schema.org/keyword/not";
  * is retrieved first: the main document, the documents it references, and
  * their dialects. The bundle is made from them without retrieving anything.
  *
- * @type (session: JsonSchemaSession, uri: string, options?: BundleOptions) => Promise<Json>
+ * @type (session: JsonSchemaHyperjump, uri: string, options?: BundleOptions) => Promise<Json>
  */
 export const bundle = async (session, uri, options = {}) => {
   const externalSchemas = new Set(options.externalSchemas?.map((uri) => toId(uri)));
@@ -143,7 +143,7 @@ const identifierFor = (main, documents, id) => {
  * `getDocument` only finds a document in a registry or retrieves it, so
  * this is always a whole document, never a resource embedded in one.
  *
- * @type (session: JsonSchemaSession, uri: Id) => Promise<JsonSchemaDocumentNode>
+ * @type (session: JsonSchemaHyperjump, uri: Id) => Promise<JsonSchemaDocumentNode>
  */
 const schemaDocument = async (session, uri) => {
   const document = await getDocument(session, uri);
@@ -159,7 +159,7 @@ const schemaDocument = async (session, uri) => {
  * reference. A reference to a resource that's already in the bundle,
  * embedded or not, finds it there.
  *
- * @type (session: JsonSchemaSession, main: JsonSchemaDocumentNode, externalSchemas: Set<Id>) => Promise<JsonSchemaDocumentNode[]>
+ * @type (session: JsonSchemaHyperjump, main: JsonSchemaDocumentNode, externalSchemas: Set<Id>) => Promise<JsonSchemaDocumentNode[]>
  */
 const referencedDocuments = async (session, main, externalSchemas) => {
   /** @type Map<string, [resource: JsonSchemaDocumentNode, document: JsonSchemaDocumentNode]> */

@@ -1,5 +1,5 @@
 import { describe, test, expect, vi } from "vitest";
-import { JsonSchema } from "../json-schema.js";
+import { configureJsonSchema } from "../json-schema.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import { BASIC } from "../output/index.js";
 import { compile } from "./compile.js";
@@ -13,7 +13,7 @@ vi.mock("../kernel/instrumented.js", async (importOriginal) => {
   return importOriginal();
 });
 
-const jsonSchema = new JsonSchema({ allowRetrieval: [], dialects: [v1Dialect] });
+const jsonSchema = configureJsonSchema({ allowRetrieval: [], dialects: [v1Dialect] });
 const schema = /** @type const */ ({ $schema: v1DialectUri, type: "string" });
 
 describe("the instrumented evaluator", () => {

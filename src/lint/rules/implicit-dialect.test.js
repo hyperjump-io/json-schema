@@ -2,7 +2,8 @@ import { describe, test, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
 import { rejsonParse } from "@hyperjump/browser";
-import { JsonSchema } from "../../json-schema.js";
+import { configureJsonSchema } from "../../json-schema.js";
+import { JsonSchemaHyperjump } from "../../session.js";
 import { SchemaRegistry } from "../../registry/schema-registry.js";
 import { jsonSchemaResolve } from "../../schema/resolve.js";
 import { draft07Dialect } from "../../dialects/draft-07/index.js";
@@ -78,23 +79,28 @@ describe("implicit-dialect", () => {
   // The CLI never reports it, so these are how it's used
   describe("linting from code", () => {
     test("a registry entry's dialectUri", async () => {
-      const jsonSchema = new JsonSchema({ dialects: [draft202012Dialect] });
-      jsonSchema.registry = new SchemaRegistry([{
-        schema: `{ "type": "string" }`,
-        retrievalUri: "https://example.com/a",
-        dialectUri: draft202012
-      }]);
+      const jsonSchema = configureJsonSchema({
+        dialects: [draft202012Dialect],
+        registry: new SchemaRegistry([{
+          schema: `{ "type": "string" }`,
+          retrievalUri: "https://example.com/a",
+          dialectUri: draft202012
+        }])
+      });
       const results = await lintSchema(jsonSchema, "https://example.com/a", { plugins: [implicitDialect] });
 
       expect(results.map((result) => result.ruleId)).to.eql(["implicit-dialect"]);
     });
 
     test("the default dialect", async () => {
-      const jsonSchema = new JsonSchema({ defaultDialectUri: draft202012, dialects: [draft202012Dialect] });
-      jsonSchema.registry = new SchemaRegistry([{
-        schema: `{ "type": "string" }`,
-        retrievalUri: "https://example.com/a"
-      }]);
+      const jsonSchema = configureJsonSchema({
+        defaultDialectUri: draft202012,
+        dialects: [draft202012Dialect],
+        registry: new SchemaRegistry([{
+          schema: `{ "type": "string" }`,
+          retrievalUri: "https://example.com/a"
+        }])
+      });
       const results = await lintSchema(jsonSchema, "https://example.com/a", { plugins: [implicitDialect] });
 
       expect(results.map((result) => result.ruleId)).to.eql(["implicit-dialect"]);
@@ -104,12 +110,12 @@ describe("implicit-dialect", () => {
 
 /** @type (json: string, options: { dialectUri?: string; defaultDialectUri?: string }) => Promise<VFile> */
 const lint = async (json, { dialectUri, defaultDialectUri }) => {
-  const jsonSchema = new JsonSchema({ defaultDialectUri, dialects: [draft07Dialect, draft202012Dialect] });
+  const jsonSchema = configureJsonSchema({ defaultDialectUri, dialects: [draft07Dialect, draft202012Dialect] });
 
   const file = new VFile({ path: "/schemas/a.schema.json", value: json });
   const processor = unified()
     .use(rejsonParse)
-    .use(jsonSchemaResolve, { session: jsonSchema.session(), dialectUri })
+    .use(jsonSchemaResolve, { session: new JsonSchemaHyperjump(jsonSchema), dialectUri })
     .use(implicitDialect);
   await processor.run(processor.parse(file), file);
   return file;

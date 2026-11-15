@@ -29,14 +29,14 @@ own type. A schema declared `as const` fits too.
 A `JsonSchema` knows the schema type of its dialects. When you pass a
 schema as a value to `validate`, `validator`, `compile`, or `bundle`, it's
 checked without you naming a type.
-`new JsonSchema({ dialects: [v1Dialect] })` is a `JsonSchema<V1Schema>`. A
+`configureJsonSchema({ dialects: [v1Dialect] })` is a `JsonSchema<V1Schema>`. A
 URI isn't checked.
 
 ```typescript
-import { JsonSchema, validate } from "@hyperjump/json-schema";
+import { configureJsonSchema, validate } from "@hyperjump/json-schema";
 import { v1Dialect } from "@hyperjump/json-schema/v1";
 
-const jsonSchema = new JsonSchema({ dialects: [v1Dialect] });
+const jsonSchema = configureJsonSchema({ dialects: [v1Dialect] });
 
 await validate(jsonSchema, {
   $schema: "https://json-schema.org/v1",
@@ -101,13 +101,11 @@ usually do.
 
 ## In a registry
 
-The `JsonSchema`'s `registry` has the `JsonSchema`'s schema type. A schema
-you add to it is checked without declaring anything:
+A registry's type parameter is the type of schema it takes. Give it the
+type of your dialects, and a schema you add to it is checked:
 
 ```typescript
-const jsonSchema = new JsonSchema({ dialects: [v1Dialect] });
-
-jsonSchema.registry = jsonSchema.registry.with({
+new SchemaRegistry<V1Schema>().with({
   $schema: "https://json-schema.org/v1",
   $id: "https://example.com/person",
   type: "object",
@@ -119,28 +117,12 @@ jsonSchema.registry = jsonSchema.registry.with({
 Object literal may only specify known properties, but 'minLenght' does not exist in type ...
 ```
 
-Any registry can be assigned to it, so a registry without a type still
-works.
-
-A separate registry, like one for a call's `registry` option, is checked
-when you give it a schema type. Then every schema added to it is checked.
-That includes schemas passed to the constructor, to `with`, and to the
-registries `with` returns. The type can be a dialect's type or come from a
-`JsonSchema`: `new SchemaRegistry<SchemaTypeOf<typeof jsonSchema>>()`. A
-registry without a type accepts any JSON. JSON text isn't checked, because
-its type is `string`.
-
-```typescript
-import { SchemaRegistry } from "@hyperjump/json-schema";
-import type { V1Schema } from "@hyperjump/json-schema/v1";
-
-const registry = new SchemaRegistry<V1Schema>().with({
-  $schema: "https://json-schema.org/v1",
-  $id: "https://example.com/person",
-  type: "object",
-  properties: { name: { type: "string" } }
-});
-```
+Every schema added to it is checked. That includes schemas passed to the
+constructor, to `with`, and to the registries `with` returns. The type can
+be a dialect's type or come from a `JsonSchema`:
+`new SchemaRegistry<SchemaTypeOf<typeof jsonSchema>>()`. A registry without
+a type accepts any JSON, and the config and every call take a registry of
+any type. JSON text isn't checked, because its type is `string`.
 
 For schemas in more than one dialect, give it a union. A schema's
 `$schema` decides which type in the union it has to fit. A schema without
@@ -175,10 +157,10 @@ const person = {
   properties: { name: { type: "string" } }
 } as const satisfies V1Schema;
 
-jsonSchema.registry = new SchemaRegistry<V1Schema>().with(person);
+const registry = new SchemaRegistry<V1Schema>().with(person);
 
 const jason = { name: "Jason" } as const;
-await validate(jsonSchema, "https://example.com/person", jason); // true
+await validate(jsonSchema, "https://example.com/person", jason, { registry }); // true
 ```
 
 ## Custom keywords
@@ -188,7 +170,7 @@ adds. A `JsonSchema` with that dialect checks schemas that use them.
 Subschemas have the same type, so they can use your keywords too.
 
 ```typescript
-const jsonSchema = new JsonSchema({
+const jsonSchema = configureJsonSchema({
   dialects: [extendDialect(v1Dialect, { keywords: { even: evenKeyword } })]
 });
 

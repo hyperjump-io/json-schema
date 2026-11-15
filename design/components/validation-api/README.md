@@ -1,10 +1,10 @@
 # Validation API (`src/operations/`)
 
-The operations are functions that take a `JsonSchema` or a session (see
+The operations are functions that take a `JsonSchema` (see
 [The API as functions](../api/README.md)). The evaluators behind a compiled
 schema are in `src/kernel/validator.js`, which isn't exported.
 
-- `validate`, `validator`, `annotate`, and `annotator` take a context, a
+- `validate`, `validator`, `annotate`, and `annotator` take a `JsonSchema`, a
   schema (a URI or a value), and options (`src/operations/validate.js`).
   `validator` and `annotator` compile and return a function, with the
   output format, plugins, and input chosen once. `validate` and `annotate`
@@ -13,7 +13,7 @@ schema are in `src/kernel/validator.js`, which isn't exported.
   restored schema (`restore`) is used the same way (`src/operations/compile.js`).
 - `validatorFor` and `annotatorFor` were the design's working name, kept
   because they say what they take. Rejected: overloading `validator` with
-  a `CompiledSchema` in place of the context and schema, which makes its
+  a `CompiledSchema` in place of the `JsonSchema` and schema, which makes its
   types and its first argument ambiguous.
 - `validate` never builds an AST. `annotate` validates and returns the
   instance as an AST, so users never need to call both. The `input` option
@@ -43,18 +43,21 @@ schema are in `src/kernel/validator.js`, which isn't exported.
   `defaultDialectUri`, like any schema without one. The operation reaches
   the session's registries through the session's state (`registriesOf`),
   which isn't exported from the package.
-- Given a session, an operation uses it, and `registry` or
-  `allowRetrieval` in its options is a `TypeError`, because the session
-  already has its own and ignoring them would be silent.
-- Operations take a session mainly for code that only has one: a unified
-  plugin or lint rule gets the session a document was resolved in, and
-  shouldn't create one, so what it validates or bundles sees the same
-  registry, `allowRetrieval`, and documents (the CLI bundles a file in its
-  session this way). A session also shares retrieved documents and
-  dialects built from meta-schemas between calls, and keeps them on one
-  version of each file. Considered 2026-10-29: only a `JsonSchema`, adding
-  sessions back when something needs them. Kept, because the pipeline case
-  already exists.
+- Each call has a session of its own, made from the `JsonSchema` and the
+  call's `registry` and `allowRetrieval`. Decided 2026-11-14. Before, an
+  operation also took a session (`Context`), so operations could share
+  what it retrieved, and `registry` or `allowRetrieval` in its options was
+  a `TypeError`, because the session already had its own. That was two
+  ways to do the same thing, and sharing a session past one unit of work
+  is a mistake: its documents go stale and it keeps everything it
+  resolved. Sessions are for browsing and pipelines (see
+  [Sessions](../sessions/README.md)). The CLI, the only code that gave an
+  operation a session, bundled a file in the session it was resolved in;
+  now its bundle reads the documents the file references again. Resolving
+  a file never put its tree in the session, so the file itself was read
+  again either way. Rejected: operations taking only a session, which
+  makes session lifetime every user's problem, even for one validation.
+  Considered 2026-10-29 and kept then, for the pipeline case.
 - FLAG output is a plain `boolean` to avoid allocating. BASIC and DETAILED are
   `{ valid, errors }`. An output format is a value (`OutputFormat<R>`)
   passed as `output`, and its type is its result's. A new output format spec is in progress and

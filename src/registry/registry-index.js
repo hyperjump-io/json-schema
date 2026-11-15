@@ -28,7 +28,7 @@ import { entriesOf } from "./registry-entries.js";
 
 /**
  * `fromRegistry` is set if the entry was identified with a dialect another
- * entry in the same registry, or the JsonSchema's registry, defines.
+ * entry in the same registry, or the registry a value is added to, defines.
  *
  * @typedef {{
  *   uri: Id;
@@ -44,7 +44,7 @@ import { entriesOf } from "./registry-entries.js";
 
 /**
  * Finds a dialect defined by an entry in the same registry, or the
- * JsonSchema's registry
+ * registry a value is added to
  *
  * @typedef {(dialectUri: Id) => DialectDefinition | undefined} RegistryDialects
  */
@@ -61,9 +61,9 @@ const identifications = new WeakMap();
 /**
  * A JsonSchema's index of a registry: each entry by the URI it's identified
  * by with the JsonSchema's dialects. A registry never changes, and neither
- * do a JsonSchema's dialects, so neither does its index. A session's own registry can also use the
- * dialects defined in the JsonSchema's registry, so its index is made with
- * that registry's index.
+ * do a JsonSchema's dialects, so neither does its index. A schema an
+ * operation is given as a value can use the dialects defined in the
+ * session's registry, so its index is made with that registry's index.
  */
 export class RegistryIndex {
   /** @type JsonSchema */
@@ -269,8 +269,8 @@ export class RegistryIndex {
  * Find the URI an entry is identified by. That depends on the dialect, so
  * only the root's resolve hooks (`$id`, `$vocabulary`) run. Nothing is
  * retrieved, so an entry whose dialect isn't defined by the JsonSchema,
- * another entry in the same registry, or the JsonSchema's registry has to
- * wait for it.
+ * another entry in the same registry, or the registry a value is added to
+ * has to wait for it.
  *
  * Every entry is identified when a registry is first used, so it's parsed
  * with `JSON.parse`, which is much faster than building a tree with
@@ -354,9 +354,8 @@ const identifyRoot = (jsonSchema, entry, registryDialect, root) => {
       return { error: /** @type Error */ (error) };
     }
 
-    if (jsonSchema.hasDialect(absoluteDialectUri)) {
-      dialect = jsonSchema.getDialect(absoluteDialectUri);
-    } else {
+    dialect = jsonSchema.dialects[absoluteDialectUri];
+    if (dialect === undefined) {
       const definition = registryDialect(absoluteDialectUri);
       if (definition === undefined) {
         return { waitingFor: absoluteDialectUri };
@@ -404,7 +403,7 @@ const rootEffects = (jsonSchema, root, dialect, retrievalUri) => {
 
   for (const [name, valueNodeOf] of root.properties) {
     const keywordUri = dialect.keywords[name];
-    const keyword = keywordUri !== undefined && jsonSchema.hasKeyword(keywordUri) ? jsonSchema.getKeyword(keywordUri) : undefined;
+    const keyword = keywordUri === undefined ? undefined : jsonSchema.keywords[keywordUri];
     if (!keyword?.resolve) {
       continue;
     }
@@ -413,7 +412,7 @@ const rootEffects = (jsonSchema, root, dialect, retrievalUri) => {
 
     /** @type ResolveContext */
     const context = {
-      vocabulary: (uri) => jsonSchema.getVocabulary(uri),
+      vocabulary: (uri) => jsonSchema.vocabularies[toId(uri)],
       dialectUri: dialect.uri,
       setBaseUri: (reference) => {
         try {

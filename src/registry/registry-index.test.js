@@ -1,10 +1,15 @@
 import { describe, test, expect } from "vitest";
-import { JsonSchema } from "../json-schema.js";
+import { configureJsonSchema } from "../json-schema.js";
+import { JsonSchemaHyperjump } from "../session.js";
 import { SchemaRegistry } from "./schema-registry.js";
 import { RegistryIndex } from "./registry-index.js";
 import { toId } from "../identifiers.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import { getDocument } from "../session.js";
+
+/**
+ * @import { JsonSchema } from "../json-schema.d.ts"
+ */
 
 describe("RegistryIndex", () => {
   const uri = "https://example.com/a";
@@ -65,7 +70,7 @@ describe("RegistryIndex", () => {
 
   test("a session doesn't identify entries until it looks for a schema", async () => {
     let identified = 0;
-    const jsonSchema = new JsonSchema({
+    const jsonSchema = configureJsonSchema({
       dialects: [{
         uri: "https://example.com/counted",
         keywords: {
@@ -83,7 +88,7 @@ describe("RegistryIndex", () => {
     });
     const registry = new SchemaRegistry().with({ $schema: "https://example.com/counted", $id: "https://example.com/counted-schema" });
 
-    const session = jsonSchema.session({ registry });
+    const session = new JsonSchemaHyperjump(jsonSchema, { registry });
     expect(identified).to.equal(0);
 
     await getDocument(session, "https://example.com/counted-schema");
@@ -93,6 +98,6 @@ describe("RegistryIndex", () => {
 
 /** @type () => JsonSchema */
 const v1 = () => {
-  const jsonSchema = new JsonSchema({ dialects: [v1Dialect] });
+  const jsonSchema = configureJsonSchema({ dialects: [v1Dialect] });
   return jsonSchema;
 };

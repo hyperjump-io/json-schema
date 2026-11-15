@@ -22,9 +22,6 @@ isPerson({ name: "Jason" }); // true
 `validate` and `annotate` compile the schema every time. Use them for
 one-off checks, not in a loop.
 
-The first argument can also be a session. Then several calls share the
-schemas it retrieved. See [Sessions](../extending/sessions.md).
-
 ## The schema
 
 A schema can be its URI, like `"https://example.com/person"` or a `file:`

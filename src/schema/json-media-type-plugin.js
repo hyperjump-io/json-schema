@@ -8,7 +8,7 @@ import { getDialect, hasDialect, isSession } from "../session.js";
 /**
  * @import { DocumentSession } from "@hyperjump/browser"
  * @import { AbsoluteIri } from "@hyperjump/uri"
- * @import { JsonSchemaSession } from "../session.d.ts"
+ * @import { JsonSchemaHyperjump } from "../session.d.ts"
  * @import { JsonSchemaMediaTypeDocument } from "./media-type-plugin.d.ts"
  * @import * as API from "./json-media-type-plugin.d.ts"
  */
@@ -53,7 +53,7 @@ export const jsonOrSchemaMediaType = Object.freeze({
  *
  * It's given with the session, which is a `JsonSchema`'s when there's one.
  *
- * @type (text: string, url: AbsoluteIri, session: DocumentSession) => Promise<{ uri: string, session: JsonSchemaSession } | undefined>
+ * @type (text: string, url: AbsoluteIri, session: DocumentSession) => Promise<{ uri: string, session: JsonSchemaHyperjump } | undefined>
  */
 const schemaDialect = async (text, url, session) => {
   if (!isSession(session) || !text.includes(`"$schema"`)) {

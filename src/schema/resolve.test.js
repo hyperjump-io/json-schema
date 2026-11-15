@@ -1,3 +1,4 @@
+import { toId } from "../identifiers.js";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
@@ -7,7 +8,8 @@ import { describe, test, beforeEach, beforeAll, afterAll, expect } from "vitest"
 import { unified } from "unified";
 import { VFile } from "vfile";
 import { fetcher, fromJson, jrefStep, jsonPointerGet, nodeTransport, rejsonParse } from "@hyperjump/browser";
-import { JsonSchema, SchemaError, extendDialect } from "../json-schema.js";
+import { configureJsonSchema, SchemaError, extendDialect } from "../json-schema.js";
+import { JsonSchemaHyperjump } from "../session.js";
 import { jsonSchemaResolve, resolveSchema } from "./resolve.js";
 import idKeyword from "../keywords/id.js";
 import anchorKeyword from "../keywords/anchor.js";
@@ -27,6 +29,7 @@ import { get } from "../session.js";
  * @import { JsonSchemaResolveOptions } from "./resolve.d.ts"
  * @import { FollowedNode } from "@hyperjump/browser"
  * @import { JsonSchemaKeywordNode, JsonSchemaNode, JsonSchemaTolerantNode } from "./schema-ast.d.ts"
+ * @import { JsonSchema } from "../json-schema.d.ts"
  */
 
 const dialectUri = "https://example.com/dialect";
@@ -38,7 +41,7 @@ describe("resolveSchema", () => {
   test("problems are returned as data, and the tree becomes the schema AST", async () => {
     const { node } = fromJson(JSON.stringify({ $schema: dialectUri, $id: "#not-absolute" }), noUrl);
     const tree = /** @type JsonDocumentNode */ ({ type: "json-document", status: "success", children: [node] });
-    const { document, messages } = await resolveSchema(tree, { session: testJsonSchema().session(), uri: baseUri });
+    const { document, messages } = await resolveSchema(tree, { session: new JsonSchemaHyperjump(testJsonSchema()), uri: baseUri });
 
     expect(document.type).to.equal("json-schema-document");
     expect(document.uri).to.equal(baseUri);
@@ -50,7 +53,7 @@ describe("resolveSchema", () => {
     // schema is read again with its parent's dialect
     const { node } = fromJson(JSON.stringify({ $schema: dialectUri, properties: { a: { $schema: strictDialectUri, foo: 1 } } }), noUrl);
     const tree = /** @type JsonDocumentNode */ ({ type: "json-document", status: "success", children: [node] });
-    const { messages } = await resolveSchema(tree, { session: testJsonSchema().session(), uri: baseUri });
+    const { messages } = await resolveSchema(tree, { session: new JsonSchemaHyperjump(testJsonSchema()), uri: baseUri });
 
     expect(messages.map(({ ruleId }) => ruleId)).to.eql(["misplaced-dialect"]);
   });
@@ -96,7 +99,7 @@ describe("jsonSchemaResolve", () => {
     });
 
     test("the session is on the file for lint rules", async () => {
-      const session = jsonSchema.session();
+      const session = new JsonSchemaHyperjump(jsonSchema);
       const { file } = await resolve(jsonSchema, `{ "$schema": "${dialectUri}" }`, { session });
 
       expect(file.data.jsonSchemaSession).to.equal(session);
@@ -815,7 +818,7 @@ describe("jsonSchemaResolve", () => {
       });
 
       test("a self-describing meta-schema doesn't replace a dialect that's already defined", async () => {
-        const dialect = jsonSchema.getDialect(dialectUri);
+        const dialect = jsonSchema.dialects[toId(dialectUri)];
         const { root, file } = await resolve(jsonSchema, `{
           "$schema": "${dialectUri}",
           "$vocabulary": { "https://example.com/vocab/core": true }
@@ -823,7 +826,7 @@ describe("jsonSchemaResolve", () => {
 
         expect(file.messages).to.eql([]);
         expect(root).to.include({ type: "json-schema", dialectUri: dialectUri });
-        expect(jsonSchema.getDialect(dialectUri)).to.equal(dialect);
+        expect(jsonSchema.dialects[toId(dialectUri)]).to.equal(dialect);
       });
     });
   });
@@ -953,7 +956,7 @@ describe("jsonSchemaResolve", () => {
     });
 
     test("a .schema.json file is a schema", async () => {
-      const session = jsonSchema.session();
+      const session = new JsonSchemaHyperjump(jsonSchema);
       const uri = await schemaFile("main.schema.json", {
         $schema: dialectUri,
         $defs: { foo: { $anchor: "foo", type: "string" } }
@@ -964,7 +967,7 @@ describe("jsonSchemaResolve", () => {
     });
 
     test("references between embedded resources", async () => {
-      const session = jsonSchema.session();
+      const session = new JsonSchemaHyperjump(jsonSchema);
       const uri = await schemaFile("embedded.schema.json", {
         $schema: legacyDialectUri,
         properties: { foo: { $ref: "https://example.com/a" } },
@@ -982,7 +985,7 @@ describe("jsonSchemaResolve", () => {
     });
 
     test("an embedded resource can reference the document that embeds it", async () => {
-      const session = jsonSchema.session();
+      const session = new JsonSchemaHyperjump(jsonSchema);
       const uri = await schemaFile("embedding.schema.json", {
         $schema: legacyDialectUri,
         $id: "https://example.com/embedding",
@@ -999,7 +1002,7 @@ describe("jsonSchemaResolve", () => {
     });
 
     test("an embedded resource isn't visible outside the document that embeds it", async () => {
-      const session = jsonSchema.session();
+      const session = new JsonSchemaHyperjump(jsonSchema);
       const embeddedUri = "https://example.com/embedded-only";
       const uri = await schemaFile("embeds-a-file.schema.json", {
         $schema: legacyDialectUri,
@@ -1012,7 +1015,7 @@ describe("jsonSchemaResolve", () => {
     });
 
     test("a schema with problems can't be retrieved", async () => {
-      const session = jsonSchema.session();
+      const session = new JsonSchemaHyperjump(jsonSchema);
       const uri = await schemaFile("invalid.schema.json", { type: "string" });
 
       // A schema that can't be used fails its retrieval with its problems
@@ -1023,7 +1026,7 @@ describe("jsonSchemaResolve", () => {
     });
 
     test("every problem in a schema is in the error", async () => {
-      const session = jsonSchema.session();
+      const session = new JsonSchemaHyperjump(jsonSchema);
       const path = join(directory, "problems.schema.json");
       await writeFile(path, `{
   "$schema": "${dialectUri}",
@@ -1131,7 +1134,7 @@ const strictDialect = {
  * @type (options?: { dialects?: DialectConfig[]; keywords?: Keyword<any, any, any>[]; extension?: DialectExtension; config?: JsonSchemaConfig }) => JsonSchema
  */
 const testJsonSchema = ({ dialects = [], keywords = [], extension, config } = {}) => {
-  const jsonSchema = new JsonSchema({
+  const jsonSchema = configureJsonSchema({
     allowRetrieval: [pathToFileURL(join(tmpdir(), "/")).href, "test:/"],
     ...config,
     dialects: [extension ? extendDialect(testDialect, extension) : testDialect, legacyDialect, strictDialect, ...dialects],
@@ -1174,7 +1177,7 @@ const resolve = async (jsonSchema, json, options = {}) => {
   const file = new VFile({ value: json, path });
   const processor = unified()
     .use(rejsonParse, { accept, ...path === undefined && { url: uri ?? baseUri } })
-    .use(jsonSchemaResolve, { session: jsonSchema.session(), ...resolveOptions });
+    .use(jsonSchemaResolve, { session: new JsonSchemaHyperjump(jsonSchema), ...resolveOptions });
   const document = await processor.run(processor.parse(file), file);
 
   return { document, file, root: /** @type JsonSchemaTolerantNode */ (document.children[0]) };

@@ -1,6 +1,7 @@
+import type { JsonSchema } from "../json-schema.d.ts";
 import type { Json } from "@hyperjump/browser";
 import type { SessionOptions } from "../session.d.ts";
-import type { Context, SchemaSource } from "./context.d.ts";
+import type { SchemaSource } from "./schema-source.d.ts";
 
 /**
  * Bundle a schema and every schema it references into one compound schema
@@ -35,7 +36,7 @@ import type { Context, SchemaSource } from "./context.d.ts";
  * @throws An error from `@hyperjump/browser` if a schema can't be
  * retrieved. Its `cause.code` says why.
  */
-export function bundle<S>(context: Context<S>, schema: NoInfer<SchemaSource<S>>, options?: SessionOptions & BundleOptions): Promise<Json>;
+export function bundle<S>(jsonSchema: JsonSchema<S>, schema: NoInfer<SchemaSource<S>>, options?: SessionOptions & BundleOptions): Promise<Json>;
 
 export type BundleOptions = {
   /**

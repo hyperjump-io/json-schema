@@ -3,7 +3,8 @@ import { cwd } from "node:process";
 import { describe, test, beforeEach, expect } from "vitest";
 import { VFile } from "vfile";
 import { linter } from "./test-linter.js";
-import { JsonSchema } from "../json-schema.js";
+import { configureJsonSchema } from "../json-schema.js";
+import { JsonSchemaHyperjump } from "../session.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import { findSchema } from "./find-schema.js";
@@ -11,16 +12,15 @@ import { assertIri, normalizeIri } from "@hyperjump/uri";
 import { fetcher, nodeTransport } from "@hyperjump/browser";
 
 /**
- * @import { JsonSchemaSession } from "../session.d.ts"
  * @import { JsonSchemaDocumentNode } from "../schema/schema-ast.d.ts"
  */
 
 describe("findSchema", () => {
-  /** @type JsonSchemaSession */
+  /** @type JsonSchemaHyperjump */
   let session;
 
   beforeEach(() => {
-    const jsonSchema = new JsonSchema({
+    const jsonSchema = configureJsonSchema({
       allowRetrieval: ["test:/", "file:///nothing-here/"],
       dialects: [v1Dialect],
       stack: nodeTransport({ schemes: { "test:": fetcher(respond) } })
@@ -37,7 +37,7 @@ describe("findSchema", () => {
         embedded: { $id: "https://example.com/embedded", type: "boolean" }
       }
     });
-    session = jsonSchema.session({ registry });
+    session = new JsonSchemaHyperjump(jsonSchema, { registry });
   });
 
   describe("found", () => {
@@ -132,7 +132,7 @@ describe("findSchema", () => {
       await linter()
         .use(() => async (/** @type JsonSchemaDocumentNode */ tree, file) => {
           for (const uri of uris) {
-            const session = /** @type JsonSchemaSession */ (file.data.jsonSchemaSession);
+            const session = /** @type JsonSchemaHyperjump */ (file.data.jsonSchemaSession);
             const result = await findSchema(session, iri(uri), { document: tree });
             statuses.push(result.status);
           }
@@ -155,7 +155,7 @@ describe("findSchema", () => {
       const file = new VFile({ path: "/nothing-here/a.schema.json", value: `{ "$schema": "${v1DialectUri}", "$defs": { "foo": true } }` });
       await linter()
         .use(() => async (/** @type JsonSchemaDocumentNode */ _tree, file) => {
-          const session = /** @type JsonSchemaSession */ (file.data.jsonSchemaSession);
+          const session = /** @type JsonSchemaHyperjump */ (file.data.jsonSchemaSession);
           const result = await findSchema(session, iri("file:///nothing-here/a.schema.json#/$defs/foo"));
           statuses.push(result.status);
         })

@@ -6,7 +6,8 @@ import { describe, test, beforeEach, beforeAll, afterAll, expect } from "vitest"
 import { unified } from "unified";
 import { VFile } from "vfile";
 import { rejsonParse } from "@hyperjump/browser";
-import { JsonSchema, extendDialect } from "../json-schema.js";
+import { configureJsonSchema, extendDialect } from "../json-schema.js";
+import { JsonSchemaHyperjump } from "../session.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import { draft04Dialect, draft04DialectUri } from "../dialects/draft-04/index.js";
@@ -18,12 +19,13 @@ import { compile } from "../operations/compile.js";
 /**
  * @import { JsonParseStatus } from "@hyperjump/browser"
  * @import { Keyword } from "../keyword.d.ts"
+ * @import { JsonSchema } from "../json-schema.d.ts"
  */
 
 const baseUri = "https://example.com/schema";
 
 /** @type (extension: Record<string, Keyword<any, any, any>>, keywords?: Keyword<any, any, any>[]) => JsonSchema */
-const withV1Keywords = (extension, keywords) => new JsonSchema({
+const withV1Keywords = (extension, keywords) => configureJsonSchema({
   dialects: [extendDialect(v1Dialect, { keywords: extension })],
   keywords
 });
@@ -33,7 +35,7 @@ describe("keyword checks", () => {
   let jsonSchema;
 
   beforeEach(() => {
-    jsonSchema = new JsonSchema({ dialects: [v1Dialect, draft04Dialect, draft07Dialect, draft201909Dialect, draft202012Dialect] });
+    jsonSchema = configureJsonSchema({ dialects: [v1Dialect, draft04Dialect, draft07Dialect, draft201909Dialect, draft202012Dialect] });
   });
 
   test("valid keyword values", async () => {
@@ -286,7 +288,7 @@ describe("a schema with an invalid keyword value", () => {
     const path = join(directory, "invalid.schema.json");
     await writeFile(path, `{ "$schema": "${v1DialectUri}", "minLength": -1 }`);
 
-    const jsonSchema = new JsonSchema({ allowRetrieval: [pathToFileURL(join(tmpdir(), "/")).href], dialects: [v1Dialect] });
+    const jsonSchema = configureJsonSchema({ allowRetrieval: [pathToFileURL(join(tmpdir(), "/")).href], dialects: [v1Dialect] });
     await expect(compile(jsonSchema, pathToFileURL(path).toString())).rejects.toMatchObject({
       messages: [{ ruleId: "https://json-schema.org/keyword/minLength" }]
     });
@@ -302,7 +304,7 @@ const check = async (jsonSchema, json, accept) => {
   const file = new VFile(json);
   const processor = unified()
     .use(rejsonParse, { accept, url: baseUri })
-    .use(jsonSchemaResolve, { session: jsonSchema.session() });
+    .use(jsonSchemaResolve, { session: new JsonSchemaHyperjump(jsonSchema) });
   await processor.run(processor.parse(file), file);
 
   return file.messages.map(({ reason, ruleId, place }) => {

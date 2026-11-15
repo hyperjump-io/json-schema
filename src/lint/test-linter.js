@@ -1,6 +1,7 @@
 import { unified } from "unified";
 import { rejsonParse, rejsonStringify } from "@hyperjump/browser";
-import { JsonSchema } from "../json-schema.js";
+import { configureJsonSchema } from "../json-schema.js";
+import { JsonSchemaHyperjump } from "../session.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
 import { v1Dialect } from "../dialects/v1/index.js";
 import { draft04Dialect } from "../dialects/draft-04/index.js";
@@ -14,7 +15,7 @@ import { fullFormats } from "../formats/full.js";
  * @import { Processor } from "unified"
  */
 
-const jsonSchema = new JsonSchema({ dialects: [v1Dialect, draft04Dialect, draft06Dialect, draft07Dialect, draft201909Dialect, draft202012Dialect], formats: fullFormats });
+const jsonSchema = configureJsonSchema({ dialects: [v1Dialect, draft04Dialect, draft06Dialect, draft07Dialect, draft201909Dialect, draft202012Dialect], formats: fullFormats });
 
 /**
  * For testing lint rules: resolves a schema with every preset's dialect, as
@@ -32,5 +33,5 @@ export const linter = unified()
  * @this {Processor}
  */
 function resolveInNewSession() {
-  return /** @type Function */ (jsonSchemaResolve).call(this, { session: jsonSchema.session() });
+  return /** @type Function */ (jsonSchemaResolve).call(this, { session: new JsonSchemaHyperjump(jsonSchema) });
 }

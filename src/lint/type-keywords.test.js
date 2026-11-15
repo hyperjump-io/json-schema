@@ -2,7 +2,8 @@ import { describe, test, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
 import { rejsonParse, rejsonStringify } from "@hyperjump/browser";
-import { JsonSchema, extendDialect } from "../json-schema.js";
+import { configureJsonSchema, extendDialect } from "../json-schema.js";
+import { JsonSchemaHyperjump } from "../session.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
 import { draft202012Dialect } from "../dialects/draft-2020-12/index.js";
 import fractionalLimitForInteger from "./rules/fractional-limit-for-integer.js";
@@ -32,7 +33,7 @@ const allowsKeyword = {
   lower: (types) => ({ op: "typeIs", types: Array.isArray(types) ? types : [types] })
 };
 
-const jsonSchema = new JsonSchema({ dialects: [extendDialect(draft202012Dialect, { keywords: { allows: allowsKeyword } })] });
+const jsonSchema = configureJsonSchema({ dialects: [extendDialect(draft202012Dialect, { keywords: { allows: allowsKeyword } })] });
 
 describe("more than one keyword that lowers to typeIs", () => {
   test("keyword-for-disallowed-type names the keywords that don't allow the type", async () => {
@@ -91,7 +92,7 @@ const reasons = async (rule, json) => {
   await unified()
     .use(rejsonParse)
     .use(function () {
-      return /** @type Function */ (jsonSchemaResolve).call(this, { session: jsonSchema.session() });
+      return /** @type Function */ (jsonSchemaResolve).call(this, { session: new JsonSchemaHyperjump(jsonSchema) });
     })
     .use(rule)
     .use(rejsonStringify)

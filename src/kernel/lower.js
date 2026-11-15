@@ -12,7 +12,7 @@ import { differentResources, sameResource } from "../schema/same-resource.js";
  * @import { Json } from "@hyperjump/browser"
  * @import { Iri } from "@hyperjump/uri"
  * @import { Dialect } from "../dialect.d.ts"
- * @import { JsonSchemaSession } from "../session.d.ts"
+ * @import { JsonSchemaHyperjump } from "../session.d.ts"
  * @import { Keyword, LowerInput, Reference, Shape } from "../keyword.d.ts"
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode, JsonSchemaTolerantNode } from "../schema/schema-ast.d.ts"
  * @import { Expression, Handle, Kernel, KeywordGroup } from "./kernel.d.ts"
@@ -31,7 +31,7 @@ import { differentResources, sameResource } from "../schema/same-resource.js";
  * schemas in it compiled, and given to its `lower`, with its siblings
  * parsed the same way. The expressions are in the normal form.
  *
- * @type (session: JsonSchemaSession, uri: string) => Promise<Kernel>
+ * @type (session: JsonSchemaHyperjump, uri: string) => Promise<Kernel>
  */
 export const lower = async (session, uri) => {
   return new Lowerer(session).lower(uri);
@@ -82,11 +82,12 @@ export const lower = async (session, uri) => {
  * rejected is left out. Each keyword is also lowered without each sibling
  * it read, so lint knows where each operation came from.
  *
- * `keywordOf` is the definition of a keyword by URI.
+ * `keywords` are the definitions, by URI. A resolved schema only has
+ * keywords that have one.
  *
- * @type (keywordOf: (uri: string) => Keyword, node: ObjectSchemaNode, dialect: Dialect, inputs: Inputs, tolerant: boolean) => LoweredKeyword[]
+ * @type (keywords: Readonly<Record<string, Keyword>>, node: ObjectSchemaNode, dialect: Dialect, inputs: Inputs, tolerant: boolean) => LoweredKeyword[]
  */
-export const lowerKeywords = (keywordOf, node, dialect, inputs, tolerant) => {
+export const lowerKeywords = (keywords, node, dialect, inputs, tolerant) => {
   const properties = node.children;
 
   /** @type LoweredKeyword[] */
@@ -96,7 +97,7 @@ export const lowerKeywords = (keywordOf, node, dialect, inputs, tolerant) => {
   for (const keywordNode of properties) {
     const [nameNode, valueNode] = keywordNode.children;
     const keywordUri = keywordNode.keywordUri;
-    const keyword = keywordOf(keywordDefinitionUri(keywordUri));
+    const keyword = keywords[keywordDefinitionUri(keywordUri)];
     if (keyword.lower === undefined || (tolerant && !accepts(keyword, valueNode, node))) {
       continue;
     }
@@ -117,7 +118,7 @@ export const lowerKeywords = (keywordOf, node, dialect, inputs, tolerant) => {
           continue;
         }
 
-        const siblingKeyword = keywordOf(keywordDefinitionUri(siblingUri));
+        const siblingKeyword = keywords[keywordDefinitionUri(siblingUri)];
         if (tolerant && !accepts(siblingKeyword, sibling.children[1], node)) {
           continue;
         }
@@ -192,7 +193,7 @@ export const lowerKeywords = (keywordOf, node, dialect, inputs, tolerant) => {
  * that's missing something is lowered once it's there.
  */
 class Lowerer {
-  /** @type JsonSchemaSession */
+  /** @type JsonSchemaHyperjump */
   #session;
 
   /** @type Kernel["schemas"] */
@@ -288,7 +289,7 @@ class Lowerer {
   // resource, so they're only worked out once
 
   /**
-   * @param {JsonSchemaSession} session
+   * @param {JsonSchemaHyperjump} session
    */
   constructor(session) {
     this.#session = session;
@@ -570,7 +571,7 @@ class Lowerer {
     }
 
     const { jsonSchema } = this.#session;
-    const lowered = lowerKeywords((uri) => jsonSchema.getKeyword(uri), /** @type ObjectSchemaNode */ (node), /** @type Dialect */ (dialect), this.#inputs, false);
+    const lowered = lowerKeywords(jsonSchema.keywords, /** @type ObjectSchemaNode */ (node), /** @type Dialect */ (dialect), this.#inputs, false);
     if (this.#needs.size > 0) {
       return;
     }

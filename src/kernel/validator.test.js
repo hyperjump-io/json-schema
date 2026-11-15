@@ -6,7 +6,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { describe, test, beforeEach, beforeAll, afterAll, expect } from "vitest";
 import { VFileMessage } from "vfile-message";
 import { fromJson, jsonPointerGet } from "@hyperjump/browser";
-import { JsonSchema, outputErrorMessage, toVFileMessage } from "../json-schema.js";
+import { configureJsonSchema, outputErrorMessage, toVFileMessage } from "../json-schema.js";
 import idKeyword from "../keywords/id.js";
 import anchorKeyword from "../keywords/anchor.js";
 import dynamicAnchorKeyword from "../keywords/dynamicAnchor.js";
@@ -24,6 +24,7 @@ import { noUrl } from "../identifiers.js";
  * @import { DetailedValidationError, ValidationError } from "../output/validation-error.d.ts"
  * @import { DialectConfig } from "../dialect.d.ts"
  * @import { OutputFormat } from "../output/output-format.d.ts"
+ * @import { JsonSchema } from "../json-schema.d.ts"
  */
 
 const dialectUri = "https://example.com/dialect";
@@ -357,7 +358,7 @@ describe("Validator", () => {
   });
 
   beforeEach(() => {
-    jsonSchema = new JsonSchema({ allowRetrieval: [pathToFileURL(join(tmpdir(), "/")).href], dialects: [testDialect], keywords });
+    jsonSchema = configureJsonSchema({ allowRetrieval: [pathToFileURL(join(tmpdir(), "/")).href], dialects: [testDialect], keywords });
   });
 
   describe("validate", () => {
@@ -1044,7 +1045,7 @@ describe("Validator", () => {
     test("x- keywords are annotations if unknown keywords are errors", async () => {
       for (const unknownKeywords of /** @type const */ (["error", "ignore"])) {
         const strictDialectUri = `https://example.com/${unknownKeywords}-dialect`;
-        const jsonSchema = new JsonSchema({
+        const jsonSchema = configureJsonSchema({
           allowRetrieval: [pathToFileURL(join(tmpdir(), "/")).href],
           dialects: [testDialect, { uri: strictDialectUri, keywords: {}, unknownKeywords }],
           keywords
@@ -1659,7 +1660,7 @@ describe("Validator", () => {
       const compiled = await compile(jsonSchema, await schemaFile({ type: "number" }));
       const serialized = serialize(compiled);
 
-      expect(() => restore(new JsonSchema(), serialized)).to.throw("isn't supported");
+      expect(() => restore(configureJsonSchema(), serialized)).to.throw("isn't supported");
     });
 
     test("a restored validator evaluates escape hatches", async () => {
@@ -1676,12 +1677,12 @@ describe("Validator", () => {
       const compiled = await compile(jsonSchema, await schemaFile({ sorted: "ascending" }));
       const serialized = serialize(compiled);
 
-      const other = new JsonSchema({ dialects: [testDialect], keywords: [...keywords, { ...sortedKeyword, evaluate: undefined }] });
+      const other = configureJsonSchema({ dialects: [testDialect], keywords: [...keywords, { ...sortedKeyword, evaluate: undefined }] });
       expect(() => restore(other, serialized)).to.throw("needs 'evaluate'");
     });
 
     test("compiling needs the keywords of escape hatches to have evaluate", async () => {
-      const other = new JsonSchema({ allowRetrieval: [pathToFileURL(join(tmpdir(), "/")).href], dialects: [testDialect], keywords: [...keywords, { ...sortedKeyword, evaluate: undefined }] });
+      const other = configureJsonSchema({ allowRetrieval: [pathToFileURL(join(tmpdir(), "/")).href], dialects: [testDialect], keywords: [...keywords, { ...sortedKeyword, evaluate: undefined }] });
       await expect(compile(other, await schemaFile({ sorted: "ascending" }))).rejects.toThrow("needs 'evaluate'");
     });
 

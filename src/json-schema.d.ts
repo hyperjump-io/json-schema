@@ -3,7 +3,7 @@ import type { Keyword } from "./keyword.d.ts";
 import type { Dialect, DialectConfig, DialectExtension, DialectKeywords, DialectSchema, UnknownKeywords, Vocabulary, VocabularyConfig } from "./dialect.d.ts";
 import type { Format } from "./format.d.ts";
 import type { SchemaRegistry } from "./registry/schema-registry.d.ts";
-import type { JsonSchemaSession, SchemaMediaTypes, SessionOptions } from "./session.d.ts";
+import type { SchemaMediaTypes } from "./session.d.ts";
 
 export { outputErrorMessage, toVFileMessage } from "./output/validation-error.js";
 export { SchemaError } from "./schema/schema-error.js";
@@ -52,6 +52,15 @@ export type JsonSchemaConfig<D extends DialectConfig<any, any, any> = DialectCon
    * the dialects bring. One here replaces a dialect's.
    */
   vocabularies?: Record<string, VocabularyConfig>;
+
+  /**
+   * Schemas every session sees, like custom meta-schemas. A session sees
+   * them with its own `registry`, as one registry, so a schema in either
+   * can use a dialect a schema in the other defines. Give it the schema
+   * type of the dialects, like `new SchemaRegistry<V1Schema>()`, so its
+   * schemas are checked.
+   */
+  registry?: SchemaRegistry<any>;
 };
 
 /**
@@ -83,33 +92,28 @@ export type AnySchema = boolean | { readonly [property: string]: ReadonlyJson };
 export type SchemaTypeOf<J> = J extends JsonSchema<infer S> ? S : never;
 
 /**
- * Creates a `JsonSchema`. Its schema type is the union of its dialects'
- * ({@link DialectSchema}), so `new JsonSchema({ dialects: [v1Dialect] })` is
- * a `JsonSchema<V1Schema>`, and a schema an operation is given as a value
- * is checked against it.
+ * Create a `JsonSchema`. Its schema type is the union of its dialects'
+ * ({@link DialectSchema}), so `configureJsonSchema({ dialects: [v1Dialect] })`
+ * is a `JsonSchema<V1Schema>`, and a schema an operation is given as a
+ * value is checked against it. `M` is the config's media types, which a
+ * session's documents can be in.
+ *
+ * @throws Error if a dialect is in the config more than once, or a dialect
+ * or vocabulary names a keyword that has no definition.
  */
-export type JsonSchemaConstructor = {
-  // Without a default for D, which TypeScript would pick instead of
-  // inferring it when a dialect in the config has a function with untyped
-  // parameters
-  // `M` is the config's media types, which a session's documents can be
-  // in
-  new<const D extends AnyDialectConfig, M extends MediaTypePlugin<any> = never>(config?: JsonSchemaConfig<D> & { mediaTypes?: readonly M[] }): JsonSchema<AnyDialectConfig extends D ? AnySchema : DialectSchema<D>, M>;
-
-  // For `class MyJsonSchema extends JsonSchema`, which needs a signature
-  // without type parameters. A subclass's schemas are `any`.
-  new (config?: JsonSchemaConfig): JsonSchema;
-  readonly prototype: JsonSchema;
-};
-
-export const JsonSchema: JsonSchemaConstructor;
+// Without a default for D, which TypeScript would pick instead of inferring
+// it when a dialect in the config has a function with untyped parameters
+export function configureJsonSchema<const D extends AnyDialectConfig, M extends MediaTypePlugin<any> = never>(
+  config?: JsonSchemaConfig<D> & { mediaTypes?: readonly M[] }
+): JsonSchema<AnyDialectConfig extends D ? AnySchema : DialectSchema<D>, M>;
 
 /**
  * What decides how schemas are read: definitions, a registry, and how
  * schemas are retrieved. `S` is the type of its schemas, from its dialects.
- * Operations, like `validate` and `bundle`, are functions that take it.
+ * It's a frozen value. Sessions (`JsonSchemaHyperjump`) and operations, like `validate`
+ * and `bundle`, are functions that take it.
  */
-export interface JsonSchema<S = any, M extends MediaTypePlugin<any> = MediaTypePlugin> {
+export type JsonSchema<S = any, M extends MediaTypePlugin<any> = MediaTypePlugin> = {
   /**
    * The config it was created with. It's a frozen copy, with frozen copies
    * of its lists, so changing the object it was created with doesn't
@@ -129,64 +133,28 @@ export interface JsonSchema<S = any, M extends MediaTypePlugin<any> = MediaTypeP
   readonly stack: Fetcher;
 
   /**
-   * Start a session for retrieving and browsing schemas. Dialects built
-   * from meta-schemas belong to the session, like the documents it
-   * retrieves. Operations given the session share them.
+   * The keyword definitions, by URI: the config's, then the ones the
+   * dialects and vocabularies bring
    */
-  session(options?: SessionOptions): JsonSchemaSession<S, M>;
+  readonly keywords: Readonly<Record<string, Keyword>>;
+
+  /** The format definitions, by URI, like `keywords` */
+  readonly formats: Readonly<Record<string, Format>>;
 
   /**
-   * Schemas every session sees, like custom meta-schemas, after the
-   * session's own `registry`. It starts empty. Change it by replacing it
-   * with a new registry (`with`, `without`, `concat`). A session sees the
-   * registry this was when the session was created.
-   *
-   * It has the `JsonSchema`'s schema type, so a schema added to it with
-   * `jsonSchema.registry = jsonSchema.registry.with(schema)` is checked.
-   * Any registry can be assigned to it.
+   * The config's dialects, with their definitions named by URI. They're by
+   * identifier: the URI without a fragment, normalized. A dialect a session
+   * built from its meta-schema isn't here (see `getDialect`).
    */
-  get registry(): SchemaRegistry<S>;
-  set registry(value: SchemaRegistry<any>);
-
-  /** Whether there's a keyword definition with this URI */
-  hasKeyword(uri: string): boolean;
+  readonly dialects: Readonly<Record<string, Dialect>>;
 
   /**
-   * Get a keyword definition.
-   *
-   * @throws Error if the keyword isn't in the config or a dialect.
+   * The vocabularies `$vocabulary` can use, from the config or a dialect,
+   * with their definitions named by URI. They're by identifier, like
+   * `dialects`.
    */
-  getKeyword(uri: string): Keyword;
-
-  /** Whether there's a format definition with this URI */
-  hasFormat(uri: string): boolean;
-
-  /**
-   * Get a format definition.
-   *
-   * @throws Error if the format isn't in the config or a dialect.
-   */
-  getFormat(uri: string): Format;
-
-  /**
-   * Whether a dialect is in the config. A dialect a session built from its
-   * meta-schema isn't.
-   */
-  hasDialect(uri: string): boolean;
-
-  /**
-   * Get a dialect from the config, with its definitions named by URI.
-   *
-   * @throws Error if the dialect isn't in the config.
-   */
-  getDialect(uri: string): Dialect;
-
-  /**
-   * A vocabulary `$vocabulary` can use, from the config or a dialect, with
-   * its definitions named by URI
-   */
-  getVocabulary(uri: string): Vocabulary | undefined;
-}
+  readonly vocabularies: Readonly<Record<string, Vocabulary>>;
+};
 
 declare module "unist" {
   interface Data {

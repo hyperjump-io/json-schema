@@ -5,7 +5,7 @@ import { SchemaRegistry } from "./schema-registry.js";
 
 /**
  * @import { JsonSchema } from "../json-schema.d.ts"
- * @import { JsonSchemaSession } from "../session.d.ts"
+ * @import { JsonSchemaHyperjump } from "../session.d.ts"
  * @import { JsonSchemaDocumentNode } from "../schema/schema-ast.d.ts"
  * @import { ReadonlyJson } from "@hyperjump/browser"
  * @import { SchemaRegistry as SchemaRegistryType } from "./schema-registry.d.ts"
@@ -18,24 +18,24 @@ import { SchemaRegistry } from "./schema-registry.js";
  * The schemas a session finds in the registries it sees
  */
 export class SessionRegistries {
-  /** @type JsonSchemaSession */
+  /** @type JsonSchemaHyperjump */
   #session;
 
   /**
-   * The registries this session sees: its own, then the JsonSchema's as it
-   * was when the session was created
+   * The session's own registry, if it has one. The session sees it with the
+   * config's registry, as one registry.
    *
-   * @type [SchemaRegistry | undefined, SchemaRegistry]
+   * @type SchemaRegistry | undefined
    */
-  #registries;
+  #registry;
 
   /**
-   * Their indexes, which are made the first time the session looks for a
-   * schema, so a session that never does doesn't identify anything
+   * The registry's index, which is made the first time the session looks
+   * for a schema, so a session that never does doesn't identify anything
    *
-   * @type RegistryIndex[] | undefined
+   * @type RegistryIndex | undefined
    */
-  #indexes;
+  #index;
 
   /**
    * Schemas operations were given as values, each in a registry of its own,
@@ -54,32 +54,29 @@ export class SessionRegistries {
   #documents;
 
   /**
-   * @param {JsonSchemaSession} session
-   * @param {SchemaRegistry} [sessionRegistry]
+   * @param {JsonSchemaHyperjump} session
+   * @param {SchemaRegistry} [registry]
    */
-  constructor(session, sessionRegistry) {
-    const instanceRegistry = session.jsonSchema.registry;
-
+  constructor(session, registry) {
     this.#session = session;
+    this.#registry = registry;
     this.#documents = new Map();
-    this.#registries = [sessionRegistry === instanceRegistry ? undefined : sessionRegistry, instanceRegistry];
     this.#values = [];
   }
 
   /**
    * Add a schema given as a value. It's found by a new `urn:uuid:` URI,
-   * which identifies it if it doesn't have an `$id`. One whose `$id` a
-   * registry the session sees also has is an error, even if they're
-   * identical, so a value can't replace a schema from a registry.
+   * which identifies it if it doesn't have an `$id`. It can use the dialects
+   * the registry's schemas define. One whose `$id` the registry also has is
+   * an error, even if they're identical, so a value can't replace a schema
+   * from a registry.
    *
    * @type (schema: ReadonlyJson) => string
-   * @throws Error if a registry has a schema identified by its `$id`
+   * @throws Error if the registry has a schema identified by its `$id`
    */
   addValue(schema) {
     const uri = toId(`urn:uuid:${crypto.randomUUID()}`);
-    const jsonSchema = this.#session.jsonSchema;
-    const instanceIndex = registryIndex(jsonSchema, this.#registries[1]);
-    const index = new RegistryIndex(jsonSchema, new SchemaRegistry().with(schema, { retrievalUri: uri }), instanceIndex);
+    const index = new RegistryIndex(this.#session.jsonSchema, new SchemaRegistry().with(schema, { retrievalUri: uri }), this.#registryIndex());
     this.#values.push(index);
 
     const id = index.lookup(uri)?.uri;
@@ -90,15 +87,15 @@ export class SessionRegistries {
     return uri;
   }
 
+  /** @type () => RegistryIndex */
+  #registryIndex() {
+    this.#index ??= registryIndex(this.#session.jsonSchema, this.#registry);
+    return this.#index;
+  }
+
   /** @type () => RegistryIndex[] */
   #registryIndexes() {
-    if (!this.#indexes) {
-      const jsonSchema = this.#session.jsonSchema;
-      const [sessionRegistry, instanceRegistry] = this.#registries;
-      const instanceIndex = registryIndex(jsonSchema, instanceRegistry);
-      this.#indexes = sessionRegistry ? [registryIndex(jsonSchema, sessionRegistry, instanceIndex), instanceIndex] : [instanceIndex];
-    }
-    return this.#values.length === 0 ? this.#indexes : [...this.#values, ...this.#indexes];
+    return this.#values.length === 0 ? [this.#registryIndex()] : [...this.#values, this.#registryIndex()];
   }
 
   /**
@@ -189,7 +186,7 @@ export class SessionRegistries {
       // identified, with any others. If it didn't, it's still a problem.
       throw indexed.error;
     }
-    if (Object.values(document.embedded).every((resource) => resource.dialectUri === undefined || jsonSchema.hasDialect(resource.dialectUri))) {
+    if (Object.values(document.embedded).every((resource) => resource.dialectUri === undefined || resource.dialectUri in jsonSchema.dialects)) {
       let documents = sharedDocuments.get(jsonSchema);
       if (!documents) {
         documents = new WeakMap();
@@ -203,38 +200,39 @@ export class SessionRegistries {
 }
 
 /**
- * Each JsonSchema's index of each registry it's used with, by the index of
- * the JsonSchema's registry whose dialects it can use, if any. They're all
- * held weakly, so a registry that was only used for one session can go
- * away.
+ * Each JsonSchema's index of the registry its sessions see with each
+ * session registry, and its index of its config's registry alone, by the
+ * JsonSchema. They're held weakly, so a registry that was only used for one
+ * session can go away.
  *
- * @type WeakMap<JsonSchema, WeakMap<RegistryIndex | JsonSchema, WeakMap<SchemaRegistry, RegistryIndex>>>
+ * @type WeakMap<JsonSchema, WeakMap<SchemaRegistry | JsonSchema, RegistryIndex>>
  */
 const registryIndexes = new WeakMap();
 
 /**
- * A registry is indexed the first time a session uses it.
+ * A registry is indexed the first time a session uses it. A session sees
+ * the config's registry and its own as one registry, so a schema in either
+ * can use a dialect a schema in the other defines.
  *
- * @type (jsonSchema: JsonSchema, registry: SchemaRegistry, dialectsFrom?: RegistryIndex) => RegistryIndex
+ * @type (jsonSchema: JsonSchema, registry: SchemaRegistry | undefined) => RegistryIndex
  */
-const registryIndex = (jsonSchema, registry, dialectsFrom) => {
-  let byDialects = registryIndexes.get(jsonSchema);
-  if (!byDialects) {
-    byDialects = new WeakMap();
-    registryIndexes.set(jsonSchema, byDialects);
-  }
-
-  const key = dialectsFrom ?? jsonSchema;
-  let indexes = byDialects.get(key);
+const registryIndex = (jsonSchema, registry) => {
+  let indexes = registryIndexes.get(jsonSchema);
   if (!indexes) {
     indexes = new WeakMap();
-    byDialects.set(key, indexes);
+    registryIndexes.set(jsonSchema, indexes);
   }
 
-  let index = indexes.get(registry);
+  const key = registry ?? jsonSchema;
+  let index = indexes.get(key);
   if (!index) {
-    index = new RegistryIndex(jsonSchema, registry, dialectsFrom);
-    indexes.set(registry, index);
+    const configRegistry = jsonSchema.config.registry;
+    let seen = configRegistry ?? registry ?? new SchemaRegistry();
+    if (configRegistry !== undefined && registry !== undefined) {
+      seen = configRegistry.concat(registry);
+    }
+    index = new RegistryIndex(jsonSchema, seen);
+    indexes.set(key, index);
   }
 
   return index;
@@ -252,7 +250,7 @@ const sharedDocuments = new WeakMap();
  * A registry entry is resolved like a retrieved schema, with its retrieval
  * URI as the document's URI.
  *
- * @type (session: JsonSchemaSession, indexed: IndexedEntry) => Promise<JsonSchemaDocumentNode>
+ * @type (session: JsonSchemaHyperjump, indexed: IndexedEntry) => Promise<JsonSchemaDocumentNode>
  */
 const resolveEntry = async (session, { entry, uri }) => {
   const documentUri = entry.retrievalUri ?? uri;

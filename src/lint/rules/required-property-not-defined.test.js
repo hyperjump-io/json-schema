@@ -3,7 +3,8 @@ import { unified } from "unified";
 import { VFile } from "vfile";
 import { rejsonParse } from "@hyperjump/browser";
 import { linter } from "../test-linter.js";
-import { JsonSchema } from "../../json-schema.js";
+import { configureJsonSchema } from "../../json-schema.js";
+import { JsonSchemaHyperjump } from "../../session.js";
 import { SchemaRegistry } from "../../registry/schema-registry.js";
 import { jsonSchemaResolve } from "../../schema/resolve.js";
 import { draft202012Dialect } from "../../dialects/draft-2020-12/index.js";
@@ -143,7 +144,7 @@ const reasons = async (json) => (await lint(json)).messages.map((message) => mes
  * @type (json: string) => Promise<string[]>
  */
 const reasonsWithBase = async (json) => {
-  const jsonSchema = new JsonSchema({ dialects: [draft202012Dialect] });
+  const jsonSchema = configureJsonSchema({ dialects: [draft202012Dialect] });
   const registry = new SchemaRegistry().with({
     $schema: draft2020,
     $id: "https://example.com/base",
@@ -157,7 +158,7 @@ const reasonsWithBase = async (json) => {
   const file = new VFile({ path: "/schemas/a.schema.json", value: json });
   const processor = unified()
     .use(rejsonParse)
-    .use(jsonSchemaResolve, { session: jsonSchema.session({ registry }) })
+    .use(jsonSchemaResolve, { session: new JsonSchemaHyperjump(jsonSchema, { registry }) })
     .use(requiredPropertyNotDefined);
   await processor.run(processor.parse(file), file);
   return file.messages.map((message) => message.reason);

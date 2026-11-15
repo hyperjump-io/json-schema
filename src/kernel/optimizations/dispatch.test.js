@@ -1,6 +1,6 @@
 import { describe, test, expect } from "vitest";
 import { fromJson } from "@hyperjump/browser";
-import { JsonSchema } from "../../json-schema.js";
+import { configureJsonSchema } from "../../json-schema.js";
 import { SchemaRegistry } from "../../registry/schema-registry.js";
 import { v1Dialect, v1DialectUri } from "../../dialects/v1/index.js";
 import { astInstance, jsInstance } from "../instance.js";
@@ -18,7 +18,7 @@ import { noUrl } from "../../identifiers.js";
  * @import { Mode } from "../optimize.js"
  */
 
-const jsonSchema = new JsonSchema({ dialects: [v1Dialect] });
+const jsonSchema = configureJsonSchema({ dialects: [v1Dialect] });
 
 const fast = { fast: true, plugins: false, annotations: false };
 
