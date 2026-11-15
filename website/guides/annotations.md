@@ -35,11 +35,8 @@ node.data.annotations;
 // Map { "https://json-schema.org/keyword/title" => ["Person"] }
 ```
 
-The tree is a [unist](https://github.com/syntax-tree/unist) tree. You can
-use unist utilities like
-[`unist-util-visit`](https://github.com/syntax-tree/unist-util-visit) to find
-the nodes you need. Each node has a `jsonType`, a `location`, and
-`children`.
+Each part of the value has its own node, with its own annotations. See
+[Finding a node](#finding-a-node) for how to get to the one you want.
 
 With `input: "json"`, it does the same for JSON text, and the nodes have
 positions. With `input: "node"`, it annotates a node you already have, and
@@ -77,6 +74,44 @@ dialect:
 
 ```typescript
 annotation(config, node, "https://json-schema.org/keyword/title");
+```
+
+## Finding a node
+
+`node` is the whole value. The `title` of the `name` property is on the
+node for `name`, so get to that node first. The tree is a JSON AST from
+[`@hyperjump/browser`](https://github.com/hyperjump-io/browser/blob/v2/website/parsing.md),
+so its functions read it. `jsonPointerGet` takes a JSON Pointer, and
+`jsonStep` takes one property name or array index:
+
+```typescript
+import { jsonPointerGet, jsonStep } from "@hyperjump/browser";
+
+annotation(config, jsonPointerGet("/name", node), "title"); // ["Name"]
+annotation(config, jsonStep("name", node), "title"); // ["Name"]
+```
+
+`jsonObjectEntries` and `jsonArrayIter` go through an object's properties
+and an array's items.
+
+To check every node, walk the tree. It's a
+[unist](https://github.com/syntax-tree/unist) tree, so unist utilities like
+[`unist-util-visit`](https://github.com/syntax-tree/unist-util-visit) work
+on it. Its nodes have the type `"json"`. With `input: "json"`, each node has
+its position in the text, so you can say where something is. This finds the
+values a schema says are deprecated:
+
+```typescript
+import { visit } from "unist-util-visit";
+
+const annotatePerson = await annotator(config, "https://example.com/person", { input: "json" });
+const { node } = annotatePerson(text);
+
+visit(node, "json", (valueNode) => {
+  if (annotation(config, valueNode, "deprecated").includes(true)) {
+    console.log(`Line ${valueNode.position.start.line} is deprecated`);
+  }
+});
 ```
 
 ## Which annotations are kept
