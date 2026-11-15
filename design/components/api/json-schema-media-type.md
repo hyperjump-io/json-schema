@@ -1,6 +1,7 @@
 # JSON Schema as a media type
 
-Proposed 2026-11-14. Nothing here is decided or built yet.
+Proposed 2026-11-14. Nothing here is built yet. Sharing the HTTP cache is
+decided. The rest isn't.
 
 Browser already has a model for a kind of document: a session is a
 `Hyperjump`, its config is a plain value, and a media type plugin knows how
@@ -55,25 +56,56 @@ const session = new Hyperjump({ ...config, registry });
   `config.mediaTypes`, instead of from `JsonSchema<S, M>`. The config's
   media types, `M`, are the rest of the list.
 
-### Decision needed: sharing the HTTP cache
+### Sharing the HTTP cache
 
-Every session of a `JsonSchema` shares its stack, which has an HTTP cache
-in Node.js (`#default-stack`). It's what keeps `validator(jsonSchema, uri)`
-from retrieving again on every call, because each call has a session of
-its own. A `Hyperjump` without a `stack` makes a stack of its own, so with a
-plain config, each call would start with an empty cache.
+Decided 2026-11-14: as browser does it. Calls share an HTTP cache when the
+config they're given has a `stack` with one, and there's none by default.
 
-- The config has a `stack`, and the docs say to make the config once. It's
-  easy to miss, and a config made in a function that's called for each
-  request has a cache for each request.
-- Browser's default stack is shared by every session without one. That's
-  module state, which [No global state](../../principles/no-global-state.md)
-  rules out.
-- `jsonSchemaMediaTypes` makes a stack and returns it with the plugins, as
-  a config to spread. A media type plugin shouldn't decide how things are
+```js
+const config = {
+  mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }),
+  // Only for calls to share an HTTP cache
+  stack: compose(httpCache())(defaultStack())
+};
+```
+
+- Every session of a `JsonSchema` shares its stack, which has an HTTP
+  cache in Node.js (`#default-stack`). That decides for the application
+  that its sessions belong together, which browser leaves to whoever builds
+  the stack (see browser's `design/principles/state-lifetimes.md`). It's
+  also the only reason a `JsonSchema` has a `stack`. Stage 1 removes
+  `src/default-stack.js`, `src/default-stack.browser.js`, the
+  `#default-stack` import, and the `stack` member.
+- Browser's config is a plain value, and sessions share a stack by being
+  made from the same one (`{ stack: defaultStack() }`). Its default stack
+  has no HTTP cache, because it lives as long as its session, and a web
+  browser caches already (see browser's `design/components/sessions.md`).
+- Without a `stack`, each call's session has a default stack of its own, so
+  a remote schema is retrieved again for each compile. The results are the
+  same. Only `http:` and `https:` are cached at all: a file is read each
+  time, and a registry's schema isn't retrieved, so it matters for remote
+  schemas compiled more than once, like a service that compiles for each
+  request. A config made in a function that's called for each request has
+  a cache for each request, which is no cache, not a wrong one. In a web
+  browser, nothing changes, because the platform's cache is under every
+  stack.
+- The docs show the stack with a cache on the retrieval page, as a way to
+  retrieve less, not in the simple path. Most schemas are files or in a
+  registry.
+
+Rejected:
+
+- One default stack for every session without one, in browser or here.
+  Browser rejected it: sessions that never said they belong together would
+  share the scheduler's limits and whatever else the stack keeps. It's also
+  module state (see [No global state](../../principles/no-global-state.md)).
+- `jsonSchemaMediaTypes` making a stack and returning it with the plugins,
+  as a config to spread. A media type plugin doesn't decide how things are
   retrieved, and two of them would each bring one.
-- A function that makes the whole config (`jsonSchemaConfig(…)`), with the
-  stack, is `configureJsonSchema` again under another name.
+- A function that makes the whole config with the stack
+  (`jsonSchemaConfig(…)`). It's `configureJsonSchema` under another name,
+  and browser rejected a class that holds a configuration and makes
+  sessions, because a plain object holds it already.
 
 ## Stage 2: registries in browser
 
