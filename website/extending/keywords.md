@@ -1,11 +1,11 @@
 # Custom keywords
 
 A keyword is a plain object with a URI. Give it a name in a dialect with
-`extendDialect`. That returns a new dialect. Put the new dialect in the
-config in place of the original.
+`extendDialect`. That returns a new dialect. Give the new dialect to
+`jsonSchemaMediaTypes` in place of the original.
 
 ```typescript
-import { configureJsonSchema, extendDialect } from "@hyperjump/json-schema";
+import { extendDialect, jsonSchemaMediaTypes } from "@hyperjump/json-schema";
 import type { Keyword } from "@hyperjump/json-schema";
 import { v1Dialect } from "@hyperjump/json-schema/v1";
 
@@ -20,9 +20,11 @@ const evenKeyword = {
   lower: (even) => even ? { op: "multipleOf", divisor: 2 } : { op: "pass" }
 } satisfies Keyword<boolean>;
 
-const jsonSchema = configureJsonSchema({
-  dialects: [extendDialect(v1Dialect, { keywords: { even: evenKeyword } })]
-});
+const config = {
+  mediaTypes: jsonSchemaMediaTypes({
+    dialects: [extendDialect(v1Dialect, { keywords: { even: evenKeyword } })]
+  })
+};
 ```
 
 ```json
@@ -40,10 +42,12 @@ what its value is in a schema. See
 [Schemas that use it](#schemas-that-use-it).
 
 To replace a keyword a dialect has, put a definition with the same URI in
-the `keywords` config. It's used in every dialect that has the keyword.
+the `keywords` option of `jsonSchemaMediaTypes`. It's used in every dialect that has the keyword.
 
 ```typescript
-const jsonSchema = configureJsonSchema({ dialects: [v1Dialect], keywords: [myTypeKeyword] });
+const config = {
+  mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect], keywords: [myTypeKeyword] })
+};
 ```
 
 ## The parts of a keyword
@@ -215,7 +219,7 @@ them, but they can't see inside a predicate or an opaque operation.
 
 ## Schemas that use it
 
-A `JsonSchema` with your dialect checks schemas passed to it as values. It
+A config with your dialect checks schemas passed to operations as values. It
 uses your keyword's type. See
 [Schema types](../guides/schema-types.md#custom-keywords). To name the
 type, pass your keywords to the dialect's type. Use the names they have in

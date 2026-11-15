@@ -3,7 +3,7 @@ import type { JsonType, ReadonlyJson } from "@hyperjump/browser";
 /**
  * The definition of a format for the `format` keyword. A dialect maps format
  * names to these by URI. Like keywords, formats are stateless, so one
- * definition can be shared by every `JsonSchema` instance and every dialect.
+ * definition can be shared by every config and every dialect.
  */
 export type Format = {
   /**

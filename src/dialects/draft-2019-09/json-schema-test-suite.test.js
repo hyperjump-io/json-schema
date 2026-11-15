@@ -2,10 +2,10 @@ import { describeValidationTestSuite, testSuiteJsonSchema } from "../../../test/
 import { draft201909Dialect, draft201909DialectUri } from "./index.js";
 
 /**
- * @import { JsonSchema } from "../../json-schema.d.ts"
+ * @import { JsonSchemaConfig } from "../../json-schema.d.ts"
  */
 
-/** @type (validateFormats: boolean) => JsonSchema */
+/** @type (validateFormats: boolean) => JsonSchemaConfig */
 const draft201909JsonSchema = (validateFormats) => {
   const jsonSchema = testSuiteJsonSchema({ validateFormats, dialects: [draft201909Dialect] });
   return jsonSchema;

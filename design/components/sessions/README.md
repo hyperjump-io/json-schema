@@ -1,6 +1,6 @@
 # Sessions
 
-With one document cache for a `JsonSchema`'s whole life, a registry for
+With one document cache for a config's whole life, a registry for
 one compilation would be visible to compilations running at the same time,
 and nothing could be removed without leaving resolved documents behind that
 depended on it. So state is separated by how long it lives.
@@ -9,20 +9,19 @@ depended on it. So state is separated by how long it lives.
 
 | Level | What it is | What it has |
 | --- | --- | --- |
-| Long-lived | `JsonSchema` | keywords and their schemas, formats, dialects, output formats, the `registry` every session sees, the config, and the stack every session retrieves through |
-| Session | a `Hyperjump` made by `new JsonSchemaHyperjump(jsonSchema)` | browser's session, its own `registry`, the documents it retrieves, its resources, and the dialects it builds from meta-schemas |
+| Long-lived | the config | the JSON Schema media types, with the definitions (keywords and their schemas, formats, dialects), the `registry` every call sees, and the stack, if it has one |
+| Session | a `Hyperjump` made by `new JsonSchemaHyperjump(config)` | browser's session, its config's `registry`, the documents it retrieves, its resources, and the dialects it builds from meta-schemas |
 
 - The long-lived level only has state that doesn't depend on a session.
-  Definitions and the stack, with its HTTP cache, are the same for every
-  session. Anything that depends on registries, including every resolved
+  Definitions, and a stack with an HTTP cache if the config has one, are
+  the same for every session made from it (see
+  [JSON Schema as a media type](../api/json-schema-media-type.md)). Anything that depends on registries, including every resolved
   document, belongs to a session and goes away with it, so nothing is ever
   left behind.
-- `JsonSchema` isn't a `Hyperjump`. Browser has one level: a session, made
-  from a configuration that's a value. `JsonSchema` keeps the
-  configuration and the stack, and makes a `Hyperjump` for each session
-  from them (see [Browser v2](../browser-v2.md)).
-- A session is a `Hyperjump`: a subclass with the `JsonSchema` and its own
-  `fetch`. So browser's `get`, `getDocument`, and `jref*` functions take
+- The config is browser's: browser has one level, a session, made from a
+  configuration that's a value, and a session is made from the config
+  (see [Browser v2](../browser-v2.md)).
+- A session is a `Hyperjump`: a subclass with its own `fetch`. So browser's `get`, `getDocument`, and `jref*` functions take
   it, schemas are browsed with browser's own functions, and it's traced,
   observed, and closed like any browser session (`new Trace(session)`).
   - `fetch` asks the registries, then `Hyperjump`'s `fetch`. A registry's
@@ -44,7 +43,7 @@ depended on it. So state is separated by how long it lives.
   documents checks.
 - There's no default session. Browsing needs a session, because a node
   needs one to follow references.
-- An operation takes a `JsonSchema` (`compile(jsonSchema, uri, { registry })`)
+- An operation takes the config (`compile(config, uri, { registry })`)
   and starts a session for that call, so each call sees changes, and calls
   that run at the same time can't see each other's registries. It never
   takes a session (see [Validation API](../validation-api/README.md)). A compiled schema doesn't need its session
@@ -53,21 +52,22 @@ depended on it. So state is separated by how long it lives.
   [Validation API](../validation-api/README.md)).
 - A schema with problems fails its retrieval with its `SchemaError`, which
   is what `get`, `getDocument`, and the operations throw. Nothing wraps it.
-- Dialects from the config belong to `JsonSchema`, and its `getDialect`
-  only finds those. A dialect built from a meta-schema belongs to the
+- Dialects the media types were made with are in their definitions, and
+  they're found there first. A dialect built from a meta-schema belongs to the
   session that built it. `getDialect(session, uri)` finds both, and it's
   what the resolver and the compiler use.
 - Browser gives a media type plugin the session a document is being
   retrieved in (`parse(response, session)`), so the schema media type
-  plugins resolve schemas in that session. Retrieving a schema in a session
-  that isn't a `JsonSchema`'s is an error.
+  plugins resolve schemas in that session, with the definitions in its
+  config. Retrieving a schema in a session that isn't a
+  `JsonSchemaHyperjump` is an error, until registries are in browser.
 - What a session finds is typed by its media types. A reference can lead to
   any document the session can read, so `get` and the `jref*` functions
-  return a schema's node, a JRef node, a JSON node, or a node of one of the
-  config's media types, and a schema's node is told by its `type`,
+  return a schema's node, a JSON node, or a node of another of the config's
+  media types, like JRef, and a schema's node is told by its `type`,
   `"json-schema"`.
-  - `JsonSchema` and `JsonSchemaHyperjump` have a type parameter for the
-    config's media types, so those are in the type too.
+  - `JsonSchemaHyperjump<C>` has its config's type, so its media types are
+    in the type too.
   - A session that's only known as a `JsonSchemaHyperjump` could have any
     media types, so what it finds is `unknown`. `isSchemaNode` and
     `isSchemaDocument` narrow it, and they're what this package's own code

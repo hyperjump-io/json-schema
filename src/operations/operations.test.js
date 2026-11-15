@@ -1,6 +1,6 @@
 import { describe, test, expect } from "vitest";
 import { fromJs } from "@hyperjump/browser";
-import { configureJsonSchema } from "../json-schema.js";
+import { jsonSchemaMediaTypes } from "../json-schema.js";
 import { JsonSchemaHyperjump } from "../session.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
@@ -18,7 +18,7 @@ import { annotation } from "../session.js";
  * @import { BasicOutput } from "../output/output-format.d.ts"
  */
 
-const jsonSchema = configureJsonSchema({ allowRetrieval: [], dialects: [v1Dialect] });
+const jsonSchema = { mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }), allowRetrieval: [] };
 
 /** @type (properties: Record<string, Json>) => Record<string, Json> */
 const v1 = (properties) => ({ $schema: v1DialectUri, ...properties });
@@ -61,7 +61,11 @@ describe("operations", () => {
     });
 
     test("an $id the config's registry has is an error", async () => {
-      const other = configureJsonSchema({ allowRetrieval: [], dialects: [v1Dialect], registry: new SchemaRegistry().with(v1({ $id: "https://example.com/both" })) });
+      const other = {
+        mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }),
+        allowRetrieval: [],
+        registry: new SchemaRegistry().with(v1({ $id: "https://example.com/both" }))
+      };
 
       await expect(validate(other, v1({ $id: "https://example.com/both" }), 42)).rejects.toThrow("More than one registry has a schema identified as 'https://example.com/both'");
     });
@@ -75,7 +79,10 @@ describe("operations", () => {
     });
 
     test("a boolean schema", async () => {
-      const withDefault = configureJsonSchema({ allowRetrieval: [], dialects: [v1Dialect], defaultDialectUri: v1DialectUri });
+      const withDefault = {
+        mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect], defaultDialectUri: v1DialectUri }),
+        allowRetrieval: []
+      };
 
       expect(await validate(withDefault, true, 42)).to.equal(true);
       expect(await validate(withDefault, false, 42)).to.equal(false);

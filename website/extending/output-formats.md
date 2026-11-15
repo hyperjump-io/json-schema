@@ -41,7 +41,7 @@ const MESSAGES: OutputFormat<Messages> = () => {
   };
 };
 
-const result = await validate(jsonSchema, "https://example.com/person",
+const result = await validate(config, "https://example.com/person",
   { age: -1 }, { output: MESSAGES });
 ```
 

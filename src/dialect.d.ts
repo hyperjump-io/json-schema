@@ -2,12 +2,12 @@ import type { Keyword, KeywordValue, Shape } from "./keyword.d.ts";
 import type { Format } from "./format.d.ts";
 
 /**
- * A dialect as it's given to a {@link JsonSchema} in its config, with the
+ * A dialect as it's given to `jsonSchemaMediaTypes` in its options, with the
  * definitions it uses. A keyword or format can be a definition or a URI. A
- * URI means the definition comes from somewhere else: the config's
+ * URI means the definition comes from somewhere else: the options'
  * `keywords` or `formats`, or another dialect. A format named by a URI that
  * nothing defines isn't supported, like `hostname` without the full formats.
- * The `JsonSchema` keeps it as a {@link Dialect}, with URIs.
+ * The media types' definitions keep it as a {@link Dialect}, with URIs.
  *
  * Its type parameters are its keywords, URI, and what unknown keywords
  * mean, so its schema type ({@link DialectSchema}) comes from its
@@ -37,8 +37,8 @@ export type DialectConfig<
 
   /**
    * The vocabularies `$vocabulary` can use, by URI, for a dialect whose
-   * meta-schemas list them, like 2020-12. Every dialect of a `JsonSchema`
-   * sees them.
+   * meta-schemas list them, like 2020-12. Every dialect the media types are
+   * made with sees them.
    */
   vocabularies?: Record<string, VocabularyConfig>;
 };
@@ -70,7 +70,7 @@ export type VocabularyConfig = {
   assertFormats?: boolean;
 };
 
-/** A vocabulary as a {@link JsonSchema} keeps it, with URIs */
+/** A vocabulary as the media types' definitions keep it, with URIs */
 export type Vocabulary = {
   keywords: Readonly<Record<string, string>>;
   formats?: Readonly<Record<string, string>>;
@@ -82,7 +82,7 @@ export type Vocabulary = {
  * identified by its `$schema`, which is also the URI of the dialect's
  * meta-schema.
  *
- * Dialects that aren't in the {@link JsonSchema}'s config are built from
+ * Dialects the media types aren't made with are built from
  * the `$vocabulary` of their meta-schema, which is retrieved the first time
  * the dialect is used. This is how a dialect is read, with its definitions
  * named by URI. It's given as a {@link DialectConfig}.
@@ -120,8 +120,8 @@ export type Dialect = {
 
   /**
    * Whether `format` validates by default. It's `true` in v1 and `false` in
-   * most other dialects. In a dialect a `JsonSchema` has, it's the
-   * `validateFormats` config, if there is one.
+   * most other dialects. In a dialect the media types are made with, it's
+   * the `validateFormats` option, if there is one.
    */
   assertFormats?: boolean;
 };

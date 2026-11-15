@@ -7,24 +7,24 @@ import { annotateFunction, needsInstrumented, validateFunction, validatorOf } fr
  */
 
 /** @type typeof API.validate */
-export const validate = async (jsonSchema, schema, instance, options) => {
-  return /** @type any */ ((await validator(jsonSchema, schema, /** @type any */ (options)))(/** @type any */ (instance)));
+export const validate = async (config, schema, instance, options) => {
+  return /** @type any */ ((await validator(config, schema, /** @type any */ (options)))(/** @type any */ (instance)));
 };
 
 /** @type typeof API.validator */
-export const validator = async (jsonSchema, schema, options = {}) => {
-  const compiled = await compile(jsonSchema, schema, options);
+export const validator = async (config, schema, options = {}) => {
+  const compiled = await compile(config, schema, options);
   return validateFunction(validatorOf(compiled), options, needsInstrumented(options) ? await loadInstrumented() : undefined);
 };
 
 /** @type typeof API.annotate */
-export const annotate = async (jsonSchema, schema, instance, options) => {
-  return /** @type any */ ((await annotator(jsonSchema, schema, /** @type any */ (options)))(/** @type any */ (instance)));
+export const annotate = async (config, schema, instance, options) => {
+  return /** @type any */ ((await annotator(config, schema, /** @type any */ (options)))(/** @type any */ (instance)));
 };
 
 /** @type typeof API.annotator */
-export const annotator = async (jsonSchema, schema, options = {}) => {
-  const compiled = await compile(jsonSchema, schema, options);
+export const annotator = async (config, schema, options = {}) => {
+  const compiled = await compile(config, schema, options);
   return annotateFunction(validatorOf(compiled), options, await loadInstrumented());
 };
 

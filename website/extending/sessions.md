@@ -5,7 +5,7 @@ it, including the documents it retrieves and the dialects it builds from
 meta-schemas. All of that is thrown away with the session.
 
 Each operation, like `validator` or `bundle`, starts a session of its own.
-Start one yourself with `new JsonSchemaHyperjump(jsonSchema)` to:
+Start one yourself with `new JsonSchemaHyperjump(config)` to:
 
 - **Browse schemas** with the
   [`@hyperjump/browser`](https://github.com/hyperjump-io/browser/blob/v2/website/README.md)
@@ -17,7 +17,7 @@ Start one yourself with `new JsonSchemaHyperjump(jsonSchema)` to:
 ```typescript
 import { JsonSchemaHyperjump, get } from "@hyperjump/json-schema";
 
-const session = new JsonSchemaHyperjump(jsonSchema, { registry });
+const session = new JsonSchemaHyperjump({ ...config, registry });
 
 const name = await get(
   session,
@@ -25,13 +25,15 @@ const name = await get(
 );
 ```
 
-A session takes the same `registry` and `allowRetrieval` options as an
-operation.
+A session takes only a config. For a session with its own `registry` or
+`allowRetrieval`, give it a config that has them, like the example. That
+replaces the config's registry. If the config has one, keep it too with
+`registry: config.registry.concat(mine)`.
 
 A session sees documents as they were when it first retrieved them. Start
-a new session to see changes. In Node.js, HTTP responses are cached across
-sessions according to their caching headers, unless the config has a
-`stack` of its own.
+a new session to see changes. Sessions only share an HTTP cache when
+their config has a `stack` with one. See
+[Retrieving less](../guides/retrieval.md#retrieving-less).
 
 ## Browsing
 
@@ -48,8 +50,8 @@ from this package too:
 | `getDialect(session, uri)` | A dialect, from the config or from a meta-schema the session finds |
 | `annotation(session, node, keyword)` | A node's annotations. See [Annotations](../guides/annotations.md#reading-an-annotation). |
 
-A schema is found in the session's registry or the `JsonSchema`'s, and
-otherwise it's retrieved. `allowRetrieval` doesn't apply to a schema in a
+A schema is found in the config's registry, and otherwise it's
+retrieved. `allowRetrieval` doesn't apply to a schema in a
 registry.
 
 A session is a `Hyperjump`, browser's session, so you trace its requests,
@@ -64,7 +66,7 @@ const trace = new Trace(session);
 ### What you get isn't always a schema
 
 A reference can lead to any document the session can read, like a JSON
-file or a JRef document. So a node from `get` or a `jref` function might
+file, or a JRef document if the config has `jrefMediaType`. So a node from `get` or a `jref` function might
 not be a schema, and a document from `getDocument` might not be a schema
 document. Check with `isSchemaNode` and `isSchemaDocument`:
 
@@ -78,8 +80,9 @@ if (isSchemaNode(node)) {
 ```
 
 In TypeScript, the type of what you get comes from the session. A session
-from a `JsonSchema` you created gives a schema's node, a JRef node, or a
-JSON node, and a schema's node has the `type` `"json-schema"`. A session
+from a config you created gives a node of one of its media types: a
+schema's node, a JSON node, or another, like a JRef node if the config has
+`jrefMediaType`. A schema's node has the `type` `"json-schema"`. A session
 that's only typed as `JsonSchemaHyperjump`, like a function's parameter,
 could have any media types, so what it gives is `unknown` until you check
 it.
@@ -98,7 +101,7 @@ import {
 } from "@hyperjump/json-schema";
 import { visitReferences } from "@hyperjump/json-schema/lint";
 
-const session = new JsonSchemaHyperjump(jsonSchema);
+const session = new JsonSchemaHyperjump(config);
 const person = await getDocument(session, "https://example.com/person");
 if (!isSchemaDocument(person)) {
   throw Error("Not a schema");

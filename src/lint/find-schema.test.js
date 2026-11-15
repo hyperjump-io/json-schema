@@ -3,7 +3,7 @@ import { cwd } from "node:process";
 import { describe, test, beforeEach, expect } from "vitest";
 import { VFile } from "vfile";
 import { linter } from "./test-linter.js";
-import { configureJsonSchema } from "../json-schema.js";
+import { jsonSchemaMediaTypes } from "../json-schema.js";
 import { JsonSchemaHyperjump } from "../session.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
@@ -20,11 +20,11 @@ describe("findSchema", () => {
   let session;
 
   beforeEach(() => {
-    const jsonSchema = configureJsonSchema({
+    const jsonSchema = {
+      mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }),
       allowRetrieval: ["test:/", "file:///nothing-here/"],
-      dialects: [v1Dialect],
       stack: nodeTransport({ schemes: { "test:": fetcher(respond) } })
-    });
+    };
 
     const registry = new SchemaRegistry().with({
       $schema: v1DialectUri,
@@ -37,7 +37,7 @@ describe("findSchema", () => {
         embedded: { $id: "https://example.com/embedded", type: "boolean" }
       }
     });
-    session = new JsonSchemaHyperjump(jsonSchema, { registry });
+    session = new JsonSchemaHyperjump({ ...jsonSchema, registry });
   });
 
   describe("found", () => {

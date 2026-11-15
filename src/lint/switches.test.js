@@ -2,7 +2,7 @@ import { describe, test, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
 import { fromJs, rejsonParse, rejsonStringify } from "@hyperjump/browser";
-import { configureJsonSchema, extendDialect } from "../json-schema.js";
+import { jsonSchemaMediaTypes, extendDialect } from "../json-schema.js";
 import { JsonSchemaHyperjump } from "../session.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
 import { draft202012Dialect } from "../dialects/draft-2020-12/index.js";
@@ -58,11 +58,11 @@ const byKeyKeyword = {
   lower: (pairs) => ({ op: "keySwitch", cases: pairs, none: { op: "fail" }, unparsed: anyOf(pairs) })
 };
 
-const jsonSchema = configureJsonSchema({
-  dialects: [extendDialect(draft202012Dialect, {
+const jsonSchema = {
+  mediaTypes: jsonSchemaMediaTypes({ dialects: [extendDialect(draft202012Dialect, {
     keywords: { byKind: byKindKeyword, byType: byTypeKeyword, byKey: byKeyKeyword }
-  })]
-});
+  })] })
+};
 
 describe("the switches in lint", () => {
   describe("evaluated", () => {

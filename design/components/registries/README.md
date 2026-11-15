@@ -1,7 +1,7 @@
 # Registries (`SchemaRegistry`)
 
 A registry holds schemas that aren't retrieved from a URI. It's separate
-from `JsonSchema` so one registry can be shared by several `JsonSchema`s and
+from the config so one registry can be shared by several configs and
 sessions. A registry never changes. `with` and `without` return a new one,
 so the registries a session sees are its snapshot of them.
 
@@ -18,8 +18,8 @@ class SchemaRegistry<S = ReadonlyJson> {
 `S` is the type of the schemas it takes, like `V1Schema`, so schemas written
 in TypeScript are checked (see [Schema types](../schema-types.md)).
 
-Implemented in `src/registry/schema-registry.js`, with each `JsonSchema`'s
-index of a registry in `src/registry/registry-index.js`. A registry's
+Implemented in `src/registry/schema-registry.js`, with the index of a
+registry for some definitions in `src/registry/registry-index.js`. A registry's
 entries are in `src/registry/registry-entries.js`, which isn't exported. How
 a session finds schemas in the registries it sees is in
 `src/registry/session-registries.js`.
@@ -67,8 +67,8 @@ a session finds schemas in the registries it sees is in
   so an edit is `without` then `with`. The constructor is for creating a
   registry in one step, like the test suite does.
 - A schema is kept as JSON text. A value is stringified when it's added,
-  so changing it afterward doesn't change the registry, and everything a
-  `JsonSchema` caches from an entry stays right. A value that can't be
+  so changing it afterward doesn't change the registry, and everything
+  cached from an entry stays right. A value that can't be
   JSON, like one with a cycle, throws then instead of when a session finds
   it. Identifying and resolving a value costs a `JSON.parse` of its text
   instead of reading the value. Rejected: keeping the value, which a caller
@@ -108,13 +108,15 @@ a session finds schemas in the registries it sees is in
   what maps the registry's copy back to its file. Rejected: one document
   for both, which needs a registry entry to be something browser reads, or
   browser's cache to know about registries.
-- A session sees one registry: the config's `registry`, for schemas every
-  session sees, like custom meta-schemas, combined with `concat` with its
-  own (`new JsonSchemaHyperjump(jsonSchema, { registry })`, and the operations'
-  `registry` option). So a schema in either can use a dialect a schema in
-  the other defines. The combined registry's index is cached for the
-  `JsonSchema` by the session's registry, so a session doesn't index a
-  registry another one already did. Decided 2026-11-14. Before, the
+- A session sees one registry, its config's `registry`. An operation
+  combines the config's, for schemas every call sees, like custom
+  meta-schemas, with its `registry` option, with `concat`, before it makes
+  the session. So a schema in either can use a dialect a schema in the
+  other defines. A registry's index is cached for the definitions by the
+  registry, so a session doesn't index a registry another one already
+  did. A config and its own registry, or a session's, are combined for
+  each call, so a call's index is made again from cached identifications.
+  Decided 2026-11-14. Before, the
   `JsonSchema` had a `registry` property that was changed by assigning a
   new registry, and a session looked in two registries, with its own
   index borrowing dialects from the `JsonSchema`'s. Only the session's
@@ -134,8 +136,9 @@ a session finds schemas in the registries it sees is in
   iteration without `concat`, and `concat` without iteration, which leaves
   no way to list what's in a registry.
 - Lookup order is: embedded resources, the registry, then browser (the
-  session's documents, then the stack, with its HTTP cache). Two entries
-  found by the same URI are an error when the URI is looked up, so a
+  session's documents, then the stack, with its HTTP cache if it has
+  one). Two entries found by the same URI are an error when the URI is
+  looked up, so a
   session's registry can't replace a schema in the config's. Two with the
   same `retrievalUri` are an error when `concat` combines them, the first
   time the session uses the registry. A registry can't check that itself,
@@ -157,8 +160,8 @@ a session finds schemas in the registries it sees is in
 - Listing the URIs a registry's entries are identified by, for something
   like a language server's "go to schema". A registry can't do it, because
   identification depends on the dialect, so it would be a function of a
-  `JsonSchema` and a registry (`identify(jsonSchema, registry)`), built on
-  the index each `JsonSchema` already has. It's left until something needs
+  config and a registry (`identify(config, registry)`), built on the index
+  the definitions already have. It's left until something needs
   it.
 
 ## Contents

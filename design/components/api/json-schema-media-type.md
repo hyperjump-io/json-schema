@@ -1,7 +1,7 @@
 # JSON Schema as a media type
 
-Decided 2026-11-14. Nothing here is built yet. It's built in the order of
-its stages (see [Order](#order)).
+Decided 2026-11-14. Stage 1 is built (2026-11-14). Stages 2 and 3 aren't
+yet. It's built in the order of its stages (see [Order](#order)).
 
 Browser already has a model for a kind of document: a session is a
 `Hyperjump`, its config is a plain value, and a media type plugin knows how
@@ -36,25 +36,46 @@ const session = new Hyperjump({ ...config, registry });
 
 ## Stage 1: definitions on the plugin
 
-- `jsonSchemaMediaTypes(config)` builds the definition tables once, as
-  `configureJsonSchema` does now, and returns the schema plugin and the
-  JSON-or-schema plugin, which share them. `parse` reads its own
-  definitions. It only needs the session for what browser already gives a
-  plugin: retrieving a meta-schema, and `session.state`, where the dialects
-  built from meta-schemas already are.
-- What needs definitions without parsing finds the schema plugin in
-  `config.mediaTypes`: `compile` (the kernel's definitions), `restore`,
-  lint (`document.js`), and `annotation`. A config without it is an error
-  that says to add `jsonSchemaMediaTypes`.
-- Operations take a `HyperjumpConfig` with the plugin, and make
-  `new Hyperjump({ ...config, registry, allowRetrieval })` for each call.
-  `JsonSchemaHyperjump` stays for this stage, only for registries.
-- What's cached for a `JsonSchema` now (registry entries'
-  identifications, registry indexes, and resolved registry entries) is
-  keyed by the plugin. That changes the key, not the code.
-- The schema type `S` comes from the plugin's dialects, found in
-  `config.mediaTypes`, instead of from `JsonSchema<S, M>`. The config's
-  media types, `M`, are the rest of the list.
+Built 2026-11-14.
+
+- `jsonSchemaMediaTypes(options)` (`src/json-schema.js`) builds the
+  definition tables once, as `configureJsonSchema` did, and returns the
+  schema plugin and the JSON-or-schema plugin, frozen. The schema plugin
+  is `schemaMediaType` with a `definitions` property: the tables,
+  `defaultDialectUri`, and `validateFormats`. The JSON-or-schema plugin is
+  the same for every config, because nothing in it reads the definitions
+  except through the session.
+- What needs the definitions finds them with `definitionsOf(config)`
+  (`src/definition-of.js`), the `definitions` of the first media type that
+  has them: resolving, identifying registry entries, lowering, `compile`'s
+  and `restore`'s kernel definitions, lint (`document.js`), `getDialect`,
+  and `annotation`. Parsing a schema reads them from the session's config
+  the same way, so a plugin's `parse` only needs the session for what
+  browser already gives it: retrieving a meta-schema, and `session.state`.
+  A config without them is a `TypeError` that says to add
+  `jsonSchemaMediaTypes`.
+- Operations take the config (`JsonSchemaConfig<S>`), and make a session
+  for each call (`callSession`, `src/operations/call-session.js`): the
+  config, with the call's `allowRetrieval` instead of the config's, and the
+  config's registry combined with the call's with `concat`. Combining them
+  before the session was planned for stage 2, and it lets stage 1 drop the
+  session's own pair of registries: a `JsonSchemaHyperjump` sees one, its
+  config's `registry`. A schema an operation is given as a value is still
+  added to the session after it's made (`addValue`), until stage 2.
+- `JsonSchemaHyperjump` takes a config (`new JsonSchemaHyperjump(config)`)
+  and is `Hyperjump<C>`, so what a session finds is typed by its config's
+  media types, with no `jsonSchema` property. It stays for this stage,
+  only for its registry `fetch`.
+- What was cached for a `JsonSchema` (registry entries' identifications,
+  registry indexes, and resolved registry entries) is keyed by the
+  definitions. That changed the key, not the code.
+- The schema type `S` comes from the schema plugin's type
+  (`SchemaMediaType<S>`), found in `config.mediaTypes`, which also gives
+  `SchemaTypeOf<C>`. A type-only property, `[schemaType]`, carries it,
+  because nothing at runtime has to.
+- The CLI's config adds `jrefMediaType` after the JSON Schema media types,
+  as `configureJsonSchema` did for it, and a stack with an HTTP cache,
+  because it retrieves the same schemas for many files.
 
 ### Sharing the HTTP cache
 

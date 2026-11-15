@@ -3,7 +3,8 @@ import { VFile } from "vfile";
 import { relativeFileUrl } from "@hyperjump/browser";
 import { SchemaError } from "../schema/schema-error.js";
 import { toSchemaMessage } from "../schema/resolve-text.js";
-import { getDocument, JsonSchemaHyperjump } from "../session.js";
+import { getDocument } from "../session.js";
+import { callSession } from "./call-session.js";
 import { isSchemaDocument } from "../schema/schema-nodes.js";
 
 /**
@@ -13,8 +14,8 @@ import { isSchemaDocument } from "../schema/schema-nodes.js";
  */
 
 /** @type typeof API.lint */
-export const lint = async (jsonSchema, uri, options = {}) => {
-  const session = new JsonSchemaHyperjump(jsonSchema, options);
+export const lint = async (config, uri, options = {}) => {
+  const session = callSession(config, options);
 
   let document;
   try {

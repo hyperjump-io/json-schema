@@ -1,16 +1,17 @@
 import { toId } from "../identifiers.js";
 import { describe, test, expect } from "vitest";
-import { configureJsonSchema } from "../json-schema.js";
+import { jsonSchemaMediaTypes } from "../json-schema.js";
 import { JsonSchemaHyperjump } from "../session.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
 import idKeyword from "./id.js";
 import vocabularyKeyword from "./vocabulary.js";
 import { getDialect as getSessionDialect } from "../session.js";
+import { definitionsOf } from "../definition-of.js";
 
 /**
  * @import { Json } from "@hyperjump/browser"
  * @import { DialectConfig, VocabularyConfig } from "../dialect.d.ts"
- * @import { JsonSchema } from "../json-schema.d.ts"
+ * @import { JsonSchemaConfig } from "../json-schema.d.ts"
  */
 
 const metaDialectUri = "https://example.com/meta-dialect";
@@ -22,17 +23,16 @@ const fooKeyword = { uri: "https://example.com/keyword/foo", shape: /** @type co
 const barKeyword = { uri: "https://example.com/keyword/bar", shape: /** @type const */ ("data") };
 
 describe("vocabularies", () => {
-  /** @type (vocabularies?: Record<string, VocabularyConfig>, dialectVocabularies?: Record<string, VocabularyConfig>) => JsonSchema */
-  const withVocabularies = (vocabularies, dialectVocabularies) => configureJsonSchema({
-    dialects: [metaDialect(metaDialectUri, dialectVocabularies), metaDialect(otherMetaDialectUri)],
-    vocabularies
+  /** @type (vocabularies?: Record<string, VocabularyConfig>, dialectVocabularies?: Record<string, VocabularyConfig>) => JsonSchemaConfig */
+  const withVocabularies = (vocabularies, dialectVocabularies) => ({
+    mediaTypes: jsonSchemaMediaTypes({ dialects: [metaDialect(metaDialectUri, dialectVocabularies), metaDialect(otherMetaDialectUri)], vocabularies })
   });
 
-  /** @type (jsonSchema: JsonSchema, schemas: Json[], dialectUri: string) => Promise<unknown> */
+  /** @type (jsonSchema: JsonSchemaConfig, schemas: Json[], dialectUri: string) => Promise<unknown> */
   const getDialect = async (jsonSchema, schemas, dialectUri) => {
     const registry = new SchemaRegistry(schemas.map((schema) => ({ schema })));
 
-    return getSessionDialect(new JsonSchemaHyperjump(jsonSchema, { registry }), dialectUri);
+    return getSessionDialect(new JsonSchemaHyperjump({ ...jsonSchema, registry }), dialectUri);
   };
 
   test("every vocabulary in the config is supported", async () => {
@@ -71,11 +71,9 @@ describe("vocabularies", () => {
   });
 
   test("the validateFormats config replaces what the vocabularies say", async () => {
-    const jsonSchema = configureJsonSchema({
-      dialects: [metaDialect(metaDialectUri)],
-      vocabularies: { [barVocabularyUri]: { keywords: {}, assertFormats: true } },
-      validateFormats: false
-    });
+    const jsonSchema = {
+      mediaTypes: jsonSchemaMediaTypes({ dialects: [metaDialect(metaDialectUri)], vocabularies: { [barVocabularyUri]: { keywords: {}, assertFormats: true } }, validateFormats: false })
+    };
 
     const dialectUri = "https://example.com/dialect";
     const dialect = await getDialect(jsonSchema, [
@@ -106,7 +104,7 @@ describe("vocabularies", () => {
     const schemas = [metaSchema(dialectUri, otherMetaDialectUri, { [fooVocabularyUri]: true })];
 
     expect(await getDialect(jsonSchema, schemas, dialectUri)).to.include({ uri: dialectUri });
-    expect(jsonSchema.keywords[fooKeyword.uri]).to.equal(fooKeyword);
+    expect(definitionsOf(jsonSchema).keywords[fooKeyword.uri]).to.equal(fooKeyword);
   });
 
   test("one in the config replaces a dialect's", () => {
@@ -115,10 +113,10 @@ describe("vocabularies", () => {
       { [fooVocabularyUri]: { keywords: { foo: fooKeyword } } }
     );
 
-    expect(jsonSchema.vocabularies[toId(fooVocabularyUri)]).to.eql({ keywords: { bar: barKeyword.uri } });
+    expect(definitionsOf(jsonSchema).vocabularies[toId(fooVocabularyUri)]).to.eql({ keywords: { bar: barKeyword.uri } });
   });
 
-  test("a vocabulary is only supported by the JsonSchema it's in the config of", async () => {
+  test("a vocabulary is only supported by the media types it's in the options of", async () => {
     const jsonSchema = withVocabularies({ [fooVocabularyUri]: { keywords: { foo: fooKeyword } } });
     const other = withVocabularies();
 

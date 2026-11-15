@@ -3,7 +3,7 @@ import { unified } from "unified";
 import { VFile } from "vfile";
 import { rejsonParse } from "@hyperjump/browser";
 import { linter } from "../test-linter.js";
-import { configureJsonSchema, extendDialect } from "../../json-schema.js";
+import { jsonSchemaMediaTypes, extendDialect } from "../../json-schema.js";
 import { JsonSchemaHyperjump } from "../../session.js";
 import { jsonSchemaResolve } from "../../schema/resolve.js";
 import { draft202012Dialect } from "../../dialects/draft-2020-12/index.js";
@@ -166,13 +166,15 @@ const reasons = async (json) => (await lint(json)).messages.map((message) => mes
 
 /**
  * Lint with a custom format. The CLI's formats can't be changed, so the
- * schema is resolved in a session of a `JsonSchema` that has it.
+ * schema is resolved in a session whose config has it.
  *
  * @type (json: string, types?: import("@hyperjump/browser").JsonType[]) => Promise<string[]>
  */
 const reasonsWithCustomFormat = async (json, types) => {
   const custom = { uri: "https://example.com/format/custom", types, validate: () => true };
-  const jsonSchema = configureJsonSchema({ dialects: [extendDialect(draft202012Dialect, { formats: { custom } })] });
+  const jsonSchema = {
+    mediaTypes: jsonSchemaMediaTypes({ dialects: [extendDialect(draft202012Dialect, { formats: { custom } })] })
+  };
 
   const file = new VFile({ path: "/schemas/a.schema.json", value: json });
   const processor = unified()

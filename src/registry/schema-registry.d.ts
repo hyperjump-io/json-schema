@@ -12,8 +12,8 @@ import type { ReadonlyJson } from "@hyperjump/browser";
  * A registry never changes. `with` and `without` return a new registry, and
  * a session sees the registries it was created with. A schema is copied when
  * it's added, so changing the value afterward doesn't change the registry. A registry isn't tied
- * to a {@link JsonSchema}. One registry can be used by any number of them
- * and their sessions, which each identify its schemas with their own
+ * to a config. One registry can be used by any number of them and their
+ * sessions, which each identify its schemas with their own
  * dialects when they look one up. A schema that can't be identified is
  * found by its `retrievalUri`, and finding it throws the problem. One
  * without a `retrievalUri` is reported when a lookup doesn't find anything.

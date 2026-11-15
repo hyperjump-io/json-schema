@@ -8,7 +8,7 @@ compiling anything.
 ```typescript
 import { compile, serialize } from "@hyperjump/json-schema";
 
-const person = await compile(jsonSchema, "https://example.com/person");
+const person = await compile(config, "https://example.com/person");
 await writeFile("./person.compiled.json", JSON.stringify(serialize(person)));
 ```
 
@@ -16,7 +16,7 @@ await writeFile("./person.compiled.json", JSON.stringify(serialize(person)));
 import { restore, validatorFor } from "@hyperjump/json-schema";
 
 const text = await readFile("./person.compiled.json", "utf8");
-const person = restore(jsonSchema, JSON.parse(text));
+const person = restore(config, JSON.parse(text));
 const isPerson = validatorFor(person);
 
 isPerson({ name: "Jason" }); // true
@@ -26,8 +26,8 @@ isPerson({ name: "Jason" }); // true
 `compile`. Make functions from it with `validatorFor` and `annotatorFor`.
 They take the same options as `validator` and `annotator`.
 
-The `JsonSchema` that restores it needs the same keywords and formats as the
-one that compiled it. That usually means the same dialects plus any
+The config that restores it needs the same keywords and formats as the one
+that compiled it. That usually means the same dialects plus any
 [custom keywords](../extending/keywords.md) or
 [formats](../extending/formats.md) you added. `restore` throws if one is
 missing. It also throws if the schema was compiled by a library version
@@ -36,9 +36,11 @@ with a different compiled format, so compile again after upgrading.
 A compiled schema doesn't change when its source schemas do. Compile again
 when they change, for example in your build.
 
-Nothing else is cached between calls. `validate(jsonSchema, uri, value)`
+Nothing else is cached between calls. `validate(config, uri, value)`
 compiles every time, and so does a schema given as a value. Code that
-validates many values should make a `validator` once.
+validates many values should make a `validator` once. A remote schema is
+also retrieved again each time, unless the config shares an HTTP cache. See
+[Retrieving less](retrieval.md#retrieving-less).
 
 ## Schemas in files
 
@@ -50,7 +52,7 @@ so that the locations in errors point to its files:
 ```typescript
 import { pathToFileURL } from "node:url";
 
-const person = restore(jsonSchema, JSON.parse(text), {
+const person = restore(config, JSON.parse(text), {
   uri: pathToFileURL("./schemas/person.schema.json").href
 });
 ```

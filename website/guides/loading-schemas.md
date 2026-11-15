@@ -9,7 +9,7 @@ When a schema is needed, it's looked for in this order:
 1. A schema embedded in the same document. This applies to a reference
    from inside that document.
 2. The registry passed to `compile` or another operation, and the
-   [`JsonSchema`'s](#schemas-for-every-call).
+   [config's](#schemas-for-every-call).
 3. Retrieval by its URI. This works for `file:`, `http:`, and `https:` URIs
    that [`allowRetrieval`](retrieval.md) allows.
 
@@ -39,7 +39,7 @@ const registry = new SchemaRegistry<V1Schema>()
     type: "object"
   });
 
-const isPerson = await validator(jsonSchema, "https://example.com/person", { registry });
+const isPerson = await validator(config, "https://example.com/person", { registry });
 ```
 
 Pass the registry to `validator`, `compile`, `lint`, or any other operation
@@ -110,20 +110,23 @@ added without one can't be removed.
 
 Some schemas belong everywhere, like a
 [custom meta-schema](dialects.md#custom-meta-schemas) that defines a
-dialect your schemas use. Give those to `configureJsonSchema` as its
-`registry`, and every call and session can find them.
+dialect your schemas use. Put those in the config's `registry`, and every
+call and session can find them.
 
 ```typescript
 const metaSchemas = new SchemaRegistry().with(myMetaSchema);
 
-const jsonSchema = configureJsonSchema({ dialects: [draft202012Dialect], registry: metaSchemas });
+const config = {
+  mediaTypes: jsonSchemaMediaTypes({ dialects: [draft202012Dialect] }),
+  registry: metaSchemas
+};
 ```
 
-A call combines its own registry with the `JsonSchema`'s. A schema in
+A call sees its own registry and the config's as one registry. A schema in
 either can use a dialect whose meta-schema is in the other. If both have a
 schema with the same URI, that's an error, so a call's registry can't
-replace a schema in the `JsonSchema`'s. A `JsonSchema`'s registry can't
-change, so keep schemas that change in the registries you pass to calls.
+replace a schema in the config's. Keep schemas that change in the
+registries you pass to calls, so you can make the config once.
 
 ### Combining registries
 
@@ -132,7 +135,7 @@ your application's schemas with generated ones. The schemas are shared, not
 copied. Two different schemas with the same `retrievalUri` throw.
 
 ```typescript
-const isPerson = await validator(jsonSchema, "https://example.com/person", {
+const isPerson = await validator(config, "https://example.com/person", {
   registry: registry.concat(generated)
 });
 ```
@@ -158,7 +161,7 @@ meta-schema in a file needs an `$id`. It's found by that `$id` from a
 import { pathToFileURL } from "node:url";
 
 const uri = pathToFileURL("./schemas/person.schema.json").href;
-const isPerson = await validator(jsonSchema, uri);
+const isPerson = await validator(config, uri);
 ```
 
 A `.json` file is a schema if its `$schema` is a dialect, like
@@ -176,19 +179,20 @@ A schema at an `http:` or `https:` URL is retrieved if `allowRetrieval`
 allows it. Nothing on the network is allowed by default.
 
 ```typescript
-const jsonSchema = configureJsonSchema({
-  dialects: [v1Dialect],
+const config = {
+  mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }),
   allowRetrieval: ["./", "https://schemas.example.com/"]
-});
+};
 
 const uri = "https://schemas.example.com/person";
-const isPerson = await validator(jsonSchema, uri);
+const isPerson = await validator(config, uri);
 ```
 
 The response must be `application/schema+json`, or `application/json` with
-a `$schema` that's a dialect. Responses are cached according to their
-caching headers. A schema that's been retrieved is reused for the life of
-the session. To send credentials, see
+a `$schema` that's a dialect. A schema that's been retrieved is reused for
+the life of the session. Each call has a session of its own, so a call
+retrieves the schema again, unless the config has an HTTP cache. See
+[Retrieving less](retrieval.md#retrieving-less). To send credentials, see
 [Controlling retrieval](retrieval.md#sending-credentials).
 
 ## When a schema isn't found

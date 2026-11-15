@@ -13,7 +13,7 @@ import recommended from "@hyperjump/json-schema/lint/recommended";
 
 const file = await unified()
   .use(rejsonParse, { accept: "recovered" })
-  .use(jsonSchemaResolve, { session: new JsonSchemaHyperjump(jsonSchema) })
+  .use(jsonSchemaResolve, { session: new JsonSchemaHyperjump(config) })
   .use(recommended)
   .use(rejsonStringify)
   .process(new VFile({ path: "person.schema.json", value: schemaText }));
@@ -42,8 +42,8 @@ They aren't thrown, so every problem in the file is reported.
 
 | Option | What it is |
 | --- | --- |
-| `session` | A session from your `JsonSchema`. It has the dialects and keywords. Rules use it to find the schemas the document references, so it decides what they can see. See [Controlling retrieval](../guides/retrieval.md). |
-| `dialectUri` | The dialect to use if the schema doesn't have `$schema`. The default is the `JsonSchema`'s `defaultDialectUri`. |
+| `session` | A session from your config. It has the dialects and keywords. Rules use it to find the schemas the document references, so it decides what they can see. See [Controlling retrieval](../guides/retrieval.md). |
+| `dialectUri` | The dialect to use if the schema doesn't have `$schema`. The default is the `defaultDialectUri` of the config's JSON Schema media types. |
 
 It's asynchronous because a dialect from a custom meta-schema has to be
 retrieved first.
@@ -68,7 +68,7 @@ import thenElseWithoutIf from
 
 unified()
   .use(rejsonParse, { accept: "recovered" })
-  .use(jsonSchemaResolve, { session: new JsonSchemaHyperjump(jsonSchema) })
+  .use(jsonSchemaResolve, { session: new JsonSchemaHyperjump(config) })
   .use(recommended)
   .use(thenElseWithoutIf, ["error"]);
 ```

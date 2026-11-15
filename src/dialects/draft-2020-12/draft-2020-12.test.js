@@ -1,5 +1,5 @@
 import { describe, test, beforeEach, expect } from "vitest";
-import { configureJsonSchema } from "../../json-schema.js";
+import { jsonSchemaMediaTypes } from "../../json-schema.js";
 import { SchemaRegistry } from "../../registry/schema-registry.js";
 import { draft202012Dialect, draft202012DialectUri } from "./index.js";
 import { compile as compileSchema } from "../../operations/compile.js";
@@ -7,25 +7,25 @@ import { validatorFor } from "../../operations/validate-compiled.js";
 
 /**
  * @import { Json } from "@hyperjump/browser"
- * @import { JsonSchemaConfig } from "../../json-schema.d.ts"
+ * @import { JsonSchemaConfig, JsonSchemaOptions } from "../../json-schema.d.ts"
  * @import { CompiledSchema } from "../../operations/compile.d.ts"
- * @import { JsonSchema } from "../../json-schema.d.ts"
  */
 
 describe("draft-2020-12", () => {
-  /** @type (config?: JsonSchemaConfig) => JsonSchema */
-  const draft202012 = (config) => {
-    const jsonSchema = configureJsonSchema({ allowRetrieval: [], dialects: [draft202012Dialect], ...config });
-    return jsonSchema;
-  };
+  /** @type (config?: JsonSchemaOptions & { allowRetrieval?: string[]; registry?: SchemaRegistry }) => JsonSchemaConfig */
+  const draft202012 = ({ registry, ...options } = {}) => ({
+    mediaTypes: jsonSchemaMediaTypes({ dialects: [draft202012Dialect], ...options }),
+    allowRetrieval: [],
+    registry
+  });
 
-  /** @type (jsonSchema: JsonSchema, schemas: Json[], uri: string) => Promise<CompiledSchema> */
+  /** @type (jsonSchema: JsonSchemaConfig, schemas: Json[], uri: string) => Promise<CompiledSchema> */
   const compile = (jsonSchema, schemas, uri) => {
     const registry = new SchemaRegistry(schemas.map((schema) => ({ schema })));
     return compileSchema(jsonSchema, uri, { registry });
   };
 
-  /** @type JsonSchema */
+  /** @type JsonSchemaConfig */
   let jsonSchema;
 
   beforeEach(() => {

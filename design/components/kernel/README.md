@@ -70,10 +70,11 @@ lowered, before any optimization. It has `kernel: 1`, and
 A compiled schema is its kernel and the definitions the kernel uses
 (`src/kernel/definitions.js`): each group's keyword, which plugins see,
 the formats that assert, and the keywords of escape hatches, for their
-`evaluate`. Compiling and restoring collect them from the `JsonSchema`,
-so a definition that's missing fails there, not on the first evaluation.
-The evaluators and `Validator` only read the definitions, never the
-`JsonSchema`. Lint's evaluator collects the ones the `JsonSchema` has, and
+`evaluate`. Compiling and restoring collect them from the config's
+definitions, so a definition that's missing fails there, not on the first
+evaluation. The evaluators and `Validator` only read the kernel's
+definitions, never the config. Lint's evaluator collects the ones the
+config's definitions have, and
 treats an asserting format without one as unknown. Before 2026-10-30, the
 evaluators were given the `JsonSchema` to look definitions up in, which
 made a compiled schema depend on a whole client, with its URI scheme
@@ -85,7 +86,7 @@ relative to the entry's document (`src/kernel/kernel-uris.js`), so it
 doesn't say where the files are and can be restored on another machine. A
 URI in the entry's own document is only its fragment (`#/properties/a`),
 so the document can be renamed too, and another file is a relative path
-(`common/address.json#/type`). `restore(jsonSchema, serialized, { uri })`
+(`common/address.json#/type`). `restore(config, serialized, { uri })`
 resolves them against where the entry is now. Without `uri`, they stay
 relative, which still works as handles, because handles are only
 compared. Other URIs are absolute. It didn't change the version, because

@@ -1,10 +1,10 @@
 # Custom formats
 
 A format is a plain object with a URI. Give it a name in a dialect with
-`extendDialect`. Then put the dialect it returns in the config.
+`extendDialect`. Then give the dialect it returns to `jsonSchemaMediaTypes`.
 
 ```typescript
-import { configureJsonSchema, extendDialect } from "@hyperjump/json-schema";
+import { extendDialect, jsonSchemaMediaTypes } from "@hyperjump/json-schema";
 import type { Format } from "@hyperjump/json-schema";
 import { v1Dialect } from "@hyperjump/json-schema/v1";
 
@@ -15,9 +15,11 @@ const hexFormat = {
     && /^[0-9a-f]+$/i.test(value)
 } satisfies Format;
 
-const jsonSchema = configureJsonSchema({
-  dialects: [extendDialect(v1Dialect, { formats: { hex: hexFormat } })]
-});
+const config = {
+  mediaTypes: jsonSchemaMediaTypes({
+    dialects: [extendDialect(v1Dialect, { formats: { hex: hexFormat } })]
+  })
+};
 ```
 
 ```json
@@ -40,7 +42,7 @@ There's no `integer` type for formats, because formats apply to the types
 in JSON's data model. A format for integers applies to numbers. Its
 `validate` checks that they're integers.
 
-As with the built-in formats, the dialect and the `validateFormats` config
+As with the built-in formats, the dialect and the `validateFormats` option
 decide whether a format validates or only annotates. See
 [Formats](../guides/formats.md).
 

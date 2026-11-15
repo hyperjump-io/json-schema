@@ -5,7 +5,7 @@
 lists what each built-in keyword lowers to.
 
 - It's synchronous and only reads its inputs and the context (`dialect`
-  and `keywordName`). It doesn't get the `JsonSchema`. Before 2026-10-30
+  and `keywordName`). It doesn't get the definitions. Before 2026-10-30
   it did, and only `format` used it, for the `validateFormats` config and
   to check that the format's definition exists.
 - The kernel retrieves what references in the value and in the siblings
@@ -20,8 +20,9 @@ lists what each built-in keyword lowers to.
   see it pass, and the optimizer leaves it out when nothing can see it.
 - `format` decides whether it asserts when it's lowered, from the
   dialect's `assertFormats`, so a serialized expression means the same
-  wherever it's restored. A `JsonSchema` applies the `validateFormats`
-  config to every dialect it has or builds from a meta-schema. That the
+  wherever it's restored. The `validateFormats` option is applied to
+  every dialect the media types have or a session builds from a
+  meta-schema. That the
   format's definition exists is checked with the kernel's other
   definitions (see [Compile and evaluate](../../components/kernel/README.md)).
 

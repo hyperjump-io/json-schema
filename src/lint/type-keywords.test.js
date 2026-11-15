@@ -2,7 +2,7 @@ import { describe, test, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
 import { rejsonParse, rejsonStringify } from "@hyperjump/browser";
-import { configureJsonSchema, extendDialect } from "../json-schema.js";
+import { jsonSchemaMediaTypes, extendDialect } from "../json-schema.js";
 import { JsonSchemaHyperjump } from "../session.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
 import { draft202012Dialect } from "../dialects/draft-2020-12/index.js";
@@ -33,7 +33,9 @@ const allowsKeyword = {
   lower: (types) => ({ op: "typeIs", types: Array.isArray(types) ? types : [types] })
 };
 
-const jsonSchema = configureJsonSchema({ dialects: [extendDialect(draft202012Dialect, { keywords: { allows: allowsKeyword } })] });
+const jsonSchema = {
+  mediaTypes: jsonSchemaMediaTypes({ dialects: [extendDialect(draft202012Dialect, { keywords: { allows: allowsKeyword } })] })
+};
 
 describe("more than one keyword that lowers to typeIs", () => {
   test("keyword-for-disallowed-type names the keywords that don't allow the type", async () => {

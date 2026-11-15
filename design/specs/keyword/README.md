@@ -1,7 +1,7 @@
 # Keywords (`src/keyword.d.ts`)
 
 Keywords are plain, stateless objects so one definition can be shared by
-every `JsonSchema` instance and every dialect. Anything instance-specific
+every config and every dialect. Anything instance-specific
 should come through a context argument. (Classes with constructor injection
 were considered. See [Open questions](#open-questions).)
 

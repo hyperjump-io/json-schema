@@ -1,9 +1,10 @@
-import type { Fetcher, HyperjumpConfig, Json, MediaTypePlugin, ReadonlyJson } from "@hyperjump/browser";
+import type { HyperjumpConfig, Json, MediaTypePlugin, ReadonlyJson } from "@hyperjump/browser";
 import type { Keyword } from "./keyword.d.ts";
 import type { Dialect, DialectConfig, DialectExtension, DialectKeywords, DialectSchema, UnknownKeywords, Vocabulary, VocabularyConfig } from "./dialect.d.ts";
 import type { Format } from "./format.d.ts";
 import type { SchemaRegistry } from "./registry/schema-registry.d.ts";
-import type { SchemaMediaTypes } from "./session.d.ts";
+import type { schemaMediaType } from "./schema/media-type-plugin.d.ts";
+import type { jsonOrSchemaMediaType } from "./schema/json-media-type-plugin.d.ts";
 
 export { outputErrorMessage, toVFileMessage } from "./output/validation-error.js";
 export { SchemaError } from "./schema/schema-error.js";
@@ -11,7 +12,8 @@ export type { ValidationError, DetailedValidationError } from "./output/validati
 export type { SchemaMessage } from "./schema/schema-error.js";
 export type { BasicOutput, DetailedOutput, OutputError, OutputFormat, JsonSyntaxError } from "./output/output-format.d.ts";
 
-export type JsonSchemaConfig<D extends DialectConfig<any, any, any> = DialectConfig<any, any, any>> = HyperjumpConfig & {
+/** What `jsonSchemaMediaTypes` makes the JSON Schema media types with */
+export type JsonSchemaOptions<D extends DialectConfig<any, any, any> = DialectConfig<any, any, any>> = {
   /**
    * The dialect of a schema that doesn't have `$schema` and doesn't get a
    * dialect from anywhere else, such as a `Content-Type` parameter or the
@@ -30,8 +32,8 @@ export type JsonSchemaConfig<D extends DialectConfig<any, any, any> = DialectCon
    * The dialects schemas can use, like `v1Dialect`, with the keywords and
    * formats they bring. Other dialects can still be defined by meta-schemas
    * (`$vocabulary`), and a session builds those the first time they're
-   * used. A dialect can't be in the list twice. They can't change after the
-   * `JsonSchema` is created. Their schema types are the `JsonSchema`'s.
+   * used. A dialect can't be in the list twice. Their schema types are the
+   * config's.
    */
   dialects?: D[];
 
@@ -52,20 +54,44 @@ export type JsonSchemaConfig<D extends DialectConfig<any, any, any> = DialectCon
    * the dialects bring. One here replaces a dialect's.
    */
   vocabularies?: Record<string, VocabularyConfig>;
+};
+
+/**
+ * What schemas are read with: a session's config, and what operations, like
+ * `validate` and `bundle`, take. It's browser's config, with the JSON Schema
+ * media types in its `mediaTypes` and a `registry`. `S` is the type of its
+ * schemas, from the dialects the media types were made with.
+ *
+ * ```js
+ * const config = { mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }) };
+ * ```
+ *
+ * Without a `stack`, each session has one of its own, so calls don't share
+ * an HTTP cache. To share one, put a stack with one in the config, and make
+ * the config once.
+ */
+export type JsonSchemaConfig<S = any> = HyperjumpConfig & {
+  /**
+   * The media types documents are read with, which have to include the
+   * JSON Schema media types (`jsonSchemaMediaTypes`). Put others, like
+   * `jrefMediaType`, after them, so JSON is read by the plugin that finds
+   * schemas in it.
+   */
+  readonly mediaTypes: readonly (SchemaMediaType<S> | MediaTypePlugin<any>)[];
 
   /**
-   * Schemas every session sees, like custom meta-schemas. A session sees
+   * Schemas every session sees, like custom meta-schemas. An operation sees
    * them with its own `registry`, as one registry, so a schema in either
    * can use a dialect a schema in the other defines. Give it the schema
    * type of the dialects, like `new SchemaRegistry<V1Schema>()`, so its
    * schemas are checked.
    */
-  registry?: SchemaRegistry<any>;
+  readonly registry?: SchemaRegistry<any>;
 };
 
 /**
  * A dialect with more keywords or formats, such as a custom keyword in the
- * v1 dialect. Pass it in the config instead of the dialect. Its schema type
+ * v1 dialect. Pass it in the options instead of the dialect. Its schema type
  * has the keywords it adds.
  *
  * @throws Error if the dialect already has a keyword or format with one of
@@ -76,64 +102,59 @@ export function extendDialect<K extends DialectKeywords, Uri extends string, U e
   extension: DialectExtension<E>
 ): DialectConfig<K & E, Uri, U>;
 
-/** Any dialect in the config. It's `D` when there are none. */
+/** Any dialect in the options. It's `D` when there are none. */
 type AnyDialectConfig = DialectConfig<DialectKeywords, string, UnknownKeywords>;
 
 /**
- * Any schema: what a `JsonSchema` without dialects in its config takes,
- * because its schemas' dialects come from meta-schemas
+ * Any schema: what JSON Schema media types without dialects take, because
+ * their schemas' dialects come from meta-schemas
  */
 export type AnySchema = boolean | { readonly [property: string]: ReadonlyJson };
 
-/**
- * The schema type of a `JsonSchema` (`S`), like `V1Schema`, for a registry
- * of its schemas: `new SchemaRegistry<SchemaTypeOf<typeof jsonSchema>>()`
- */
-export type SchemaTypeOf<J> = J extends JsonSchema<infer S> ? S : never;
+declare const schemaType: unique symbol;
 
 /**
- * Create a `JsonSchema`. Its schema type is the union of its dialects'
- * ({@link DialectSchema}), so `configureJsonSchema({ dialects: [v1Dialect] })`
- * is a `JsonSchema<V1Schema>`, and a schema an operation is given as a
- * value is checked against it. `M` is the config's media types, which a
- * session's documents can be in.
+ * The JSON Schema media type (`application/schema+json`), with the
+ * definitions it reads schemas with. `S` is the type of its schemas. It's
+ * only a type: nothing has the `schemaType` property.
+ */
+export type SchemaMediaType<S = any> = typeof schemaMediaType & {
+  readonly definitions: JsonSchemaDefinitions;
+  readonly [schemaType]: S;
+};
+
+/** JSON that can be a schema (`application/json`) */
+export type JsonOrSchemaMediaType = typeof jsonOrSchemaMediaType;
+
+/**
+ * The schema type of a config (`S`), like `V1Schema`, for a registry of its
+ * schemas: `new SchemaRegistry<SchemaTypeOf<typeof config>>()`
+ */
+export type SchemaTypeOf<C> = C extends { readonly mediaTypes: readonly (infer P)[] }
+  ? (P extends SchemaMediaType<infer S> ? S : never)
+  : never;
+
+/**
+ * The JSON Schema media types: JSON Schema, and JSON that can be a schema,
+ * in that order, made with the definitions schemas are read with. They go in
+ * a config's `mediaTypes`. Their schema type is the union of the dialects'
+ * ({@link DialectSchema}), so a config with
+ * `jsonSchemaMediaTypes({ dialects: [v1Dialect] })` checks a schema an
+ * operation is given as a value against `V1Schema`.
  *
- * @throws Error if a dialect is in the config more than once, or a dialect
+ * @throws Error if a dialect is in the options more than once, or a dialect
  * or vocabulary names a keyword that has no definition.
  */
 // Without a default for D, which TypeScript would pick instead of inferring
-// it when a dialect in the config has a function with untyped parameters
-export function configureJsonSchema<const D extends AnyDialectConfig, M extends MediaTypePlugin<any> = never>(
-  config?: JsonSchemaConfig<D> & { mediaTypes?: readonly M[] }
-): JsonSchema<AnyDialectConfig extends D ? AnySchema : DialectSchema<D>, M>;
+// it when a dialect in the options has a function with untyped parameters
+export function jsonSchemaMediaTypes<const D extends AnyDialectConfig>(
+  options?: JsonSchemaOptions<D>
+): readonly [SchemaMediaType<AnyDialectConfig extends D ? AnySchema : DialectSchema<D>>, JsonOrSchemaMediaType];
 
-/**
- * What decides how schemas are read: definitions, a registry, and how
- * schemas are retrieved. `S` is the type of its schemas, from its dialects.
- * It's a frozen value. Sessions (`JsonSchemaHyperjump`) and operations, like `validate`
- * and `bundle`, are functions that take it.
- */
-export type JsonSchema<S = any, M extends MediaTypePlugin<any> = MediaTypePlugin> = {
+/** The definitions schemas are read with, on the JSON Schema media type */
+export type JsonSchemaDefinitions = {
   /**
-   * The config it was created with. It's a frozen copy, with frozen copies
-   * of its lists, so changing the object it was created with doesn't
-   * change it. Its `mediaTypes` are the ones schemas are read with (JSON
-   * Schema, JSON that can be a schema, and JRef), then the config's. The
-   * first plugin that matches a response as well as another one parses it,
-   * so the config's can't replace those.
-   */
-  readonly config: Readonly<JsonSchemaConfig> & { readonly mediaTypes: readonly (SchemaMediaTypes | M)[] };
-
-  /**
-   * What every session retrieves through: the config's `stack`, or one with
-   * an HTTP cache in Node.js, so a session doesn't retrieve again what an
-   * earlier one did. In a browser, which caches responses itself, it's
-   * `@hyperjump/browser`'s default.
-   */
-  readonly stack: Fetcher;
-
-  /**
-   * The keyword definitions, by URI: the config's, then the ones the
+   * The keyword definitions, by URI: the options', then the ones the
    * dialects and vocabularies bring
    */
   readonly keywords: Readonly<Record<string, Keyword>>;
@@ -142,18 +163,21 @@ export type JsonSchema<S = any, M extends MediaTypePlugin<any> = MediaTypePlugin
   readonly formats: Readonly<Record<string, Format>>;
 
   /**
-   * The config's dialects, with their definitions named by URI. They're by
+   * The options' dialects, with their definitions named by URI. They're by
    * identifier: the URI without a fragment, normalized. A dialect a session
    * built from its meta-schema isn't here (see `getDialect`).
    */
   readonly dialects: Readonly<Record<string, Dialect>>;
 
   /**
-   * The vocabularies `$vocabulary` can use, from the config or a dialect,
+   * The vocabularies `$vocabulary` can use, from the options or a dialect,
    * with their definitions named by URI. They're by identifier, like
    * `dialects`.
    */
   readonly vocabularies: Readonly<Record<string, Vocabulary>>;
+
+  readonly defaultDialectUri: string | undefined;
+  readonly validateFormats: boolean | undefined;
 };
 
 declare module "unist" {

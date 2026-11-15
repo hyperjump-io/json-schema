@@ -1,8 +1,8 @@
 # Formats (`src/format.d.ts`)
 
 Formats work like keywords. A format definition (`{ uri, types, validate }`,
-`src/format.d.ts`) is stateless, and a `JsonSchema` gets it from a dialect
-or the config's `formats`. `types` is the JSON types the format applies to, so the
+`src/format.d.ts`) is stateless, and the JSON Schema media types get it
+from a dialect or the options' `formats`. `types` is the JSON types the format applies to, so the
 `format` keyword passes other values without calling `validate`, as the
 spec says, and lint can tell which types a format is for. Without it, a
 format applies to every type. There's no `integer`, because the spec says

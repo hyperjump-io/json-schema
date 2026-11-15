@@ -1,4 +1,4 @@
-import type { JsonSchema } from "../json-schema.d.ts";
+import type { JsonSchemaConfig } from "../json-schema.d.ts";
 import type { JsonErrorNode, JsonNode, JsonParseStatus, ReadonlyJson } from "@hyperjump/browser";
 import type { EvaluationPlugin } from "../kernel/evaluation-plugin.d.ts";
 import type { OutputFormat } from "../output/output-format.d.ts";
@@ -14,7 +14,7 @@ import type { SchemaSource } from "./schema-source.d.ts";
  * @throws An error from `@hyperjump/browser` if a schema can't be
  * retrieved. Its `cause.code` says why.
  */
-export function validate<S, R = boolean, I extends Input = "value">(jsonSchema: JsonSchema<S>, schema: NoInfer<SchemaSource<S>>, instance: InstanceOf<I>, options?: ValidationOptions<R, I>): Promise<R>;
+export function validate<S, R = boolean, I extends Input = "value">(config: JsonSchemaConfig<S>, schema: NoInfer<SchemaSource<S>>, instance: InstanceOf<I>, options?: ValidationOptions<R, I>): Promise<R>;
 
 /**
  * Compile a schema into a function that validates instances. The output
@@ -25,18 +25,18 @@ export function validate<S, R = boolean, I extends Input = "value">(jsonSchema: 
  * @throws An error from `@hyperjump/browser` if a schema can't be
  * retrieved. Its `cause.code` says why.
  */
-export function validator<S, R = boolean, I extends Input = "value">(jsonSchema: JsonSchema<S>, schema: NoInfer<SchemaSource<S>>, options?: ValidationOptions<R, I>): Promise<(instance: InstanceOf<I>) => R>;
+export function validator<S, R = boolean, I extends Input = "value">(config: JsonSchemaConfig<S>, schema: NoInfer<SchemaSource<S>>, options?: ValidationOptions<R, I>): Promise<(instance: InstanceOf<I>) => R>;
 
 /**
  * Validate an instance and annotate it: the result has the instance as a
  * JSON AST with the annotations attached to its nodes. Read them with
- * `JsonSchemaHyperjump.annotation`. It compiles the schema every time, like
+ * `annotation`. It compiles the schema every time, like
  * {@link validate}.
  */
-export function annotate<S, R = boolean, I extends Input = "value">(jsonSchema: JsonSchema<S>, schema: NoInfer<SchemaSource<S>>, instance: InstanceOf<I>, options?: ValidationOptions<R, I>): Promise<AnnotationResult<R>>;
+export function annotate<S, R = boolean, I extends Input = "value">(config: JsonSchemaConfig<S>, schema: NoInfer<SchemaSource<S>>, instance: InstanceOf<I>, options?: ValidationOptions<R, I>): Promise<AnnotationResult<R>>;
 
 /** Compile a schema into a function that annotates instances, like {@link validator} */
-export function annotator<S, R = boolean, I extends Input = "value">(jsonSchema: JsonSchema<S>, schema: NoInfer<SchemaSource<S>>, options?: ValidationOptions<R, I>): Promise<(instance: InstanceOf<I>) => AnnotationResult<R>>;
+export function annotator<S, R = boolean, I extends Input = "value">(config: JsonSchemaConfig<S>, schema: NoInfer<SchemaSource<S>>, options?: ValidationOptions<R, I>): Promise<(instance: InstanceOf<I>) => AnnotationResult<R>>;
 
 /**
  * What an instance is:

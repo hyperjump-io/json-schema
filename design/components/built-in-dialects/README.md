@@ -2,13 +2,13 @@
 
 Each dialect's module exports its dialect (`v1Dialect`,
 `draft202012Dialect`, …), which carries the keyword and format definitions
-it uses. A `JsonSchema` only has the dialects in its config, plus
-`$schema` and the unknown keyword, which every dialect has. Any of them can
-be in one config.
+it uses. The JSON Schema media types only have the dialects in their
+options, plus `$schema` and the unknown keyword, which every dialect has.
+Any of them can be in one set of options.
 
-- Constructing a `JsonSchema` registers each definition a dialect brings
-  that isn't registered yet, after the config's own `keywords` and
-  `formats`. So a keyword replaced through the config stays replaced,
+- `jsonSchemaMediaTypes` registers each definition a dialect brings that
+  isn't registered yet, after the options' own `keywords` and `formats`. So
+  a keyword replaced through the options stays replaced,
   whatever order the dialects are in, and the same dialect twice throws.
   The dialect is stored with URIs (`getDialect` returns
   `{ keywords: Record<string, string> }`), the form everything that reads
@@ -21,7 +21,7 @@ be in one config.
   added a dialect named by URIs, with a separate list of the definitions it
   used (`addPreset`). Dialects carry their definitions now, so the list
   became the dialect's maps, and the add functions went with the rest of
-  the setup methods (see [Dialects](../dialects/README.md#the-config)).
+  the setup methods (see [Dialects](../dialects/README.md#the-options)).
 - v1 used to be in every `JsonSchema`, because keyword schemas were written
   in v1. Now it's a dialect like the others.
 - v1's `conditional`, `itemPattern`, and `requireAllExcept` aren't full
@@ -29,13 +29,13 @@ be in one config.
   added with `extendDialect` as a reminder.
 - Formats that need Unicode data aren't in any dialect. A dialect names
   them by URI, and they're only supported when `fullFormats` is in the
-  config's `formats`.
+  options' `formats`.
 
 - Rejected: a separate preset value (`{ dialect, keywords, formats }`) for
   each dialect, which was only needed while a dialect named its keywords by
   URI; and keeping `addV1` and the others for unified pipelines. A unified
   plugin's `this` is the processor, not a `JsonSchema`, and a pipeline that
-  needs dialects is given a `JsonSchema` that has them, as lint's rules
+  needs dialects is given a session whose config has them, as lint's rules
   are.
 
 ## Meta-schemas

@@ -42,39 +42,44 @@ written. Custom keywords are part of the type.
   dialect's `$schema` only fits that dialect's type. One without `$schema`
   fits any of them, so with an open dialect in the union, a misspelled
   keyword fits that one.
-- **A `JsonSchema` has its dialects' schema types.** A dialect in the
-  config is a `DialectConfig<K, Uri, U>`, with its keyword map, so
+- **A config has its dialects' schema types.** A dialect given to
+  `jsonSchemaMediaTypes` is a `DialectConfig<K, Uri, U>`, with its keyword map, so
   `DialectSchema<D>` is `SchemaOf` of its keywords' types. A keyword named
   by a URI has no type, so any value fits it. The built-in dialects are
   declared with their keyword lists (`DialectConfig<V1Keywords, …>`), so
   tsc checks that the definitions in `dialect.js` fit them, as well as the
-  `schema-type.test-d.ts` files. `configureJsonSchema({ dialects })` is a
-  `JsonSchema<S>` with the union of their types, and without dialects it's
-  `AnySchema`. `extendDialect` returns `DialectConfig<K & E, …>`, so the
-  keywords it adds are in the type. A session is a
-  `JsonSchemaHyperjump<S, M>`, where `M` is the config's media types (see
+  `schema-type.test-d.ts` files. `jsonSchemaMediaTypes({ dialects })`
+  returns a `SchemaMediaType<S>` with the union of their types, and without
+  dialects it's `AnySchema`. A config with it in its `mediaTypes` is a
+  `JsonSchemaConfig<S>`: an operation infers `S` from the plugin in the
+  list, whatever else is in it. The plugin carries `S` in a property that's
+  only in its type (`[schemaType]`), which nothing reads at runtime.
+  `extendDialect` returns `DialectConfig<K & E, …>`, so the keywords it adds
+  are in the type. A session is a `JsonSchemaHyperjump<C>`, with its
+  config's type, so its media types are in the type of what it finds (see
   [Sessions](sessions/README.md)).
 - **A schema an operation is given as a value is checked.** `validate`,
   `validator`, `annotate`, `annotator`, `compile`, and `bundle` take
-  `NoInfer<SchemaSource<S>>`, so `S` comes from the `JsonSchema`, not the
-  schema. A URI isn't checked. `SchemaTypeOf<J>` gets a `JsonSchema`'s `S`,
-  for a registry. Rejected: a type argument on each call
+  `NoInfer<SchemaSource<S>>`, so `S` comes from the config, not the
+  schema. A URI isn't checked. `SchemaTypeOf<C>` gets a config's `S`, for a
+  registry. Rejected: a type argument on each call
   (`validate<V1Schema>(…)`), which leaves the simple path unchecked.
-- **`JsonSchema` is a type, and `configureJsonSchema` a generic function.**
-  The function infers `S` from its argument. Before 2026-11-14,
+- **`jsonSchemaMediaTypes` is a generic function.** It infers `S` from its
+  argument. From 2026-11-14, it was `configureJsonSchema`, which returned a
+  `JsonSchema<S>`, until the same day. Before that,
   `JsonSchema` was a class, declared as an interface and a
   `JsonSchemaConstructor` with a generic construct signature, plus one
   without type parameters for `class X extends JsonSchema`, because a
   class can't infer its type parameter as a type computed from its
   constructor's argument. `S` isn't in any member's parameters, so a
-  `JsonSchema<V1Schema>` is assignable to a `JsonSchema`, whose `S` is
-  `any`.
+  `JsonSchemaConfig<V1Schema>` is assignable to a `JsonSchemaConfig`, whose
+  `S` is `any`.
 - **What it took in TypeScript 6.** The dialects' type parameter is
-  `const`, so a dialect written in the config keeps `unknownKeywords` and
+  `const`, so a dialect written in the options keeps `unknownKeywords` and
   its keywords' shapes as literals. Its constraint uses
   `Keyword<any, Shape, any>`, because `Keyword<any, any, any>` gives
   `shape` no contextual type. It has no default: with one, TypeScript
-  picks the default instead of inferring when a dialect in the config has
+  picks the default instead of inferring when a dialect in the options has
   a function with untyped parameters. And `NoInfer` wraps the whole
   `SchemaSource<S>`: `string | NoInfer<S>` rejected schemas that fit `S`.
 - **A registry has the type of the schemas it takes.**

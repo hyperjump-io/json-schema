@@ -10,7 +10,7 @@ keywords mean. Most custom dialects don't need code:
 
 Write your own dialect when its meta-schema doesn't define it. Examples are
 a dialect based on draft-07 or one whose meta-schema describes itself. Put
-it in the `dialects` config.
+it in the `dialects` option of `jsonSchemaMediaTypes`.
 
 ```typescript
 import type { DialectConfig } from "@hyperjump/json-schema";
@@ -26,7 +26,7 @@ const myDialect = {
   assertFormats: true
 } satisfies DialectConfig;
 
-const jsonSchema = configureJsonSchema({ dialects: [myDialect] });
+const config = { mediaTypes: jsonSchemaMediaTypes({ dialects: [myDialect] }) };
 ```
 
 ```json
@@ -50,15 +50,15 @@ const jsonSchema = configureJsonSchema({ dialects: [myDialect] });
 
 A built-in keyword's definition is in the dialect it comes from, like
 `v1Dialect.keywords.type`. A keyword or format can also be given as a URI.
-Then its definition comes from the config's `keywords` or `formats`. If a
-keyword is named by a URI that nothing defines, creating the `JsonSchema`
-is an error. A format that nothing defines isn't supported.
+Then its definition comes from the `keywords` or `formats` option of
+`jsonSchemaMediaTypes`. If a keyword is named by a URI that nothing
+defines, `jsonSchemaMediaTypes` throws. A format that nothing defines isn't supported.
 
 A dialect only has the keywords you give it. That includes `$id` and
 `$ref`. Without `$id`, a schema in your dialect has no identifier.
 
 A dialect's URI should be the URI of its meta-schema. That way tools that
-retrieve `$schema` find a meta-schema. A dialect can only be in the config
+retrieve `$schema` find a meta-schema. A dialect can only be in `dialects`
 once.
 
 Declare a dialect with `satisfies DialectConfig` instead of a type
@@ -68,10 +68,10 @@ annotation, so `unknownKeywords` keeps its literal type. Declare its URI
 
 ## Its schema type
 
-A dialect's schema type comes from its keywords. A `JsonSchema` with your
-dialect checks schemas passed to it as values. See
+A dialect's schema type comes from its keywords. A config with your
+dialect checks schemas passed to operations as values. See
 [Schema types](../guides/schema-types.md). `DialectSchema` names the type.
-A keyword named by a URI, with its definition in the config's `keywords`,
+A keyword named by a URI, with its definition in the `keywords` option,
 allows any value.
 
 ```typescript

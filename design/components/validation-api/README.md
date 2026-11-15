@@ -1,10 +1,10 @@
 # Validation API (`src/operations/`)
 
-The operations are functions that take a `JsonSchema` (see
+The operations are functions that take a config (see
 [The API as functions](../api/README.md)). The evaluators behind a compiled
 schema are in `src/kernel/validator.js`, which isn't exported.
 
-- `validate`, `validator`, `annotate`, and `annotator` take a `JsonSchema`, a
+- `validate`, `validator`, `annotate`, and `annotator` take a config, a
   schema (a URI or a value), and options (`src/operations/validate.js`).
   `validator` and `annotator` compile and return a function, with the
   output format, plugins, and input chosen once. `validate` and `annotate`
@@ -13,7 +13,7 @@ schema are in `src/kernel/validator.js`, which isn't exported.
   restored schema (`restore`) is used the same way (`src/operations/compile.js`).
 - `validatorFor` and `annotatorFor` were the design's working name, kept
   because they say what they take. Rejected: overloading `validator` with
-  a `CompiledSchema` in place of the `JsonSchema` and schema, which makes its
+  a `CompiledSchema` in place of the config and schema, which makes its
   types and its first argument ambiguous.
 - `validate` never builds an AST. `annotate` validates and returns the
   instance as an AST, so users never need to call both. The `input` option
@@ -43,8 +43,8 @@ schema are in `src/kernel/validator.js`, which isn't exported.
   `defaultDialectUri`, like any schema without one. The operation reaches
   the session's registries through the session's state (`registriesOf`),
   which isn't exported from the package.
-- Each call has a session of its own, made from the `JsonSchema` and the
-  call's `registry` and `allowRetrieval`. Decided 2026-11-14. Before, an
+- Each call has a session of its own, made from the config and the
+  call's `registry` and `allowRetrieval` (`src/operations/call-session.js`). Decided 2026-11-14. Before, an
   operation also took a session (`Context`), so operations could share
   what it retrieved, and `registry` or `allowRetrieval` in its options was
   a `TypeError`, because the session already had its own. That was two
@@ -120,7 +120,7 @@ schema are in `src/kernel/validator.js`, which isn't exported.
 
 ## Known limitations
 
-- The `JsonSchema` shortcuts (`validate(uri, ...)` and the others) compile the
+- The shortcuts (`validate(config, uri, ...)` and the others) compile the
   schema every time.
 
 ## Contents

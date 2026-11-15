@@ -6,15 +6,14 @@ import { pathToFileURL } from "node:url";
 import { describe, test, beforeAll, afterAll, expect } from "vitest";
 import { normalizeIri, toRelativeIri, urlToIri } from "@hyperjump/uri";
 import { toId } from "./identifiers.js";
-import { configureJsonSchema } from "./json-schema.js";
+import { jsonSchemaMediaTypes } from "./json-schema.js";
 import { v1Dialect, v1DialectUri } from "./dialects/v1/index.js";
 import { SchemaRegistry } from "./registry/schema-registry.js";
 import { compile } from "./operations/compile.js";
 import { validatorFor } from "./operations/validate-compiled.js";
 
 /**
- * @import { JsonSchemaConfig } from "./json-schema.d.ts"
- * @import { JsonSchema } from "./json-schema.d.ts"
+ * @import { JsonSchemaConfig, JsonSchemaOptions } from "./json-schema.d.ts"
  */
 
 const schema = JSON.stringify({ $schema: v1DialectUri, type: "string" });
@@ -82,8 +81,9 @@ describe("allowRetrieval", () => {
   });
 });
 
-/** @type (config?: JsonSchemaConfig) => JsonSchema */
-const v1 = (config) => {
-  const jsonSchema = configureJsonSchema({ dialects: [v1Dialect], ...config });
-  return jsonSchema;
-};
+/** @type (config?: JsonSchemaOptions & { allowRetrieval?: string[]; registry?: SchemaRegistry }) => JsonSchemaConfig */
+const v1 = ({ allowRetrieval, registry, ...options } = {}) => ({
+  mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect], ...options }),
+  allowRetrieval,
+  registry
+});

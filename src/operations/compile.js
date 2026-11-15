@@ -4,7 +4,8 @@ import { withResolvedUris } from "../kernel/kernel-uris.js";
 import { schemaReads } from "../kernel/kernel.js";
 import { kernelDefinitions } from "../kernel/definitions.js";
 import { schemaUri } from "./schema-source.js";
-import { JsonSchemaHyperjump } from "../session.js";
+import { callSession } from "./call-session.js";
+import { definitionsOf } from "../definition-of.js";
 
 /**
  * @import { Kernel } from "../kernel/kernel.d.ts"
@@ -12,17 +13,17 @@ import { JsonSchemaHyperjump } from "../session.js";
  */
 
 /** @type typeof API.compile */
-export const compile = async (jsonSchema, schema, options) => {
-  const session = new JsonSchemaHyperjump(jsonSchema, options);
+export const compile = async (config, schema, options) => {
+  const session = callSession(config, options);
   const kernel = await lower(session, schemaUri(session, schema));
-  return /** @type any */ (new Validator(kernelDefinitions(session.jsonSchema, kernel), kernel));
+  return /** @type any */ (new Validator(kernelDefinitions(definitionsOf(config), kernel), kernel));
 };
 
 /** @type typeof API.serialize */
 export const serialize = (compiled) => /** @type Validator */ (/** @type unknown */ (compiled)).serialize();
 
 /** @type typeof API.restore */
-export const restore = (jsonSchema, serialized, options = {}) => {
+export const restore = (config, serialized, options = {}) => {
   const kernel = /** @type Kernel */ (serialized);
   const version = typeof serialized === "object" && serialized !== null && !Array.isArray(serialized) ? kernel.kernel : undefined;
   if (version !== 1) {
@@ -43,5 +44,5 @@ export const restore = (jsonSchema, serialized, options = {}) => {
   // Plugins see each keyword's definition, asserting formats are
   // validated with theirs, and escape hatches by their keyword's `evaluate`
   const restored = withResolvedUris({ ...kernel, reads }, options.uri);
-  return /** @type any */ (new Validator(kernelDefinitions(jsonSchema, restored), restored));
+  return /** @type any */ (new Validator(kernelDefinitions(definitionsOf(config), restored), restored));
 };

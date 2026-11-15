@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { describe, test, beforeAll, afterAll, expect } from "vitest";
-import { configureJsonSchema } from "../json-schema.js";
+import { jsonSchemaMediaTypes } from "../json-schema.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import recommended from "./recommended.js";
@@ -12,7 +12,7 @@ import referenceWithoutTarget from "./rules/reference-without-target.js";
 import { lint } from "../operations/lint.js";
 
 /**
- * @import { JsonSchema } from "../json-schema.d.ts"
+ * @import { JsonSchemaConfig } from "../json-schema.d.ts"
  */
 
 const a = `{
@@ -137,14 +137,20 @@ describe("lint", () => {
     test("a document that isn't a schema", async () => {
       const path = join(directory, "instance.json");
       await writeFile(path, "{}");
-      const jsonSchema = configureJsonSchema({ allowRetrieval: [pathToFileURL(join(directory, "/")).href] });
+      const jsonSchema = {
+        mediaTypes: jsonSchemaMediaTypes(),
+        allowRetrieval: [pathToFileURL(join(directory, "/")).href]
+      };
 
       await expect(lint(jsonSchema, pathToFileURL(path).href)).rejects.toThrow("isn't a schema");
     });
   });
 });
 
-/** @type (...schemas: string[]) => JsonSchema */
+/** @type (...schemas: string[]) => JsonSchemaConfig */
 const jsonSchemaWith = (...schemas) => {
-  return configureJsonSchema({ dialects: [v1Dialect], registry: new SchemaRegistry(schemas.map((schema) => ({ schema }))) });
+  return {
+    mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }),
+    registry: new SchemaRegistry(schemas.map((schema) => ({ schema })))
+  };
 };

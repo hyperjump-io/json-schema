@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { describe, test, beforeAll, expect } from "vitest";
 import { jsonPointerGet } from "@hyperjump/browser";
 import { resolveId, toId } from "../src/identifiers.js";
-import { configureJsonSchema } from "../src/json-schema.js";
+import { jsonSchemaMediaTypes } from "../src/json-schema.js";
 import { SchemaRegistry } from "../src/registry/schema-registry.js";
 import { fullFormats } from "../src/formats/full.js";
 import { BASIC } from "../src/output/index.js";
@@ -13,10 +13,9 @@ import { annotation, JsonSchemaHyperjump } from "../src/session.js";
 
 /**
  * @import { Json, JsonNode } from "@hyperjump/browser"
- * @import { JsonSchemaConfig } from "../src/json-schema.d.ts"
+ * @import { JsonSchemaConfig, JsonSchemaOptions } from "../src/json-schema.d.ts"
  * @import { CompiledSchema } from "../src/operations/compile.d.ts"
  * @import { DialectConfig } from "../src/dialect.d.ts"
- * @import { JsonSchema } from "../src/json-schema.d.ts"
  */
 
 /**
@@ -128,24 +127,23 @@ export const isSkipped = (skip, path) => {
 };
 
 /**
- * A JsonSchema for running test cases. Every test case's schemas are in a
+ * A config for running test cases. Every test case's schemas are in a
  * session registry, so nothing is retrieved. The suite's URIs aren't real,
  * so nothing is allowed to make sure of that.
  *
- * @type (config?: JsonSchemaConfig) => JsonSchema
+ * @type (options?: JsonSchemaOptions) => JsonSchemaConfig
  */
-export const testSuiteJsonSchema = (config) => {
-  const jsonSchema = configureJsonSchema({ allowRetrieval: [], ...config, formats: fullFormats });
-
-  return jsonSchema;
-};
+export const testSuiteJsonSchema = (options) => ({
+  mediaTypes: jsonSchemaMediaTypes({ ...options, formats: fullFormats }),
+  allowRetrieval: []
+});
 
 /**
  * Compile a test case's schema. External schema URIs aren't unique across
  * test cases, so each test case has its own registry. The suite's schemas
  * don't have `$schema`, so the dialect under test is given for them.
  *
- * @type (jsonSchema: JsonSchema, dialectUri: string, uri: string, schema: Json, externalSchemas?: Record<string, Json>) => Promise<CompiledSchema>
+ * @type (jsonSchema: JsonSchemaConfig, dialectUri: string, uri: string, schema: Json, externalSchemas?: Record<string, Json>) => Promise<CompiledSchema>
  */
 export const compileTestCase = async (jsonSchema, dialectUri, uri, schema, externalSchemas = {}) => {
   const registry = new SchemaRegistry([
@@ -167,7 +165,7 @@ export const compileTestCase = async (jsonSchema, dialectUri, uri, schema, exter
  *   description: string;
  *   version: number;
  *   dialectUri: string;
- *   jsonSchema: (testCase: ValidationTestCase) => JsonSchema;
+ *   jsonSchema: (testCase: ValidationTestCase) => JsonSchemaConfig;
  *   applies?: (testCase: ValidationTestCase) => boolean;
  *   testDirectories?: Record<string, string>;
  *   skip?: Set<string>;
@@ -178,7 +176,7 @@ export const compileTestCase = async (jsonSchema, dialectUri, uri, schema, exter
  * Run the validation test cases that are compatible with a release. Every
  * way of evaluating a test has to agree.
  *
- * - `jsonSchema`: The JsonSchema a test case runs with. Each test case's
+ * - `jsonSchema`: The config a test case runs with. Each test case's
  *   schemas are only in its own session, so it can be shared.
  * - `applies`: Whether a compatible test case applies, such as by its tags
  * - `testDirectories`: Directories of test files, by the name their files
@@ -263,7 +261,7 @@ export const describeValidationTestSuite = (options) => {
  *   description: string;
  *   version: number;
  *   dialect: DialectConfig;
- *   jsonSchema: JsonSchema;
+ *   jsonSchema: JsonSchemaConfig;
  *   skip?: Set<string>;
  * }} AnnotationTestSuiteOptions
  */
@@ -274,7 +272,7 @@ export const describeValidationTestSuite = (options) => {
  * identified by their URIs in `dialect`.
  *
  * - `jsonSchema`: Each test case's schemas are only in its own session, so
- *   one JsonSchema runs every test case.
+ *   one config runs every test case.
  * - `skip`: Skipped test files, test cases, and tests (see {@link isSkipped}).
  *   A test is identified by its instance as JSON.
  *

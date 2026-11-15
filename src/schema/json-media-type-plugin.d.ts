@@ -1,5 +1,4 @@
 import type { JsonMediaTypeDocument, MediaTypePlugin } from "@hyperjump/browser";
-import type { JsonSchema } from "../json-schema.d.ts";
 import type { JsonSchemaMediaTypeDocument } from "./media-type-plugin.d.ts";
 
 /** A JSON document, or a schema document if it's a schema */
@@ -21,8 +20,8 @@ export type JsonOrSchemaDocument = JsonMediaTypeDocument | JsonSchemaMediaTypeDo
  * A fragment of a schema is a schema's, and a fragment of JSON identifies
  * the whole document.
  *
- * It's in every {@link JsonSchema}'s `mediaTypes`, before the config's, so
- * it's what parses JSON. Only a session of a `JsonSchema` reads a document
- * as a schema.
+ * `jsonSchemaMediaTypes` returns it after the JSON Schema media type, and
+ * it's what parses JSON. Only a `JsonSchemaHyperjump` reads a document as a
+ * schema. It isn't exported from the package.
  */
 export const jsonOrSchemaMediaType: Readonly<MediaTypePlugin<JsonOrSchemaDocument>> & Required<Pick<MediaTypePlugin<JsonOrSchemaDocument>, "fragmentPointer">>;

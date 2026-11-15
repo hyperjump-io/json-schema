@@ -1,6 +1,5 @@
 import type { Plugin } from "unified";
 import type { JsonDocumentNode } from "@hyperjump/browser";
-import type { JsonSchema } from "../json-schema.d.ts";
 import type { JsonSchemaHyperjump } from "../session.d.ts";
 import type { JsonSchemaDocumentNode } from "./schema-ast.d.ts";
 import type { SchemaMessage } from "./schema-error.d.ts";
@@ -15,7 +14,7 @@ export type JsonSchemaResolveOptions = {
   /**
    * The dialect to use if the document doesn't have `$schema`, such as the
    * `schema` parameter of a `Content-Type` header. If this isn't given, the
-   * `defaultDialectUri` of the {@link JsonSchema} config is used.
+   * `defaultDialectUri` the JSON Schema media types were made with is used.
    */
   dialectUri?: string;
 };

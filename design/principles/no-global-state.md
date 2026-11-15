@@ -5,12 +5,12 @@ Everything is per instance. v1 had global state (`registerSchema`,
 couldn't configure JSON Schema differently, and tests leaked into each
 other.
 
-- Keywords, formats, and dialects are in a `JsonSchema`'s config, not
-  added to the module.
+- Keywords, formats, and dialects are given to `jsonSchemaMediaTypes`,
+  whose media types go in a config, not added to the module.
 - Definitions are plain, stateless objects, so one definition can be shared
-  by every `JsonSchema` and every dialect. Anything instance-specific comes
+  by every config and every dialect. Anything instance-specific comes
   through a context argument (see [Keywords](../specs/keyword/README.md)).
-- State is separated by how long it lives: the long-lived `JsonSchema` only
+- State is separated by how long it lives: the long-lived config only
   has what doesn't depend on a session, and everything that depends on
   registries belongs to a session and goes away with it (see
   [Sessions](../components/sessions/README.md)).

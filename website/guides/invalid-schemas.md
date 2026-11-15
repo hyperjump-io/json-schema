@@ -15,7 +15,7 @@ const registry = new SchemaRegistry().with(`{
 }`);
 
 try {
-  await compile(jsonSchema, "https://example.com/bad", { registry });
+  await compile(config, "https://example.com/bad", { registry });
 } catch (error) {
   if (!(error instanceof SchemaError)) {
     throw error;

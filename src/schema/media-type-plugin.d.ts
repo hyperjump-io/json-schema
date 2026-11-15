@@ -1,5 +1,4 @@
 import type { MediaTypePlugin } from "@hyperjump/browser";
-import type { JsonSchema } from "../json-schema.d.ts";
 import type { JsonSchemaDocumentNode } from "./schema-ast.d.ts";
 
 /**
@@ -20,8 +19,9 @@ export type JsonSchemaMediaTypeDocument = JsonSchemaDocumentNode<"success">;
  * `ERR_ANCHOR_NOT_FOUND`, with the `anchor`, if the fragment isn't an
  * anchor in the document or a JSON Pointer. Its `url` is the resource's.
  *
- * It's in every {@link JsonSchema}'s `mediaTypes`. A schema can only be
- * retrieved in a session of a `JsonSchema`: `parse` throws in any other.
+ * `jsonSchemaMediaTypes` makes it with the definitions schemas are read
+ * with. A schema can only be retrieved in a `JsonSchemaHyperjump`: `parse`
+ * throws in any other session. It isn't exported from the package.
  */
 export const schemaMediaType: Readonly<MediaTypePlugin<JsonSchemaMediaTypeDocument>> & Required<Pick<MediaTypePlugin<JsonSchemaMediaTypeDocument>, "fragmentPointer">>;
 

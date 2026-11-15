@@ -7,7 +7,7 @@ import { entriesOf } from "./registry-entries.js";
 
 /**
  * @import { JsonNode } from "@hyperjump/browser"
- * @import { JsonSchema } from "../json-schema.d.ts"
+ * @import { JsonSchemaDefinitions } from "../json-schema.d.ts"
  * @import { SchemaRegistry } from "./schema-registry.d.ts"
  * @import { RegistryEntry } from "./registry-entries.js"
  * @import { Dialect, DialectDefinition } from "../dialect.d.ts"
@@ -50,24 +50,24 @@ import { entriesOf } from "./registry-entries.js";
  */
 
 /**
- * Identifications that only depend on the JsonSchema and the entry, which
+ * Identifications that only depend on the definitions and the entry, which
  * every index of a registry with the entry can share. That's what keeps a
  * registry that's one edit away from another cheap to index.
  *
- * @type WeakMap<JsonSchema, WeakMap<RegistryEntry, Identification>>
+ * @type WeakMap<JsonSchemaDefinitions, WeakMap<RegistryEntry, Identification>>
  */
 const identifications = new WeakMap();
 
 /**
- * A JsonSchema's index of a registry: each entry by the URI it's identified
- * by with the JsonSchema's dialects. A registry never changes, and neither
- * do a JsonSchema's dialects, so neither does its index. A schema an
+ * An index of a registry for some definitions: each entry by the URI it's
+ * identified by with their dialects. A registry never changes, and neither
+ * do the definitions, so neither does its index. A schema an
  * operation is given as a value can use the dialects defined in the
  * session's registry, so its index is made with that registry's index.
  */
 export class RegistryIndex {
-  /** @type JsonSchema */
-  #jsonSchema;
+  /** @type JsonSchemaDefinitions */
+  #definitions;
 
   /** @type RegistryIndex | undefined */
   #dialectsFrom;
@@ -99,12 +99,12 @@ export class RegistryIndex {
   #unidentified;
 
   /**
-   * @param {JsonSchema} jsonSchema
+   * @param {JsonSchemaDefinitions} definitions
    * @param {SchemaRegistry} registry
    * @param {RegistryIndex} [dialectsFrom]
    */
-  constructor(jsonSchema, registry, dialectsFrom) {
-    this.#jsonSchema = jsonSchema;
+  constructor(definitions, registry, dialectsFrom) {
+    this.#definitions = definitions;
     this.#dialectsFrom = dialectsFrom;
     this.#byUri = new Map();
     this.#dialects = new Map();
@@ -125,15 +125,15 @@ export class RegistryIndex {
    * @type (entry: RegistryEntry) => boolean
    */
   #identify(entry) {
-    let cache = identifications.get(this.#jsonSchema);
+    let cache = identifications.get(this.#definitions);
     if (!cache) {
       cache = new WeakMap();
-      identifications.set(this.#jsonSchema, cache);
+      identifications.set(this.#definitions, cache);
     }
 
     let identification = cache.get(entry);
     if (!identification) {
-      identification = identify(this.#jsonSchema, entry, this.#registryDialect);
+      identification = identify(this.#definitions, entry, this.#registryDialect);
       if (!("waitingFor" in identification) && !identification.fromRegistry) {
         cache.set(entry, identification);
       }
@@ -268,7 +268,7 @@ export class RegistryIndex {
 /**
  * Find the URI an entry is identified by. That depends on the dialect, so
  * only the root's resolve hooks (`$id`, `$vocabulary`) run. Nothing is
- * retrieved, so an entry whose dialect isn't defined by the JsonSchema,
+ * retrieved, so an entry whose dialect isn't in the definitions, defined by
  * another entry in the same registry, or the registry a value is added to
  * has to wait for it.
  *
@@ -277,12 +277,12 @@ export class RegistryIndex {
  * positions. Only a problem needs positions, so an entry added as text is
  * parsed again into a tree if there is one.
  *
- * @type (jsonSchema: JsonSchema, entry: RegistryEntry, registryDialect: RegistryDialects) => Identification
+ * @type (definitions: JsonSchemaDefinitions, entry: RegistryEntry, registryDialect: RegistryDialects) => Identification
  */
-export const identify = (jsonSchema, entry, registryDialect) => {
+export const identify = (definitions, entry, registryDialect) => {
   const root = parsedRoot(entry);
   if (root) {
-    const identification = identifyRoot(jsonSchema, entry, registryDialect, root);
+    const identification = identifyRoot(definitions, entry, registryDialect, root);
     // A value has no positions, so it isn't parsed again for them
     if (!("error" in identification) || entry.stringified) {
       return identification;
@@ -295,7 +295,7 @@ export const identify = (jsonSchema, entry, registryDialect) => {
     return { error: Error(`The schema${retrievalUri ? ` at '${retrievalUri}'` : ""} isn't valid JSON`, { cause: toVFileMessage(result.errors[0]) }) };
   }
 
-  return identifyRoot(jsonSchema, entry, registryDialect, nodeRoot(result.node));
+  return identifyRoot(definitions, entry, registryDialect, nodeRoot(result.node));
 };
 
 /**
@@ -337,10 +337,10 @@ const nodeRoot = (node) => {
   };
 };
 
-/** @type (jsonSchema: JsonSchema, entry: RegistryEntry, registryDialect: RegistryDialects, root: Root) => Identification */
-const identifyRoot = (jsonSchema, entry, registryDialect, root) => {
+/** @type (definitions: JsonSchemaDefinitions, entry: RegistryEntry, registryDialect: RegistryDialects, root: Root) => Identification */
+const identifyRoot = (definitions, entry, registryDialect, root) => {
   const { retrievalUri } = entry;
-  const dialectUri = root.$schema ?? entry.dialectUri ?? jsonSchema.config.defaultDialectUri;
+  const dialectUri = root.$schema ?? entry.dialectUri ?? definitions.defaultDialectUri;
 
   /** @type Dialect | undefined */
   let dialect;
@@ -354,7 +354,7 @@ const identifyRoot = (jsonSchema, entry, registryDialect, root) => {
       return { error: /** @type Error */ (error) };
     }
 
-    dialect = jsonSchema.dialects[absoluteDialectUri];
+    dialect = definitions.dialects[absoluteDialectUri];
     if (dialect === undefined) {
       const definition = registryDialect(absoluteDialectUri);
       if (definition === undefined) {
@@ -370,7 +370,7 @@ const identifyRoot = (jsonSchema, entry, registryDialect, root) => {
     /** @type DialectDefinition | undefined */
     let definedDialect;
     if (root.isObject && dialect !== undefined) {
-      ({ uri, definedDialect } = rootEffects(jsonSchema, root, dialect, retrievalUri));
+      ({ uri, definedDialect } = rootEffects(definitions, root, dialect, retrievalUri));
     }
 
     if (uri === undefined) {
@@ -392,9 +392,9 @@ const identifyRoot = (jsonSchema, entry, registryDialect, root) => {
  * defines. A root that's a reference (draft-04 through draft-07 `$ref`)
  * ignores both.
  *
- * @type (jsonSchema: JsonSchema, root: Root, dialect: Dialect, retrievalUri: Id | undefined) => { uri?: Id; definedDialect?: DialectDefinition }
+ * @type (definitions: JsonSchemaDefinitions, root: Root, dialect: Dialect, retrievalUri: Id | undefined) => { uri?: Id; definedDialect?: DialectDefinition }
  */
-const rootEffects = (jsonSchema, root, dialect, retrievalUri) => {
+const rootEffects = (definitions, root, dialect, retrievalUri) => {
   /** @type Id | undefined */
   let uri;
   /** @type DialectDefinition | undefined */
@@ -403,7 +403,7 @@ const rootEffects = (jsonSchema, root, dialect, retrievalUri) => {
 
   for (const [name, valueNodeOf] of root.properties) {
     const keywordUri = dialect.keywords[name];
-    const keyword = keywordUri === undefined ? undefined : jsonSchema.keywords[keywordUri];
+    const keyword = keywordUri === undefined ? undefined : definitions.keywords[keywordUri];
     if (!keyword?.resolve) {
       continue;
     }
@@ -412,7 +412,7 @@ const rootEffects = (jsonSchema, root, dialect, retrievalUri) => {
 
     /** @type ResolveContext */
     const context = {
-      vocabulary: (uri) => jsonSchema.vocabularies[toId(uri)],
+      vocabulary: (uri) => definitions.vocabularies[toId(uri)],
       dialectUri: dialect.uri,
       setBaseUri: (reference) => {
         try {

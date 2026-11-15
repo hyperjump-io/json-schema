@@ -6,7 +6,7 @@ it isn't, pass an output format as the `output` option.
 ```typescript
 import { BASIC, validator } from "@hyperjump/json-schema";
 
-const checkPerson = await validator(jsonSchema, "https://example.com/person", { output: BASIC });
+const checkPerson = await validator(config, "https://example.com/person", { output: BASIC });
 const result = checkPerson({ age: -1 });
 ```
 
@@ -52,7 +52,7 @@ The results below show only each error's `absoluteKeywordLocation` and
 A list of every keyword that failed, in document order.
 
 ```typescript
-const result = await validate(jsonSchema, "https://example.com/person", { age: -1 }, { output: BASIC });
+const result = await validate(config, "https://example.com/person", { age: -1 }, { output: BASIC });
 ```
 
 ```json
@@ -83,7 +83,7 @@ The same errors, nested under the keywords that applied them. Here,
 `/age`.
 
 ```typescript
-const result = await validate(jsonSchema, "https://example.com/person", { age: -1 }, { output: DETAILED });
+const result = await validate(config, "https://example.com/person", { age: -1 }, { output: DETAILED });
 ```
 
 ```json

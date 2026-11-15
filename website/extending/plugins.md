@@ -12,7 +12,7 @@ evaluated with the same plugin objects.
 
 ```typescript
 const keywords = new Set<string>();
-await validate(jsonSchema, uri, instance, {
+await validate(config, uri, instance, {
   plugins: [{
     afterKeyword(keyword, at, valid) {
       keywords.add(keyword.absoluteKeywordLocation);
@@ -67,7 +67,7 @@ import type { Json } from "@hyperjump/browser";
 
 const description = "https://json-schema.org/keyword/description";
 const descriptions = new Map<string, Json>();
-await validate(jsonSchema, uri, json, {
+await validate(config, uri, json, {
   input: "json",
   plugins: [{
     annotation(keyword, at, value) {

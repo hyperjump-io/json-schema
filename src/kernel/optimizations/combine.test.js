@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { configureJsonSchema } from "../../json-schema.js";
+import { jsonSchemaMediaTypes } from "../../json-schema.js";
 import { SchemaRegistry } from "../../registry/schema-registry.js";
 import { v1Dialect, v1DialectUri } from "../../dialects/v1/index.js";
 import combine from "./combine.js";
@@ -13,7 +13,7 @@ import { validatorFor } from "../../operations/validate-compiled.js";
  * @import { Mode } from "../optimize.js"
  */
 
-const jsonSchema = configureJsonSchema({ dialects: [v1Dialect] });
+const jsonSchema = { mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }) };
 
 const fast = { fast: true, plugins: false, annotations: false };
 const plugins = { fast: false, plugins: true, annotations: false };

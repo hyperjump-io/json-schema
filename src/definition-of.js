@@ -1,10 +1,12 @@
 /**
  * @import { Format } from "./format.d.ts"
  * @import { Keyword } from "./keyword.d.ts"
+ * @import { HyperjumpConfig } from "@hyperjump/browser"
+ * @import { JsonSchemaDefinitions } from "./json-schema.d.ts"
  */
 
-// Looking up a definition a schema needs, in a JsonSchema's `keywords` or
-// `formats`. They aren't part of the API.
+// Looking up the definitions a schema needs: a config's, and a keyword or
+// format in them. They aren't part of the API.
 
 /**
  * @type (keywords: Readonly<Record<string, Keyword>>, uri: string) => Keyword
@@ -12,7 +14,7 @@
  */
 export const keywordOf = (keywords, uri) => {
   if (!(uri in keywords)) {
-    throw Error(`The '${uri}' keyword isn't supported. Add it to the dialect or the 'keywords' config.`);
+    throw Error(`The '${uri}' keyword isn't supported. Add it to the dialect or the 'keywords' option of jsonSchemaMediaTypes.`);
   }
 
   return keywords[uri];
@@ -24,8 +26,25 @@ export const keywordOf = (keywords, uri) => {
  */
 export const formatOf = (formats, uri) => {
   if (!(uri in formats)) {
-    throw Error(`The '${uri}' format isn't supported. Add it to the dialect or the 'formats' config.`);
+    throw Error(`The '${uri}' format isn't supported. Add it to the dialect or the 'formats' option of jsonSchemaMediaTypes.`);
   }
 
   return formats[uri];
+};
+
+/**
+ * The definitions of the JSON Schema media types in a config, from
+ * `jsonSchemaMediaTypes`, which are on its schema plugin
+ *
+ * @type (config: HyperjumpConfig) => JsonSchemaDefinitions
+ * @throws TypeError if the config doesn't have them
+ */
+export const definitionsOf = (config) => {
+  for (const plugin of config.mediaTypes ?? []) {
+    if ("definitions" in plugin) {
+      return /** @type JsonSchemaDefinitions */ (plugin.definitions);
+    }
+  }
+
+  throw TypeError("The config has no JSON Schema media types. Add them with 'mediaTypes: jsonSchemaMediaTypes({ dialects })'.");
 };

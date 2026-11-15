@@ -1,15 +1,16 @@
 # Dialects (`src/dialect.d.ts`)
 
 - A dialect is `{ uri, keywords, unknownKeywords }`. `keywords` maps names to
-  keyword URIs. In the config, a dialect (`DialectConfig`) maps names to
-  definitions or URIs, and the `JsonSchema` stores it with URIs (see
+  keyword URIs. In `jsonSchemaMediaTypes`'s options, a dialect
+  (`DialectConfig`) maps names to definitions or URIs, and the media
+  types' definitions store it with URIs (see
   [Built-in dialects](../built-in-dialects/README.md)). The core has no vocabularies. A dialect is one flat map of
   keywords, and vocabularies are only how `$vocabulary` builds one. `unknownKeywords` is `"error"` (v1), `"annotation"` (2019-09,
   2020-12), or `"ignore"` (draft-04 through draft-07).
-- There's no default dialect unless the user sets `defaultDialectUri` in the
-  config. Otherwise, a schema whose dialect can't be determined is an error.
+- There's no default dialect unless the user sets `defaultDialectUri` in
+  the options. Otherwise, a schema whose dialect can't be determined is an error.
   The dialect comes from `$schema`, then the containing resource, then the
-  `schema`/`profile` media type parameter, then the config.
+  `schema`/`profile` media type parameter, then the options.
 - `$schema` is only allowed where a schema resource starts. Anywhere else,
   it's ignored with a message and the parent's dialect is used.
 - A `$schema` is read the same way in every dialect, and it's tolerant: the
@@ -26,35 +27,34 @@
   recognize those exact forms. v1 drops the meta-schema role
   (json-schema-org/json-schema-spec#1712): `$schema` only identifies the
   dialect, and it MUST be normalized and have no fragment.
-- A `JsonSchema`'s dialects are in its config and can't change. A dialect
-  in the config twice is an error. A keyword a dialect names by URI has to
-  be defined, by another dialect or the config's `keywords`, or
-  constructing the `JsonSchema` throws, because nothing can define it
+- The dialects are in `jsonSchemaMediaTypes`'s options and can't change. A
+  dialect in the options twice is an error. A keyword a dialect names by
+  URI has to be defined, by another dialect or the options' `keywords`, or
+  `jsonSchemaMediaTypes` throws, because nothing can define it
   later. A format named by a URI nothing defines is only unsupported, like
   `hostname` without the full formats. A dialect a meta-schema defines can
   still name a keyword that isn't defined, and that's reported when a
   schema uses it (`unsupported-keyword`).
 - `extendDialect(dialect, { keywords, formats })` is a function that
   returns a dialect with more keywords and formats, which goes in the
-  config instead. That's how users add custom keywords and formats to v1.
+  options instead. That's how users add custom keywords and formats to v1.
   It can't replace either. Before 2026-10-29 it was a method that changed
   the instance's dialect, with `addDialect` and `removeDialect`, and a
   schema resolved before the change didn't see it.
 
-## The config
+## The options
 
-- A `JsonSchema`'s dialects, keywords, formats, and vocabularies are in its
-  config, and can't change after it's created. Before 2026-10-29 they were
-  added with methods, and a schema resolved before a change didn't see it.
-  Now nothing cached from a definition can go stale. Adding a dialect
-  later, like one loaded with `import()` when a schema needs it, means
-  creating another `JsonSchema`.
-  - `jsonSchema.config` is a frozen copy, and so are its `dialects`,
-    `keywords`, `formats`, and `vocabularies`. The `Hyperjump` copies and
-    freezes the config and its own lists, but only `JsonSchema` knows
-    these are lists. Before 2026-10-31, they were the caller's, so
-    changing one after the `JsonSchema` was created changed what `config`
-    said without changing the `JsonSchema`.
+- The dialects, keywords, formats, and vocabularies are
+  `jsonSchemaMediaTypes`'s options, and can't change after the media types
+  are made. Before 2026-10-29 they were added with methods, and a schema
+  resolved before a change didn't see it. Now nothing cached from a
+  definition can go stale. Adding a dialect later, like one loaded with
+  `import()` when a schema needs it, means making the media types again.
+  - The options are read once, into frozen tables, so changing a list
+    afterward changes nothing. Before 2026-10-31, the `JsonSchema` kept the
+    caller's lists in its `config`, so changing one changed what `config`
+    said without changing the `JsonSchema`. From then until 2026-11-14, it
+    kept frozen copies.
 - There's still no default dialect. One isn't inferred when there's only
   one dialect, because adding a second would change how schemas without
   `$schema` are read. `defaultDialectUri` sets one.

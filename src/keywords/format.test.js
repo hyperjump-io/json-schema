@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { describe, test, beforeAll, afterAll, expect } from "vitest";
-import { configureJsonSchema, extendDialect } from "../json-schema.js";
+import { jsonSchemaMediaTypes, extendDialect } from "../json-schema.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import { fullFormats } from "../formats/full.js";
 import { compile } from "../operations/compile.js";
@@ -11,9 +11,9 @@ import { annotatorFor, validatorFor } from "../operations/validate-compiled.js";
 
 /**
  * @import { Json, ReadonlyJson } from "@hyperjump/browser"
- * @import { JsonSchemaConfig } from "../json-schema.d.ts"
+ * @import { SchemaRegistry } from "../registry/schema-registry.d.ts"
+ * @import { JsonSchemaConfig, JsonSchemaOptions } from "../json-schema.d.ts"
  * @import { Format } from "../format.d.ts"
- * @import { JsonSchema } from "../json-schema.d.ts"
  */
 
 describe("format", () => {
@@ -28,11 +28,12 @@ describe("format", () => {
     return pathToFileURL(path).toString();
   };
 
-  /** @type (config?: JsonSchemaConfig) => JsonSchema */
-  const v1 = (config) => {
-    const jsonSchema = configureJsonSchema({ allowRetrieval: [pathToFileURL(join(tmpdir(), "/")).href], dialects: [v1Dialect], ...config });
-    return jsonSchema;
-  };
+  /** @type (config?: JsonSchemaOptions & { allowRetrieval?: string[]; registry?: SchemaRegistry }) => JsonSchemaConfig */
+  const v1 = ({ allowRetrieval = [pathToFileURL(join(tmpdir(), "/")).href], registry, ...options } = {}) => ({
+    mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect], ...options }),
+    allowRetrieval,
+    registry
+  });
 
   beforeAll(async () => {
     directory = await mkdtemp(join(tmpdir(), "json-schema-"));
@@ -62,7 +63,7 @@ describe("format", () => {
   });
 
   test("the lite formats don't include the formats that need Unicode data", async () => {
-    await expect(compile(v1(), await schemaFile({ format: "idn-hostname" }))).rejects.toThrow("'formats' config");
+    await expect(compile(v1(), await schemaFile({ format: "idn-hostname" }))).rejects.toThrow("'formats' option");
   });
 
   test("the full formats", async () => {

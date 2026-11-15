@@ -27,7 +27,7 @@ An annotation belongs to part of a value. In this schema, `"Name"` is the
 nodes with each node's annotations attached to it.
 
 ```typescript
-const annotatePerson = await annotator(jsonSchema, "https://example.com/person");
+const annotatePerson = await annotator(config, "https://example.com/person");
 const { output, node } = annotatePerson({ name: "Jason" });
 
 output; // true
@@ -55,7 +55,7 @@ in a session. By default it uses v1's names:
 ```typescript
 import { annotation, JsonSchemaHyperjump } from "@hyperjump/json-schema";
 
-const session = new JsonSchemaHyperjump(jsonSchema);
+const session = new JsonSchemaHyperjump(config);
 annotation(session, node, "title"); // ["Person"]
 ```
 

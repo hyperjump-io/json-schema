@@ -2,7 +2,7 @@ import { describe, test, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
 import { jsonPointerGet, rejsonParse } from "@hyperjump/browser";
-import { configureJsonSchema } from "../json-schema.js";
+import { jsonSchemaMediaTypes } from "../json-schema.js";
 import { JsonSchemaHyperjump } from "../session.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
 import { draft04Dialect } from "../dialects/draft-04/index.js";
@@ -272,7 +272,9 @@ describe("assertsOnItsOwn", () => {
  * }>
  */
 const lower = async (json) => {
-  const jsonSchema = configureJsonSchema({ dialects: [draft04Dialect, draft07Dialect, draft201909Dialect, draft202012Dialect] });
+  const jsonSchema = {
+    mediaTypes: jsonSchemaMediaTypes({ dialects: [draft04Dialect, draft07Dialect, draft201909Dialect, draft202012Dialect] })
+  };
   const session = new JsonSchemaHyperjump(jsonSchema);
 
   const file = new VFile({ path: "/schemas/a.schema.json", value: json });

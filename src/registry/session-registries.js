@@ -1,10 +1,11 @@
 import { toId } from "../identifiers.js";
+import { definitionsOf } from "../definition-of.js";
 import { resolveSchemaText, resolveSchemaValue } from "../schema/resolve-text.js";
 import { RegistryIndex } from "./registry-index.js";
 import { SchemaRegistry } from "./schema-registry.js";
 
 /**
- * @import { JsonSchema } from "../json-schema.d.ts"
+ * @import { JsonSchemaDefinitions } from "../json-schema.d.ts"
  * @import { JsonSchemaHyperjump } from "../session.d.ts"
  * @import { JsonSchemaDocumentNode } from "../schema/schema-ast.d.ts"
  * @import { ReadonlyJson } from "@hyperjump/browser"
@@ -22,8 +23,7 @@ export class SessionRegistries {
   #session;
 
   /**
-   * The session's own registry, if it has one. The session sees it with the
-   * config's registry, as one registry.
+   * The registry in the session's config, if it has one
    *
    * @type SchemaRegistry | undefined
    */
@@ -76,7 +76,7 @@ export class SessionRegistries {
    */
   addValue(schema) {
     const uri = toId(`urn:uuid:${crypto.randomUUID()}`);
-    const index = new RegistryIndex(this.#session.jsonSchema, new SchemaRegistry().with(schema, { retrievalUri: uri }), this.#registryIndex());
+    const index = new RegistryIndex(definitionsOf(this.#session.config), new SchemaRegistry().with(schema, { retrievalUri: uri }), this.#registryIndex());
     this.#values.push(index);
 
     const id = index.lookup(uri)?.uri;
@@ -89,7 +89,7 @@ export class SessionRegistries {
 
   /** @type () => RegistryIndex */
   #registryIndex() {
-    this.#index ??= registryIndex(this.#session.jsonSchema, this.#registry);
+    this.#index ??= registryIndex(definitionsOf(this.#session.config), this.#registry);
     return this.#index;
   }
 
@@ -162,14 +162,14 @@ export class SessionRegistries {
 
   /**
    * A registry entry is resolved the first time it's needed. If it only
-   * uses dialects added to the JsonSchema, it's resolved once for every
-   * session.
+   * uses the definitions' dialects, it's resolved once for every session
+   * with the same definitions.
    *
    * @type (indexed: IndexedEntry) => Promise<JsonSchemaDocumentNode>
    */
   async #document(indexed) {
-    const jsonSchema = this.#session.jsonSchema;
-    const shared = sharedDocuments.get(jsonSchema)?.get(indexed.entry);
+    const definitions = definitionsOf(this.#session.config);
+    const shared = sharedDocuments.get(definitions)?.get(indexed.entry);
     if (shared) {
       return shared;
     }
@@ -186,11 +186,11 @@ export class SessionRegistries {
       // identified, with any others. If it didn't, it's still a problem.
       throw indexed.error;
     }
-    if (Object.values(document.embedded).every((resource) => resource.dialectUri === undefined || resource.dialectUri in jsonSchema.dialects)) {
-      let documents = sharedDocuments.get(jsonSchema);
+    if (Object.values(document.embedded).every((resource) => resource.dialectUri === undefined || resource.dialectUri in definitions.dialects)) {
+      let documents = sharedDocuments.get(definitions);
       if (!documents) {
         documents = new WeakMap();
-        sharedDocuments.set(jsonSchema, documents);
+        sharedDocuments.set(definitions, documents);
       }
       documents.set(indexed.entry, pending);
     }
@@ -200,38 +200,30 @@ export class SessionRegistries {
 }
 
 /**
- * Each JsonSchema's index of the registry its sessions see with each
- * session registry, and its index of its config's registry alone, by the
- * JsonSchema. They're held weakly, so a registry that was only used for one
- * session can go away.
+ * The index of each registry sessions see, by their definitions, and of no
+ * registry, by the definitions themselves. They're held weakly, so a
+ * registry that was only used for one session can go away.
  *
- * @type WeakMap<JsonSchema, WeakMap<SchemaRegistry | JsonSchema, RegistryIndex>>
+ * @type WeakMap<JsonSchemaDefinitions, WeakMap<SchemaRegistry | JsonSchemaDefinitions, RegistryIndex>>
  */
 const registryIndexes = new WeakMap();
 
 /**
- * A registry is indexed the first time a session uses it. A session sees
- * the config's registry and its own as one registry, so a schema in either
- * can use a dialect a schema in the other defines.
+ * A registry is indexed the first time a session uses it.
  *
- * @type (jsonSchema: JsonSchema, registry: SchemaRegistry | undefined) => RegistryIndex
+ * @type (definitions: JsonSchemaDefinitions, registry: SchemaRegistry | undefined) => RegistryIndex
  */
-const registryIndex = (jsonSchema, registry) => {
-  let indexes = registryIndexes.get(jsonSchema);
+const registryIndex = (definitions, registry) => {
+  let indexes = registryIndexes.get(definitions);
   if (!indexes) {
     indexes = new WeakMap();
-    registryIndexes.set(jsonSchema, indexes);
+    registryIndexes.set(definitions, indexes);
   }
 
-  const key = registry ?? jsonSchema;
+  const key = registry ?? definitions;
   let index = indexes.get(key);
   if (!index) {
-    const configRegistry = jsonSchema.config.registry;
-    let seen = configRegistry ?? registry ?? new SchemaRegistry();
-    if (configRegistry !== undefined && registry !== undefined) {
-      seen = configRegistry.concat(registry);
-    }
-    index = new RegistryIndex(jsonSchema, seen);
+    index = new RegistryIndex(definitions, registry ?? new SchemaRegistry());
     indexes.set(key, index);
   }
 
@@ -239,10 +231,10 @@ const registryIndex = (jsonSchema, registry) => {
 };
 
 /**
- * Registry entries resolved with only the dialects added to a JsonSchema,
- * which every session of the JsonSchema can share
+ * Registry entries resolved with only the definitions' dialects, which every
+ * session with the same definitions can share
  *
- * @type WeakMap<JsonSchema, WeakMap<RegistryEntry, Promise<JsonSchemaDocumentNode>>>
+ * @type WeakMap<JsonSchemaDefinitions, WeakMap<RegistryEntry, Promise<JsonSchemaDocumentNode>>>
  */
 const sharedDocuments = new WeakMap();
 

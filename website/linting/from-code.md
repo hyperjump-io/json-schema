@@ -7,7 +7,7 @@ your users give you before you accept them.
 ```typescript
 import { lint } from "@hyperjump/json-schema";
 
-const results = await lint(jsonSchema, "https://example.com/person");
+const results = await lint(config, "https://example.com/person");
 
 for (const result of results) {
   console.log(`${result.severity}: ${result.message} (${result.url})`);
@@ -67,7 +67,7 @@ import recommended from "@hyperjump/json-schema/lint/recommended";
 import thenElseWithoutIf from
   "@hyperjump/json-schema/lint/rules/then-else-without-if";
 
-const results = await lint(jsonSchema, "https://example.com/person", {
+const results = await lint(config, "https://example.com/person", {
   plugins: [recommended, [thenElseWithoutIf, ["error"]]]
 });
 results[0].severity; // "error"

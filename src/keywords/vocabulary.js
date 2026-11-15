@@ -3,18 +3,18 @@ import { boolean } from "./checks.js";
 
 /**
  * @import { Keyword } from "../keyword.d.ts"
- * @import { JsonSchema } from "../json-schema.d.ts"
  */
 
 /**
  * `$vocabulary` (2019-09, 2020-12). It makes a meta-schema define the dialect
  * it identifies, with the keywords of the vocabularies it lists. A required
- * vocabulary (`true`) that the {@link JsonSchema} doesn't know is a problem
+ * vocabulary (`true`) that the JSON Schema media types don't know is a problem
  * with the meta-schema. An optional one (`false`) is skipped. Entries that
  * aren't booleans are ignored.
  *
- * Vocabularies are in the `JsonSchema`'s config, from its dialects and its
- * `vocabularies`, so every dialect that has `$vocabulary` sees all of them.
+ * Vocabularies are in the media types' definitions, from their dialects and
+ * their `vocabularies`, so every dialect that has `$vocabulary` sees all of
+ * them.
  *
  * @type Keyword<Record<string, boolean>, "data">
  */

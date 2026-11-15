@@ -26,19 +26,19 @@ own type. A schema declared `as const` fits too.
 
 ## Schemas you pass to operations
 
-A `JsonSchema` knows the schema type of its dialects. When you pass a
-schema as a value to `validate`, `validator`, `compile`, or `bundle`, it's
-checked without you naming a type.
-`configureJsonSchema({ dialects: [v1Dialect] })` is a `JsonSchema<V1Schema>`. A
-URI isn't checked.
+A config knows the schema type of the dialects its JSON Schema media types
+were made with. When you pass a schema as a value to `validate`,
+`validator`, `compile`, or `bundle`, it's checked without you naming a
+type. A config with `jsonSchemaMediaTypes({ dialects: [v1Dialect] })`
+checks schemas against `V1Schema`. A URI isn't checked.
 
 ```typescript
-import { configureJsonSchema, validate } from "@hyperjump/json-schema";
+import { jsonSchemaMediaTypes, validate } from "@hyperjump/json-schema";
 import { v1Dialect } from "@hyperjump/json-schema/v1";
 
-const jsonSchema = configureJsonSchema({ dialects: [v1Dialect] });
+const config = { mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }) };
 
-await validate(jsonSchema, {
+await validate(config, {
   $schema: "https://json-schema.org/v1",
   type: "string",
   minLenght: 1
@@ -50,9 +50,9 @@ Object literal may only specify known properties, but 'minLenght' does not exist
 ```
 
 With more than one dialect, the type is the union of their types. A
-session has the same type as its `JsonSchema`. A `JsonSchema` without
-dialects accepts any schema. To use the type in a function of your own,
-use `SchemaTypeOf<typeof jsonSchema>`.
+session has the same type as its config. A config whose media types have
+no dialects accepts any schema. To use the type in a function of your own,
+use `SchemaTypeOf<typeof config>`.
 
 ## The dialects' types
 
@@ -119,8 +119,8 @@ Object literal may only specify known properties, but 'minLenght' does not exist
 
 Every schema added to it is checked. That includes schemas passed to the
 constructor, to `with`, and to the registries `with` returns. The type can
-be a dialect's type or come from a `JsonSchema`:
-`new SchemaRegistry<SchemaTypeOf<typeof jsonSchema>>()`. A registry without
+be a dialect's type or come from a config:
+`new SchemaRegistry<SchemaTypeOf<typeof config>>()`. A registry without
 a type accepts any JSON, and the config and every call take a registry of
 any type. JSON text isn't checked, because its type is `string`.
 
@@ -160,21 +160,23 @@ const person = {
 const registry = new SchemaRegistry<V1Schema>().with(person);
 
 const jason = { name: "Jason" } as const;
-await validate(jsonSchema, "https://example.com/person", jason, { registry }); // true
+await validate(config, "https://example.com/person", jason, { registry }); // true
 ```
 
 ## Custom keywords
 
 A dialect extended with `extendDialect` has types for the keywords it
-adds. A `JsonSchema` with that dialect checks schemas that use them.
+adds. A config with that dialect checks schemas that use them.
 Subschemas have the same type, so they can use your keywords too.
 
 ```typescript
-const jsonSchema = configureJsonSchema({
-  dialects: [extendDialect(v1Dialect, { keywords: { even: evenKeyword } })]
-});
+const config = {
+  mediaTypes: jsonSchemaMediaTypes({
+    dialects: [extendDialect(v1Dialect, { keywords: { even: evenKeyword } })]
+  })
+};
 
-await validate(jsonSchema, { type: "integer", even: 2 }, 4);
+await validate(config, { type: "integer", even: 2 }, 4);
 ```
 
 ```text

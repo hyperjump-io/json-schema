@@ -5,23 +5,25 @@ Decided and built 2026-10-29, replacing methods on `JsonSchema`,
 `addKeyword`. Bundles shrank as a result (see
 [Bundle size](../../benchmarks/bundle-size.md)).
 
-`JsonSchema` is a value of what decides how schemas are read: its
-definitions (dialects, keywords, formats), its registry, the config, and
-the stack. Everything done with schemas, like validating, annotating,
-bundling, and linting, is a function that takes a `JsonSchema`, and
-starts a session of its own. A session is a `Hyperjump`, and browsing is
-functions of it (see [Sessions](../sessions/README.md)).
+What decides how schemas are read is a config: browser's, with the JSON
+Schema media types in its `mediaTypes`, which carry the definitions
+(dialects, keywords, formats), and a `registry` (see
+[JSON Schema as a media type](json-schema-media-type.md)). Everything done
+with schemas, like validating, annotating, bundling, and linting, is a
+function that takes the config, and starts a session of its own. A session
+is a `Hyperjump`, and browsing is functions of it (see
+[Sessions](../sessions/README.md)).
 
 ```js
-import { BASIC, configureJsonSchema, SchemaRegistry, validate, validator } from "@hyperjump/json-schema";
+import { BASIC, jsonSchemaMediaTypes, SchemaRegistry, validate, validator } from "@hyperjump/json-schema";
 import { v1Dialect } from "@hyperjump/json-schema/v1";
 
-const jsonSchema = configureJsonSchema({ dialects: [v1Dialect] });
+const config = { mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }) };
 
-await validate(jsonSchema, schema, data);
+await validate(config, schema, data);
 
 const registry = new SchemaRegistry().with(addressSchema).with(personSchema);
-const isPerson = await validator(jsonSchema, "https://example.com/person", { registry, output: BASIC });
+const isPerson = await validator(config, "https://example.com/person", { registry, output: BASIC });
 isPerson(data);
 ```
 
@@ -33,18 +35,24 @@ isPerson(data);
   An operation that isn't about JSON Schema, like bundling JRef, can take
   a `Hyperjump` instead, so one that works for several media types doesn't
   need a class hierarchy.
-- The simple path is short: create a `JsonSchema` with a dialect, then
+- The simple path is short: make a config with a dialect, then
   validate. A schema can be passed as a value, so a registry is only
   needed for schemas that reference each other.
 
 ## `JsonSchema` as a value
 
-Decided and built 2026-11-14. `configureJsonSchema(config)` returns a frozen
-value instead of a class's instance: the config, with its `registry`, the
-stack, and the definitions by URI in `keywords`, `formats`, `dialects`, and
-`vocabularies`. The tables have no prototype, so a URI like
-`constructor` isn't found in them. A session is
-`new JsonSchemaHyperjump(jsonSchema)`.
+Decided and built 2026-11-14, and replaced the same day by stage 1 of
+[JSON Schema as a media type](json-schema-media-type.md): the definitions
+went onto the media type plugin, and the config is browser's. What follows
+is still how sessions and the definitions' lookups work.
+
+`configureJsonSchema(config)` returned a frozen value instead of a class's
+instance: the config, with its `registry`, the stack, and the definitions
+by URI in `keywords`, `formats`, `dialects`, and `vocabularies`, which the
+media type's `definitions` are now. The tables have no prototype, so a URI
+like `constructor` isn't found in them. A session was
+`new JsonSchemaHyperjump(jsonSchema)`, and is
+`new JsonSchemaHyperjump(config)`.
 
 - The names say what each makes. The argument to `configureJsonSchema` is
   configuration, not a schema, which `createJsonSchema` made it sound

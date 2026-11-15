@@ -5,6 +5,7 @@ import { siblingValues } from "../keywords/utilities.js";
 import { readsDynamicScope, readsMarks } from "./kernel.js";
 import { normalForm } from "./normalize.js";
 import { getDialect } from "../session.js";
+import { definitionsOf } from "../definition-of.js";
 import { referencedSchema } from "../schema/referenced-schema.js";
 import { differentResources, sameResource } from "../schema/same-resource.js";
 
@@ -570,8 +571,7 @@ class Lowerer {
       return;
     }
 
-    const { jsonSchema } = this.#session;
-    const lowered = lowerKeywords(jsonSchema.keywords, /** @type ObjectSchemaNode */ (node), /** @type Dialect */ (dialect), this.#inputs, false);
+    const lowered = lowerKeywords(definitionsOf(this.#session.config).keywords, /** @type ObjectSchemaNode */ (node), /** @type Dialect */ (dialect), this.#inputs, false);
     if (this.#needs.size > 0) {
       return;
     }

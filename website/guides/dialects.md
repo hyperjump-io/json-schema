@@ -6,17 +6,19 @@ it's written in with `$schema`.
 
 ## Choosing dialects
 
-A `JsonSchema` only has the dialects in its `dialects` config, so your
-application only loads the ones it uses. Import each one from its module.
-Each dialect brings its own keywords and formats. You can't change the
-dialects after the `JsonSchema` is created.
+The JSON Schema media types only have the dialects in the `dialects`
+option of `jsonSchemaMediaTypes`, so only the ones you use are loaded. Import each one from its module. Each dialect brings its own
+keywords and formats. You can't change the dialects after the media types
+are made.
 
 ```typescript
-import { configureJsonSchema } from "@hyperjump/json-schema";
+import { jsonSchemaMediaTypes } from "@hyperjump/json-schema";
 import { draft202012Dialect } from "@hyperjump/json-schema/draft-2020-12";
 import { draft07Dialect } from "@hyperjump/json-schema/draft-07";
 
-const jsonSchema = configureJsonSchema({ dialects: [draft202012Dialect, draft07Dialect] });
+const config = {
+  mediaTypes: jsonSchemaMediaTypes({ dialects: [draft202012Dialect, draft07Dialect] })
+};
 ```
 
 | Dialect | Module | Export | Dialect URI |
@@ -45,14 +47,16 @@ it gets its dialect from somewhere else:
   [Loading schemas](loading-schemas.md#schemas-without-id).
 - An HTTP response can name it with a `schema` parameter on its
   `Content-Type`.
-- The `defaultDialectUri` config sets the dialect for every schema that
-  still doesn't have one.
+- The `defaultDialectUri` option of `jsonSchemaMediaTypes` sets the
+  dialect for every schema that still doesn't have one.
 
 ```typescript
-const jsonSchema = configureJsonSchema({
-  dialects: [v1Dialect],
-  defaultDialectUri: "https://json-schema.org/v1"
-});
+const config = {
+  mediaTypes: jsonSchemaMediaTypes({
+    dialects: [v1Dialect],
+    defaultDialectUri: "https://json-schema.org/v1"
+  })
+};
 ```
 
 A default makes your schemas depend on your configuration. Other tools
@@ -99,23 +103,25 @@ In 2019-09 and 2020-12, a meta-schema can define its own dialect with
 dialect uses. A schema whose `$schema` is that meta-schema's URI uses that
 dialect.
 
-This kind of dialect doesn't go in the config. It's built the first time a
+This kind of dialect doesn't go in `dialects`. It's built the first time a
 schema uses it, so the meta-schema only needs to be somewhere it can be
 found, like a registry. The meta-schema's own dialect, like 2020-12, does
-need to be in the config. That dialect brings the vocabularies 2020-12
+need to be in `dialects`. That dialect brings the vocabularies 2020-12
 defines.
 
 To use your own vocabulary in a meta-schema, add it to the `vocabularies`
-config by its URI. Its keywords are definitions, just like a dialect's. See
+option by its URI. Its keywords are definitions, just like a dialect's. See
 [Custom keywords](../extending/keywords.md).
 
 ```typescript
-const jsonSchema = configureJsonSchema({
-  dialects: [draft202012Dialect],
-  vocabularies: {
-    "https://example.com/vocab/even": { keywords: { even: evenKeyword } }
-  }
-});
+const config = {
+  mediaTypes: jsonSchemaMediaTypes({
+    dialects: [draft202012Dialect],
+    vocabularies: {
+      "https://example.com/vocab/even": { keywords: { even: evenKeyword } }
+    }
+  })
+};
 ```
 
 To make a dialect any other way, see [Custom dialects](../extending/dialects.md).

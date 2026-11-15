@@ -83,7 +83,7 @@ an internal meta-schema.
   by its `$id`, which can't be a file, from a registry, like the CLI's
   workspace registry. The schema has no dialect then, like one whose
   dialect can't be found. Before 2026-10-27, a meta-schema could be found
-  by its path. `jsonOrSchemaMediaType` reads a `.json` file whose
+  by its path. The JSON-or-schema media type reads a `.json` file whose
   `$schema` is a file as JSON without retrieving it, because that's an
   instance naming its schema, like `"$schema": "./schema.json"`.
 - The resolver's own checks (schemas that aren't objects or booleans,

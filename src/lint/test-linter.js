@@ -1,6 +1,6 @@
 import { unified } from "unified";
 import { rejsonParse, rejsonStringify } from "@hyperjump/browser";
-import { configureJsonSchema } from "../json-schema.js";
+import { jsonSchemaMediaTypes } from "../json-schema.js";
 import { JsonSchemaHyperjump } from "../session.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
 import { v1Dialect } from "../dialects/v1/index.js";
@@ -15,7 +15,9 @@ import { fullFormats } from "../formats/full.js";
  * @import { Processor } from "unified"
  */
 
-const jsonSchema = configureJsonSchema({ dialects: [v1Dialect, draft04Dialect, draft06Dialect, draft07Dialect, draft201909Dialect, draft202012Dialect], formats: fullFormats });
+const jsonSchema = {
+  mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect, draft04Dialect, draft06Dialect, draft07Dialect, draft201909Dialect, draft202012Dialect], formats: fullFormats })
+};
 
 /**
  * For testing lint rules: resolves a schema with every preset's dialect, as

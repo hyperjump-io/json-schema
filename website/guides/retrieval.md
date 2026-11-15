@@ -24,9 +24,10 @@ The default allows what's local to your application. In Node.js it's
 `["/"]`, which allows the page's origin. Nothing else is allowed.
 
 ```typescript
-const jsonSchema = configureJsonSchema({
+const config = {
+  mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }),
   allowRetrieval: ["./", "https://schemas.example.com/"]
-});
+};
 ```
 
 When you set your own list, include `"./"` if you still want to allow local
@@ -59,15 +60,16 @@ absolute URLs.
 
 ## Different rules for different requests
 
-A call or a session can have its own list. It replaces the config's list
-instead of adding to it, so a session can allow less.
+A call can have its own list, and a session can have a config with its
+own. It replaces the config's list instead of adding to it, so a call or a
+session can allow less.
 
 ```typescript
-const isPerson = await validator(jsonSchema, uri, {
+const isPerson = await validator(config, uri, {
   allowRetrieval: ["./schemas/"]
 });
 
-const session = new JsonSchemaHyperjump(jsonSchema, { allowRetrieval: ["./schemas/"] });
+const session = new JsonSchemaHyperjump({ ...config, allowRetrieval: ["./schemas/"] });
 ```
 
 Use it when parts of your application trust different things. For example,
@@ -80,20 +82,46 @@ config. Any schema can name any URL, so headers are given by URL and only the
 URLs you list get them:
 
 ```typescript
-const jsonSchema = configureJsonSchema({
+const config = {
+  mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }),
   allowRetrieval: ["./", "https://schemas.example.com/"],
   headers: {
     "https://schemas.example.com/": { Authorization: `Bearer ${process.env.SCHEMAS_TOKEN}` }
   }
-});
+};
 ```
 
 A URL that ends with `/` gets its headers for everything under it, the same as
 in `allowRetrieval`. A URL's headers can be a function instead, which can be
 async, so you can refresh a token.
 
-Retrieval comes from `@hyperjump/browser`. These work the same way on a
-`JsonSchema`, and its docs cover them:
+## Retrieving less
+
+Each call starts a session, and by default each session retrieves through
+a stack of its own. A remote schema is retrieved again each time it's
+compiled. That matters for a schema on a server that you compile more than
+once, like in a service that compiles for each request. Files are read
+each time anyway, and a schema in a registry isn't retrieved.
+
+For calls to share an HTTP cache, give the config a `stack` with one, and
+make the config once:
+
+```typescript
+import { compose, defaultStack, httpCache } from "@hyperjump/browser";
+
+const config = {
+  mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }),
+  allowRetrieval: ["./", "https://schemas.example.com/"],
+  stack: compose(httpCache())(defaultStack())
+};
+```
+
+Every call and session made with this config uses the same cache. The
+results are the same without it. In a browser you don't need it, because
+the browser caches responses already.
+
+Retrieval comes from `@hyperjump/browser`. These work the same way here,
+and its docs cover them:
 
 - [HTTP caching](https://github.com/hyperjump-io/browser/blob/v2/website/http-caching.md)
 - [Headers](https://github.com/hyperjump-io/browser/blob/v2/website/sessions.md#headers)

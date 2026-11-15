@@ -9,7 +9,7 @@ import { pathToFileURL } from "node:url";
 import { bundle } from "@hyperjump/json-schema";
 
 const uri = pathToFileURL("./schemas/person.schema.json").href;
-const bundled = await bundle(jsonSchema, uri, {
+const bundled = await bundle(config, uri, {
   id: "https://example.com/schemas/person.schema.json"
 });
 ```
@@ -89,7 +89,7 @@ Meta-schemas aren't bundled.
 ## Options
 
 ```typescript
-await bundle(jsonSchema, uri, {
+await bundle(config, uri, {
   externalSchemas: ["https://schemas.example.com/common"],
   alwaysIncludeDialect: true,
   definitionNamingStrategy: "uuid"

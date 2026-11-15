@@ -1,30 +1,26 @@
 import { Hyperjump } from "@hyperjump/browser";
-import type { jrefMediaType, Json, MediaTypePlugin } from "@hyperjump/browser";
+import type { Json } from "@hyperjump/browser";
 import type { Data } from "unist";
 import type { JsonSchemaDocumentNode, JsonSchemaNode } from "./schema/schema-ast.d.ts";
 import type { Dialect } from "./dialect.d.ts";
 import type { SchemaRegistry } from "./registry/schema-registry.d.ts";
-import type { JsonSchema, JsonSchemaConfig } from "./json-schema.d.ts";
-import type { schemaMediaType } from "./schema/media-type-plugin.d.ts";
-import type { jsonOrSchemaMediaType } from "./schema/json-media-type-plugin.d.ts";
+import type { JsonSchemaConfig } from "./json-schema.d.ts";
 import type { SessionRegistries } from "./registry/session-registries.js";
 
 export type SessionOptions = {
   /**
-   * Schemas only this session sees, in addition to the {@link JsonSchema}
-   * config's `registry`. The session sees the two as one registry, so a
-   * schema in either can use a dialect defined by a meta-schema in the
-   * other. Combine registries with `concat`.
+   * Schemas only this call sees, in addition to the config's `registry`.
+   * The call sees the two as one registry, so a schema in either can use a
+   * dialect defined by a meta-schema in the other.
    */
   registry?: SchemaRegistry<any>;
 
   /**
-   * What this session can retrieve, instead of the {@link JsonSchema}'s
-   * `allowRetrieval` config. It's for an application that allows different
-   * things for different sessions, such as the files in different folders
-   * of a project. It replaces the config rather than adding to it, so a
-   * session can allow less. To allow what the config allows too, include
-   * its entries.
+   * What this call can retrieve, instead of the config's `allowRetrieval`.
+   * It's for an application that allows different things for different
+   * calls, such as the files in different folders of a project. It replaces
+   * the config's rather than adding to it, so a call can allow less. To
+   * allow what the config allows too, include its entries.
    */
   allowRetrieval?: string[];
 };
@@ -33,7 +29,6 @@ export type SessionOptions = {
  * The media types every session reads documents with: JSON Schema, JSON
  * that can be a schema, and JRef
  */
-export type SchemaMediaTypes = typeof schemaMediaType | typeof jsonOrSchemaMediaType | typeof jrefMediaType;
 
 /**
  * A session that retrieves and browses schemas. Everything resolved belongs
@@ -44,36 +39,27 @@ export type SchemaMediaTypes = typeof schemaMediaType | typeof jsonOrSchemaMedia
  *
  * It's a `Hyperjump`, `@hyperjump/browser`'s session, so browser's
  * functions, like `get` and `jrefStep`, take it, and it's traced, observed,
- * and closed like one. Its `fetch` finds a schema in the session's registry and the
- * {@link JsonSchema} config's before anything is retrieved, so
- * `allowRetrieval` doesn't apply to a registry's schema.
+ * and closed like one. Its `fetch` finds a schema in its config's
+ * `registry` before anything is retrieved, so `allowRetrieval` doesn't apply
+ * to a registry's schema.
  *
  * A reference can lead to any document the session can read, so what `get`
- * and the `jref*` functions return is a node of a schema, of a JRef
- * document, of a JSON document, or of a document in one of the config's
- * media types (`M`). A schema's node has the `type` `"json-schema"`. A
- * session whose type doesn't say its `JsonSchema`'s media types, like a
- * `JsonSchemaHyperjump` without type arguments, could have any, so nothing
- * is known about its nodes.
+ * and the `jref*` functions return is a node of a document in one of the
+ * config's media types: a schema, JSON, or another, like JRef. A schema's
+ * node has the `type` `"json-schema"`. A session whose type doesn't say its
+ * config's media types, like a `JsonSchemaHyperjump` without type
+ * arguments, could have any, so nothing is known about its nodes.
  */
-export class JsonSchemaHyperjump<S = any, M extends MediaTypePlugin<any> = MediaTypePlugin>
-  extends Hyperjump<JsonSchemaConfig & { readonly mediaTypes: readonly (SchemaMediaTypes | M)[] }> {
-  /**
-   * Its config is the `JsonSchema`'s, with `allowRetrieval` from the
-   * options if they have it.
-   */
-  constructor(jsonSchema: JsonSchema<S, M>, options?: SessionOptions);
-
-  readonly jsonSchema: JsonSchema<S, M>;
+export class JsonSchemaHyperjump<C extends JsonSchemaConfig = JsonSchemaConfig> extends Hyperjump<C> {
+  constructor(config: C);
 }
 
 /**
- * `@hyperjump/browser`'s `get` and `getDocument`. With a session of a
- * {@link JsonSchema}, a fragment of a schema is an anchor or a JSON Pointer,
- * and documents are found in this order: an embedded resource, if
+ * `@hyperjump/browser`'s `get` and `getDocument`. In a
+ * {@link JsonSchemaHyperjump}, a fragment of a schema is an anchor or a JSON
+ * Pointer, and documents are found in this order: an embedded resource, if
  * `referencedFrom` is a node of the document that contains it; a schema in
- * the session's registry or the `JsonSchema` config's; then it's
- * retrieved. `getDocument` never finds an embedded resource.
+ * the config's registry; then it's retrieved. `getDocument` never finds an embedded resource.
  *
  * They throw a `SchemaError` if a schema has problems, with every problem
  * in the document, and an `Error` if more than one schema in the registries
@@ -82,15 +68,15 @@ export class JsonSchemaHyperjump<S = any, M extends MediaTypePlugin<any> = Media
 export { get, getDocument } from "@hyperjump/browser";
 
 /**
- * Get a dialect. If it isn't in the {@link JsonSchema}'s config or
- * built in this session, its meta-schema is found with
+ * Get a dialect. If it isn't one the JSON Schema media types were made with
+ * or built in this session, its meta-schema is found with
  * {@link getDocument}, which can find it in a registry, and the dialect is
  * the one the meta-schema defines (see
  * `JsonSchemaDocumentNode.definedDialect`). That's `$vocabulary` in 2019-09
  * and 2020-12. The meta-schema must be a schema (`application/schema+json`
  * or a `.schema.json` file). A JSON document isn't used even if it has a
- * `$vocabulary`. A self-describing meta-schema's dialect has to be in the
- * config.
+ * `$vocabulary`. A self-describing meta-schema's dialect has to be one the
+ * media types were made with.
  *
  * @throws Error if the meta-schema can't be retrieved, isn't a schema,
  * doesn't define a dialect, or depends on a meta-schema that depends on
@@ -133,13 +119,13 @@ export const annotation: <A extends Json = Json>(session: JsonSchemaHyperjump, n
 // What follows is used by the library. It isn't exported from the package.
 
 /**
- * Whether something is a session of a {@link JsonSchema}, and not a
- * `JsonSchema` or a session of `@hyperjump/browser`'s
+ * Whether something is a {@link JsonSchemaHyperjump}, and not a session of
+ * `@hyperjump/browser`'s
  */
 export const isSession: (context: object) => context is JsonSchemaHyperjump;
 
 /** The schemas a session finds in the registries it sees */
 export const registriesOf: (session: JsonSchemaHyperjump) => SessionRegistries;
 
-/** Whether a dialect is in the {@link JsonSchema}'s config or was built in this session */
+/** Whether a dialect is one the JSON Schema media types were made with or was built in this session */
 export const hasDialect: (session: JsonSchemaHyperjump, uri: string) => boolean;

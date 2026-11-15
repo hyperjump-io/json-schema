@@ -2,8 +2,10 @@ import type { Corpus } from "./corpus.ts";
 
 /**
  * One of the copies of src/ that ab-setup.sh made in AB_DIR: `a` or `b`. Both
- * have to have the API from 2026-10-29 on (operations are functions that
- * take the JsonSchema, and dialects are in the config).
+ * have to have the API from 2026-10-29 on (operations are functions, and
+ * dialects are in the config). What operations take changed since: a
+ * `JsonSchema` instance, then `configureJsonSchema`'s value, then a config
+ * with `jsonSchemaMediaTypes`, so either side can be any of them.
  */
 export const load = async (dir: "a" | "b") => {
   if (!process.env.AB_DIR) {
@@ -16,7 +18,15 @@ export const load = async (dir: "a" | "b") => {
     dialects.push((await import(`${src}dialects/${path}/index.js`))[name]);
   }
   // Nothing is retrieved, because `allowRetrieval` isn't configured
-  const jsonSchema = new api.JsonSchema({ validateFormats: false, dialects });
+  const options = { validateFormats: false, dialects };
+  let jsonSchema;
+  if (api.jsonSchemaMediaTypes) {
+    jsonSchema = { mediaTypes: api.jsonSchemaMediaTypes(options) };
+  } else if (api.configureJsonSchema) {
+    jsonSchema = api.configureJsonSchema(options);
+  } else {
+    jsonSchema = new api.JsonSchema(options);
+  }
 
   /** The corpus's entry schema compiled, with its schemas in a session registry */
   const compile = (corpus: Corpus) => {

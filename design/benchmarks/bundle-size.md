@@ -18,7 +18,7 @@ rendered size before minifying. The v1 numbers were measured with the same
 entries written for v1, against a worktree of v1. Those entries were
 deleted on 2026-10-31, since v1 isn't changing.
 
-Each entry creates a `JsonSchema`, adds its dialects, and calls one
+Each entry makes a config with its dialects, and calls one
 operation:
 
 | Entry | Does |

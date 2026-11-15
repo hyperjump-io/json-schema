@@ -2,7 +2,7 @@ import { describe, test, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
 import { fromJs, jsonPointerGet, rejsonParse } from "@hyperjump/browser";
-import { configureJsonSchema, extendDialect } from "../json-schema.js";
+import { jsonSchemaMediaTypes, extendDialect } from "../json-schema.js";
 import { JsonSchemaHyperjump } from "../session.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
 import { draft202012Dialect } from "../dialects/draft-2020-12/index.js";
@@ -197,9 +197,9 @@ describe("evaluatorForLint", () => {
  * @type (schema: object, pointer?: string) => Promise<(value: Json) => LintEvaluation>
  */
 const evaluatorAt = async (schema, pointer = "") => {
-  const jsonSchema = configureJsonSchema({
-    dialects: [extendDialect(draft202012Dialect, { keywords: { lowercase: lowercaseKeyword, wrap: wrapKeyword } }), v1Dialect, draft07Dialect]
-  });
+  const jsonSchema = {
+    mediaTypes: jsonSchemaMediaTypes({ dialects: [extendDialect(draft202012Dialect, { keywords: { lowercase: lowercaseKeyword, wrap: wrapKeyword } }), v1Dialect, draft07Dialect] })
+  };
   const session = new JsonSchemaHyperjump(jsonSchema);
 
   const file = new VFile({ path: "/schemas/a.schema.json", value: JSON.stringify(schema) });

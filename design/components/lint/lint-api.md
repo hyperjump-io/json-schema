@@ -1,7 +1,7 @@
 # Linting from code
 
 Linting needs a unified pipeline today, outside of the CLI.
-`lint(jsonSchema, uri)` (`src/operations/lint.js`) lints a schema
+`lint(config, uri)` (`src/operations/lint.js`) lints a schema
 document without one. It takes a URI, not a schema
 as a value, because it lints a document, and a value's document would only
 be the value.
@@ -33,7 +33,7 @@ be the value.
   is specific, so it's kept. Rules still report with `file.message`, so
   results are converted from `VFileMessage`s when the pass finishes.
 - Rules don't run in the media type plugin's `parse`. A resolved document
-  from a registry is cached once per `JsonSchema` and shared by sessions
+  from a registry is cached once for each set of definitions and shared by sessions
   (see [Making sessions cheap](../registries/cheap-sessions.md)), so it would keep the results of the
   first session's rules. Lint is a separate pass over a resolved document,
   in a `VFile` with the session on `file.data.jsonSchemaSession`.

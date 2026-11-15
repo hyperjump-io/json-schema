@@ -1,4 +1,4 @@
-import type { JsonSchema } from "../json-schema.d.ts";
+import type { JsonSchemaConfig } from "../json-schema.d.ts";
 import type { PluggableList } from "unified";
 import type { SchemaMessage } from "../schema/schema-error.d.ts";
 import type { SessionOptions } from "../session.d.ts";
@@ -18,7 +18,7 @@ import type { SessionOptions } from "../session.d.ts";
  * @throws An error from `@hyperjump/browser` if the document can't be
  * retrieved. Its `cause.code` says why.
  */
-export function lint(jsonSchema: JsonSchema, uri: string, options?: SessionOptions & LintOptions): Promise<SchemaMessage[]>;
+export function lint(config: JsonSchemaConfig, uri: string, options?: SessionOptions & LintOptions): Promise<SchemaMessage[]>;
 
 export type LintOptions = {
   /**

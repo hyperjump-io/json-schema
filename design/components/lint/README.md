@@ -10,7 +10,7 @@ plugins, configured per project, with presets, like remark-lint.
 - [The rule catalogue](catalogue.md): porting rules, and rules of our own
 - [Configuration comments](configuration-comments.md)
 - [Other schemas](other-schemas.md): rules that follow references
-- [Linting from code](lint-api.md): `lint(jsonSchema, uri)`
+- [Linting from code](lint-api.md): `lint(config, uri)`
 - [What a keyword group does](effect.md): `effect.js`, and the rules on it
 - [Schema groups](schema-groups.md)
 

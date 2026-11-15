@@ -1,9 +1,11 @@
 # Identification
 
 Identity depends on the dialect, so a registry can't index its own
-entries. Each `JsonSchema` indexes each registry it's used with.
+entries. It's indexed for each set of definitions it's used with, the JSON
+Schema media types' (see
+[JSON Schema as a media type](../api/json-schema-media-type.md)).
 
-- A `JsonSchema` identifies a registry's entries the first time a session
+- A registry's entries are identified the first time a session
   looks for a schema in it, not when the session is created, so a session
   that never looks doesn't pay for it. Identification is synchronous: it
   gets the dialect and runs only the root's resolve hooks (`identify` in
@@ -22,21 +24,21 @@ entries. Each `JsonSchema` indexes each registry it's used with.
   others, like a retrieved file with problems. One
   without a `retrievalUri` can't be found, so its problem is reported when
   a lookup misses.
-- An entry's dialect is one added to the `JsonSchema` or one defined by
-  another entry in the same registry (its root's `defineDialect` effect).
-  An entry in a session's registry can also use a dialect defined in the
-  `JsonSchema`'s registry, so custom meta-schemas can go there once. The
-  index of a session's registry then depends on the `JsonSchema`'s
-  registry too, so it's cached by both (`WeakMap<instanceIndex,
-  WeakMap<registry, RegistryIndex>>`, under each `JsonSchema`). Replacing
-  the `JsonSchema`'s registry makes new indexes the next time they're
-  used, which should be rare. Entries identified with a dialect from a
-  registry aren't shared between indexes. Rejected: dialects from any
-  registry a session sees, because then an index would depend on all of
-  them.
+- An entry's dialect is one in the definitions or one defined by another
+  entry in the same registry (its root's `defineDialect` effect). A
+  session sees one registry, the config's combined with the call's, so a
+  custom meta-schema in the config's registry identifies the call's
+  schemas, and the other way around. An index is cached for the
+  definitions by the registry (`WeakMap<definitions, WeakMap<registry,
+  RegistryIndex>>`). Entries identified with a dialect from a registry
+  aren't shared between indexes. A schema an operation is given as a
+  value is indexed in a registry of its own, which can use the dialects
+  the session's registry defines. Before 2026-11-14, a session's own
+  registry could use the dialects in the `JsonSchema`'s registry, but not
+  the other way around, and its index was cached by both.
 - An entry whose dialect isn't defined yet waits in a list by dialect URI.
   Nothing is retrieved to identify an entry. Waiting entries are tried
-  again once the rest of the registry is identified. A `JsonSchema`'s
+  again once the rest of the registry is identified. The definitions'
   dialects never change, so that's the last time. Until 2026-10-29, they
   were also tried again when a lookup missed, for a dialect added later
   with `addDialect`. The dialects they're waiting for are in the error when
@@ -53,10 +55,8 @@ entries. Each `JsonSchema` indexes each registry it's used with.
 
 ## Known limitations
 
-- A registry schema can only be identified with a dialect added to the
-  `JsonSchema` or defined by a meta-schema in the same registry or the
-  `JsonSchema`'s registry, because identification is synchronous and
-  never retrieves. If its dialect's meta-schema is only retrievable, or a
-  schema in the `JsonSchema`'s registry uses a dialect defined in a
-  session's registry, it's found by its `retrievalUri` but not by its
-  `$id`.
+- A registry schema can only be identified with a dialect in the
+  definitions or defined by a meta-schema in the registry the session
+  sees, because identification is synchronous and never retrieves. If its
+  dialect's meta-schema is only retrievable, it's found by its
+  `retrievalUri` but not by its `$id`.

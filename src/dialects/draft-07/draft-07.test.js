@@ -1,5 +1,5 @@
 import { describe, test, beforeEach, expect } from "vitest";
-import { configureJsonSchema } from "../../json-schema.js";
+import { jsonSchemaMediaTypes } from "../../json-schema.js";
 import { SchemaRegistry } from "../../registry/schema-registry.js";
 import { draft07Dialect, draft07DialectUri } from "./index.js";
 import { compile as compileSchema } from "../../operations/compile.js";
@@ -7,28 +7,28 @@ import { validatorFor } from "../../operations/validate-compiled.js";
 
 /**
  * @import { Json } from "@hyperjump/browser"
- * @import { JsonSchemaConfig } from "../../json-schema.d.ts"
+ * @import { JsonSchemaConfig, JsonSchemaOptions } from "../../json-schema.d.ts"
  * @import { CompiledSchema } from "../../operations/compile.d.ts"
- * @import { JsonSchema } from "../../json-schema.d.ts"
  */
 
 describe("draft-07", () => {
-  /** @type (config?: JsonSchemaConfig) => JsonSchema */
-  const draft07 = (config) => {
-    const jsonSchema = configureJsonSchema({ allowRetrieval: [], dialects: [draft07Dialect], ...config });
-    return jsonSchema;
-  };
+  /** @type (config?: JsonSchemaOptions & { allowRetrieval?: string[]; registry?: SchemaRegistry }) => JsonSchemaConfig */
+  const draft07 = ({ registry, ...options } = {}) => ({
+    mediaTypes: jsonSchemaMediaTypes({ dialects: [draft07Dialect], ...options }),
+    allowRetrieval: [],
+    registry
+  });
 
   const $schema = `${draft07DialectUri}#`;
   const uri = "http://example.com/schema";
 
-  /** @type (jsonSchema: JsonSchema, schema: Json) => Promise<CompiledSchema> */
+  /** @type (jsonSchema: JsonSchemaConfig, schema: Json) => Promise<CompiledSchema> */
   const compile = (jsonSchema, schema) => {
     const registry = new SchemaRegistry([{ schema, retrievalUri: uri }]);
     return compileSchema(jsonSchema, uri, { registry });
   };
 
-  /** @type JsonSchema */
+  /** @type JsonSchemaConfig */
   let jsonSchema;
 
   beforeEach(() => {
@@ -68,7 +68,7 @@ describe("draft-07", () => {
   });
 
   test("a format the dialect names without a definition is still an error", async () => {
-    await expect(compile(jsonSchema, { $schema, format: "idn-hostname" })).rejects.toThrow("'formats' config");
+    await expect(compile(jsonSchema, { $schema, format: "idn-hostname" })).rejects.toThrow("'formats' option");
   });
 
   test("format is only an annotation if the config says so", async () => {

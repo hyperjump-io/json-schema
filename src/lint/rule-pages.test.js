@@ -3,7 +3,7 @@ import { describe, test, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
 import { rejsonParse } from "@hyperjump/browser";
-import { configureJsonSchema } from "../json-schema.js";
+import { jsonSchemaMediaTypes } from "../json-schema.js";
 import { JsonSchemaHyperjump } from "../session.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
 import { v1Dialect } from "../dialects/v1/index.js";
@@ -33,7 +33,9 @@ const ruleNames = readdirSync(rulesUrl)
 
 const readme = readFileSync(new URL("README.md", pagesUrl), "utf8");
 
-const jsonSchema = configureJsonSchema({ dialects: [v1Dialect, draft04Dialect, draft06Dialect, draft07Dialect, draft201909Dialect, draft202012Dialect] });
+const jsonSchema = {
+  mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect, draft04Dialect, draft06Dialect, draft07Dialect, draft201909Dialect, draft202012Dialect] })
+};
 
 /**
  * @typedef {{
@@ -99,7 +101,7 @@ const lint = async (name, rule, { code, dialectUri }) => {
   const processor = unified()
     .use(rejsonParse, { accept: "recovered", url: "https://example.com/schema.json" })
     .use(jsonSchemaResolve, {
-      session: new JsonSchemaHyperjump(jsonSchema, { allowRetrieval: [] }),
+      session: new JsonSchemaHyperjump({ ...jsonSchema, allowRetrieval: [] }),
       ...dialectUri && { dialectUri }
     })
     .use(rule);

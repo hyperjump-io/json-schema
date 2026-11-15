@@ -5,9 +5,9 @@ text ─ fromJson ─▶ JSON AST ─ resolveSchema ─▶ Schema AST ─ (schem
        (browser)                  (async)                                                  (async)                              (sync, lazy)
 ```
 
-- A `JsonSchema` has the definitions, the config, and the stack schemas
-  are retrieved through. Its session is a value around browser's session,
-  a `Hyperjump`, that browser's functions take. Schemas are retrieved,
+- A config is browser's, with the JSON Schema media types, which have the
+  definitions, and a registry. A session is a `JsonSchemaHyperjump`, a
+  `Hyperjump` made from a config, that browser's functions take. Schemas are retrieved,
   browsed, and compiled in a session (see [Sessions and registries](components/sessions/README.md)).
 - Schemas are retrieved with browser's `get`. The schema media type plugin
   (`application/schema+json`, `.schema.json`) parses with `fromJson` and
@@ -16,7 +16,8 @@ text ─ fromJson ─▶ JSON AST ─ resolveSchema ─▶ Schema AST ─ (schem
   `SchemaError` with all of them (see [Validation API](components/validation-api/README.md)).
 - A JSON document (`application/json`, `.json`) is a schema if its
   top-level `$schema` is a dialect the session has or can find
-  (`jsonOrSchemaMediaType`, which comes before browser's JSON plugin), and
+  (the second of `jsonSchemaMediaTypes`'s plugins, which replaces browser's
+  JSON plugin), and
   JSON otherwise. The plugin's `fragmentPointer` reads a schema's
   fragments as a schema's. Before 2026-10-27, only `.schema.json` files
   and `application/schema+json` responses were schemas, and a workspace
@@ -27,8 +28,8 @@ text ─ fromJson ─▶ JSON AST ─ resolveSchema ─▶ Schema AST ─ (schem
 
 | Where | What |
 | --- | --- |
-| `src/json-schema.js` | `configureJsonSchema`: the config and the definitions it brings |
-| `src/operations/` | The operations: `validate`, `validator`, `annotate`, `annotator`, `compile`, `serialize`, `restore`, `bundle`, `lint`, and what they share (`schema-source.js`, `evaluators.js`). `validatorFor` and `annotatorFor` are in `validate-compiled.js`, apart from the others, because they import the instrumented evaluator |
+| `src/json-schema.js` | `jsonSchemaMediaTypes`: the definitions, and the media types that carry them. `src/definition-of.js` finds them in a config |
+| `src/operations/` | The operations: `validate`, `validator`, `annotate`, `annotator`, `compile`, `serialize`, `restore`, `bundle`, `lint`, and what they share (`call-session.js`, `schema-source.js`, `evaluators.js`). `validatorFor` and `annotatorFor` are in `validate-compiled.js`, apart from the others, because they import the instrumented evaluator |
 | `src/session.js` | Sessions: creating one, what one keeps for schemas, `getDialect`, and `annotation` |
 | `src/keyword.d.ts`, `src/dialect.d.ts`, `src/format.d.ts` | What a keyword, dialect, and format are |
 | `src/schema/` | Text to schema AST: the media type plugin, `resolveSchema` and `jsonSchemaResolve`, schema validation, and the schema AST types |

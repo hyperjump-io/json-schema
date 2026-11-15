@@ -23,12 +23,12 @@ browsers.
   retrieve whatever it references.
 
 ```typescript
-import { configureJsonSchema, validator } from "@hyperjump/json-schema";
+import { jsonSchemaMediaTypes, validator } from "@hyperjump/json-schema";
 import { v1Dialect } from "@hyperjump/json-schema/v1";
 
-const jsonSchema = configureJsonSchema({ dialects: [v1Dialect] });
+const config = { mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }) };
 
-const isPerson = await validator(jsonSchema, {
+const isPerson = await validator(config, {
   $schema: "https://json-schema.org/v1",
   type: "object",
   properties: { name: { type: "string" } },

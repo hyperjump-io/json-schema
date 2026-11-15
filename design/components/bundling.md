@@ -1,6 +1,6 @@
 # Bundling (`src/bundle/`)
 
-`bundle(jsonSchema, uri, options)` makes a compound schema document the way
+`bundle(config, uri, options)` makes a compound schema document the way
 2020-12 describes, in any dialect: every referenced document is embedded in
 the main schema's definitions with its identifier, so no reference changes.
 It's v1's bundler and keeps its options (`alwaysIncludeDialect`,

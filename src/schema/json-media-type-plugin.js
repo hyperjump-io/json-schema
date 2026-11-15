@@ -51,7 +51,8 @@ export const jsonOrSchemaMediaType = Object.freeze({
  * that doesn't mention `$schema` isn't parsed. A meta-schema whose `$schema`
  * is itself describes itself, so it's a schema. A dialect can't be a file.
  *
- * It's given with the session, which is a `JsonSchema`'s when there's one.
+ * It's given with the session, which is a `JsonSchemaHyperjump` when there's
+ * one.
  *
  * @type (text: string, url: AbsoluteIri, session: DocumentSession) => Promise<{ uri: string, session: JsonSchemaHyperjump } | undefined>
  */

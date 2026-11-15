@@ -42,11 +42,11 @@ export const assertNoReservedKeywords = (keywords) => {
 };
 
 /**
- * A dialect as an instance uses it: the `validateFormats` config, if there
- * is one, decides whether `format` validates, instead of the dialect
+ * A dialect as it's used: the `validateFormats` option, if there is one,
+ * decides whether `format` validates, instead of the dialect
  *
- * @type (dialect: Dialect, config: API.JsonSchemaConfig) => Dialect
+ * @type (dialect: Dialect, options: { validateFormats?: boolean }) => Dialect
  */
-export const withValidateFormats = (dialect, config) => {
-  return config.validateFormats === undefined ? dialect : { ...dialect, assertFormats: config.validateFormats };
+export const withValidateFormats = (dialect, options) => {
+  return options.validateFormats === undefined ? dialect : { ...dialect, assertFormats: options.validateFormats };
 };

@@ -64,12 +64,6 @@
       "default": "./src/lint/rules/*.js"
     }
   },
-  "imports": {
-    "#default-stack": {
-      "node": "./src/default-stack.js",
-      "default": "./src/default-stack.browser.js"
-    }
-  },
   "scripts": {
     "lint": "oxlint",
     "test": "vitest run",

@@ -1,5 +1,5 @@
 import { SchemaRegistry } from "./schema-registry.js";
-import { configureJsonSchema } from "../json-schema.js";
+import { jsonSchemaMediaTypes } from "../json-schema.js";
 import { JsonSchemaHyperjump } from "../session.js";
 import type { V1Schema } from "../dialects/v1/index.d.ts";
 import type { Draft202012Schema } from "../dialects/draft-2020-12/index.d.ts";
@@ -27,8 +27,8 @@ new SchemaRegistry([{ schema: { type: "string" } }]).with({ anything: [1] });
 new SchemaRegistry().with({ required: ["name"] } as const);
 
 // A registry of any type can be used
-const jsonSchema = configureJsonSchema({ registry });
-new JsonSchemaHyperjump(jsonSchema, { registry: registry.concat(new SchemaRegistry()) });
+const jsonSchema = { mediaTypes: jsonSchemaMediaTypes(), registry };
+new JsonSchemaHyperjump({ ...jsonSchema, registry: registry.concat(new SchemaRegistry()) });
 
 // A union takes schemas in more than one dialect. `$schema` says which.
 const both = new SchemaRegistry<V1Schema | Draft202012Schema>()

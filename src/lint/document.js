@@ -5,6 +5,7 @@ import { lowerKeywords } from "../kernel/lower.js";
 import { keywordDefinitionUri } from "../keywords/unknown.js";
 import { findSchema } from "./find-schema.js";
 import { getDialect } from "../session.js";
+import { definitionsOf } from "../definition-of.js";
 import { provenance, sourcesWithoutEffect } from "./provenance.js";
 import { visitReferences, visitSchemas } from "./utilities.js";
 
@@ -98,8 +99,8 @@ const gather = async (session, tree) => {
       if (schemaNode.jsonType === "object") {
         for (const { keywordUri } of /** @type JsonSchemaKeywordNode[] */ (schemaNode.children)) {
           const uri = keywordDefinitionUri(keywordUri);
-          if (!(uri in keywords) && uri in session.jsonSchema.keywords) {
-            keywords[uri] = session.jsonSchema.keywords[uri];
+          if (!(uri in keywords) && uri in definitionsOf(session.config).keywords) {
+            keywords[uri] = definitionsOf(session.config).keywords[uri];
           }
         }
       }
@@ -155,8 +156,8 @@ const gather = async (session, tree) => {
   const formats = {};
   for (const dialect of dialects.values()) {
     for (const uri of Object.values(dialect?.formats ?? {})) {
-      if (!(uri in formats) && uri in session.jsonSchema.formats) {
-        formats[uri] = session.jsonSchema.formats[uri];
+      if (!(uri in formats) && uri in definitionsOf(session.config).formats) {
+        formats[uri] = definitionsOf(session.config).formats[uri];
       }
     }
   }
@@ -164,7 +165,7 @@ const gather = async (session, tree) => {
   // The keywords of escape hatches, which can be other than the keywords
   // that lowered to them
   const expressions = [...reached.values()].flatMap((loweredKeywords) => loweredKeywords.map(({ group }) => group.expression));
-  const escapeHatches = availableDefinitions(session.jsonSchema, expressions);
+  const escapeHatches = availableDefinitions(definitionsOf(session.config), expressions);
 
   return {
     tree,
@@ -251,7 +252,7 @@ const lower = async (session, tree) => {
 
     const resolved = await dialect;
     if (resolved !== undefined) {
-      const lowered = lowerKeywords(session.jsonSchema.keywords, schemaNode, resolved, inputs, true)
+      const lowered = lowerKeywords(definitionsOf(session.config).keywords, schemaNode, resolved, inputs, true)
         .map((keyword) => /** @type LoweredKeyword */ ({
           group: keyword.group,
           keywordNode: keyword.keywordNode,

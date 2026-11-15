@@ -8,7 +8,7 @@ import { describe, test, beforeEach, beforeAll, afterAll, expect } from "vitest"
 import { unified } from "unified";
 import { VFile } from "vfile";
 import { fetcher, fromJson, jrefStep, jsonPointerGet, nodeTransport, rejsonParse } from "@hyperjump/browser";
-import { configureJsonSchema, SchemaError, extendDialect } from "../json-schema.js";
+import { jsonSchemaMediaTypes, SchemaError, extendDialect } from "../json-schema.js";
 import { JsonSchemaHyperjump } from "../session.js";
 import { jsonSchemaResolve, resolveSchema } from "./resolve.js";
 import idKeyword from "../keywords/id.js";
@@ -20,16 +20,16 @@ import recursiveAnchorKeyword from "../keywords/draft-2019-09/recursiveAnchor.js
 import vocabularyKeyword from "../keywords/vocabulary.js";
 import { noUrl } from "../identifiers.js";
 import { get } from "../session.js";
+import { definitionsOf } from "../definition-of.js";
 
 /**
  * @import { JsonDocumentNode, JsonParseStatus } from "@hyperjump/browser"
- * @import { JsonSchemaConfig } from "../json-schema.d.ts"
+ * @import { JsonSchemaConfig, JsonSchemaOptions } from "../json-schema.d.ts"
  * @import { DialectConfig, DialectExtension } from "../dialect.d.ts"
  * @import { Keyword } from "../keyword.d.ts"
  * @import { JsonSchemaResolveOptions } from "./resolve.d.ts"
  * @import { FollowedNode } from "@hyperjump/browser"
  * @import { JsonSchemaKeywordNode, JsonSchemaNode, JsonSchemaTolerantNode } from "./schema-ast.d.ts"
- * @import { JsonSchema } from "../json-schema.d.ts"
  */
 
 const dialectUri = "https://example.com/dialect";
@@ -60,7 +60,7 @@ describe("resolveSchema", () => {
 });
 
 describe("jsonSchemaResolve", () => {
-  /** @type JsonSchema */
+  /** @type JsonSchemaConfig */
   let jsonSchema;
 
   beforeEach(() => {
@@ -818,7 +818,7 @@ describe("jsonSchemaResolve", () => {
       });
 
       test("a self-describing meta-schema doesn't replace a dialect that's already defined", async () => {
-        const dialect = jsonSchema.dialects[toId(dialectUri)];
+        const dialect = definitionsOf(jsonSchema).dialects[toId(dialectUri)];
         const { root, file } = await resolve(jsonSchema, `{
           "$schema": "${dialectUri}",
           "$vocabulary": { "https://example.com/vocab/core": true }
@@ -826,7 +826,7 @@ describe("jsonSchemaResolve", () => {
 
         expect(file.messages).to.eql([]);
         expect(root).to.include({ type: "json-schema", dialectUri: dialectUri });
-        expect(jsonSchema.dialects[toId(dialectUri)]).to.equal(dialect);
+        expect(definitionsOf(jsonSchema).dialects[toId(dialectUri)]).to.equal(dialect);
       });
     });
   });
@@ -1128,19 +1128,21 @@ const strictDialect = {
 };
 
 /**
- * A JsonSchema with the test dialects, which can also retrieve `test:` URIs.
+ * A config with the test dialects, which can also retrieve `test:` URIs.
  * `extension` adds keywords to the main test dialect.
  *
- * @type (options?: { dialects?: DialectConfig[]; keywords?: Keyword<any, any, any>[]; extension?: DialectExtension; config?: JsonSchemaConfig }) => JsonSchema
+ * @type (options?: { dialects?: DialectConfig[]; keywords?: Keyword<any, any, any>[]; extension?: DialectExtension; config?: JsonSchemaOptions }) => JsonSchemaConfig
  */
 const testJsonSchema = ({ dialects = [], keywords = [], extension, config } = {}) => {
-  const jsonSchema = configureJsonSchema({
+  const jsonSchema = {
     allowRetrieval: [pathToFileURL(join(tmpdir(), "/")).href, "test:/"],
-    ...config,
-    dialects: [extension ? extendDialect(testDialect, extension) : testDialect, legacyDialect, strictDialect, ...dialects],
-    keywords: [...testKeywords, ...keywords],
+    mediaTypes: jsonSchemaMediaTypes({
+      ...config,
+      dialects: [extension ? extendDialect(testDialect, extension) : testDialect, legacyDialect, strictDialect, ...dialects],
+      keywords: [...testKeywords, ...keywords]
+    }),
     stack: nodeTransport({ schemes: { "test:": fetcher(respond) } })
-  });
+  };
   return jsonSchema;
 };
 
@@ -1168,7 +1170,7 @@ const respond = async ({ url: uri }) => {
 };
 
 /**
- * @param {JsonSchema} jsonSchema
+ * @param {JsonSchemaConfig} jsonSchema
  * @param {string} json
  * @param {Partial<JsonSchemaResolveOptions> & { accept?: JsonParseStatus, path?: string, uri?: string }} [options]
  */

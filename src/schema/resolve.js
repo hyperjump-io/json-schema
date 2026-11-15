@@ -2,7 +2,7 @@ import { relativeFileUrl } from "@hyperjump/browser";
 import { pointerAppend } from "@hyperjump/json-pointer";
 import { assertIriReference, encodeIriFragment, getScheme, isIriReference, normalizeIri, resolveIri, urlToIri } from "@hyperjump/uri";
 import { resolveId, toId } from "../identifiers.js";
-import { keywordOf } from "../definition-of.js";
+import { definitionsOf, keywordOf } from "../definition-of.js";
 import schemaKeyword from "../keywords/schema.js";
 import unknownKeyword from "../keywords/unknown.js";
 import { siblingValues } from "../keywords/utilities.js";
@@ -47,7 +47,7 @@ import { getDialect } from "../session.js";
 
 /** @type typeof API.resolveSchema */
 export const resolveSchema = async (tree, options) => {
-  const dialectUri = options.dialectUri ?? options.session.jsonSchema.config.defaultDialectUri;
+  const dialectUri = options.dialectUri ?? definitionsOf(options.session.config).defaultDialectUri;
   const resolver = new Resolver(options.session, tree, toId(options.uri));
   return resolver.resolve(dialectUri);
 };
@@ -291,7 +291,7 @@ class Resolver {
           this.#message(`'${name}' isn't a keyword in the '${dialect.uri}' dialect`, property, "unknown-keyword");
         }
 
-        return [keywordNode, `${unknownKeyword.uri}#${encodeIriFragment(name)}`, this.#session.jsonSchema.keywords[unknownKeyword.uri]];
+        return [keywordNode, `${unknownKeyword.uri}#${encodeIriFragment(name)}`, definitionsOf(this.#session.config).keywords[unknownKeyword.uri]];
       }
 
       const keywordUri = name === "$schema" ? schemaKeyword.uri : dialect.keywords[name];
@@ -299,7 +299,7 @@ class Resolver {
       /** @type Keyword */
       let keyword;
       try {
-        keyword = keywordOf(this.#session.jsonSchema.keywords, keywordUri);
+        keyword = keywordOf(definitionsOf(this.#session.config).keywords, keywordUri);
       } catch (error) {
         this.#message(/** @type Error */ (error).message, property, "unsupported-keyword");
         keyword = { uri: keywordUri, shape: "data" };
@@ -339,7 +339,7 @@ class Resolver {
 
       /** @type ResolveContext */
       const context = {
-        vocabulary: (uri) => this.#session.jsonSchema.vocabularies[toId(uri)],
+        vocabulary: (uri) => definitionsOf(this.#session.config).vocabularies[toId(uri)],
         dialectUri: dialect.uri,
         setBaseUri: (reference) => {
           let baseUri;
@@ -574,12 +574,12 @@ class Resolver {
    */
   #selfDescribingDialect(dialectUri, node) {
     const uri = toId(dialectUri);
-    const dialect = this.#session.jsonSchema.dialects[uri];
+    const dialect = definitionsOf(this.#session.config).dialects[uri];
     if (dialect) {
       return dialect;
     }
 
-    this.#message(`The '${uri}' meta-schema describes itself, so its dialect has to be in the 'dialects' config.`, node, "unknown-dialect");
+    this.#message(`The '${uri}' meta-schema describes itself, so its dialect has to be in the 'dialects' option of jsonSchemaMediaTypes.`, node, "unknown-dialect");
   }
 
   /**

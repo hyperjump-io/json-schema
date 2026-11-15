@@ -7,17 +7,17 @@ retrieve anything, so it's safe to share and reuse.
 ```typescript
 import { validator } from "@hyperjump/json-schema";
 
-const isPerson = await validator(jsonSchema, "https://example.com/person");
+const isPerson = await validator(config, "https://example.com/person");
 
 isPerson({ name: "Jason" }); // true
 ```
 
 | Function | Does |
 | --- | --- |
-| `validator(jsonSchema, schema, options)` | Compiles and returns a function that validates |
-| `annotator(jsonSchema, schema, options)` | Compiles and returns a function that also collects [annotations](annotations.md) |
-| `validate(jsonSchema, schema, value, options)` | Compiles and validates once |
-| `annotate(jsonSchema, schema, value, options)` | Compiles and annotates once |
+| `validator(config, schema, options)` | Compiles and returns a function that validates |
+| `annotator(config, schema, options)` | Compiles and returns a function that also collects [annotations](annotations.md) |
+| `validate(config, schema, value, options)` | Compiles and validates once |
+| `annotate(config, schema, value, options)` | Compiles and annotates once |
 
 `validate` and `annotate` compile the schema every time. Use them for
 one-off checks, not in a loop.
@@ -28,7 +28,7 @@ A schema can be its URI, like `"https://example.com/person"` or a `file:`
 URL. It can also be the schema itself.
 
 ```typescript
-await validate(jsonSchema, {
+await validate(config, {
   $schema: "https://json-schema.org/v1",
   type: "string"
 }, "Jason"); // true
@@ -42,9 +42,9 @@ in the schema are resolved against it.
 It can reference schemas in a [registry](loading-schemas.md#registries),
 but its `$id` can't be one that a registry also has, even if the schemas
 are identical. A boolean schema has no `$schema`, so it needs the
-`defaultDialectUri` config.
+`defaultDialectUri` option of `jsonSchemaMediaTypes`.
 
-Nothing is cached. Calling `validate(jsonSchema, schema, value)` with the
+Nothing is cached. Calling `validate(config, schema, value)` with the
 same schema value compiles it again each time. Call `validator` once
 instead.
 
@@ -79,7 +79,7 @@ so the rest of the text is still validated.
 ```typescript
 import { BASIC, validator } from "@hyperjump/json-schema";
 
-const checkText = await validator(jsonSchema, "https://example.com/person", { input: "json", output: BASIC });
+const checkText = await validator(config, "https://example.com/person", { input: "json", output: BASIC });
 const result = checkText(`{ "name": "Jason", "age": -1, }`);
 ```
 
@@ -112,7 +112,7 @@ positions.
 ```typescript
 import { fromJson } from "@hyperjump/browser";
 
-const isPersonNode = await validator(jsonSchema, "https://example.com/person", { input: "node" });
+const isPersonNode = await validator(config, "https://example.com/person", { input: "node" });
 
 const { node } = fromJson(`{ "name": "Jason" }`);
 isPersonNode(node); // true
@@ -126,7 +126,7 @@ boolean. `BASIC` and `DETAILED` return the errors.
 ```typescript
 import { BASIC, validator } from "@hyperjump/json-schema";
 
-const checkPerson = await validator(jsonSchema, "https://example.com/person", { output: BASIC });
+const checkPerson = await validator(config, "https://example.com/person", { output: BASIC });
 checkPerson({ age: -1 });
 // { valid: false, errors: [...] }
 ```
@@ -145,7 +145,7 @@ one compiled schema to validate in different ways. `serialize` and
 ```typescript
 import { BASIC, compile, validatorFor } from "@hyperjump/json-schema";
 
-const person = await compile(jsonSchema, "https://example.com/person");
+const person = await compile(config, "https://example.com/person");
 const isPerson = validatorFor(person);
 const checkPerson = validatorFor(person, { output: BASIC });
 ```

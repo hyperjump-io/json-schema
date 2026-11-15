@@ -1,6 +1,6 @@
 import { describe, test, expect } from "vitest";
 import { fromJson } from "@hyperjump/browser";
-import { configureJsonSchema } from "../../json-schema.js";
+import { jsonSchemaMediaTypes } from "../../json-schema.js";
 import { SchemaRegistry } from "../../registry/schema-registry.js";
 import { v1Dialect, v1DialectUri } from "../../dialects/v1/index.js";
 import { astInstance, jsInstance } from "../instance.js";
@@ -11,6 +11,7 @@ import { BASIC } from "../../output/index.js";
 import { compile as compileSchema, restore, serialize } from "../../operations/compile.js";
 import { validatorFor } from "../../operations/validate-compiled.js";
 import { noUrl } from "../../identifiers.js";
+import { definitionsOf } from "../../definition-of.js";
 
 /**
  * @import { Json } from "@hyperjump/browser"
@@ -18,7 +19,7 @@ import { noUrl } from "../../identifiers.js";
  * @import { Mode } from "../optimize.js"
  */
 
-const jsonSchema = configureJsonSchema({ dialects: [v1Dialect] });
+const jsonSchema = { mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }) };
 
 const fast = { fast: true, plugins: false, annotations: false };
 
@@ -262,7 +263,7 @@ describe("dispatch", () => {
       const after = { ...kernel, schemas: { ...kernel.schemas, ...Object.fromEntries(replaced) } };
       const options = { instance: astInstance, isAst: true, annotating: false, instrumented: false };
       const { node } = fromJson(json, noUrl);
-      const definitions = kernelDefinitions(jsonSchema, kernel);
+      const definitions = kernelDefinitions(definitionsOf(jsonSchema), kernel);
       return [instrumented(definitions, kernel, options)(node), instrumented(definitions, after, options)(node)];
     };
 
@@ -325,7 +326,7 @@ describe("dispatch", () => {
           parsed.map((json) => validatorFor(restore(jsonSchema, withRoot(expression)))(JSON.parse(json)))
         ];
         for (const [instance, isAst] of /** @type const */ ([[astInstance, true], [jsInstance, false]])) {
-          const evaluate = instrumented(kernelDefinitions(jsonSchema, withRoot(expression)), withRoot(expression), /** @type any */ ({ instance, isAst, annotating: false, instrumented: false }));
+          const evaluate = instrumented(kernelDefinitions(definitionsOf(jsonSchema), withRoot(expression)), withRoot(expression), /** @type any */ ({ instance, isAst, annotating: false, instrumented: false }));
           evaluations.push((isAst ? jsons : parsed).map((json) => evaluate(isAst ? fromJson(json, noUrl).node : JSON.parse(json))));
         }
         return evaluations;

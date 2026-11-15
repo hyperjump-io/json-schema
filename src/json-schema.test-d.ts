@@ -1,5 +1,5 @@
-import { configureJsonSchema, extendDialect } from "./json-schema.js";
-import type { JsonSchema, SchemaTypeOf } from "./json-schema.d.ts";
+import { jsonSchemaMediaTypes, extendDialect } from "./json-schema.js";
+import type { JsonSchemaConfig, SchemaTypeOf } from "./json-schema.d.ts";
 import type { Keyword } from "./keyword.d.ts";
 import { SchemaRegistry } from "./registry/schema-registry.js";
 import { v1Dialect } from "./dialects/v1/index.js";
@@ -16,14 +16,14 @@ import { annotate, validate, validator } from "./operations/validate.js";
 import { annotatorFor, validatorFor } from "./operations/validate-compiled.js";
 import { JsonSchemaHyperjump, get, getDocument } from "./session.js";
 import { isSchemaDocument, isSchemaNode } from "./schema/schema-nodes.js";
-import { jrefStep } from "@hyperjump/browser";
+import { jrefMediaType, jrefStep } from "@hyperjump/browser";
 import type { DocumentNode, FollowedNode, JrefNode, JsonNode, MediaTypePlugin } from "@hyperjump/browser";
 import type { JsonSchemaNode } from "./schema/schema-ast.d.ts";
 
 // What's only read can be readonly
 const instance = { tags: ["a", "b"], nested: { list: [1, 2] } } as const;
 
-declare const jsonSchema: JsonSchema;
+declare const jsonSchema: JsonSchemaConfig;
 await validate(jsonSchema, "https://example.com/schema", instance);
 await annotate(jsonSchema, "https://example.com/schema", instance);
 
@@ -61,9 +61,9 @@ void [valid, basic, errors];
 
 // Schema types from the config
 
-// A JsonSchema's schema type is its dialects'
-const v1Only = configureJsonSchema({ dialects: [v1Dialect] });
-v1Only satisfies JsonSchema<V1Schema>;
+// A config's schema type is its media types' dialects'
+const v1Only = { mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }) };
+v1Only satisfies JsonSchemaConfig<V1Schema>;
 const v1Schema: SchemaTypeOf<typeof v1Only> = { $schema: "https://json-schema.org/v1", type: "string" };
 
 await validate(v1Only, { $schema: "https://json-schema.org/v1", type: "string", minLength: 1 }, "foo");
@@ -79,13 +79,13 @@ await bundle(v1Only, { minLenght: 1 });
 // A URI isn't checked
 await validate(v1Only, "https://example.com/schema", "foo");
 
-// A session has its JsonSchema's schema type
+// An operation takes a config, not a session
 // @ts-expect-error
-await validate(new JsonSchemaHyperjump(v1Only), { minLenght: 1 }, "foo");
+await validate(new JsonSchemaHyperjump(v1Only), "https://example.com/schema", "foo");
 
 // A union of dialects is told apart by `$schema`
-const both = configureJsonSchema({ dialects: [v1Dialect, draft202012Dialect] });
-both satisfies JsonSchema<V1Schema | Draft202012Schema>;
+const both = { mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect, draft202012Dialect] }) };
+both satisfies JsonSchemaConfig<V1Schema | Draft202012Schema>;
 await validate(both, { $schema: "https://json-schema.org/draft/2020-12/schema", unknown: 1 }, "foo");
 // @ts-expect-error
 await validate(both, { $schema: "https://json-schema.org/v1", unknown: 1 }, "foo");
@@ -96,58 +96,69 @@ const evenKeyword = {
   shape: "data",
   lower: (even: boolean) => even ? { op: "multipleOf", divisor: 2 } : { op: "pass" }
 } satisfies Keyword<boolean>;
-const withEven = configureJsonSchema({ dialects: [extendDialect(v1Dialect, { keywords: { even: evenKeyword } })] });
-withEven satisfies JsonSchema<V1Schema<{ even: typeof evenKeyword }>>;
+const withEven = {
+  mediaTypes: jsonSchemaMediaTypes({ dialects: [extendDialect(v1Dialect, { keywords: { even: evenKeyword } })] })
+};
+withEven satisfies JsonSchemaConfig<V1Schema<{ even: typeof evenKeyword }>>;
 await validate(withEven, { type: "integer", even: true }, 2);
 // @ts-expect-error
 await validate(withEven, { type: "integer", even: 2 }, 2);
 
 // A dialect written in the config, with a keyword named by URI that
 // allows any value
-const custom = configureJsonSchema({
-  dialects: [{
+const custom = {
+  mediaTypes: jsonSchemaMediaTypes({ dialects: [{
     uri: "https://example.com/dialect",
     keywords: { $id: "https://json-schema.org/keyword/id", even: evenKeyword },
     unknownKeywords: "error"
-  }],
-  keywords: [idKeyword]
-});
+  }], keywords: [idKeyword] })
+};
 await validate(custom, { $schema: "https://example.com/dialect", $id: 42, even: true }, 2);
 // @ts-expect-error
 await validate(custom, { other: 1 }, 2);
 
 // Without dialects, any schema
-const none = configureJsonSchema();
+const none = { mediaTypes: jsonSchemaMediaTypes() };
 await validate(none, { anything: [1] }, 2);
 await validate(none, true, 2);
 
-// A registry can take the JsonSchema's schemas
+// A registry can take the config's schemas
 new SchemaRegistry<SchemaTypeOf<typeof v1Only>>().with(v1Schema);
 // @ts-expect-error
 new SchemaRegistry<SchemaTypeOf<typeof v1Only>>().with({ minLenght: 1 });
 
 // The config takes a registry of any type
-configureJsonSchema({ dialects: [v1Dialect], registry: new SchemaRegistry<V1Schema>().with({ type: "string" }) });
-configureJsonSchema({ dialects: [v1Dialect], registry: new SchemaRegistry().with({ anything: [1] }) });
+({
+  mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }),
+  registry: new SchemaRegistry<V1Schema>().with({ type: "string" })
+}) satisfies JsonSchemaConfig;
+({
+  mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }),
+  registry: new SchemaRegistry().with({ anything: [1] })
+}) satisfies JsonSchemaConfig;
+
+// A config has to have the JSON Schema media types
+// @ts-expect-error
+await validate({}, "https://example.com/schema", 42);
 
 // What a session finds is a node of a document in one of its media types:
-// a schema, JRef, JSON, or one of the config's
+// a schema, JSON, or another one in the config, like JRef
 type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
 const yes = <T extends true>(_is?: T) => {};
 
 const found = await get(new JsonSchemaHyperjump(v1Only), "https://example.com/schema");
-yes<Equal<typeof found, FollowedNode<JsonSchemaNode | JrefNode | JsonNode>>>();
+yes<Equal<typeof found, FollowedNode<JsonSchemaNode | JsonNode>>>();
 if (found.type === "json-schema") {
   found satisfies FollowedNode<JsonSchemaNode>;
   const stepped = await jrefStep(new JsonSchemaHyperjump(v1Only), "properties", found);
-  yes<Equal<typeof stepped, FollowedNode<JsonSchemaNode | JrefNode | JsonNode>>>();
+  yes<Equal<typeof stepped, FollowedNode<JsonSchemaNode | JsonNode>>>();
 }
 
 type OtherNode = JsonNode<{ type: "other" }>;
 declare const otherMediaType: MediaTypePlugin<DocumentNode<OtherNode>>;
-const withOther = configureJsonSchema({ dialects: [v1Dialect], mediaTypes: [otherMediaType] });
+const withOther = { mediaTypes: [...jsonSchemaMediaTypes({ dialects: [v1Dialect] }), jrefMediaType, otherMediaType] };
 const foundOther = await get(new JsonSchemaHyperjump(withOther), "https://example.com/schema");
-yes<Equal<typeof foundOther, FollowedNode<JsonSchemaNode | JrefNode | JsonNode | OtherNode>>>();
+yes<Equal<typeof foundOther, FollowedNode<JsonSchemaNode | JsonNode | JrefNode | OtherNode>>>();
 
 // A session whose type doesn't say its media types could have any
 const unknownNode = await get(new JsonSchemaHyperjump(jsonSchema), "https://example.com/schema");

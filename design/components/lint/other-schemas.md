@@ -95,5 +95,5 @@ document finds something. They can see what's in registries and what
   giving the identifier relative to the referencing schema, which is
   shorter but harder to read when the bases have nothing in common.
 - Schemas aren't trusted, but plugins are. A plugin could make its own
-  unrestricted `JsonSchema`. Nothing can stop code that sets out to do that.
+  unrestricted config. Nothing can stop code that sets out to do that.
   The restriction keeps a schema from making rules retrieve what it names.

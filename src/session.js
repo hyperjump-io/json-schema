@@ -1,6 +1,7 @@
 import { getDocument, Hyperjump, relativeFileUrl } from "@hyperjump/browser";
 import { encodeIriFragment, urlToIri } from "@hyperjump/uri";
 import { toId } from "./identifiers.js";
+import { definitionsOf } from "./definition-of.js";
 import { SessionRegistries } from "./registry/session-registries.js";
 import { DocumentResponse } from "./registry/document-response.js";
 import { isSchemaDocument } from "./schema/schema-nodes.js";
@@ -9,7 +10,7 @@ import unknownKeyword, { keywordDefinitionUri } from "./keywords/unknown.js";
 
 /**
  * @import { Dialect } from "./dialect.d.ts"
- * @import { JsonSchema } from "./json-schema.d.ts"
+ * @import { JsonSchemaConfig } from "./json-schema.d.ts"
  * @import { JsonSchemaDocumentNode, JsonSchemaNode } from "./schema/schema-ast.d.ts"
  * @import { Id } from "./identifiers.js"
  * @import * as API from "./session.d.ts"
@@ -40,42 +41,28 @@ const schemasKey = {};
 
 /** @type (session: API.JsonSchemaHyperjump) => Schemas */
 const schemasOf = (session) => session.state(schemasKey, () => {
-  throw Error("A schema can only be retrieved in a session of a JsonSchema. Use 'new JsonSchemaHyperjump(jsonSchema)' to start one.");
+  throw Error("A schema can only be retrieved in a JsonSchemaHyperjump. Use 'new JsonSchemaHyperjump(config)' to start one.");
 });
 
 /**
- * A browser session that finds schemas in the registries it sees before it
+ * A browser session that finds schemas in its config's `registry` before it
  * retrieves anything. It's a `Hyperjump`, so it's traced, observed, and
  * closed like any other.
  */
 export class JsonSchemaHyperjump extends Hyperjump {
-  /** @type JsonSchema */
-  #jsonSchema;
-
   /**
-   * @param {JsonSchema} jsonSchema
-   * @param {API.SessionOptions} [options]
+   * @param {JsonSchemaConfig} config
    */
-  constructor(jsonSchema, options = {}) {
-    const allowRetrieval = options.allowRetrieval ?? jsonSchema.config.allowRetrieval;
-    super({
-      ...jsonSchema.config,
-      stack: jsonSchema.stack,
-      ...allowRetrieval === undefined ? {} : { allowRetrieval }
-    });
-    this.#jsonSchema = jsonSchema;
+  constructor(config) {
+    super(config);
 
     const session = /** @type API.JsonSchemaHyperjump */ (/** @type unknown */ (this));
     this.state(schemasKey, () => /** @type Schemas */ ({
-      registries: new SessionRegistries(session, options.registry),
+      registries: new SessionRegistries(session, config.registry),
       dialects: {},
       pendingDialects: {},
       loading: new Map()
     }));
-  }
-
-  get jsonSchema() {
-    return this.#jsonSchema;
   }
 
   // A registry's schema isn't retrieved, so it's found before the session
@@ -132,7 +119,7 @@ export { get, getDocument } from "@hyperjump/browser";
 export const hasDialect = (session, uri) => dialectOf(session, toId(uri)) !== undefined;
 
 /** @type (session: API.JsonSchemaHyperjump, uri: Id) => Dialect | undefined */
-const dialectOf = (session, uri) => session.jsonSchema.dialects[uri] ?? schemasOf(session).dialects[uri];
+const dialectOf = (session, uri) => definitionsOf(session.config).dialects[uri] ?? schemasOf(session).dialects[uri];
 
 /** @type typeof API.getDialect */
 export const getDialect = async (session, dialectUri, options = {}) => {
@@ -209,11 +196,11 @@ const loadDialect = async (session, uri) => {
 
     const { definedDialect } = metaSchema;
     if (!definedDialect) {
-      throw Error(`The meta-schema for the '${relativeFileUrl(uri)}' dialect doesn't define a dialect (with '$vocabulary', for example). Add it to the 'dialects' config.`);
+      throw Error(`The meta-schema for the '${relativeFileUrl(uri)}' dialect doesn't define a dialect (with '$vocabulary', for example). Add it to the 'dialects' option of jsonSchemaMediaTypes.`);
     }
 
     // The dialect is identified by whichever URI found the meta-schema
-    const dialect = withValidateFormats({ ...definedDialect, uri }, session.jsonSchema.config);
+    const dialect = withValidateFormats({ ...definedDialect, uri }, definitionsOf(session.config));
     dialects[uri] = dialect;
     return dialect;
   } finally {
@@ -236,7 +223,7 @@ export const annotation = (session, node, keyword, dialectUri = v1DialectUri) =>
  * @type (session: API.JsonSchemaHyperjump, keyword: string, dialectUri: string) => string
  */
 const keywordUri = (session, keyword, dialectUri) => {
-  if (keywordDefinitionUri(keyword) in session.jsonSchema.keywords) {
+  if (keywordDefinitionUri(keyword) in definitionsOf(session.config).keywords) {
     return keyword;
   }
 

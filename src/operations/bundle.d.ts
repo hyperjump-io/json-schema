@@ -1,4 +1,4 @@
-import type { JsonSchema } from "../json-schema.d.ts";
+import type { JsonSchemaConfig } from "../json-schema.d.ts";
 import type { Json } from "@hyperjump/browser";
 import type { SessionOptions } from "../session.d.ts";
 import type { SchemaSource } from "./schema-source.d.ts";
@@ -36,7 +36,7 @@ import type { SchemaSource } from "./schema-source.d.ts";
  * @throws An error from `@hyperjump/browser` if a schema can't be
  * retrieved. Its `cause.code` says why.
  */
-export function bundle<S>(jsonSchema: JsonSchema<S>, schema: NoInfer<SchemaSource<S>>, options?: SessionOptions & BundleOptions): Promise<Json>;
+export function bundle<S>(config: JsonSchemaConfig<S>, schema: NoInfer<SchemaSource<S>>, options?: SessionOptions & BundleOptions): Promise<Json>;
 
 export type BundleOptions = {
   /**

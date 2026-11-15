@@ -5,7 +5,7 @@
   draft-04 through draft-07, each in its directory's
   `json-schema-test-suite.test.js`. v1 also runs the suite's proposal
   tests.
-- One `JsonSchema` runs every test case of a release. Each test case's
+- One config runs every test case of a release. Each test case's
   schema and `externalSchemas` are in a session registry, which keeps test
   cases from seeing each other's schemas, and `http(s):` is removed so
   nothing is retrieved. Each test is checked as a value, as JSON
@@ -17,7 +17,7 @@
   record the schema they came from.
 - The runners share `describeValidationTestSuite` and
   `describeAnnotationTestSuite` in `test/test-suite.js`. Each one gives the
-  release, the dialect, the `JsonSchema` to use, and what to skip. The
+  release, the dialect, the config to use, and what to skip. The
   annotation runner gets the dialect itself, because the suite names
   keywords and annotations are identified by keyword URI.
 - Tests for `conditional`, `itemPattern`, and `requireAllExcept` are in

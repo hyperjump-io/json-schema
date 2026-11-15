@@ -9,16 +9,18 @@ is in browser's [design docs](https://github.com/hyperjump-io/browser/blob/v2/de
   value. Documents are functions of a session: `get(session, url)`,
   `getDocument(session, url)`, and the `jref*` functions. What they need
   of one is its `fetch`, `state`, `contextUrl`, and `config`
-  (`DocumentSession`), so a `JsonSchema`'s session is a value with those,
-  whose `fetch` asks the registries first (see
-  [Sessions](sessions/README.md)).
+  (`DocumentSession`). A JSON Schema session is a `Hyperjump` whose `fetch`
+  asks the registry first (see [Sessions](sessions/README.md)).
 - `session.state(key, init)` keeps what lives as long as the session. What
   a session has for schemas is there: its registries, its resources, and
   the dialects it built from meta-schemas.
 - Retrieval is a stack of layers on a transport, which a session is given
-  as `stack`. Every session of a `JsonSchema` has the same one. In Node.js,
-  it has an HTTP cache, since browser's default stack doesn't have one
-  (`src/default-stack.js`).
+  as `stack`. Sessions made from a config with one share it, and its HTTP
+  cache if it has one. Without one, each session has browser's default
+  stack, which has no HTTP cache (see
+  [JSON Schema as a media type](api/json-schema-media-type.md#sharing-the-http-cache)).
+  Before 2026-11-14, every session of a `JsonSchema` shared one with an
+  HTTP cache in Node.js (`src/default-stack.js`).
 - A session keeps a document under the URL its response came from, never
   the one the document says it has. A schema document's `url` is its
   `uri`, which is its `$id`, so a retrieved schema is only found by where
@@ -36,19 +38,20 @@ is in browser's [design docs](https://github.com/hyperjump-io/browser/blob/v2/de
   say its media type.
 - A media type plugin is a plain value, in the session's `mediaTypes`. The
   plugin with the most specific match for a response parses it, and the
-  first one wins a tie. `JsonSchema` puts its plugins before the config's:
-  JSON Schema, JSON that can be a schema, and JRef. So JSON is read by the
-  plugin that finds schemas in it, even when the config has browser's
-  defaults, and the config's can't replace them.
+  first one wins a tie. `jsonSchemaMediaTypes` returns JSON Schema's in the
+  order they run, JSON Schema and then JSON that can be a schema, and the
+  docs put other media types, like JRef, after them, so JSON is read by
+  the plugin that finds schemas in it. Before 2026-11-14, `JsonSchema` put
+  its plugins, with JRef, before the config's itself.
 - A plugin's `parse` gets the response and the session. The response has
   the `Content-Type`'s `schema` and `profile` parameters, and the session
   is what a schema's meta-schema is retrieved in.
 - A file's media type is the one for the longest extension that matches.
 - What `get` and the `jref*` functions return is typed by the session's
   media types, since a reference can lead to a document in any of them. A
-  `JsonSchema`'s session says its media types, so what it finds is a
-  schema's node, a JRef node, a JSON node, or a node of one of the
-  config's media types (see [Sessions](sessions/README.md)).
+  `JsonSchemaHyperjump` has its config's type, so what it finds is a
+  schema's node, a JSON node, or a node of another of the config's media
+  types, like JRef (see [Sessions](sessions/README.md)).
 - `allowRetrieval`, in the config. A session of its own allowance is a
   `Hyperjump` made with it. A refusal is a network error whose
   `cause.code` is `ERR_RETRIEVAL_NOT_ALLOWED` (see

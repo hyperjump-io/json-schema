@@ -14,7 +14,7 @@ These stay public, because something users write depends on them.
 | Keyword definitions: the `check`, `resolve`, `lower`, and `evaluate` hooks and their contexts | Custom keywords |
 | Kernel expressions, the `Kernel` format (versioned with `kernel: 1`), and helpers like `subexpressions` | Custom keywords lower to expressions, and `serialize` returns a `Kernel` |
 | `EvaluationPlugin` | Custom output formats, and anything that watches evaluation, like coverage |
-| Schema AST types, `schemaMediaType`, `isSchemaNode`, `isSchemaDocument`, `resolveSchema`, `jsonSchemaResolve`, `jsonSchemaValidate` | Editors and the language server, schemas in other formats, like YAML |
+| Schema AST types, `jsonSchemaMediaTypes`, `isSchemaNode`, `isSchemaDocument`, `resolveSchema`, `jsonSchemaResolve`, `jsonSchemaValidate` | Editors and the language server, schemas in other formats, like YAML |
 | The lint toolkit (`./lint`) | Lint rules |
 | Session browsing: `get`, `getDocument`, `getDialect`, `annotation` | Any operation that walks schemas |
 
@@ -34,7 +34,7 @@ These stay public, because something users write depends on them.
 - `get` and `getDocument` are browser's, exported as they are. What they
   find might not be a schema, so `isSchemaNode` and `isSchemaDocument` are
   exported with them.
-- There's no `lower` function. `serialize(await compile(jsonSchema, uri))`
+- There's no `lower` function. `serialize(await compile(config, uri))`
   is the kernel as it was lowered. The optimization passes run inside a
   validator, once for each evaluation mode, and what they produce is never
   returned. The lowered kernel is what tools need: provenance needs

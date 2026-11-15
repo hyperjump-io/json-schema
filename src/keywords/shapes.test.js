@@ -3,7 +3,7 @@ import { describe, test, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
 import { jsonPointerGet, rejsonParse } from "@hyperjump/browser";
-import { configureJsonSchema } from "../json-schema.js";
+import { jsonSchemaMediaTypes } from "../json-schema.js";
 import { JsonSchemaHyperjump } from "../session.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
@@ -12,6 +12,7 @@ import { draft06Dialect, draft06DialectUri } from "../dialects/draft-06/index.js
 import { draft07Dialect, draft07DialectUri } from "../dialects/draft-07/index.js";
 import { draft201909Dialect, draft201909DialectUri } from "../dialects/draft-2019-09/index.js";
 import { draft202012Dialect, draft202012DialectUri } from "../dialects/draft-2020-12/index.js";
+import { definitionsOf } from "../definition-of.js";
 
 /**
  * @import { Json } from "@hyperjump/browser"
@@ -30,14 +31,16 @@ import { draft202012Dialect, draft202012DialectUri } from "../dialects/draft-202
  * @typedef {{ value: Json; pointer: string; reportedBy: "schema" | "shape" | "keyword" }} Case
  */
 
-const jsonSchema = configureJsonSchema({ dialects: [v1Dialect, draft04Dialect, draft06Dialect, draft07Dialect, draft201909Dialect, draft202012Dialect] });
+const jsonSchema = {
+  mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect, draft04Dialect, draft06Dialect, draft07Dialect, draft201909Dialect, draft202012Dialect] })
+};
 
 /** @type Map<string, { name: string; dialectUri: string; shape: Shape }> */
 const keywords = new Map();
 for (const dialectUri of [v1DialectUri, draft202012DialectUri, draft201909DialectUri, draft07DialectUri, draft06DialectUri, draft04DialectUri]) {
-  for (const [name, keywordUri] of Object.entries(jsonSchema.dialects[toId(dialectUri)].keywords)) {
+  for (const [name, keywordUri] of Object.entries(definitionsOf(jsonSchema).dialects[toId(dialectUri)].keywords)) {
     if (!keywords.has(keywordUri)) {
-      keywords.set(keywordUri, { name, dialectUri, shape: jsonSchema.keywords[keywordUri].shape });
+      keywords.set(keywordUri, { name, dialectUri, shape: definitionsOf(jsonSchema).keywords[keywordUri].shape });
     }
   }
 }

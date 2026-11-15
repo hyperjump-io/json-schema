@@ -17,7 +17,7 @@ import { reporter } from "vfile-reporter";
 import { rejsonParse, rejsonStringify } from "@hyperjump/browser";
 import { compile, jsonSchemaValidate } from "@hyperjump/json-schema";
 
-const compiled = await compile(jsonSchema, "https://example.com/person");
+const compiled = await compile(config, "https://example.com/person");
 
 const file = await unified()
   .use(rejsonParse, { accept: "recovered" })

@@ -3,9 +3,8 @@ export { annotation, get, getDialect, getDocument, JsonSchemaHyperjump } from ".
 export type { GetDialectOptions, SessionOptions } from "./session.js";
 export * from "./schema/resolve.js";
 export * from "./schema/schema-nodes.js";
-export { schemaMediaType } from "./schema/media-type-plugin.js";
 export type { JsonSchemaMediaTypeDocument } from "./schema/media-type-plugin.js";
-export * from "./schema/json-media-type-plugin.js";
+export type { JsonOrSchemaDocument } from "./schema/json-media-type-plugin.js";
 export * from "./validate/validate.js";
 export * from "./output/index.js";
 export * from "./operations/validate.js";

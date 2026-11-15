@@ -9,7 +9,7 @@ import type { Expression, Handle } from "./kernel/kernel.d.ts";
  * The definition of a keyword. A dialect maps keyword names to these by URI.
  *
  * Keywords are stateless so one definition can be shared by every
- * `JsonSchema` instance and every dialect. A keyword says what it means by
+ * config and every dialect. A keyword says what it means by
  * lowering its value to a kernel expression (`lower`). Evaluating,
  * optimizing, and output formats only work with expressions.
  *

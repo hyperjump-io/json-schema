@@ -6,7 +6,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { describe, test, beforeEach, beforeAll, afterAll, expect } from "vitest";
 import { VFileMessage } from "vfile-message";
 import { fromJson, jsonPointerGet } from "@hyperjump/browser";
-import { configureJsonSchema, outputErrorMessage, toVFileMessage } from "../json-schema.js";
+import { jsonSchemaMediaTypes, outputErrorMessage, toVFileMessage } from "../json-schema.js";
 import idKeyword from "../keywords/id.js";
 import anchorKeyword from "../keywords/anchor.js";
 import dynamicAnchorKeyword from "../keywords/dynamicAnchor.js";
@@ -24,7 +24,7 @@ import { noUrl } from "../identifiers.js";
  * @import { DetailedValidationError, ValidationError } from "../output/validation-error.d.ts"
  * @import { DialectConfig } from "../dialect.d.ts"
  * @import { OutputFormat } from "../output/output-format.d.ts"
- * @import { JsonSchema } from "../json-schema.d.ts"
+ * @import { JsonSchemaConfig } from "../json-schema.d.ts"
  */
 
 const dialectUri = "https://example.com/dialect";
@@ -335,7 +335,7 @@ const keywords = [
 ];
 
 describe("Validator", () => {
-  /** @type JsonSchema */
+  /** @type JsonSchemaConfig */
   let jsonSchema;
 
   /** @type string */
@@ -358,7 +358,10 @@ describe("Validator", () => {
   });
 
   beforeEach(() => {
-    jsonSchema = configureJsonSchema({ allowRetrieval: [pathToFileURL(join(tmpdir(), "/")).href], dialects: [testDialect], keywords });
+    jsonSchema = {
+      mediaTypes: jsonSchemaMediaTypes({ dialects: [testDialect], keywords }),
+      allowRetrieval: [pathToFileURL(join(tmpdir(), "/")).href]
+    };
   });
 
   describe("validate", () => {
@@ -1045,11 +1048,10 @@ describe("Validator", () => {
     test("x- keywords are annotations if unknown keywords are errors", async () => {
       for (const unknownKeywords of /** @type const */ (["error", "ignore"])) {
         const strictDialectUri = `https://example.com/${unknownKeywords}-dialect`;
-        const jsonSchema = configureJsonSchema({
-          allowRetrieval: [pathToFileURL(join(tmpdir(), "/")).href],
-          dialects: [testDialect, { uri: strictDialectUri, keywords: {}, unknownKeywords }],
-          keywords
-        });
+        const jsonSchema = {
+          mediaTypes: jsonSchemaMediaTypes({ dialects: [testDialect, { uri: strictDialectUri, keywords: {}, unknownKeywords }], keywords }),
+          allowRetrieval: [pathToFileURL(join(tmpdir(), "/")).href]
+        };
         const path = join(directory, `${fileCount++}.schema.json`);
         await writeFile(path, JSON.stringify({ "$schema": strictDialectUri, "x-foo": 1 }));
         const compiled = await compile(jsonSchema, pathToFileURL(path).toString());
@@ -1660,7 +1662,7 @@ describe("Validator", () => {
       const compiled = await compile(jsonSchema, await schemaFile({ type: "number" }));
       const serialized = serialize(compiled);
 
-      expect(() => restore(configureJsonSchema(), serialized)).to.throw("isn't supported");
+      expect(() => restore({ mediaTypes: jsonSchemaMediaTypes() }, serialized)).to.throw("isn't supported");
     });
 
     test("a restored validator evaluates escape hatches", async () => {
@@ -1677,12 +1679,17 @@ describe("Validator", () => {
       const compiled = await compile(jsonSchema, await schemaFile({ sorted: "ascending" }));
       const serialized = serialize(compiled);
 
-      const other = configureJsonSchema({ dialects: [testDialect], keywords: [...keywords, { ...sortedKeyword, evaluate: undefined }] });
+      const other = {
+        mediaTypes: jsonSchemaMediaTypes({ dialects: [testDialect], keywords: [...keywords, { ...sortedKeyword, evaluate: undefined }] })
+      };
       expect(() => restore(other, serialized)).to.throw("needs 'evaluate'");
     });
 
     test("compiling needs the keywords of escape hatches to have evaluate", async () => {
-      const other = configureJsonSchema({ allowRetrieval: [pathToFileURL(join(tmpdir(), "/")).href], dialects: [testDialect], keywords: [...keywords, { ...sortedKeyword, evaluate: undefined }] });
+      const other = {
+        mediaTypes: jsonSchemaMediaTypes({ dialects: [testDialect], keywords: [...keywords, { ...sortedKeyword, evaluate: undefined }] }),
+        allowRetrieval: [pathToFileURL(join(tmpdir(), "/")).href]
+      };
       await expect(compile(other, await schemaFile({ sorted: "ascending" }))).rejects.toThrow("needs 'evaluate'");
     });
 

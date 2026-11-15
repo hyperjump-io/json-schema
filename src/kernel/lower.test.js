@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { configureJsonSchema, extendDialect } from "../json-schema.js";
+import { jsonSchemaMediaTypes, extendDialect } from "../json-schema.js";
 import { JsonSchemaHyperjump } from "../session.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
@@ -24,10 +24,10 @@ const recordedKeyword = {
   }
 };
 
-const jsonSchema = configureJsonSchema({
-  allowRetrieval: [],
-  dialects: [extendDialect(v1Dialect, { keywords: { recorded: recordedKeyword } })]
-});
+const jsonSchema = {
+  mediaTypes: jsonSchemaMediaTypes({ dialects: [extendDialect(v1Dialect, { keywords: { recorded: recordedKeyword } })] }),
+  allowRetrieval: []
+};
 
 /** @type (schemas: Record<string, Json>[]) => SchemaRegistry */
 const registryOf = (schemas) => new SchemaRegistry(schemas.map((schema) => ({ schema: { $schema: v1DialectUri, ...schema } })));
@@ -39,7 +39,7 @@ describe("lower", () => {
       { $id: "https://example.com/main", recorded: "https://example.com/other#/$defs/a" },
       { $id: "https://example.com/other", $defs: { a: { type: "string" } } }
     ]);
-    await lower(new JsonSchemaHyperjump(jsonSchema, { registry }), "https://example.com/main");
+    await lower(new JsonSchemaHyperjump({ ...jsonSchema, registry }), "https://example.com/main");
 
     expect(references.map(({ handle }) => handle)).to.eql(["https://example.com/other#/$defs/a"]);
     expect(references[0].dynamicAnchors).to.eql({});
@@ -51,7 +51,7 @@ describe("lower", () => {
       { $id: "https://example.com/a", $ref: "https://example.com/b" },
       { $id: "https://example.com/b", type: "string" }
     ]);
-    const kernel = await lower(new JsonSchemaHyperjump(jsonSchema, { registry }), "https://example.com/main");
+    const kernel = await lower(new JsonSchemaHyperjump({ ...jsonSchema, registry }), "https://example.com/main");
 
     expect(Object.keys(kernel.schemas).sort()).to.eql(["https://example.com/a#", "https://example.com/b#", "https://example.com/main#"]);
   });
@@ -61,7 +61,7 @@ describe("lower", () => {
       { $id: "https://example.com/main", allOf: [{ $ref: "https://example.com/missing-a" }, { $ref: "https://example.com/missing-b" }] }
     ]);
     for (let attempt = 0; attempt < 3; attempt++) {
-      await expect(lower(new JsonSchemaHyperjump(jsonSchema, { registry }), "https://example.com/main")).rejects.toThrow("missing-a");
+      await expect(lower(new JsonSchemaHyperjump({ ...jsonSchema, registry }), "https://example.com/main")).rejects.toThrow("missing-a");
     }
   });
 });

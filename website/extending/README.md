@@ -14,14 +14,17 @@ name for different keywords.
 
 That's why a keyword is defined with its URI and then given a name in a
 dialect. Dialects carry their keyword definitions. `extendDialect` makes a
-new dialect with more definitions, and that dialect goes in the config.
+new dialect with more definitions, and that dialect goes in the `dialects`
+option of `jsonSchemaMediaTypes`.
 
 ```typescript
 const evenKeyword = { uri: "https://example.com/keyword/even", ... };
 
-const jsonSchema = configureJsonSchema({
-  dialects: [extendDialect(v1Dialect, { keywords: { even: evenKeyword } })]
-});
+const config = {
+  mediaTypes: jsonSchemaMediaTypes({
+    dialects: [extendDialect(v1Dialect, { keywords: { even: evenKeyword } })]
+  })
+};
 ```
 
 Use a domain you control in your URIs so they don't conflict with anyone

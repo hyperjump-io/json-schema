@@ -6,7 +6,7 @@ import { describe, test, beforeEach, beforeAll, afterAll, expect } from "vitest"
 import { unified } from "unified";
 import { VFile } from "vfile";
 import { rejsonParse } from "@hyperjump/browser";
-import { configureJsonSchema, extendDialect } from "../json-schema.js";
+import { jsonSchemaMediaTypes, extendDialect } from "../json-schema.js";
 import { JsonSchemaHyperjump } from "../session.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
@@ -19,23 +19,24 @@ import { compile } from "../operations/compile.js";
 /**
  * @import { JsonParseStatus } from "@hyperjump/browser"
  * @import { Keyword } from "../keyword.d.ts"
- * @import { JsonSchema } from "../json-schema.d.ts"
+ * @import { JsonSchemaConfig } from "../json-schema.d.ts"
  */
 
 const baseUri = "https://example.com/schema";
 
-/** @type (extension: Record<string, Keyword<any, any, any>>, keywords?: Keyword<any, any, any>[]) => JsonSchema */
-const withV1Keywords = (extension, keywords) => configureJsonSchema({
-  dialects: [extendDialect(v1Dialect, { keywords: extension })],
-  keywords
+/** @type (extension: Record<string, Keyword<any, any, any>>, keywords?: Keyword<any, any, any>[]) => JsonSchemaConfig */
+const withV1Keywords = (extension, keywords) => ({
+  mediaTypes: jsonSchemaMediaTypes({ dialects: [extendDialect(v1Dialect, { keywords: extension })], keywords })
 });
 
 describe("keyword checks", () => {
-  /** @type JsonSchema */
+  /** @type JsonSchemaConfig */
   let jsonSchema;
 
   beforeEach(() => {
-    jsonSchema = configureJsonSchema({ dialects: [v1Dialect, draft04Dialect, draft07Dialect, draft201909Dialect, draft202012Dialect] });
+    jsonSchema = {
+      mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect, draft04Dialect, draft07Dialect, draft201909Dialect, draft202012Dialect] })
+    };
   });
 
   test("valid keyword values", async () => {
@@ -288,7 +289,10 @@ describe("a schema with an invalid keyword value", () => {
     const path = join(directory, "invalid.schema.json");
     await writeFile(path, `{ "$schema": "${v1DialectUri}", "minLength": -1 }`);
 
-    const jsonSchema = configureJsonSchema({ allowRetrieval: [pathToFileURL(join(tmpdir(), "/")).href], dialects: [v1Dialect] });
+    const jsonSchema = {
+      mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }),
+      allowRetrieval: [pathToFileURL(join(tmpdir(), "/")).href]
+    };
     await expect(compile(jsonSchema, pathToFileURL(path).toString())).rejects.toMatchObject({
       messages: [{ ruleId: "https://json-schema.org/keyword/minLength" }]
     });
@@ -298,7 +302,7 @@ describe("a schema with an invalid keyword value", () => {
 /**
  * Each message's reason, rule, and the text it's placed on
  *
- * @type (jsonSchema: JsonSchema, json: string, accept?: JsonParseStatus) => Promise<{ reason: string; ruleId?: string; at: string }[]>
+ * @type (jsonSchema: JsonSchemaConfig, json: string, accept?: JsonParseStatus) => Promise<{ reason: string; ruleId?: string; at: string }[]>
  */
 const check = async (jsonSchema, json, accept) => {
   const file = new VFile(json);

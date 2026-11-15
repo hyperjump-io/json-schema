@@ -1,5 +1,3 @@
-import { jrefMediaType } from "@hyperjump/browser";
-import { defaultStack } from "#default-stack";
 import { toId } from "./identifiers.js";
 import { schemaMediaType } from "./schema/media-type-plugin.js";
 import { jsonOrSchemaMediaType } from "./schema/json-media-type-plugin.js";
@@ -19,15 +17,8 @@ export { extendDialect } from "./dialects/extend-dialect.js";
  */
 
 /**
- * @template T
- * @param {T[] | undefined} array
- * @returns {T[] | undefined}
- */
-const frozenCopy = (array) => array && /** @type T[] */ (Object.freeze([...array]));
-
-/**
- * The definitions a `JsonSchema` is building, by URI. Each one has no
- * prototype, so a URI like `constructor` isn't found in it.
+ * The definitions being built, by URI. Each one has no prototype, so a URI
+ * like `constructor` isn't found in it.
  *
  * @typedef {{
  *   keywords: Record<string, Keyword>;
@@ -37,22 +28,8 @@ const frozenCopy = (array) => array && /** @type T[] */ (Object.freeze([...array
  * }} Tables
  */
 
-/** @type typeof API.configureJsonSchema */
-export const configureJsonSchema = (config = {}) => {
-  // Its media types come before the config's, and the first plugin wins
-  // a tie, so JSON is always read by the plugin that finds schemas in it,
-  // even when the config has browser's defaults. The config is a frozen
-  // copy, with frozen copies of its lists, so changing the object it was
-  // created with doesn't change it.
-  const frozenConfig = Object.freeze({
-    ...config,
-    mediaTypes: Object.freeze([schemaMediaType, jsonOrSchemaMediaType, jrefMediaType, ...config.mediaTypes ?? []]),
-    dialects: frozenCopy(config.dialects),
-    keywords: frozenCopy(config.keywords),
-    formats: frozenCopy(config.formats),
-    vocabularies: config.vocabularies && Object.freeze({ ...config.vocabularies })
-  });
-
+/** @type typeof API.jsonSchemaMediaTypes */
+export const jsonSchemaMediaTypes = (options = {}) => {
   /** @type Tables */
   const tables = {
     keywords: Object.create(null),
@@ -61,12 +38,12 @@ export const configureJsonSchema = (config = {}) => {
     vocabularies: Object.create(null)
   };
 
-  // The config's definitions come first, so one that replaces a
-  // dialect's stays replaced, whatever order the dialects are in
-  for (const keyword of config.keywords ?? []) {
+  // The options' definitions come first, so one that replaces a dialect's
+  // stays replaced, whatever order the dialects are in
+  for (const keyword of options.keywords ?? []) {
     tables.keywords[keyword.uri] = keyword;
   }
-  for (const format of config.formats ?? []) {
+  for (const format of options.formats ?? []) {
     tables.formats[format.uri] = format;
   }
 
@@ -74,15 +51,15 @@ export const configureJsonSchema = (config = {}) => {
   addDefinition(tables.keywords, schemaKeyword);
   addDefinition(tables.keywords, unknownKeyword);
 
-  for (const uri in config.vocabularies) {
-    tables.vocabularies[toId(uri)] = addVocabulary(tables, config.vocabularies[uri]);
+  for (const uri in options.vocabularies) {
+    tables.vocabularies[toId(uri)] = addVocabulary(tables, options.vocabularies[uri]);
   }
-  for (const dialect of config.dialects ?? []) {
-    addDialect(tables, dialect, frozenConfig);
+  for (const dialect of options.dialects ?? []) {
+    addDialect(tables, dialect, options);
   }
 
-  // A dialect can name a keyword by URI that another dialect or the config
-  // defines, so this waits until they're all added
+  // A dialect can name a keyword by URI that another dialect or the options
+  // define, so this waits until they're all added
   for (const dialect of Object.values(tables.dialects)) {
     assertDefined(tables.keywords, dialect.keywords, `'${dialect.uri}' dialect`);
   }
@@ -90,16 +67,22 @@ export const configureJsonSchema = (config = {}) => {
     assertDefined(tables.keywords, tables.vocabularies[uri].keywords, `'${uri}' vocabulary`);
   }
 
-  return /** @type any */ (Object.freeze({
-    config: frozenConfig,
-    // Every session shares it, so what one retrieves over HTTP is cached
-    // for the next
-    stack: config.stack ?? defaultStack(),
+  /** @type API.JsonSchemaDefinitions */
+  const definitions = Object.freeze({
     keywords: Object.freeze(tables.keywords),
     formats: Object.freeze(tables.formats),
     dialects: Object.freeze(tables.dialects),
-    vocabularies: Object.freeze(tables.vocabularies)
-  }));
+    vocabularies: Object.freeze(tables.vocabularies),
+    defaultDialectUri: options.defaultDialectUri,
+    validateFormats: options.validateFormats
+  });
+
+  // JSON-or-schema reads what the schema plugin doesn't, so it comes second.
+  // Everything that needs the definitions finds them on the schema plugin.
+  return /** @type any */ (Object.freeze([
+    Object.freeze({ ...schemaMediaType, definitions }),
+    jsonOrSchemaMediaType
+  ]));
 };
 
 /**
@@ -145,12 +128,12 @@ const addVocabulary = (tables, { keywords, formats, assertFormats }) => {
  * A dialect is kept with its definitions named by URI, which is how
  * everything reads it.
  *
- * @type (tables: Tables, dialect: DialectConfig, config: API.JsonSchemaConfig) => void
+ * @type (tables: Tables, dialect: DialectConfig, options: API.JsonSchemaOptions) => void
  */
-const addDialect = (tables, { vocabularies, ...dialect }, config) => {
+const addDialect = (tables, { vocabularies, ...dialect }, options) => {
   const uri = toId(dialect.uri);
   if (uri in tables.dialects) {
-    throw Error(`The '${uri}' dialect is in the config more than once`);
+    throw Error(`The '${uri}' dialect is in the 'dialects' option more than once`);
   }
   assertNoReservedKeywords(dialect.keywords);
 
@@ -160,7 +143,7 @@ const addDialect = (tables, { vocabularies, ...dialect }, config) => {
 
   const { formats, ...rest } = dialect;
   /** @type Dialect */
-  const added = withValidateFormats({ ...rest, uri, keywords: addDefinitions(tables.keywords, dialect.keywords) }, config);
+  const added = withValidateFormats({ ...rest, uri, keywords: addDefinitions(tables.keywords, dialect.keywords) }, options);
   if (formats !== undefined) {
     added.formats = addDefinitions(tables.formats, formats);
   }
@@ -171,7 +154,7 @@ const addDialect = (tables, { vocabularies, ...dialect }, config) => {
 const assertDefined = (defined, keywords, definedIn) => {
   for (const name in keywords) {
     if (!(keywords[name] in defined)) {
-      throw Error(`The ${definedIn} has no definition for the '${keywords[name]}' keyword. Add it to the dialect or the 'keywords' config.`);
+      throw Error(`The ${definedIn} has no definition for the '${keywords[name]}' keyword. Add it to the dialect or the 'keywords' option of jsonSchemaMediaTypes.`);
     }
   }
 };

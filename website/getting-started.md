@@ -14,22 +14,23 @@ It's an ES module with TypeScript types. It works in Node.js and in
 browsers. In a browser, use a bundler that supports the `imports` field of
 `package.json`. Vite, webpack, esbuild, and Rollup all do.
 
-## Create a `JsonSchema`
+## Create a config
 
-A `JsonSchema` holds everything your application's schemas need. That's the
-dialects it supports and its configuration. A
-dialect is a version of JSON Schema. Most applications create one
-`JsonSchema` and use it everywhere.
+The config holds everything your schemas need. That's the dialects it
+supports and how schemas are retrieved. A dialect is a version of JSON
+Schema. Most applications create one config and use it everywhere.
 
-It starts without any dialects, so give it the ones your schemas use. This
-tutorial uses JSON Schema v1. [Dialects](guides/dialects.md) lists the
-others.
+A schema is a document of the JSON Schema media type.
+`jsonSchemaMediaTypes` makes the media types that schemas are read with,
+and they go in the config's `mediaTypes`. They start without any dialects,
+so give them the ones your schemas use. This tutorial uses JSON Schema v1.
+[Dialects](guides/dialects.md) lists the others.
 
 ```typescript
-import { configureJsonSchema } from "@hyperjump/json-schema";
+import { jsonSchemaMediaTypes } from "@hyperjump/json-schema";
 import { v1Dialect } from "@hyperjump/json-schema/v1";
 
-const jsonSchema = configureJsonSchema({ dialects: [v1Dialect] });
+const config = { mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }) };
 ```
 
 ## Add a schema
@@ -88,7 +89,7 @@ like.
 ```typescript
 import { validator } from "@hyperjump/json-schema";
 
-const isPerson = await validator(jsonSchema, "https://example.com/person", { registry });
+const isPerson = await validator(config, "https://example.com/person", { registry });
 
 isPerson({ name: "Jason", age: 42 }); // true
 isPerson({ age: -1 }); // false
@@ -105,7 +106,7 @@ pass the schema as a value instead of a URI. It compiles every time, so use
 ```typescript
 import { validate } from "@hyperjump/json-schema";
 
-await validate(jsonSchema, { $schema: "https://json-schema.org/v1", type: "string" }, 42); // false
+await validate(config, { $schema: "https://json-schema.org/v1", type: "string" }, 42); // false
 ```
 
 ## Find out what's wrong
@@ -116,7 +117,7 @@ By default, a validator only says whether a value is valid. Ask for the
 ```typescript
 import { BASIC } from "@hyperjump/json-schema";
 
-const checkPerson = await validator(jsonSchema, "https://example.com/person", { registry, output: BASIC });
+const checkPerson = await validator(config, "https://example.com/person", { registry, output: BASIC });
 const result = checkPerson({ age: -1 });
 
 result.valid; // false
@@ -179,7 +180,7 @@ const file = new VFile({
   path: "person.json",
   value: `{ "name": "Jason", "age": -1, }`
 });
-const checkText = await validator(jsonSchema, "https://example.com/person", { registry, input: "json", output: BASIC });
+const checkText = await validator(config, "https://example.com/person", { registry, input: "json", output: BASIC });
 const result = checkText(String(file));
 
 for (const error of result.errors) {
@@ -228,7 +229,7 @@ A file is a schema if its `$schema` is a dialect or its name ends with
 import { pathToFileURL } from "node:url";
 
 const uri = pathToFileURL("./schemas/person.schema.json").href;
-const isPerson = await validator(jsonSchema, uri);
+const isPerson = await validator(config, uri);
 ```
 
 By default, only files in the working directory can be retrieved. A schema
@@ -254,7 +255,7 @@ const users = new SchemaRegistry().with(`{
   "required": ["nmae"]
 }`);
 
-const results = await lint(jsonSchema, "https://example.com/user", { registry: users });
+const results = await lint(config, "https://example.com/user", { registry: users });
 
 for (const result of results) {
   console.log(result.message);

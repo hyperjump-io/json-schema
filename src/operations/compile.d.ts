@@ -1,5 +1,5 @@
 import type { Json, ReadonlyJson } from "@hyperjump/browser";
-import type { JsonSchema } from "../json-schema.d.ts";
+import type { JsonSchemaConfig } from "../json-schema.d.ts";
 import type { SessionOptions } from "../session.d.ts";
 import type { SchemaSource } from "./schema-source.d.ts";
 
@@ -28,7 +28,7 @@ export type CompiledSchema = {
  * @throws An error from `@hyperjump/browser` if a schema can't be
  * retrieved. Its `cause.code` says why.
  */
-export function compile<S>(jsonSchema: JsonSchema<S>, schema: NoInfer<SchemaSource<S>>, options?: SessionOptions): Promise<CompiledSchema>;
+export function compile<S>(config: JsonSchemaConfig<S>, schema: NoInfer<SchemaSource<S>>, options?: SessionOptions): Promise<CompiledSchema>;
 
 /**
  * The compiled schema as JSON, to be restored with {@link restore} without
@@ -53,7 +53,7 @@ export function serialize(compiled: CompiledSchema): Json;
  * this library's (`kernel: 1`), or if a keyword or asserting format in it
  * isn't in the config.
  */
-export function restore(jsonSchema: JsonSchema, serialized: ReadonlyJson, options?: RestoreOptions): CompiledSchema;
+export function restore(config: JsonSchemaConfig, serialized: ReadonlyJson, options?: RestoreOptions): CompiledSchema;
 
 export type RestoreOptions = {
   /**

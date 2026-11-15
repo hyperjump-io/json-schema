@@ -47,8 +47,8 @@ export type LintDocument = {
   dialects: ReadonlyMap<string, Dialect | undefined>;
 
   /**
-   * The keywords and formats these documents use that the `JsonSchema` has,
-   * by URI
+   * The keywords and formats these documents use that the JSON Schema
+   * definitions have, by URI
    */
   definitions: Definitions;
 };

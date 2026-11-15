@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { configureJsonSchema } from "../../json-schema.js";
+import { jsonSchemaMediaTypes } from "../../json-schema.js";
 import { SchemaRegistry } from "../../registry/schema-registry.js";
 import { v1Dialect, v1DialectUri } from "../../dialects/v1/index.js";
 import { draft201909Dialect, draft201909DialectUri } from "../../dialects/draft-2019-09/index.js";
@@ -9,12 +9,12 @@ import { compile as compileSchema, serialize } from "../../operations/compile.js
 /**
  * @import { Json } from "@hyperjump/browser"
  * @import { Expression, Kernel } from "../kernel.d.ts"
- * @import { JsonSchema } from "../../json-schema.d.ts"
+ * @import { JsonSchemaConfig } from "../../json-schema.d.ts"
  */
 
-const jsonSchema = configureJsonSchema({ dialects: [v1Dialect] });
+const jsonSchema = { mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }) };
 
-const draft201909JsonSchema = configureJsonSchema({ dialects: [draft201909Dialect] });
+const draft201909JsonSchema = { mediaTypes: jsonSchemaMediaTypes({ dialects: [draft201909Dialect] }) };
 
 const mode = { fast: true, plugins: false, annotations: false };
 
@@ -162,7 +162,7 @@ describe("staticUnevaluated", () => {
   });
 });
 
-/** @type (schema: Record<string, Json>, dialect?: { jsonSchema: JsonSchema; dialectUri: string }) => Promise<Kernel> */
+/** @type (schema: Record<string, Json>, dialect?: { jsonSchema: JsonSchemaConfig; dialectUri: string }) => Promise<Kernel> */
 const compile = async (schema, dialect = { jsonSchema, dialectUri: v1DialectUri }) => {
   const uri = `https://example.com/schema-${count++}`;
   const registry = new SchemaRegistry([{ schema, retrievalUri: uri, dialectUri: dialect.dialectUri }]);
@@ -175,7 +175,7 @@ const compile = async (schema, dialect = { jsonSchema, dialectUri: v1DialectUri 
  * their keyword URIs, with what the groups that read marks became. What
  * they apply is left out, because it doesn't change.
  *
- * @type (schema: Record<string, Json>, dialect?: { jsonSchema: JsonSchema; dialectUri: string }) => Promise<[string, Json][]>
+ * @type (schema: Record<string, Json>, dialect?: { jsonSchema: JsonSchemaConfig; dialectUri: string }) => Promise<[string, Json][]>
  */
 const optimizedGroups = async (schema, dialect) => {
   const kernel = await compile(schema, dialect);

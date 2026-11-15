@@ -4,7 +4,7 @@ import { formatOf, keywordOf } from "../definition-of.js";
 
 /**
  * @import { Format } from "../format.d.ts"
- * @import { JsonSchema } from "../json-schema.d.ts"
+ * @import { JsonSchemaDefinitions } from "../json-schema.d.ts"
  * @import { Keyword } from "../keyword.d.ts"
  * @import { Expression, Kernel } from "./kernel.d.ts"
  */
@@ -12,8 +12,8 @@ import { formatOf, keywordOf } from "../definition-of.js";
 /**
  * The definitions a kernel uses, by URI: each group's keyword, which
  * plugins see, the formats that assert, and the keywords of escape hatches,
- * for their `evaluate`. Evaluators read these, not the `JsonSchema`, so a
- * compiled schema is a kernel and its definitions.
+ * for their `evaluate`. Evaluators read these, not all of the JSON Schema
+ * definitions, so a compiled schema is a kernel and its definitions.
  *
  * @typedef {{
  *   keywords: Readonly<Record<string, Keyword>>;
@@ -25,9 +25,9 @@ import { formatOf, keywordOf } from "../definition-of.js";
  * A kernel's definitions. One that's missing throws, so a schema that can't
  * be evaluated isn't compiled or restored.
  *
- * @type (jsonSchema: JsonSchema, kernel: Kernel) => Definitions
+ * @type (schemaDefinitions: JsonSchemaDefinitions, kernel: Kernel) => Definitions
  */
-export const kernelDefinitions = (jsonSchema, kernel) => {
+export const kernelDefinitions = (schemaDefinitions, kernel) => {
   /** @type MutableDefinitions */
   const definitions = { keywords: {}, formats: {} };
   for (const handle in kernel.schemas) {
@@ -35,8 +35,8 @@ export const kernelDefinitions = (jsonSchema, kernel) => {
     if (typeof schema !== "boolean") {
       for (const { keywordUri, expression } of schema.keywords) {
         const uri = keywordDefinitionUri(keywordUri);
-        definitions.keywords[uri] ??= keywordOf(jsonSchema.keywords, uri);
-        addDefinitions(definitions, jsonSchema, expression, false);
+        definitions.keywords[uri] ??= keywordOf(schemaDefinitions.keywords, uri);
+        addDefinitions(definitions, schemaDefinitions, expression, false);
       }
     }
   }
@@ -44,16 +44,16 @@ export const kernelDefinitions = (jsonSchema, kernel) => {
 };
 
 /**
- * The definitions expressions use, without the ones the `JsonSchema`
- * doesn't have, for lint, which evaluates what it can
+ * The definitions expressions use, without the ones that aren't in the JSON
+ * Schema definitions, for lint, which evaluates what it can
  *
- * @type (jsonSchema: JsonSchema, expressions: Iterable<Expression>) => Definitions
+ * @type (schemaDefinitions: JsonSchemaDefinitions, expressions: Iterable<Expression>) => Definitions
  */
-export const availableDefinitions = (jsonSchema, expressions) => {
+export const availableDefinitions = (schemaDefinitions, expressions) => {
   /** @type MutableDefinitions */
   const definitions = { keywords: {}, formats: {} };
   for (const expression of expressions) {
-    addDefinitions(definitions, jsonSchema, expression, true);
+    addDefinitions(definitions, schemaDefinitions, expression, true);
   }
   return definitions;
 };
@@ -77,23 +77,23 @@ export const keywordEvaluate = (definitions, uri) => {
  */
 
 /**
- * @type (definitions: MutableDefinitions, jsonSchema: JsonSchema, expression: Expression, tolerant: boolean) => void
+ * @type (definitions: MutableDefinitions, schemaDefinitions: JsonSchemaDefinitions, expression: Expression, tolerant: boolean) => void
  */
-const addDefinitions = (definitions, jsonSchema, expression, tolerant) => {
+const addDefinitions = (definitions, schemaDefinitions, expression, tolerant) => {
   if (expression.op === "format" && expression.assert) {
     const uri = /** @type string */ (expression.uri);
-    if (!tolerant || uri in jsonSchema.formats) {
-      definitions.formats[uri] ??= formatOf(jsonSchema.formats, uri);
+    if (!tolerant || uri in schemaDefinitions.formats) {
+      definitions.formats[uri] ??= formatOf(schemaDefinitions.formats, uri);
     }
   } else if (expression.op === "predicate" || expression.op === "opaque") {
-    if (!tolerant || expression.keyword in jsonSchema.keywords) {
-      definitions.keywords[expression.keyword] ??= keywordOf(jsonSchema.keywords, expression.keyword);
+    if (!tolerant || expression.keyword in schemaDefinitions.keywords) {
+      definitions.keywords[expression.keyword] ??= keywordOf(schemaDefinitions.keywords, expression.keyword);
       if (!tolerant) {
         keywordEvaluate(definitions, expression.keyword);
       }
     }
   }
   subexpressions(expression).forEach((subexpression) => {
-    addDefinitions(definitions, jsonSchema, subexpression, tolerant);
+    addDefinitions(definitions, schemaDefinitions, subexpression, tolerant);
   });
 };
