@@ -41,6 +41,8 @@ hand and have JSDoc explaining the details. Documentation for users is in
 - [Architecture](architecture.md): the pipeline, and a code map
 - [The API as functions](components/api/README.md)
   - [Public API](components/api/public-api.md)
+  - [JSON Schema as a media type](components/api/json-schema-media-type.md):
+    a proposal, not decided
 - [Dialects](components/dialects/README.md)
   - [Vocabularies](components/dialects/vocabularies.md)
   - [Dialects from meta-schemas](components/dialects/from-meta-schemas.md)
