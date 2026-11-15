@@ -55,7 +55,7 @@ A list of every keyword that failed, in document order.
 const result = await validate(jsonSchema, "https://example.com/person", { age: -1 }, { output: BASIC });
 ```
 
-```json wrap
+```json
 {
   "valid": false,
   "errors": [
@@ -86,7 +86,7 @@ The same errors, nested under the keywords that applied them. Here,
 const result = await validate(jsonSchema, "https://example.com/person", { age: -1 }, { output: DETAILED });
 ```
 
-```json wrap
+```json
 {
   "valid": false,
   "errors": [
