@@ -107,36 +107,126 @@ Rejected:
   and browser rejected a class that holds a configuration and makes
   sessions, because a plain object holds it already.
 
-## Stage 2: registries in browser
+## Stage 2: a registry in browser, identification here
 
-Browser removed `Registry` because a registry is JSON Schema's concept: a
-schema is found by its `$id`, and which keyword is the `$id` depends on the
-dialect. Its plan also records why a layer on the stack was rejected: every
-registered URL would have to be in `allowRetrieval`, a schema added to a
+Browser has had a registry twice. `f07120c` added a layer of documents by
+URL, whose entries were a body, the parts of a response, or a function
+that makes one. `6fdbb40` (2026-11-12) removed it, because an application's
+own layer can answer the documents it has, and because what any layer
+answers has to be in `allowRetrieval`, so a cached response isn't a way
+around the list. Its plan also records why a layer was wrong for JSON
+Schema: every registered URL would have to be allowed, a schema added to a
 session later couldn't be, and every session would parse the registry
-again. Moving registries back has to answer those.
+again.
 
-- A `Hyperjump`'s `fetch` answers from its `registry` before
-  `allowRetrieval` and the stack, as `JsonSchemaHyperjump`'s `fetch` does
-  now. A registry's schema isn't retrieved, so `allowRetrieval` doesn't
-  apply to it, and it isn't in a trace.
-- A media type plugin identifies its documents with a new hook, like
-  `identify(text, registryDialects)`, so browser keys entries without
-  knowing what an `$id` is. A registry entry has a media type, which the
-  schema plugin gets from `dialectUri` (as the `Content-Type`'s `schema`
-  parameter) or the entry's text.
-- What "Making sessions cheap" relies on moves with it: identifications and
-  indexes cached for a plugin and an entry, entries resolved once for
-  every session that can share them, and the `DocumentResponse` that hands
-  a resolved document to the plugin.
-- A schema an operation is given as a value is added to the session's
-  registry, as `SessionRegistries.addValue` does now.
-- When a retrieval fails, the error says if a schema in a registry is
-  waiting for its dialect or can't be identified, as now.
+What this package's registry does now, and where each part would go:
 
-`SessionRegistries`, `RegistryIndex`, and their caches move to browser.
-`SchemaRegistry` could stay here, as an iterable of entries browser reads,
-or move too.
+| What | Where |
+| --- | --- |
+| Answers before `allowRetrieval` and the stack | Browser |
+| Finds a schema by its `$id`, which depends on the dialect, which a meta-schema in the registry can define | Here |
+| Combines the config's registry with the call's | Here, before the session |
+| Resolves an entry once for every session that can share it | Here |
+| Adds a schema an operation is given as a value | Here, before the session |
+| Explains a retrieval that might have been for one of its schemas | Here |
+| Keeps where an entry came from (`origin`) | Here |
+
+### In browser
+
+- A session's `registry` has the documents the application already has.
+  `Hyperjump`'s `fetch` asks it before `allowRetrieval` and the stack, as
+  `JsonSchemaHyperjump`'s `fetch` does now. `allowRetrieval` keeps a
+  document from making the session fetch whatever it names, and a
+  document the application gives the session isn't fetched. That reverses
+  `6fdbb40`'s rule that what a layer answers has to be allowed, for this
+  one place, which isn't a layer.
+- A registry is an object browser asks for a URL: `get(url, ctx)` returns
+  a response, or nothing to go on to `allowRetrieval` and the stack. It can
+  throw, like any fetch. Browser exports a registry of entries by URL, with
+  the entries `f07120c` had.
+- Open: whether a registry's answer is in a trace, as it was in a HAR
+  before `6fdbb40` (`_source: "registry"`), and whether a redirect to a registered
+  URL is answered by the registry, which makes an entry that's a redirect
+  an alias.
+
+### Here
+
+- `SchemaRegistry` is a registry browser can ask. Its `get` finds the
+  schema plugin in `ctx.session.config.mediaTypes`, identifies its entries
+  with the plugin's definitions, cached for each plugin and entry as now,
+  and answers with a response. `RegistryIndex` and the identification
+  caches stay, keyed by the plugin. Browser doesn't know what an `$id` is.
+- An entry resolved with only the config's dialects is shared by every
+  session, as now: its response is made by a function that gets
+  `ctx.session`, resolves the entry in the first session that asks, and
+  answers the next with a `DocumentResponse`. Browser doesn't know that a
+  parse can be shared.
+- An operation combines the config's registry with its own with `concat`,
+  and adds a schema it's given as a value
+  (`registry.with(value, { retrievalUri: "urn:uuid:…" })`), before it makes
+  the session. The session's registry never changes after it's made.
+  `SessionRegistries`, with its list of values added later, goes. An
+  application that makes a session combines them the same way:
+  `new Hyperjump({ ...config, registry: config.registry.concat(mine) })`.
+
+### Explaining a miss
+
+An entry can be in a registry and not found by its `$id`:
+
+- It's waiting for its dialect: its `$schema` isn't a config dialect, and
+  no meta-schema in the registry defines it, like a meta-schema that's only
+  retrievable, or a typo. It's found by its `retrievalUri`, but which
+  keyword is the `$id` depends on the dialect.
+- It can't be identified: its text isn't JSON, or its `$id` is invalid or
+  a `file:` URI. It's found by its `retrievalUri`, and finding it throws a
+  `SchemaError` with the problem. Without one, nothing can find it.
+
+Now, the session's `fetch` catches every failed retrieval, and if any
+registry has an entry like that, it throws an `AggregateError` of the
+failure and those problems, with the first problem's message. It can't
+know which entry was asked for, so every failed retrieval in that session
+gets the registry's message, even one for an unrelated typo in a `$ref`.
+
+Instead, the registry's `get` explains only a URL that's probably one of
+its entries. A waiting entry's root usually has `$id` or `id`, and
+resolving it against the `retrievalUri` gives a URL it would be found by.
+When that's the URL asked for, `get` throws, and nothing is retrieved:
+
+> 'https://example.com/person' is in the registry, but it can't be
+> identified until the 'https://example.com/my-dialect' dialect is
+> defined.
+
+- An unrelated miss keeps its own error.
+- A schema that's also retrievable at its `$id` isn't retrieved instead of
+  the registry's copy, which the application said it has.
+- Guessing without the dialect can only be wrong one way: a draft-04
+  schema with only `$id`, which draft-04 doesn't use, matches, and it's an
+  entry that can't be used anyway.
+- An entry that can't be identified and has no `retrievalUri` isn't
+  explained. Nothing can find it, so no miss is about it. The tools that
+  have broken files, like the CLI and a language server, lint each file
+  themselves, and report its problem where it is with its `origin`.
+- `missReasons`, and the `AggregateError`, go. So does the need for the
+  session's `fetch` override, and with it `JsonSchemaHyperjump`: a session
+  is `new Hyperjump({ ...config, registry })`.
+
+Rejected:
+
+- Browser identifying entries, with a media type plugin hook
+  (`identify(text, registryDialects)`) and the loop over entries waiting
+  for a dialect another entry defines. It would put JSON Schema's
+  dependencies between documents in browser (see
+  [Browser stays generic](../../principles/browser-stays-generic.md)).
+- A registry that's a value of entries by URL, which browser only looks
+  up. Identifying needs the definitions, so every session an application
+  makes would need its registry identified first
+  (`toBrowserRegistry(config, schemaRegistry)`). A `SchemaRegistry` given
+  to any config works as it is.
+- `registry.explainMiss(url)`, which browser would add to a failed
+  retrieval's error. It's a hook for what `get` throwing already does.
+- This package catching retrieval errors in `get` and the operations, to
+  add the registry's problems. It wouldn't cover a user's own retrieval,
+  and it explains every miss, like now.
 
 ## Stage 3: `annotation`
 
@@ -162,5 +252,4 @@ from a meta-schema, is gone by the time `annotation` is called anyway.
 - Operations taking only a session. It makes session lifetime every
   user's problem, even for one validation (see
   [Validation API](../validation-api/README.md)).
-- Registries as a layer on the stack, for the reasons in browser's plan
-  above.
+- Registries as a layer on the stack, for the reasons in stage 2.
