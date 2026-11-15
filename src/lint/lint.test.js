@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { describe, test, beforeAll, afterAll, expect } from "vitest";
-import { jsonSchemaMediaTypes } from "../json-schema.js";
+import { jsonSchemaConfig } from "../json-schema.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import recommended from "./recommended.js";
@@ -137,10 +137,9 @@ describe("lint", () => {
     test("a document that isn't a schema", async () => {
       const path = join(directory, "instance.json");
       await writeFile(path, "{}");
-      const jsonSchema = {
-        mediaTypes: jsonSchemaMediaTypes(),
+      const jsonSchema = jsonSchemaConfig({
         allowRetrieval: [pathToFileURL(join(directory, "/")).href]
-      };
+      });
 
       await expect(lint(jsonSchema, pathToFileURL(path).href)).rejects.toThrow("isn't a schema");
     });
@@ -149,8 +148,8 @@ describe("lint", () => {
 
 /** @type (...schemas: string[]) => JsonSchemaConfig */
 const jsonSchemaWith = (...schemas) => {
-  return {
-    mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }),
+  return jsonSchemaConfig({
+    dialects: [v1Dialect],
     registry: new SchemaRegistry(schemas.map((schema) => ({ schema })))
-  };
+  });
 };

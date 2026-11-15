@@ -12,10 +12,10 @@ media type, a session is a plain `Hyperjump`, and the long-lived value is a
 `HyperjumpConfig`.
 
 ```js
-import { BASIC, jsonSchemaMediaTypes, validator } from "@hyperjump/json-schema";
+import { BASIC, jsonSchemaConfig, validator } from "@hyperjump/json-schema";
 import { v1Dialect } from "@hyperjump/json-schema/v1";
 
-const config = { mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }) };
+const config = jsonSchemaConfig({ dialects: [v1Dialect] });
 
 const isPerson = await validator(config, "https://example.com/person", { registry, output: BASIC });
 const session = new Hyperjump({ ...config, registry });
@@ -82,11 +82,11 @@ Decided 2026-11-14: as browser does it. Calls share an HTTP cache when the
 config they're given has a `stack` with one, and there's none by default.
 
 ```js
-const config = {
-  mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }),
+const config = jsonSchemaConfig({
+  dialects: [v1Dialect],
   // Only for calls to share an HTTP cache
   stack: compose(httpCache())(defaultStack())
-};
+});
 ```
 
 - Every session of a `JsonSchema` shares its stack, which has an HTTP
@@ -287,9 +287,46 @@ is read by keyword URI. A session isn't needed: since operations have
 sessions of their own, the one `annotate` used, which built any dialect
 from a meta-schema, is gone by the time `annotation` is called anyway.
 
+## Making a config
+
+Decided and built 2026-11-14, after the stages. `jsonSchemaConfig(options)`
+(`src/json-schema.js`) makes the config, and `jsonSchemaMediaTypes` isn't
+exported anymore (`src/media-types.js`).
+
+```js
+const config = jsonSchemaConfig({ dialects: [v1Dialect], mediaTypes: [jrefMediaType], allowRetrieval });
+```
+
+- It takes the definition options and browser's config options, and
+  returns browser's options as they are, with `mediaTypes` the JSON Schema
+  media types made from the definition options, then the options'
+  `mediaTypes`. It adds nothing else: no stack, so
+  [Sharing the HTTP cache](#sharing-the-http-cache) stands, and no object
+  with state. The config is still a plain value, spread to make another.
+- `{ mediaTypes: jsonSchemaMediaTypes({ dialects }) }` made the first thing
+  a user writes about browser's media type plugins, and adding JRef meant
+  putting it after the JSON Schema ones by hand. Now the order can't be
+  wrong, and the simple path doesn't mention media types.
+- Its type infers the schema type from the dialects and the other media
+  types (`M`) from `mediaTypes`, so a session made from the config types
+  what it finds by all of them.
+- [Sharing the HTTP cache](#sharing-the-http-cache) rejected a function
+  that makes the whole config, because it was one that adds a stack, and
+  browser rejected a class that holds a configuration and makes sessions.
+  This one does neither: it only works out `mediaTypes`.
+- It's named for what it returns, a `JsonSchemaConfig`, like `validator`
+  and `annotator`. It was built as `configureJsonSchema`, which sounds like
+  an action. `jsonSchemaConfig(…)` is also the name of the function that
+  [Sharing the HTTP cache](#sharing-the-http-cache) rejected, which added a
+  stack. This one doesn't.
+- Rejected: exporting `jsonSchemaMediaTypes` too, for an application that
+  has a browser config already. It passes it in instead
+  (`jsonSchemaConfig({ ...browserConfig, dialects })`), so there's one
+  way to make a config.
+
 ## Names and media types
 
-- The factory is `jsonSchemaMediaTypes`, because what it returns replaces
+- The factory was `jsonSchemaMediaTypes`, because what it returns replaces
   browser's `defaultMediaTypes` in a config. The docs call what it goes in
   "the config", as browser does, and name it `config`. The exported
   `schemaMediaType` and `jsonOrSchemaMediaType` go, because each plugin
@@ -298,8 +335,8 @@ from a meta-schema, is gone by the time `annotation` is called anyway.
   order, and nothing else. JSON-or-schema reads JSON that isn't a schema
   too, so browser's JSON plugin isn't needed. A config with it doesn't
   read JRef, which browser's `defaultMediaTypes` does. An application that
-  needs it adds it, and other media types, after them:
-  `[...jsonSchemaMediaTypes(…), jrefMediaType]`.
+  needs it adds it, and other media types, in `jsonSchemaConfig`'s
+  `mediaTypes`, which come after them.
 - `file.data.jsonSchemaSession` keeps its name, and is a `Hyperjump`. A
   lint rule finds the definitions the way an operation does, from the
   schema plugin in `session.config.mediaTypes`. A key like
@@ -320,7 +357,7 @@ change across two repositories.
   user's problem, even for one validation (see
   [Validation API](../validation-api/README.md)).
 - Registries as a layer on the stack, for the reasons in stage 2.
-- JRef in `jsonSchemaMediaTypes`, as `configureJsonSchema` adds it now. A
+- JRef in `jsonSchemaMediaTypes`, as the first `configureJsonSchema` added it. A
   schema doesn't need it, and adding it after the factory's plugins can't
   get the order wrong.
 - `jsonSchema(…)` for the factory. Nothing would be named `jsonSchema`

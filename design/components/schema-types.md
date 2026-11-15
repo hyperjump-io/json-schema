@@ -43,16 +43,17 @@ written. Custom keywords are part of the type.
   fits any of them, so with an open dialect in the union, a misspelled
   keyword fits that one.
 - **A config has its dialects' schema types.** A dialect given to
-  `jsonSchemaMediaTypes` is a `DialectConfig<K, Uri, U>`, with its keyword map, so
+  `jsonSchemaConfig` is a `DialectConfig<K, Uri, U>`, with its keyword map, so
   `DialectSchema<D>` is `SchemaOf` of its keywords' types. A keyword named
   by a URI has no type, so any value fits it. The built-in dialects are
   declared with their keyword lists (`DialectConfig<V1Keywords, …>`), so
   tsc checks that the definitions in `dialect.js` fit them, as well as the
-  `schema-type.test-d.ts` files. `jsonSchemaMediaTypes({ dialects })`
-  returns a `SchemaMediaType<S>` with the union of their types, and without
-  dialects it's `AnySchema`. A config with it in its `mediaTypes` is a
-  `JsonSchemaConfig<S>`: an operation infers `S` from the plugin in the
-  list, whatever else is in it. The plugin carries `S` in a property that's
+  `schema-type.test-d.ts` files. `jsonSchemaConfig({ dialects })`
+  returns a config whose JSON Schema media type is a `SchemaMediaType<S>`
+  with the union of their types, and without dialects it's `AnySchema`. A
+  config with it in its `mediaTypes` is a `JsonSchemaConfig<S>`: an
+  operation infers `S` from the plugin in the list, whatever else is in
+  it. The plugin carries `S` in a property that's
   only in its type (`[schemaType]`), which nothing reads at runtime.
   `extendDialect` returns `DialectConfig<K & E, …>`, so the keywords it adds
   are in the type. A session is a `Hyperjump<C>`, with its config's type, so its media types are in the type of what it finds (see
@@ -63,9 +64,11 @@ written. Custom keywords are part of the type.
   schema. A URI isn't checked. `SchemaTypeOf<C>` gets a config's `S`, for a
   registry. Rejected: a type argument on each call
   (`validate<V1Schema>(…)`), which leaves the simple path unchecked.
-- **`jsonSchemaMediaTypes` is a generic function.** It infers `S` from its
-  argument. From 2026-11-14, it was `configureJsonSchema`, which returned a
-  `JsonSchema<S>`, until the same day. Before that,
+- **`jsonSchemaConfig` is a generic function.** It infers `S` from its
+  argument, and the config's other media types (`M`) from its
+  `mediaTypes`. On 2026-11-14, `configureJsonSchema` returned a
+  `JsonSchema<S>`, then `jsonSchemaMediaTypes` replaced it, and then
+  `jsonSchemaConfig` returned a config, the same day. Before that,
   `JsonSchema` was a class, declared as an interface and a
   `JsonSchemaConstructor` with a generic construct signature, plus one
   without type parameters for `class X extends JsonSchema`, because a

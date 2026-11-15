@@ -14,7 +14,7 @@
  */
 export const keywordOf = (keywords, uri) => {
   if (!(uri in keywords)) {
-    throw Error(`The '${uri}' keyword isn't supported. Add it to the dialect or the 'keywords' option of jsonSchemaMediaTypes.`);
+    throw Error(`The '${uri}' keyword isn't supported. Add it to the dialect or the 'keywords' option of jsonSchemaConfig.`);
   }
 
   return keywords[uri];
@@ -26,7 +26,7 @@ export const keywordOf = (keywords, uri) => {
  */
 export const formatOf = (formats, uri) => {
   if (!(uri in formats)) {
-    throw Error(`The '${uri}' format isn't supported. Add it to the dialect or the 'formats' option of jsonSchemaMediaTypes.`);
+    throw Error(`The '${uri}' format isn't supported. Add it to the dialect or the 'formats' option of jsonSchemaConfig.`);
   }
 
   return formats[uri];
@@ -42,7 +42,7 @@ export const formatOf = (formats, uri) => {
 export const definitionsOf = (config) => {
   const definitions = definitionsIn(config);
   if (!definitions) {
-    throw TypeError("The config has no JSON Schema media types. Add them with 'mediaTypes: jsonSchemaMediaTypes({ dialects })'.");
+    throw TypeError("The config has no JSON Schema media types. Make it with 'jsonSchemaConfig({ dialects })'.");
   }
   return definitions;
 };

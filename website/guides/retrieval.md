@@ -24,10 +24,10 @@ The default allows what's local to your application. In Node.js it's
 `["/"]`, which allows the page's origin. Nothing else is allowed.
 
 ```typescript
-const config = {
-  mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }),
+const config = jsonSchemaConfig({
+  dialects: [v1Dialect],
   allowRetrieval: ["./", "https://schemas.example.com/"]
-};
+});
 ```
 
 When you set your own list, include `"./"` if you still want to allow local
@@ -82,13 +82,13 @@ config. Any schema can name any URL, so headers are given by URL and only the
 URLs you list get them:
 
 ```typescript
-const config = {
-  mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }),
+const config = jsonSchemaConfig({
+  dialects: [v1Dialect],
   allowRetrieval: ["./", "https://schemas.example.com/"],
   headers: {
     "https://schemas.example.com/": { Authorization: `Bearer ${process.env.SCHEMAS_TOKEN}` }
   }
-};
+});
 ```
 
 A URL that ends with `/` gets its headers for everything under it, the same as
@@ -109,11 +109,11 @@ make the config once:
 ```typescript
 import { compose, defaultStack, httpCache } from "@hyperjump/browser";
 
-const config = {
-  mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }),
+const config = jsonSchemaConfig({
+  dialects: [v1Dialect],
   allowRetrieval: ["./", "https://schemas.example.com/"],
   stack: compose(httpCache())(defaultStack())
-};
+});
 ```
 
 Every call and session made with this config uses the same cache. The

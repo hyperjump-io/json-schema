@@ -6,7 +6,7 @@ it uses. The JSON Schema media types only have the dialects in their
 options, plus `$schema` and the unknown keyword, which every dialect has.
 Any of them can be in one set of options.
 
-- `jsonSchemaMediaTypes` registers each definition a dialect brings that
+- `jsonSchemaConfig` registers each definition a dialect brings that
   isn't registered yet, after the options' own `keywords` and `formats`. So
   a keyword replaced through the options stays replaced,
   whatever order the dialects are in, and the same dialect twice throws.

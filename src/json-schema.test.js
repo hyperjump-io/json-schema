@@ -6,8 +6,9 @@ import { cwd } from "node:process";
 import { pathToFileURL } from "node:url";
 import { describe, test, beforeEach, expect } from "vitest";
 import { createServer } from "node:http";
-import { compose, defaultMediaTypes, defaultStack, fetcher, get, httpCache, Hyperjump, jsonPointerGet, jsonValue, Trace } from "@hyperjump/browser";
-import { jsonSchemaMediaTypes, extendDialect } from "./json-schema.js";
+import { compose, defaultMediaTypes, defaultStack, fetcher, get, httpCache, Hyperjump, jsonPointerGet, jsonValue, Trace, jrefMediaType } from "@hyperjump/browser";
+import { jsonSchemaConfig, extendDialect } from "./json-schema.js";
+import { jsonSchemaMediaTypes } from "./media-types.js";
 import { v1Dialect, v1DialectUri } from "./dialects/v1/index.js";
 import { draft07Dialect } from "./dialects/draft-07/index.js";
 import { SchemaRegistry } from "./registry/schema-registry.js";
@@ -32,10 +33,10 @@ describe("jsonSchemaMediaTypes", () => {
   let jsonSchema;
 
   beforeEach(() => {
-    jsonSchema = {
-      mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }),
+    jsonSchema = jsonSchemaConfig({
+      dialects: [v1Dialect],
       allowRetrieval: [pathToFileURL(join(tmpdir(), "/")).href]
-    };
+    });
   });
 
   describe("dialects", () => {
@@ -47,7 +48,7 @@ describe("jsonSchemaMediaTypes", () => {
     };
 
     test("a dialect in the config", () => {
-      const jsonSchema = { mediaTypes: jsonSchemaMediaTypes({ dialects: [dialect] }) };
+      const jsonSchema = jsonSchemaConfig({ dialects: [dialect] });
 
       expect(toId(dialect.uri) in definitionsOf(jsonSchema).dialects).to.equal(true);
       expect(definitionsOf(jsonSchema).dialects[toId(dialect.uri)]).to.eql({ ...dialect, keywords: { $id: idKeyword.uri } });
@@ -55,14 +56,14 @@ describe("jsonSchemaMediaTypes", () => {
     });
 
     test("an empty fragment identifies the same dialect", () => {
-      const jsonSchema = { mediaTypes: jsonSchemaMediaTypes({ dialects: [{ ...dialect, uri: `${dialect.uri}#` }] }) };
+      const jsonSchema = jsonSchemaConfig({ dialects: [{ ...dialect, uri: `${dialect.uri}#` }] });
 
       expect(toId(dialect.uri) in definitionsOf(jsonSchema).dialects).to.equal(true);
       expect(definitionsOf(jsonSchema).dialects[toId(dialect.uri)]).to.include({ uri: dialect.uri });
     });
 
     test("a dialect can't be in the config twice", () => {
-      expect(() => ({ mediaTypes: jsonSchemaMediaTypes({ dialects: [dialect, { ...dialect, keywords: {} }] }) })).to.throw("more than once");
+      expect(() => jsonSchemaConfig({ dialects: [dialect, { ...dialect, keywords: {} }] })).to.throw("more than once");
     });
 
     test("a dialect that isn't in the config", () => {
@@ -71,24 +72,25 @@ describe("jsonSchemaMediaTypes", () => {
 
     test("a keyword named by URI comes from the config's keywords", () => {
       const foo = { uri: "https://example.com/keyword/foo", shape: /** @type const */ ("data") };
-      const jsonSchema = {
-        mediaTypes: jsonSchemaMediaTypes({ dialects: [{ ...dialect, keywords: { foo: foo.uri } }], keywords: [foo] })
-      };
+      const jsonSchema = jsonSchemaConfig({
+        dialects: [{ ...dialect, keywords: { foo: foo.uri } }],
+        keywords: [foo]
+      });
 
       expect(definitionsOf(jsonSchema).keywords[foo.uri]).to.equal(foo);
     });
 
     test("a keyword named by URI that isn't defined", () => {
-      expect(() => ({
-        mediaTypes: jsonSchemaMediaTypes({ dialects: [{ ...dialect, keywords: { foo: "https://example.com/keyword/foo" } }] })
+      expect(() => jsonSchemaConfig({
+        dialects: [{ ...dialect, keywords: { foo: "https://example.com/keyword/foo" } }]
       }))
         .to.throw("no definition for the 'https://example.com/keyword/foo' keyword");
     });
 
     test("a format named by URI that isn't defined isn't supported", () => {
-      const jsonSchema = {
-        mediaTypes: jsonSchemaMediaTypes({ dialects: [{ ...dialect, formats: { bar: "https://example.com/format/bar" } }] })
-      };
+      const jsonSchema = jsonSchemaConfig({
+        dialects: [{ ...dialect, formats: { bar: "https://example.com/format/bar" } }]
+      });
 
       expect(definitionsOf(jsonSchema).dialects[toId(dialect.uri)].formats).to.eql({ bar: "https://example.com/format/bar" });
       expect("https://example.com/format/bar" in definitionsOf(jsonSchema).formats).to.equal(false);
@@ -124,6 +126,14 @@ describe("jsonSchemaMediaTypes", () => {
       expect(Object.isFrozen(mediaTypes[0])).to.equal(true);
     });
 
+    test("jsonSchemaConfig puts them before the options' media types, and keeps browser's options", () => {
+      const config = jsonSchemaConfig({ dialects: [v1Dialect], mediaTypes: [jrefMediaType], allowRetrieval: ["./"] });
+
+      expect(config.mediaTypes.map((plugin) => plugin.mediaType)).to.eql(["application/schema+json", "application/json", "application/reference+json"]);
+      expect(config.allowRetrieval).to.eql(["./"]);
+      expect(Object.keys(config).sort()).to.eql(["allowRetrieval", "mediaTypes"]);
+    });
+
     test("a config without them can't be used", async () => {
       await expect(validate(/** @type any */ ({}), true, 42)).rejects.toThrow("no JSON Schema media types");
     });
@@ -132,7 +142,7 @@ describe("jsonSchemaMediaTypes", () => {
   describe("keywords", () => {
     test("one in the config replaces a dialect's", () => {
       const replacement = { ...idKeyword, check: () => {} };
-      const jsonSchema = { mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect], keywords: [replacement] }) };
+      const jsonSchema = jsonSchemaConfig({ dialects: [v1Dialect], keywords: [replacement] });
 
       expect(definitionsOf(jsonSchema).keywords[idKeyword.uri]).to.equal(replacement);
     });
@@ -157,7 +167,7 @@ describe("jsonSchemaMediaTypes", () => {
   describe("formats", () => {
     test("a format in the config", () => {
       const format = { uri: "https://example.com/format/foo", validate: () => true };
-      const jsonSchema = { mediaTypes: jsonSchemaMediaTypes({ formats: [format] }) };
+      const jsonSchema = jsonSchemaConfig({ formats: [format] });
 
       expect(definitionsOf(jsonSchema).formats[format.uri]).to.equal(format);
     });
@@ -171,8 +181,8 @@ describe("jsonSchemaMediaTypes", () => {
     const keywords = { "x-foo": "https://example.com/keyword/foo" };
 
     test("in a dialect", () => {
-      expect(() => ({
-        mediaTypes: jsonSchemaMediaTypes({ dialects: [{ uri: "https://example.com/x", keywords, unknownKeywords: "error" }] })
+      expect(() => jsonSchemaConfig({
+        dialects: [{ uri: "https://example.com/x", keywords, unknownKeywords: "error" }]
       })).to.throw("reserved");
     });
 
@@ -184,7 +194,7 @@ describe("jsonSchemaMediaTypes", () => {
   describe("sessions", () => {
     test("a session is browser's, so it's traced and closed like any other", async () => {
       const registry = new SchemaRegistry().with({ $schema: v1DialectUri, $id: "https://example.com/registered" });
-      const session = new Hyperjump({ mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }), allowRetrieval: [], registry });
+      const session = new Hyperjump(jsonSchemaConfig({ dialects: [v1Dialect], allowRetrieval: [], registry }));
 
       const trace = new Trace(session);
       await get(session, "https://example.com/registered");
@@ -199,14 +209,14 @@ describe("jsonSchemaMediaTypes", () => {
     });
 
     test("a dialect built from a meta-schema only belongs to the session", async () => {
-      const jsonSchema = {
-        mediaTypes: jsonSchemaMediaTypes({ dialects: [{
+      const jsonSchema = jsonSchemaConfig({
+        dialects: [{
           uri: "https://example.com/meta-dialect",
           keywords: { $id: idKeyword, $vocabulary: vocabularyKeyword },
           unknownKeywords: "annotation",
           vocabularies: { "https://example.com/vocab/core": { keywords: { $id: idKeyword } } }
-        }] })
-      };
+        }]
+      });
       const uri = "https://example.com/session-dialect";
       const registry = new SchemaRegistry().with({
         $schema: "https://example.com/meta-dialect",
@@ -224,7 +234,7 @@ describe("jsonSchemaMediaTypes", () => {
     test("a session sees the dialects its media types were made with", async () => {
       /** @type Dialect */
       const dialect = { uri: "https://example.com/added-dialect", keywords: {}, unknownKeywords: "annotation" };
-      const session = new Hyperjump({ mediaTypes: jsonSchemaMediaTypes({ dialects: [dialect] }) });
+      const session = new Hyperjump(jsonSchemaConfig({ dialects: [dialect] }));
 
       expect(hasDialect(session, dialect.uri)).to.equal(true);
       expect(await getDialect(session, dialect.uri)).to.eql(dialect);
@@ -265,11 +275,11 @@ describe("jsonSchemaMediaTypes", () => {
           headers: { "content-type": "application/schema+json", "cache-control": "max-age=60" }
         });
       });
-      const uncached = {
-        mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }),
+      const uncached = jsonSchemaConfig({
+        dialects: [v1Dialect],
         allowRetrieval: ["https://example.com/"],
         stack
-      };
+      });
 
       expect(uncached.stack).to.equal(stack);
       expect(validatorFor(await compile(uncached, "https://example.com/schema"))(42)).to.equal(false);
@@ -281,11 +291,12 @@ describe("jsonSchemaMediaTypes", () => {
       const stack = fetcher(() => new Response(JSON.stringify({ $schema: v1DialectUri, type: "string" }), {
         headers: { "content-type": "application/json" }
       }));
-      const withDefaults = {
-        mediaTypes: [...jsonSchemaMediaTypes({ dialects: [v1Dialect] }), ...[...defaultMediaTypes]],
+      const withDefaults = jsonSchemaConfig({
+        dialects: [v1Dialect],
+        mediaTypes: [...[...defaultMediaTypes]],
         allowRetrieval: ["https://example.com/"],
         stack
-      };
+      });
 
       expect((await getDocument(new Hyperjump(withDefaults), "https://example.com/schema")).type).to.equal("json-schema-document");
     });
@@ -325,7 +336,7 @@ describe("jsonSchemaMediaTypes", () => {
         const path = join(directory, "schema.schema.json");
         await writeFile(path, JSON.stringify({ $schema: v1DialectUri, type: "string" }));
 
-        const session = new Hyperjump({ mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }) });
+        const session = new Hyperjump(jsonSchemaConfig({ dialects: [v1Dialect] }));
         const document = await getDocument(session, relative(cwd(), path));
         expect(/** @type import("./schema/schema-ast.d.ts").JsonSchemaDocumentNode */ (/** @type unknown */ (document)).uri).to.equal(pathToFileURL(path).href);
       } finally {
@@ -356,7 +367,7 @@ describe("jsonSchemaMediaTypes", () => {
     });
 
     beforeEach(() => {
-      jsonSchema = { mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }), registry: trusted };
+      jsonSchema = jsonSchemaConfig({ dialects: [v1Dialect], registry: trusted });
     });
 
     test("a document can't change what a reference in another document finds", async () => {
@@ -468,7 +479,7 @@ describe("jsonSchemaMediaTypes", () => {
     });
 
     test("a reference to a schema that's a reference finds what that one finds, from its document", async () => {
-      const draft07 = { mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect, draft07Dialect] }) };
+      const draft07 = jsonSchemaConfig({ dialects: [v1Dialect, draft07Dialect] });
       const registry = new SchemaRegistry()
         .with({ $schema: v1DialectUri, $id: "https://example.com/main", $ref: "https://example.com/old#/definitions/alias" })
         .with({
@@ -486,7 +497,7 @@ describe("jsonSchemaMediaTypes", () => {
     });
 
     test("schemas that are references that lead back to one already followed aren't compiled", async () => {
-      const draft07 = { mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect, draft07Dialect] }) };
+      const draft07 = jsonSchemaConfig({ dialects: [v1Dialect, draft07Dialect] });
       const registry = new SchemaRegistry()
         .with({ $schema: v1DialectUri, $id: "https://example.com/main", $ref: "https://example.com/a#/definitions/x" })
         .with({ $schema: draft07Dialect.uri, $id: "https://example.com/a", definitions: { x: { $ref: "https://example.com/b#/definitions/y" } } })
@@ -526,7 +537,7 @@ describe("jsonSchemaMediaTypes", () => {
     });
 
     beforeEach(() => {
-      jsonSchema = { mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }), registry: annotated };
+      jsonSchema = jsonSchemaConfig({ dialects: [v1Dialect], registry: annotated });
     });
 
     test("annotation by name in the v1 dialect", async () => {
@@ -569,10 +580,10 @@ describe("jsonSchemaMediaTypes", () => {
     });
 
     test("annotation by name in another dialect", async () => {
-      const other = {
-        mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect, { uri: "https://example.com/dialect", keywords: { label: "https://json-schema.org/keyword/title" }, unknownKeywords: "error" }] }),
+      const other = jsonSchemaConfig({
+        dialects: [v1Dialect, { uri: "https://example.com/dialect", keywords: { label: "https://json-schema.org/keyword/title" }, unknownKeywords: "error" }],
         registry: annotated
-      };
+      });
       const { node } = await annotate(other, "https://example.com/annotated", {});
 
       expect(annotation(other, node, "label", "https://example.com/dialect")).to.eql(["root"]);

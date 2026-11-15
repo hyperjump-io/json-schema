@@ -8,13 +8,14 @@
 | v1, draft-04 to draft-07 | Validates |
 | 2019-09, 2020-12 | Only annotates. A value that isn't an email is still valid. |
 
-The `validateFormats` option of `jsonSchemaMediaTypes` overrides the dialect
+The `validateFormats` option of `jsonSchemaConfig` overrides the dialect
 for every schema:
 
 ```typescript
-const config = {
-  mediaTypes: jsonSchemaMediaTypes({ dialects: [draft202012Dialect], validateFormats: true })
-};
+const config = jsonSchemaConfig({
+  dialects: [draft202012Dialect],
+  validateFormats: true
+});
 ```
 
 A format only applies to values of its type. `"email"` only checks strings,
@@ -36,9 +37,10 @@ In v1, `date-time` allows the time zone and tag suffixes of RFC 9557, like
 ```typescript
 import { fullFormats } from "@hyperjump/json-schema/formats/full";
 
-const config = {
-  mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect], formats: fullFormats })
-};
+const config = jsonSchemaConfig({
+  dialects: [v1Dialect],
+  formats: fullFormats
+});
 ```
 
 | Dialect | Formats |

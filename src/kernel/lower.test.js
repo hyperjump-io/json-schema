@@ -1,6 +1,6 @@
 import { Hyperjump } from "@hyperjump/browser";
 import { describe, test, expect } from "vitest";
-import { jsonSchemaMediaTypes, extendDialect } from "../json-schema.js";
+import { jsonSchemaConfig, extendDialect } from "../json-schema.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import { lower } from "./lower.js";
@@ -24,10 +24,10 @@ const recordedKeyword = {
   }
 };
 
-const jsonSchema = {
-  mediaTypes: jsonSchemaMediaTypes({ dialects: [extendDialect(v1Dialect, { keywords: { recorded: recordedKeyword } })] }),
+const jsonSchema = jsonSchemaConfig({
+  dialects: [extendDialect(v1Dialect, { keywords: { recorded: recordedKeyword } })],
   allowRetrieval: []
-};
+});
 
 /** @type (schemas: Record<string, Json>[]) => SchemaRegistry */
 const registryOf = (schemas) => new SchemaRegistry(schemas.map((schema) => ({ schema: { $schema: v1DialectUri, ...schema } })));

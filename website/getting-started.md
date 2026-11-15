@@ -20,17 +20,15 @@ The config holds everything your schemas need. That's the dialects it
 supports and how schemas are retrieved. A dialect is a version of JSON
 Schema. Most applications create one config and use it everywhere.
 
-A schema is a document of the JSON Schema media type.
-`jsonSchemaMediaTypes` makes the media types that schemas are read with,
-and they go in the config's `mediaTypes`. They start without any dialects,
-so give them the ones your schemas use. This tutorial uses JSON Schema v1.
+`jsonSchemaConfig` makes a config. It starts without any dialects, so
+give it the ones your schemas use. This tutorial uses JSON Schema v1.
 [Dialects](guides/dialects.md) lists the others.
 
 ```typescript
-import { jsonSchemaMediaTypes } from "@hyperjump/json-schema";
+import { jsonSchemaConfig } from "@hyperjump/json-schema";
 import { v1Dialect } from "@hyperjump/json-schema/v1";
 
-const config = { mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }) };
+const config = jsonSchemaConfig({ dialects: [v1Dialect] });
 ```
 
 ## Add a schema

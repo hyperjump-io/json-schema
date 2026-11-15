@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { describe, test, beforeAll, expect } from "vitest";
 import { jsonPointerGet } from "@hyperjump/browser";
 import { resolveId, toId } from "../src/identifiers.js";
-import { jsonSchemaMediaTypes } from "../src/json-schema.js";
+import { jsonSchemaConfig } from "../src/json-schema.js";
 import { SchemaRegistry } from "../src/registry/schema-registry.js";
 import { fullFormats } from "../src/formats/full.js";
 import { BASIC } from "../src/output/index.js";
@@ -133,8 +133,9 @@ export const isSkipped = (skip, path) => {
  *
  * @type (options?: JsonSchemaOptions) => JsonSchemaConfig
  */
-export const testSuiteJsonSchema = (options) => ({
-  mediaTypes: jsonSchemaMediaTypes({ ...options, formats: fullFormats }),
+export const testSuiteJsonSchema = (options) => jsonSchemaConfig({
+  ...options,
+  formats: fullFormats,
   allowRetrieval: []
 });
 

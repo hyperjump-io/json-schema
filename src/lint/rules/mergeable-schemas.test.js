@@ -3,7 +3,7 @@ import { unified } from "unified";
 import { VFile } from "vfile";
 import { rejsonParse, Hyperjump } from "@hyperjump/browser";
 import { linter } from "../test-linter.js";
-import { jsonSchemaMediaTypes, extendDialect } from "../../json-schema.js";
+import { jsonSchemaConfig, extendDialect } from "../../json-schema.js";
 import { jsonSchemaResolve } from "../../schema/resolve.js";
 import { draft202012Dialect } from "../../dialects/draft-2020-12/index.js";
 import mergeableSchemas from "./mergeable-schemas.js";
@@ -160,9 +160,9 @@ describe("mergeable-schemas", () => {
 
   test("a custom keyword that reads a sibling", async () => {
     const scaleKeyword = { uri: "https://example.com/keyword/scale", shape: /** @type const */ ("data"), siblings: { maximum: "https://json-schema.org/keyword/maximum" } };
-    const jsonSchema = {
-      mediaTypes: jsonSchemaMediaTypes({ dialects: [extendDialect(draft202012Dialect, { keywords: { scale: scaleKeyword } })] })
-    };
+    const jsonSchema = jsonSchemaConfig({
+      dialects: [extendDialect(draft202012Dialect, { keywords: { scale: scaleKeyword } })]
+    });
 
     /** @type (json: string) => Promise<string[]> */
     const customReasons = async (json) => {

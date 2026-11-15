@@ -3,7 +3,7 @@ import { unified } from "unified";
 import { VFile } from "vfile";
 import { rejsonParse, Hyperjump } from "@hyperjump/browser";
 import { linter } from "../test-linter.js";
-import { jsonSchemaMediaTypes } from "../../json-schema.js";
+import { jsonSchemaConfig } from "../../json-schema.js";
 import { SchemaRegistry } from "../../registry/schema-registry.js";
 import { jsonSchemaResolve } from "../../schema/resolve.js";
 import { draft202012Dialect } from "../../dialects/draft-2020-12/index.js";
@@ -143,7 +143,7 @@ const reasons = async (json) => (await lint(json)).messages.map((message) => mes
  * @type (json: string) => Promise<string[]>
  */
 const reasonsWithBase = async (json) => {
-  const jsonSchema = { mediaTypes: jsonSchemaMediaTypes({ dialects: [draft202012Dialect] }) };
+  const jsonSchema = jsonSchemaConfig({ dialects: [draft202012Dialect] });
   const registry = new SchemaRegistry().with({
     $schema: draft2020,
     $id: "https://example.com/base",

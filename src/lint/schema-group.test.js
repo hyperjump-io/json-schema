@@ -2,7 +2,7 @@ import { describe, test, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
 import { jsonPointerGet, rejsonParse, Hyperjump } from "@hyperjump/browser";
-import { jsonSchemaMediaTypes } from "../json-schema.js";
+import { jsonSchemaConfig } from "../json-schema.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
 import { draft07Dialect } from "../dialects/draft-07/index.js";
@@ -248,8 +248,8 @@ describe("schemaGroup", () => {
 
 /** @type (schema: Record<string, Json>) => Promise<{ document: LintDocument; at: (pointer: string) => JsonSchemaNode }> */
 const resolve = async (schema) => {
-  const jsonSchema = {
-    mediaTypes: jsonSchemaMediaTypes({ dialects: [draft07Dialect, draft202012Dialect, {
+  const jsonSchema = jsonSchemaConfig({
+    dialects: [draft07Dialect, draft202012Dialect, {
       uri: opaqueDialect,
       keywords: {
         $defs: `${keyword}/definitions`,
@@ -271,8 +271,8 @@ const resolve = async (schema) => {
         }
       },
       unknownKeywords: "annotation"
-    }] })
-  };
+    }]
+  });
 
   const registry = new SchemaRegistry().with({
     $schema: draft2020,

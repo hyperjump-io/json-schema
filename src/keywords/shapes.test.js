@@ -3,7 +3,7 @@ import { describe, test, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
 import { jsonPointerGet, rejsonParse, Hyperjump } from "@hyperjump/browser";
-import { jsonSchemaMediaTypes } from "../json-schema.js";
+import { jsonSchemaConfig } from "../json-schema.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import { draft04Dialect, draft04DialectUri } from "../dialects/draft-04/index.js";
@@ -30,9 +30,9 @@ import { definitionsOf } from "../definition-of.js";
  * @typedef {{ value: Json; pointer: string; reportedBy: "schema" | "shape" | "keyword" }} Case
  */
 
-const jsonSchema = {
-  mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect, draft04Dialect, draft06Dialect, draft07Dialect, draft201909Dialect, draft202012Dialect] })
-};
+const jsonSchema = jsonSchemaConfig({
+  dialects: [v1Dialect, draft04Dialect, draft06Dialect, draft07Dialect, draft201909Dialect, draft202012Dialect]
+});
 
 /** @type Map<string, { name: string; dialectUri: string; shape: Shape }> */
 const keywords = new Map();

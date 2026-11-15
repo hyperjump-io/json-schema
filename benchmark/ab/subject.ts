@@ -5,7 +5,8 @@ import type { Corpus } from "./corpus.ts";
  * have to have the API from 2026-10-29 on (operations are functions, and
  * dialects are in the config). What operations take changed since: a
  * `JsonSchema` instance, then `configureJsonSchema`'s value, then a config
- * with `jsonSchemaMediaTypes`, so either side can be any of them.
+ * with `jsonSchemaMediaTypes`, then `jsonSchemaConfig`'s, so either side can
+ * be any of them.
  */
 export const load = async (dir: "a" | "b") => {
   if (!process.env.AB_DIR) {
@@ -20,7 +21,9 @@ export const load = async (dir: "a" | "b") => {
   // Nothing is retrieved, because `allowRetrieval` isn't configured
   const options = { validateFormats: false, dialects };
   let jsonSchema;
-  if (api.jsonSchemaMediaTypes) {
+  if (api.jsonSchemaConfig) {
+    jsonSchema = api.jsonSchemaConfig(options);
+  } else if (api.jsonSchemaMediaTypes) {
     jsonSchema = { mediaTypes: api.jsonSchemaMediaTypes(options) };
   } else if (api.configureJsonSchema) {
     jsonSchema = api.configureJsonSchema(options);

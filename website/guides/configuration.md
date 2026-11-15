@@ -3,31 +3,28 @@
 ## The config
 
 ```typescript
-import { jsonSchemaMediaTypes } from "@hyperjump/json-schema";
+import { jsonSchemaConfig } from "@hyperjump/json-schema";
 import { v1Dialect } from "@hyperjump/json-schema/v1";
 import { fullFormats } from "@hyperjump/json-schema/formats/full";
 
-const config = {
-  mediaTypes: jsonSchemaMediaTypes({
-    dialects: [v1Dialect],
-    formats: fullFormats,
-    defaultDialectUri: "https://json-schema.org/v1",
-    validateFormats: true
-  }),
+const config = jsonSchemaConfig({
+  dialects: [v1Dialect],
+  formats: fullFormats,
+  defaultDialectUri: "https://json-schema.org/v1",
+  validateFormats: true,
   allowRetrieval: ["./", "https://schemas.example.com/"]
-};
+});
 ```
 
-The config is a `JsonSchemaConfig`. It's `@hyperjump/browser`'s config with
-the JSON Schema media types in its `mediaTypes`. Every operation takes it
-first, and a session is made from it. Most applications make one config
-and use it everywhere. The dialects given to `jsonSchemaMediaTypes` give
-the config its [schema type](schema-types.md).
+`jsonSchemaConfig` makes the config, a `JsonSchemaConfig`. It's a plain
+object, `@hyperjump/browser`'s config with the JSON Schema media types in
+its `mediaTypes`. Every operation takes it first, and a session is made
+from it. Most applications make one config and use it everywhere. Its
+dialects give the config its [schema type](schema-types.md).
 
-### `jsonSchemaMediaTypes(options)`
+### What schemas can use
 
-`jsonSchemaMediaTypes` makes the JSON Schema media types: JSON Schema, then
-JSON that can be a schema. Its options decide what schemas can use.
+These options decide what schemas can use.
 
 | Option | Default | What it does |
 | --- | --- | --- |
@@ -38,8 +35,8 @@ JSON that can be a schema. Its options decide what schemas can use.
 | `defaultDialectUri` | None | The dialect of a schema that has no `$schema` and gets no dialect from anywhere else. See [Dialects](dialects.md#schemas-without-schema). |
 | `validateFormats` | The dialect's | Whether `format` validates in every dialect. See [Formats](formats.md). |
 
-The JSON Schema media type's `definitions` property has the definitions it
-has, by URI: its `keywords`, `formats`, `dialects`, and `vocabularies`.
+The config's first media type, JSON Schema, has the definitions in its
+`definitions` property, by URI: its `keywords`, `formats`, `dialects`, and `vocabularies`.
 They're the options', then the ones its dialects bring. Dialects and
 vocabularies are by the URI without a fragment. A dialect a meta-schema
 defines isn't in `dialects`. Use `getDialect` with a session to find one of
@@ -49,11 +46,14 @@ those.
 config.mediaTypes[0].definitions.dialects;
 ```
 
-### The config's options
+### How schemas are found
+
+These options are `@hyperjump/browser`'s, and they're in the config as
+they are.
 
 | Option | Default | What it does |
 | --- | --- | --- |
-| `mediaTypes` | Required | The media types documents are read with. It has to have the JSON Schema media types first. Put others, like `jrefMediaType` from `@hyperjump/browser`, after them. See [browser's media types](https://github.com/hyperjump-io/browser/blob/v2/website/media-types.md). |
+| `mediaTypes` | JSON Schema and JSON | More media types documents can be in, like `jrefMediaType` from `@hyperjump/browser` for JRef. They come after JSON Schema's. See [browser's media types](https://github.com/hyperjump-io/browser/blob/v2/website/media-types.md). |
 | `registry` | None | Schemas for every call and session, like custom meta-schemas. See [Loading schemas](loading-schemas.md#schemas-for-every-call). |
 | `allowRetrieval` | `["./"]` | The URLs schemas can be retrieved from. See [Controlling retrieval](retrieval.md). |
 | `headers` | None | Headers to send with requests, such as credentials, by URL. See [Controlling retrieval](retrieval.md#sending-credentials). |

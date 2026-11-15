@@ -1,4 +1,4 @@
-import { jsonSchemaMediaTypes, extendDialect } from "./json-schema.js";
+import { jsonSchemaConfig, extendDialect } from "./json-schema.js";
 import type { JsonSchemaConfig, SchemaTypeOf } from "./json-schema.d.ts";
 import type { Keyword } from "./keyword.d.ts";
 import { SchemaRegistry } from "./registry/schema-registry.js";
@@ -62,7 +62,7 @@ void [valid, basic, errors];
 // Schema types from the config
 
 // A config's schema type is its media types' dialects'
-const v1Only = { mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }) };
+const v1Only = jsonSchemaConfig({ dialects: [v1Dialect] });
 v1Only satisfies JsonSchemaConfig<V1Schema>;
 const v1Schema: SchemaTypeOf<typeof v1Only> = { $schema: "https://json-schema.org/v1", type: "string" };
 
@@ -84,7 +84,7 @@ await validate(v1Only, "https://example.com/schema", "foo");
 await validate(new Hyperjump(v1Only), "https://example.com/schema", "foo");
 
 // A union of dialects is told apart by `$schema`
-const both = { mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect, draft202012Dialect] }) };
+const both = jsonSchemaConfig({ dialects: [v1Dialect, draft202012Dialect] });
 both satisfies JsonSchemaConfig<V1Schema | Draft202012Schema>;
 await validate(both, { $schema: "https://json-schema.org/draft/2020-12/schema", unknown: 1 }, "foo");
 // @ts-expect-error
@@ -96,9 +96,9 @@ const evenKeyword = {
   shape: "data",
   lower: (even: boolean) => even ? { op: "multipleOf", divisor: 2 } : { op: "pass" }
 } satisfies Keyword<boolean>;
-const withEven = {
-  mediaTypes: jsonSchemaMediaTypes({ dialects: [extendDialect(v1Dialect, { keywords: { even: evenKeyword } })] })
-};
+const withEven = jsonSchemaConfig({
+  dialects: [extendDialect(v1Dialect, { keywords: { even: evenKeyword } })]
+});
 withEven satisfies JsonSchemaConfig<V1Schema<{ even: typeof evenKeyword }>>;
 await validate(withEven, { type: "integer", even: true }, 2);
 // @ts-expect-error
@@ -106,19 +106,20 @@ await validate(withEven, { type: "integer", even: 2 }, 2);
 
 // A dialect written in the config, with a keyword named by URI that
 // allows any value
-const custom = {
-  mediaTypes: jsonSchemaMediaTypes({ dialects: [{
+const custom = jsonSchemaConfig({
+  dialects: [{
     uri: "https://example.com/dialect",
     keywords: { $id: "https://json-schema.org/keyword/id", even: evenKeyword },
     unknownKeywords: "error"
-  }], keywords: [idKeyword] })
-};
+  }],
+  keywords: [idKeyword]
+});
 await validate(custom, { $schema: "https://example.com/dialect", $id: 42, even: true }, 2);
 // @ts-expect-error
 await validate(custom, { other: 1 }, 2);
 
 // Without dialects, any schema
-const none = { mediaTypes: jsonSchemaMediaTypes() };
+const none = jsonSchemaConfig();
 await validate(none, { anything: [1] }, 2);
 await validate(none, true, 2);
 
@@ -128,14 +129,14 @@ new SchemaRegistry<SchemaTypeOf<typeof v1Only>>().with(v1Schema);
 new SchemaRegistry<SchemaTypeOf<typeof v1Only>>().with({ minLenght: 1 });
 
 // The config takes a registry of any type
-({
-  mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }),
+(jsonSchemaConfig({
+  dialects: [v1Dialect],
   registry: new SchemaRegistry<V1Schema>().with({ type: "string" })
-}) satisfies JsonSchemaConfig;
-({
-  mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }),
+})) satisfies JsonSchemaConfig;
+(jsonSchemaConfig({
+  dialects: [v1Dialect],
   registry: new SchemaRegistry().with({ anything: [1] })
-}) satisfies JsonSchemaConfig;
+})) satisfies JsonSchemaConfig;
 
 // A config has to have the JSON Schema media types
 // @ts-expect-error
@@ -156,7 +157,7 @@ if (found.type === "json-schema") {
 
 type OtherNode = JsonNode<{ type: "other" }>;
 declare const otherMediaType: MediaTypePlugin<DocumentNode<OtherNode>>;
-const withOther = { mediaTypes: [...jsonSchemaMediaTypes({ dialects: [v1Dialect] }), jrefMediaType, otherMediaType] };
+const withOther = jsonSchemaConfig({ dialects: [v1Dialect], mediaTypes: [jrefMediaType, otherMediaType] });
 const foundOther = await get(new Hyperjump(withOther), "https://example.com/schema");
 yes<Equal<typeof foundOther, FollowedNode<JsonSchemaNode | JsonNode | JrefNode | OtherNode>>>();
 

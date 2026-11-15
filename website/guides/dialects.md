@@ -7,18 +7,18 @@ it's written in with `$schema`.
 ## Choosing dialects
 
 The JSON Schema media types only have the dialects in the `dialects`
-option of `jsonSchemaMediaTypes`, so only the ones you use are loaded. Import each one from its module. Each dialect brings its own
+option of `jsonSchemaConfig`, so only the ones you use are loaded. Import each one from its module. Each dialect brings its own
 keywords and formats. You can't change the dialects after the media types
 are made.
 
 ```typescript
-import { jsonSchemaMediaTypes } from "@hyperjump/json-schema";
+import { jsonSchemaConfig } from "@hyperjump/json-schema";
 import { draft202012Dialect } from "@hyperjump/json-schema/draft-2020-12";
 import { draft07Dialect } from "@hyperjump/json-schema/draft-07";
 
-const config = {
-  mediaTypes: jsonSchemaMediaTypes({ dialects: [draft202012Dialect, draft07Dialect] })
-};
+const config = jsonSchemaConfig({
+  dialects: [draft202012Dialect, draft07Dialect]
+});
 ```
 
 | Dialect | Module | Export | Dialect URI |
@@ -47,16 +47,14 @@ it gets its dialect from somewhere else:
   [Loading schemas](loading-schemas.md#schemas-without-id).
 - An HTTP response can name it with a `schema` parameter on its
   `Content-Type`.
-- The `defaultDialectUri` option of `jsonSchemaMediaTypes` sets the
+- The `defaultDialectUri` option of `jsonSchemaConfig` sets the
   dialect for every schema that still doesn't have one.
 
 ```typescript
-const config = {
-  mediaTypes: jsonSchemaMediaTypes({
-    dialects: [v1Dialect],
-    defaultDialectUri: "https://json-schema.org/v1"
-  })
-};
+const config = jsonSchemaConfig({
+  dialects: [v1Dialect],
+  defaultDialectUri: "https://json-schema.org/v1"
+});
 ```
 
 A default makes your schemas depend on your configuration. Other tools
@@ -114,14 +112,12 @@ option by its URI. Its keywords are definitions, just like a dialect's. See
 [Custom keywords](../extending/keywords.md).
 
 ```typescript
-const config = {
-  mediaTypes: jsonSchemaMediaTypes({
-    dialects: [draft202012Dialect],
-    vocabularies: {
-      "https://example.com/vocab/even": { keywords: { even: evenKeyword } }
-    }
-  })
-};
+const config = jsonSchemaConfig({
+  dialects: [draft202012Dialect],
+  vocabularies: {
+    "https://example.com/vocab/even": { keywords: { even: evenKeyword } }
+  }
+});
 ```
 
 To make a dialect any other way, see [Custom dialects](../extending/dialects.md).

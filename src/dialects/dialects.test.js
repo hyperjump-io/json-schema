@@ -1,6 +1,6 @@
 import { toId } from "../identifiers.js";
 import { describe, test, expect } from "vitest";
-import { jsonSchemaMediaTypes } from "../json-schema.js";
+import { jsonSchemaConfig } from "../json-schema.js";
 import { v1Dialect, v1DialectUri } from "./v1/index.js";
 import { draft04Dialect, draft04DialectUri } from "./draft-04/index.js";
 import { draft06Dialect, draft06DialectUri } from "./draft-06/index.js";
@@ -32,7 +32,7 @@ const fullOnly = new Set([
 
 describe("dialects", () => {
   test("the media types have no dialects unless they're in the options", () => {
-    const jsonSchema = { mediaTypes: jsonSchemaMediaTypes() };
+    const jsonSchema = jsonSchemaConfig();
 
     for (const [, , dialectUri] of dialects) {
       expect(toId(dialectUri) in definitionsOf(jsonSchema).dialects, dialectUri).to.equal(false);
@@ -40,7 +40,7 @@ describe("dialects", () => {
   });
 
   test("every dialect can be in one config", () => {
-    const jsonSchema = { mediaTypes: jsonSchemaMediaTypes({ dialects: dialects.map(([, dialect]) => dialect) }) };
+    const jsonSchema = jsonSchemaConfig({ dialects: dialects.map(([, dialect]) => dialect) });
 
     for (const [, , dialectUri] of dialects) {
       expect(toId(dialectUri) in definitionsOf(jsonSchema).dialects, dialectUri).to.equal(true);
@@ -49,7 +49,7 @@ describe("dialects", () => {
 
   describe.each(dialects)("%s", (_name, dialect, dialectUri) => {
     test("brings every keyword and format it uses", () => {
-      const jsonSchema = { mediaTypes: jsonSchemaMediaTypes({ dialects: [dialect] }) };
+      const jsonSchema = jsonSchemaConfig({ dialects: [dialect] });
 
       const added = definitionsOf(jsonSchema).dialects[toId(dialectUri)];
       for (const uri of Object.values(added.keywords)) {
@@ -62,13 +62,13 @@ describe("dialects", () => {
 
     test("a keyword in the config replaces the dialect's", () => {
       const type = { uri: "https://json-schema.org/keyword/type", shape: /** @type const */ ("data") };
-      const jsonSchema = { mediaTypes: jsonSchemaMediaTypes({ dialects: [dialect], keywords: [type] }) };
+      const jsonSchema = jsonSchemaConfig({ dialects: [dialect], keywords: [type] });
 
       expect(definitionsOf(jsonSchema).keywords[type.uri]).to.equal(type);
     });
 
     test("it can't be in the config twice", () => {
-      expect(() => ({ mediaTypes: jsonSchemaMediaTypes({ dialects: [dialect, dialect] }) })).to.throw("more than once");
+      expect(() => jsonSchemaConfig({ dialects: [dialect, dialect] })).to.throw("more than once");
     });
   });
 });

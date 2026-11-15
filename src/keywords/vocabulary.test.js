@@ -1,7 +1,7 @@
 import { Hyperjump } from "@hyperjump/browser";
 import { toId } from "../identifiers.js";
 import { describe, test, expect } from "vitest";
-import { jsonSchemaMediaTypes } from "../json-schema.js";
+import { jsonSchemaConfig } from "../json-schema.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
 import idKeyword from "./id.js";
 import vocabularyKeyword from "./vocabulary.js";
@@ -24,8 +24,9 @@ const barKeyword = { uri: "https://example.com/keyword/bar", shape: /** @type co
 
 describe("vocabularies", () => {
   /** @type (vocabularies?: Record<string, VocabularyConfig>, dialectVocabularies?: Record<string, VocabularyConfig>) => JsonSchemaConfig */
-  const withVocabularies = (vocabularies, dialectVocabularies) => ({
-    mediaTypes: jsonSchemaMediaTypes({ dialects: [metaDialect(metaDialectUri, dialectVocabularies), metaDialect(otherMetaDialectUri)], vocabularies })
+  const withVocabularies = (vocabularies, dialectVocabularies) => jsonSchemaConfig({
+    dialects: [metaDialect(metaDialectUri, dialectVocabularies), metaDialect(otherMetaDialectUri)],
+    vocabularies
   });
 
   /** @type (jsonSchema: JsonSchemaConfig, schemas: Json[], dialectUri: string) => Promise<unknown> */
@@ -71,9 +72,11 @@ describe("vocabularies", () => {
   });
 
   test("the validateFormats config replaces what the vocabularies say", async () => {
-    const jsonSchema = {
-      mediaTypes: jsonSchemaMediaTypes({ dialects: [metaDialect(metaDialectUri)], vocabularies: { [barVocabularyUri]: { keywords: {}, assertFormats: true } }, validateFormats: false })
-    };
+    const jsonSchema = jsonSchemaConfig({
+      dialects: [metaDialect(metaDialectUri)],
+      vocabularies: { [barVocabularyUri]: { keywords: {}, assertFormats: true } },
+      validateFormats: false
+    });
 
     const dialectUri = "https://example.com/dialect";
     const dialect = await getDialect(jsonSchema, [

@@ -1,0 +1,161 @@
+import { toId } from "./identifiers.js";
+import { schemaMediaType } from "./schema/media-type-plugin.js";
+import { jsonOrSchemaMediaType } from "./schema/json-media-type-plugin.js";
+import schemaKeyword from "./keywords/schema.js";
+import unknownKeyword from "./keywords/unknown.js";
+import { assertNoReservedKeywords, withValidateFormats } from "./dialects/extend-dialect.js";
+
+/**
+ * @import { Keyword } from "./keyword.d.ts"
+ * @import { Format } from "./format.d.ts"
+ * @import { Dialect, DialectConfig, Vocabulary, VocabularyConfig } from "./dialect.d.ts"
+ * @import * as API from "./json-schema.d.ts"
+ * @import * as MediaTypes from "./media-types.d.ts"
+ */
+
+// The JSON Schema media types, with the definitions schemas are read with.
+// `jsonSchemaConfig` puts them in a config. They aren't exported from the
+// package.
+
+/**
+ * The definitions being built, by URI. Each one has no prototype, so a URI
+ * like `constructor` isn't found in it.
+ *
+ * @typedef {{
+ *   keywords: Record<string, Keyword>;
+ *   formats: Record<string, Format>;
+ *   dialects: Record<string, Dialect>;
+ *   vocabularies: Record<string, Vocabulary>;
+ * }} Tables
+ */
+
+/** @type typeof MediaTypes.jsonSchemaMediaTypes */
+export const jsonSchemaMediaTypes = (options = {}) => {
+  /** @type Tables */
+  const tables = {
+    keywords: Object.create(null),
+    formats: Object.create(null),
+    dialects: Object.create(null),
+    vocabularies: Object.create(null)
+  };
+
+  // The options' definitions come first, so one that replaces a dialect's
+  // stays replaced, whatever order the dialects are in
+  for (const keyword of options.keywords ?? []) {
+    tables.keywords[keyword.uri] = keyword;
+  }
+  for (const format of options.formats ?? []) {
+    tables.formats[format.uri] = format;
+  }
+
+  // Every dialect has these
+  addDefinition(tables.keywords, schemaKeyword);
+  addDefinition(tables.keywords, unknownKeyword);
+
+  for (const uri in options.vocabularies) {
+    tables.vocabularies[toId(uri)] = addVocabulary(tables, options.vocabularies[uri]);
+  }
+  for (const dialect of options.dialects ?? []) {
+    addDialect(tables, dialect, options);
+  }
+
+  // A dialect can name a keyword by URI that another dialect or the options
+  // define, so this waits until they're all added
+  for (const dialect of Object.values(tables.dialects)) {
+    assertDefined(tables.keywords, dialect.keywords, `'${dialect.uri}' dialect`);
+  }
+  for (const uri in tables.vocabularies) {
+    assertDefined(tables.keywords, tables.vocabularies[uri].keywords, `'${uri}' vocabulary`);
+  }
+
+  /** @type API.JsonSchemaDefinitions */
+  const definitions = Object.freeze({
+    keywords: Object.freeze(tables.keywords),
+    formats: Object.freeze(tables.formats),
+    dialects: Object.freeze(tables.dialects),
+    vocabularies: Object.freeze(tables.vocabularies),
+    defaultDialectUri: options.defaultDialectUri,
+    validateFormats: options.validateFormats
+  });
+
+  // JSON-or-schema reads what the schema plugin doesn't, so it comes second.
+  // Everything that needs the definitions finds them on the schema plugin.
+  return /** @type any */ (Object.freeze([
+    Object.freeze({ ...schemaMediaType, definitions }),
+    jsonOrSchemaMediaType
+  ]));
+};
+
+/**
+ * Register a definition a dialect or vocabulary brings, unless one with its
+ * URI already is, and name it by URI
+ *
+ * @type <D extends { uri: string }>(table: Record<string, D>, definition: D | string) => string
+ */
+const addDefinition = (table, definition) => {
+  if (typeof definition === "string") {
+    return definition;
+  }
+  table[definition.uri] ??= definition;
+  return definition.uri;
+};
+
+/** @type <D extends { uri: string }>(table: Record<string, D>, definitions: Record<string, D | string>) => Record<string, string> */
+const addDefinitions = (table, definitions) => {
+  /** @type Record<string, string> */
+  const uris = {};
+  for (const name in definitions) {
+    uris[name] = addDefinition(table, definitions[name]);
+  }
+  return uris;
+};
+
+/** @type (tables: Tables, vocabulary: VocabularyConfig) => Vocabulary */
+const addVocabulary = (tables, { keywords, formats, assertFormats }) => {
+  assertNoReservedKeywords(keywords);
+
+  /** @type Vocabulary */
+  const vocabulary = { keywords: addDefinitions(tables.keywords, keywords) };
+  if (formats !== undefined) {
+    vocabulary.formats = addDefinitions(tables.formats, formats);
+  }
+  if (assertFormats !== undefined) {
+    vocabulary.assertFormats = assertFormats;
+  }
+  return vocabulary;
+};
+
+/**
+ * A dialect is kept with its definitions named by URI, which is how
+ * everything reads it.
+ *
+ * @type (tables: Tables, dialect: DialectConfig, options: API.JsonSchemaOptions) => void
+ */
+const addDialect = (tables, { vocabularies, ...dialect }, options) => {
+  const uri = toId(dialect.uri);
+  if (uri in tables.dialects) {
+    throw Error(`The '${uri}' dialect is in the 'dialects' option more than once`);
+  }
+  assertNoReservedKeywords(dialect.keywords);
+
+  for (const vocabularyUri in vocabularies) {
+    tables.vocabularies[toId(vocabularyUri)] ??= addVocabulary(tables, vocabularies[vocabularyUri]);
+  }
+
+  const { formats, ...rest } = dialect;
+  /** @type Dialect */
+  const added = withValidateFormats({ ...rest, uri, keywords: addDefinitions(tables.keywords, dialect.keywords) }, options);
+  if (formats !== undefined) {
+    added.formats = addDefinitions(tables.formats, formats);
+  }
+  tables.dialects[uri] = added;
+};
+
+/** @type (defined: Record<string, Keyword>, keywords: Readonly<Record<string, string>>, definedIn: string) => void */
+const assertDefined = (defined, keywords, definedIn) => {
+  for (const name in keywords) {
+    if (!(keywords[name] in defined)) {
+      throw Error(`The ${definedIn} has no definition for the '${keywords[name]}' keyword. Add it to the dialect or the 'keywords' option of jsonSchemaConfig.`);
+    }
+  }
+};

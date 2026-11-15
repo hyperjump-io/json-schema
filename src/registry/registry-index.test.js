@@ -1,6 +1,6 @@
 import { Hyperjump } from "@hyperjump/browser";
 import { describe, test, expect } from "vitest";
-import { jsonSchemaMediaTypes } from "../json-schema.js";
+import { jsonSchemaConfig } from "../json-schema.js";
 import { SchemaRegistry } from "./schema-registry.js";
 import { RegistryIndex } from "./registry-index.js";
 import { toId } from "../identifiers.js";
@@ -71,8 +71,8 @@ describe("RegistryIndex", () => {
 
   test("a session doesn't identify entries until it looks for a schema", async () => {
     let identified = 0;
-    const jsonSchema = {
-      mediaTypes: jsonSchemaMediaTypes({ dialects: [{
+    const jsonSchema = jsonSchemaConfig({
+      dialects: [{
         uri: "https://example.com/counted",
         keywords: {
           $id: {
@@ -85,8 +85,8 @@ describe("RegistryIndex", () => {
           }
         },
         unknownKeywords: "ignore"
-      }] })
-    };
+      }]
+    });
     const registry = new SchemaRegistry().with({ $schema: "https://example.com/counted", $id: "https://example.com/counted-schema" });
 
     const session = new Hyperjump({ ...jsonSchema, registry });
@@ -99,6 +99,6 @@ describe("RegistryIndex", () => {
 
 /** @type () => JsonSchemaConfig */
 const v1 = () => {
-  const jsonSchema = { mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }) };
+  const jsonSchema = jsonSchemaConfig({ dialects: [v1Dialect] });
   return jsonSchema;
 };

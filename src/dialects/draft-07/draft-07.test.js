@@ -1,5 +1,5 @@
 import { describe, test, beforeEach, expect } from "vitest";
-import { jsonSchemaMediaTypes } from "../../json-schema.js";
+import { jsonSchemaConfig } from "../../json-schema.js";
 import { SchemaRegistry } from "../../registry/schema-registry.js";
 import { draft07Dialect, draft07DialectUri } from "./index.js";
 import { compile as compileSchema } from "../../operations/compile.js";
@@ -13,8 +13,9 @@ import { validatorFor } from "../../operations/validate-compiled.js";
 
 describe("draft-07", () => {
   /** @type (config?: JsonSchemaOptions & { allowRetrieval?: string[]; registry?: SchemaRegistry }) => JsonSchemaConfig */
-  const draft07 = ({ registry, ...options } = {}) => ({
-    mediaTypes: jsonSchemaMediaTypes({ dialects: [draft07Dialect], ...options }),
+  const draft07 = ({ registry, ...options } = {}) => jsonSchemaConfig({
+    dialects: [draft07Dialect],
+    ...options,
     allowRetrieval: [],
     registry
   });

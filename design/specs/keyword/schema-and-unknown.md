@@ -2,7 +2,7 @@
 
 `$schema` and unknown keywords are part of every dialect. The resolver maps
 `$schema` by name, and any other name the dialect doesn't define is
-unknown. `jsonSchemaMediaTypes` adds both to every set of definitions,
+unknown. `jsonSchemaConfig` adds both to every set of definitions,
 and they're ordinary keywords otherwise. The unknown keyword can be replaced.
 
 - An unknown keyword's `keywordUri` is

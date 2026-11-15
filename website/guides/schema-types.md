@@ -29,14 +29,14 @@ own type. A schema declared `as const` fits too.
 A config knows the schema type of the dialects its JSON Schema media types
 were made with. When you pass a schema as a value to `validate`,
 `validator`, `compile`, or `bundle`, it's checked without you naming a
-type. A config with `jsonSchemaMediaTypes({ dialects: [v1Dialect] })`
+type. A config from `jsonSchemaConfig({ dialects: [v1Dialect] })`
 checks schemas against `V1Schema`. A URI isn't checked.
 
 ```typescript
-import { jsonSchemaMediaTypes, validate } from "@hyperjump/json-schema";
+import { jsonSchemaConfig, validate } from "@hyperjump/json-schema";
 import { v1Dialect } from "@hyperjump/json-schema/v1";
 
-const config = { mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }) };
+const config = jsonSchemaConfig({ dialects: [v1Dialect] });
 
 await validate(config, {
   $schema: "https://json-schema.org/v1",
@@ -170,11 +170,9 @@ adds. A config with that dialect checks schemas that use them.
 Subschemas have the same type, so they can use your keywords too.
 
 ```typescript
-const config = {
-  mediaTypes: jsonSchemaMediaTypes({
-    dialects: [extendDialect(v1Dialect, { keywords: { even: evenKeyword } })]
-  })
-};
+const config = jsonSchemaConfig({
+  dialects: [extendDialect(v1Dialect, { keywords: { even: evenKeyword } })]
+});
 
 await validate(config, { type: "integer", even: 2 }, 4);
 ```

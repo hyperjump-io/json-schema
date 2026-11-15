@@ -15,10 +15,10 @@ is a `Hyperjump`, and browsing is functions of it (see
 [Sessions](../sessions/README.md)).
 
 ```js
-import { BASIC, jsonSchemaMediaTypes, SchemaRegistry, validate, validator } from "@hyperjump/json-schema";
+import { BASIC, jsonSchemaConfig, SchemaRegistry, validate, validator } from "@hyperjump/json-schema";
 import { v1Dialect } from "@hyperjump/json-schema/v1";
 
-const config = { mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }) };
+const config = jsonSchemaConfig({ dialects: [v1Dialect] });
 
 await validate(config, schema, data);
 
@@ -64,7 +64,10 @@ like `constructor` isn't found in them. A session was
   it makes a `Hyperjump`; `hyperjumpJsonSchema` with `hyperjumpSession`,
   which are long; and `createSession` or `startHyperjump`, a function
   that only calls the constructor, with a separate `JsonSchemaSession`
-  type for the class.
+  type for the class. Both names went later the same day: a config is made
+  with `jsonSchemaConfig`, named for what it returns, and a session is
+  browser's `Hyperjump` (see
+  [JSON Schema as a media type](json-schema-media-type.md#making-a-config)).
 
 - It removed `session()`, a second way to make a session, and seven
   `has` and `get` methods that were lookups in those tables. What they

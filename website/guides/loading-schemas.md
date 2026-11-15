@@ -116,10 +116,10 @@ call and session can find them.
 ```typescript
 const metaSchemas = new SchemaRegistry().with(myMetaSchema);
 
-const config = {
-  mediaTypes: jsonSchemaMediaTypes({ dialects: [draft202012Dialect] }),
+const config = jsonSchemaConfig({
+  dialects: [draft202012Dialect],
   registry: metaSchemas
-};
+});
 ```
 
 A call sees its own registry and the config's as one registry. A schema in
@@ -179,10 +179,10 @@ A schema at an `http:` or `https:` URL is retrieved if `allowRetrieval`
 allows it. Nothing on the network is allowed by default.
 
 ```typescript
-const config = {
-  mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }),
+const config = jsonSchemaConfig({
+  dialects: [v1Dialect],
   allowRetrieval: ["./", "https://schemas.example.com/"]
-};
+});
 
 const uri = "https://schemas.example.com/person";
 const isPerson = await validator(config, uri);
@@ -210,7 +210,7 @@ retrieves the schema again, unless the config has an HTTP cache. See
   [Invalid schemas](invalid-schemas.md).
 - An `Error` when a schema in a registry probably has the URI, by its
   `$id`, but can't be used. One whose `$schema` is a dialect that isn't
-  defined, by the dialects you gave `jsonSchemaMediaTypes` or a
+  defined, by the dialects you gave `jsonSchemaConfig` or a
   meta-schema in the registry, has the code `"ERR_DIALECT_NOT_DEFINED"`,
   with its `dialect`. Nothing is retrieved for it, even if the URI could
   be:

@@ -12,7 +12,7 @@ export type { ValidationError, DetailedValidationError } from "./output/validati
 export type { SchemaMessage } from "./schema/schema-error.js";
 export type { BasicOutput, DetailedOutput, OutputError, OutputFormat, JsonSyntaxError } from "./output/output-format.d.ts";
 
-/** What `jsonSchemaMediaTypes` makes the JSON Schema media types with */
+/** The definitions schemas are read with, which `jsonSchemaConfig` takes */
 export type JsonSchemaOptions<D extends DialectConfig<any, any, any> = DialectConfig<any, any, any>> = {
   /**
    * The dialect of a schema that doesn't have `$schema` and doesn't get a
@@ -63,7 +63,7 @@ export type JsonSchemaOptions<D extends DialectConfig<any, any, any> = DialectCo
  * schemas, from the dialects the media types were made with.
  *
  * ```js
- * const config = { mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }) };
+ * const config = jsonSchemaConfig({ dialects: [v1Dialect] });
  * ```
  *
  * Without a `stack`, each session has one of its own, so calls don't share
@@ -73,9 +73,7 @@ export type JsonSchemaOptions<D extends DialectConfig<any, any, any> = DialectCo
 export type JsonSchemaConfig<S = any> = HyperjumpConfig & {
   /**
    * The media types documents are read with, which have to include the
-   * JSON Schema media types (`jsonSchemaMediaTypes`). Put others, like
-   * `jrefMediaType`, after them, so JSON is read by the plugin that finds
-   * schemas in it.
+   * JSON Schema media types, which `jsonSchemaConfig` puts first.
    */
   readonly mediaTypes: readonly (SchemaMediaType<S> | MediaTypePlugin<any>)[];
 
@@ -103,7 +101,7 @@ export function extendDialect<K extends DialectKeywords, Uri extends string, U e
 ): DialectConfig<K & E, Uri, U>;
 
 /** Any dialect in the options. It's `D` when there are none. */
-type AnyDialectConfig = DialectConfig<DialectKeywords, string, UnknownKeywords>;
+export type AnyDialectConfig = DialectConfig<DialectKeywords, string, UnknownKeywords>;
 
 /**
  * Any schema: what JSON Schema media types without dialects take, because
@@ -135,21 +133,48 @@ export type SchemaTypeOf<C> = C extends { readonly mediaTypes: readonly (infer P
   : never;
 
 /**
- * The JSON Schema media types: JSON Schema, and JSON that can be a schema,
- * in that order, made with the definitions schemas are read with. They go in
- * a config's `mediaTypes`. Their schema type is the union of the dialects'
- * ({@link DialectSchema}), so a config with
- * `jsonSchemaMediaTypes({ dialects: [v1Dialect] })` checks a schema an
- * operation is given as a value against `V1Schema`.
+ * What `jsonSchemaConfig` takes: the definitions schemas are read with,
+ * and browser's config options. `mediaTypes` are more media types, like
+ * `jrefMediaType`, which come after the JSON Schema ones.
+ */
+export type JsonSchemaConfigOptions<D extends DialectConfig<any, any, any> = DialectConfig<any, any, any>, M extends MediaTypePlugin<any> = MediaTypePlugin<any>>
+  = JsonSchemaOptions<D> & Omit<HyperjumpConfig, "mediaTypes"> & {
+    /** Schemas every call and session sees, like custom meta-schemas */
+    registry?: SchemaRegistry<any>;
+
+    /**
+     * Media types documents can be in, besides JSON Schema and JSON, like
+     * `jrefMediaType` for JRef. They come after the JSON Schema media types,
+     * so JSON is read by the plugin that finds schemas in it.
+     */
+    mediaTypes?: readonly M[];
+  };
+
+/**
+ * Make a config: browser's config options, with the JSON Schema media types
+ * made from the definition options, then the options' `mediaTypes`. It's a
+ * plain value, so a config for another call or session is
+ * `{ ...config, registry }`. Its schema type is the union of the dialects'
+ * ({@link DialectSchema}), so a schema an operation is given as a value is
+ * checked against it.
+ *
+ * ```js
+ * const config = jsonSchemaConfig({ dialects: [v1Dialect] });
+ * ```
  *
  * @throws Error if a dialect is in the options more than once, or a dialect
  * or vocabulary names a keyword that has no definition.
  */
 // Without a default for D, which TypeScript would pick instead of inferring
 // it when a dialect in the options has a function with untyped parameters
-export function jsonSchemaMediaTypes<const D extends AnyDialectConfig>(
-  options?: JsonSchemaOptions<D>
-): readonly [SchemaMediaType<AnyDialectConfig extends D ? AnySchema : DialectSchema<D>>, JsonOrSchemaMediaType];
+export function jsonSchemaConfig<const D extends AnyDialectConfig, M extends MediaTypePlugin<any> = never>(
+  options?: JsonSchemaConfigOptions<D, M>
+): Omit<JsonSchemaConfig<SchemaOfDialects<D>>, "mediaTypes"> & {
+  readonly mediaTypes: readonly (SchemaMediaType<SchemaOfDialects<D>> | JsonOrSchemaMediaType | M)[];
+};
+
+/** The schema type of the dialects in the options. It's any schema without them. */
+export type SchemaOfDialects<D extends AnyDialectConfig> = AnyDialectConfig extends D ? AnySchema : DialectSchema<D>;
 
 /** The definitions schemas are read with, on the JSON Schema media type */
 export type JsonSchemaDefinitions = {

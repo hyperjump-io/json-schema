@@ -17,7 +17,7 @@ text ─ fromJson ─▶ JSON AST ─ resolveSchema ─▶ Schema AST ─ (schem
   `SchemaError` with all of them (see [Validation API](components/validation-api/README.md)).
 - A JSON document (`application/json`, `.json`) is a schema if its
   top-level `$schema` is a dialect the session has or can find
-  (the second of `jsonSchemaMediaTypes`'s plugins, which replaces browser's
+  (the second of the JSON Schema media types, which replaces browser's
   JSON plugin), and
   JSON otherwise. The plugin's `fragmentPointer` reads a schema's
   fragments as a schema's. Before 2026-10-27, only `.schema.json` files
@@ -29,7 +29,7 @@ text ─ fromJson ─▶ JSON AST ─ resolveSchema ─▶ Schema AST ─ (schem
 
 | Where | What |
 | --- | --- |
-| `src/json-schema.js` | `jsonSchemaMediaTypes`: the definitions, and the media types that carry them. `src/definition-of.js` finds them in a config |
+| `src/json-schema.js` | `jsonSchemaConfig`: a config with the JSON Schema media types. `src/media-types.js` makes the definitions and the media types that carry them, and `src/definition-of.js` finds them in a config |
 | `src/operations/` | The operations: `validate`, `validator`, `annotate`, `annotator`, `compile`, `serialize`, `restore`, `bundle`, `lint`, and what they share (`call-session.js`, `schema-source.js`, `evaluators.js`). `validatorFor` and `annotatorFor` are in `validate-compiled.js`, apart from the others, because they import the instrumented evaluator |
 | `src/session.js` | What a session keeps for schemas, and `getDialect` |
 | `src/annotation.js` | `annotation`, which reads an annotation by keyword name |

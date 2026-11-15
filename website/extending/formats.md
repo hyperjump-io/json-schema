@@ -1,10 +1,10 @@
 # Custom formats
 
 A format is a plain object with a URI. Give it a name in a dialect with
-`extendDialect`. Then give the dialect it returns to `jsonSchemaMediaTypes`.
+`extendDialect`. Then give the dialect it returns to `jsonSchemaConfig`.
 
 ```typescript
-import { extendDialect, jsonSchemaMediaTypes } from "@hyperjump/json-schema";
+import { extendDialect, jsonSchemaConfig } from "@hyperjump/json-schema";
 import type { Format } from "@hyperjump/json-schema";
 import { v1Dialect } from "@hyperjump/json-schema/v1";
 
@@ -15,11 +15,9 @@ const hexFormat = {
     && /^[0-9a-f]+$/i.test(value)
 } satisfies Format;
 
-const config = {
-  mediaTypes: jsonSchemaMediaTypes({
-    dialects: [extendDialect(v1Dialect, { formats: { hex: hexFormat } })]
-  })
-};
+const config = jsonSchemaConfig({
+  dialects: [extendDialect(v1Dialect, { formats: { hex: hexFormat } })]
+});
 ```
 
 ```json

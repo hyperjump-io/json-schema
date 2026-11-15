@@ -1,7 +1,7 @@
 # Dialects (`src/dialect.d.ts`)
 
 - A dialect is `{ uri, keywords, unknownKeywords }`. `keywords` maps names to
-  keyword URIs. In `jsonSchemaMediaTypes`'s options, a dialect
+  keyword URIs. In `jsonSchemaConfig`'s options, a dialect
   (`DialectConfig`) maps names to definitions or URIs, and the media
   types' definitions store it with URIs (see
   [Built-in dialects](../built-in-dialects/README.md)). The core has no vocabularies. A dialect is one flat map of
@@ -27,10 +27,10 @@
   recognize those exact forms. v1 drops the meta-schema role
   (json-schema-org/json-schema-spec#1712): `$schema` only identifies the
   dialect, and it MUST be normalized and have no fragment.
-- The dialects are in `jsonSchemaMediaTypes`'s options and can't change. A
+- The dialects are in `jsonSchemaConfig`'s options and can't change. A
   dialect in the options twice is an error. A keyword a dialect names by
   URI has to be defined, by another dialect or the options' `keywords`, or
-  `jsonSchemaMediaTypes` throws, because nothing can define it
+  `jsonSchemaConfig` throws, because nothing can define it
   later. A format named by a URI nothing defines is only unsupported, like
   `hostname` without the full formats. A dialect a meta-schema defines can
   still name a keyword that isn't defined, and that's reported when a
@@ -45,8 +45,8 @@
 ## The options
 
 - The dialects, keywords, formats, and vocabularies are
-  `jsonSchemaMediaTypes`'s options, and can't change after the media types
-  are made. Before 2026-10-29 they were added with methods, and a schema
+  `jsonSchemaConfig`'s options, and can't change after the config is
+  made. Before 2026-10-29 they were added with methods, and a schema
   resolved before a change didn't see it. Now nothing cached from a
   definition can go stale. Adding a dialect later, like one loaded with
   `import()` when a schema needs it, means making the media types again.

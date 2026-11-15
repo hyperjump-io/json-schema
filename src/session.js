@@ -123,7 +123,7 @@ const loadDialect = async (session, uri) => {
 
     const { definedDialect } = metaSchema;
     if (!definedDialect) {
-      throw Error(`The meta-schema for the '${relativeFileUrl(uri)}' dialect doesn't define a dialect (with '$vocabulary', for example). Add it to the 'dialects' option of jsonSchemaMediaTypes.`);
+      throw Error(`The meta-schema for the '${relativeFileUrl(uri)}' dialect doesn't define a dialect (with '$vocabulary', for example). Add it to the 'dialects' option of jsonSchemaConfig.`);
     }
 
     // The dialect is identified by whichever URI found the meta-schema

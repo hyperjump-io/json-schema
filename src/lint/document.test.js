@@ -2,7 +2,7 @@ import { describe, test, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
 import { rejsonParse, Hyperjump } from "@hyperjump/browser";
-import { jsonSchemaMediaTypes } from "../json-schema.js";
+import { jsonSchemaConfig } from "../json-schema.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
 import { draft202012Dialect } from "../dialects/draft-2020-12/index.js";
@@ -64,7 +64,7 @@ describe("documentForLint", () => {
 
 /** @type (schema: Record<string, Json>) => Promise<{ tree: JsonSchemaDocumentNode; file: VFile }> */
 const resolveFile = async (schema) => {
-  const jsonSchema = { mediaTypes: jsonSchemaMediaTypes({ dialects: [draft202012Dialect], formats: fullFormats }) };
+  const jsonSchema = jsonSchemaConfig({ dialects: [draft202012Dialect], formats: fullFormats });
   const registry = new SchemaRegistry().with({
     $schema: draft2020,
     $id: other,

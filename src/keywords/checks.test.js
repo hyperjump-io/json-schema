@@ -6,7 +6,7 @@ import { describe, test, beforeEach, beforeAll, afterAll, expect } from "vitest"
 import { unified } from "unified";
 import { VFile } from "vfile";
 import { rejsonParse, Hyperjump } from "@hyperjump/browser";
-import { jsonSchemaMediaTypes, extendDialect } from "../json-schema.js";
+import { jsonSchemaConfig, extendDialect } from "../json-schema.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import { draft04Dialect, draft04DialectUri } from "../dialects/draft-04/index.js";
@@ -24,8 +24,9 @@ import { compile } from "../operations/compile.js";
 const baseUri = "https://example.com/schema";
 
 /** @type (extension: Record<string, Keyword<any, any, any>>, keywords?: Keyword<any, any, any>[]) => JsonSchemaConfig */
-const withV1Keywords = (extension, keywords) => ({
-  mediaTypes: jsonSchemaMediaTypes({ dialects: [extendDialect(v1Dialect, { keywords: extension })], keywords })
+const withV1Keywords = (extension, keywords) => jsonSchemaConfig({
+  dialects: [extendDialect(v1Dialect, { keywords: extension })],
+  keywords
 });
 
 describe("keyword checks", () => {
@@ -33,9 +34,9 @@ describe("keyword checks", () => {
   let jsonSchema;
 
   beforeEach(() => {
-    jsonSchema = {
-      mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect, draft04Dialect, draft07Dialect, draft201909Dialect, draft202012Dialect] })
-    };
+    jsonSchema = jsonSchemaConfig({
+      dialects: [v1Dialect, draft04Dialect, draft07Dialect, draft201909Dialect, draft202012Dialect]
+    });
   });
 
   test("valid keyword values", async () => {
@@ -288,10 +289,10 @@ describe("a schema with an invalid keyword value", () => {
     const path = join(directory, "invalid.schema.json");
     await writeFile(path, `{ "$schema": "${v1DialectUri}", "minLength": -1 }`);
 
-    const jsonSchema = {
-      mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }),
+    const jsonSchema = jsonSchemaConfig({
+      dialects: [v1Dialect],
       allowRetrieval: [pathToFileURL(join(tmpdir(), "/")).href]
-    };
+    });
     await expect(compile(jsonSchema, pathToFileURL(path).toString())).rejects.toMatchObject({
       messages: [{ ruleId: "https://json-schema.org/keyword/minLength" }]
     });

@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { describe, test, beforeAll, expect } from "vitest";
 import { isCompatible } from "../../test/test-suite.js";
-import { jsonSchemaMediaTypes } from "../json-schema.js";
+import { jsonSchemaConfig } from "../json-schema.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import { draft202012Dialect, draft202012DialectUri } from "../dialects/draft-2020-12/index.js";
@@ -355,8 +355,9 @@ describe("bundle", () => {
 });
 
 /** @type (config?: JsonSchemaOptions & { allowRetrieval?: string[]; registry?: SchemaRegistry }) => JsonSchemaConfig */
-const allDialects = ({ allowRetrieval, registry, ...options } = {}) => ({
-  mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect, draft202012Dialect, draft201909Dialect, draft07Dialect, draft06Dialect, draft04Dialect], ...options }),
+const allDialects = ({ allowRetrieval, registry, ...options } = {}) => jsonSchemaConfig({
+  dialects: [v1Dialect, draft202012Dialect, draft201909Dialect, draft07Dialect, draft06Dialect, draft04Dialect],
+  ...options,
   allowRetrieval,
   registry
 });

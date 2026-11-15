@@ -3,7 +3,7 @@ import { describe, test, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
 import { rejsonParse, Hyperjump } from "@hyperjump/browser";
-import { jsonSchemaMediaTypes } from "../json-schema.js";
+import { jsonSchemaConfig } from "../json-schema.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
 import { v1Dialect } from "../dialects/v1/index.js";
 import { draft04Dialect } from "../dialects/draft-04/index.js";
@@ -32,9 +32,9 @@ const ruleNames = readdirSync(rulesUrl)
 
 const readme = readFileSync(new URL("README.md", pagesUrl), "utf8");
 
-const jsonSchema = {
-  mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect, draft04Dialect, draft06Dialect, draft07Dialect, draft201909Dialect, draft202012Dialect] })
-};
+const jsonSchema = jsonSchemaConfig({
+  dialects: [v1Dialect, draft04Dialect, draft06Dialect, draft07Dialect, draft201909Dialect, draft202012Dialect]
+});
 
 /**
  * @typedef {{

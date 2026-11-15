@@ -75,7 +75,7 @@ annotation(config, node, "format"); // [], because it's v1's format
 
 Pass a dialect's URI too if the config doesn't have v1, even for `title`.
 
-The dialect has to be one you gave `jsonSchemaMediaTypes`, so it can't be
+The dialect has to be one you gave `jsonSchemaConfig`, so it can't be
 one a [custom meta-schema](dialects.md#custom-meta-schemas) defines. For a
 schema in that dialect, pass the dialect its meta-schema is built on, like
 2020-12, whose names it shares. For a keyword from your own vocabulary,

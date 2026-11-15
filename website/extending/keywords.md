@@ -2,10 +2,10 @@
 
 A keyword is a plain object with a URI. Give it a name in a dialect with
 `extendDialect`. That returns a new dialect. Give the new dialect to
-`jsonSchemaMediaTypes` in place of the original.
+`jsonSchemaConfig` in place of the original.
 
 ```typescript
-import { extendDialect, jsonSchemaMediaTypes } from "@hyperjump/json-schema";
+import { extendDialect, jsonSchemaConfig } from "@hyperjump/json-schema";
 import type { Keyword } from "@hyperjump/json-schema";
 import { v1Dialect } from "@hyperjump/json-schema/v1";
 
@@ -20,11 +20,9 @@ const evenKeyword = {
   lower: (even) => even ? { op: "multipleOf", divisor: 2 } : { op: "pass" }
 } satisfies Keyword<boolean>;
 
-const config = {
-  mediaTypes: jsonSchemaMediaTypes({
-    dialects: [extendDialect(v1Dialect, { keywords: { even: evenKeyword } })]
-  })
-};
+const config = jsonSchemaConfig({
+  dialects: [extendDialect(v1Dialect, { keywords: { even: evenKeyword } })]
+});
 ```
 
 ```json
@@ -42,12 +40,13 @@ what its value is in a schema. See
 [Schemas that use it](#schemas-that-use-it).
 
 To replace a keyword a dialect has, put a definition with the same URI in
-the `keywords` option of `jsonSchemaMediaTypes`. It's used in every dialect that has the keyword.
+the `keywords` option of `jsonSchemaConfig`. It's used in every dialect that has the keyword.
 
 ```typescript
-const config = {
-  mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect], keywords: [myTypeKeyword] })
-};
+const config = jsonSchemaConfig({
+  dialects: [v1Dialect],
+  keywords: [myTypeKeyword]
+});
 ```
 
 ## The parts of a keyword

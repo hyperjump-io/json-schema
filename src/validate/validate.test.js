@@ -6,7 +6,7 @@ import { describe, test, beforeAll, afterAll, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
 import { rejsonParse, rejsonStringify } from "@hyperjump/browser";
-import { jsonSchemaMediaTypes } from "../json-schema.js";
+import { jsonSchemaConfig } from "../json-schema.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
 import { v1Dialect } from "../dialects/v1/index.js";
 import { jsonSchemaValidate } from "./validate.js";
@@ -24,7 +24,7 @@ describe("jsonSchemaValidate", () => {
   let compiled;
 
   beforeAll(async () => {
-    const jsonSchema = { mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }) };
+    const jsonSchema = jsonSchemaConfig({ dialects: [v1Dialect] });
     const registry = new SchemaRegistry([{
       schema: {
         $schema: "https://json-schema.org/v1",
@@ -101,7 +101,7 @@ describe("jsonSchemaValidate", () => {
       directory = await mkdtemp(join(cwd(), ".validate-test-"));
       const path = join(directory, "person.schema.json");
       await writeFile(path, JSON.stringify({ $schema: "https://json-schema.org/v1", properties: { age: { minimum: 0 } } }));
-      const jsonSchema = { mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }) };
+      const jsonSchema = jsonSchemaConfig({ dialects: [v1Dialect] });
       fileValidator = await compile(jsonSchema, pathToFileURL(path).href);
     });
 

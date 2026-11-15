@@ -1,6 +1,6 @@
 import { describe, test, expect } from "vitest";
 import { fetcher, Hyperjump } from "@hyperjump/browser";
-import { jsonSchemaMediaTypes } from "../json-schema.js";
+import { jsonSchemaConfig } from "../json-schema.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import { compile } from "../operations/compile.js";
@@ -19,11 +19,11 @@ describe("what a session finds that isn't a schema", () => {
     const [body, contentType] = /** @type [string, string] */ (served.get(request.url));
     return new Response(body, { headers: { "content-type": contentType } });
   });
-  const jsonSchema = {
-    mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }),
+  const jsonSchema = jsonSchemaConfig({
+    dialects: [v1Dialect],
     allowRetrieval: ["https://example.com/"],
     stack
-  };
+  });
 
   test("isSchemaNode is only true for a schema", async () => {
     const session = new Hyperjump(jsonSchema);

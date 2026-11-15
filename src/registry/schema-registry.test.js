@@ -1,6 +1,6 @@
 import { Hyperjump } from "@hyperjump/browser";
 import { describe, test, beforeEach, expect } from "vitest";
-import { jsonSchemaMediaTypes } from "../json-schema.js";
+import { jsonSchemaConfig } from "../json-schema.js";
 import { SchemaRegistry } from "./schema-registry.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import vocabularyKeyword from "../keywords/vocabulary.js";
@@ -522,8 +522,9 @@ describe("SchemaRegistry", () => {
  *
  * @type (options?: JsonSchemaOptions & { registry?: SchemaRegistry }) => JsonSchemaConfig
  */
-const offline = ({ registry, ...options } = {}) => ({
-  mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect], ...options }),
+const offline = ({ registry, ...options } = {}) => jsonSchemaConfig({
+  dialects: [v1Dialect],
+  ...options,
   allowRetrieval: [],
   registry
 });

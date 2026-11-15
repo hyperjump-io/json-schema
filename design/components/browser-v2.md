@@ -41,10 +41,10 @@ is in browser's [design docs](https://github.com/hyperjump-io/browser/blob/v2/de
   say its media type.
 - A media type plugin is a plain value, in the session's `mediaTypes`. The
   plugin with the most specific match for a response parses it, and the
-  first one wins a tie. `jsonSchemaMediaTypes` returns JSON Schema's in the
-  order they run, JSON Schema and then JSON that can be a schema, and the
-  docs put other media types, like JRef, after them, so JSON is read by
-  the plugin that finds schemas in it. Before 2026-11-14, `JsonSchema` put
+  first one wins a tie. `jsonSchemaConfig` puts JSON Schema's first, in
+  the order they run, JSON Schema and then JSON that can be a schema, and
+  the options' `mediaTypes`, like JRef, after them, so JSON is read by the
+  plugin that finds schemas in it. Before 2026-11-14, `JsonSchema` put
   its plugins, with JRef, before the config's itself.
 - A plugin's `parse` gets the response and the session. The response has
   the `Content-Type`'s `schema` and `profile` parameters, and the session

@@ -28,7 +28,7 @@ and a registry that's one edit away from another is cheap to index.
   index for what it actually uses, plus anything that depends on a dialect
   only that session has.
 - A cached identification or resolved document can't go stale, because
-  the definitions are made once by `jsonSchemaMediaTypes` and never
+  the definitions are made once by `jsonSchemaConfig` and never
   change. Before
   2026-10-29, a later `addKeyword` or `extendDialect` didn't change what
   was already cached.

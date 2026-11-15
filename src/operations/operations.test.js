@@ -1,6 +1,6 @@
 import { describe, test, expect } from "vitest";
 import { fromJs } from "@hyperjump/browser";
-import { jsonSchemaMediaTypes } from "../json-schema.js";
+import { jsonSchemaConfig } from "../json-schema.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import { BASIC } from "../output/index.js";
@@ -17,7 +17,7 @@ import { annotation } from "../annotation.js";
  * @import { BasicOutput } from "../output/output-format.d.ts"
  */
 
-const jsonSchema = { mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }), allowRetrieval: [] };
+const jsonSchema = jsonSchemaConfig({ dialects: [v1Dialect], allowRetrieval: [] });
 
 /** @type (properties: Record<string, Json>) => Record<string, Json> */
 const v1 = (properties) => ({ $schema: v1DialectUri, ...properties });
@@ -60,11 +60,11 @@ describe("operations", () => {
     });
 
     test("an $id the config's registry has is an error", async () => {
-      const other = {
-        mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }),
+      const other = jsonSchemaConfig({
+        dialects: [v1Dialect],
         allowRetrieval: [],
         registry: new SchemaRegistry().with(v1({ $id: "https://example.com/both" }))
-      };
+      });
 
       await expect(validate(other, v1({ $id: "https://example.com/both" }), 42)).rejects.toThrow("More than one schema in the registry is found by 'https://example.com/both'");
     });
@@ -78,10 +78,11 @@ describe("operations", () => {
     });
 
     test("a boolean schema", async () => {
-      const withDefault = {
-        mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect], defaultDialectUri: v1DialectUri }),
+      const withDefault = jsonSchemaConfig({
+        dialects: [v1Dialect],
+        defaultDialectUri: v1DialectUri,
         allowRetrieval: []
-      };
+      });
 
       expect(await validate(withDefault, true, 42)).to.equal(true);
       expect(await validate(withDefault, false, 42)).to.equal(false);

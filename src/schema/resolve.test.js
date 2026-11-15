@@ -8,7 +8,7 @@ import { describe, test, beforeEach, beforeAll, afterAll, expect } from "vitest"
 import { unified } from "unified";
 import { VFile } from "vfile";
 import { fetcher, fromJson, jrefStep, jsonPointerGet, nodeTransport, rejsonParse, Hyperjump } from "@hyperjump/browser";
-import { jsonSchemaMediaTypes, SchemaError, extendDialect } from "../json-schema.js";
+import { jsonSchemaConfig, SchemaError, extendDialect } from "../json-schema.js";
 import { jsonSchemaResolve, resolveSchema } from "./resolve.js";
 import idKeyword from "../keywords/id.js";
 import anchorKeyword from "../keywords/anchor.js";
@@ -1133,15 +1133,13 @@ const strictDialect = {
  * @type (options?: { dialects?: DialectConfig[]; keywords?: Keyword<any, any, any>[]; extension?: DialectExtension; config?: JsonSchemaOptions }) => JsonSchemaConfig
  */
 const testJsonSchema = ({ dialects = [], keywords = [], extension, config } = {}) => {
-  const jsonSchema = {
+  const jsonSchema = jsonSchemaConfig({
     allowRetrieval: [pathToFileURL(join(tmpdir(), "/")).href, "test:/"],
-    mediaTypes: jsonSchemaMediaTypes({
-      ...config,
-      dialects: [extension ? extendDialect(testDialect, extension) : testDialect, legacyDialect, strictDialect, ...dialects],
-      keywords: [...testKeywords, ...keywords]
-    }),
+    ...config,
+    dialects: [extension ? extendDialect(testDialect, extension) : testDialect, legacyDialect, strictDialect, ...dialects],
+    keywords: [...testKeywords, ...keywords],
     stack: nodeTransport({ schemes: { "test:": fetcher(respond) } })
-  };
+  });
   return jsonSchema;
 };
 

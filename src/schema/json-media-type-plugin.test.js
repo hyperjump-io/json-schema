@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { cwd } from "node:process";
 import { pathToFileURL } from "node:url";
 import { describe, test, beforeAll, afterAll, expect } from "vitest";
-import { jsonSchemaMediaTypes } from "../json-schema.js";
+import { jsonSchemaConfig } from "../json-schema.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import { draft202012Dialect } from "../dialects/draft-2020-12/index.js";
 import { compile } from "../operations/compile.js";
@@ -34,7 +34,7 @@ describe("JsonOrSchemaMediaTypePlugin", () => {
     await rm(directory, { recursive: true, force: true });
   });
 
-  const jsonSchema = () => ({ mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }) });
+  const jsonSchema = () => jsonSchemaConfig({ dialects: [v1Dialect] });
   const session = () => new Hyperjump(jsonSchema());
 
   test("a .json file whose $schema is a dialect is a schema", async () => {
@@ -72,13 +72,13 @@ describe("JsonOrSchemaMediaTypePlugin", () => {
       $schema: "https://json-schema.org/draft/2020-12/schema",
       $vocabulary: { "https://json-schema.org/draft/2020-12/vocab/core": true }
     });
-    const jsonSchema = {
-      mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect, draft202012Dialect] }),
+    const jsonSchema = jsonSchemaConfig({
+      dialects: [v1Dialect, draft202012Dialect],
       allowRetrieval: ["./", "test:/"],
       stack: nodeTransport({
         schemes: { "test:": fetcher(() => new Response(metaSchema, { headers: { "Content-Type": "application/json" } })) }
       })
-    };
+    });
     const uri = await jsonFile("custom.json", { $schema: "test:/meta" });
 
     expect((await getDocument(new Hyperjump(jsonSchema), uri)).type).to.equal("json-schema-document");

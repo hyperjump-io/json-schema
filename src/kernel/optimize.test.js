@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { jsonSchemaMediaTypes } from "../json-schema.js";
+import { jsonSchemaConfig } from "../json-schema.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import { optimize } from "./optimize.js";
@@ -10,7 +10,7 @@ import { compile as compileSchema, serialize } from "../operations/compile.js";
  * @import { Kernel } from "./kernel.d.ts"
  */
 
-const jsonSchema = { mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }) };
+const jsonSchema = jsonSchemaConfig({ dialects: [v1Dialect] });
 
 let count = 0;
 

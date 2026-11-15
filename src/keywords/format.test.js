@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { describe, test, beforeAll, afterAll, expect } from "vitest";
-import { jsonSchemaMediaTypes, extendDialect } from "../json-schema.js";
+import { jsonSchemaConfig, extendDialect } from "../json-schema.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import { fullFormats } from "../formats/full.js";
 import { compile } from "../operations/compile.js";
@@ -29,8 +29,9 @@ describe("format", () => {
   };
 
   /** @type (config?: JsonSchemaOptions & { allowRetrieval?: string[]; registry?: SchemaRegistry }) => JsonSchemaConfig */
-  const v1 = ({ allowRetrieval = [pathToFileURL(join(tmpdir(), "/")).href], registry, ...options } = {}) => ({
-    mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect], ...options }),
+  const v1 = ({ allowRetrieval = [pathToFileURL(join(tmpdir(), "/")).href], registry, ...options } = {}) => jsonSchemaConfig({
+    dialects: [v1Dialect],
+    ...options,
     allowRetrieval,
     registry
   });

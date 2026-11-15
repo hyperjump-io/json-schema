@@ -2,7 +2,7 @@ import { describe, test, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
 import { rejsonParse, Hyperjump } from "@hyperjump/browser";
-import { jsonSchemaMediaTypes } from "../../json-schema.js";
+import { jsonSchemaConfig } from "../../json-schema.js";
 import { SchemaRegistry } from "../../registry/schema-registry.js";
 import { jsonSchemaResolve } from "../../schema/resolve.js";
 import { draft07Dialect } from "../../dialects/draft-07/index.js";
@@ -78,27 +78,28 @@ describe("implicit-dialect", () => {
   // The CLI never reports it, so these are how it's used
   describe("linting from code", () => {
     test("a registry entry's dialectUri", async () => {
-      const jsonSchema = {
-        mediaTypes: jsonSchemaMediaTypes({ dialects: [draft202012Dialect] }),
+      const jsonSchema = jsonSchemaConfig({
+        dialects: [draft202012Dialect],
         registry: new SchemaRegistry([{
           schema: `{ "type": "string" }`,
           retrievalUri: "https://example.com/a",
           dialectUri: draft202012
         }])
-      };
+      });
       const results = await lintSchema(jsonSchema, "https://example.com/a", { plugins: [implicitDialect] });
 
       expect(results.map((result) => result.ruleId)).to.eql(["implicit-dialect"]);
     });
 
     test("the default dialect", async () => {
-      const jsonSchema = {
-        mediaTypes: jsonSchemaMediaTypes({ defaultDialectUri: draft202012, dialects: [draft202012Dialect] }),
+      const jsonSchema = jsonSchemaConfig({
+        defaultDialectUri: draft202012,
+        dialects: [draft202012Dialect],
         registry: new SchemaRegistry([{
           schema: `{ "type": "string" }`,
           retrievalUri: "https://example.com/a"
         }])
-      };
+      });
       const results = await lintSchema(jsonSchema, "https://example.com/a", { plugins: [implicitDialect] });
 
       expect(results.map((result) => result.ruleId)).to.eql(["implicit-dialect"]);
@@ -108,9 +109,10 @@ describe("implicit-dialect", () => {
 
 /** @type (json: string, options: { dialectUri?: string; defaultDialectUri?: string }) => Promise<VFile> */
 const lint = async (json, { dialectUri, defaultDialectUri }) => {
-  const jsonSchema = {
-    mediaTypes: jsonSchemaMediaTypes({ defaultDialectUri, dialects: [draft07Dialect, draft202012Dialect] })
-  };
+  const jsonSchema = jsonSchemaConfig({
+    defaultDialectUri,
+    dialects: [draft07Dialect, draft202012Dialect]
+  });
 
   const file = new VFile({ path: "/schemas/a.schema.json", value: json });
   const processor = unified()

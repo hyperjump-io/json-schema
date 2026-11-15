@@ -580,7 +580,7 @@ class Resolver {
       return dialect;
     }
 
-    this.#message(`The '${uri}' meta-schema describes itself, so its dialect has to be in the 'dialects' option of jsonSchemaMediaTypes.`, node, "unknown-dialect");
+    this.#message(`The '${uri}' meta-schema describes itself, so its dialect has to be in the 'dialects' option of jsonSchemaConfig.`, node, "unknown-dialect");
   }
 
   /**
