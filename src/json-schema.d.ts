@@ -1,4 +1,4 @@
-import type { HyperjumpConfig, Json, MediaTypePlugin, ReadonlyJson } from "@hyperjump/browser";
+import type { CacheStore, HyperjumpConfig, Json, MediaTypePlugin, ReadonlyJson } from "@hyperjump/browser";
 import type { Keyword } from "./keyword.d.ts";
 import type { Dialect, DialectConfig, DialectExtension, DialectKeywords, DialectSchema, UnknownKeywords, Vocabulary, VocabularyConfig } from "./dialect.d.ts";
 import type { Format } from "./format.d.ts";
@@ -67,8 +67,9 @@ export type JsonSchemaOptions<D extends DialectConfig<any, any, any> = DialectCo
  * ```
  *
  * Without a `stack`, each session has one of its own, so calls don't share
- * an HTTP cache. To share one, put a stack with one in the config, and make
- * the config once.
+ * an HTTP cache. To share one, make the config once with
+ * `jsonSchemaConfig({ httpCache: new MemoryCacheStore() })`, or with a stack
+ * that has one.
  */
 export type JsonSchemaConfig<S = any> = HyperjumpConfig & {
   /**
@@ -148,6 +149,19 @@ export type JsonSchemaConfigOptions<D extends DialectConfig<any, any, any> = Dia
      * so JSON is read by the plugin that finds schemas in it.
      */
     mediaTypes?: readonly M[];
+
+    /**
+     * Put `@hyperjump/browser`'s HTTP cache on top of the config's `stack`,
+     * or the default stack, keeping responses in this store, so every call
+     * and session made with the config shares it, and a remote schema isn't
+     * retrieved again while it's fresh. The store is where responses are
+     * kept: browser's `MemoryCacheStore` or `FileCacheStore`, or your own
+     * `CacheStore`. Make the config once, or each one has a cache of its
+     * own. For the cache's other options, put it on the `stack` yourself.
+     * It's for Node.js: a browser caches responses itself, and browser's
+     * HTTP cache throws there.
+     */
+    httpCache?: CacheStore;
   };
 
 /**

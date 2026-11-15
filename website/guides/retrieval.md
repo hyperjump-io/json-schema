@@ -103,22 +103,40 @@ compiled. That matters for a schema on a server that you compile more than
 once, like in a service that compiles for each request. Files are read
 each time anyway, and a schema in a registry isn't retrieved.
 
-For calls to share an HTTP cache, give the config a `stack` with one, and
-make the config once:
+For calls to share an HTTP cache, give the config one with the `httpCache`
+option, and make the config once. Its value is where the cache keeps
+responses:
 
 ```typescript
-import { compose, defaultStack, httpCache } from "@hyperjump/browser";
+import { MemoryCacheStore } from "@hyperjump/browser";
 
 const config = jsonSchemaConfig({
   dialects: [v1Dialect],
   allowRetrieval: ["./", "https://schemas.example.com/"],
-  stack: compose(httpCache())(defaultStack())
+  httpCache: new MemoryCacheStore()
 });
 ```
 
-Every call and session made with this config uses the same cache. The
-results are the same without it. In a browser you don't need it, because
-the browser caches responses already.
+Every call and session made with this config uses the same cache, which
+keeps a response as long as its caching headers say it's fresh. The
+results are the same without it. If the config has a `stack`, the cache
+goes on top of it.
+
+The store can be any of these:
+
+- `new MemoryCacheStore()` keeps responses in memory, for as long as the
+  process runs. It keeps at most 1000 URLs.
+- `new FileCacheStore({ directory })` keeps them on disk, so they outlive
+  the process.
+- Your own, like one that keeps responses in Redis. A store is an object
+  with `match`, `put`, and `delete`. See
+  [browser's HTTP caching](https://github.com/hyperjump-io/browser/blob/v2/website/http-caching.md).
+
+For the cache's other options, like a shared cache, put browser's
+`httpCache` on the config's `stack` yourself.
+
+It's for Node.js. In a browser you don't need it, because the browser
+caches responses already, and setting it throws.
 
 Retrieval comes from `@hyperjump/browser`. These work the same way here,
 and its docs cover them:

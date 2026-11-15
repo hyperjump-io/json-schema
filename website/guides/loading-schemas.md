@@ -178,21 +178,33 @@ By default, only files in the working directory can be retrieved. See
 A schema at an `http:` or `https:` URL is retrieved if `allowRetrieval`
 allows it. Nothing on the network is allowed by default.
 
+If you expect to retrieve schemas over HTTP, give the config an HTTP cache
+too, with `httpCache`. Each call has a session of its own, so without one,
+every call retrieves its schemas again, even the same ones. With one, a
+schema is retrieved again only when its caching headers say it's stale.
+Make the config once, so every call shares its cache.
+
 ```typescript
+import { MemoryCacheStore } from "@hyperjump/browser";
+
 const config = jsonSchemaConfig({
   dialects: [v1Dialect],
-  allowRetrieval: ["./", "https://schemas.example.com/"]
+  allowRetrieval: ["./", "https://schemas.example.com/"],
+  httpCache: new MemoryCacheStore()
 });
 
 const uri = "https://schemas.example.com/person";
 const isPerson = await validator(config, uri);
 ```
 
+The store is where the cache keeps responses. `MemoryCacheStore` keeps them
+for as long as the process runs, and `FileCacheStore` keeps them on disk.
+See [Retrieving less](retrieval.md#retrieving-less). In a browser, leave
+`httpCache` out, because the browser caches responses itself.
+
 The response must be `application/schema+json`, or `application/json` with
 a `$schema` that's a dialect. A schema that's been retrieved is reused for
-the life of the session. Each call has a session of its own, so a call
-retrieves the schema again, unless the config has an HTTP cache. See
-[Retrieving less](retrieval.md#retrieving-less). To send credentials, see
+the life of the session. To send credentials, see
 [Controlling retrieval](retrieval.md#sending-credentials).
 
 ## When a schema isn't found

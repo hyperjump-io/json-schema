@@ -49,7 +49,8 @@ config.mediaTypes[0].definitions.dialects;
 ### How schemas are found
 
 These options are `@hyperjump/browser`'s, and they're in the config as
-they are.
+they are, except `httpCache`, which `jsonSchemaConfig` puts on the
+`stack`.
 
 | Option | Default | What it does |
 | --- | --- | --- |
@@ -57,7 +58,8 @@ they are.
 | `registry` | None | Schemas for every call and session, like custom meta-schemas. See [Loading schemas](loading-schemas.md#schemas-for-every-call). |
 | `allowRetrieval` | `["./"]` | The URLs schemas can be retrieved from. See [Controlling retrieval](retrieval.md). |
 | `headers` | None | Headers to send with requests, such as credentials, by URL. See [Controlling retrieval](retrieval.md#sending-credentials). |
-| `stack` | `http:`, `https:`, and `file:`, one for each session | What schemas are retrieved through, such as a transport with more URL schemes or an HTTP cache that calls share. See [Retrieving less](retrieval.md#retrieving-less) and [browser's layers](https://github.com/hyperjump-io/browser/blob/v2/website/layers.md). |
+| `stack` | `http:`, `https:`, and `file:`, one for each session | What schemas are retrieved through, such as a transport with more URL schemes. See [browser's layers](https://github.com/hyperjump-io/browser/blob/v2/website/layers.md). |
+| `httpCache` | None | An HTTP cache every call and session made with the config shares, on top of the `stack`, which keeps responses in this store: a `MemoryCacheStore`, a `FileCacheStore`, or your own. For Node.js. See [Retrieving less](retrieval.md#retrieving-less). |
 
 The config takes `@hyperjump/browser`'s other options too, like
 `maxRedirects`.

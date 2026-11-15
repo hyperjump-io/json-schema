@@ -80,14 +80,30 @@ Built 2026-11-14.
 
 Decided 2026-11-14: as browser does it. Calls share an HTTP cache when the
 config they're given has a `stack` with one, and there's none by default.
+`jsonSchemaConfig`'s `httpCache` option puts one on the stack.
 
 ```js
 const config = jsonSchemaConfig({
   dialects: [v1Dialect],
   // Only for calls to share an HTTP cache
-  stack: compose(httpCache())(defaultStack())
+  httpCache: new MemoryCacheStore()
 });
 ```
+
+- `httpCache` is the cache's store, where it keeps responses: browser's
+  `MemoryCacheStore` or `FileCacheStore`, or the application's own
+  `CacheStore`. `jsonSchemaConfig` makes the cache, on top of the options'
+  `stack` or browser's default stack
+  (`compose(httpCache({ store }))(stack)`), so every call and session made
+  with the config shares it. Rejected: `true` for one in memory, which
+  hides that there's a choice of where, and browser's `HttpCacheOptions`,
+  whose other options, like `shared`, are rare enough to put the cache on
+  the `stack` for. Added after
+  `jsonSchemaConfig`, because writing the stack out meant knowing
+  browser's layers to retrieve less. It's still the application's choice,
+  so the default stays without one. In a browser it throws, as browser's
+  HTTP cache does, because the browser caches responses itself. Bundles
+  have browser's stub for it, about 0.3 kB.
 
 - Every session of a `JsonSchema` shares its stack, which has an HTTP
   cache in Node.js (`#default-stack`). That decides for the application

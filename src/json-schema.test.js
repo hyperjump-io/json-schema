@@ -6,7 +6,7 @@ import { cwd } from "node:process";
 import { pathToFileURL } from "node:url";
 import { describe, test, beforeEach, expect } from "vitest";
 import { createServer } from "node:http";
-import { compose, defaultMediaTypes, defaultStack, fetcher, get, httpCache, Hyperjump, jsonPointerGet, jsonValue, Trace, jrefMediaType } from "@hyperjump/browser";
+import { defaultMediaTypes, fetcher, get, Hyperjump, jsonPointerGet, jsonValue, MemoryCacheStore, Trace, jrefMediaType } from "@hyperjump/browser";
 import { jsonSchemaConfig, extendDialect } from "./json-schema.js";
 import { jsonSchemaMediaTypes } from "./media-types.js";
 import { v1Dialect, v1DialectUri } from "./dialects/v1/index.js";
@@ -240,7 +240,7 @@ describe("jsonSchemaMediaTypes", () => {
       expect(await getDialect(session, dialect.uri)).to.eql(dialect);
     });
 
-    test("calls share an HTTP cache when the config's stack has one", async () => {
+    test("calls share an HTTP cache when the config has one", async () => {
       let requests = 0;
       const server = createServer((_request, response) => {
         requests++;
@@ -251,9 +251,8 @@ describe("jsonSchemaMediaTypes", () => {
       try {
         const { port } = /** @type import("node:net").AddressInfo */ (server.address());
         const origin = `http://127.0.0.1:${port}/`;
-        const mediaTypes = jsonSchemaMediaTypes({ dialects: [v1Dialect] });
-        const cached = { mediaTypes, allowRetrieval: [origin], stack: compose(httpCache())(defaultStack()) };
-        const uncached = { mediaTypes, allowRetrieval: [origin] };
+        const cached = jsonSchemaConfig({ dialects: [v1Dialect], allowRetrieval: [origin], httpCache: new MemoryCacheStore() });
+        const uncached = jsonSchemaConfig({ dialects: [v1Dialect], allowRetrieval: [origin] });
 
         expect(validatorFor(await compile(cached, `${origin}schema`))(42)).to.equal(false);
         expect(validatorFor(await compile(cached, `${origin}schema`))(42)).to.equal(false);
@@ -265,6 +264,43 @@ describe("jsonSchemaMediaTypes", () => {
       } finally {
         server.close();
       }
+    });
+
+    test("the HTTP cache goes on top of the config's stack", async () => {
+      let requests = 0;
+      const stack = fetcher(() => {
+        requests++;
+        return new Response(JSON.stringify({ $schema: v1DialectUri, type: "string" }), {
+          headers: { "content-type": "application/schema+json", "cache-control": "max-age=60" }
+        });
+      });
+      const config = jsonSchemaConfig({ dialects: [v1Dialect], allowRetrieval: ["https://example.com/"], stack, httpCache: new MemoryCacheStore() });
+
+      await compile(config, "https://example.com/schema");
+      await compile(config, "https://example.com/schema");
+      expect(requests).to.equal(1);
+    });
+
+    test("the HTTP cache keeps responses in the store it's given", async () => {
+      /** @type Map<string, import("@hyperjump/browser").CachedEntry[]> */
+      const entries = new Map();
+      /** @type import("@hyperjump/browser").CacheStore */
+      const store = {
+        match: (url) => entries.get(url) ?? [],
+        put: (entry) => {
+          entries.set(entry.url, [entry]);
+        },
+        delete: (url) => {
+          entries.delete(url);
+        }
+      };
+      const stack = fetcher(() => new Response(JSON.stringify({ $schema: v1DialectUri, type: "string" }), {
+        headers: { "content-type": "application/schema+json", "cache-control": "max-age=60" }
+      }));
+      const config = jsonSchemaConfig({ dialects: [v1Dialect], allowRetrieval: ["https://example.com/"], stack, httpCache: store });
+
+      await compile(config, "https://example.com/schema");
+      expect([...entries.keys()]).to.eql(["https://example.com/schema"]);
     });
 
     test("sessions retrieve through the config's stack, as it is", async () => {
