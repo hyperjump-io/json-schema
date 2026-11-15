@@ -1,9 +1,8 @@
 import { describe, test, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
-import { rejsonParse } from "@hyperjump/browser";
+import { rejsonParse, Hyperjump } from "@hyperjump/browser";
 import { jsonSchemaMediaTypes } from "../../json-schema.js";
-import { JsonSchemaHyperjump } from "../../session.js";
 import { SchemaRegistry } from "../../registry/schema-registry.js";
 import { jsonSchemaResolve } from "../../schema/resolve.js";
 import { draft04Dialect } from "../../dialects/draft-04/index.js";
@@ -150,7 +149,7 @@ describe("invalid-default-or-example", () => {
  */
 const lint = async (json) => {
   const jsonSchema = { mediaTypes: jsonSchemaMediaTypes({ dialects: [draft04Dialect, draft202012Dialect] }) };
-  const session = new JsonSchemaHyperjump({ ...jsonSchema, registry: new SchemaRegistry([{ schema: json, retrievalUri: uri }]) });
+  const session = new Hyperjump({ ...jsonSchema, registry: new SchemaRegistry([{ schema: json, retrievalUri: uri }]) });
 
   const file = new VFile(json);
   const processor = unified()

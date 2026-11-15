@@ -2,7 +2,6 @@ import { relativeFileUrl } from "@hyperjump/browser";
 import { toAbsoluteIri, urlToIri } from "@hyperjump/uri";
 import { parse as parseContentType } from "content-type";
 import { resolveSchemaText } from "./resolve-text.js";
-import { isSession } from "../session.js";
 import { DocumentResponse } from "../registry/document-response.js";
 
 /**
@@ -16,12 +15,6 @@ export const schemaMediaType = Object.freeze({
 
   /** @type typeof API.schemaMediaType.parse */
   parse: async (response, session) => {
-    // Resolving a schema can mean retrieving its meta-schema, which belongs
-    // to the session
-    if (!isSession(session)) {
-      throw Error("A schema can only be retrieved in a JsonSchemaHyperjump. Use 'new JsonSchemaHyperjump(config)' to start one.");
-    }
-
     // A registry's schema is resolved already
     if (response instanceof DocumentResponse) {
       return /** @type API.JsonSchemaMediaTypeDocument */ (response.document);
@@ -31,7 +24,7 @@ export const schemaMediaType = Object.freeze({
     // where it comes in
     const uri = toAbsoluteIri(urlToIri(new URL(response.url)));
     const { schema, profile } = contentTypeParameters(response);
-    return /** @type API.JsonSchemaMediaTypeDocument */ (await resolveSchemaText(await response.text(), session, uri, schema ?? profile));
+    return /** @type API.JsonSchemaMediaTypeDocument */ (await resolveSchemaText(await response.text(), /** @type any */ (session), uri, schema ?? profile));
   },
 
   /**

@@ -5,7 +5,9 @@ it, including the documents it retrieves and the dialects it builds from
 meta-schemas. All of that is thrown away with the session.
 
 Each operation, like `validator` or `bundle`, starts a session of its own.
-Start one yourself with `new JsonSchemaHyperjump(config)` to:
+A session is [`@hyperjump/browser`](https://github.com/hyperjump-io/browser/blob/v2/website/sessions.md)'s,
+a `Hyperjump`, made from your config. Start one yourself with
+`new Hyperjump(config)` to:
 
 - **Browse schemas** with the
   [`@hyperjump/browser`](https://github.com/hyperjump-io/browser/blob/v2/website/README.md)
@@ -15,9 +17,10 @@ Start one yourself with `new JsonSchemaHyperjump(config)` to:
   [Annotations](../guides/annotations.md#reading-an-annotation).
 
 ```typescript
-import { JsonSchemaHyperjump, get } from "@hyperjump/json-schema";
+import { Hyperjump } from "@hyperjump/browser";
+import { get } from "@hyperjump/json-schema";
 
-const session = new JsonSchemaHyperjump({ ...config, registry });
+const session = new Hyperjump({ ...config, registry });
 
 const name = await get(
   session,
@@ -83,7 +86,7 @@ In TypeScript, the type of what you get comes from the session. A session
 from a config you created gives a node of one of its media types: a
 schema's node, a JSON node, or another, like a JRef node if the config has
 `jrefMediaType`. A schema's node has the `type` `"json-schema"`. A session
-that's only typed as `JsonSchemaHyperjump`, like a function's parameter,
+that's only typed as `Hyperjump<JsonSchemaConfig>`, like a function's parameter,
 could have any media types, so what it gives is `unknown` until you check
 it.
 
@@ -95,13 +98,13 @@ reference's node as `referencedFrom`, so the session knows which document
 the reference is in.
 
 ```typescript
+import { Hyperjump } from "@hyperjump/browser";
 import {
-  JsonSchemaHyperjump, get, getDocument, isSchemaDocument, isSchemaNode,
-  type JsonSchemaNode
+  get, getDocument, isSchemaDocument, isSchemaNode, type JsonSchemaNode
 } from "@hyperjump/json-schema";
 import { visitReferences } from "@hyperjump/json-schema/lint";
 
-const session = new JsonSchemaHyperjump(config);
+const session = new Hyperjump(config);
 const person = await getDocument(session, "https://example.com/person");
 if (!isSchemaDocument(person)) {
   throw Error("Not a schema");

@@ -51,8 +51,8 @@ instance: the config, with its `registry`, the stack, and the definitions
 by URI in `keywords`, `formats`, `dialects`, and `vocabularies`, which the
 media type's `definitions` are now. The tables have no prototype, so a URI
 like `constructor` isn't found in them. A session was
-`new JsonSchemaHyperjump(jsonSchema)`, and is
-`new JsonSchemaHyperjump(config)`.
+`new JsonSchemaHyperjump(jsonSchema)`, and is browser's,
+`new Hyperjump(config)` (see [JSON Schema as a media type](json-schema-media-type.md)).
 
 - The names say what each makes. The argument to `configureJsonSchema` is
   configuration, not a schema, which `createJsonSchema` made it sound

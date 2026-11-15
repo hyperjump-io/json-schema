@@ -1,14 +1,13 @@
-import { getDocument, Hyperjump, relativeFileUrl } from "@hyperjump/browser";
-import { encodeIriFragment, urlToIri } from "@hyperjump/uri";
+import { getDocument, relativeFileUrl } from "@hyperjump/browser";
+import { encodeIriFragment } from "@hyperjump/uri";
 import { toId } from "./identifiers.js";
 import { definitionsOf } from "./definition-of.js";
-import { SessionRegistries } from "./registry/session-registries.js";
-import { DocumentResponse } from "./registry/document-response.js";
 import { isSchemaDocument } from "./schema/schema-nodes.js";
 import { withValidateFormats } from "./dialects/extend-dialect.js";
 import unknownKeyword, { keywordDefinitionUri } from "./keywords/unknown.js";
 
 /**
+ * @import { Hyperjump } from "@hyperjump/browser"
  * @import { Dialect } from "./dialect.d.ts"
  * @import { JsonSchemaConfig } from "./json-schema.d.ts"
  * @import { JsonSchemaDocumentNode, JsonSchemaNode } from "./schema/schema-ast.d.ts"
@@ -20,7 +19,8 @@ import unknownKeyword, { keywordDefinitionUri } from "./keywords/unknown.js";
 const v1DialectUri = "https://json-schema.org/v1";
 
 /**
- * What a session keeps for schemas, in its state
+ * What a session keeps for schemas, in its state, made the first time it's
+ * needed
  *
  * - `dialects` are the dialects built from meta-schemas in this session.
  * - `pendingDialects` are the dialects whose meta-schemas are being
@@ -29,7 +29,6 @@ const v1DialectUri = "https://json-schema.org/v1";
  *   the dialects their meta-schemas are waiting on.
  *
  * @typedef {{
- *   registries: SessionRegistries,
  *   dialects: Record<string, Dialect>,
  *   pendingDialects: Record<string, Promise<Dialect>>,
  *   loading: Map<Id, Set<Id>>
@@ -39,86 +38,19 @@ const v1DialectUri = "https://json-schema.org/v1";
 /** The key of a session's schemas in its state */
 const schemasKey = {};
 
-/** @type (session: API.JsonSchemaHyperjump) => Schemas */
-const schemasOf = (session) => session.state(schemasKey, () => {
-  throw Error("A schema can only be retrieved in a JsonSchemaHyperjump. Use 'new JsonSchemaHyperjump(config)' to start one.");
-});
-
-/**
- * A browser session that finds schemas in its config's `registry` before it
- * retrieves anything. It's a `Hyperjump`, so it's traced, observed, and
- * closed like any other.
- */
-export class JsonSchemaHyperjump extends Hyperjump {
-  /**
-   * @param {JsonSchemaConfig} config
-   */
-  constructor(config) {
-    super(config);
-
-    const session = /** @type API.JsonSchemaHyperjump */ (/** @type unknown */ (this));
-    this.state(schemasKey, () => /** @type Schemas */ ({
-      registries: new SessionRegistries(session, config.registry),
-      dialects: {},
-      pendingDialects: {},
-      loading: new Map()
-    }));
-  }
-
-  // A registry's schema isn't retrieved, so it's found before the session
-  // fetches, and `allowRetrieval` doesn't apply to it. A registry is keyed by
-  // IRI, so the URL is converted where it comes in.
-  /** @type Hyperjump["fetch"] */
-  async fetch(input, init) {
-    const url = new URL(input instanceof Request ? input.url : input, this.contextUrl);
-    const { registries } = schemasOf(/** @type API.JsonSchemaHyperjump */ (/** @type unknown */ (this)));
-    const registryDocument = registries.get(toId(urlToIri(url)));
-    if (registryDocument) {
-      return new DocumentResponse(await registryDocument);
-    }
-
-    // A failure might be explained by a schema in a registry that can't be
-    // identified yet
-    let response;
-    let failure;
-    try {
-      response = await super.fetch(input, init);
-      if (response.ok) {
-        return response;
-      }
-      failure = Error(`'${relativeFileUrl(url.href)}' can't be used, because its response's status is ${response.status}`, { cause: { code: "ERR_HTTP_STATUS", status: response.status } });
-    } catch (error) {
-      failure = error;
-    }
-
-    const reasons = registries.missReasons();
-    if (reasons.length === 0) {
-      if (response) {
-        return response;
-      }
-      throw failure;
-    }
-
-    await response?.body?.cancel();
-    throw new AggregateError([failure, ...reasons], reasons[0].message);
-  }
-}
-
-/**
- * @param {object} context
- * @returns {context is API.JsonSchemaHyperjump}
- */
-export const isSession = (context) => context instanceof JsonSchemaHyperjump;
-
-/** @type typeof API.registriesOf */
-export const registriesOf = (session) => schemasOf(session).registries;
+/** @type (session: Hyperjump<JsonSchemaConfig>) => Schemas */
+const schemasOf = (session) => session.state(schemasKey, () => ({
+  dialects: {},
+  pendingDialects: {},
+  loading: new Map()
+}));
 
 export { get, getDocument } from "@hyperjump/browser";
 
 /** @type typeof API.hasDialect */
 export const hasDialect = (session, uri) => dialectOf(session, toId(uri)) !== undefined;
 
-/** @type (session: API.JsonSchemaHyperjump, uri: Id) => Dialect | undefined */
+/** @type (session: Hyperjump<JsonSchemaConfig>, uri: Id) => Dialect | undefined */
 const dialectOf = (session, uri) => definitionsOf(session.config).dialects[uri] ?? schemasOf(session).dialects[uri];
 
 /** @type typeof API.getDialect */
@@ -147,7 +79,7 @@ export const getDialect = async (session, dialectUri, options = {}) => {
  * dialect, that dialect is waiting on the one it asked for. If that one is
  * waiting on this one, neither will ever finish.
  *
- * @type (session: API.JsonSchemaHyperjump, referencedFrom: Id, uri: Id) => void
+ * @type (session: Hyperjump<JsonSchemaConfig>, referencedFrom: Id, uri: Id) => void
  */
 const waitOn = (session, referencedFrom, uri) => {
   const { loading } = schemasOf(session);
@@ -178,7 +110,7 @@ const isWaitingOn = (loading, uri, target, visited = new Set()) => {
   return false;
 };
 
-/** @type (session: API.JsonSchemaHyperjump, uri: Id) => Promise<Dialect> */
+/** @type (session: Hyperjump<JsonSchemaConfig>, uri: Id) => Promise<Dialect> */
 const loadDialect = async (session, uri) => {
   const { loading, dialects } = schemasOf(session);
   loading.set(uri, new Set());
@@ -220,7 +152,7 @@ export const annotation = (session, node, keyword, dialectUri = v1DialectUri) =>
  * registered without it. A name that isn't a keyword in the dialect is an
  * unknown keyword.
  *
- * @type (session: API.JsonSchemaHyperjump, keyword: string, dialectUri: string) => string
+ * @type (session: Hyperjump<JsonSchemaConfig>, keyword: string, dialectUri: string) => string
  */
 const keywordUri = (session, keyword, dialectUri) => {
   if (keywordDefinitionUri(keyword) in definitionsOf(session.config).keywords) {

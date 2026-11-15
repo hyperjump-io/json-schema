@@ -1,15 +1,16 @@
 import type { Plugin } from "unified";
 import type { JsonDocumentNode } from "@hyperjump/browser";
-import type { JsonSchemaHyperjump } from "../session.d.ts";
 import type { JsonSchemaDocumentNode } from "./schema-ast.d.ts";
 import type { SchemaMessage } from "./schema-error.d.ts";
+import type { Hyperjump } from "@hyperjump/browser";
+import type { JsonSchemaConfig } from "../json-schema.d.ts";
 
 export type JsonSchemaResolveOptions = {
   /**
    * Provides the dialects and keywords. Meta-schemas are retrieved in this
    * session, and dialects built from them belong to it.
    */
-  session: JsonSchemaHyperjump;
+  session: Hyperjump<JsonSchemaConfig>;
 
   /**
    * The dialect to use if the document doesn't have `$schema`, such as the
@@ -52,6 +53,6 @@ export const jsonSchemaResolve: Plugin<[JsonSchemaResolveOptions], JsonDocumentN
 declare module "vfile" {
   interface DataMap {
     /** The session the schema was resolved in. See {@link jsonSchemaResolve}. */
-    jsonSchemaSession: JsonSchemaHyperjump;
+    jsonSchemaSession: Hyperjump<JsonSchemaConfig>;
   }
 }

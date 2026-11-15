@@ -14,9 +14,9 @@ import { BASIC } from "./output/index.js";
 import { compile, restore, serialize } from "./operations/compile.js";
 import { annotate, validate, validator } from "./operations/validate.js";
 import { annotatorFor, validatorFor } from "./operations/validate-compiled.js";
-import { JsonSchemaHyperjump, get, getDocument } from "./session.js";
+import { get, getDocument } from "./session.js";
 import { isSchemaDocument, isSchemaNode } from "./schema/schema-nodes.js";
-import { jrefMediaType, jrefStep } from "@hyperjump/browser";
+import { jrefMediaType, jrefStep, Hyperjump } from "@hyperjump/browser";
 import type { DocumentNode, FollowedNode, JrefNode, JsonNode, MediaTypePlugin } from "@hyperjump/browser";
 import type { JsonSchemaNode } from "./schema/schema-ast.d.ts";
 
@@ -81,7 +81,7 @@ await validate(v1Only, "https://example.com/schema", "foo");
 
 // An operation takes a config, not a session
 // @ts-expect-error
-await validate(new JsonSchemaHyperjump(v1Only), "https://example.com/schema", "foo");
+await validate(new Hyperjump(v1Only), "https://example.com/schema", "foo");
 
 // A union of dialects is told apart by `$schema`
 const both = { mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect, draft202012Dialect] }) };
@@ -146,27 +146,27 @@ await validate({}, "https://example.com/schema", 42);
 type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
 const yes = <T extends true>(_is?: T) => {};
 
-const found = await get(new JsonSchemaHyperjump(v1Only), "https://example.com/schema");
+const found = await get(new Hyperjump(v1Only), "https://example.com/schema");
 yes<Equal<typeof found, FollowedNode<JsonSchemaNode | JsonNode>>>();
 if (found.type === "json-schema") {
   found satisfies FollowedNode<JsonSchemaNode>;
-  const stepped = await jrefStep(new JsonSchemaHyperjump(v1Only), "properties", found);
+  const stepped = await jrefStep(new Hyperjump(v1Only), "properties", found);
   yes<Equal<typeof stepped, FollowedNode<JsonSchemaNode | JsonNode>>>();
 }
 
 type OtherNode = JsonNode<{ type: "other" }>;
 declare const otherMediaType: MediaTypePlugin<DocumentNode<OtherNode>>;
 const withOther = { mediaTypes: [...jsonSchemaMediaTypes({ dialects: [v1Dialect] }), jrefMediaType, otherMediaType] };
-const foundOther = await get(new JsonSchemaHyperjump(withOther), "https://example.com/schema");
+const foundOther = await get(new Hyperjump(withOther), "https://example.com/schema");
 yes<Equal<typeof foundOther, FollowedNode<JsonSchemaNode | JsonNode | JrefNode | OtherNode>>>();
 
 // A session whose type doesn't say its media types could have any
-const unknownNode = await get(new JsonSchemaHyperjump(jsonSchema), "https://example.com/schema");
+const unknownNode = await get(new Hyperjump(jsonSchema), "https://example.com/schema");
 yes<Equal<typeof unknownNode, unknown>>();
 if (isSchemaNode(unknownNode)) {
   unknownNode.dialectUri satisfies string;
 }
-const anyDocument = await getDocument(new JsonSchemaHyperjump(jsonSchema), "https://example.com/schema");
+const anyDocument = await getDocument(new Hyperjump(jsonSchema), "https://example.com/schema");
 if (isSchemaDocument(anyDocument)) {
   anyDocument.anchors satisfies Record<string, string>;
 }

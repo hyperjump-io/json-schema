@@ -55,8 +55,7 @@ written. Custom keywords are part of the type.
   list, whatever else is in it. The plugin carries `S` in a property that's
   only in its type (`[schemaType]`), which nothing reads at runtime.
   `extendDialect` returns `DialectConfig<K & E, …>`, so the keywords it adds
-  are in the type. A session is a `JsonSchemaHyperjump<C>`, with its
-  config's type, so its media types are in the type of what it finds (see
+  are in the type. A session is a `Hyperjump<C>`, with its config's type, so its media types are in the type of what it finds (see
   [Sessions](sessions/README.md)).
 - **A schema an operation is given as a value is checked.** `validate`,
   `validator`, `annotate`, `annotator`, `compile`, and `bundle` take

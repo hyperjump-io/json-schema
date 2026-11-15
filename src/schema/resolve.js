@@ -12,7 +12,6 @@ import { getDialect } from "../session.js";
  * @import { Node } from "unist"
  * @import { VFile } from "vfile"
  * @import { JsonDocumentNode, JsonErrorNode } from "@hyperjump/browser"
- * @import { JsonSchemaHyperjump } from "../session.d.ts"
  * @import { SchemaMessage } from "./schema-error.d.ts"
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode, JsonSchemaTolerantNode } from "./schema-ast.d.ts"
  * @import { Keyword, ResolveContext, Shape } from "../keyword.d.ts"
@@ -20,6 +19,8 @@ import { getDialect } from "../session.js";
  * @import { NormalizedIri } from "@hyperjump/uri"
  * @import { Id } from "../identifiers.js"
  * @import * as API from "./resolve.d.ts"
+ * @import { Hyperjump } from "@hyperjump/browser"
+ * @import { JsonSchemaConfig } from "../json-schema.d.ts"
  */
 
 /**
@@ -78,7 +79,7 @@ export function jsonSchemaResolve(options) {
 }
 
 class Resolver {
-  /** @type JsonSchemaHyperjump */
+  /** @type Hyperjump<JsonSchemaConfig> */
   #session;
 
   /**
@@ -102,7 +103,7 @@ class Resolver {
   #documentUri;
 
   /**
-   * @param {JsonSchemaHyperjump} session
+   * @param {Hyperjump<JsonSchemaConfig>} session
    * @param {JsonDocumentNode} tree
    * @param {Id} uri
    */

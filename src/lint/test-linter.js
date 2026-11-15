@@ -1,7 +1,6 @@
 import { unified } from "unified";
-import { rejsonParse, rejsonStringify } from "@hyperjump/browser";
+import { rejsonParse, rejsonStringify, Hyperjump } from "@hyperjump/browser";
 import { jsonSchemaMediaTypes } from "../json-schema.js";
-import { JsonSchemaHyperjump } from "../session.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
 import { v1Dialect } from "../dialects/v1/index.js";
 import { draft04Dialect } from "../dialects/draft-04/index.js";
@@ -35,5 +34,5 @@ export const linter = unified()
  * @this {Processor}
  */
 function resolveInNewSession() {
-  return /** @type Function */ (jsonSchemaResolve).call(this, { session: new JsonSchemaHyperjump(jsonSchema) });
+  return /** @type Function */ (jsonSchemaResolve).call(this, { session: new Hyperjump(jsonSchema) });
 }

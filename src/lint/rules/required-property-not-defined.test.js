@@ -1,10 +1,9 @@
 import { describe, test, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
-import { rejsonParse } from "@hyperjump/browser";
+import { rejsonParse, Hyperjump } from "@hyperjump/browser";
 import { linter } from "../test-linter.js";
 import { jsonSchemaMediaTypes } from "../../json-schema.js";
-import { JsonSchemaHyperjump } from "../../session.js";
 import { SchemaRegistry } from "../../registry/schema-registry.js";
 import { jsonSchemaResolve } from "../../schema/resolve.js";
 import { draft202012Dialect } from "../../dialects/draft-2020-12/index.js";
@@ -158,7 +157,7 @@ const reasonsWithBase = async (json) => {
   const file = new VFile({ path: "/schemas/a.schema.json", value: json });
   const processor = unified()
     .use(rejsonParse)
-    .use(jsonSchemaResolve, { session: new JsonSchemaHyperjump({ ...jsonSchema, registry }) })
+    .use(jsonSchemaResolve, { session: new Hyperjump({ ...jsonSchema, registry }) })
     .use(requiredPropertyNotDefined);
   await processor.run(processor.parse(file), file);
   return file.messages.map((message) => message.reason);

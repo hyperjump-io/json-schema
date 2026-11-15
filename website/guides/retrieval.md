@@ -69,7 +69,7 @@ const isPerson = await validator(config, uri, {
   allowRetrieval: ["./schemas/"]
 });
 
-const session = new JsonSchemaHyperjump({ ...config, allowRetrieval: ["./schemas/"] });
+const session = new Hyperjump({ ...config, allowRetrieval: ["./schemas/"] });
 ```
 
 Use it when parts of your application trust different things. For example,

@@ -28,7 +28,9 @@ import { entriesOf } from "./registry-entries.js";
 
 /**
  * `fromRegistry` is set if the entry was identified with a dialect another
- * entry in the same registry, or the registry a value is added to, defines.
+ * entry in the same registry defines. An entry that's waiting for its
+ * dialect, or can't be identified, has the URI it's probably identified by,
+ * if its root has an `$id` or `id`, so a lookup that misses it can say why.
  *
  * @typedef {{
  *   uri: Id;
@@ -37,14 +39,15 @@ import { entriesOf } from "./registry-entries.js";
  * } | {
  *   error: Error;
  *   fromRegistry?: true;
+ *   probably?: Id;
  * } | {
  *   waitingFor: Id;
+ *   probably?: Id;
  * }} Identification
  */
 
 /**
- * Finds a dialect defined by an entry in the same registry, or the
- * registry a value is added to
+ * Finds a dialect defined by an entry in the same registry
  *
  * @typedef {(dialectUri: Id) => DialectDefinition | undefined} RegistryDialects
  */
@@ -61,16 +64,11 @@ const identifications = new WeakMap();
 /**
  * An index of a registry for some definitions: each entry by the URI it's
  * identified by with their dialects. A registry never changes, and neither
- * do the definitions, so neither does its index. A schema an
- * operation is given as a value can use the dialects defined in the
- * session's registry, so its index is made with that registry's index.
+ * do the definitions, so neither does its index.
  */
 export class RegistryIndex {
   /** @type JsonSchemaDefinitions */
   #definitions;
-
-  /** @type RegistryIndex | undefined */
-  #dialectsFrom;
 
   /** @type Map<Id, IndexedEntry[]> */
   #byUri;
@@ -84,32 +82,30 @@ export class RegistryIndex {
 
   /**
    * Entries whose dialect isn't defined yet, with the dialect they're
-   * waiting for
+   * waiting for and the URI they're probably identified by
    *
-   * @type Map<RegistryEntry, Id>
+   * @type Map<RegistryEntry, { waitingFor: Id; probably?: Id }>
    */
   #waiting;
 
   /**
-   * The problems with entries that can't be identified and don't have a
-   * retrieval URI to be found by
+   * Entries that can't be identified and don't have a retrieval URI to be
+   * found by, with their problem and the URI they're probably identified by
    *
-   * @type Error[]
+   * @type Map<RegistryEntry, { error: Error; probably?: Id }>
    */
   #unidentified;
 
   /**
    * @param {JsonSchemaDefinitions} definitions
    * @param {SchemaRegistry} registry
-   * @param {RegistryIndex} [dialectsFrom]
    */
-  constructor(definitions, registry, dialectsFrom) {
+  constructor(definitions, registry) {
     this.#definitions = definitions;
-    this.#dialectsFrom = dialectsFrom;
     this.#byUri = new Map();
     this.#dialects = new Map();
     this.#waiting = new Map();
-    this.#unidentified = [];
+    this.#unidentified = new Map();
 
     for (const entry of entriesOf(registry)) {
       this.#identify(entry);
@@ -144,7 +140,7 @@ export class RegistryIndex {
       if (!wasWaiting && entry.retrievalUri !== undefined) {
         this.#add(entry.retrievalUri, { entry, uri: entry.retrievalUri });
       }
-      this.#waiting.set(entry, identification.waitingFor);
+      this.#waiting.set(entry, identification);
       return false;
     }
 
@@ -157,7 +153,7 @@ export class RegistryIndex {
 
     if ("error" in identification) {
       if (entry.retrievalUri === undefined) {
-        this.#unidentified.push(identification.error);
+        this.#unidentified.set(entry, identification);
       } else {
         this.#add(entry.retrievalUri, { entry, uri: entry.retrievalUri, error: identification.error });
       }
@@ -199,16 +195,7 @@ export class RegistryIndex {
   }
 
   /** @type RegistryDialects */
-  #registryDialect = (dialectUri) => this.#dialects.get(dialectUri) ?? this.#dialectsFrom?.dialect(dialectUri);
-
-  /**
-   * The dialect an entry defines, by a URI the entry is found by
-   *
-   * @type RegistryDialects
-   */
-  dialect(dialectUri) {
-    return this.#dialects.get(dialectUri);
-  }
+  #registryDialect = (dialectUri) => this.#dialects.get(dialectUri);
 
   /**
    * Identifying an entry can define a dialect another entry is waiting for,
@@ -242,14 +229,25 @@ export class RegistryIndex {
   }
 
   /**
-   * Why a lookup might not have found what it was looking for: the dialects
-   * entries are waiting for, and the problems with entries that can't be
-   * identified and don't have a retrieval URI to be found by
+   * Why a URI a lookup missed isn't found, if an entry that can't be
+   * identified is probably identified by it: its root's `$id` or `id`,
+   * which is what identifies it in most dialects, but which one only its
+   * dialect says. It's the entry's problem, or that it's waiting for its
+   * dialect.
    *
-   * @type () => { waitingFor: Set<string>; unidentified: Error[] }
+   * @type (uri: Id) => Error | undefined
    */
-  missing() {
-    return { waitingFor: new Set(this.#waiting.values()), unidentified: this.#unidentified };
+  missed(uri) {
+    for (const { waitingFor, probably } of this.#waiting.values()) {
+      if (probably === uri) {
+        return Error(`'${uri}' is in the registry, but it can't be identified until the '${waitingFor}' dialect is defined`, { cause: { code: "ERR_DIALECT_NOT_DEFINED", dialect: waitingFor } });
+      }
+    }
+    for (const { error, probably } of this.#unidentified.values()) {
+      if (probably === uri) {
+        return error;
+      }
+    }
   }
 }
 
@@ -268,9 +266,8 @@ export class RegistryIndex {
 /**
  * Find the URI an entry is identified by. That depends on the dialect, so
  * only the root's resolve hooks (`$id`, `$vocabulary`) run. Nothing is
- * retrieved, so an entry whose dialect isn't in the definitions, defined by
- * another entry in the same registry, or the registry a value is added to
- * has to wait for it.
+ * retrieved, so an entry whose dialect isn't in the definitions or defined
+ * by another entry in the same registry has to wait for it.
  *
  * Every entry is identified when a registry is first used, so it's parsed
  * with `JSON.parse`, which is much faster than building a tree with
@@ -351,14 +348,14 @@ const identifyRoot = (definitions, entry, registryDialect, root) => {
     try {
       absoluteDialectUri = toId(dialectUri);
     } catch (error) {
-      return { error: /** @type Error */ (error) };
+      return { error: /** @type Error */ (error), probably: probableId(root, retrievalUri) };
     }
 
     dialect = definitions.dialects[absoluteDialectUri];
     if (dialect === undefined) {
       const definition = registryDialect(absoluteDialectUri);
       if (definition === undefined) {
-        return { waitingFor: absoluteDialectUri };
+        return { waitingFor: absoluteDialectUri, probably: probableId(root, retrievalUri) };
       }
       dialect = { ...definition, uri: absoluteDialectUri };
       fromRegistry = true;
@@ -383,7 +380,7 @@ const identifyRoot = (definitions, entry, registryDialect, root) => {
 
     return { uri, definedDialect, fromRegistry };
   } catch (error) {
-    return { error: /** @type Error */ (error), fromRegistry };
+    return { error: /** @type Error */ (error), fromRegistry, probably: probableId(root, retrievalUri) };
   }
 };
 
@@ -446,4 +443,26 @@ const rootEffects = (definitions, root, dialect, retrievalUri) => {
  */
 const propertyValue = (node, name) => {
   return /** @type JsonNode | undefined */ (node.children.find((property) => property.children[0].value === name)?.children[1]);
+};
+
+/**
+ * The URI an entry whose dialect isn't known is probably identified by: its
+ * root's `$id`, or `id` (draft-04), resolved against its retrieval URI
+ *
+ * @type (root: Root, retrievalUri: Id | undefined) => Id | undefined
+ */
+const probableId = (root, retrievalUri) => {
+  for (const [name, valueNodeOf] of root.properties) {
+    if (name !== "$id" && name !== "id") {
+      continue;
+    }
+    const node = valueNodeOf();
+    if (node.jsonType === "string") {
+      try {
+        return resolveId(node.value, retrievalUri);
+      } catch {
+        return;
+      }
+    }
+  }
 };

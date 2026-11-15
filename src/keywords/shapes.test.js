@@ -2,9 +2,8 @@ import { toId } from "../identifiers.js";
 import { describe, test, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
-import { jsonPointerGet, rejsonParse } from "@hyperjump/browser";
+import { jsonPointerGet, rejsonParse, Hyperjump } from "@hyperjump/browser";
 import { jsonSchemaMediaTypes } from "../json-schema.js";
-import { JsonSchemaHyperjump } from "../session.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import { draft04Dialect, draft04DialectUri } from "../dialects/draft-04/index.js";
@@ -52,7 +51,7 @@ describe("A keyword's value that doesn't fit its shape is reported once", () => 
         const file = new VFile(JSON.stringify({ $schema: dialectUri, [name]: value }));
         const processor = unified()
           .use(rejsonParse, { url: "https://example.com/schema" })
-          .use(jsonSchemaResolve, { session: new JsonSchemaHyperjump(jsonSchema) });
+          .use(jsonSchemaResolve, { session: new Hyperjump(jsonSchema) });
         const document = await processor.run(processor.parse(file), file);
 
         const root = /** @type any */ (document.children[0]);

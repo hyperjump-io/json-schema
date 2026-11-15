@@ -1,6 +1,7 @@
 import { getScheme } from "@hyperjump/uri";
 import { toId } from "../identifiers.js";
 import { entriesOf, setEntries } from "./registry-entries.js";
+import { registryResponse } from "./registry-lookup.js";
 
 /**
  * @import { ReadonlyJson } from "@hyperjump/browser"
@@ -71,6 +72,16 @@ export class SchemaRegistry {
   /** @type API.SchemaRegistry[typeof Symbol.iterator] */
   [Symbol.iterator]() {
     return entriesOf(this)[Symbol.iterator]();
+  }
+
+  /**
+   * What the registry has for a URL, for a session to answer it with before
+   * anything is retrieved (`@hyperjump/browser`'s `Registry`)
+   *
+   * @type API.SchemaRegistry["get"]
+   */
+  get(url, ctx) {
+    return registryResponse(this, url, /** @type any */ (ctx.session));
   }
 
   /** @type API.SchemaRegistry["without"] */

@@ -74,7 +74,8 @@ are `validate`, `validator`, `compile`, `bundle`, `lint`, and so on.
 
 A session takes only a config. For a session with its own registry or
 `allowRetrieval`, give it a config that has them, like
-`new JsonSchemaHyperjump({ ...config, registry })`.
+`new Hyperjump({ ...config, registry })`, with `Hyperjump` from
+`@hyperjump/browser`.
 
 ## Per validator
 

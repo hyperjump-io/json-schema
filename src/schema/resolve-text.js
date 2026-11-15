@@ -6,10 +6,11 @@ import { noUrl } from "../identifiers.js";
 /**
  * @import { VFileMessage } from "vfile-message"
  * @import { Json, JsonDocumentNode } from "@hyperjump/browser"
- * @import { JsonSchemaHyperjump } from "../session.d.ts"
  * @import { JsonSchemaDocumentNode } from "./schema-ast.d.ts"
  * @import { SchemaMessage } from "./schema-error.d.ts"
  * @import { AbsoluteIri, Iri } from "@hyperjump/uri"
+ * @import { Hyperjump } from "@hyperjump/browser"
+ * @import { JsonSchemaConfig } from "../json-schema.d.ts"
  */
 
 /**
@@ -18,7 +19,7 @@ import { noUrl } from "../identifiers.js";
  * every problem in the document is found. A registry entry's `origin` is on
  * the document and its problems.
  *
- * @type (text: string, session: JsonSchemaHyperjump, uri: AbsoluteIri, dialectUri: string | undefined, origin?: string) => Promise<JsonSchemaDocumentNode>
+ * @type (text: string, session: Hyperjump<JsonSchemaConfig>, uri: AbsoluteIri, dialectUri: string | undefined, origin?: string) => Promise<JsonSchemaDocumentNode>
  * @throws SchemaError if the document has any problem, because a schema with
  * problems can't be used reliably
  */
@@ -45,7 +46,7 @@ export const resolveSchemaText = async (text, session, uri, dialectUri, origin) 
  * Resolve a schema that was added to a registry as a value. Its nodes have
  * no positions, so neither do its problems.
  *
- * @type (value: Json, session: JsonSchemaHyperjump, uri: AbsoluteIri, dialectUri: string | undefined, origin?: string) => Promise<JsonSchemaDocumentNode>
+ * @type (value: Json, session: Hyperjump<JsonSchemaConfig>, uri: AbsoluteIri, dialectUri: string | undefined, origin?: string) => Promise<JsonSchemaDocumentNode>
  * @throws SchemaError if the document has any problem
  */
 export const resolveSchemaValue = async (value, session, uri, dialectUri, origin) => {
@@ -54,7 +55,7 @@ export const resolveSchemaValue = async (value, session, uri, dialectUri, origin
   return resolveTree(tree, [], session, uri, dialectUri, origin);
 };
 
-/** @type (tree: JsonDocumentNode | undefined, messages: SchemaMessage[], session: JsonSchemaHyperjump, uri: AbsoluteIri, dialectUri: string | undefined, origin?: string) => Promise<JsonSchemaDocumentNode> */
+/** @type (tree: JsonDocumentNode | undefined, messages: SchemaMessage[], session: Hyperjump<JsonSchemaConfig>, uri: AbsoluteIri, dialectUri: string | undefined, origin?: string) => Promise<JsonSchemaDocumentNode> */
 const resolveTree = async (tree, messages, session, uri, dialectUri, origin) => {
   if (tree !== undefined) {
     const resolved = await resolveSchema(tree, { session, uri, dialectUri });

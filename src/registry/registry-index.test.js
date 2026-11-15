@@ -1,6 +1,6 @@
+import { Hyperjump } from "@hyperjump/browser";
 import { describe, test, expect } from "vitest";
 import { jsonSchemaMediaTypes } from "../json-schema.js";
-import { JsonSchemaHyperjump } from "../session.js";
 import { SchemaRegistry } from "./schema-registry.js";
 import { RegistryIndex } from "./registry-index.js";
 import { toId } from "../identifiers.js";
@@ -89,7 +89,7 @@ describe("RegistryIndex", () => {
     };
     const registry = new SchemaRegistry().with({ $schema: "https://example.com/counted", $id: "https://example.com/counted-schema" });
 
-    const session = new JsonSchemaHyperjump({ ...jsonSchema, registry });
+    const session = new Hyperjump({ ...jsonSchema, registry });
     expect(identified).to.equal(0);
 
     await getDocument(session, "https://example.com/counted-schema");

@@ -1,4 +1,4 @@
-import type { ReadonlyJson } from "@hyperjump/browser";
+import type { ReadonlyJson, Registry, RegistryContext } from "@hyperjump/browser";
 
 /**
  * Schemas that aren't retrieved from a URI. A schema is identified the way
@@ -16,9 +16,11 @@ import type { ReadonlyJson } from "@hyperjump/browser";
  * sessions, which each identify its schemas with their own
  * dialects when they look one up. A schema that can't be identified is
  * found by its `retrievalUri`, and finding it throws the problem. One
- * without a `retrievalUri` is reported when a lookup doesn't find anything.
- * Two schemas found by the same URI are an error when that URI is looked
- * up.
+ * without a `retrievalUri` can't be found. Two schemas found by the same URI
+ * are an error when that URI is looked up.
+ *
+ * It's a `@hyperjump/browser` `Registry`, so it goes in a config's
+ * `registry`, and a session asks it before anything is retrieved.
  *
  * `S` is the type of the schemas it takes, for checking schemas written in
  * TypeScript, such as `V1Schema`. A union takes schemas in more than one
@@ -31,7 +33,7 @@ import type { ReadonlyJson } from "@hyperjump/browser";
  * });
  * ```
  */
-export class SchemaRegistry<S = ReadonlyJson> {
+export class SchemaRegistry<S = ReadonlyJson> implements Registry {
   /**
    * @throws Error if two entries have the same `retrievalUri`, or one is a
    * `file:` URI
@@ -49,6 +51,19 @@ export class SchemaRegistry<S = ReadonlyJson> {
    * with a cycle
    */
   with(schema: S | string, options?: SchemaRegistryAddOptions): SchemaRegistry<S>;
+
+  /**
+   * The schema identified by a URL, with the definitions in the session's
+   * config, as a response a schema media type parses, or `undefined` if the
+   * registry doesn't have it.
+   *
+   * @throws Error if more than one schema is found by the URL, or one that's
+   * probably identified by it is waiting for its dialect, which a
+   * meta-schema in the registry or the config's dialects have to define.
+   * Its `cause.code` is `ERR_DIALECT_NOT_DEFINED`, with the `dialect`.
+   * @throws SchemaError if the schema has problems.
+   */
+  get(url: string, ctx: RegistryContext): Promise<Response | undefined>;
 
   /**
    * A registry without the schema added with this `retrievalUri`. A schema

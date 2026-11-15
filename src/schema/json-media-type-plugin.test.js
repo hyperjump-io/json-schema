@@ -4,13 +4,12 @@ import { cwd } from "node:process";
 import { pathToFileURL } from "node:url";
 import { describe, test, beforeAll, afterAll, expect } from "vitest";
 import { jsonSchemaMediaTypes } from "../json-schema.js";
-import { JsonSchemaHyperjump } from "../session.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import { draft202012Dialect } from "../dialects/draft-2020-12/index.js";
 import { compile } from "../operations/compile.js";
 import { validatorFor } from "../operations/validate-compiled.js";
 import { getDocument } from "../session.js";
-import { fetcher, nodeTransport } from "@hyperjump/browser";
+import { fetcher, nodeTransport, Hyperjump } from "@hyperjump/browser";
 
 /**
  * @import { Json } from "@hyperjump/browser"
@@ -36,7 +35,7 @@ describe("JsonOrSchemaMediaTypePlugin", () => {
   });
 
   const jsonSchema = () => ({ mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }) });
-  const session = () => new JsonSchemaHyperjump(jsonSchema());
+  const session = () => new Hyperjump(jsonSchema());
 
   test("a .json file whose $schema is a dialect is a schema", async () => {
     const uri = await jsonFile("person.json", { $schema: v1DialectUri, $defs: { name: { type: "string" } } });
@@ -82,6 +81,6 @@ describe("JsonOrSchemaMediaTypePlugin", () => {
     };
     const uri = await jsonFile("custom.json", { $schema: "test:/meta" });
 
-    expect((await getDocument(new JsonSchemaHyperjump(jsonSchema), uri)).type).to.equal("json-schema-document");
+    expect((await getDocument(new Hyperjump(jsonSchema), uri)).type).to.equal("json-schema-document");
   });
 });

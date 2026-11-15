@@ -21,15 +21,15 @@ in TypeScript are checked (see [Schema types](../schema-types.md)).
 Implemented in `src/registry/schema-registry.js`, with the index of a
 registry for some definitions in `src/registry/registry-index.js`. A registry's
 entries are in `src/registry/registry-entries.js`, which isn't exported. How
-a session finds schemas in the registries it sees is in
-`src/registry/session-registries.js`.
+a registry answers a session is in `src/registry/registry-lookup.js`.
 
-- A registry's schema isn't retrieved, so the registries aren't in the
-  stack. A session's `fetch`, which is what browser's `get` fetches with,
-  asks the registries before the session's `Hyperjump` (see
-  [Sessions](../sessions/README.md)). So a schema in one is found before
-  anything is retrieved, and `allowRetrieval` doesn't apply to it. A
-  registry is keyed by IRI, so `fetch` works out the `Id` of the URL it's
+- A registry's schema isn't retrieved, so the registry isn't in the stack.
+  A `SchemaRegistry` is browser's `Registry`, a config's `registry`, which
+  `Hyperjump`'s `fetch` asks before `allowRetrieval` and the stack, with
+  the session (see [Sessions](../sessions/README.md)). So a schema in one
+  is found before anything is retrieved, and `allowRetrieval` doesn't
+  apply to it. Its `get` finds the definitions in the session's config,
+  and a registry is keyed by IRI, so it works out the `Id` of the URL it's
   asked for.
   - It answers with a `DocumentResponse`, a response that has the resolved
     document (`src/registry/document-response.js`), and the schema media
@@ -44,12 +44,17 @@ a session finds schemas in the registries it sees is in
   - A layer on the stack was rejected. Browser checks `allowRetrieval`
     before the stack, so every URI a registry's schemas are found by
     would have to be allowed: all of them identified when a session is
-    created, parsed again for each session, and a schema an operation
-    gives an existing session as a value couldn't be added.
-  - When a retrieval fails, the error says so if a schema in a registry
-    is waiting for its dialect or can't be identified, since it might be
-    the one that was asked for. It's an `AggregateError` of the failure
-    and those reasons.
+    created, and parsed again for each session.
+  - A URL a registry doesn't have is explained only if a schema in it is
+    probably the one asked for: it's waiting for its dialect, or can't be
+    identified, and its root's `$id` or `id` resolves to the URL. Then
+    `get` throws, with that the dialect isn't defined
+    (`ERR_DIALECT_NOT_DEFINED`) or the schema's problem, and nothing is
+    retrieved instead. Any other miss keeps its own error, so a typo in a
+    `$ref` isn't blamed on a registry. Before 2026-11-14, every failed
+    retrieval in a session whose registry had such a schema was an
+    `AggregateError` of the failure and every one of them (see
+    [JSON Schema as a media type](../api/json-schema-media-type.md#explaining-a-miss)).
 
 - A schema is identified the way JSON Schema identifies it: by its `$id`
   (or `id` in draft-04), resolved against `retrievalUri`, or by

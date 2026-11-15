@@ -7,13 +7,13 @@ AST with `jsonSchemaResolve`. Then add the lint rules as plugins.
 import { unified } from "unified";
 import { VFile } from "vfile";
 import { reporter } from "vfile-reporter";
-import { rejsonParse, rejsonStringify } from "@hyperjump/browser";
-import { JsonSchemaHyperjump, jsonSchemaResolve } from "@hyperjump/json-schema";
+import { Hyperjump, rejsonParse, rejsonStringify } from "@hyperjump/browser";
+import { jsonSchemaResolve } from "@hyperjump/json-schema";
 import recommended from "@hyperjump/json-schema/lint/recommended";
 
 const file = await unified()
   .use(rejsonParse, { accept: "recovered" })
-  .use(jsonSchemaResolve, { session: new JsonSchemaHyperjump(config) })
+  .use(jsonSchemaResolve, { session: new Hyperjump(config) })
   .use(recommended)
   .use(rejsonStringify)
   .process(new VFile({ path: "person.schema.json", value: schemaText }));
@@ -68,7 +68,7 @@ import thenElseWithoutIf from
 
 unified()
   .use(rejsonParse, { accept: "recovered" })
-  .use(jsonSchemaResolve, { session: new JsonSchemaHyperjump(config) })
+  .use(jsonSchemaResolve, { session: new Hyperjump(config) })
   .use(recommended)
   .use(thenElseWithoutIf, ["error"]);
 ```

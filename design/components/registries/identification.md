@@ -32,8 +32,8 @@ Schema media types' (see
   definitions by the registry (`WeakMap<definitions, WeakMap<registry,
   RegistryIndex>>`). Entries identified with a dialect from a registry
   aren't shared between indexes. A schema an operation is given as a
-  value is indexed in a registry of its own, which can use the dialects
-  the session's registry defines. Before 2026-11-14, a session's own
+  value is added to the call's registry, so it can use the dialects the
+  registry's meta-schemas define, and the other way around. Before 2026-11-14, a session's own
   registry could use the dialects in the `JsonSchema`'s registry, but not
   the other way around, and its index was cached by both.
 - An entry whose dialect isn't defined yet waits in a list by dialect URI.

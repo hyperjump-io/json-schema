@@ -3,12 +3,14 @@ import { normalizeIri, toAbsoluteIri, urlToIri } from "@hyperjump/uri";
 import { resolveId } from "../identifiers.js";
 import { resolveSchemaText } from "./resolve-text.js";
 import { contentTypeParameters, schemaMediaType } from "./media-type-plugin.js";
-import { getDialect, hasDialect, isSession } from "../session.js";
+import { getDialect, hasDialect } from "../session.js";
+import { definitionsIn } from "../definition-of.js";
 
 /**
  * @import { DocumentSession } from "@hyperjump/browser"
  * @import { AbsoluteIri } from "@hyperjump/uri"
- * @import { JsonSchemaHyperjump } from "../session.d.ts"
+ * @import { Hyperjump } from "@hyperjump/browser"
+ * @import { JsonSchemaConfig } from "../json-schema.d.ts"
  * @import { JsonSchemaMediaTypeDocument } from "./media-type-plugin.d.ts"
  * @import * as API from "./json-media-type-plugin.d.ts"
  */
@@ -51,15 +53,18 @@ export const jsonOrSchemaMediaType = Object.freeze({
  * that doesn't mention `$schema` isn't parsed. A meta-schema whose `$schema`
  * is itself describes itself, so it's a schema. A dialect can't be a file.
  *
- * It's given with the session, which is a `JsonSchemaHyperjump` when there's
- * one.
+ * It's given with the session, if the session's config has the JSON Schema
+ * definitions. Without them, it's JSON.
  *
- * @type (text: string, url: AbsoluteIri, session: DocumentSession) => Promise<{ uri: string, session: JsonSchemaHyperjump } | undefined>
+ * @type (text: string, url: AbsoluteIri, session: DocumentSession) => Promise<{ uri: string, session: Hyperjump<JsonSchemaConfig> } | undefined>
  */
-const schemaDialect = async (text, url, session) => {
-  if (!isSession(session) || !text.includes(`"$schema"`)) {
+const schemaDialect = async (text, url, documentSession) => {
+  if (!definitionsIn(documentSession.config) || !text.includes(`"$schema"`)) {
     return;
   }
+  // Browser gives a plugin the session that's retrieving, which is a
+  // `Hyperjump`
+  const session = /** @type Hyperjump<JsonSchemaConfig> */ (/** @type unknown */ (documentSession));
 
   let dialectUri;
   try {

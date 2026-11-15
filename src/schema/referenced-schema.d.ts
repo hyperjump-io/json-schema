@@ -1,6 +1,7 @@
 import type { Iri } from "@hyperjump/uri";
-import type { JsonSchemaHyperjump } from "../session.d.ts";
 import type { JsonSchemaDocumentNode, JsonSchemaNode } from "./schema-ast.d.ts";
+import type { Hyperjump } from "@hyperjump/browser";
+import type { JsonSchemaConfig } from "../json-schema.d.ts";
 
 /**
  * The schema a reference finds, and the resource it's in. `embedded` is the
@@ -21,7 +22,7 @@ import type { JsonSchemaDocumentNode, JsonSchemaNode } from "./schema-ast.d.ts";
  * `cause.code` is `ERR_ANCHOR_NOT_FOUND` or starts with `ERR_POINTER_`.
  */
 export const referencedSchema: (
-  session: JsonSchemaHyperjump,
+  session: Hyperjump<JsonSchemaConfig>,
   uri: Iri,
   embedded?: Record<string, JsonSchemaDocumentNode>
 ) => Promise<{ document: JsonSchemaDocumentNode; node: JsonSchemaNode }>;

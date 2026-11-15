@@ -1,7 +1,7 @@
+import { Hyperjump } from "@hyperjump/browser";
 import { toId } from "../identifiers.js";
 import { describe, test, expect } from "vitest";
 import { jsonSchemaMediaTypes } from "../json-schema.js";
-import { JsonSchemaHyperjump } from "../session.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
 import idKeyword from "./id.js";
 import vocabularyKeyword from "./vocabulary.js";
@@ -32,7 +32,7 @@ describe("vocabularies", () => {
   const getDialect = async (jsonSchema, schemas, dialectUri) => {
     const registry = new SchemaRegistry(schemas.map((schema) => ({ schema })));
 
-    return getSessionDialect(new JsonSchemaHyperjump({ ...jsonSchema, registry }), dialectUri);
+    return getSessionDialect(new Hyperjump({ ...jsonSchema, registry }), dialectUri);
   };
 
   test("every vocabulary in the config is supported", async () => {

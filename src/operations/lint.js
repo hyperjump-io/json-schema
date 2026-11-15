@@ -15,7 +15,7 @@ import { isSchemaDocument } from "../schema/schema-nodes.js";
 
 /** @type typeof API.lint */
 export const lint = async (config, uri, options = {}) => {
-  const session = callSession(config, options);
+  const { session } = callSession(config, uri, options);
 
   let document;
   try {

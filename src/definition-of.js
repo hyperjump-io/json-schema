@@ -40,11 +40,22 @@ export const formatOf = (formats, uri) => {
  * @throws TypeError if the config doesn't have them
  */
 export const definitionsOf = (config) => {
+  const definitions = definitionsIn(config);
+  if (!definitions) {
+    throw TypeError("The config has no JSON Schema media types. Add them with 'mediaTypes: jsonSchemaMediaTypes({ dialects })'.");
+  }
+  return definitions;
+};
+
+/**
+ * A config's JSON Schema definitions, if it has them
+ *
+ * @type (config: HyperjumpConfig) => JsonSchemaDefinitions | undefined
+ */
+export const definitionsIn = (config) => {
   for (const plugin of config.mediaTypes ?? []) {
     if ("definitions" in plugin) {
       return /** @type JsonSchemaDefinitions */ (plugin.definitions);
     }
   }
-
-  throw TypeError("The config has no JSON Schema media types. Add them with 'mediaTypes: jsonSchemaMediaTypes({ dialects })'.");
 };

@@ -4,9 +4,8 @@ import { cwd } from "node:process";
 import { describe, test, beforeAll, afterAll, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
-import { rejsonParse } from "@hyperjump/browser";
+import { rejsonParse, Hyperjump } from "@hyperjump/browser";
 import { jsonSchemaMediaTypes } from "../../json-schema.js";
-import { JsonSchemaHyperjump } from "../../session.js";
 import { SchemaRegistry } from "../../registry/schema-registry.js";
 import { jsonSchemaResolve } from "../../schema/resolve.js";
 import { v1Dialect } from "../../dialects/v1/index.js";
@@ -43,7 +42,7 @@ describe("reference-by-location", () => {
     const file = new VFile({ path: join(directory, "a.schema.json"), value: json });
     const processor = unified()
       .use(rejsonParse)
-      .use(jsonSchemaResolve, { session: new JsonSchemaHyperjump({ ...jsonSchema, registry }) })
+      .use(jsonSchemaResolve, { session: new Hyperjump({ ...jsonSchema, registry }) })
       .use(referenceByLocation);
     await processor.run(processor.parse(file), file);
     return file;

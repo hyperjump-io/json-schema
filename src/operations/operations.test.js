@@ -1,7 +1,6 @@
 import { describe, test, expect } from "vitest";
-import { fromJs } from "@hyperjump/browser";
+import { fromJs, Hyperjump } from "@hyperjump/browser";
 import { jsonSchemaMediaTypes } from "../json-schema.js";
-import { JsonSchemaHyperjump } from "../session.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import { BASIC } from "../output/index.js";
@@ -57,7 +56,7 @@ describe("operations", () => {
       const schema = v1({ $id: "https://example.com/both", type: "string" });
       const registry = new SchemaRegistry().with(schema);
 
-      await expect(validate(jsonSchema, schema, 42, { registry })).rejects.toThrow("More than one registry has a schema identified as 'https://example.com/both'");
+      await expect(validate(jsonSchema, schema, 42, { registry })).rejects.toThrow("More than one schema in the registry is found by 'https://example.com/both'");
     });
 
     test("an $id the config's registry has is an error", async () => {
@@ -67,7 +66,7 @@ describe("operations", () => {
         registry: new SchemaRegistry().with(v1({ $id: "https://example.com/both" }))
       };
 
-      await expect(validate(other, v1({ $id: "https://example.com/both" }), 42)).rejects.toThrow("More than one registry has a schema identified as 'https://example.com/both'");
+      await expect(validate(other, v1({ $id: "https://example.com/both" }), 42)).rejects.toThrow("More than one schema in the registry is found by 'https://example.com/both'");
     });
 
     test("a schema is copied, so changing it afterward has no effect", async () => {
@@ -135,7 +134,7 @@ describe("operations", () => {
 
       expect(output).to.equal(true);
       expect(status).to.equal("success");
-      expect(annotation(new JsonSchemaHyperjump(jsonSchema), node, "title")).to.eql(["root"]);
+      expect(annotation(new Hyperjump(jsonSchema), node, "title")).to.eql(["root"]);
     });
 
     test("JSON text", async () => {
@@ -144,7 +143,7 @@ describe("operations", () => {
 
       expect(output).to.equal(false);
       expect(status).to.equal("recovered");
-      expect(annotation(new JsonSchemaHyperjump(jsonSchema), node, "title")).to.eql(["root"]);
+      expect(annotation(new Hyperjump(jsonSchema), node, "title")).to.eql(["root"]);
     });
 
     test("a node is annotated where it is", async () => {
@@ -152,7 +151,7 @@ describe("operations", () => {
       const result = annotatorFor(await compile(jsonSchema, schema), { input: "node" })(node);
 
       expect(result).to.include({ output: true, status: "success", node });
-      expect(annotation(new JsonSchemaHyperjump(jsonSchema), node, "title")).to.eql(["root"]);
+      expect(annotation(new Hyperjump(jsonSchema), node, "title")).to.eql(["root"]);
     });
   });
 

@@ -34,15 +34,13 @@ schema are in `src/kernel/validator.js`, which isn't exported.
   their own (`src/operations/validate-compiled.js`). The package is
   `"sideEffects": false`, or bundlers keep every re-exported module (see
   [Bundle size](../../benchmarks/bundle-size.md)).
-- A schema given as a value is added to the session in a registry of its
-  own (`SessionRegistries.addValue`), found
-  first. It's identified by a new `urn:uuid:` URI, which also identifies it
-  without an `$id`. Its `$id` is looked up in the other registries when
-  it's added, so one a registry also has throws, even if identical.
-  Nothing is cached. A boolean has no `$schema`, so it needs
-  `defaultDialectUri`, like any schema without one. The operation reaches
-  the session's registries through the session's state (`registriesOf`),
-  which isn't exported from the package.
+- A schema given as a value is added to the call's registry before its
+  session is made (`callSession`), so the session's registry never
+  changes. It's found by a new `urn:uuid:` URI, which also identifies it
+  without an `$id`. Its `$id` is looked up when it's added, so one another
+  schema in the registry also has throws, even if identical. Nothing is
+  cached. A boolean has no `$schema`, so it needs `defaultDialectUri`, like
+  any schema without one.
 - Each call has a session of its own, made from the config and the
   call's `registry` and `allowRetrieval` (`src/operations/call-session.js`). Decided 2026-11-14. Before, an
   operation also took a session (`Context`), so operations could share

@@ -1,6 +1,7 @@
 import type { NormalizedIri } from "@hyperjump/uri";
-import type { JsonSchemaHyperjump } from "../session.d.ts";
 import type { JsonSchemaDocumentNode, JsonSchemaNode } from "../schema/schema-ast.d.ts";
+import type { Hyperjump } from "@hyperjump/browser";
+import type { JsonSchemaConfig } from "../json-schema.d.ts";
 
 /**
  * What a reference finds. A rule reports `missing`, and not `unknown`.
@@ -53,4 +54,4 @@ export type FindSchemaOptions = {
  * @throws Error that isn't about finding the schema, such as a bug in a
  * plugin.
  */
-export const findSchema: (session: JsonSchemaHyperjump, uri: NormalizedIri, options?: FindSchemaOptions) => Promise<FindSchemaResult>;
+export const findSchema: (session: Hyperjump<JsonSchemaConfig>, uri: NormalizedIri, options?: FindSchemaOptions) => Promise<FindSchemaResult>;

@@ -8,7 +8,6 @@ import { describe, test, beforeEach, expect } from "vitest";
 import { createServer } from "node:http";
 import { compose, defaultMediaTypes, defaultStack, fetcher, get, httpCache, Hyperjump, jsonPointerGet, jsonValue, Trace } from "@hyperjump/browser";
 import { jsonSchemaMediaTypes, extendDialect } from "./json-schema.js";
-import { JsonSchemaHyperjump } from "./session.js";
 import { v1Dialect, v1DialectUri } from "./dialects/v1/index.js";
 import { draft07Dialect } from "./dialects/draft-07/index.js";
 import { SchemaRegistry } from "./registry/schema-registry.js";
@@ -182,13 +181,17 @@ describe("jsonSchemaMediaTypes", () => {
   });
 
   describe("sessions", () => {
-    test("a session is a Hyperjump, so it's traced and closed like one", async () => {
-      const session = new JsonSchemaHyperjump({ mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }), allowRetrieval: [] });
-      expect(session).to.be.instanceOf(Hyperjump);
+    test("a session is browser's, so it's traced and closed like any other", async () => {
+      const registry = new SchemaRegistry().with({ $schema: v1DialectUri, $id: "https://example.com/registered" });
+      const session = new Hyperjump({ mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }), allowRetrieval: [], registry });
 
       const trace = new Trace(session);
+      await get(session, "https://example.com/registered");
       await expect(get(session, "https://example.com/schema")).rejects.toThrow();
-      expect(trace.records.map((record) => record.url)).to.eql(["https://example.com/schema"]);
+      expect(trace.records.map((record) => [record.url, record.source])).to.eql([
+        ["https://example.com/registered", "registry"],
+        ["https://example.com/schema", undefined]
+      ]);
 
       session.close();
       await expect(get(session, "https://example.com/schema")).rejects.toThrow("closed");
@@ -209,18 +212,18 @@ describe("jsonSchemaMediaTypes", () => {
         $id: uri,
         $vocabulary: { "https://example.com/vocab/core": true }
       });
-      const session = new JsonSchemaHyperjump({ ...jsonSchema, registry });
+      const session = new Hyperjump({ ...jsonSchema, registry });
 
       expect(await getDialect(session, uri)).to.eql({ uri, keywords: { $id: "https://json-schema.org/keyword/id" }, unknownKeywords: "annotation", formats: {}, assertFormats: false });
       expect(hasDialect(session, uri)).to.equal(true);
       expect(toId(uri) in definitionsOf(jsonSchema).dialects).to.equal(false);
-      expect(hasDialect(new JsonSchemaHyperjump(jsonSchema), uri)).to.equal(false);
+      expect(hasDialect(new Hyperjump(jsonSchema), uri)).to.equal(false);
     });
 
     test("a session sees the dialects its media types were made with", async () => {
       /** @type Dialect */
       const dialect = { uri: "https://example.com/added-dialect", keywords: {}, unknownKeywords: "annotation" };
-      const session = new JsonSchemaHyperjump({ mediaTypes: jsonSchemaMediaTypes({ dialects: [dialect] }) });
+      const session = new Hyperjump({ mediaTypes: jsonSchemaMediaTypes({ dialects: [dialect] }) });
 
       expect(hasDialect(session, dialect.uri)).to.equal(true);
       expect(await getDialect(session, dialect.uri)).to.eql(dialect);
@@ -283,7 +286,7 @@ describe("jsonSchemaMediaTypes", () => {
         stack
       };
 
-      expect((await getDocument(new JsonSchemaHyperjump(withDefaults), "https://example.com/schema")).type).to.equal("json-schema-document");
+      expect((await getDocument(new Hyperjump(withDefaults), "https://example.com/schema")).type).to.equal("json-schema-document");
     });
 
     test("each compile has its own session, so it sees changes", async () => {
@@ -302,14 +305,14 @@ describe("jsonSchemaMediaTypes", () => {
       }
     });
 
-    test("a schema can't be retrieved in a session that isn't a JsonSchemaHyperjump", async () => {
+    test("a schema can be retrieved in any session whose config has the JSON Schema media types", async () => {
       const directory = await mkdtemp(join(tmpdir(), "json-schema-"));
       try {
         const path = join(directory, "schema.schema.json");
         await writeFile(path, JSON.stringify({ $schema: v1DialectUri }));
 
         const session = new Hyperjump({ mediaTypes: jsonSchema.mediaTypes, allowRetrieval: [pathToFileURL(join(directory, "/")).href] });
-        await expect(get(session, pathToFileURL(path).toString())).rejects.toThrow("A schema can only be retrieved in a JsonSchemaHyperjump");
+        expect(await get(session, pathToFileURL(path).toString())).to.include({ type: "json-schema" });
       } finally {
         await rm(directory, { recursive: true });
       }
@@ -321,7 +324,7 @@ describe("jsonSchemaMediaTypes", () => {
         const path = join(directory, "schema.schema.json");
         await writeFile(path, JSON.stringify({ $schema: v1DialectUri, type: "string" }));
 
-        const session = new JsonSchemaHyperjump({ mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }) });
+        const session = new Hyperjump({ mediaTypes: jsonSchemaMediaTypes({ dialects: [v1Dialect] }) });
         const document = await getDocument(session, relative(cwd(), path));
         expect(/** @type import("./schema/schema-ast.d.ts").JsonSchemaDocumentNode */ (/** @type unknown */ (document)).uri).to.equal(pathToFileURL(path).href);
       } finally {
@@ -494,7 +497,7 @@ describe("jsonSchemaMediaTypes", () => {
     });
 
     test("documents with different resources for a URI can be browsed in one session", async () => {
-      const session = new JsonSchemaHyperjump({ ...jsonSchema, registry: trusted.with({
+      const session = new Hyperjump({ ...jsonSchema, registry: trusted.with({
         $schema: v1DialectUri,
         $id: "https://example.com/other",
         $defs: {
@@ -527,7 +530,7 @@ describe("jsonSchemaMediaTypes", () => {
 
     test("annotation by name in the v1 dialect", async () => {
       const { node } = await annotate(jsonSchema, "https://example.com/annotated", { foo: 1, bar: 2 });
-      const session = new JsonSchemaHyperjump(jsonSchema);
+      const session = new Hyperjump(jsonSchema);
 
       expect(annotation(session, node, "title")).to.eql(["root"]);
       expect(annotation(session, jsonPointerGet("/foo", /** @type any */ (node)), "title")).to.eql(["foo", "also foo"]);
@@ -537,32 +540,32 @@ describe("jsonSchemaMediaTypes", () => {
     test("annotation by keyword URI", async () => {
       const { node } = await annotate(jsonSchema, "https://example.com/annotated", {});
 
-      expect(annotation(new JsonSchemaHyperjump(jsonSchema), node, "https://json-schema.org/keyword/title")).to.eql(["root"]);
+      expect(annotation(new Hyperjump(jsonSchema), node, "https://json-schema.org/keyword/title")).to.eql(["root"]);
     });
 
     test("annotation by unknown keyword name", async () => {
       const { node } = await annotate(jsonSchema, "https://example.com/annotated", {});
 
-      expect(annotation(new JsonSchemaHyperjump(jsonSchema), node, "x-foo")).to.eql(["bar"]);
+      expect(annotation(new Hyperjump(jsonSchema), node, "x-foo")).to.eql(["bar"]);
     });
 
     test("annotation by unknown keyword URI", async () => {
       const { node } = await annotate(jsonSchema, "https://example.com/annotated", {});
 
-      expect(annotation(new JsonSchemaHyperjump(jsonSchema), node, "https://json-schema.org/keyword/unknown#x-foo")).to.eql(["bar"]);
+      expect(annotation(new Hyperjump(jsonSchema), node, "https://json-schema.org/keyword/unknown#x-foo")).to.eql(["bar"]);
     });
 
     test("annotation by keyword URI doesn't need the dialect", async () => {
       const { node } = await annotate(jsonSchema, "https://example.com/annotated", {});
 
-      expect(annotation(new JsonSchemaHyperjump(jsonSchema), node, "https://json-schema.org/keyword/title", "https://example.com/dialect")).to.eql(["root"]);
+      expect(annotation(new Hyperjump(jsonSchema), node, "https://json-schema.org/keyword/title", "https://example.com/dialect")).to.eql(["root"]);
     });
 
     test("annotation by name with property names", async () => {
       const { node } = await annotate(jsonSchema, "https://example.com/annotated", { foo: 1 });
       const nameNode = /** @type any */ (node).children[0].children[0];
 
-      expect(annotation(new JsonSchemaHyperjump(jsonSchema), nameNode, "title")).to.eql(["name"]);
+      expect(annotation(new Hyperjump(jsonSchema), nameNode, "title")).to.eql(["name"]);
     });
 
     test("annotation by name in another dialect", async () => {
@@ -571,7 +574,7 @@ describe("jsonSchemaMediaTypes", () => {
         registry: annotated
       };
       const { node } = await annotate(other, "https://example.com/annotated", {});
-      const session = new JsonSchemaHyperjump(other);
+      const session = new Hyperjump(other);
 
       expect(annotation(session, node, "label", "https://example.com/dialect")).to.eql(["root"]);
       expect(annotation(session, node, "title", "https://example.com/dialect")).to.eql([]);
@@ -580,7 +583,7 @@ describe("jsonSchemaMediaTypes", () => {
     test("annotation by name in a dialect that isn't defined", async () => {
       const { node } = await annotate(jsonSchema, "https://example.com/annotated", {});
 
-      expect(() => annotation(new JsonSchemaHyperjump(jsonSchema), node, "title", "https://example.com/dialect")).to.throw("isn't defined");
+      expect(() => annotation(new Hyperjump(jsonSchema), node, "title", "https://example.com/dialect")).to.throw("isn't defined");
     });
   });
 

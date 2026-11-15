@@ -1,6 +1,6 @@
 # JSON Schema as a media type
 
-Decided 2026-11-14. Stage 1 is built (2026-11-14). Stages 2 and 3 aren't
+Decided 2026-11-14. Stages 1 and 2 are built (2026-11-14). Stage 3 isn't
 yet. It's built in the order of its stages (see [Order](#order)).
 
 Browser already has a model for a kind of document: a session is a
@@ -129,6 +129,29 @@ Rejected:
   sessions, because a plain object holds it already.
 
 ## Stage 2: a registry in browser, identification here
+
+Built 2026-11-14, as below, with these details:
+
+- Browser's is a config's `registry` (`src/registry.js` there), and
+  `registry(entries, { base })` makes one by URL. What it answers is in
+  traces with the source `"registry"`, and what it throws is recorded like
+  a failed fetch.
+- `SchemaRegistry`'s `get` is `registryResponse` (`src/registry/registry-lookup.js`),
+  which also has the index cache and the resolved entries, shared for the
+  definitions or kept in the session's state. `SessionRegistries`,
+  `registriesOf`, `isSession`, and `JsonSchemaHyperjump` are gone, and a
+  session is `new Hyperjump(config)`. The schema plugin's `parse` doesn't
+  check what session it's in, and the JSON-or-schema plugin reads JSON as
+  JSON in a session whose config doesn't have the definitions.
+- An operation adds a schema it's given as a value to the call's registry
+  (`callSession`), and checks that no other schema in it has the value's
+  `$id` (`assertOnlyValue`). The error is the index's, "More than one
+  schema in the registry is found by", like any other two schemas with one
+  identifier.
+- A miss is explained for an entry that can't be identified too, not only
+  one waiting for its dialect, when its root's `$id` probably is the URL:
+  its problem is thrown, like "can't be identified by a 'file:' URI". One
+  with nothing to go by isn't explained.
 
 Browser has had a registry twice. `f07120c` added a layer of documents by
 URL, whose entries were a body, the parts of a response, or a function

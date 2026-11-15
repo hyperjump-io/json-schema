@@ -6,8 +6,9 @@ text ─ fromJson ─▶ JSON AST ─ resolveSchema ─▶ Schema AST ─ (schem
 ```
 
 - A config is browser's, with the JSON Schema media types, which have the
-  definitions, and a registry. A session is a `JsonSchemaHyperjump`, a
-  `Hyperjump` made from a config, that browser's functions take. Schemas are retrieved,
+  definitions, and a registry, a `SchemaRegistry`. A session is browser's,
+  a `Hyperjump` made from a config, which asks the registry before it
+  retrieves anything. Schemas are retrieved,
   browsed, and compiled in a session (see [Sessions and registries](components/sessions/README.md)).
 - Schemas are retrieved with browser's `get`. The schema media type plugin
   (`application/schema+json`, `.schema.json`) parses with `fromJson` and

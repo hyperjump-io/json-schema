@@ -2,9 +2,8 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { describe, test, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
-import { rejsonParse } from "@hyperjump/browser";
+import { rejsonParse, Hyperjump } from "@hyperjump/browser";
 import { jsonSchemaMediaTypes } from "../json-schema.js";
-import { JsonSchemaHyperjump } from "../session.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
 import { v1Dialect } from "../dialects/v1/index.js";
 import { draft04Dialect } from "../dialects/draft-04/index.js";
@@ -101,7 +100,7 @@ const lint = async (name, rule, { code, dialectUri }) => {
   const processor = unified()
     .use(rejsonParse, { accept: "recovered", url: "https://example.com/schema.json" })
     .use(jsonSchemaResolve, {
-      session: new JsonSchemaHyperjump({ ...jsonSchema, allowRetrieval: [] }),
+      session: new Hyperjump({ ...jsonSchema, allowRetrieval: [] }),
       ...dialectUri && { dialectUri }
     })
     .use(rule);

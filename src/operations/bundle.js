@@ -1,5 +1,4 @@
 import { bundle as bundleSchema } from "../bundle/bundle.js";
-import { schemaUri } from "./schema-source.js";
 import { callSession } from "./call-session.js";
 
 /**
@@ -8,6 +7,6 @@ import { callSession } from "./call-session.js";
 
 /** @type typeof API.bundle */
 export const bundle = async (config, schema, options = {}) => {
-  const session = callSession(config, options);
-  return bundleSchema(session, schemaUri(session, schema), options);
+  const { session, uri } = callSession(config, schema, options);
+  return bundleSchema(session, uri, options);
 };

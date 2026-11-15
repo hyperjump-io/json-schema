@@ -13,10 +13,11 @@ import { differentResources, sameResource } from "../schema/same-resource.js";
  * @import { Json } from "@hyperjump/browser"
  * @import { Iri } from "@hyperjump/uri"
  * @import { Dialect } from "../dialect.d.ts"
- * @import { JsonSchemaHyperjump } from "../session.d.ts"
  * @import { Keyword, LowerInput, Reference, Shape } from "../keyword.d.ts"
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode, JsonSchemaTolerantNode } from "../schema/schema-ast.d.ts"
  * @import { Expression, Handle, Kernel, KeywordGroup } from "./kernel.d.ts"
+ * @import { Hyperjump } from "@hyperjump/browser"
+ * @import { JsonSchemaConfig } from "../json-schema.d.ts"
  */
 
 /**
@@ -32,7 +33,7 @@ import { differentResources, sameResource } from "../schema/same-resource.js";
  * schemas in it compiled, and given to its `lower`, with its siblings
  * parsed the same way. The expressions are in the normal form.
  *
- * @type (session: JsonSchemaHyperjump, uri: string) => Promise<Kernel>
+ * @type (session: Hyperjump<JsonSchemaConfig>, uri: string) => Promise<Kernel>
  */
 export const lower = async (session, uri) => {
   return new Lowerer(session).lower(uri);
@@ -194,7 +195,7 @@ export const lowerKeywords = (keywords, node, dialect, inputs, tolerant) => {
  * that's missing something is lowered once it's there.
  */
 class Lowerer {
-  /** @type JsonSchemaHyperjump */
+  /** @type Hyperjump<JsonSchemaConfig> */
   #session;
 
   /** @type Kernel["schemas"] */
@@ -290,7 +291,7 @@ class Lowerer {
   // resource, so they're only worked out once
 
   /**
-   * @param {JsonSchemaHyperjump} session
+   * @param {Hyperjump<JsonSchemaConfig>} session
    */
   constructor(session) {
     this.#session = session;

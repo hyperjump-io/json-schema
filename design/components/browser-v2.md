@@ -9,8 +9,11 @@ is in browser's [design docs](https://github.com/hyperjump-io/browser/blob/v2/de
   value. Documents are functions of a session: `get(session, url)`,
   `getDocument(session, url)`, and the `jref*` functions. What they need
   of one is its `fetch`, `state`, `contextUrl`, and `config`
-  (`DocumentSession`). A JSON Schema session is a `Hyperjump` whose `fetch`
-  asks the registry first (see [Sessions](sessions/README.md)).
+  (`DocumentSession`). A JSON Schema session is a `Hyperjump` made from a
+  config with the JSON Schema media types (see [Sessions](sessions/README.md)).
+- A config's `registry` is asked before `allowRetrieval` and the stack. A
+  `SchemaRegistry` is one, so its schemas aren't retrieved (see
+  [Registries](registries/README.md)).
 - `session.state(key, init)` keeps what lives as long as the session. What
   a session has for schemas is there: its registries, its resources, and
   the dialects it built from meta-schemas.
@@ -49,7 +52,7 @@ is in browser's [design docs](https://github.com/hyperjump-io/browser/blob/v2/de
 - A file's media type is the one for the longest extension that matches.
 - What `get` and the `jref*` functions return is typed by the session's
   media types, since a reference can lead to a document in any of them. A
-  `JsonSchemaHyperjump` has its config's type, so what it finds is a
+  `Hyperjump<C>` has its config's type, so what it finds is a
   schema's node, a JSON node, or a node of another of the config's media
   types, like JRef (see [Sessions](sessions/README.md)).
 - `allowRetrieval`, in the config. A session of its own allowance is a

@@ -208,3 +208,13 @@ retrieves the schema again, unless the config has an HTTP cache. See
   [browser's errors](https://github.com/hyperjump-io/browser/blob/v2/website/errors.md).
 - A `SchemaError` when the schema is found but has problems. See
   [Invalid schemas](invalid-schemas.md).
+- An `Error` when a schema in a registry probably has the URI, by its
+  `$id`, but can't be used. One whose `$schema` is a dialect that isn't
+  defined, by the dialects you gave `jsonSchemaMediaTypes` or a
+  meta-schema in the registry, has the code `"ERR_DIALECT_NOT_DEFINED"`,
+  with its `dialect`. Nothing is retrieved for it, even if the URI could
+  be:
+
+  ```text
+  'https://example.com/person' is in the registry, but it can't be identified until the 'https://example.com/my-dialect' dialect is defined
+  ```

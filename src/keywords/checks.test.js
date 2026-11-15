@@ -5,9 +5,8 @@ import { pathToFileURL } from "node:url";
 import { describe, test, beforeEach, beforeAll, afterAll, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
-import { rejsonParse } from "@hyperjump/browser";
+import { rejsonParse, Hyperjump } from "@hyperjump/browser";
 import { jsonSchemaMediaTypes, extendDialect } from "../json-schema.js";
-import { JsonSchemaHyperjump } from "../session.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import { draft04Dialect, draft04DialectUri } from "../dialects/draft-04/index.js";
@@ -308,7 +307,7 @@ const check = async (jsonSchema, json, accept) => {
   const file = new VFile(json);
   const processor = unified()
     .use(rejsonParse, { accept, url: baseUri })
-    .use(jsonSchemaResolve, { session: new JsonSchemaHyperjump(jsonSchema) });
+    .use(jsonSchemaResolve, { session: new Hyperjump(jsonSchema) });
   await processor.run(processor.parse(file), file);
 
   return file.messages.map(({ reason, ruleId, place }) => {

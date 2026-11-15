@@ -18,17 +18,18 @@ import { visitReferences, visitSchemas } from "./utilities.js";
  * @import { Handle } from "../kernel/kernel.d.ts"
  * @import { Inputs, ObjectSchemaNode } from "../kernel/lower.js"
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode } from "../schema/schema-ast.d.ts"
- * @import { JsonSchemaHyperjump } from "../session.d.ts"
  * @import { FindSchemaResult } from "./find-schema.d.ts"
  * @import { LintSchemas, LoweredKeyword } from "./lower.d.ts"
  * @import * as API from "./document.d.ts"
+ * @import { Hyperjump } from "@hyperjump/browser"
+ * @import { JsonSchemaConfig } from "../json-schema.d.ts"
  */
 
 /**
  * Each tree's document, by session, because sessions can build different
  * dialects for the same URI
  *
- * @type WeakMap<JsonSchemaHyperjump, WeakMap<JsonSchemaDocumentNode, Promise<API.LintDocument>>>
+ * @type WeakMap<Hyperjump<JsonSchemaConfig>, WeakMap<JsonSchemaDocumentNode, Promise<API.LintDocument>>>
  */
 const lintDocuments = new WeakMap();
 
@@ -65,7 +66,7 @@ export const schemaAt = (document, uri) => {
  * reference is found from the tree, so a resource embedded in it is found
  * there.
  *
- * @type (session: JsonSchemaHyperjump, tree: JsonSchemaDocumentNode) => Promise<API.LintDocument>
+ * @type (session: Hyperjump<JsonSchemaConfig>, tree: JsonSchemaDocumentNode) => Promise<API.LintDocument>
  */
 const gather = async (session, tree) => {
   /** @type LintSchemas */
@@ -183,7 +184,7 @@ const gather = async (session, tree) => {
  * different dialects for the same URI. They're lowered once, so rules share
  * them.
  *
- * @type WeakMap<JsonSchemaHyperjump, WeakMap<JsonSchemaDocumentNode, Promise<LintSchemas>>>
+ * @type WeakMap<Hyperjump<JsonSchemaConfig>, WeakMap<JsonSchemaDocumentNode, Promise<LintSchemas>>>
  */
 const cache = new WeakMap();
 
@@ -191,7 +192,7 @@ const cache = new WeakMap();
  * What every object schema in a document lowers to (see
  * `LintDocument.schemas`)
  *
- * @type (session: JsonSchemaHyperjump, document: JsonSchemaDocumentNode) => Promise<LintSchemas>
+ * @type (session: Hyperjump<JsonSchemaConfig>, document: JsonSchemaDocumentNode) => Promise<LintSchemas>
  */
 const lowerDocument = (session, document) => {
   let bySession = cache.get(session);
@@ -224,7 +225,7 @@ export const lowerSchemaForLint = (document, schemaNode) => {
   return lowered.map(({ group }) => group);
 };
 
-/** @type (session: JsonSchemaHyperjump, tree: JsonSchemaDocumentNode) => Promise<LintSchemas> */
+/** @type (session: Hyperjump<JsonSchemaConfig>, tree: JsonSchemaDocumentNode) => Promise<LintSchemas> */
 const lower = async (session, tree) => {
   const inputs = inputsFor(tree);
 

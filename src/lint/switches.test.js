@@ -1,9 +1,8 @@
 import { describe, test, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
-import { fromJs, rejsonParse, rejsonStringify } from "@hyperjump/browser";
+import { fromJs, rejsonParse, rejsonStringify, Hyperjump } from "@hyperjump/browser";
 import { jsonSchemaMediaTypes, extendDialect } from "../json-schema.js";
-import { JsonSchemaHyperjump } from "../session.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
 import { draft202012Dialect } from "../dialects/draft-2020-12/index.js";
 import { appliesTo, canPass } from "./analysis.js";
@@ -153,7 +152,7 @@ const noDefinitions = /** @type LintDocument */ (/** @type unknown */ ({ definit
 
 /** @type (schema: object) => Promise<LintDocument> */
 const resolve = async (schema) => {
-  const session = new JsonSchemaHyperjump(jsonSchema);
+  const session = new Hyperjump(jsonSchema);
   const file = new VFile({ path: "/schemas/a.schema.json", value: JSON.stringify({ $schema: draft2020, ...schema }) });
   const processor = unified()
     .use(rejsonParse)
@@ -176,7 +175,7 @@ const reasons = async (rule, json) => {
   await unified()
     .use(rejsonParse)
     .use(function () {
-      return /** @type Function */ (jsonSchemaResolve).call(this, { session: new JsonSchemaHyperjump(jsonSchema) });
+      return /** @type Function */ (jsonSchemaResolve).call(this, { session: new Hyperjump(jsonSchema) });
     })
     .use(rule)
     .use(rejsonStringify)

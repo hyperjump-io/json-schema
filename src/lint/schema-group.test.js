@@ -1,9 +1,8 @@
 import { describe, test, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
-import { jsonPointerGet, rejsonParse } from "@hyperjump/browser";
+import { jsonPointerGet, rejsonParse, Hyperjump } from "@hyperjump/browser";
 import { jsonSchemaMediaTypes } from "../json-schema.js";
-import { JsonSchemaHyperjump } from "../session.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
 import { jsonSchemaResolve } from "../schema/resolve.js";
 import { draft07Dialect } from "../dialects/draft-07/index.js";
@@ -281,7 +280,7 @@ const resolve = async (schema) => {
     allOf: [{ properties: { a: {} } }],
     $defs: { b: { properties: { b: {} } } }
   });
-  const session = new JsonSchemaHyperjump({ ...jsonSchema, registry });
+  const session = new Hyperjump({ ...jsonSchema, registry });
 
   const file = new VFile({ path: "/schemas/a.schema.json", value: JSON.stringify(schema) });
   const processor = unified()

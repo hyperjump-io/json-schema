@@ -1,5 +1,7 @@
 import type { MediaTypePlugin } from "@hyperjump/browser";
 import type { JsonSchemaDocumentNode } from "./schema-ast.d.ts";
+import type { Hyperjump } from "@hyperjump/browser";
+import type { JsonSchemaConfig } from "../json-schema.d.ts";
 
 /**
  * Documents are only made for schemas without problems, so their status is
@@ -20,7 +22,7 @@ export type JsonSchemaMediaTypeDocument = JsonSchemaDocumentNode<"success">;
  * anchor in the document or a JSON Pointer. Its `url` is the resource's.
  *
  * `jsonSchemaMediaTypes` makes it with the definitions schemas are read
- * with. A schema can only be retrieved in a `JsonSchemaHyperjump`: `parse`
+ * with. A schema can only be retrieved in a `Hyperjump<JsonSchemaConfig>`: `parse`
  * throws in any other session. It isn't exported from the package.
  */
 export const schemaMediaType: Readonly<MediaTypePlugin<JsonSchemaMediaTypeDocument>> & Required<Pick<MediaTypePlugin<JsonSchemaMediaTypeDocument>, "fragmentPointer">>;
