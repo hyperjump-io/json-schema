@@ -23,7 +23,8 @@ These stay public, because something users write depends on them.
 - `get(session, uri, { referencedFrom })` is how to follow a reference,
   documented in the website's
   [Sessions](../../../website/extending/sessions.md#following-references)
-  page, with `visitReferences` to find them. An embedded resource is only
+  page, with browser's `jrefFindAll` and `reference: "manual"` to find
+  them as targets. An embedded resource is only
   found that way, so an operation that follows `$ref` without it, like a
   docs generator or a bundler, gets embedded resources wrong.
   `referencedFrom` is a target, the reference's node and the document

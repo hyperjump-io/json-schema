@@ -15,9 +15,12 @@ being considered (see [Open questions](../specs/keyword/README.md#open-questions
   references, and their dialects. The bundle is then made from them
   without retrieving anything (`bundleDocuments`). Before 2026-10-30, the
   dialects were retrieved as each document was embedded.
-- References are found the way `visitReferences` finds them (`$ref` and
-  draft-04–07 reference nodes), plus 2020-12's `$dynamicRef`, in the whole
-  tree, so a reference in a definition nothing uses is bundled.
+- A document's references are found by browsing it as it's written, with
+  browser's `jrefFindAll` and `reference: "manual"`, which gives each
+  `reference` node as a target (`$ref`, draft-04–07 reference nodes, and
+  2020-12's `$dynamicRef`), in the whole tree, so a reference in a
+  definition nothing uses is bundled. A reference is followed from its
+  target, so the document it's in is what caused the request.
   `$recursiveRef` and v1's `$dynamicRef` never leave the document. A custom
   keyword that references a schema isn't followed. Compiling and bundling
   what the session loaded was considered, because it would follow any
@@ -25,7 +28,10 @@ being considered (see [Open questions](../specs/keyword/README.md#open-questions
   definitions is.
 - A reference to a resource that's already in the bundle, including one
   embedded in an embedded document, isn't followed. Each document is
-  embedded once.
+  embedded once. That's looked for in every document that's been
+  gathered, not only the one the reference is in, which is why bundling
+  keeps the loop that gathers documents and doesn't browse with
+  references followed.
 - A bundle is one document, so it can only have one resource for a URI.
   Two of its documents that have a resource with the same URI have to
   have an identical one, or it's a `duplicate-id` problem.

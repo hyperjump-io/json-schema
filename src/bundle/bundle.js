@@ -1,7 +1,6 @@
-import { jsonValue, relativeFileUrl } from "@hyperjump/browser";
+import { jrefFindAll, jsonValue, relativeFileUrl } from "@hyperjump/browser";
 import { getFragment, getScheme, isIri, isIriReference, normalizeIri, resolveIri, toAbsoluteIri, toRelativeIri } from "@hyperjump/uri";
 import { toId } from "../identifiers.js";
-import { visitReferences } from "../lint/utilities.js";
 import { get, getDialect } from "../session.js";
 import { isSchemaDocument } from "../schema/schema-nodes.js";
 import { differentResources, sameResource } from "../schema/same-resource.js";
@@ -13,7 +12,7 @@ import { differentResources, sameResource } from "../schema/same-resource.js";
  * @import { JsonSchemaDocumentNode, JsonSchemaNode } from "../schema/schema-ast.d.ts"
  * @import { NormalizedIri } from "@hyperjump/uri"
  * @import { Id } from "../identifiers.js"
- * @import { Hyperjump } from "@hyperjump/browser"
+ * @import { Hyperjump, Target } from "@hyperjump/browser"
  * @import { JsonSchemaConfig } from "../json-schema.d.ts"
  */
 
@@ -32,8 +31,9 @@ const notUri = "https://json-schema.org/keyword/not";
 export const bundle = async (session, uri, options = {}) => {
   const externalSchemas = new Set(options.externalSchemas?.map((uri) => toId(uri)));
 
-  const main = await schemaDocument(session, toId(uri));
-  const documents = await referencedDocuments(session, main, externalSchemas);
+  const mainTarget = await schemaTarget(session, toId(uri));
+  const main = mainTarget.document;
+  const documents = await referencedDocuments(session, mainTarget, externalSchemas);
 
   /** @type Map<string, Dialect> */
   const dialects = new Map();
@@ -141,52 +141,65 @@ const identifierFor = (main, documents, id) => {
 };
 
 /**
- * The document at a URI, as it's written. Without a target it's referenced
- * from, `get` only finds a document in a registry or retrieves it, so this
- * is always a whole document, never a resource embedded in one.
+ * A schema document
  *
- * @type (session: Hyperjump<JsonSchemaConfig>, uri: Id) => Promise<JsonSchemaDocumentNode>
+ * @typedef {Target<JsonSchemaDocumentNode, JsonSchemaNode>} DocumentTarget
  */
-const schemaDocument = async (session, uri) => {
-  const document = (await get(session, uri, { reference: "manual" })).document;
-  if (!isSchemaDocument(document)) {
+
+/**
+ * The root of the document at a URI, as it's written, as a target. With
+ * `referencedFrom`, the reference that led to it, the document it's in is
+ * what caused it to be retrieved.
+ *
+ * @type (session: Hyperjump<JsonSchemaConfig>, uri: Id, referencedFrom?: Target) => Promise<DocumentTarget>
+ */
+const schemaTarget = async (session, uri, referencedFrom) => {
+  const target = /** @type Target */ (await get(session, uri, { referencedFrom, reference: "manual" }));
+  if (!isSchemaDocument(target.document)) {
     throw Error(`'${relativeFileUrl(uri)}' isn't a schema`);
   }
 
-  return document;
+  return /** @type DocumentTarget */ (target);
 };
 
 /**
  * Every document the main document references, and the ones they
  * reference. A reference to a resource that's already in the bundle,
- * embedded or not, finds it there.
+ * embedded or not, finds it there, so it isn't followed. That's looked
+ * for in every document that's been gathered, not only the one the
+ * reference is in, because a bundle is one document.
  *
- * @type (session: Hyperjump<JsonSchemaConfig>, main: JsonSchemaDocumentNode, externalSchemas: Set<Id>) => Promise<JsonSchemaDocumentNode[]>
+ * A document's references are found by browsing it as it's written, which
+ * gives each one as a target. v1's `$dynamicRef` is a name, so it never
+ * references another document.
+ *
+ * @type (session: Hyperjump<JsonSchemaConfig>, main: DocumentTarget, externalSchemas: Set<Id>) => Promise<JsonSchemaDocumentNode[]>
  */
 const referencedDocuments = async (session, main, externalSchemas) => {
   /** @type Map<string, [resource: JsonSchemaDocumentNode, document: JsonSchemaDocumentNode]> */
   const resources = new Map();
-  addResources(resources, main);
+  addResources(resources, main.document);
   const documents = [main];
   for (let index = 0; index < documents.length; index++) {
-    for (const reference of references(documents[index])) {
-      const uri = toAbsoluteIri(reference);
+    const references = /** @type Target[] */ (await jrefFindAll(session, /** @type any */ (documents[index]), "reference", { reference: "manual", maxDepth: Infinity }));
+    for (const reference of references) {
+      const uri = toAbsoluteIri(/** @type {{ href: NormalizedIri }} */ (reference.node).href);
       if (resources.has(uri) || externalSchemas.has(uri)) {
         continue;
       }
 
-      const document = await schemaDocument(session, uri);
-      if (document.uri !== uri) {
+      const found = await schemaTarget(session, uri, reference);
+      if (found.document.uri !== uri) {
         // Embedded, it's only found by its identifier
-        throw Error(`'${relativeFileUrl(uri)}' is identified as '${document.uri}', so a reference to '${relativeFileUrl(uri)}' wouldn't find it in the bundle`);
+        throw Error(`'${relativeFileUrl(uri)}' is identified as '${found.document.uri}', so a reference to '${relativeFileUrl(uri)}' wouldn't find it in the bundle`);
       }
 
-      addResources(resources, document);
-      documents.push(document);
+      addResources(resources, found.document);
+      documents.push(found);
     }
   }
 
-  return documents.slice(1);
+  return documents.slice(1).map(({ document }) => document);
 };
 
 /**
@@ -208,22 +221,6 @@ const addResources = (resources, document) => {
       throw differentResources(resource, document, bundled[1]);
     }
   }
-};
-
-/**
- * The URIs a document references. v1's `$dynamicRef` is a name, so it never
- * references another document.
- *
- * @type (document: JsonSchemaDocumentNode) => NormalizedIri[]
- */
-const references = (document) => {
-  /** @type NormalizedIri[] */
-  const uris = [];
-  visitReferences(document, (uri) => {
-    uris.push(uri);
-  });
-
-  return uris;
 };
 
 /**

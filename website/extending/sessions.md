@@ -128,8 +128,9 @@ for (const reference of references) {
 ```
 
 A reference is a node whose `type` is `"reference"`, with the URI it
-resolves to as `href`: a `$ref` from draft-04 through draft-07, which is
-the whole schema, or the value of `$ref` since 2019-09.
+resolves to as `href`. From draft-04 through draft-07, it's the schema with
+the `$ref`, which is the whole schema. Since 2019-09, it's the value of
+`$ref`, 2020-12's `$dynamicRef`, or 2019-09's `$recursiveRef`.
 
 `referencedFrom` matters for a schema embedded in the same document, like
 an `$id` in `$defs`. The session only finds an embedded schema from the
@@ -138,12 +139,6 @@ finds a different schema with the same URI instead. The session finds
 every other reference the usual way: first in the registries, then by
 retrieving it. What `get` gives you is a target too, so you follow a
 reference in the schema it found by passing it as `referencedFrom` in turn.
-
-`visitReferences` finds every reference in a document along with the URI it
-refers to and its node. It finds `$ref` in every dialect, 2020-12's
-`$dynamicRef`, and 2019-09's `$recursiveRef`. In the tree, a reference
-that's a keyword's value is a `json` node with the resolved URI as `href`.
-A draft-04 to draft-07 `$ref` is a `reference` node with `href`.
 
 Follow references in the session the document is in. That way you only
 reach what its registry and `allowRetrieval` allow. In a lint rule,
