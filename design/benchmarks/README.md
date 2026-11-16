@@ -57,6 +57,7 @@ something that can be run.
   - [What the property loop doesn't do](kernel-in-src/property-loop-rejected.md)
   - [An `except` that selects every name](kernel-in-src/every-name.md)
   - [Index loops instead of iterators](kernel-in-src/index-loops.md)
+  - [Plugin loops and schemas of one group](kernel-in-src/plugin-loops-and-one-group.md)
 - [Bundle size](bundle-size.md) (2026-10-29)
 - [Registry values](registry-values.md) (2026-11-10)
 - [Building the flag evaluator first](flag-evaluator-first.md) (2026-11-10)

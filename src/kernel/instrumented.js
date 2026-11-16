@@ -430,6 +430,51 @@ export const instrumented = (definitions, kernel, options) => {
     });
     const ownMarks = keywordGroups.some(({ expression }) => readsMarks(expression));
 
+    // Most schemas have one group, like an item schema that's only `type`.
+    // It's evaluated without the loop over groups, or a set for the schema's
+    // marks: the group's are the schema's.
+    if (typeof compiled !== "boolean" && groups.length === 1 && groups[0].evaluate !== undefined && !ownMarks && !tracksDynamicScope) {
+      const [{ info: groupInfo, evaluate, marks: mode }] = groups;
+      return (instance, marks, segment) => {
+        if (isAst && ops.typeOf(instance) === undefined) {
+          return true;
+        }
+
+        const outerInstance = currentInstance;
+        const outerAt = currentAt;
+        currentInstance = instance;
+        if (tracking && (segment !== undefined || outerInstance !== instance || currentAt === undefined)) {
+          currentAt = new Location(currentAt, segment, isAst ? /** @type EvaluationLocation["node"] */ (instance) : undefined, instance, ops);
+        }
+        const at = /** @type EvaluationLocation */ (currentAt);
+        const schemaStart = annotating ? annotations.length : 0;
+
+        const parentState = keywordState;
+        const outerSchemaState = schemaState;
+        const ownState = plugin.beforeSchema?.(info, at, parentState);
+        schemaState = ownState;
+        const state = plugin.beforeKeyword?.(groupInfo, at, ownState);
+        keywordState = state;
+
+        const own = marks === undefined || mode === NONE ? undefined : new Set();
+        const valid = evaluate(instance, own);
+
+        plugin.afterKeyword?.(groupInfo, at, valid, state, ownState);
+        keywordState = parentState;
+        if (valid) {
+          addAll(marks, own);
+        } else if (annotations.length > schemaStart) {
+          annotations.length = schemaStart;
+        }
+        schemaState = outerSchemaState;
+        plugin.afterSchema?.(info, at, valid, ownState, parentState);
+
+        currentInstance = outerInstance;
+        currentAt = outerAt;
+        return valid;
+      };
+    }
+
     return (instance, marks, segment) => {
       if (isAst && ops.typeOf(instance) === undefined) {
         return true;
@@ -1304,9 +1349,34 @@ export const instrumented = (definitions, kernel, options) => {
     }
     const namedTable = nameTable(entries);
 
+    // A plain object's properties are read with `for...in`, as in `fast.js`,
+    // which doesn't make an array of entries for each object. Its value is
+    // read first, so V8 reads it from the enum cache (see
+    // `property-values-first.md`). The loop bodies are written out for each
+    // kind of instance, because calling a function for each property made
+    // ASTs without plugins up to 16% slower.
     /** @type Evaluator<I> */
     let loop;
-    if (selected.length === 0) {
+    if (selected.length === 0 && !isAst) {
+      loop = (instance, marks) => {
+        let valid = true;
+        const object = /** @type Record<string, I> */ (/** @type unknown */ (instance));
+        for (const name in object) {
+          const value = object[name];
+          const entry = namedTable[name];
+          if (entry !== undefined) {
+            if (entry.mask === 0 ? entry.evaluate(value, undefined, name) : isOfType(entry.mask, value)) {
+              marks?.add(name);
+            } else if (stopsEarly) {
+              return false;
+            } else {
+              valid = false;
+            }
+          }
+        }
+        return valid;
+      };
+    } else if (selected.length === 0) {
       loop = (instance, marks) => {
         let valid = true;
         const properties = propertiesOf(instance);
@@ -1323,6 +1393,34 @@ export const instrumented = (definitions, kernel, options) => {
               valid = false;
             }
           }
+        }
+        return valid;
+      };
+    } else if (!isAst) {
+      loop = (instance, marks) => {
+        let valid = true;
+        const object = /** @type Record<string, I> */ (/** @type unknown */ (instance));
+        for (const name in object) {
+          const value = object[name];
+          let evaluated = false;
+          let isValid = true;
+          const entry = namedTable[name];
+          if (entry !== undefined) {
+            evaluated = true;
+            isValid = entry.mask === 0 ? entry.evaluate(value, undefined, name) : isOfType(entry.mask, value);
+          }
+          for (let select = 0; select < selected.length; select++) {
+            if (unevaluated[select] ? !(/** @type Set<string | number> */ (marks).has(name)) : selects[select](name)) {
+              evaluated = true;
+              isValid = selected[select](value, undefined, name) && isValid;
+            }
+          }
+          if (evaluated && isValid) {
+            marks?.add(name);
+          } else if (stopsEarly && !isValid) {
+            return false;
+          }
+          valid &&= isValid;
         }
         return valid;
       };
@@ -1457,7 +1555,8 @@ export const instrumented = (definitions, kernel, options) => {
       let found = 0;
       /** @type boolean[] */
       const tested = [];
-      for (const [name, value] of ops.entries(instance)) {
+      /** @type (name: string, value: I) => void */
+      const match = (name, value) => {
         let matched = false;
         const entry = namedTable[name];
         if (entry !== undefined) {
@@ -1483,6 +1582,17 @@ export const instrumented = (definitions, kernel, options) => {
           if (select === undefined ? !matched : select(name)) {
             matches.push(slot, name, value, evaluate);
           }
+        }
+      };
+      if (isAst) {
+        for (const [name, value] of ops.entries(instance)) {
+          match(name, value);
+        }
+      } else {
+        const object = /** @type Record<string, I> */ (/** @type unknown */ (instance));
+        for (const name in object) {
+          const value = object[name];
+          match(name, value);
         }
       }
       matches[0] = found;
