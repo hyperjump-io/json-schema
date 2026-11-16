@@ -16,16 +16,17 @@ export type JsonSchemaMediaTypeDocument = JsonSchemaDocumentNode<"success">;
  * The `schema` parameter of the media type (or `profile`, which was used
  * before 2020-12) is the dialect of a schema that doesn't have `$schema`.
  *
- * A fragment is an anchor, or a JSON Pointer that's percent-encoded.
- * `fragmentPointer` throws an `Error` whose `cause.code` is
- * `ERR_ANCHOR_NOT_FOUND`, with the `anchor`, if the fragment isn't an
- * anchor in the document or a JSON Pointer. Its `url` is the resource's.
+ * A fragment is an anchor, or a JSON Pointer that's percent-encoded. A
+ * schema document says so with its `anchors`, which `@hyperjump/browser`
+ * reads. A fragment that isn't an anchor in the document or a JSON Pointer
+ * is its `ERR_ANCHOR_NOT_FOUND`, with the `anchor`, and its `url` is the
+ * resource's.
  *
  * `jsonSchemaMediaTypes` makes it with the definitions schemas are read
  * with. A schema can only be retrieved in a `Hyperjump<JsonSchemaConfig>`: `parse`
  * throws in any other session. It isn't exported from the package.
  */
-export const schemaMediaType: Readonly<MediaTypePlugin<JsonSchemaMediaTypeDocument>> & Required<Pick<MediaTypePlugin<JsonSchemaMediaTypeDocument>, "fragmentPointer">>;
+export const schemaMediaType: Readonly<MediaTypePlugin<JsonSchemaMediaTypeDocument>>;
 
 // Used by the library. It isn't exported from the package.
 export const contentTypeParameters: (response: Response) => Record<string, string | undefined>;

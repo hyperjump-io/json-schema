@@ -1,4 +1,3 @@
-import { relativeFileUrl } from "@hyperjump/browser";
 import { toAbsoluteIri, urlToIri } from "@hyperjump/uri";
 import { parse as parseContentType } from "content-type";
 import { resolveSchemaText } from "./resolve-text.js";
@@ -25,28 +24,6 @@ export const schemaMediaType = Object.freeze({
     const uri = toAbsoluteIri(urlToIri(new URL(response.url)));
     const { schema, profile } = contentTypeParameters(response);
     return /** @type API.JsonSchemaMediaTypeDocument */ (await resolveSchemaText(await response.text(), /** @type any */ (session), uri, schema ?? profile));
-  },
-
-  /**
-   * An anchor identifies a JSON Pointer. Otherwise, the fragment is a JSON
-   * Pointer that's percent-encoded. A fragment that's neither is an anchor
-   * that isn't in the document.
-   *
-   * @type typeof API.schemaMediaType.fragmentPointer
-   */
-  fragmentPointer: (document, fragment) => {
-    if (Object.hasOwn(document.anchors, fragment)) {
-      return document.anchors[fragment];
-    }
-
-    const pointer = decodeURIComponent(fragment);
-    if (pointer !== "" && !pointer.startsWith("/")) {
-      throw Object.assign(Error(`There's no '${fragment}' anchor in '${relativeFileUrl(document.uri)}'`, {
-        cause: { code: "ERR_ANCHOR_NOT_FOUND", anchor: fragment }
-      }), { url: document.url });
-    }
-
-    return pointer;
   }
 });
 

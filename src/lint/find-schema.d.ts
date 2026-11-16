@@ -29,13 +29,13 @@ export type FindSchemaResult = {
 
 export type FindSchemaOptions = {
   /**
-   * A target in the document the reference is in, which it's followed
-   * from. A resource in that document, including its root, is found there
+   * The document the reference is in, or a target in it, which it's
+   * followed from. A resource in that document, including its root, is found there
    * before anything is retrieved, the way a reference finds an embedded
    * resource. It can be in the tree being linted, which wasn't retrieved,
    * so the session doesn't have it.
    */
-  from?: Target;
+  from?: Target | JsonSchemaDocumentNode;
 };
 
 /**

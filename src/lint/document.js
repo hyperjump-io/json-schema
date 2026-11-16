@@ -1,10 +1,9 @@
-import { documentTarget, jrefVisit, jsonPointerGet } from "@hyperjump/browser";
+import { jrefVisit, jsonPointerGet } from "@hyperjump/browser";
 import { toAbsoluteIri } from "@hyperjump/uri";
 import { availableDefinitions } from "../kernel/definitions.js";
 import { lowerKeywords, nodeReader, targetReader } from "../kernel/lower.js";
 import { keywordDefinitionUri } from "../keywords/unknown.js";
 import { findSchema } from "./find-schema.js";
-import { schemaMediaType } from "../schema/media-type-plugin.js";
 import { getDialect } from "../session.js";
 import { definitionsOf } from "../definition-of.js";
 import { provenance, sourcesWithoutEffect } from "./provenance.js";
@@ -83,10 +82,10 @@ const gather = async (session, tree) => {
   /** @type Set<JsonSchemaDocumentNode> */
   const documents = new Set();
   /**
-   * References to find, each by the URI it refers to, with a target in
-   * the document it's in, which it's followed from
+   * References to find, each by the URI it refers to, with the document
+   * it's in, or a target in it, which it's followed from
    *
-   * @type [uri: NormalizedIri, from: Target][]
+   * @type [uri: NormalizedIri, from: Target | JsonSchemaDocumentNode][]
    */
   const pending = [];
 
@@ -121,7 +120,7 @@ const gather = async (session, tree) => {
     return read;
   };
 
-  const { schemas, root } = await addDocument(tree);
+  const { schemas } = await addDocument(tree);
 
   // The identifier of what a reference in the tree finds, which says
   // whether the reference could use it
@@ -150,8 +149,8 @@ const gather = async (session, tree) => {
       // resource without it
       const { location } = result.node;
       const identifier = location.endsWith("#") ? toAbsoluteIri(location) : location;
-      if (toAbsoluteIri(identifier) !== toAbsoluteIri(uri) && root !== undefined) {
-        pending.push([identifier, root]);
+      if (toAbsoluteIri(identifier) !== toAbsoluteIri(uri) && tree.children[0] !== undefined) {
+        pending.push([identifier, tree]);
       }
     }
   }
@@ -196,12 +195,11 @@ const gather = async (session, tree) => {
 const cache = new WeakMap();
 
 /**
- * What's read from a document: the target of its root, if it has one, its
- * schemas, its references as targets, which they're followed from, and
- * what every object schema in it lowers to (see `LintDocument.schemas`)
+ * What's read from a document: its schemas, its references as targets,
+ * which they're followed from, and what every object schema in it lowers
+ * to (see `LintDocument.schemas`)
  *
  * @typedef {{
- *   root: Target | undefined;
  *   schemaNodes: (JsonSchemaNode & { type: "json-schema" })[];
  *   references: Target[];
  *   schemas: LintSchemas;
@@ -249,20 +247,18 @@ const lower = async (session, tree) => {
   /** @type LintSchemas */
   const schemas = new Map();
   /** @type Read */
-  const read = { root: undefined, schemaNodes: [], references: [], schemas };
+  const read = { schemaNodes: [], references: [], schemas };
   if (tree.children[0] === undefined) {
     return read;
   }
 
-  // The document is browsed as it's written, so every schema and reference
-  // in it is a target. A document that's linted might not be one the
-  // session retrieved, so its root's target is made from it.
-  const root = /** @type Target */ (documentTarget(tree, schemaMediaType));
-  read.root = root;
+  // The document is browsed as it's written, from the tree, so every
+  // schema and reference in it is a target. A document that's linted might
+  // not be one the session retrieved.
 
   /** @type Target<JsonSchemaDocumentNode, ObjectSchemaNode>[] */
   const schemaTargets = [];
-  await jrefVisit(session, /** @type any */ (root), (/** @type Target */ target) => {
+  await jrefVisit(session, /** @type any */ (tree), (/** @type Target */ target) => {
     const node = /** @type JsonSchemaNode */ (target.node);
     if (node.type === "json-schema") {
       read.schemaNodes.push(node);

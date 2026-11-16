@@ -2,7 +2,7 @@ import { jsonMediaType } from "@hyperjump/browser";
 import { normalizeIri, toAbsoluteIri, urlToIri } from "@hyperjump/uri";
 import { resolveId } from "../identifiers.js";
 import { resolveSchemaText } from "./resolve-text.js";
-import { contentTypeParameters, schemaMediaType } from "./media-type-plugin.js";
+import { contentTypeParameters } from "./media-type-plugin.js";
 import { getDialect, hasDialect } from "../session.js";
 import { definitionsIn } from "../definition-of.js";
 
@@ -34,17 +34,7 @@ export const jsonOrSchemaMediaType = Object.freeze({
     }
 
     return /** @type JsonSchemaMediaTypeDocument */ (await resolveSchemaText(text, dialectUri.session, uri, contentTypeParameters(response).schema));
-  },
-
-  /**
-   * A schema's fragments are a schema's, and JSON's identify the whole
-   * document
-   *
-   * @type typeof API.jsonOrSchemaMediaType.fragmentPointer
-   */
-  fragmentPointer: (document, fragment) => document.type === "json-schema-document"
-    ? schemaMediaType.fragmentPointer(/** @type JsonSchemaMediaTypeDocument */ (/** @type unknown */ (document)), fragment)
-    : ""
+  }
 });
 
 /**

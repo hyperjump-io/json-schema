@@ -41,18 +41,20 @@ is in browser's [design docs](https://github.com/hyperjump-io/browser/blob/v2/de
   it's written, a target at a time. Lowering reads a schema with them,
   so every schema and reference in it is a target, and nothing makes one
   from a node.
-- `documentTarget`, for a document the session didn't retrieve, like one
-  that's linted. A target has its document's media type, so browser
-  finds what the document contains.
+- A document where a target is taken, for one the session didn't
+  retrieve, like one that's linted. The browsing functions and
+  `referencedFrom` take the tree, and browser finds what the document
+  contains.
 - Embedded documents. A document's `embedded` has the documents it
   contains, and a reference from the document, given as a target in it
   (`referencedFrom`), finds them before anything is retrieved. Every
   resource of a schema document is in its `embedded`, the root too, so a
   reference to a document's own `$id` finds it there.
-- Anchors aren't in browser, because only JSON Schema uses them. A media
-  type plugin's `fragmentPointer` says what a fragment identifies, and
-  browser keeps the plugin that parsed a document, so a document doesn't
-  say its media type.
+- Anchors. A document's `anchors` say what its fragments identify, as a
+  JSON Pointer for each name, and a fragment that isn't one is a JSON
+  Pointer. A schema document has them for each resource, so browser
+  resolves a schema's fragments without this package's plugins, in a
+  tree it didn't parse too.
 - A media type plugin is a plain value, in the session's `mediaTypes`. The
   plugin with the most specific match for a response parses it, and the
   first one wins a tie. `jsonSchemaConfig` puts JSON Schema's first, in
@@ -78,7 +80,7 @@ is in browser's [design docs](https://github.com/hyperjump-io/browser/blob/v2/de
   `TypeError` `fetch` rejects with, like `ENOENT` for a missing file. A
   response that isn't a success is `ERR_HTTP_STATUS`, with its `status`.
   A JSON Pointer that doesn't lead to a value is one of `ERR_POINTER_*`.
-  An anchor that isn't in a schema is this package's `ERR_ANCHOR_NOT_FOUND`.
+  An anchor that isn't in a schema is browser's `ERR_ANCHOR_NOT_FOUND`.
 - Nothing wraps what a plugin's `parse` throws, so a schema with problems
   fails its retrieval with its `SchemaError`.
 - Browser's identifiers are WHATWG URLs and this package's are IRIs, so

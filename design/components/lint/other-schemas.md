@@ -53,10 +53,9 @@ document finds something. They can see what's in registries and what
 - A document that's linted isn't retrieved. The engine reads the file and
   the processor resolves it, so the session doesn't have it. A reference
   is followed from its own target, `findSchema`'s `from` option. A
-  document is browsed as it's written from its root's target, which for
-  one the session didn't retrieve is made from the document and the
-  schema media type (browser's `documentTarget`), so browser finds what
-  it contains the way it does for one it retrieved. Rules get the nodes being
+  document is browsed as it's written from the document, which browser
+  takes where it takes a target, so browser finds what one the session
+  didn't retrieve contains the way it does for one it retrieved. Rules get the nodes being
   linted, even when the document has problems, and nothing is read again,
   so stdin and editor buffers work.
 - Adding the linted document to the session was considered: to browser's

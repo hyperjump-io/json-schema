@@ -20,10 +20,10 @@ export type JsonOrSchemaDocument = JsonMediaTypeDocument | JsonSchemaMediaTypeDo
  * that's a file, which can't be a dialect.
  *
  * A fragment of a schema is a schema's, and a fragment of JSON identifies
- * the whole document.
+ * the whole document, which each document says with its `anchors`.
  *
  * `jsonSchemaMediaTypes` returns it after the JSON Schema media type, and
  * it's what parses JSON. Only a `Hyperjump<JsonSchemaConfig>` reads a document as a
  * schema. It isn't exported from the package.
  */
-export const jsonOrSchemaMediaType: Readonly<MediaTypePlugin<JsonOrSchemaDocument>> & Required<Pick<MediaTypePlugin<JsonOrSchemaDocument>, "fragmentPointer">>;
+export const jsonOrSchemaMediaType: Readonly<MediaTypePlugin<JsonOrSchemaDocument>>;

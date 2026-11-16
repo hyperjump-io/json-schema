@@ -27,10 +27,9 @@ what it finds, and linting doesn't.
   written. A document's references are found as targets by browsing it as
   it's written (`jrefVisit` with `reference: "manual"`).
   - A tree that's linted can be one the session didn't retrieve, like an
-    editor's. Its root's target is made from the tree and the schema
-    media type (browser's `documentTarget`), and it's browsed from there,
-    so browser finds what it embeds the way it does for a document it
-    retrieved.
+    editor's. Browser's functions take the tree where they take a
+    target, so it's browsed from the tree, and browser finds what it
+    embeds the way it does for a document it retrieved.
   - What's found has the document it's in, which is the whole document,
     not a resource it embeds.
 - What isn't a schema is an error whose `cause.code` is

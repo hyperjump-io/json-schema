@@ -57,12 +57,12 @@ its position.
   resource has beyond its values, like its dynamic anchors. A node's
   resource isn't looked up from the node.
 - Anchors and dynamic anchors are recorded per resource as JSON Pointers.
-  2019-09's `$recursiveAnchor: true` is a dynamic anchor named `""`. The
-  schema media type plugins' `fragmentPointer` looks anchors up, so browser
-  doesn't know about them either. An embedded resource has the plugin that
-  parsed the document it's in, so that works for a resource browser didn't
-  parse.
+  2019-09's `$recursiveAnchor: true` is a dynamic anchor named `""`. A
+  resource's `anchors` is what browser reads to find what a fragment
+  identifies, so it works for a resource browser didn't parse, like an
+  embedded one or one in a tree that's linted. Browser doesn't know
+  dynamic anchors.
 - A fragment that isn't a JSON Pointer is an anchor. If the resource
-  doesn't have it, `fragmentPointer` throws an error whose `cause.code` is
-  `ERR_ANCHOR_NOT_FOUND`, so it never reaches browser as a pointer that
-  isn't valid.
+  doesn't have it, browser throws an error whose `cause.code` is
+  `ERR_ANCHOR_NOT_FOUND`, so it's never read as a pointer that isn't
+  valid.
