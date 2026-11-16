@@ -1330,6 +1330,71 @@ describe("Basic Output Format", () => {
     });
   });
 
+  test("a '#' in a property name is percent-encoded", async () => {
+    registerSchema({
+      properties: {
+        "a#b": { type: "string" }
+      }
+    }, schemaUri, dialectUri);
+    const output = await validate(schemaUri, { "a#b": 42 }, BASIC);
+
+    expect(output).to.eql({
+      valid: false,
+      errors: [
+        {
+          keyword: "https://json-schema.org/keyword/type",
+          absoluteKeywordLocation: `${schemaUri}#/properties/a%23b/type`,
+          instanceLocation: "#/a%23b"
+        }
+      ]
+    });
+  });
+
+  test("a $ref to a percent-encoded '#'", async () => {
+    registerSchema({
+      $ref: "#/$defs/a%23b",
+      $defs: {
+        "a#b": { type: "string" }
+      }
+    }, schemaUri, dialectUri);
+    const output = await validate(schemaUri, 42, BASIC);
+
+    expect(output).to.eql({
+      valid: false,
+      errors: [
+        {
+          keyword: "https://json-schema.org/keyword/type",
+          absoluteKeywordLocation: `${schemaUri}#/$defs/a%23b/type`,
+          instanceLocation: "#"
+        }
+      ]
+    });
+  });
+
+  test("a $dynamicAnchor under a '#' in a property name", async () => {
+    registerSchema({
+      $dynamicRef: "foo",
+      $defs: {
+        "a#b": {
+          $dynamicAnchor: "foo",
+          type: "string"
+        }
+      }
+    }, schemaUri, dialectUri);
+    const output = await validate(schemaUri, 42, BASIC);
+
+    expect(output).to.eql({
+      valid: false,
+      errors: [
+        {
+          keyword: "https://json-schema.org/keyword/type",
+          absoluteKeywordLocation: `${schemaUri}#/$defs/a%23b/type`,
+          instanceLocation: "#"
+        }
+      ]
+    });
+  });
+
   test("a large number of errors", async () => {
     registerSchema({
       properties: {
