@@ -7,7 +7,7 @@ import { pathToFileURL } from "node:url";
 import { describe, test, beforeEach, beforeAll, afterAll, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
-import { fetcher, fromJson, jrefStep, jsonPointerGet, nodeTransport, rejsonParse, Hyperjump } from "@hyperjump/browser";
+import { fetcher, fromJson, jrefSelect, jsonPointerGet, nodeTransport, rejsonParse, Hyperjump } from "@hyperjump/browser";
 import { jsonSchemaConfig, SchemaError, extendDialect } from "../json-schema.js";
 import { jsonSchemaResolve, resolveSchema } from "./resolve.js";
 import idKeyword from "../keywords/id.js";
@@ -979,7 +979,7 @@ describe("jsonSchemaResolve", () => {
       const a = schemaNode(await get(session, `${uri}#/properties/foo`));
       expect(a.location).to.equal("https://example.com/a#");
 
-      const b = schemaNode(await jrefStep(session, "b", schemaNode(await jrefStep(session, "properties", a))));
+      const b = schemaNode(await jrefSelect(session, "> [key=properties] > [key=b]", a));
       expect(b.location).to.equal("https://example.com/b#");
     });
 
@@ -996,7 +996,7 @@ describe("jsonSchemaResolve", () => {
       });
 
       const c = schemaNode(await get(session, `${uri}#/properties/foo`));
-      const d = schemaNode(await jrefStep(session, "root", schemaNode(await jrefStep(session, "properties", c))));
+      const d = schemaNode(await jrefSelect(session, "> [key=properties] > [key=root]", c));
       expect(d.location).to.equal("https://example.com/embedding#/definitions/d");
     });
 

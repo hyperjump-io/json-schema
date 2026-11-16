@@ -47,7 +47,7 @@ from this package too:
 | --- | --- |
 | `get(session, uri)` | The node a URI identifies. A fragment is an anchor or a JSON Pointer. It follows a draft-04 to draft-07 `$ref`. |
 | `getDocument(session, uri)` | The document at a URI, without its fragment |
-| `jrefStep(session, key, node)` and the other `jref` functions | Step into a node, following references. See [browser's browsing](https://github.com/hyperjump-io/browser/blob/v2/website/browsing.md). |
+| `jrefSelect(session, selector, node)` and the other `jref` functions | Find the nodes under a node, following references. See [browser's browsing](https://github.com/hyperjump-io/browser/blob/v2/website/browsing.md). |
 | `getDialect(session, uri)` | A dialect, from the config or from a meta-schema the session finds |
 
 A schema is found in the config's registry, and otherwise it's

@@ -16,7 +16,7 @@ import { annotate, validate, validator } from "./operations/validate.js";
 import { annotatorFor, validatorFor } from "./operations/validate-compiled.js";
 import { get, getDocument } from "./session.js";
 import { isSchemaDocument, isSchemaNode } from "./schema/schema-nodes.js";
-import { jrefMediaType, jrefStep, Hyperjump } from "@hyperjump/browser";
+import { jrefMediaType, jrefSelect, Hyperjump } from "@hyperjump/browser";
 import type { DocumentNode, FollowedNode, JrefNode, JsonNode, MediaTypePlugin } from "@hyperjump/browser";
 import type { JsonSchemaNode } from "./schema/schema-ast.d.ts";
 
@@ -151,8 +151,8 @@ const found = await get(new Hyperjump(v1Only), "https://example.com/schema");
 yes<Equal<typeof found, FollowedNode<JsonSchemaNode | JsonNode>>>();
 if (found.type === "json-schema") {
   found satisfies FollowedNode<JsonSchemaNode>;
-  const stepped = await jrefStep(new Hyperjump(v1Only), "properties", found);
-  yes<Equal<typeof stepped, FollowedNode<JsonSchemaNode | JsonNode>>>();
+  const selected = await jrefSelect(new Hyperjump(v1Only), "> [key=properties]", found);
+  yes<Equal<typeof selected, FollowedNode<JsonSchemaNode | JsonNode> | undefined>>();
 }
 
 type OtherNode = JsonNode<{ type: "other" }>;
