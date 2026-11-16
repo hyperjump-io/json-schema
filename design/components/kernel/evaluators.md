@@ -21,6 +21,9 @@
   An AST's `entries` is an array rather than a generator, which was
   4–21% faster with and without plugins
   ([Evaluating ASTs](../../benchmarks/kernel-in-src/evaluating-asts.md)).
+  So is its `keys`, and the loops over `items` and `keys` read them by
+  index instead of with `for...of`, which made hooks up to 14% faster
+  ([Index loops](../../benchmarks/kernel-in-src/index-loops.md)).
   An AST without plugins or annotating stops early, like `fast.js`: a
   schema at its first failing group, `any` at the first subexpression that
   passes if nothing reads marks, and `eachItem` at the first item that

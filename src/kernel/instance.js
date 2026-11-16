@@ -127,12 +127,16 @@ class AstInstance {
     return entries;
   }
 
+  // An array, not a generator, like `entries`, so the evaluator can read it by index
   /** @type InstanceOps<InstanceNode>["keys"] */
-  * keys(instance) {
+  keys(instance) {
     const object = /** @type JsonNode<{ type: "json" }, JsonErrorNode> & { jsonType: "object" } */ (instance);
+    /** @type InstanceNode[] */
+    const keys = [];
     for (const property of object.children) {
-      yield /** @type InstanceNode */ (/** @type unknown */ (property.children[0]));
+      keys.push(/** @type InstanceNode */ (/** @type unknown */ (property.children[0])));
     }
+    return keys;
   }
 
   /** @type InstanceOps<InstanceNode>["items"] */

@@ -1020,10 +1020,10 @@ export const instrumented = (definitions, kernel, options) => {
             return true;
           }
           let valid = true;
-          let index = 0;
-          for (const item of ops.items(instance)) {
-            if (index >= from && !(unevaluated && /** @type Set<string | number> */ (marks).has(index))) {
-              if (of(item, undefined, index)) {
+          const items = /** @type I[] */ (ops.items(instance));
+          for (let index = from; index < items.length; index++) {
+            if (!(unevaluated && /** @type Set<string | number> */ (marks).has(index))) {
+              if (of(items[index], undefined, index)) {
                 marks?.add(index);
               } else {
                 valid = false;
@@ -1032,7 +1032,6 @@ export const instrumented = (definitions, kernel, options) => {
                 }
               }
             }
-            index++;
           }
           return valid;
         };
@@ -1045,13 +1044,12 @@ export const instrumented = (definitions, kernel, options) => {
             return true;
           }
           let matches = 0;
-          let index = 0;
-          for (const item of ops.items(instance)) {
-            if (of(item, undefined, index)) {
+          const items = /** @type I[] */ (ops.items(instance));
+          for (let index = 0; index < items.length; index++) {
+            if (of(items[index], undefined, index)) {
               matches++;
               marks?.add(index);
             }
-            index++;
           }
           return matches >= min && (max === null || matches <= max);
         };
@@ -1088,8 +1086,9 @@ export const instrumented = (definitions, kernel, options) => {
             return true;
           }
           let valid = true;
-          for (const name of ops.keys(instance)) {
-            valid = of(name, undefined) && valid;
+          const names = /** @type I[] */ (ops.keys(instance));
+          for (let index = 0; index < names.length; index++) {
+            valid = of(names[index], undefined) && valid;
           }
           return valid;
         };
@@ -1537,13 +1536,14 @@ export const instrumented = (definitions, kernel, options) => {
       /** @type Set<number> */
       let current = new Set();
       addReachable(states, start, current);
+      const items = /** @type I[] */ (ops.items(instance));
       let index = 0;
-      for (const item of ops.items(instance)) {
+      for (; index < items.length; index++) {
         /** @type Set<number> */
         const next = new Set();
         for (const state of current) {
           const { evaluate } = states[state];
-          if (evaluate !== undefined && evaluate(item, undefined, index)) {
+          if (evaluate !== undefined && evaluate(items[index], undefined, index)) {
             addReachable(states, /** @type number */ (states[state].next), next);
           }
         }
@@ -1551,7 +1551,6 @@ export const instrumented = (definitions, kernel, options) => {
         if (current.size === 0) {
           return false;
         }
-        index++;
       }
 
       if (!current.has(end)) {
