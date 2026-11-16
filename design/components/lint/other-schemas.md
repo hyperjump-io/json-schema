@@ -32,8 +32,10 @@ document finds something. They can see what's in registries and what
   itself.
 - `findSchema(session, uri, options)` (`src/lint/find-schema.js`) finds what
   a reference would, without following a reference it finds. It's
-  `referencedSchema` (see [Referenced schemas](../referenced-schemas.md))
-  with a failure as a result. It's what
+  browser's `get` from the document the reference is in, with
+  `reference: "manual"` (see
+  [Referenced schemas](../referenced-schemas.md)), with a failure as a
+  result. It's what
   `documentForLint` finds references with, and isn't part of the API, so a
   rule can't retrieve anything. A rule that needs a URI no reference names
   gets it by `documentForLint` finding it too, like the identifiers above. Its result is
@@ -50,9 +52,10 @@ document finds something. They can see what's in registries and what
   having problems.
 - A document that's linted isn't retrieved. The engine reads the file and
   the processor resolves it, so the session doesn't have it. A reference
-  from it is found with `findSchema`'s `document` option, which looks in
-  the referencing document's `embedded` map before the session, the way
-  browser finds what a reference's document contains. Rules get the nodes being
+  is followed from the document it's in, `findSchema`'s `document`
+  option, and for a document the session didn't retrieve, browser is told
+  its media type, so it finds what the document contains the way it does
+  for one it retrieved. Rules get the nodes being
   linted, even when the document has problems, and nothing is read again,
   so stdin and editor buffers work.
 - Adding the linted document to the session was considered: to browser's
@@ -63,8 +66,11 @@ document finds something. They can see what's in registries and what
 - A reference back to the linted file from another document goes through
   the session, which retrieves the file. That's the same text for the CLI.
   The language server's `file:` plugin reads open files from their buffers.
-- `documentForLint` follows references the way browser does: resolve the reference
-  against its resource's URI and find that. `visitReferences` does the
+- `documentForLint` follows references with browser: resolve the
+  reference against its resource's URI and find that, from the document
+  the reference is in. What a URI finds is kept once, and the linted
+  document's references are found first, so it's what a reference in
+  that document finds. `visitReferences` does the
   first part for every static reference, in every dialect: a `$ref`
   keyword (2019-09 and later), resolved against its schema's location, or
   a schema that's a reference (`$ref` in draft-04 through draft-07, whose

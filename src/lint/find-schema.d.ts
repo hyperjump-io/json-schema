@@ -29,10 +29,11 @@ export type FindSchemaResult = {
 
 export type FindSchemaOptions = {
   /**
-   * The document the reference is in. A resource in it, including its root,
-   * is found in it before the session is used, the way a reference finds an
-   * embedded resource. It's the tree being linted, because a document
-   * that's linted wasn't retrieved, so the session doesn't have it.
+   * The document the reference is in, which it's followed from. A resource
+   * in it, including its root, is found in it before anything is
+   * retrieved, the way a reference finds an embedded resource. It can be
+   * the tree being linted, which wasn't retrieved, so the session doesn't
+   * have it.
    */
   document?: JsonSchemaDocumentNode;
 };

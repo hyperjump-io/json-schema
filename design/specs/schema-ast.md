@@ -26,9 +26,7 @@ its position.
   the document the reference is in. A reference is followed from a
   target (`referencedFrom`), which is its node and the document that was
   retrieved. So a resource's nodes keep their canonical URIs, and a
-  document can't change what a reference in another document finds.
-  Linting has the reference's document without a target, so it looks in
-  its `embedded` itself (see
+  document can't change what a reference in another document finds (see
   [Referenced schemas](../components/referenced-schemas.md)).
 - A session can have documents with different resources for a URI, like a
   schema and a document that embeds another schema with its `$id`. Each is

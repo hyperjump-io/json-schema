@@ -29,8 +29,8 @@ These stay public, because something users write depends on them.
   `referencedFrom` is a target, the reference's node and the document
   it's in, and what `get` returns is one, so a reference in what was
   found is followed from it in turn. Without it, `get` only finds a
-  whole document, from a registry or by retrieving it. Compiling follows
-  references this way, and linting and bundling don't (see
+  whole document, from a registry or by retrieving it. Compiling and
+  linting follow references this way, and bundling doesn't (see
   [Referenced schemas](../referenced-schemas.md)).
 - `get` is browser's, exported as it is. What it finds might not be a
   schema, so `isSchemaNode` and `isSchemaDocument` are exported with it.

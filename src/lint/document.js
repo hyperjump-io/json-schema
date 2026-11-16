@@ -81,7 +81,12 @@ const gather = async (session, tree) => {
   const keywords = {};
   /** @type Set<JsonSchemaDocumentNode> */
   const documents = new Set();
-  /** @type NormalizedIri[] */
+  /**
+   * References to find, each with the document it's in, which it's
+   * followed from
+   *
+   * @type [uri: NormalizedIri, document: JsonSchemaDocumentNode][]
+   */
   const pending = [];
 
   /** @type (document: JsonSchemaDocumentNode) => Promise<LintSchemas> */
@@ -107,7 +112,7 @@ const gather = async (session, tree) => {
       }
     });
     visitReferences(document, (uri) => {
-      pending.push(uri);
+      pending.push([uri, document]);
     });
 
     const lowered = await lowerDocument(session, document);
@@ -122,14 +127,17 @@ const gather = async (session, tree) => {
   // The identifier of what a reference in the tree finds, which says
   // whether the reference could use it
   /** @type Set<string> */
-  const fromTree = new Set(pending);
+  const fromTree = new Set(pending.map(([uri]) => uri));
 
-  for (let uri = pending.shift(); uri !== undefined; uri = pending.shift()) {
+  // What a URI finds is kept once. The tree's references are found first,
+  // so it's what a reference in the tree finds.
+  for (let next = pending.shift(); next !== undefined; next = pending.shift()) {
+    const [uri, document] = next;
     if (found.has(uri)) {
       continue;
     }
 
-    const result = await findSchema(session, uri, { document: tree });
+    const result = await findSchema(session, uri, { document });
     found.set(uri, result);
     if (result.status !== "found") {
       continue;
@@ -144,7 +152,7 @@ const gather = async (session, tree) => {
       const { location } = result.node;
       const identifier = location.endsWith("#") ? toAbsoluteIri(location) : location;
       if (toAbsoluteIri(identifier) !== toAbsoluteIri(uri)) {
-        pending.push(identifier);
+        pending.push([identifier, tree]);
       }
     }
   }

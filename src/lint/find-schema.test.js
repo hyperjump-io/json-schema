@@ -177,6 +177,19 @@ describe("findSchema", () => {
       expect(statuses).to.eql(["found", "found", "missing"]);
     });
   });
+
+  describe("a document the session retrieved", () => {
+    test("a reference in it finds a resource it embeds, in that document", async () => {
+      const container = await findSchema(session, iri("https://example.com/schema"));
+      if (container.status !== "found") {
+        throw Error("Expected the schema to be found");
+      }
+
+      const result = await findSchema(session, iri("https://example.com/embedded"), { document: container.document });
+      expect(result).toMatchObject({ status: "found", node: { location: "https://example.com/embedded#" } });
+      expect(result.status === "found" && result.document, "what's found has the document it's in").to.equal(container.document);
+    });
+  });
 });
 
 /**

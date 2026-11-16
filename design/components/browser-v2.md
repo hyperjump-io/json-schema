@@ -36,6 +36,9 @@ is in browser's [design docs](https://github.com/hyperjump-io/browser/blob/v2/de
   one in its document's `embedded` with the URI of its location, so
   compiling has a schema's dialect, dynamic anchors, and document without
   looking anything up.
+- `referencedFromMediaType`, for a reference in a document the session
+  didn't retrieve, like one that's linted. With the document's media
+  type, browser finds what it contains.
 - Embedded documents. A document's `embedded` has the documents it
   contains, and a reference from the document, given as a target in it
   (`referencedFrom`), finds them before anything is retrieved. Every
