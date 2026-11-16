@@ -30,7 +30,7 @@ There are two phases:
    each retrieval as it reached it, so every keyword was async. Fetching
    every `href` up front was rejected, because it would retrieve what isn't
    compiled, like references in `$defs` that nothing applies. It compiles
-   the schemastore corpus to the same kernels in the same time.
+   the SchemaStore corpus to the same kernels in the same time.
    - A handle names one schema, so a kernel can only have one resource for
      a URI. A resource that's reached in two documents has to be identical
      in both, or it's a `duplicate-id` problem. Schemas are queued by node,
