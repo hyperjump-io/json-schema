@@ -11,9 +11,8 @@ import type { JsonSchemaConfig } from "../json-schema.d.ts";
  * with its own.
  *
  * The schema can be a reference itself, which isn't followed. It's what
- * code that gathers the schemas a document reaches uses, like compiling
- * and linting, which need the document of what they find and read it
- * synchronously. It isn't part of the API.
+ * linting uses, which reports on references as they're written, and finds
+ * them in a tree the session might not have. It isn't part of the API.
  *
  * @throws What `getDocument` throws.
  * @throws An `Error` whose `cause.code` is `ERR_NOT_A_SCHEMA` if the
@@ -26,3 +25,23 @@ export const referencedSchema: (
   uri: Iri,
   embedded?: Record<string, JsonSchemaDocumentNode>
 ) => Promise<{ document: JsonSchemaDocumentNode; node: JsonSchemaNode }>;
+
+/**
+ * The schema a reference finds, followed, and the resource it's in. It's
+ * browser's `get` with `from` as `referencedFrom`, so a resource the
+ * document `from` is in embeds is found before anything is retrieved, and
+ * a schema that's a reference is followed, through any document, to a
+ * value. `from` is a node of a document the session has. Without it, the
+ * URI is found the way any URI is. It's what compiling uses. It isn't part
+ * of the API.
+ *
+ * @throws What `get` and `getDocument` throw, like an `Error` whose
+ * `cause.code` is `ERR_REFERENCE_CYCLE`.
+ * @throws An `Error` whose `cause.code` is `ERR_NOT_A_SCHEMA` if what the
+ * references lead to isn't a schema.
+ */
+export const followedSchema: (
+  session: Hyperjump<JsonSchemaConfig>,
+  uri: Iri,
+  from?: JsonSchemaNode
+) => Promise<{ document: JsonSchemaDocumentNode; node: JsonSchemaNode & { type: "json-schema" } }>;

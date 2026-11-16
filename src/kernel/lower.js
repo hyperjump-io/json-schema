@@ -6,7 +6,7 @@ import { readsDynamicScope, readsMarks } from "./kernel.js";
 import { normalForm } from "./normalize.js";
 import { getDialect } from "../session.js";
 import { definitionsOf } from "../definition-of.js";
-import { referencedSchema } from "../schema/referenced-schema.js";
+import { followedSchema } from "../schema/referenced-schema.js";
 import { differentResources, sameResource } from "../schema/same-resource.js";
 
 /**
@@ -175,10 +175,10 @@ export const lowerKeywords = (keywords, node, dialect, inputs, tolerant) => {
 
 /**
  * What compiling needs that's retrieved: the schema a reference finds (by
- * the URI and the document the reference is in, as a number and as the
- * `embedded` it's looked for in first), and a dialect
+ * the URI and the document the reference is in, as a number, and the
+ * schema the reference is in, which it's followed from), and a dialect
  *
- * @typedef {{ kind: "target"; uri: string; document: number; from: Embedded | undefined }
+ * @typedef {{ kind: "target"; uri: string; document: number; from: JsonSchemaNode | undefined }
  *   | { kind: "dialect"; uri: string }} Need
  */
 
@@ -246,10 +246,10 @@ class Lowerer {
   #retrieved;
 
   /**
-   * The document of the schema that's being lowered, which its references
-   * are followed from
+   * The schema that's being lowered, which its references are followed
+   * from
    *
-   * @type Embedded | undefined
+   * @type JsonSchemaNode | undefined
    */
   #current;
 
@@ -392,18 +392,8 @@ class Lowerer {
   /** @type (key: string, need: Need) => Promise<void> */
   async #retrieveOnce(key, need) {
     if (need.kind === "target") {
-      // A schema that's a reference is the schema it finds, which is looked
-      // for from the document that reference is in
-      let found = await referencedSchema(this.#session, /** @type Iri */ (need.uri), need.from);
-      const chain = [need.uri];
-      while (found.node.type === "reference") {
-        const href = /** @type Iri */ (found.node.href);
-        if (chain.includes(href)) {
-          throw Error(`Following references led back to '${relativeFileUrl(href)}'`, { cause: { code: "ERR_REFERENCE_CYCLE", chain: [...chain, href] } });
-        }
-        chain.push(href);
-        found = await referencedSchema(this.#session, href, found.document.embedded);
-      }
+      // A schema that's a reference is the schema it finds
+      const found = await followedSchema(this.#session, /** @type Iri */ (need.uri), need.from);
 
       // A document's resources share its `embedded`, so one that isn't
       // known yet was retrieved
@@ -441,6 +431,11 @@ class Lowerer {
     } else if (compiled !== resource && !sameResource(compiled, resource)) {
       throw differentResources(resource, this.#retrieved.get(resource.embedded) ?? resource, this.#retrieved.get(compiled.embedded) ?? compiled);
     }
+  }
+
+  /** @type () => Embedded | undefined */
+  #currentDocument() {
+    return this.#current && this.#documents.get(this.#current);
   }
 
   /** @type (document: Embedded | undefined) => number */
@@ -491,7 +486,7 @@ class Lowerer {
    * @type (uri: string) => Target | undefined
    */
   #target(uri) {
-    const document = this.#documentNumber(this.#current);
+    const document = this.#documentNumber(this.#currentDocument());
     const target = this.#targets.get(`${document} ${uri}`);
     if (target === undefined) {
       this.#need({ kind: "target", uri, document, from: this.#current });
@@ -507,7 +502,7 @@ class Lowerer {
    */
   #handle(node) {
     if (node.type !== "reference") {
-      return this.#schema(node, /** @type Embedded */ (this.#current));
+      return this.#schema(node, /** @type Embedded */ (this.#currentDocument()));
     }
 
     const target = this.#target(/** @type Iri */ (node.href));
@@ -553,7 +548,7 @@ class Lowerer {
    * @type (node: JsonSchemaNode) => void
    */
   #lowerSchema(node) {
-    this.#current = this.#documents.get(node);
+    this.#current = node;
     const handle = node.location;
     if (node.jsonType !== "boolean" && node.jsonType !== "object") {
       throw Error(`No schema found at '${relativeFileUrl(handle)}'`);

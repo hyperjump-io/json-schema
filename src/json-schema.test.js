@@ -532,6 +532,17 @@ describe("jsonSchemaMediaTypes", () => {
       expect([validate(42), validate("a")]).to.eql([true, false]);
     });
 
+    test("a reference can go through a document that isn't a schema, as long as it ends at a schema", async () => {
+      const stack = fetcher((request) => new URL(request.url).pathname === "/link"
+        ? new Response(JSON.stringify({ $ref: "/string" }), { headers: { "content-type": "application/reference+json" } })
+        : new Response(JSON.stringify({ $schema: v1DialectUri, type: "string" }), { headers: { "content-type": "application/schema+json" } }));
+      const config = jsonSchemaConfig({ dialects: [v1Dialect], mediaTypes: [jrefMediaType], allowRetrieval: ["https://example.com/"], stack });
+      const registry = new SchemaRegistry().with({ $schema: v1DialectUri, $id: "https://example.com/main", $ref: "https://example.com/link" });
+
+      const validate = validatorFor(await compile(config, "https://example.com/main", { registry }));
+      expect([validate("a"), validate(42)]).to.eql([true, false]);
+    });
+
     test("schemas that are references that lead back to one already followed aren't compiled", async () => {
       const draft07 = jsonSchemaConfig({ dialects: [v1Dialect, draft07Dialect] });
       const registry = new SchemaRegistry()

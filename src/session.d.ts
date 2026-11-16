@@ -45,7 +45,7 @@ export type SessionOptions = {
  * Schema media types, a fragment of a schema is an anchor or a JSON
  * Pointer, and documents are found in this order: an embedded resource, if
  * `referencedFrom` is a node of the document that contains it; a schema in
- * the config's registry; then it's retrieved. `getDocument` never finds an embedded resource.
+ * the config's registry; then it's retrieved.
  *
  * They throw a `SchemaError` if a schema has problems, with every problem
  * in the document, and an `Error` if more than one schema in the registries

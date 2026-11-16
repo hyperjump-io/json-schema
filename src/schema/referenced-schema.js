@@ -1,8 +1,8 @@
 import { jsonPointerGet, relativeFileUrl } from "@hyperjump/browser";
 import { getFragment, toAbsoluteIri } from "@hyperjump/uri";
-import { getDocument } from "../session.js";
+import { get, getDocument } from "../session.js";
 import { schemaMediaType } from "./media-type-plugin.js";
-import { isSchemaDocument } from "./schema-nodes.js";
+import { isSchemaDocument, isSchemaNode } from "./schema-nodes.js";
 
 /**
  * @import { JsonSchemaNode } from "./schema-ast.d.ts"
@@ -23,6 +23,23 @@ export const referencedSchema = async (session, uri, embedded) => {
   const pointer = fragment === undefined ? "" : schemaMediaType.fragmentPointer(/** @type JsonSchemaMediaTypeDocument */ (document), fragment);
   const node = jsonPointerGet(pointer, /** @type JsonSchemaNode */ (document.children[0]));
   if (node.type !== "json-schema" && node.type !== "reference") {
+    throw notASchema(uri);
+  }
+
+  return { document, node };
+};
+
+/** @type typeof API.followedSchema */
+export const followedSchema = async (session, uri, from) => {
+  const node = await get(session, uri, { referencedFrom: from });
+  if (!isSchemaNode(node)) {
+    throw notASchema(uri);
+  }
+
+  // The node's document is the one that has it, which can be a resource
+  // its container embeds
+  const document = await getDocument(session, toAbsoluteIri(node.location), { referencedFrom: node });
+  if (!isSchemaDocument(document)) {
     throw notASchema(uri);
   }
 
