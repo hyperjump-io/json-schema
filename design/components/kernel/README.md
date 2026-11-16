@@ -11,41 +11,58 @@ be traded away for speed.
 There are two phases:
 
 1. **Lower** (async, once per compiled schema, `lower.js`). Walk the schema AST
-   from the entry URI, retrieving referenced schemas with `followedSchema`
-   (see [Referenced schemas](../referenced-schemas.md)). Each
+   from the entry URI, following references with browser's `get` as it
+   reaches them (see [Referenced schemas](../referenced-schemas.md)). Each
    keyword's value is parsed by its shape, with the schemas in it compiled,
    and given to its `lower` with the siblings it declares. The result is a
    `Kernel`: a table of handles (canonical URIs) to a boolean or the
    schema's keyword groups, and the dynamic anchors of every resource.
    Schemas refer to each other by handle, so cycles are fine. Expressions
-   are in the normal form (`normalize.js`). All I/O happens here, but
-   lowering a schema is synchronous (`lowerKeywords`, which lint shares):
-   it lowers every schema it can with what's been retrieved, then
-   retrieves, at the same time, what the rest need (what a reference finds
-   and a dialect), and lowers those, until nothing is missing. A resource's
-   dynamic anchors don't need retrieving: a schema is from a document the
-   session has. A schema that's missing something isn't lowered until it's
-   there. If more than one retrieval fails, the first one's error is
-   thrown, so it's the same every time. Before 2026-10-30, lowering awaited
-   each retrieval as it reached it, so every keyword was async. Fetching
-   every `href` up front was rejected, because it would retrieve what isn't
-   compiled, like references in `$defs` that nothing applies. It compiles
-   the SchemaStore corpus to the same kernels in the same time.
+   are in the normal form (`normalize.js`). Schemas are lowered one at a
+   time, in the order they're found, and a schema is lowered in one pass:
+   parsing a keyword's value waits for each reference in it, so
+   `lowerKeywords`, which lint shares, is asynchronous, and a keyword's
+   `lower` isn't. A resource's dynamic anchors don't need retrieving: a
+   schema is from a document the session has. What's compiled and what
+   fails is the same every time, because nothing is retrieved out of
+   order.
+   - A reference is retrieved when it's reached, so references are
+     retrieved one at a time. A schema that refers to many documents that
+     are slow to arrive takes the sum of them: 20 references that each
+     take 5 ms compile in about 135 ms.
+   - Rejected: lowering every schema it can with what's been retrieved,
+     then retrieving what the rest need at the same time, and lowering
+     those again, until nothing is missing. It retrieved in parallel (17
+     ms for the 20 references), but a schema with a reference was lowered
+     twice, with a placeholder for what wasn't there yet, and compiling
+     kept what was needed, what was being retrieved, and which document
+     each schema came from.
+   - Rejected: finding a schema's references by its keywords' shapes when
+     the schema is found, following them then, and waiting for them when
+     it's lowered. It was the fastest measured, about 8 percent faster on
+     a whole compile of 37 real schemas and parallel, with `lowerKeywords`
+     synchronous, but a keyword's value was read twice, once for its
+     references and once to lower it.
+   - Rejected: one pass with every schema lowered as soon as it's found
+     and the kernel put together afterwards in a fixed order. It retrieved
+     in parallel, but it made promises for every schema, and a whole
+     compile was 20 to 25 percent slower.
+   - Rejected: fetching every `href` up front, because it would retrieve
+     what isn't compiled, like references in `$defs` that nothing applies.
    - A handle names one schema, so a kernel can only have one resource for
      a URI. A resource that's reached in two documents has to be identical
      in both, or it's a `duplicate-id` problem. Schemas are queued by node,
      not by handle, so a resource that's in two documents has its
      references followed from each, and what they find is compared too.
      What's compiled doesn't depend on which document was reached first.
-   - What a reference finds is kept by the reference's document and the
-     URI, since references from one document to a URI find the same
-     thing. A schema's document is the one it was queued from, and a
-     schema a reference found comes with its document.
-   - A reference is followed from the schema it's in. A reference to a
-     schema that's a reference itself, like a draft-07 `$ref`, finds what
-     that one finds, looked for from the document it's in. References
-     that lead back to one already followed are an error whose
-     `cause.code` is `ERR_REFERENCE_CYCLE`, with the `chain`.
+   - A schema is queued as a target, with its document. A schema inside
+     it has the same document, and a schema a reference found comes with
+     its own.
+   - A reference is followed from the target of the schema it's in. A
+     reference to a schema that's a reference itself, like a draft-07
+     `$ref`, finds what that one finds, looked for from the document it's
+     in. References that lead back to one already followed are an error
+     whose `cause.code` is `ERR_REFERENCE_CYCLE`, with the `chain`.
 2. **Build evaluators** (sync, lazy). The kernel is optimized for what an
    evaluation can observe (see [Optimizations](optimizations/README.md)) and turned into closures.
    Each evaluator is built the first time it's needed and cached on the

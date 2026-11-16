@@ -99,7 +99,7 @@ Known limitations:
   are hard (each `use` has to add to the type, and declaration merging
   would add every method to every instance), features share state, so
   they depend on each other and on the order they're added in, and two
-  mixins that both wrap `getDocument` depend on that order. Registering
+  mixins that both wrap `get` depend on that order. Registering
   things (dialects, keywords, formats) doesn't depend on order, and that's
   what's in the config.
 - A default instance, ready to use from each dialect's entry point

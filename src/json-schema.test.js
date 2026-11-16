@@ -17,7 +17,7 @@ import idKeyword from "./keywords/id.js";
 import { compile } from "./operations/compile.js";
 import { annotate, validate } from "./operations/validate.js";
 import { validatorFor } from "./operations/validate-compiled.js";
-import { getDialect, getDocument, hasDialect } from "./session.js";
+import { getDialect, hasDialect } from "./session.js";
 import { annotation } from "./annotation.js";
 import { definitionsOf } from "./definition-of.js";
 
@@ -334,7 +334,7 @@ describe("jsonSchemaMediaTypes", () => {
         stack
       });
 
-      expect((await getDocument(new Hyperjump(withDefaults), "https://example.com/schema")).type).to.equal("json-schema-document");
+      expect(((await get(new Hyperjump(withDefaults), "https://example.com/schema", { reference: "manual" })).document).type).to.equal("json-schema-document");
     });
 
     test("each compile has its own session, so it sees changes", async () => {
@@ -360,7 +360,7 @@ describe("jsonSchemaMediaTypes", () => {
         await writeFile(path, JSON.stringify({ $schema: v1DialectUri }));
 
         const session = new Hyperjump({ mediaTypes: jsonSchema.mediaTypes, allowRetrieval: [pathToFileURL(join(directory, "/")).href] });
-        expect(await get(session, pathToFileURL(path).toString())).to.include({ type: "json-schema" });
+        expect((await get(session, pathToFileURL(path).toString())).node).to.include({ type: "json-schema" });
       } finally {
         await rm(directory, { recursive: true });
       }
@@ -373,7 +373,7 @@ describe("jsonSchemaMediaTypes", () => {
         await writeFile(path, JSON.stringify({ $schema: v1DialectUri, type: "string" }));
 
         const session = new Hyperjump(jsonSchemaConfig({ dialects: [v1Dialect] }));
-        const document = await getDocument(session, relative(cwd(), path));
+        const document = (await get(session, relative(cwd(), path), { reference: "manual" })).document;
         expect(/** @type import("./schema/schema-ast.d.ts").JsonSchemaDocumentNode */ (/** @type unknown */ (document)).uri).to.equal(pathToFileURL(path).href);
       } finally {
         await rm(directory, { recursive: true });
@@ -566,7 +566,7 @@ describe("jsonSchemaMediaTypes", () => {
 
       const embedded = await get(session, "https://example.com/other#/$defs/common/type");
       const document = await get(session, "https://example.com/common#/type");
-      expect([jsonValue(/** @type any */ (embedded)), jsonValue(/** @type any */ (document))]).to.eql(["number", "string"]);
+      expect([jsonValue(/** @type any */ (embedded.node)), jsonValue(/** @type any */ (document.node))]).to.eql(["number", "string"]);
     });
   });
 

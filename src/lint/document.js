@@ -211,7 +211,7 @@ const lowerDocument = (session, document) => {
 };
 
 /** @type typeof API.lowerSchemaForLint */
-export const lowerSchemaForLint = (document, schemaNode) => {
+export const lowerSchemaForLint = async (document, schemaNode) => {
   if (schemaNode.type !== "json-schema" || schemaNode.jsonType !== "object") {
     return;
   }
@@ -221,7 +221,7 @@ export const lowerSchemaForLint = (document, schemaNode) => {
     return;
   }
 
-  const lowered = lowerKeywords(document.definitions.keywords, /** @type ObjectSchemaNode */ (schemaNode), dialect, inputsFor(document.tree), true);
+  const lowered = await lowerKeywords(document.definitions.keywords, /** @type ObjectSchemaNode */ (schemaNode), dialect, inputsFor(document.tree), true);
   return lowered.map(({ group }) => group);
 };
 
@@ -253,7 +253,7 @@ const lower = async (session, tree) => {
 
     const resolved = await dialect;
     if (resolved !== undefined) {
-      const lowered = lowerKeywords(definitionsOf(session.config).keywords, schemaNode, resolved, inputs, true)
+      const lowered = (await lowerKeywords(definitionsOf(session.config).keywords, schemaNode, resolved, inputs, true))
         .map((keyword) => /** @type LoweredKeyword */ ({
           group: keyword.group,
           keywordNode: keyword.keywordNode,

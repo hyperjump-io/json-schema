@@ -5,7 +5,7 @@ import { SchemaRegistry } from "./schema-registry.js";
 import { RegistryIndex } from "./registry-index.js";
 import { toId } from "../identifiers.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
-import { getDocument } from "../session.js";
+import { get } from "../session.js";
 import { definitionsOf } from "../definition-of.js";
 
 /**
@@ -92,7 +92,7 @@ describe("RegistryIndex", () => {
     const session = new Hyperjump({ ...jsonSchema, registry });
     expect(identified).to.equal(0);
 
-    await getDocument(session, "https://example.com/counted-schema");
+    await get(session, "https://example.com/counted-schema", { reference: "manual" });
     expect(identified).to.be.greaterThan(0);
   });
 });

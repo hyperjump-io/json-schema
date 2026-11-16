@@ -9,7 +9,7 @@ import type { JsonSchemaDocumentNode, JsonSchemaNode } from "./schema-ast.d.ts";
 export const isSchemaNode: (node: unknown) => node is JsonSchemaNode & { type: "json-schema" };
 
 /**
- * Whether a document is a schema document. `getDocument` finds any document
+ * Whether a document is a schema document. `get` finds any document
  * a session can read, like a JSON file.
  */
 export const isSchemaDocument: (document: unknown) => document is JsonSchemaDocumentNode;

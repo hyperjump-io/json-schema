@@ -17,7 +17,8 @@ document finds something. They can see what's in registries and what
   found once for each tree and session, and a reached document is lowered
   once for each session. Every helper (`schemaGroup`, `effectOf`,
   `marksEvery`, `evaluatorForLint`, `formatTypes`, `keywordAppliesTo`, …)
-  is a synchronous function of it. Before 2026-10-30, rules took
+  is a synchronous function of it, except `lowerSchemaForLint`, which
+  lowers a schema a rule made. Before 2026-10-30, rules took
   `(session, tree)`, each helper followed references itself, as it needed
   them, with caches keyed by session in five modules, and `effectOf` found
   references again for every keyword. Following all of them up front

@@ -4,7 +4,7 @@ import { jsonSchemaConfig } from "../json-schema.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import { compile } from "../operations/compile.js";
-import { get, getDocument } from "../session.js";
+import { get } from "../session.js";
 import { isSchemaDocument, isSchemaNode } from "./schema-nodes.js";
 
 describe("what a session finds that isn't a schema", () => {
@@ -28,20 +28,20 @@ describe("what a session finds that isn't a schema", () => {
   test("isSchemaNode is only true for a schema", async () => {
     const session = new Hyperjump(jsonSchema);
 
-    expect(isSchemaNode(await get(session, "https://example.com/schema"))).to.equal(true);
-    expect(isSchemaNode(await get(session, "https://example.com/schema#/properties/a"))).to.equal(true);
-    expect(isSchemaNode(await get(session, "https://example.com/schema#/properties")), "a value in a schema").to.equal(false);
-    expect(isSchemaNode(await get(session, "https://example.com/json"))).to.equal(false);
-    expect(isSchemaNode(await get(session, "https://example.com/jref"))).to.equal(false);
+    expect(isSchemaNode((await get(session, "https://example.com/schema")).node)).to.equal(true);
+    expect(isSchemaNode((await get(session, "https://example.com/schema#/properties/a")).node)).to.equal(true);
+    expect(isSchemaNode((await get(session, "https://example.com/schema#/properties")).node), "a value in a schema").to.equal(false);
+    expect(isSchemaNode((await get(session, "https://example.com/json")).node)).to.equal(false);
+    expect(isSchemaNode((await get(session, "https://example.com/jref")).node)).to.equal(false);
     expect(isSchemaNode(undefined)).to.equal(false);
   });
 
   test("isSchemaDocument is only true for a schema document", async () => {
     const session = new Hyperjump(jsonSchema);
 
-    expect(isSchemaDocument(await getDocument(session, "https://example.com/schema"))).to.equal(true);
-    expect(isSchemaDocument(await getDocument(session, "https://example.com/json"))).to.equal(false);
-    expect(isSchemaDocument(await getDocument(session, "https://example.com/jref"))).to.equal(false);
+    expect(isSchemaDocument((await get(session, "https://example.com/schema", { reference: "manual" })).document)).to.equal(true);
+    expect(isSchemaDocument((await get(session, "https://example.com/json", { reference: "manual" })).document)).to.equal(false);
+    expect(isSchemaDocument((await get(session, "https://example.com/jref", { reference: "manual" })).document)).to.equal(false);
   });
 
   test.each(["json", "number", "jref", "schema#/properties"])("a reference to %s isn't compiled", async (target) => {

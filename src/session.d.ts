@@ -41,22 +41,24 @@ export type SessionOptions = {
 // any, so nothing is known about its nodes.
 
 /**
- * `@hyperjump/browser`'s `get` and `getDocument`. In a session with the JSON
- * Schema media types, a fragment of a schema is an anchor or a JSON
- * Pointer, and documents are found in this order: an embedded resource, if
- * `referencedFrom` is a node of the document that contains it; a schema in
- * the config's registry; then it's retrieved.
+ * `@hyperjump/browser`'s `get`. In a session with the JSON Schema media
+ * types, a fragment of a schema is an anchor or a JSON Pointer, and
+ * documents are found in this order: an embedded resource, if
+ * `referencedFrom` is a target in the document that contains it; a schema
+ * in the config's registry; then it's retrieved. With
+ * `reference: "manual"`, a schema that's a reference isn't followed, so
+ * the target's document is the one at the URI.
  *
- * They throw a `SchemaError` if a schema has problems, with every problem
+ * It throws a `SchemaError` if a schema has problems, with every problem
  * in the document, and an `Error` if more than one schema in the registries
  * is found by the URI.
  */
-export { get, getDocument } from "@hyperjump/browser";
+export { get } from "@hyperjump/browser";
 
 /**
  * Get a dialect. If it isn't one the JSON Schema media types were made with
  * or built in this session, its meta-schema is found with
- * {@link getDocument}, which can find it in a registry, and the dialect is
+ * {@link get}, which can find it in a registry, and the dialect is
  * the one the meta-schema defines (see
  * `JsonSchemaDocumentNode.definedDialect`). That's `$vocabulary` in 2019-09
  * and 2020-12. The meta-schema must be a schema (`application/schema+json`

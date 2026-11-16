@@ -8,7 +8,7 @@ import idKeyword from "../keywords/id.js";
 import typeKeyword from "../keywords/type.js";
 import { compile as compileSchema } from "../operations/compile.js";
 import { validatorFor } from "../operations/validate-compiled.js";
-import { get, getDocument } from "../session.js";
+import { get } from "../session.js";
 
 /**
  * @import { Json } from "@hyperjump/browser"
@@ -111,7 +111,7 @@ describe("SchemaRegistry", () => {
     test("a schema with an $id is also found by its retrieval URI", async () => {
       const registry = new SchemaRegistry().with(v1({ $id: "https://example.com/b", type: "string" }), { retrievalUri: "https://example.com/a" });
 
-      const node = /** @type {{ location: string }} */ (await get(new Hyperjump({ ...jsonSchema, registry }), "https://example.com/a"));
+      const { node } = /** @type {{ node: { location: string } }} */ (await get(new Hyperjump({ ...jsonSchema, registry }), "https://example.com/a"));
       expect(node.location).to.equal("https://example.com/b#");
       expect(validatorFor(await compile(registry, "https://example.com/a"))(42)).to.equal(false);
     });
@@ -275,8 +275,8 @@ describe("SchemaRegistry", () => {
       const registry = registryOf(v1({ $id: "https://example.com/a" }));
       const copy = new SchemaRegistry([...registry]);
 
-      const first = await getDocument(new Hyperjump({ ...jsonSchema, registry }), "https://example.com/a");
-      const second = await getDocument(new Hyperjump({ ...jsonSchema, registry: copy }), "https://example.com/a");
+      const first = (await get(new Hyperjump({ ...jsonSchema, registry }), "https://example.com/a", { reference: "manual" })).document;
+      const second = (await get(new Hyperjump({ ...jsonSchema, registry: copy }), "https://example.com/a", { reference: "manual" })).document;
       expect(second).to.equal(first);
     });
   });
@@ -291,9 +291,9 @@ describe("SchemaRegistry", () => {
         .with(v1({}), { retrievalUri: "https://example.com/b" });
       const after = new Hyperjump({ ...jsonSchema, registry: edited });
 
-      await expect(getDocument(before, "https://example.com/b")).rejects.toMatchObject({ cause: { code: "ERR_RETRIEVAL_NOT_ALLOWED" } });
-      await expect(getDocument(after, "https://example.com/b")).resolves.toBeDefined();
-      expect(await getDocument(after, "https://example.com/a")).not.to.equal(await getDocument(before, "https://example.com/a"));
+      await expect(get(before, "https://example.com/b", { reference: "manual" }).then(({ document }) => document)).rejects.toMatchObject({ cause: { code: "ERR_RETRIEVAL_NOT_ALLOWED" } });
+      await expect(get(after, "https://example.com/b", { reference: "manual" }).then(({ document }) => document)).resolves.toBeDefined();
+      expect((await get(after, "https://example.com/a", { reference: "manual" })).document).not.to.equal((await get(before, "https://example.com/a", { reference: "manual" })).document);
     });
 
     test("a session registry is only seen by that session", async () => {
@@ -326,8 +326,8 @@ describe("SchemaRegistry", () => {
     test("a schema is resolved once for every session", async () => {
       const registry = registryOf(v1({ $id: "https://example.com/a" }));
 
-      const first = await getDocument(new Hyperjump({ ...jsonSchema, registry }), "https://example.com/a");
-      const second = await getDocument(new Hyperjump({ ...jsonSchema, registry }), "https://example.com/a");
+      const first = (await get(new Hyperjump({ ...jsonSchema, registry }), "https://example.com/a", { reference: "manual" })).document;
+      const second = (await get(new Hyperjump({ ...jsonSchema, registry }), "https://example.com/a", { reference: "manual" })).document;
 
       expect(second).to.equal(first);
     });
@@ -336,8 +336,8 @@ describe("SchemaRegistry", () => {
       const registry = registryOf(v1({ $id: "https://example.com/a" }));
       const edited = registry.with(v1({}), { retrievalUri: "https://example.com/b" });
 
-      const first = await getDocument(new Hyperjump({ ...jsonSchema, registry }), "https://example.com/a");
-      const second = await getDocument(new Hyperjump({ ...jsonSchema, registry: edited }), "https://example.com/a");
+      const first = (await get(new Hyperjump({ ...jsonSchema, registry }), "https://example.com/a", { reference: "manual" })).document;
+      const second = (await get(new Hyperjump({ ...jsonSchema, registry: edited }), "https://example.com/a", { reference: "manual" })).document;
 
       expect(second).to.equal(first);
     });
@@ -498,7 +498,7 @@ describe("SchemaRegistry", () => {
     test("the schema's document has its origin", async () => {
       const registry = new SchemaRegistry([{ schema: v1({ $id: "https://example.com/a" }), origin: "schemas/a.schema.json" }]);
       const session = new Hyperjump({ ...offline(), registry });
-      const document = await getDocument(session, "https://example.com/a");
+      const document = (await get(session, "https://example.com/a", { reference: "manual" })).document;
 
       expect(/** @type JsonSchemaDocumentNode */ (/** @type unknown */ (document)).origin).to.equal("schemas/a.schema.json");
     });

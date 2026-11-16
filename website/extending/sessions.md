@@ -41,14 +41,13 @@ their configuration has a `stack` with one. See
 
 A session is a browser session, a `Hyperjump`, that the functions of
 [`@hyperjump/browser`](https://github.com/hyperjump-io/browser/blob/v2/website/README.md)
-take, so you browse schemas with them. This package exports `get` and
-`getDocument` too:
+take, so you browse schemas with them. This package exports `get` too:
 
 | Function | What it does |
 | --- | --- |
-| `get(session, uri)` | The node a URI identifies. A fragment is an anchor or a JSON Pointer. It follows a draft-04 to draft-07 `$ref`. |
-| `getDocument(session, uri)` | The document at a URI, without its fragment |
-| `jrefSelect(session, selector, node)` and the other `jref` functions | Find the nodes under a node, following references. See [browser's browsing](https://github.com/hyperjump-io/browser/blob/v2/website/browsing.md). |
+| `get(session, uri)` | A target for what a URI identifies: its `node`, and the `document` the node is in. A fragment is an anchor or a JSON Pointer. It follows a draft-04 to draft-07 `$ref`. |
+| `get(session, uri, { reference: "manual" })` | The same, without following a `$ref`, so the target's `document` is always the document at the URI |
+| `jrefSelect(session, selector, target)` and the other `jref` functions | Find the values under a target, following references. See [browser's browsing](https://github.com/hyperjump-io/browser/blob/v2/website/browsing.md). |
 | `getDialect(session, uri)` | A dialect, from the configuration or from a meta-schema the session finds |
 
 A session looks for a schema in the configuration's registry first, and
@@ -67,44 +66,49 @@ const trace = new Trace(session);
 ### What you get isn't always a schema
 
 A reference can lead to any document the session can read, like a JSON
-file, or a JRef document if the configuration has `jrefMediaType`. So a
-node from `get` or a `jref` function might not be a schema, and a document
-from `getDocument` might not be a schema document. Check with
-`isSchemaNode` and `isSchemaDocument`:
+file, or a JRef document if the configuration has `jrefMediaType`. So the
+node of a target from `get` or a `jref` function might not be a schema, and
+its document might not be a schema document. Check with `isSchemaNode` and
+`isSchemaDocument`:
 
 ```typescript
 import { get, isSchemaNode } from "@hyperjump/json-schema";
 
-const node = await get(session, "https://example.com/person");
+const { node } = await get(session, "https://example.com/person");
 if (isSchemaNode(node)) {
   node.dialectUri; // "https://json-schema.org/v1"
 }
 ```
 
 In TypeScript, the type of what you get comes from the session. A session
-from a configuration you created gives a node of one of its media types: a
-schema's node, a JSON node, or another, like a JRef node if the
-configuration has `jrefMediaType`. A schema's node has the `type`
+from a configuration you created gives a target whose node is of one of its
+media types: a schema's node, a JSON node, or another, like a JRef node if
+the configuration has `jrefMediaType`. A schema's node has the `type`
 `"json-schema"`. A session that's only typed as
 `Hyperjump<JsonSchemaConfig>`, like a function's parameter, could have any
-media types, so what it gives is `unknown` until you check it.
+media types, so a target's `document` and `node` are `unknown` until you
+check them.
 
 ## Following references
 
 Some tools follow references themselves, like a documentation generator or
-a bundler. They find what a reference points to with `get`. Pass the
-reference's node as `referencedFrom`, so the session knows which document
-the reference is in.
+a bundler. They find what a reference points to with `get`. Pass a target
+for the reference as `referencedFrom`, which is its node and the document
+it's in, so the session knows which document to follow it from.
 
 ```typescript
 import { Hyperjump } from "@hyperjump/browser";
 import {
-  get, getDocument, isSchemaDocument, isSchemaNode, type JsonSchemaNode
+  get, isSchemaDocument, isSchemaNode, type JsonSchemaNode
 } from "@hyperjump/json-schema";
 import { visitReferences } from "@hyperjump/json-schema/lint";
 
 const session = new Hyperjump(config);
-const person = await getDocument(session, "https://example.com/person");
+const { document: person } = await get(
+  session,
+  "https://example.com/person",
+  { reference: "manual" }
+);
 if (!isSchemaDocument(person)) {
   throw Error("Not a schema");
 }
@@ -113,9 +117,10 @@ const references: [string, JsonSchemaNode][] = [];
 visitReferences(person, (uri, node) => references.push([uri, node]));
 
 for (const [uri, node] of references) {
-  const schema = await get(session, uri, { referencedFrom: node });
-  if (isSchemaNode(schema)) {
-    // The schema the reference finds
+  const referencedFrom = { document: person, node };
+  const schema = await get(session, uri, { referencedFrom });
+  if (isSchemaNode(schema.node)) {
+    // The schema the reference finds, and the document it's in
   }
 }
 ```
@@ -125,8 +130,8 @@ an `$id` in `$defs`. The session only finds an embedded schema from the
 document it's in. Without `referencedFrom`, the session doesn't find it, or
 finds a different schema with the same URI instead. The session finds
 every other reference the usual way: first in the registries, then by
-retrieving it. `getDocument` takes `referencedFrom` too, and gives you the
-embedded schema's document.
+retrieving it. What `get` gives you is a target too, so you follow a
+reference in the schema it found by passing it as `referencedFrom` in turn.
 
 `visitReferences` finds every reference in a document along with the URI it
 refers to and its node. It finds `$ref` in every dialect, 2020-12's

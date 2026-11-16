@@ -78,4 +78,4 @@ export const schemaAt: (document: LintDocument, uri: string) => JsonSchemaNode |
  * the document. It's undefined if the schema isn't an object or its
  * dialect isn't known.
  */
-export const lowerSchemaForLint: (document: LintDocument, schemaNode: JsonSchemaNode) => KeywordGroup[] | undefined;
+export const lowerSchemaForLint: (document: LintDocument, schemaNode: JsonSchemaNode) => Promise<KeywordGroup[] | undefined>;

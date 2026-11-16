@@ -27,7 +27,7 @@ import { definitionsOf } from "../definition-of.js";
  * @import { DialectConfig, DialectExtension } from "../dialect.d.ts"
  * @import { Keyword } from "../keyword.d.ts"
  * @import { JsonSchemaResolveOptions } from "./resolve.d.ts"
- * @import { FollowedNode } from "@hyperjump/browser"
+ * @import { FollowedNode, Target } from "@hyperjump/browser"
  * @import { JsonSchemaKeywordNode, JsonSchemaNode, JsonSchemaTolerantNode } from "./schema-ast.d.ts"
  */
 
@@ -962,7 +962,7 @@ describe("jsonSchemaResolve", () => {
       });
 
       const foo = await get(session, `${uri}#foo`);
-      expect(foo).to.include({ type: "json-schema", location: `${uri}#/$defs/foo` });
+      expect(foo.node).to.include({ type: "json-schema", location: `${uri}#/$defs/foo` });
     });
 
     test("references between embedded resources", async () => {
@@ -976,11 +976,11 @@ describe("jsonSchemaResolve", () => {
         }
       });
 
-      const a = schemaNode(await get(session, `${uri}#/properties/foo`));
-      expect(a.location).to.equal("https://example.com/a#");
+      const a = await get(session, `${uri}#/properties/foo`);
+      expect(schemaNode(a.node).location).to.equal("https://example.com/a#");
 
-      const b = schemaNode(await jrefSelect(session, "> [key=properties] > [key=b]", a));
-      expect(b.location).to.equal("https://example.com/b#");
+      const b = await jrefSelect(session, "> [key=properties] > [key=b]", schemaTarget(a));
+      expect(schemaNode(b?.node).location).to.equal("https://example.com/b#");
     });
 
     test("an embedded resource can reference the document that embeds it", async () => {
@@ -995,9 +995,9 @@ describe("jsonSchemaResolve", () => {
         }
       });
 
-      const c = schemaNode(await get(session, `${uri}#/properties/foo`));
-      const d = schemaNode(await jrefSelect(session, "> [key=properties] > [key=root]", c));
-      expect(d.location).to.equal("https://example.com/embedding#/definitions/d");
+      const c = await get(session, `${uri}#/properties/foo`);
+      const d = await jrefSelect(session, "> [key=properties] > [key=root]", schemaTarget(c));
+      expect(schemaNode(d?.node).location).to.equal("https://example.com/embedding#/definitions/d");
     });
 
     test("an embedded resource isn't visible outside the document that embeds it", async () => {
@@ -1008,8 +1008,8 @@ describe("jsonSchemaResolve", () => {
         definitions: { e: { $id: embeddedUri, type: "string" } }
       });
 
-      const root = schemaNode(await get(session, uri));
-      expect(schemaNode(await get(session, embeddedUri, { referencedFrom: root })).location).to.equal(`${embeddedUri}#`);
+      const root = await get(session, uri);
+      expect(schemaNode((await get(session, embeddedUri, { referencedFrom: root })).node).location).to.equal(`${embeddedUri}#`);
       await expect(get(session, embeddedUri)).rejects.toMatchObject({ cause: { code: "ERR_RETRIEVAL_NOT_ALLOWED" } });
     });
 
@@ -1053,6 +1053,9 @@ describe("jsonSchemaResolve", () => {
  * @type (node: unknown) => FollowedNode<JsonSchemaNode>
  */
 const schemaNode = (node) => /** @type FollowedNode<JsonSchemaNode> */ (node);
+
+/** @type (target: Target) => Target<unknown, FollowedNode<JsonSchemaNode>> */
+const schemaTarget = (target) => /** @type Target<unknown, FollowedNode<JsonSchemaNode>> */ (target);
 
 /** @type Keyword<any, any, any>[] */
 const testKeywords = [

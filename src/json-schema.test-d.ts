@@ -14,7 +14,7 @@ import { BASIC } from "./output/index.js";
 import { compile, restore, serialize } from "./operations/compile.js";
 import { annotate, validate, validator } from "./operations/validate.js";
 import { annotatorFor, validatorFor } from "./operations/validate-compiled.js";
-import { get, getDocument } from "./session.js";
+import { get } from "./session.js";
 import { isSchemaDocument, isSchemaNode } from "./schema/schema-nodes.js";
 import { jrefMediaType, jrefSelect, Hyperjump } from "@hyperjump/browser";
 import type { DocumentNode, FollowedNode, JrefNode, JsonNode, MediaTypePlugin } from "@hyperjump/browser";
@@ -142,32 +142,33 @@ new SchemaRegistry<SchemaTypeOf<typeof v1Only>>().with({ minLenght: 1 });
 // @ts-expect-error
 await validate({}, "https://example.com/schema", 42);
 
-// What a session finds is a node of a document in one of its media types:
+// What a session finds is a target whose node is of a document in one of
+// its media types:
 // a schema, JSON, or another one in the config, like JRef
 type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
 const yes = <T extends true>(_is?: T) => {};
 
 const found = await get(new Hyperjump(v1Only), "https://example.com/schema");
-yes<Equal<typeof found, FollowedNode<JsonSchemaNode | JsonNode>>>();
-if (found.type === "json-schema") {
-  found satisfies FollowedNode<JsonSchemaNode>;
+yes<Equal<typeof found.node, FollowedNode<JsonSchemaNode | JsonNode>>>();
+if (found.node.type === "json-schema") {
+  found.node satisfies FollowedNode<JsonSchemaNode>;
   const selected = await jrefSelect(new Hyperjump(v1Only), "> [key=properties]", found);
-  yes<Equal<typeof selected, FollowedNode<JsonSchemaNode | JsonNode> | undefined>>();
+  yes<Equal<NonNullable<typeof selected>["node"], FollowedNode<JsonSchemaNode | JsonNode>>>();
 }
 
 type OtherNode = JsonNode<{ type: "other" }>;
 declare const otherMediaType: MediaTypePlugin<DocumentNode<OtherNode>>;
 const withOther = jsonSchemaConfig({ dialects: [v1Dialect], mediaTypes: [jrefMediaType, otherMediaType] });
 const foundOther = await get(new Hyperjump(withOther), "https://example.com/schema");
-yes<Equal<typeof foundOther, FollowedNode<JsonSchemaNode | JsonNode | JrefNode | OtherNode>>>();
+yes<Equal<typeof foundOther.node, FollowedNode<JsonSchemaNode | JsonNode | JrefNode | OtherNode>>>();
 
 // A session whose type doesn't say its media types could have any
 const unknownNode = await get(new Hyperjump(jsonSchema), "https://example.com/schema");
-yes<Equal<typeof unknownNode, unknown>>();
-if (isSchemaNode(unknownNode)) {
-  unknownNode.dialectUri satisfies string;
+yes<Equal<typeof unknownNode.node, unknown>>();
+if (isSchemaNode(unknownNode.node)) {
+  unknownNode.node.dialectUri satisfies string;
 }
-const anyDocument = await getDocument(new Hyperjump(jsonSchema), "https://example.com/schema");
+const anyDocument = (await get(new Hyperjump(jsonSchema), "https://example.com/schema", { reference: "manual" })).document;
 if (isSchemaDocument(anyDocument)) {
   anyDocument.anchors satisfies Record<string, string>;
 }

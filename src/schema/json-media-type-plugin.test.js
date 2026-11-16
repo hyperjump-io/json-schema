@@ -8,7 +8,7 @@ import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import { draft202012Dialect } from "../dialects/draft-2020-12/index.js";
 import { compile } from "../operations/compile.js";
 import { validatorFor } from "../operations/validate-compiled.js";
-import { getDocument } from "../session.js";
+import { get } from "../session.js";
 import { fetcher, nodeTransport, Hyperjump } from "@hyperjump/browser";
 
 /**
@@ -39,7 +39,7 @@ describe("JsonOrSchemaMediaTypePlugin", () => {
 
   test("a .json file whose $schema is a dialect is a schema", async () => {
     const uri = await jsonFile("person.json", { $schema: v1DialectUri, $defs: { name: { type: "string" } } });
-    const document = await getDocument(session(), uri);
+    const document = (await get(session(), uri, { reference: "manual" })).document;
 
     expect(document.type).to.equal("json-schema-document");
   });
@@ -53,18 +53,18 @@ describe("JsonOrSchemaMediaTypePlugin", () => {
 
   test("a .json file without $schema is JSON", async () => {
     const uri = await jsonFile("plain.json", { type: "string" });
-    expect((await getDocument(session(), uri)).type).to.equal("json-document");
+    expect(((await get(session(), uri, { reference: "manual" })).document).type).to.equal("json-document");
   });
 
   test("a .json file whose $schema is a file is JSON", async () => {
     const uri = await jsonFile("relative-instance.json", { $schema: "./instance-schema.json", name: "a" });
-    expect((await getDocument(session(), uri)).type).to.equal("json-document");
+    expect(((await get(session(), uri, { reference: "manual" })).document).type).to.equal("json-document");
   });
 
   test("a .json file whose $schema is an instance's schema is JSON", async () => {
     const schemaUri = await jsonFile("instance-schema.json", { $schema: v1DialectUri, type: "object" });
     const uri = await jsonFile("instance.json", { $schema: schemaUri, name: "a" });
-    expect((await getDocument(session(), uri)).type).to.equal("json-document");
+    expect(((await get(session(), uri, { reference: "manual" })).document).type).to.equal("json-document");
   });
 
   test("a .json file in a dialect an application/json meta-schema defines is a schema", async () => {
@@ -81,6 +81,6 @@ describe("JsonOrSchemaMediaTypePlugin", () => {
     });
     const uri = await jsonFile("custom.json", { $schema: "test:/meta" });
 
-    expect((await getDocument(new Hyperjump(jsonSchema), uri)).type).to.equal("json-schema-document");
+    expect(((await get(new Hyperjump(jsonSchema), uri, { reference: "manual" })).document).type).to.equal("json-schema-document");
   });
 });

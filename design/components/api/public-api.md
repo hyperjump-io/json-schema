@@ -16,7 +16,7 @@ These stay public, because something users write depends on them.
 | `EvaluationPlugin` | Custom output formats, and anything that watches evaluation, like coverage |
 | Schema AST types, `jsonSchemaConfig`, `isSchemaNode`, `isSchemaDocument`, `resolveSchema`, `jsonSchemaResolve`, `jsonSchemaValidate` | Editors and the language server, schemas in other formats, like YAML |
 | The lint toolkit (`./lint`) | Lint rules |
-| Session browsing: `get`, `getDocument`, `getDialect`, `annotation` | Any operation that walks schemas |
+| Session browsing: `get`, `getDialect`, `annotation` | Any operation that walks schemas |
 
 ## Decided
 
@@ -26,14 +26,16 @@ These stay public, because something users write depends on them.
   page, with `visitReferences` to find them. An embedded resource is only
   found that way, so an operation that follows `$ref` without it, like a
   docs generator or a bundler, gets embedded resources wrong.
-  `referencedFrom` is the reference's node, which is what browser finds
-  the document it's in from. `getDocument` only finds a whole document,
-  from a registry or by retrieving it. This package's own operations
-  don't follow references that way (see
+  `referencedFrom` is a target, the reference's node and the document
+  it's in, and what `get` returns is one, so a reference in what was
+  found is followed from it in turn. Without it, `get` only finds a
+  whole document, from a registry or by retrieving it. Compiling follows
+  references this way, and linting and bundling don't (see
   [Referenced schemas](../referenced-schemas.md)).
-- `get` and `getDocument` are browser's, exported as they are. What they
-  find might not be a schema, so `isSchemaNode` and `isSchemaDocument` are
-  exported with them.
+- `get` is browser's, exported as it is. What it finds might not be a
+  schema, so `isSchemaNode` and `isSchemaDocument` are exported with it.
+  A document as it's written is `get` with `reference: "manual"`, which
+  doesn't follow a schema that's a reference.
 - There's no `lower` function. `serialize(await compile(config, uri))`
   is the kernel as it was lowered. The optimization passes run inside a
   validator, once for each evaluation mode, and what they produce is never

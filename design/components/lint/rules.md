@@ -46,8 +46,8 @@
   it started finding schemas from what keywords lower to, which made
   `anyOf` and `oneOf` with one schema mergeable too. It decides whether a
   schema can be moved by lowering the schema it would make
-  (`lowerSchemaForLint`) and comparing its operations with the two
-  schemas' own. Deciding from shapes instead, that a keyword whose shape
+  (`lowerSchemaForLint`, which is asynchronous because lowering is) and
+  comparing its operations with the two schemas' own. Deciding from shapes instead, that a keyword whose shape
   is a map combines if the names differ, was cheaper, but assumed every
   map's entries are independent, and it still needed `required` by URI.
   The `siblings` a keyword declares are still checked, because one that

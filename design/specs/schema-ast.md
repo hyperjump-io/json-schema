@@ -23,13 +23,12 @@ its position.
   including the root.
 - Only a reference from the same document finds an embedded resource, so
   `compile` can't start from one. Browser finds it, in the `embedded` of
-  the document the reference is in. A reference is followed from its node
-  (`referencedFrom`), and browser finds the document a node is in from the
-  node's location: among the documents the session has and the ones they
-  contain, the one where the location's pointer leads to that node. So a
-  resource's nodes keep their canonical URIs, and a document can't change
-  what a reference in another document finds. This package's own code
-  has the reference's document, so it looks in its `embedded` itself (see
+  the document the reference is in. A reference is followed from a
+  target (`referencedFrom`), which is its node and the document that was
+  retrieved. So a resource's nodes keep their canonical URIs, and a
+  document can't change what a reference in another document finds.
+  Linting has the reference's document without a target, so it looks in
+  its `embedded` itself (see
   [Referenced schemas](../components/referenced-schemas.md)).
 - A session can have documents with different resources for a URI, like a
   schema and a document that embeds another schema with its `$id`. Each is

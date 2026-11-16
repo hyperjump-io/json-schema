@@ -6,8 +6,10 @@ is in browser's [design docs](https://github.com/hyperjump-io/browser/blob/v2/de
 - The JSON AST: a type parameter for property node annotations, utilities
   that are generic over the node type, and a generic `DocumentNode<T>`.
 - A session is a `Hyperjump`, made from a configuration that's a plain
-  value. Documents are functions of a session: `get(session, url)`,
-  `getDocument(session, url)`, and the `jref*` functions. What they need
+  value. Documents are functions of a session: `get(session, url)` and
+  the `jref*` functions. `get` with `reference: "manual"` is the
+  document at a URL as it's written, which bundling, linting, and
+  dialects use. What they need
   of one is its `fetch`, `state`, `contextUrl`, and `config`
   (`DocumentSession`). A JSON Schema session is a `Hyperjump` made from a
   config with the JSON Schema media types (see [Sessions](sessions/README.md)).
@@ -28,11 +30,15 @@ is in browser's [design docs](https://github.com/hyperjump-io/browser/blob/v2/de
   the one the document says it has. A schema document's `url` is its
   `uri`, which is its `$id`, so a retrieved schema is only found by where
   it was retrieved from, and its `$id` doesn't answer for another URL.
+- A target, which is what `get` and the `jref*` functions return and
+  what a reference is followed from: a node and the document it's in,
+  which is the document that was retrieved. A schema's resource is the
+  one in its document's `embedded` with the URI of its location, so
+  compiling has a schema's dialect, dynamic anchors, and document without
+  looking anything up.
 - Embedded documents. A document's `embedded` has the documents it
-  contains, and a reference from the document, given as the reference's
-  node (`referencedFrom`), finds them before anything is retrieved.
-  Browser finds the document a node is in from the node's location, among
-  the documents the session has and the ones they contain. Every
+  contains, and a reference from the document, given as a target in it
+  (`referencedFrom`), finds them before anything is retrieved. Every
   resource of a schema document is in its `embedded`, the root too, so a
   reference to a document's own `$id` finds it there.
 - Anchors aren't in browser, because only JSON Schema uses them. A media
@@ -52,7 +58,7 @@ is in browser's [design docs](https://github.com/hyperjump-io/browser/blob/v2/de
 - A file's media type is the one for the longest extension that matches.
 - What `get` and the `jref*` functions return is typed by the session's
   media types, since a reference can lead to a document in any of them. A
-  `Hyperjump<C>` has its config's type, so what it finds is a
+  `Hyperjump<C>` has its config's type, so the node of what it finds is a
   schema's node, a JSON node, or a node of another of the config's media
   types, like JRef (see [Sessions](sessions/README.md)).
 - `allowRetrieval`, in the config. A session of its own allowance is a
