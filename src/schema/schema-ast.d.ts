@@ -17,16 +17,18 @@ import type { DialectDefinition } from "../dialect.d.ts";
  *
  * - `json`: A value that isn't a schema, such as the value of `const`, an
  *   item in `required`, or the object that holds the subschemas of
- *   `properties`. A value where a keyword's shape expects a reference
- *   (`$ref` since 2019-09) has the URI it resolves to as `href`.
+ *   `properties`.
  * - `json-schema`: An object or boolean schema. Each property of an object
  *   schema is a {@link JsonSchemaKeywordNode}. A value where a keyword's
  *   shape expects a schema is a schema even if it isn't an object or boolean.
  *   It's invalid, and the resolver reports it.
- * - `reference`: A `$ref` in a dialect where `$ref` replaces the whole
- *   object, such as draft-04 through draft-07. It works like a JRef
- *   reference, so `@hyperjump/browser` follows it automatically. Its other
- *   properties are ignored, so they're plain JSON and not keywords.
+ * - `reference`: A reference to a schema, with the URI it resolves to as
+ *   `href`, which `@hyperjump/browser` follows. It's one of two things. A
+ *   string is a value where a keyword's shape expects a reference, like
+ *   `$ref` since 2019-09. An object is a `$ref` in a dialect where `$ref`
+ *   replaces the whole object, such as draft-04 through draft-07. It
+ *   works like a JRef reference, and its other properties are ignored, so
+ *   they're plain JSON and not keywords.
  *
  * A node's `location` is relative to the schema resource that contains it.
  * Nodes in an embedded resource use that resource's URI, not the URI of the
@@ -43,12 +45,6 @@ export type JsonSchemaNode<X = never> = JsonNode<JsonSchemaAnnotations, X, JsonS
  */
 export type JsonSchemaAnnotations = { location: NormalizedIri } & ({
   type: "json";
-  /**
-   * The resolved URI of a value that's a reference. It's normalized, so it's
-   * the same as the `location` of the schema it finds, if that's in a
-   * resource with the same URI.
-   */
-  href?: NormalizedIri;
 } | {
   type: "json-schema";
   /** The dialect of the schema resource this schema belongs to */

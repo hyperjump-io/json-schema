@@ -1,30 +1,36 @@
 # Referenced schemas
 
-What a reference refers to is found with browser's `get`, from the
-document the reference is in. Compiling follows what it finds, and
-linting doesn't.
+What a reference refers to is found by browser's `get`, from the
+reference's target, which has the document it's in. Compiling follows
+what it finds, and linting doesn't.
 
-- Compiling has every schema as a target: its node and the document it's
-  in, which is the one that was retrieved. A reference in a schema is
-  `get` with that target as `referencedFrom`, which finds what the
-  document embeds before anything is retrieved, follows a schema that's a
-  reference itself through any document to a value, with browser's
-  `ERR_REFERENCE_CYCLE`, and returns a target. So what a reference finds
-  comes with its document, which is where its own references are
-  followed from, and a schema inside it is the same document with that
-  schema's node.
+- A reference is a `reference` node (see
+  [Schema AST](../specs/schema-ast.md)), so browser follows it: a
+  keyword's value, like `$ref` since 2019-09, as well as a schema that's
+  a reference.
+- Compiling reads a schema through targets, a step at a time (see
+  [Compile and evaluate](kernel/README.md)), so a reference it reaches is
+  a target. It's followed with `get` and that target as `referencedFrom`,
+  which finds what the document embeds before anything is retrieved, and
+  follows a schema that's a reference itself through any document to a
+  value, with browser's `ERR_REFERENCE_CYCLE`. What's found is a target,
+  with its document, which is where its own references are followed
+  from.
 - A schema's resource is the one in its document's `embedded` with the
   URI of its location. Every resource of a schema document shares one
   `embedded` (see [Schema AST](../specs/schema-ast.md)), so a target's
   document has all of them, and a message can name the document a
   resource came from.
 - Linting finds a reference with `findSchema` (`src/lint/find-schema.js`),
-  which is `get` with `reference: "manual"`, so what it finds isn't
-  followed. Lint reports on references as they're written.
+  which is `get` from the reference's target with `reference: "manual"`,
+  so what it finds isn't followed. Lint reports on references as they're
+  written. A document's references are found as targets by browsing it as
+  it's written (`jrefVisit` with `reference: "manual"`).
   - A tree that's linted can be one the session didn't retrieve, like an
-    editor's. It's followed from with `referencedFromMediaType`, the
-    schema media type, so browser finds what it embeds the way it does
-    for a document it retrieved.
+    editor's. Its root's target is made from the tree and the schema
+    media type (browser's `documentTarget`), and it's browsed from there,
+    so browser finds what it embeds the way it does for a document it
+    retrieved.
   - What's found has the document it's in, which is the whole document,
     not a resource it embeds.
 - What isn't a schema is an error whose `cause.code` is
@@ -46,6 +52,9 @@ Rejected:
   retrieve. Linting gave it the linted tree's `embedded` for every
   reference, so a reference in another document found what the linted
   tree embeds.
+- A target made from a node, for a subschema or a reference that was
+  found by walking nodes. Reading a schema through targets gives each one
+  as a target.
 - A `followedSchema(session, uri, from)` of this package's for compiling:
   `get` from a node, and then a second lookup from the node it found for
   the resource it's in. It was two lookups for what `get` had when it

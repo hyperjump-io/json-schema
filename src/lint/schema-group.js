@@ -1,4 +1,5 @@
 import { readsMarks, subexpressions } from "../kernel/kernel.js";
+import { isReferenceSchema } from "../schema/schema-nodes.js";
 import { appliedSchemas } from "./applied.js";
 
 /**
@@ -96,7 +97,7 @@ export const marksAreRead = (document, group) => {
  * @type (node: TreeNode) => JsonSchemaNode[]
  */
 const schemasIn = (node) => {
-  if (node.type === "json-schema" || node.type === "reference") {
+  if (node.type === "json-schema" || isReferenceSchema(node)) {
     const schemaNode = /** @type JsonSchemaNode */ (node);
     return [schemaNode];
   }
@@ -192,7 +193,7 @@ const buildContext = (document) => {
 
   /** @type (node: TreeNode, parent: JsonSchemaNode | undefined) => void */
   const walk = (node, parent) => {
-    if (node.type === "json-schema" || node.type === "reference") {
+    if (node.type === "json-schema" || isReferenceSchema(node)) {
       const schemaNode = /** @type JsonSchemaNode */ (node);
       positions.set(schemaNode, parent);
       if (schemaNode.jsonType === "object") {

@@ -1,4 +1,4 @@
-import { appendToLocation, get, jsonValue, jsonPointerGet, relativeFileUrl } from "@hyperjump/browser";
+import { appendToLocation, get, jrefArrayIter, jrefObjectEntries, jrefStep, jsonPointerGet, jsonValue, relativeFileUrl } from "@hyperjump/browser";
 import { isErrorNode } from "../keywords/checks.js";
 import { keywordDefinitionUri } from "../keywords/unknown.js";
 import { siblingValues } from "../keywords/utilities.js";
@@ -26,15 +26,64 @@ import { differentResources, sameResource } from "../schema/same-resource.js";
  */
 
 /**
- * How the schemas and references in a keyword's value become its inputs.
- * Compiling follows a reference to find what it refers to, so they can be
- * asynchronous. Lint knows everything from the document.
+ * How a schema is read, as it's written. `V` is what a schema and the
+ * values in it are read as: a target, or a node for a schema that isn't
+ * in a document, like one a lint rule makes from other schemas' keywords.
  *
+ * - `node` is a value's node.
+ * - `value` is the value of one of a schema's keywords.
+ * - `items` and `entries` are an array's items and an object's members.
+ *
+ * @template V
  * @typedef {{
- *   schema: (node: JsonSchemaNode) => Handle | Promise<Handle>;
- *   reference: (node: JsonSchemaNode) => Reference | Promise<Reference>;
+ *   node: (value: V) => JsonSchemaNode;
+ *   value: (schema: V, keywordNode: JsonSchemaKeywordNode) => V | Promise<V>;
+ *   items: (value: V) => Iterable<V> | AsyncIterable<V>;
+ *   entries: (value: V) => Iterable<[string, V]> | AsyncIterable<[string, V]>;
+ * }} Reader
+ */
+
+/**
+ * How the schemas and references in a keyword's value become its inputs,
+ * with how the schema is read. Compiling follows a reference to find what
+ * it refers to, so they can be asynchronous. Lint knows everything from
+ * the document.
+ *
+ * @template V
+ * @typedef {Reader<V> & {
+ *   schema: (value: V) => Handle | Promise<Handle>;
+ *   reference: (value: V) => Reference | Promise<Reference>;
  * }} Inputs
  */
+
+const asWritten = /** @type const */ ({ reference: "manual" });
+
+/**
+ * A schema read through targets, as it's written. Nothing is followed, so
+ * nothing is retrieved, and every value that's read is a target, which a
+ * reference in it can be followed from.
+ *
+ * @type (session: Hyperjump<JsonSchemaConfig>) => Reader<Target>
+ */
+export const targetReader = (session) => ({
+  node: (target) => /** @type JsonSchemaNode */ (target.node),
+  value: (schema, keywordNode) => jrefStep(session, keywordNode.children[0].value, /** @type any */ (schema), asWritten),
+  items: (target) => jrefArrayIter(session, /** @type any */ (target), asWritten),
+  entries: (target) => jrefObjectEntries(session, /** @type any */ (target), asWritten)
+});
+
+/**
+ * A schema read as nodes, for a schema that isn't in a document
+ *
+ * @type Reader<JsonSchemaNode>
+ */
+export const nodeReader = {
+  node: (node) => node,
+  value: (_schema, keywordNode) => keywordNode.children[1],
+  items: (node) => /** @type JsonSchemaNode[] */ (/** @type ContainerNode */ (node).children),
+  entries: (node) => /** @type JsonSchemaKeywordNode[] */ (/** @type ContainerNode */ (node).children)
+    .map((propertyNode) => [propertyNode.children[0].value, propertyNode.children[1]])
+};
 
 /**
  * A keyword group and the nodes it came from, for lint messages. When
@@ -68,9 +117,12 @@ import { differentResources, sameResource } from "../schema/same-resource.js";
  * `keywords` are the definitions, by URI. A resolved schema only has
  * keywords that have one.
  *
- * @type (keywords: Readonly<Record<string, Keyword>>, node: ObjectSchemaNode, dialect: Dialect, inputs: Inputs, tolerant: boolean) => Promise<LoweredKeyword[]>
+ * `schema` is the schema as its inputs read it, a target or a node.
+ *
+ * @type <V>(keywords: Readonly<Record<string, Keyword>>, schema: V, dialect: Dialect, inputs: Inputs<V>, tolerant: boolean) => Promise<LoweredKeyword[]>
  */
-export const lowerKeywords = async (keywords, node, dialect, inputs, tolerant) => {
+export const lowerKeywords = async (keywords, schema, dialect, inputs, tolerant) => {
+  const node = /** @type ObjectSchemaNode */ (inputs.node(schema));
   const properties = node.children;
 
   /** @type LoweredKeyword[] */
@@ -86,7 +138,8 @@ export const lowerKeywords = async (keywords, node, dialect, inputs, tolerant) =
     }
 
     try {
-      const value = await parse(valueNode, keyword.shape, inputs);
+      const parsed = keywordValue(schema, keywordNode, keyword.shape, inputs);
+      const value = parsed instanceof Promise ? await parsed : parsed;
 
       /** @type Record<string, LowerInput | undefined> */
       const siblings = {};
@@ -107,7 +160,8 @@ export const lowerKeywords = async (keywords, node, dialect, inputs, tolerant) =
         }
 
         try {
-          siblings[name] = await parse(sibling.children[1], siblingKeyword.shape, inputs);
+          const parsedSibling = keywordValue(schema, sibling, siblingKeyword.shape, inputs);
+          siblings[name] = parsedSibling instanceof Promise ? await parsedSibling : parsedSibling;
           sourceNodes.push(sibling);
           sourceNames.push(name);
         } catch (error) {
@@ -207,9 +261,11 @@ const dynamicAnchorsOf = (resource) => {
 
 /**
  * Compile a schema: lower it and every schema it applies, following
- * references as it reaches them. Each keyword's value is parsed by its
- * shape, with the schemas in it compiled, and given to its `lower`, with
- * its siblings parsed the same way. The expressions are in the normal form.
+ * references as it reaches them. A schema is read through targets, a step
+ * at a time, so every schema in it is a target, which its references are
+ * followed from. Each keyword's value is parsed by its shape, with the
+ * schemas in it compiled, and given to its `lower`, with its siblings
+ * parsed the same way. The expressions are in the normal form.
  *
  * Schemas are lowered one at a time, in the order they're found, and a
  * reference is followed when it's reached, so what's compiled and what
@@ -251,9 +307,17 @@ export const lower = async (session, uri) => {
   const queued = new Set();
 
   /**
+   * The schemas with dynamic anchors that haven't been queued, each by its
+   * location, with a target of the document it's in, which it's found from
+   *
+   * @type [location: string, from: SchemaTarget][]
+   */
+  const anchors = [];
+
+  /**
    * The handle of a schema, which is queued to be lowered. The first
-   * schema of a resource adds the resource to the kernel, with the schemas
-   * that have its dynamic anchors. Evaluation might need them whenever it
+   * schema of a resource adds the resource to the kernel, with its dynamic
+   * anchors. Evaluation might need the schemas they're on whenever it
    * enters the resource, and nothing can be retrieved then, so they're
    * compiled too.
    *
@@ -278,7 +342,8 @@ export const lower = async (session, uri) => {
         /** @type Record<string, Handle> */
         const dynamicAnchors = {};
         for (const [name, anchorNode] of dynamicAnchorsOf(resource)) {
-          dynamicAnchors[name] = schema({ document, node: anchorNode });
+          dynamicAnchors[name] = anchorNode.location;
+          anchors.push([anchorNode.location, target]);
         }
         resources[resourceUri] = { dynamicAnchors };
       } else if (other[0] !== resource && !sameResource(other[0], resource)) {
@@ -290,10 +355,44 @@ export const lower = async (session, uri) => {
     return node.location;
   };
 
+  /**
+   * The handle of the schema a value is: the schema, or what it finds if
+   * it's a reference
+   *
+   * @type (value: Target) => Promise<Handle>
+   */
+  const applied = async (value) => {
+    const node = /** @type JsonSchemaNode */ (value.node);
+    if (node.type !== "reference") {
+      return schema(/** @type SchemaTarget */ (value));
+    }
+
+    const { href } = /** @type ReferenceNode */ (node);
+    return schema(schemaTarget(/** @type Target */ (await get(session, href, { referencedFrom: value })), href));
+  };
+
+  /** @type Inputs<Target> */
+  const inputs = {
+    ...targetReader(session),
+    schema: applied,
+    reference: async (value) => {
+      const handle = await applied(value);
+      const { href } = /** @type ReferenceNode */ (value.node);
+      return { uri: href, schema: { op: "apply", schema: handle }, handle, dynamicAnchors: resources[absoluteIri(handle)].dynamicAnchors };
+    }
+  };
+
   const handle = schema(schemaTarget(/** @type Target */ (await get(session, uri)), uri));
   for (let index = 0; index < queue.length; index++) {
-    const from = queue[index];
-    const { document, node } = from;
+    // A schema with a dynamic anchor is found by its location, from the
+    // document it's in
+    for (let anchor = anchors.shift(); anchor !== undefined; anchor = anchors.shift()) {
+      const [location, from] = anchor;
+      schema(schemaTarget(/** @type Target */ (await get(session, location, { referencedFrom: from })), location));
+    }
+
+    const target = queue[index];
+    const { node } = target;
     if (node.jsonType === "boolean") {
       schemas[node.location] = node.value;
       continue;
@@ -308,28 +407,7 @@ export const lower = async (session, uri) => {
       dialects.set(dialectUri, dialect);
     }
 
-    /**
-     * The handle of the schema a reference in this schema finds
-     *
-     * @type (referenceNode: JsonSchemaNode) => Promise<Handle>
-     */
-    const follow = async (referenceNode) => {
-      const { href } = /** @type ReferenceNode */ (referenceNode);
-      return schema(schemaTarget(/** @type Target */ (await get(session, href, { referencedFrom: from })), href));
-    };
-
-    /** @type Inputs */
-    const inputs = {
-      // A schema that's a reference is the schema it finds
-      schema: (schemaNode) => schemaNode.type === "reference" ? follow(schemaNode) : schema({ document, node: schemaNode }),
-      reference: async (referenceNode) => {
-        const found = await follow(referenceNode);
-        const { href } = /** @type ReferenceNode */ (referenceNode);
-        return { uri: href, schema: { op: "apply", schema: found }, handle: found, dynamicAnchors: resources[absoluteIri(found)].dynamicAnchors };
-      }
-    };
-
-    const lowered = await lowerKeywords(keywords, /** @type ObjectSchemaNode */ (node), dialect, inputs, false);
+    const lowered = await lowerKeywords(keywords, /** @type Target */ (target), dialect, inputs, false);
 
     // The same schema in another document lowers to the same thing
     if (node.location in schemas) {
@@ -377,33 +455,60 @@ const accepts = (keyword, valueNode, schemaNode) => {
 };
 
 /**
- * A value as `lower` gets it, by its shape
+ * A keyword's value as `lower` gets it. A value whose shape is data has no
+ * schemas or references in it, so it's read from its node, without a step
+ * or a wait. Most keywords' values are data.
  *
- * @type (node: JsonSchemaNode, shape: Shape, inputs: Inputs) => Promise<LowerInput>
+ * @type <V>(schema: V, keywordNode: JsonSchemaKeywordNode, shape: Shape, inputs: Inputs<V>) => LowerInput | Promise<LowerInput>
  */
-const parse = async (node, shape, inputs) => {
+const keywordValue = (schema, keywordNode, shape, inputs) => {
+  if (shape === "data" || shape === "unappliedSchema") {
+    return data(keywordNode.children[1]);
+  }
+
+  const value = inputs.value(schema, keywordNode);
+  return value instanceof Promise ? value.then((stepped) => parse(stepped, shape, inputs)) : parse(value, shape, inputs);
+};
+
+/**
+ * A value that's data, as JSON
+ *
+ * @type (node: JsonSchemaNode) => Json
+ */
+const data = (node) => {
+  const value = /** @type Json | undefined */ (jsonValue(node));
+  if (value === undefined) {
+    throw new Misfit();
+  }
+  return value;
+};
+
+/**
+ * A value as `lower` gets it, by its shape. The value is read with the
+ * inputs, a member at a time.
+ *
+ * @type <V>(value: V, shape: Shape, inputs: Inputs<V>) => Promise<LowerInput>
+ */
+const parse = async (value, shape, inputs) => {
+  const node = inputs.node(value);
   if (shape === "schema") {
     if (node.type !== "json-schema" && node.type !== "reference") {
       throw new Misfit();
     }
-    return { op: "apply", schema: await inputs.schema(node) };
+    return { op: "apply", schema: await inputs.schema(value) };
   } else if (shape === "reference") {
     if (node.jsonType !== "string" || /** @type {{ href?: string }} */ (node).href === undefined) {
       throw new Misfit();
     }
-    return inputs.reference(node);
+    return inputs.reference(value);
   } else if (shape === "data" || shape === "unappliedSchema") {
-    const value = /** @type Json | undefined */ (jsonValue(node));
-    if (value === undefined) {
-      throw new Misfit();
-    }
-    return value;
+    return data(node);
   } else if (Array.isArray(shape)) {
     const alternative = shape.find((alternative) => fits(node, alternative));
     if (alternative === undefined) {
       throw new Misfit();
     }
-    return parse(node, alternative, inputs);
+    return parse(value, alternative, inputs);
   } else if ("array" in shape) {
     if (node.jsonType !== "array") {
       throw new Misfit();
@@ -411,8 +516,8 @@ const parse = async (node, shape, inputs) => {
 
     /** @type LowerInput[] */
     const items = [];
-    for (const itemNode of /** @type JsonSchemaNode[] */ (/** @type ContainerNode */ (node).children)) {
-      items.push(await parse(itemNode, shape.array, inputs));
+    for await (const item of inputs.items(value)) {
+      items.push(await parse(item, shape.array, inputs));
     }
     return items;
   } else {
@@ -424,9 +529,8 @@ const parse = async (node, shape, inputs) => {
     // object
     /** @type [string, LowerInput][] */
     const pairs = [];
-    for (const propertyNode of /** @type JsonSchemaKeywordNode[] */ (/** @type ContainerNode */ (node).children)) {
-      const [nameNode, valueNode] = propertyNode.children;
-      pairs.push([nameNode.value, await parse(valueNode, shape.map, inputs)]);
+    for await (const [name, member] of inputs.entries(value)) {
+      pairs.push([name, await parse(member, shape.map, inputs)]);
     }
     return pairs;
   }

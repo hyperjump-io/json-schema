@@ -1,7 +1,6 @@
 import { relativeFileUrl } from "@hyperjump/browser";
-import { schemaMediaType } from "../schema/media-type-plugin.js";
 import { SchemaError } from "../schema/schema-error.js";
-import { isSchemaDocument } from "../schema/schema-nodes.js";
+import { isReferenceSchema, isSchemaDocument } from "../schema/schema-nodes.js";
 import { get } from "../session.js";
 
 /**
@@ -14,16 +13,11 @@ import { get } from "../session.js";
 export const findSchema = async (session, uri, options = {}) => {
   try {
     // The reference is followed from the document it's in, so a resource
-    // in that document is found there. A document that's linted wasn't
-    // retrieved, so the session is told its media type. What's found isn't
-    // followed, because lint reports on references as they're written.
-    const { document, node } = /** @type Target */ (await get(session, uri, {
-      referencedFrom: options.document && { document: options.document, node: options.document.children[0] },
-      referencedFromMediaType: schemaMediaType,
-      reference: "manual"
-    }));
+    // in that document is found there. What's found isn't followed,
+    // because lint reports on references as they're written.
+    const { document, node } = /** @type Target */ (await get(session, uri, { referencedFrom: options.from, reference: "manual" }));
     const schemaNode = /** @type JsonSchemaNode */ (node);
-    if (!isSchemaDocument(document) || (schemaNode.type !== "json-schema" && schemaNode.type !== "reference")) {
+    if (!isSchemaDocument(document) || (schemaNode.type !== "json-schema" && !isReferenceSchema(schemaNode))) {
       throw Error(`'${relativeFileUrl(uri)}' isn't a schema`, { cause: { code: "ERR_NOT_A_SCHEMA" } });
     }
 

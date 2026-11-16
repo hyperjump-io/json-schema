@@ -21,9 +21,9 @@ matches).
   are strings, which a shape can't describe.
 - **`"reference"`** is a URI reference to a schema, resolved against the
   base URI (`$ref`, 2020-12's `$dynamicRef`, `$recursiveRef`). The resolver
-  gives its node the URI it resolves to as `href`, like a schema that's a
-  reference, so lint and bundling find references by the AST, without
-  knowing keywords. A reference's input to `lower` is
+  makes its node a `reference` node with the URI it resolves to as `href`,
+  like a schema that's a reference, so browser follows it, and lint and
+  bundling find references by the AST, without knowing keywords. A reference's input to `lower` is
   `{ uri: string; schema: Expression; handle: Handle; dynamicAnchors: Record<string, Handle> | undefined }`:
   `$dynamicRef` reads its fragment, and the dynamic anchors of the resource
   it resolved to are what `$dynamicRef` and `$recursiveRef` decide with.

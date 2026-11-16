@@ -463,7 +463,7 @@ class Resolver {
     }
 
     try {
-      /** @type TreeNode & { href?: NormalizedIri } */ (node).href = normalizeIri(resolveIri(node.value, resource.uri));
+      Object.assign(node, { type: "reference", href: normalizeIri(resolveIri(node.value, resource.uri)) });
     } catch (error) {
       this.#message(/** @type Error */ (error).message, node, keywordUri);
     }

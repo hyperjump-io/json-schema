@@ -10,9 +10,19 @@ its position.
   aren't keywords in the dialect get
   `https://json-schema.org/keyword/unknown#<name>`. Tooling needs to identify
   unknown keywords even in dialects that don't allow them.
-- `$ref` in draft-04 through draft-07 is a JRef-style `reference` node, not a
-  keyword, so browser follows it and it never has a keyword location. Its
-  other properties are plain JSON.
+- A reference to a schema is a `reference` node, which browser follows,
+  with the URI it resolves to as `href`. There are two kinds, told apart by
+  their JSON type (`isReferenceSchema`):
+  - A string is a value where a keyword's shape expects a reference, like
+    `$ref` since 2019-09, `$dynamicRef`, and `$recursiveRef`. The schema
+    it's in is a schema, with its other keywords. Browsing into the
+    keyword finds the schema it refers to.
+  - An object is a `$ref` in draft-04 through draft-07, a JRef-style
+    reference and not a keyword, so it never has a keyword location. Its
+    other properties are plain JSON.
+  - Rejected: a keyword's reference as a `json` node with an `href`.
+    Browser didn't know it was a reference, so what walked a schema found
+    references itself and followed them one at a time.
 - A node's `location` is its canonical URI: relative to the schema resource
   that contains it, not the document. A resource's URI, a `location`, and
   a `href` are normalized, so a `href` is the same string as the `location`

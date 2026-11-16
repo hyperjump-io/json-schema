@@ -10,26 +10,51 @@ be traded away for speed.
 
 There are two phases:
 
-1. **Lower** (async, once per compiled schema, `lower.js`). Walk the schema AST
-   from the entry URI, following references with browser's `get` as it
+1. **Lower** (async, once per compiled schema, `lower.js`). Walk the
+   schemas from the entry URI, in one pass, following references as it
    reaches them (see [Referenced schemas](../referenced-schemas.md)). Each
-   keyword's value is parsed by its shape, with the schemas in it compiled,
-   and given to its `lower` with the siblings it declares. The result is a
-   `Kernel`: a table of handles (canonical URIs) to a boolean or the
-   schema's keyword groups, and the dynamic anchors of every resource.
-   Schemas refer to each other by handle, so cycles are fine. Expressions
-   are in the normal form (`normalize.js`). Schemas are lowered one at a
-   time, in the order they're found, and a schema is lowered in one pass:
-   parsing a keyword's value waits for each reference in it, so
-   `lowerKeywords`, which lint shares, is asynchronous, and a keyword's
-   `lower` isn't. A resource's dynamic anchors don't need retrieving: a
-   schema is from a document the session has. What's compiled and what
-   fails is the same every time, because nothing is retrieved out of
-   order.
+   keyword's value is parsed by its shape, with the schemas in it
+   compiled, and given to its `lower` with the siblings it declares. The
+   result is a `Kernel`: a table of handles (canonical URIs) to a boolean
+   or the schema's keyword groups, and the dynamic anchors of every
+   resource. Schemas refer to each other by handle, so cycles are fine.
+   Expressions are in the normal form (`normalize.js`). Schemas are
+   lowered one at a time, in the order they're found, so what's compiled
+   and what fails is the same every time.
+   - A schema is read through targets, a step at a time, with browser's
+     step functions (`jrefStep`, `jrefArrayIter`, `jrefObjectEntries`) and
+     `reference: "manual"`, so it's read as it's written. Parsing a
+     keyword's value by its shape is recursion that decides what to step
+     into and builds a result from what comes back, which is what the
+     step functions are for. Every schema and reference it reaches is a
+     target, so a subschema is queued as one, a reference is followed
+     from one, and nothing makes a target from a node.
+   - A reference is followed where a shape says a schema is applied,
+     with `get` from the reference's target. So parsing waits, and
+     `lowerKeywords`, which lint shares, is asynchronous. A keyword's
+     `lower` isn't.
+   - A keyword whose shape is data has no schemas or references in its
+     value, so it's read from its node, without a step or a wait. Most
+     keywords are, and stepping to each of their values made lowering
+     about 60 percent slower on 37 real schemas.
+   - `lowerKeywords` reads a schema the way its inputs say (`Reader`):
+     as targets, or as nodes, for a schema that isn't in a document (see
+     [Lowering for lint](../../specs/kernel/lowering-for-lint.md)).
+   - The schemas with a resource's dynamic anchors are queued too, each
+     found by its location from the document it's in. Evaluation might
+     need them whenever it enters the resource, and nothing can be
+     retrieved then.
    - A reference is retrieved when it's reached, so references are
      retrieved one at a time. A schema that refers to many documents that
      are slow to arrive takes the sum of them: 20 references that each
      take 5 ms compile in about 135 ms.
+   - Rejected: browsing from the schema with `jrefVisit` to find every
+     schema it applies, and lowering them afterwards. A visitor gets a
+     schema before its references are followed, so it can't lower it, and
+     a schema's values were read twice, once to browse and once to lower.
+   - Rejected: walking the nodes and following each reference with `get`,
+     with a target made for each subschema from its node. Nothing should
+     make a target from a node it has.
    - Rejected: lowering every schema it can with what's been retrieved,
      then retrieving what the rest need at the same time, and lowering
      those again, until nothing is missing. It retrieved in parallel (17
@@ -39,10 +64,9 @@ There are two phases:
      each schema came from.
    - Rejected: finding a schema's references by its keywords' shapes when
      the schema is found, following them then, and waiting for them when
-     it's lowered. It was the fastest measured, about 8 percent faster on
-     a whole compile of 37 real schemas and parallel, with `lowerKeywords`
-     synchronous, but a keyword's value was read twice, once for its
-     references and once to lower it.
+     it's lowered. It was the fastest measured and parallel, but a
+     keyword's value was read twice, once for its references and once to
+     lower it.
    - Rejected: one pass with every schema lowered as soon as it's found
      and the kernel put together afterwards in a fixed order. It retrieved
      in parallel, but it made promises for every schema, and a whole
@@ -55,11 +79,8 @@ There are two phases:
      not by handle, so a resource that's in two documents has its
      references followed from each, and what they find is compared too.
      What's compiled doesn't depend on which document was reached first.
-   - A schema is queued as a target, with its document. A schema inside
-     it has the same document, and a schema a reference found comes with
-     its own.
-   - A reference is followed from the target of the schema it's in. A
-     reference to a schema that's a reference itself, like a draft-07
+   - A reference is followed from its own target. A reference to a
+     schema that's a reference itself, like a draft-07
      `$ref`, finds what that one finds, looked for from the document it's
      in. References that lead back to one already followed are an error
      whose `cause.code` is `ERR_REFERENCE_CYCLE`, with the `chain`.

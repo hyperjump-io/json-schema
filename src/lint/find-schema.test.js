@@ -8,7 +8,8 @@ import { SchemaRegistry } from "../registry/schema-registry.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import { findSchema } from "./find-schema.js";
 import { assertIri, normalizeIri } from "@hyperjump/uri";
-import { fetcher, nodeTransport, Hyperjump } from "@hyperjump/browser";
+import { documentTarget, fetcher, nodeTransport, Hyperjump } from "@hyperjump/browser";
+import { schemaMediaType } from "../schema/media-type-plugin.js";
 
 /**
  * @import { JsonSchemaDocumentNode } from "../schema/schema-ast.d.ts"
@@ -133,7 +134,7 @@ describe("findSchema", () => {
         .use(() => async (/** @type JsonSchemaDocumentNode */ tree, file) => {
           for (const uri of uris) {
             const session = /** @type Hyperjump<JsonSchemaConfig> */ (file.data.jsonSchemaSession);
-            const result = await findSchema(session, iri(uri), { document: tree });
+            const result = await findSchema(session, iri(uri), { from: documentTarget(tree, schemaMediaType) });
             statuses.push(result.status);
           }
         })
@@ -185,7 +186,7 @@ describe("findSchema", () => {
         throw Error("Expected the schema to be found");
       }
 
-      const result = await findSchema(session, iri("https://example.com/embedded"), { document: container.document });
+      const result = await findSchema(session, iri("https://example.com/embedded"), { from: documentTarget(container.document, schemaMediaType) });
       expect(result).toMatchObject({ status: "found", node: { location: "https://example.com/embedded#" } });
       expect(result.status === "found" && result.document, "what's found has the document it's in").to.equal(container.document);
     });

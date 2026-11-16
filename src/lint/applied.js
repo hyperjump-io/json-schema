@@ -1,3 +1,5 @@
+import { isReferenceSchema } from "../schema/schema-nodes.js";
+
 /**
  * @import { Expression } from "../kernel/kernel.d.ts"
  * @import { JsonSchemaKeywordNode, JsonSchemaNode } from "../schema/schema-ast.d.ts"
@@ -70,7 +72,7 @@ export const keywordApplying = ({ keywordNode, sourceNodes }, expression) => {
  * @type (node: TreeNode) => JsonSchemaNode[]
  */
 const schemasIn = (node) => {
-  if (node.type === "json-schema" || node.type === "reference") {
+  if (node.type === "json-schema" || isReferenceSchema(node)) {
     const schemaNode = /** @type JsonSchemaNode */ (node);
     return [schemaNode];
   }

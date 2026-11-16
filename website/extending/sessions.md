@@ -92,38 +92,44 @@ check them.
 ## Following references
 
 Some tools follow references themselves, like a documentation generator or
-a bundler. They find what a reference points to with `get`. Pass a target
-for the reference as `referencedFrom`, which is its node and the document
-it's in, so the session knows which document to follow it from.
+a bundler. They find what a reference points to with `get`. Pass the
+reference's target as `referencedFrom`, so the session knows which document
+to follow it from. Browsing a schema as it's written, with
+`reference: "manual"`, gives you its references as targets:
 
 ```typescript
-import { Hyperjump } from "@hyperjump/browser";
-import {
-  get, isSchemaDocument, isSchemaNode, type JsonSchemaNode
-} from "@hyperjump/json-schema";
-import { visitReferences } from "@hyperjump/json-schema/lint";
+import { Hyperjump, jrefFindAll } from "@hyperjump/browser";
+import { get, isSchemaNode } from "@hyperjump/json-schema";
 
 const session = new Hyperjump(config);
-const { document: person } = await get(
+const person = await get(
   session,
   "https://example.com/person",
   { reference: "manual" }
 );
-if (!isSchemaDocument(person)) {
-  throw Error("Not a schema");
-}
 
-const references: [string, JsonSchemaNode][] = [];
-visitReferences(person, (uri, node) => references.push([uri, node]));
+const references = await jrefFindAll(
+  session,
+  person,
+  "reference",
+  { reference: "manual" }
+);
 
-for (const [uri, node] of references) {
-  const referencedFrom = { document: person, node };
-  const schema = await get(session, uri, { referencedFrom });
+for (const reference of references) {
+  const schema = await get(
+    session,
+    reference.node.href,
+    { referencedFrom: reference }
+  );
   if (isSchemaNode(schema.node)) {
     // The schema the reference finds, and the document it's in
   }
 }
 ```
+
+A reference is a node whose `type` is `"reference"`, with the URI it
+resolves to as `href`: a `$ref` from draft-04 through draft-07, which is
+the whole schema, or the value of `$ref` since 2019-09.
 
 `referencedFrom` matters for a schema embedded in the same document, like
 an `$id` in `$defs`. The session only finds an embedded schema from the

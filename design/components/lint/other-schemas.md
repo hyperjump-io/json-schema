@@ -52,10 +52,11 @@ document finds something. They can see what's in registries and what
   having problems.
 - A document that's linted isn't retrieved. The engine reads the file and
   the processor resolves it, so the session doesn't have it. A reference
-  is followed from the document it's in, `findSchema`'s `document`
-  option, and for a document the session didn't retrieve, browser is told
-  its media type, so it finds what the document contains the way it does
-  for one it retrieved. Rules get the nodes being
+  is followed from its own target, `findSchema`'s `from` option. A
+  document is browsed as it's written from its root's target, which for
+  one the session didn't retrieve is made from the document and the
+  schema media type (browser's `documentTarget`), so browser finds what
+  it contains the way it does for one it retrieved. Rules get the nodes being
   linted, even when the document has problems, and nothing is read again,
   so stdin and editor buffers work.
 - Adding the linted document to the session was considered: to browser's
@@ -70,8 +71,9 @@ document finds something. They can see what's in registries and what
   reference against its resource's URI and find that, from the document
   the reference is in. What a URI finds is kept once, and the linted
   document's references are found first, so it's what a reference in
-  that document finds. `visitReferences` does the
-  first part for every static reference, in every dialect: a `$ref`
+  that document finds. A document is read in one walk, with browser's
+  `jrefVisit` and `reference: "manual"`, which finds its schemas and its
+  references as targets, every static reference in every dialect: a `$ref`
   keyword (2019-09 and later), resolved against its schema's location, or
   a schema that's a reference (`$ref` in draft-04 through draft-07, whose
   `href` is already resolved). Following one is `findSchema` on its URI.

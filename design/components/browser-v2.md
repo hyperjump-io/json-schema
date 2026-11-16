@@ -36,9 +36,14 @@ is in browser's [design docs](https://github.com/hyperjump-io/browser/blob/v2/de
   one in its document's `embedded` with the URI of its location, so
   compiling has a schema's dialect, dynamic anchors, and document without
   looking anything up.
-- `referencedFromMediaType`, for a reference in a document the session
-  didn't retrieve, like one that's linted. With the document's media
-  type, browser finds what it contains.
+- The step functions (`jrefStep`, `jrefArrayIter`, `jrefObjectEntries`)
+  and `jrefVisit`, with `reference: "manual"`, which read a schema as
+  it's written, a target at a time. Lowering reads a schema with them,
+  so every schema and reference in it is a target, and nothing makes one
+  from a node.
+- `documentTarget`, for a document the session didn't retrieve, like one
+  that's linted. A target has its document's media type, so browser
+  finds what the document contains.
 - Embedded documents. A document's `embedded` has the documents it
   contains, and a reference from the document, given as a target in it
   (`referencedFrom`), finds them before anything is retrieved. Every

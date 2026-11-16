@@ -27,8 +27,8 @@ export const visitSchemas = (tree, visitor) => {
  * Call `visitor` with every reference in the document and the absolute URI
  * it refers to. That's the value of a keyword whose shape is `"reference"`
  * (`$ref` since 2019-09, 2020-12's `$dynamicRef`, `$recursiveRef`), or a
- * schema that's a reference (`$ref` in draft-04 through draft-07). The
- * resolver gives both the URI as `href`. `node` is the keyword's value or
+ * schema that's a reference (`$ref` in draft-04 through draft-07). Both are
+ * `reference` nodes, with the URI as `href`. `node` is the keyword's value or
  * the reference. A value that isn't a valid IRI reference is a schema
  * problem, so it isn't visited.
  *
@@ -37,7 +37,7 @@ export const visitSchemas = (tree, visitor) => {
 export const visitReferences = (tree, visitor) => {
   visitNodes(tree, (node) => {
     const referenceNode = /** @type JsonSchemaNode */ (node);
-    if ((referenceNode.type === "reference" || referenceNode.type === "json") && referenceNode.href !== undefined) {
+    if (referenceNode.type === "reference") {
       visitor(referenceNode.href, referenceNode);
     }
   });

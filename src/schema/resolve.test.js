@@ -206,8 +206,8 @@ describe("jsonSchemaResolve", () => {
       }`);
 
       expect(file.messages).to.eql([]);
-      expect(at("/$ref", root)).to.include({ type: "json", href: "https://example.com/schema#/$defs/a" });
-      expect(at("/$defs/a/$ref", root)).to.include({ type: "json", href: "https://example.com/other/b.json" });
+      expect(at("/$ref", root)).to.include({ type: "reference", jsonType: "string", href: "https://example.com/schema#/$defs/a" });
+      expect(at("/$defs/a/$ref", root)).to.include({ type: "reference", jsonType: "string", href: "https://example.com/other/b.json" });
     });
 
     test("a value that isn't a URI reference where its shape expects one is reported and has no URI", async () => {
@@ -963,6 +963,26 @@ describe("jsonSchemaResolve", () => {
 
       const foo = await get(session, `${uri}#foo`);
       expect(foo.node).to.include({ type: "json-schema", location: `${uri}#/$defs/foo` });
+    });
+
+    test("a reference that's a keyword's value is followed, like a schema that's a reference", async () => {
+      const session = new Hyperjump(jsonSchema);
+      const uri = await schemaFile("ref.schema.json", {
+        $schema: dialectUri,
+        properties: { foo: { $ref: "#/$defs/a" } },
+        $defs: { a: { type: "string" } }
+      });
+
+      const written = await get(session, `${uri}#/properties/foo/$ref`, { reference: "manual" });
+      expect(written.node).to.include({ type: "reference", jsonType: "string", value: "#/$defs/a" });
+
+      const followed = await get(session, `${uri}#/properties/foo/$ref`);
+      expect(schemaNode(followed.node).location).to.equal(`${uri}#/$defs/a`);
+
+      const foo = await get(session, `${uri}#/properties/foo`);
+      expect(foo.node, "the schema it's in isn't a reference").to.include({ type: "json-schema" });
+      const selected = await jrefSelect(session, "> [key=$ref]", schemaTarget(foo));
+      expect(schemaNode(selected?.node).location).to.equal(`${uri}#/$defs/a`);
     });
 
     test("references between embedded resources", async () => {

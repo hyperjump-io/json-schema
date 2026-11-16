@@ -3,8 +3,12 @@
 Lint runs without compiling, so it lowers each document itself, in the
 normal form, without compiling or retrieving anything
 (`LintDocument.schemas`, lowered in `src/lint/document.js`, which shares
-`lowerKeywords` with compiling). `lowerKeywords` is asynchronous, because
-compiling follows references in it, and lint's inputs never wait:
+`lowerKeywords` with compiling). `lowerKeywords` is asynchronous, and it
+reads a schema the way its inputs say (`Reader`). A document's schemas are
+read as targets, as compiling reads them, with browser's step functions
+and `reference: "manual"`, so nothing is followed. A schema a rule makes
+from other schemas' keywords isn't in a document, so it's read as nodes
+(`nodeReader`):
 
 - A subschema is `apply` of its location, and a reference is `apply` of
   the URI it resolves to. The dynamic anchors of a resource in the

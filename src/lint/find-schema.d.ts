@@ -1,6 +1,6 @@
 import type { NormalizedIri } from "@hyperjump/uri";
 import type { JsonSchemaDocumentNode, JsonSchemaNode } from "../schema/schema-ast.d.ts";
-import type { Hyperjump } from "@hyperjump/browser";
+import type { Hyperjump, Target } from "@hyperjump/browser";
 import type { JsonSchemaConfig } from "../json-schema.d.ts";
 
 /**
@@ -29,13 +29,13 @@ export type FindSchemaResult = {
 
 export type FindSchemaOptions = {
   /**
-   * The document the reference is in, which it's followed from. A resource
-   * in it, including its root, is found in it before anything is
-   * retrieved, the way a reference finds an embedded resource. It can be
-   * the tree being linted, which wasn't retrieved, so the session doesn't
-   * have it.
+   * A target in the document the reference is in, which it's followed
+   * from. A resource in that document, including its root, is found there
+   * before anything is retrieved, the way a reference finds an embedded
+   * resource. It can be in the tree being linted, which wasn't retrieved,
+   * so the session doesn't have it.
    */
-  document?: JsonSchemaDocumentNode;
+  from?: Target;
 };
 
 /**

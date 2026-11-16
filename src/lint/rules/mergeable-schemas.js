@@ -1,4 +1,5 @@
 import { jsonValue } from "@hyperjump/browser";
+import { isReferenceSchema } from "../../schema/schema-nodes.js";
 import { readsMarks } from "../../kernel/kernel.js";
 import { operationsOf } from "../analysis.js";
 import { documentForLint, lowerSchemaForLint } from "../document.js";
@@ -205,7 +206,7 @@ const sameOperations = (a, b) => {
  *
  * @type (node: TreeNode) => boolean
  */
-const holdsSchemas = (node) => node.type === "json-schema" || node.type === "reference" || (node.children ?? []).some(holdsSchemas);
+const holdsSchemas = (node) => node.type === "json-schema" || isReferenceSchema(node) || (node.children ?? []).some(holdsSchemas);
 
 /** @type (node: unknown) => string */
 const valueOf = (node) => JSON.stringify(jsonValue(/** @type any */ (node)));
