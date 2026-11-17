@@ -5,7 +5,8 @@ import type { DetailedValidationError, toVFileMessage, ValidationError } from ".
 
 /**
  * An output format, passed to an evaluation as `output`. `R` is its result.
- * It's called for each evaluation that uses it. Say a location with
+ * It's called for each evaluation that uses it, and once when a function
+ * that uses it is made, to see what its plugin observes. Say a location with
  * {@link relativeFileUrl}, so a `file:` URI doesn't reveal where the schemas
  * are on the machine.
  *

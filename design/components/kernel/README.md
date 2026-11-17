@@ -90,16 +90,26 @@ There are two phases:
    compiled schema (`Validator`, which isn't exported). No `eval`. Bytecode run by one interpreter loop was tried
    instead of closures and wasn't faster (see
    [the benchmarks](../../benchmarks/README.md)).
-   - A function from `validator` or `validatorFor` without `output` or
-     `plugins` only ever uses the evaluator for a value with FLAG output
-     (`flagEvaluator`), so it's built when the function is made, not on its
-     first call. Building it was most of the first call: a median of 76
+   - A function from `validator`, `validatorFor`, `annotator`, or
+     `annotatorFor` builds every evaluator its options can use when it's
+     made (`Validator.prepare`), not on its first call. Building the flag
+     evaluator was most of the first call: a median of 76
      percent of a first pass over a corpus, and up to 95 (see
      [Building the flag evaluator first](../../benchmarks/flag-evaluator-first.md)).
-     `compile` doesn't build one, because it doesn't know which will be
-     needed. Other options still build theirs on the first call.
-     Rejected: building every evaluator a function's options could use,
-     which for output or plugins depends on whether the instance is valid.
+     With an output format, that includes the evaluator for the format's
+     plugin, which only runs if an instance is invalid. It's built once
+     per compiled schema, not per evaluation, so building it later only
+     saves anything if no instance is ever invalid, such as one call of
+     `validate` on a valid instance. Otherwise it moves the cost to the
+     first invalid instance. The format is called once when the function
+     is made, to see whether its plugin has an `annotation` hook.
+     `compile` doesn't build any, because it doesn't know which will be
+     needed, and neither do `Validator`'s methods that take options on
+     each call. Those build each evaluator the first time it's needed.
+     Rejected: building the format plugin's evaluator on the first
+     invalid instance. That's how it was at first, because whether it's
+     needed depends on whether an instance is valid. But it only helped
+     one-off validations of valid instances.
 
 The kernel is JSON, so a compiled schema can be serialized
 (`serialize` and `restore`). It's serialized as

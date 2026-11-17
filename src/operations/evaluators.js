@@ -32,20 +32,24 @@ export const needsInstrumented = ({ input, output, plugins }) => {
 export const validateFunction = (validator, options, evaluator) => {
   const evaluation = evaluationOptions(options);
 
+  // A function's evaluators are built when it's made, instead of on its
+  // first call (or its first invalid instance, for an output format's)
   switch (options.input ?? "value") {
     case "value": {
-      // The function is only for values, without output or plugins, so its
-      // evaluator is built now, when the function is made, instead of on
-      // its first call
+      // Without output or plugins, the function calls the flag evaluator
+      // directly
       if (evaluation === undefined) {
         const flag = validator.flagEvaluator();
         return (instance) => flag(instance);
       }
+      validator.prepare(false, false, evaluation, evaluator);
       return (instance) => validator.validate(instance, evaluation, evaluator);
     }
     case "json":
+      validator.prepare(true, false, evaluation, evaluator);
       return (json) => validator.validateJson(json, evaluation, evaluator);
     case "node":
+      validator.prepare(true, false, evaluation, evaluator);
       return (node) => validator.validateNode(node, evaluation, evaluator);
     default:
       throw TypeError(`'${options.input}' isn't an input. It's 'value', 'json', or 'node'.`);
@@ -56,12 +60,16 @@ export const validateFunction = (validator, options, evaluator) => {
 export const annotateFunction = (validator, options, evaluator) => {
   const evaluation = evaluationOptions(options);
 
+  // Every input is annotated as an AST
   switch (options.input ?? "value") {
     case "value":
+      validator.prepare(true, true, evaluation, evaluator);
       return (instance) => validator.annotate(instance, evaluation, evaluator);
     case "json":
+      validator.prepare(true, true, evaluation, evaluator);
       return (json) => validator.annotateJson(json, evaluation, evaluator);
     case "node":
+      validator.prepare(true, true, evaluation, evaluator);
       return (node) => ({ output: validator.annotateNode(node, evaluation, evaluator), status: "success", node });
     default:
       throw TypeError(`'${options.input}' isn't an input. It's 'value', 'json', or 'node'.`);

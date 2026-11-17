@@ -171,6 +171,29 @@ export class Validator {
     return evaluator(this.#definitions, kernel, { instance: ops, isAst, annotating, instrumented: plugins.length > 0 });
   }
 
+  /** @type API.Validator["prepare"] */
+  prepare(isAst, annotating, options, evaluator) {
+    const evaluatorFor = isAst ? this.#astEvaluator : this.#jsEvaluator;
+    const format = options?.output ?? FLAG;
+    const plugins = options?.plugins ?? [];
+
+    // The evaluators `#evaluate` uses for these options
+    if (format === FLAG) {
+      evaluatorFor(annotating, plugins, evaluator);
+      return;
+    }
+
+    const { plugin } = format();
+    if (plugins.length === 0) {
+      evaluatorFor(annotating, plugins, evaluator);
+      if (plugin) {
+        evaluatorFor(false, [plugin], evaluator);
+      }
+    } else {
+      evaluatorFor(annotating, plugin ? [...plugins, plugin] : plugins, evaluator);
+    }
+  }
+
   /**
    * Evaluate without plugins if possible, because that's fastest. The output
    * format's plugin only runs if the instance turns out to be invalid,

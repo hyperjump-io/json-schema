@@ -24,6 +24,14 @@ export class Validator {
    */
   flagEvaluator(): (instance: Json) => boolean;
 
+  /**
+   * Builds every evaluator an evaluation with these options can use, so
+   * none is built during an evaluation. With an output format, that
+   * includes the one for its plugin, which only runs if an instance is
+   * invalid. The format is called once, to see what its plugin observes.
+   */
+  prepare(isAst: boolean, annotating: boolean, options: EvaluationOptions<any> | undefined, evaluator?: typeof instrumented): void;
+
   validate<R = boolean>(instance: ReadonlyJson, options?: EvaluationOptions<R>, evaluator?: typeof instrumented): R;
   validateJson<R = boolean>(json: string, options?: EvaluationOptions<R>, evaluator?: typeof instrumented): R;
   validateNode<R = boolean>(node: JsonNode<unknown, JsonErrorNode> | JsonErrorNode, options?: EvaluationOptions<R>, evaluator?: typeof instrumented): R;

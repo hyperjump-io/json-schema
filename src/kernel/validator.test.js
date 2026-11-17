@@ -921,6 +921,23 @@ describe("Validator", () => {
       expect(validatorFor(compiled, { output: COUNT })(5)).to.equal(0);
     });
 
+    // To build its plugin's evaluator with the function, not on the first invalid instance
+    test("a format is called once when a function is made", async () => {
+      let calls = 0;
+      /** @type OutputFormat<boolean> */
+      const COUNTED = () => {
+        calls++;
+        return { plugin: {}, output: (valid) => valid };
+      };
+      const compiled = await compile(jsonSchema, await schemaFile({ type: "number" }));
+
+      const validate = validatorFor(compiled, { output: COUNTED });
+      expect(calls).to.equal(1);
+      expect(validate(1)).to.equal(true);
+      expect(validate("foo")).to.equal(false);
+      expect(calls).to.equal(3);
+    });
+
     test("FLAG is the default", async () => {
       const compiled = await compile(jsonSchema, await schemaFile({ type: "number" }));
 
