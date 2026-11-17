@@ -6,7 +6,7 @@ import { cwd } from "node:process";
 import { pathToFileURL } from "node:url";
 import { describe, test, beforeEach, expect } from "vitest";
 import { createServer } from "node:http";
-import { defaultMediaTypes, fetcher, get, Hyperjump, jsonPointerGet, jsonValue, MemoryCacheStore, Trace, jrefMediaType } from "@hyperjump/browser";
+import { defaultMediaTypes, fetcher, browse, Hyperjump, jsonPointerGet, jsonValue, MemoryCacheStore, Trace, jrefMediaType } from "@hyperjump/browser";
 import { jsonSchemaConfig, extendDialect } from "./json-schema.js";
 import { jsonSchemaMediaTypes } from "./media-types.js";
 import { v1Dialect, v1DialectUri } from "./dialects/v1/index.js";
@@ -197,15 +197,15 @@ describe("jsonSchemaMediaTypes", () => {
       const session = new Hyperjump(jsonSchemaConfig({ dialects: [v1Dialect], allowRetrieval: [], registry }));
 
       const trace = new Trace(session);
-      await get(session, "https://example.com/registered");
-      await expect(get(session, "https://example.com/schema")).rejects.toThrow();
+      await browse(session, "https://example.com/registered");
+      await expect(browse(session, "https://example.com/schema")).rejects.toThrow();
       expect(trace.records.map((record) => [record.url, record.source])).to.eql([
         ["https://example.com/registered", "registry"],
         ["https://example.com/schema", undefined]
       ]);
 
       session.close();
-      await expect(get(session, "https://example.com/schema")).rejects.toThrow("closed");
+      await expect(browse(session, "https://example.com/schema")).rejects.toThrow("closed");
     });
 
     test("a dialect built from a meta-schema only belongs to the session", async () => {
@@ -334,7 +334,7 @@ describe("jsonSchemaMediaTypes", () => {
         stack
       });
 
-      expect(((await get(new Hyperjump(withDefaults), "https://example.com/schema", { reference: "manual" })).document).type).to.equal("json-schema-document");
+      expect(((await browse(new Hyperjump(withDefaults), "https://example.com/schema", { reference: "manual" })).document).type).to.equal("json-schema-document");
     });
 
     test("each compile has its own session, so it sees changes", async () => {
@@ -360,7 +360,7 @@ describe("jsonSchemaMediaTypes", () => {
         await writeFile(path, JSON.stringify({ $schema: v1DialectUri }));
 
         const session = new Hyperjump({ mediaTypes: jsonSchema.mediaTypes, allowRetrieval: [pathToFileURL(join(directory, "/")).href] });
-        expect((await get(session, pathToFileURL(path).toString())).node).to.include({ type: "json-schema" });
+        expect((await browse(session, pathToFileURL(path).toString())).node).to.include({ type: "json-schema" });
       } finally {
         await rm(directory, { recursive: true });
       }
@@ -373,7 +373,7 @@ describe("jsonSchemaMediaTypes", () => {
         await writeFile(path, JSON.stringify({ $schema: v1DialectUri, type: "string" }));
 
         const session = new Hyperjump(jsonSchemaConfig({ dialects: [v1Dialect] }));
-        const document = (await get(session, relative(cwd(), path), { reference: "manual" })).document;
+        const document = (await browse(session, relative(cwd(), path), { reference: "manual" })).document;
         expect(/** @type import("./schema/schema-ast.d.ts").JsonSchemaDocumentNode */ (/** @type unknown */ (document)).uri).to.equal(pathToFileURL(path).href);
       } finally {
         await rm(directory, { recursive: true });
@@ -564,8 +564,8 @@ describe("jsonSchemaMediaTypes", () => {
         }
       }) });
 
-      const embedded = await get(session, "https://example.com/other#/$defs/common/type");
-      const document = await get(session, "https://example.com/common#/type");
+      const embedded = await browse(session, "https://example.com/other#/$defs/common/type");
+      const document = await browse(session, "https://example.com/common#/type");
       expect([jsonValue(/** @type any */ (embedded.node)), jsonValue(/** @type any */ (document.node))]).to.eql(["number", "string"]);
     });
   });

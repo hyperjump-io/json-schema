@@ -3,7 +3,7 @@ import { VFile } from "vfile";
 import { relativeFileUrl } from "@hyperjump/browser";
 import { SchemaError } from "../schema/schema-error.js";
 import { toSchemaMessage } from "../schema/resolve-text.js";
-import { get } from "../session.js";
+import { browse } from "../session.js";
 import { callSession } from "./call-session.js";
 import { isSchemaDocument } from "../schema/schema-nodes.js";
 
@@ -19,7 +19,7 @@ export const lint = async (config, uri, options = {}) => {
 
   let document;
   try {
-    document = (await get(session, uri, { reference: "manual" })).document;
+    document = (await browse(session, uri, { reference: "manual" })).document;
   } catch (error) {
     // A document with problems has no tree to lint
     if (error instanceof SchemaError) {
@@ -29,7 +29,7 @@ export const lint = async (config, uri, options = {}) => {
   }
 
   if (!isSchemaDocument(document)) {
-    // `get` checked it
+    // `browse` checked it
     throw Error(`'${relativeFileUrl(/** @type IriReference */ (uri))}' isn't a schema`);
   }
 

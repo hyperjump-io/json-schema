@@ -1,6 +1,6 @@
 export * from "./json-schema.js";
 export { annotation } from "./annotation.js";
-export { get, getDialect } from "./session.js";
+export { browse, getDialect } from "./session.js";
 export * from "./schema/resolve.js";
 export * from "./schema/schema-nodes.js";
 export { SchemaRegistry } from "./registry/schema-registry.js";

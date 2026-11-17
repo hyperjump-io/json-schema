@@ -35,7 +35,7 @@ being considered (see [Open questions](../specs/keyword/README.md#open-questions
 - A bundle is one document, so it can only have one resource for a URI.
   Two of its documents that have a resource with the same URI have to
   have an identical one, or it's a `duplicate-id` problem.
-- A document is found with `get` and `reference: "manual"`, so it's
+- A document is found with `browse` and `reference: "manual"`, so it's
   always a whole document from a registry or retrieval, even one whose
   root is a `$ref`. If its URI isn't
   the one the reference used, the reference wouldn't find it in the bundle,

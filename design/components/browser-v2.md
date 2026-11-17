@@ -6,8 +6,8 @@ is in browser's [design docs](https://github.com/hyperjump-io/browser/blob/v2/de
 - The JSON AST: a type parameter for property node annotations, utilities
   that are generic over the node type, and a generic `DocumentNode<T>`.
 - A session is a `Hyperjump`, made from a configuration that's a plain
-  value. Documents are functions of a session: `get(session, url)` and
-  the `jref*` functions. `get` with `reference: "manual"` is the
+  value. Documents are functions of a session: `browse(session, url)` and
+  the `jref*` functions. `browse` with `reference: "manual"` is the
   document at a URL as it's written, which bundling, linting, and
   dialects use. What they need
   of one is its `fetch`, `state`, `contextUrl`, and `config`
@@ -30,7 +30,7 @@ is in browser's [design docs](https://github.com/hyperjump-io/browser/blob/v2/de
   the one the document says it has. A schema document's `url` is its
   `uri`, which is its `$id`, so a retrieved schema is only found by where
   it was retrieved from, and its `$id` doesn't answer for another URL.
-- A target, which is what `get` and the `jref*` functions return and
+- A target, which is what `browse` and the `jref*` functions return and
   what a reference is followed from: a node and the document it's in,
   which is the document that was retrieved. A schema's resource is the
   one in its document's `embedded` with the URI of its location, so
@@ -42,7 +42,7 @@ is in browser's [design docs](https://github.com/hyperjump-io/browser/blob/v2/de
   so every schema and reference in it is a target, and nothing makes one
   from a node.
 - A document where a target is taken, for one the session didn't
-  retrieve, like one that's linted. The browsing functions and
+  retrieve, like one that's linted. The `jref*` functions and
   `referencedFrom` take the tree, and browser finds what the document
   contains.
 - Embedded documents. A document's `embedded` has the documents it
@@ -66,7 +66,7 @@ is in browser's [design docs](https://github.com/hyperjump-io/browser/blob/v2/de
   the `Content-Type`'s `schema` and `profile` parameters, and the session
   is what a schema's meta-schema is retrieved in.
 - A file's media type is the one for the longest extension that matches.
-- What `get` and the `jref*` functions return is typed by the session's
+- What `browse` and the `jref*` functions return is typed by the session's
   media types, since a reference can lead to a document in any of them. A
   `Hyperjump<C>` has its config's type, so the node of what it finds is a
   schema's node, a JSON node, or a node of another of the config's media
@@ -95,7 +95,7 @@ is in browser's [design docs](https://github.com/hyperjump-io/browser/blob/v2/de
   `jsonSyntaxErrorMessage` describes one. They become `VFileMessage`s
   where they're reported or thrown.
 - Node locations are valid IRIs. Each pointer segment is percent-encoded
-  with `appendToLocation`, and `get` decodes a fragment before following
+  with `appendToLocation`, and `browse` decodes a fragment before following
   it as a JSON Pointer. The resolver and compiler build locations the same
   way. Instance locations in output are JSON Pointers, so they aren't
   encoded.

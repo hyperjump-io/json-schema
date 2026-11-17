@@ -35,7 +35,7 @@ because normalizing costs something and changes how it reads.
   - Leaving it as it's resolved, and normalizing where lint and bundling
     compare, was tried and rejected. Validating would save one
     normalization of each `href` for each document, out of the two or
-    three it still gets when lowering follows it (browser's `get`,
+    three it still gets when lowering follows it (browser's `browse`,
     and the session's embedded lookup). Lint needed eight places to
     normalize, which normalized the same `href` again and again, and a
     rule the types can't enforce, because lint's lookups also take kernel
@@ -52,14 +52,14 @@ because normalizing costs something and changes how it reads.
 
 ## Looking up a document
 
-Browser's `get` does every lookup, including the references it follows,
+Browser's `browse` does every lookup, including the references it follows,
 with the URL it parsed. Where a lookup meets `json-schema`'s
 identifiers, the URL is converted to an `Id` (`urlToIri`, then `toId`):
 a session's `fetch` converts the URL it's asked for, to look for it in
 the registries, and a node's resource is found by the `Id` of the node's
 location.
 
-- Overriding `get` to work out the `Id` before browser does was
+- Overriding `browse` to work out the `Id` before browser does was
   rejected. Browser parses the URI either way, so it was checked twice, and
   the override stood between the session and everything it found.
 

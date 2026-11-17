@@ -1,4 +1,4 @@
-import { get, relativeFileUrl } from "@hyperjump/browser";
+import { browse, relativeFileUrl } from "@hyperjump/browser";
 import { toId } from "./identifiers.js";
 import { definitionsOf } from "./definition-of.js";
 import { isSchemaDocument } from "./schema/schema-nodes.js";
@@ -40,7 +40,7 @@ const schemasOf = (session) => session.state(schemasKey, () => ({
   loading: new Map()
 }));
 
-export { get } from "@hyperjump/browser";
+export { browse } from "@hyperjump/browser";
 
 /** @type typeof API.hasDialect */
 export const hasDialect = (session, uri) => dialectOf(session, toId(uri)) !== undefined;
@@ -112,7 +112,7 @@ const loadDialect = async (session, uri) => {
   try {
     let metaSchema;
     try {
-      metaSchema = (await get(session, uri, { reference: "manual" })).document;
+      metaSchema = (await browse(session, uri, { reference: "manual" })).document;
     } catch (error) {
       throw Error(`Unable to retrieve the meta-schema for the '${relativeFileUrl(uri)}' dialect`, { cause: error });
     }

@@ -20,11 +20,11 @@ JSON Schema uses it.
 - Browser checks it when a session's `Hyperjump` fetches, for each step of
   a redirect too. That's after embedded resources, which browser finds
   first, and after the registries, which the session's `fetch` asks before
-  the `Hyperjump`. So it covers `get`, following references, `compile`,
+  the `Hyperjump`. So it covers `browse`, following references, `compile`,
   and meta-schemas found by `getDialect`, and it doesn't apply to a
   registry's schema.
 - A refusal is browser's network error whose `cause.code` is
-  `ERR_RETRIEVAL_NOT_ALLOWED`, so it's what `get` and `compile` throw. A
+  `ERR_RETRIEVAL_NOT_ALLOWED`, so it's what `browse` and `compile` throw. A
   refusal while getting a dialect's meta-schema is the `cause` of
   `getDialect`'s error.
 - Tools use the difference between a refused URL and one that couldn't be

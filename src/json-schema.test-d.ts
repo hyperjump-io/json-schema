@@ -14,7 +14,7 @@ import { BASIC } from "./output/index.js";
 import { compile, restore, serialize } from "./operations/compile.js";
 import { annotate, validate, validator } from "./operations/validate.js";
 import { annotatorFor, validatorFor } from "./operations/validate-compiled.js";
-import { get } from "./session.js";
+import { browse } from "./session.js";
 import { isSchemaDocument, isSchemaNode } from "./schema/schema-nodes.js";
 import { jrefMediaType, jrefSelect, Hyperjump } from "@hyperjump/browser";
 import type { DocumentNode, FollowedNode, JrefNode, JsonNode, MediaTypePlugin } from "@hyperjump/browser";
@@ -148,7 +148,7 @@ await validate({}, "https://example.com/schema", 42);
 type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
 const yes = <T extends true>(_is?: T) => {};
 
-const found = await get(new Hyperjump(v1Only), "https://example.com/schema");
+const found = await browse(new Hyperjump(v1Only), "https://example.com/schema");
 yes<Equal<typeof found.node, FollowedNode<JsonSchemaNode | JsonNode>>>();
 if (found.node.type === "json-schema") {
   found.node satisfies FollowedNode<JsonSchemaNode>;
@@ -159,16 +159,16 @@ if (found.node.type === "json-schema") {
 type OtherNode = JsonNode<{ type: "other" }>;
 declare const otherMediaType: MediaTypePlugin<DocumentNode<OtherNode>>;
 const withOther = jsonSchemaConfig({ dialects: [v1Dialect], mediaTypes: [jrefMediaType, otherMediaType] });
-const foundOther = await get(new Hyperjump(withOther), "https://example.com/schema");
+const foundOther = await browse(new Hyperjump(withOther), "https://example.com/schema");
 yes<Equal<typeof foundOther.node, FollowedNode<JsonSchemaNode | JsonNode | JrefNode | OtherNode>>>();
 
 // A session whose type doesn't say its media types could have any
-const unknownNode = await get(new Hyperjump(jsonSchema), "https://example.com/schema");
+const unknownNode = await browse(new Hyperjump(jsonSchema), "https://example.com/schema");
 yes<Equal<typeof unknownNode.node, unknown>>();
 if (isSchemaNode(unknownNode.node)) {
   unknownNode.node.dialectUri satisfies string;
 }
-const anyDocument = (await get(new Hyperjump(jsonSchema), "https://example.com/schema", { reference: "manual" })).document;
+const anyDocument = (await browse(new Hyperjump(jsonSchema), "https://example.com/schema", { reference: "manual" })).document;
 if (isSchemaDocument(anyDocument)) {
   anyDocument.anchors satisfies Record<string, string>;
 }

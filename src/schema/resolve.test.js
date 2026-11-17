@@ -18,7 +18,7 @@ import legacyRefKeyword from "../keywords/draft-07/ref.js";
 import recursiveAnchorKeyword from "../keywords/draft-2019-09/recursiveAnchor.js";
 import vocabularyKeyword from "../keywords/vocabulary.js";
 import { noUrl } from "../identifiers.js";
-import { get } from "../session.js";
+import { browse } from "../session.js";
 import { definitionsOf } from "../definition-of.js";
 
 /**
@@ -961,7 +961,7 @@ describe("jsonSchemaResolve", () => {
         $defs: { foo: { $anchor: "foo", type: "string" } }
       });
 
-      const foo = await get(session, `${uri}#foo`);
+      const foo = await browse(session, `${uri}#foo`);
       expect(foo.node).to.include({ type: "json-schema", location: `${uri}#/$defs/foo` });
     });
 
@@ -973,13 +973,13 @@ describe("jsonSchemaResolve", () => {
         $defs: { a: { type: "string" } }
       });
 
-      const written = await get(session, `${uri}#/properties/foo/$ref`, { reference: "manual" });
+      const written = await browse(session, `${uri}#/properties/foo/$ref`, { reference: "manual" });
       expect(written.node).to.include({ type: "reference", jsonType: "string", value: "#/$defs/a" });
 
-      const followed = await get(session, `${uri}#/properties/foo/$ref`);
+      const followed = await browse(session, `${uri}#/properties/foo/$ref`);
       expect(schemaNode(followed.node).location).to.equal(`${uri}#/$defs/a`);
 
-      const foo = await get(session, `${uri}#/properties/foo`);
+      const foo = await browse(session, `${uri}#/properties/foo`);
       expect(foo.node, "the schema it's in isn't a reference").to.include({ type: "json-schema" });
       const selected = await jrefSelect(session, "> [key=$ref]", schemaTarget(foo));
       expect(schemaNode(selected?.node).location).to.equal(`${uri}#/$defs/a`);
@@ -996,7 +996,7 @@ describe("jsonSchemaResolve", () => {
         }
       });
 
-      const a = await get(session, `${uri}#/properties/foo`);
+      const a = await browse(session, `${uri}#/properties/foo`);
       expect(schemaNode(a.node).location).to.equal("https://example.com/a#");
 
       const b = await jrefSelect(session, "> [key=properties] > [key=b]", schemaTarget(a));
@@ -1015,7 +1015,7 @@ describe("jsonSchemaResolve", () => {
         }
       });
 
-      const c = await get(session, `${uri}#/properties/foo`);
+      const c = await browse(session, `${uri}#/properties/foo`);
       const d = await jrefSelect(session, "> [key=properties] > [key=root]", schemaTarget(c));
       expect(schemaNode(d?.node).location).to.equal("https://example.com/embedding#/definitions/d");
     });
@@ -1028,9 +1028,9 @@ describe("jsonSchemaResolve", () => {
         definitions: { e: { $id: embeddedUri, type: "string" } }
       });
 
-      const root = await get(session, uri);
-      expect(schemaNode((await get(session, embeddedUri, { referencedFrom: root })).node).location).to.equal(`${embeddedUri}#`);
-      await expect(get(session, embeddedUri)).rejects.toMatchObject({ cause: { code: "ERR_RETRIEVAL_NOT_ALLOWED" } });
+      const root = await browse(session, uri);
+      expect(schemaNode((await browse(session, embeddedUri, { referencedFrom: root })).node).location).to.equal(`${embeddedUri}#`);
+      await expect(browse(session, embeddedUri)).rejects.toMatchObject({ cause: { code: "ERR_RETRIEVAL_NOT_ALLOWED" } });
     });
 
     test("a schema with problems can't be retrieved", async () => {
@@ -1038,7 +1038,7 @@ describe("jsonSchemaResolve", () => {
       const uri = await schemaFile("invalid.schema.json", { type: "string" });
 
       // A schema that can't be used fails its retrieval with its problems
-      await expect(get(session, uri)).rejects.toMatchObject({
+      await expect(browse(session, uri)).rejects.toMatchObject({
         name: "SchemaError",
         messages: [{ ruleId: "missing-dialect", severity: "error", uri: uri }]
       });
@@ -1054,7 +1054,7 @@ describe("jsonSchemaResolve", () => {
 }`);
       const uri = pathToFileURL(path).toString();
 
-      await expect(get(session, uri)).rejects.toMatchObject({
+      await expect(browse(session, uri)).rejects.toMatchObject({
         messages: [
           { source: "json", ruleId: "trailing-comma", severity: "error", uri: uri, place: { start: { line: 4, column: 24 } } },
           { source: "json", ruleId: "trailing-comma", place: { start: { line: 4, column: 27 } } },

@@ -1,6 +1,6 @@
 # Referenced schemas
 
-What a reference refers to is found by browser's `get`, from the
+What a reference refers to is found by browser's `browse`, from the
 reference's target, which has the document it's in. Compiling follows
 what it finds, and linting doesn't.
 
@@ -10,7 +10,7 @@ what it finds, and linting doesn't.
   a reference.
 - Compiling reads a schema through targets, a step at a time (see
   [Compile and evaluate](kernel/README.md)), so a reference it reaches is
-  a target. It's followed with `get` and that target as `referencedFrom`,
+  a target. It's followed with `browse` and that target as `referencedFrom`,
   which finds what the document embeds before anything is retrieved, and
   follows a schema that's a reference itself through any document to a
   value, with browser's `ERR_REFERENCE_CYCLE`. What's found is a target,
@@ -22,7 +22,7 @@ what it finds, and linting doesn't.
   document has all of them, and a message can name the document a
   resource came from.
 - Linting finds a reference with `findSchema` (`src/lint/find-schema.js`),
-  which is `get` from the reference's target with `reference: "manual"`,
+  which is `browse` from the reference's target with `reference: "manual"`,
   so what it finds isn't followed. Lint reports on references as they're
   written. A document's references are found as targets by browsing it as
   it's written (`jrefVisit` with `reference: "manual"`).
@@ -55,15 +55,15 @@ Rejected:
   found by walking nodes. Reading a schema through targets gives each one
   as a target.
 - A `followedSchema(session, uri, from)` of this package's for compiling:
-  `get` from a node, and then a second lookup from the node it found for
-  the resource it's in. It was two lookups for what `get` had when it
+  `browse` from a node, and then a second lookup from the node it found for
+  the resource it's in. It was two lookups for what `browse` had when it
   found the node, and compiling kept its own record of which document
   each schema came from. A target has both.
 - A lookup of the document a node is in, kept by this package. The
   session kept every resource by URI for it (`addResources`,
   `resourceOf`), which walked a location's pointer in each resource with
   the URI.
-- `get` returning a node, without following, and a
+- `browse` returning a node, without following, and a
   `documentOf(session, node)` for the document a node is in. Every caller
   that wanted a document got its root to look the document up from, and
   the lookup could fail. A target has its document.

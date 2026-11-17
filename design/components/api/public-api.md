@@ -16,11 +16,11 @@ These stay public, because something users write depends on them.
 | `EvaluationPlugin` | Custom output formats, and anything that watches evaluation, like coverage |
 | Schema AST types, `jsonSchemaConfig`, `isSchemaNode`, `isSchemaDocument`, `resolveSchema`, `jsonSchemaResolve`, `jsonSchemaValidate` | Editors and the language server, schemas in other formats, like YAML |
 | The lint toolkit (`./lint`) | Lint rules |
-| Session browsing: `get`, `getDialect`, `annotation` | Any operation that walks schemas |
+| Session browsing: `browse`, `getDialect`, `annotation` | Any operation that walks schemas |
 
 ## Decided
 
-- `get(session, uri, { referencedFrom })` is how to follow a reference,
+- `browse(session, uri, { referencedFrom })` is how to follow a reference,
   documented in the website's
   [Sessions](../../../website/extending/sessions.md#following-references)
   page, with browser's `jrefFindAll` and `reference: "manual"` to find
@@ -28,14 +28,14 @@ These stay public, because something users write depends on them.
   found that way, so an operation that follows `$ref` without it, like a
   docs generator or a bundler, gets embedded resources wrong.
   `referencedFrom` is a target, the reference's node and the document
-  it's in, and what `get` returns is one, so a reference in what was
-  found is followed from it in turn. Without it, `get` only finds a
+  it's in, and what `browse` returns is one, so a reference in what was
+  found is followed from it in turn. Without it, `browse` only finds a
   whole document, from a registry or by retrieving it. Compiling and
   linting follow references this way, and bundling doesn't (see
   [Referenced schemas](../referenced-schemas.md)).
-- `get` is browser's, exported as it is. What it finds might not be a
+- `browse` is browser's, exported as it is. What it finds might not be a
   schema, so `isSchemaNode` and `isSchemaDocument` are exported with it.
-  A document as it's written is `get` with `reference: "manual"`, which
+  A document as it's written is `browse` with `reference: "manual"`, which
   doesn't follow a schema that's a reference.
 - There's no `lower` function. `serialize(await compile(config, uri))`
   is the kernel as it was lowered. The optimization passes run inside a

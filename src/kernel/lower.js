@@ -1,4 +1,4 @@
-import { appendToLocation, get, jrefArrayIter, jrefObjectEntries, jrefStep, jsonPointerGet, jsonValue, relativeFileUrl } from "@hyperjump/browser";
+import { appendToLocation, browse, jrefArrayIter, jrefObjectEntries, jrefStep, jsonPointerGet, jsonValue, relativeFileUrl } from "@hyperjump/browser";
 import { isErrorNode } from "../keywords/checks.js";
 import { keywordDefinitionUri } from "../keywords/unknown.js";
 import { siblingValues } from "../keywords/utilities.js";
@@ -368,7 +368,7 @@ export const lower = async (session, uri) => {
     }
 
     const { href } = /** @type ReferenceNode */ (node);
-    return schema(schemaTarget(/** @type Target */ (await get(session, href, { referencedFrom: value })), href));
+    return schema(schemaTarget(/** @type Target */ (await browse(session, href, { referencedFrom: value })), href));
   };
 
   /** @type Inputs<Target> */
@@ -382,13 +382,13 @@ export const lower = async (session, uri) => {
     }
   };
 
-  const handle = schema(schemaTarget(/** @type Target */ (await get(session, uri)), uri));
+  const handle = schema(schemaTarget(/** @type Target */ (await browse(session, uri)), uri));
   for (let index = 0; index < queue.length; index++) {
     // A schema with a dynamic anchor is found by its location, from the
     // document it's in
     for (let anchor = anchors.shift(); anchor !== undefined; anchor = anchors.shift()) {
       const [location, from] = anchor;
-      schema(schemaTarget(/** @type Target */ (await get(session, location, { referencedFrom: from })), location));
+      schema(schemaTarget(/** @type Target */ (await browse(session, location, { referencedFrom: from })), location));
     }
 
     const target = queue[index];

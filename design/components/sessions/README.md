@@ -22,7 +22,7 @@ depended on it. So state is separated by how long it lives.
   configuration that's a value, and a session is made from the config
   (see [Browser v2](../browser-v2.md)).
 - A session is browser's, a `Hyperjump`, with nothing added. So browser's
-  `get` and `jref*` functions take it, schemas are browsed
+  `browse` and `jref*` functions take it, schemas are browsed
   with browser's own functions, and it's traced, observed, and closed like
   any browser session (`new Trace(session)`).
   - Its config's `registry`, a `SchemaRegistry`, is asked before
@@ -37,7 +37,7 @@ depended on it. So state is separated by how long it lives.
     copied some of a `Hyperjump`'s members and reached the rest through
     `hyperjump`.
 - What this package adds to browsing is a function of a session,
-  `getDialect(session, uri)`. `get` is browser's, exported from here as
+  `getDialect(session, uri)`. `browse` is browser's, exported from here as
   it is. `annotation` doesn't need a session: it
   takes the config (see
   [Annotations](../validation-api/annotations.md)).
@@ -57,7 +57,7 @@ depended on it. So state is separated by how long it lives.
   browse; compiling, bundling, and linting are functions (see
   [Validation API](../validation-api/README.md)).
 - A schema with problems fails its retrieval with its `SchemaError`, which
-  is what `get` and the operations throw. Nothing wraps it.
+  is what `browse` and the operations throw. Nothing wraps it.
 - Dialects the media types were made with are in their definitions, and
   they're found there first. A dialect built from a meta-schema belongs to the
   session that built it. `getDialect(session, uri)` finds both, and it's
@@ -67,7 +67,7 @@ depended on it. So state is separated by how long it lives.
   plugins resolve schemas in that session, with the definitions in its
   config. Any session whose config has them can.
 - What a session finds is typed by its media types. A reference can lead to
-  any document the session can read, so `get` and the `jref*` functions
+  any document the session can read, so `browse` and the `jref*` functions
   return a target whose node is a schema's node, a JSON node, or a node of
   another of the config's media types, like JRef, and a schema's node is
   told by its `type`, `"json-schema"`.
@@ -81,17 +81,17 @@ depended on it. So state is separated by how long it lives.
 
 Rejected:
 
-- `get`, `getDialect`, and `annotation` as methods of the
-  session. They'd forward to browser's functions, and its `get` would be
+- `browse`, `getDialect`, and `annotation` as methods of the
+  session. They'd forward to browser's functions, and its `browse` would be
   browser's with another call shape.
-- `get` typed as returning a schema's. A reference
+- `browse` typed as returning a schema's. A reference
   can lead to a document that isn't a schema, like a JRef or a JSON file,
   so the type would be wrong whenever one did.
 - The config's media types left out of a session's type. A session with a
   media type of the application's could find one of its nodes, which the
   type wouldn't say.
 - Resolving after retrieving, to take the session out of browser's
-  `parse`: browser would only parse, and a `get` of this package's
+  `parse`: browser would only parse, and a `browse` of this package's
   would resolve what it returns. It moves the dependency instead of
   removing it. Resolving still needs the session, for dialects, and moving
   it needs a cache of resolved documents next to browser's, the

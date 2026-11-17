@@ -33,7 +33,7 @@ export type SessionOptions = {
 // anything is retrieved, so `allowRetrieval` doesn't apply to a registry's
 // schema.
 //
-// A reference can lead to any document the session can read, so what `get`
+// A reference can lead to any document the session can read, so what `browse`
 // and the `jref*` functions return is a node of a document in one of the
 // config's media types: a schema, JSON, or another, like JRef. A schema's
 // node has the `type` `"json-schema"`. A session whose type doesn't say its
@@ -41,7 +41,7 @@ export type SessionOptions = {
 // any, so nothing is known about its nodes.
 
 /**
- * `@hyperjump/browser`'s `get`. In a session with the JSON Schema media
+ * `@hyperjump/browser`'s `browse`. In a session with the JSON Schema media
  * types, a fragment of a schema is an anchor or a JSON Pointer, and
  * documents are found in this order: an embedded resource, if
  * `referencedFrom` is a target in the document that contains it; a schema
@@ -53,12 +53,12 @@ export type SessionOptions = {
  * in the document, and an `Error` if more than one schema in the registries
  * is found by the URI.
  */
-export { get } from "@hyperjump/browser";
+export { browse } from "@hyperjump/browser";
 
 /**
  * Get a dialect. If it isn't one the JSON Schema media types were made with
  * or built in this session, its meta-schema is found with
- * {@link get}, which can find it in a registry, and the dialect is
+ * {@link browse}, which can find it in a registry, and the dialect is
  * the one the meta-schema defines (see
  * `JsonSchemaDocumentNode.definedDialect`). That's `$vocabulary` in 2019-09
  * and 2020-12. The meta-schema must be a schema (`application/schema+json`

@@ -10,7 +10,7 @@ text ─ fromJson ─▶ JSON AST ─ resolveSchema ─▶ Schema AST ─ (schem
   a `Hyperjump` made from a config, which asks the registry before it
   retrieves anything. Schemas are retrieved,
   browsed, and compiled in a session (see [Sessions and registries](components/sessions/README.md)).
-- Schemas are retrieved with browser's `get`. The schema media type plugin
+- Schemas are retrieved with browser's `browse`. The schema media type plugin
   (`application/schema+json`, `.schema.json`) parses with `fromJson` and
   resolves with `resolveSchema` (`jsonSchemaResolve` is the same as a
   unified plugin). Any problem from either is fatal there: it throws a

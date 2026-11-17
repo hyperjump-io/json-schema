@@ -1,7 +1,7 @@
 import { relativeFileUrl } from "@hyperjump/browser";
 import { SchemaError } from "../schema/schema-error.js";
 import { isReferenceSchema, isSchemaDocument } from "../schema/schema-nodes.js";
-import { get } from "../session.js";
+import { browse } from "../session.js";
 
 /**
  * @import { Target } from "@hyperjump/browser"
@@ -15,7 +15,7 @@ export const findSchema = async (session, uri, options = {}) => {
     // The reference is followed from the document it's in, so a resource
     // in that document is found there. What's found isn't followed,
     // because lint reports on references as they're written.
-    const { document, node } = /** @type Target */ (await get(session, uri, { referencedFrom: options.from, reference: "manual" }));
+    const { document, node } = /** @type Target */ (await browse(session, uri, { referencedFrom: options.from, reference: "manual" }));
     const schemaNode = /** @type JsonSchemaNode */ (node);
     if (!isSchemaDocument(document) || (schemaNode.type !== "json-schema" && !isReferenceSchema(schemaNode))) {
       throw Error(`'${relativeFileUrl(uri)}' isn't a schema`, { cause: { code: "ERR_NOT_A_SCHEMA" } });

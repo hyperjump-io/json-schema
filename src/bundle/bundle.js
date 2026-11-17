@@ -1,7 +1,7 @@
 import { jrefFindAll, jsonValue, relativeFileUrl } from "@hyperjump/browser";
 import { getFragment, getScheme, isIri, isIriReference, normalizeIri, resolveIri, toAbsoluteIri, toRelativeIri } from "@hyperjump/uri";
 import { toId } from "../identifiers.js";
-import { get, getDialect } from "../session.js";
+import { browse, getDialect } from "../session.js";
 import { isSchemaDocument } from "../schema/schema-nodes.js";
 import { differentResources, sameResource } from "../schema/same-resource.js";
 
@@ -154,7 +154,7 @@ const identifierFor = (main, documents, id) => {
  * @type (session: Hyperjump<JsonSchemaConfig>, uri: Id, referencedFrom?: Target) => Promise<DocumentTarget>
  */
 const schemaTarget = async (session, uri, referencedFrom) => {
-  const target = /** @type Target */ (await get(session, uri, { referencedFrom, reference: "manual" }));
+  const target = /** @type Target */ (await browse(session, uri, { referencedFrom, reference: "manual" }));
   if (!isSchemaDocument(target.document)) {
     throw Error(`'${relativeFileUrl(uri)}' isn't a schema`);
   }

@@ -32,7 +32,7 @@ document finds something. They can see what's in registries and what
   itself.
 - `findSchema(session, uri, options)` (`src/lint/find-schema.js`) finds what
   a reference would, without following a reference it finds. It's
-  browser's `get` from the document the reference is in, with
+  browser's `browse` from the document the reference is in, with
   `reference: "manual"` (see
   [Referenced schemas](../referenced-schemas.md)), with a failure as a
   result. It's what

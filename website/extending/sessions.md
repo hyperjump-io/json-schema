@@ -16,11 +16,11 @@ a `Hyperjump`, made from your configuration. Start one yourself with
 
 ```typescript
 import { Hyperjump } from "@hyperjump/browser";
-import { get } from "@hyperjump/json-schema";
+import { browse } from "@hyperjump/json-schema";
 
 const session = new Hyperjump({ ...config, registry });
 
-const name = await get(
+const name = await browse(
   session,
   "https://example.com/person#/properties/name"
 );
@@ -41,13 +41,13 @@ their configuration has a `stack` with one. See
 
 A session is a browser session, a `Hyperjump`, that the functions of
 [`@hyperjump/browser`](https://github.com/hyperjump-io/browser/blob/v2/website/README.md)
-take, so you browse schemas with them. This package exports `get` too:
+take, so you browse schemas with them. This package exports `browse` too:
 
 | Function | What it does |
 | --- | --- |
-| `get(session, uri)` | A target for what a URI identifies: its `node`, and the `document` the node is in. A fragment is an anchor or a JSON Pointer. It follows a draft-04 to draft-07 `$ref`. |
-| `get(session, uri, { reference: "manual" })` | The same, without following a `$ref`, so the target's `document` is always the document at the URI |
-| `jrefSelect(session, selector, target)` and the other `jref` functions | Find the values under a target, following references. See [browser's browsing](https://github.com/hyperjump-io/browser/blob/v2/website/browsing.md). |
+| `browse(session, uri)` | A target for what a URI identifies: its `node`, and the `document` the node is in. A fragment is an anchor or a JSON Pointer. It follows a draft-04 to draft-07 `$ref`. |
+| `browse(session, uri, { reference: "manual" })` | The same, without following a `$ref`, so the target's `document` is always the document at the URI |
+| `jrefSelect(session, selector, target)` and the other `jref` functions | Find the values under a target, following references. See browser's [Read targets](https://github.com/hyperjump-io/browser/blob/v2/website/read-targets.md). |
 | `getDialect(session, uri)` | A dialect, from the configuration or from a meta-schema the session finds |
 
 A session looks for a schema in the configuration's registry first, and
@@ -67,14 +67,14 @@ const trace = new Trace(session);
 
 A reference can lead to any document the session can read, like a JSON
 file, or a JRef document if the configuration has `jrefMediaType`. So the
-node of a target from `get` or a `jref` function might not be a schema, and
+node of a target from `browse` or a `jref` function might not be a schema, and
 its document might not be a schema document. Check with `isSchemaNode` and
 `isSchemaDocument`:
 
 ```typescript
-import { get, isSchemaNode } from "@hyperjump/json-schema";
+import { browse, isSchemaNode } from "@hyperjump/json-schema";
 
-const { node } = await get(session, "https://example.com/person");
+const { node } = await browse(session, "https://example.com/person");
 if (isSchemaNode(node)) {
   node.dialectUri; // "https://json-schema.org/v1"
 }
@@ -92,17 +92,17 @@ check them.
 ## Following references
 
 Some tools follow references themselves, like a documentation generator or
-a bundler. They find what a reference points to with `get`. Pass the
+a bundler. They find what a reference points to with `browse`. Pass the
 reference's target as `referencedFrom`, so the session knows which document
 to follow it from. Browsing a schema as it's written, with
 `reference: "manual"`, gives you its references as targets:
 
 ```typescript
 import { Hyperjump, jrefFindAll } from "@hyperjump/browser";
-import { get, isSchemaNode } from "@hyperjump/json-schema";
+import { browse, isSchemaNode } from "@hyperjump/json-schema";
 
 const session = new Hyperjump(config);
-const person = await get(
+const person = await browse(
   session,
   "https://example.com/person",
   { reference: "manual" }
@@ -116,7 +116,7 @@ const references = await jrefFindAll(
 );
 
 for (const reference of references) {
-  const schema = await get(
+  const schema = await browse(
     session,
     reference.node.href,
     { referencedFrom: reference }
@@ -137,7 +137,7 @@ an `$id` in `$defs`. The session only finds an embedded schema from the
 document it's in. Without `referencedFrom`, the session doesn't find it, or
 finds a different schema with the same URI instead. The session finds
 every other reference the usual way: first in the registries, then by
-retrieving it. What `get` gives you is a target too, so you follow a
+retrieving it. What `browse` gives you is a target too, so you follow a
 reference in the schema it found by passing it as `referencedFrom` in turn.
 
 Follow references in the session the document is in. That way you only

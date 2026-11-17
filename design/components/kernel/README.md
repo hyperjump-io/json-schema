@@ -30,7 +30,7 @@ There are two phases:
      target, so a subschema is queued as one, a reference is followed
      from one, and nothing makes a target from a node.
    - A reference is followed where a shape says a schema is applied,
-     with `get` from the reference's target. So parsing waits, and
+     with `browse` from the reference's target. So parsing waits, and
      `lowerKeywords`, which lint shares, is asynchronous. A keyword's
      `lower` isn't.
    - A keyword whose shape is data has no schemas or references in its
@@ -52,7 +52,7 @@ There are two phases:
      schema it applies, and lowering them afterwards. A visitor gets a
      schema before its references are followed, so it can't lower it, and
      a schema's values were read twice, once to browse and once to lower.
-   - Rejected: walking the nodes and following each reference with `get`,
+   - Rejected: walking the nodes and following each reference with `browse`,
      with a target made for each subschema from its node. Nothing should
      make a target from a node it has.
    - Rejected: lowering every schema it can with what's been retrieved,
