@@ -262,7 +262,7 @@ describe("dispatch", () => {
       expect(replaced.size).to.be.greaterThan(0);
       const after = { ...kernel, schemas: { ...kernel.schemas, ...Object.fromEntries(replaced) } };
       const options = { instance: astInstance, isAst: true, annotating: false, instrumented: false };
-      const { node } = fromJson(json, noUrl);
+      const node = fromJson(json, noUrl).document.children[0];
       const definitions = kernelDefinitions(definitionsOf(jsonSchema), kernel);
       return [instrumented(definitions, kernel, options)(node), instrumented(definitions, after, options)(node)];
     };
@@ -327,7 +327,7 @@ describe("dispatch", () => {
         ];
         for (const [instance, isAst] of /** @type const */ ([[astInstance, true], [jsInstance, false]])) {
           const evaluate = instrumented(kernelDefinitions(definitionsOf(jsonSchema), withRoot(expression)), withRoot(expression), /** @type any */ ({ instance, isAst, annotating: false, instrumented: false }));
-          evaluations.push((isAst ? jsons : parsed).map((json) => evaluate(isAst ? fromJson(json, noUrl).node : JSON.parse(json))));
+          evaluations.push((isAst ? jsons : parsed).map((json) => evaluate(isAst ? fromJson(json, noUrl).document.children[0] : JSON.parse(json))));
         }
         return evaluations;
       };

@@ -91,8 +91,9 @@ is in browser's [design docs](https://github.com/hyperjump-io/browser/blob/v2/de
   one, and nothing reads it.
 - `jsonValue` supports arrays and objects. `jrefValue` doesn't, because it
   would need to follow references.
-- `fromJson` returns syntax errors as plain objects in `errors`, and
-  `jsonSyntaxErrorMessage` describes one. They become `VFileMessage`s
+- `fromJson` returns a document, the one `rejsonParse` makes, and syntax
+  errors as plain objects in `errors`. `jsonSyntaxErrorMessage` describes
+  one. They become `VFileMessage`s
   where they're reported or thrown.
 - Node locations are valid IRIs. Each pointer segment is percent-encoded
   with `appendToLocation`, and `browse` decodes a fragment before following

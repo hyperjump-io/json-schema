@@ -593,7 +593,7 @@ describe("Validator", () => {
         for (const length of [3, 20]) {
           const items = plugins(length);
           /** @type (json: string) => boolean */
-          const validate = (json) => /** @type boolean */ (validatorFor(compiled, { input: "node", ...options })(fromJson(json, noUrl).node));
+          const validate = (json) => /** @type boolean */ (validatorFor(compiled, { input: "node", ...options })(fromJson(json, noUrl).document.children[0]));
           expect(validate(`[${items}, @, @]`)).to.equal(true);
           expect(validate(`[${items}, { "name": }, { "name": }]`)).to.equal(true);
           expect(validate(`[${items}, { "name": "plugin0", "x": }, { "name": "plugin0", "x": }]`)).to.equal(true);
@@ -679,7 +679,7 @@ describe("Validator", () => {
       // A value that couldn't be parsed isn't evaluated, so it passes
       for (const options of [undefined, { plugins: [plugin] }]) {
         /** @type (json: string) => boolean */
-        const validate = (json) => /** @type boolean */ (validatorFor(positions, { input: "node", ...options })(fromJson(json, noUrl).node));
+        const validate = (json) => /** @type boolean */ (validatorFor(positions, { input: "node", ...options })(fromJson(json, noUrl).document.children[0]));
         expect(validate("[[1, 2], @]")).to.equal(true);
         expect(validate("[[1, @], [3, 4]]")).to.equal(true);
         expect(validate("[[1, @], [3]]")).to.equal(false);
@@ -970,8 +970,8 @@ describe("Validator", () => {
 
     test("instance locations are relative to the node evaluation starts from", async () => {
       const compiled = await compile(jsonSchema, await schemaFile({ properties: { bar: { type: "number" } } }));
-      const document = fromJson(`{ "foo": { "bar": "x" } }`, "https://example.com/document");
-      const node = /** @type any */ (document.node).children[0].children[1];
+      const { document } = fromJson(`{ "foo": { "bar": "x" } }`, "https://example.com/document");
+      const node = /** @type any */ (document.children[0]).children[0].children[1];
 
       const result = validatorFor(compiled, { input: "node", output: BASIC })(node);
       expect(result.errors.map((error) => /** @type ValidationError */ (error).instanceLocation)).to.eql(["/bar"]);
@@ -1092,7 +1092,7 @@ describe("Validator", () => {
 
     test("annotateNode", async () => {
       const compiled = await compile(jsonSchema, await schemaFile({ properties: { foo: { title: "foo" } } }));
-      const { node } = fromJson(`{ "foo": 1 }`, noUrl);
+      const node = fromJson(`{ "foo": 1 }`, noUrl).document.children[0];
 
       expect(annotatorFor(compiled, { input: "node" })(node).output).to.equal(true);
       expect(jsonPointerGet("/foo", /** @type any */ (node)).data.annotations.get(titleKeyword.uri)).to.eql(["foo"]);
@@ -1297,7 +1297,7 @@ describe("Validator", () => {
       const plugin = { afterSchema: (_schema, at) => values.push(at.value()) };
 
       validatorFor(compiled, { plugins: [plugin] })({ foo: 1 });
-      validatorFor(compiled, { input: "node", plugins: [plugin] })(fromJson(`{ "foo": 1 }`, noUrl).node);
+      validatorFor(compiled, { input: "node", plugins: [plugin] })(fromJson(`{ "foo": 1 }`, noUrl).document.children[0]);
       expect(values).to.eql([1, { foo: 1 }, 1, { foo: 1 }]);
     });
 

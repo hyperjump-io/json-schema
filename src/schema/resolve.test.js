@@ -22,7 +22,7 @@ import { browse } from "../session.js";
 import { definitionsOf } from "../definition-of.js";
 
 /**
- * @import { JsonDocumentNode, JsonParseStatus } from "@hyperjump/browser"
+ * @import { JsonParseStatus } from "@hyperjump/browser"
  * @import { JsonSchemaConfig, JsonSchemaOptions } from "../json-schema.d.ts"
  * @import { DialectConfig, DialectExtension } from "../dialect.d.ts"
  * @import { Keyword } from "../keyword.d.ts"
@@ -38,8 +38,7 @@ const baseUri = "https://example.com/schema";
 
 describe("resolveSchema", () => {
   test("problems are returned as data, and the tree becomes the schema AST", async () => {
-    const { node } = fromJson(JSON.stringify({ $schema: dialectUri, $id: "#not-absolute" }), noUrl);
-    const tree = /** @type JsonDocumentNode */ ({ type: "json-document", status: "success", children: [node] });
+    const { document: tree } = fromJson(JSON.stringify({ $schema: dialectUri, $id: "#not-absolute" }), noUrl);
     const { document, messages } = await resolveSchema(tree, { session: new Hyperjump(testJsonSchema()), uri: baseUri });
 
     expect(document.type).to.equal("json-schema-document");
@@ -50,8 +49,7 @@ describe("resolveSchema", () => {
   test("messages about keywords that turn out to be ignored are dropped", async () => {
     // `$schema` that isn't where a resource starts is ignored, and the
     // schema is read again with its parent's dialect
-    const { node } = fromJson(JSON.stringify({ $schema: dialectUri, properties: { a: { $schema: strictDialectUri, foo: 1 } } }), noUrl);
-    const tree = /** @type JsonDocumentNode */ ({ type: "json-document", status: "success", children: [node] });
+    const { document: tree } = fromJson(JSON.stringify({ $schema: dialectUri, properties: { a: { $schema: strictDialectUri, foo: 1 } } }), noUrl);
     const { messages } = await resolveSchema(tree, { session: new Hyperjump(testJsonSchema()), uri: baseUri });
 
     expect(messages.map(({ ruleId }) => ruleId)).to.eql(["misplaced-dialect"]);

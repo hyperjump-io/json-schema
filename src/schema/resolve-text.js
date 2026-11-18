@@ -24,7 +24,7 @@ import { noUrl } from "../identifiers.js";
  * problems can't be used reliably
  */
 export const resolveSchemaText = async (text, session, uri, dialectUri, origin) => {
-  const { status, node, errors, comments } = fromJson(text, noUrl);
+  const { document, errors } = fromJson(text, noUrl);
 
   /** @type SchemaMessage[] */
   const messages = errors.map((error) => ({
@@ -37,8 +37,7 @@ export const resolveSchemaText = async (text, session, uri, dialectUri, origin) 
   }));
 
   // A syntax error the parser can't recover from leaves nothing to resolve
-  /** @type JsonDocumentNode | undefined */
-  const tree = status === "failure" ? undefined : { type: "json-document", status, children: node ? [node] : [], comments, url: noUrl };
+  const tree = document.status === "failure" ? undefined : document;
   return resolveTree(tree, messages, session, uri, dialectUri, origin);
 };
 

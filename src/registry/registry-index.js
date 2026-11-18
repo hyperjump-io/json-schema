@@ -1,5 +1,5 @@
 import { VFileMessage } from "vfile-message";
-import { fromJs, fromJson, relativeFileUrl } from "@hyperjump/browser";
+import { fromJs, fromJson, hasStatus, relativeFileUrl } from "@hyperjump/browser";
 import { getScheme } from "@hyperjump/uri";
 import { noUrl, resolveId, toId } from "../identifiers.js";
 import { toVFileMessage } from "../output/validation-error.js";
@@ -287,12 +287,12 @@ export const identify = (definitions, entry, registryDialect) => {
   }
 
   const { retrievalUri } = entry;
-  const result = fromJson(entry.schema, noUrl);
-  if (result.status !== "success" || result.node === undefined) {
-    return { error: Error(`The schema${retrievalUri ? ` at '${retrievalUri}'` : ""} isn't valid JSON`, { cause: toVFileMessage(result.errors[0]) }) };
+  const { document, errors } = fromJson(entry.schema, noUrl);
+  if (!hasStatus(document, "success")) {
+    return { error: Error(`The schema${retrievalUri ? ` at '${retrievalUri}'` : ""} isn't valid JSON`, { cause: toVFileMessage(errors[0]) }) };
   }
 
-  return identifyRoot(definitions, entry, registryDialect, nodeRoot(result.node));
+  return identifyRoot(definitions, entry, registryDialect, nodeRoot(document.children[0]));
 };
 
 /**

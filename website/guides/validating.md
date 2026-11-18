@@ -114,8 +114,8 @@ import { fromJson } from "@hyperjump/browser";
 
 const isPersonNode = await validator(config, "https://example.com/person", { input: "node" });
 
-const { node } = fromJson(`{ "name": "Jason" }`);
-isPersonNode(node); // true
+const { document } = fromJson(`{ "name": "Jason" }`, "https://example.com/jason.json");
+isPersonNode(document.children[0]); // true
 ```
 
 ## Asking why
