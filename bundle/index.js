@@ -3,7 +3,8 @@ import { jrefTypeOf } from "@hyperjump/browser/jref";
 import * as JsonPointer from "@hyperjump/json-pointer";
 import { resolveIri, toAbsoluteIri } from "@hyperjump/uri";
 import { hasSchema } from "../lib/index.js";
-import { getSchema, toSchema, getKeywordName } from "../lib/experimental.js";
+import { toSchema, getKeywordName } from "../lib/experimental.js";
+import { getSchemaResource } from "../lib/schema.js";
 
 
 export const URI = "uri", UUID = "uuid";
@@ -17,7 +18,7 @@ const defaultOptions = {
 export const bundle = async (url, options = {}) => {
   const fullOptions = { ...defaultOptions, ...options };
 
-  const mainSchema = await getSchema(url);
+  const mainSchema = await getSchemaResource(url);
   fullOptions.contextUri = mainSchema.document.baseUri;
   fullOptions.contextDialectId = mainSchema.document.dialectId;
 
@@ -33,14 +34,14 @@ export const bundle = async (url, options = {}) => {
 const doBundling = async (schemaUri, bundled, fullOptions, contextSchema, visited = new Set()) => {
   visited.add(schemaUri);
 
-  const schema = await getSchema(schemaUri, contextSchema);
+  const schema = await getSchemaResource(schemaUri, contextSchema);
   for (const reference of allReferences(schema.document.root)) {
     const uri = toAbsoluteIri(resolveIri(reference.href, schema.document.baseUri));
     if (visited.has(uri) || fullOptions.externalSchemas.includes(uri) || (uri in schema.document.embedded && !(uri in schema._cache) && !hasSchema(uri))) {
       continue;
     }
 
-    const externalSchema = await getSchema(uri, contextSchema);
+    const externalSchema = await getSchemaResource(uri, contextSchema);
     const embeddedSchema = toSchema(externalSchema, {
       contextUri: externalSchema.document.baseUri.startsWith("file:") ? fullOptions.contextUri : undefined,
       includeDialect: fullOptions.alwaysIncludeDialect ? "always" : "auto",
