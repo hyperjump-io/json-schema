@@ -46,7 +46,15 @@ errors of what's evaluated ([Optimizer](../../../specs/kernel/optimizer.md)).
   lookup ([Tags none of them require](../../../benchmarks/kernel-in-src/tags-none-require.md)). Of
   SchemaStore's 886 schemas that compile, about 790 `oneOf`s and `anyOf`s
   can be dispatched by a tag that can't be by type, in about 230 schemas,
-  100 of them recursive. Unions of `const`s (300 more) could be dispatched
-  by the instance's own value, but their schemas are cheap and none are
-  recursive, so they're left.
+  100 of them recursive.
+- By value, only in `fast`: an `any` or `one` of expressions that only
+  pass some scalars (`const`s and `enum`s, maybe with a `type`, and
+  `null` and `boolean`, which are their values) is a `oneOfValues` of
+  them, for `one` the values only one of them passes. With plugins, the
+  error would be the `anyOf`'s instead of each constant's, so it's kept.
+- Nullable switches, only in `fast`: an `any` of one `typeSwitch`, maybe
+  through schemas whose only group with an effect is one, and expressions
+  that only check the type, is a `typeSwitch` where those types `pass`,
+  unless anything reads marks or the dynamic scope
+  ([Unions of constants](../../../benchmarks/kernel-in-src/unions-of-constants.md)).
 It takes about 4 ms on `package.json`.

@@ -34,7 +34,10 @@ import { isInert } from "../inert.js";
  *   same type, like `oneOf` with a different `type` in each schema, is a
  *   `typeSwitch` with a branch for each, otherwise `fail`. An `any` like
  *   that isn't a `typeSwitch`: it already stops at the first that passes,
- *   and dispatching was slower.
+ *   and dispatching was slower. In `fast`, an `any` of one `typeSwitch`
+ *   and types is one `typeSwitch` where the types pass.
+ * - **By value.** In `fast`, an `any` or `one` of expressions that only
+ *   pass some scalars, like `anyOf` of `const`s, is a `oneOfValues`.
  * - **By tag.** Among the expressions that can pass an object, by the value
  *   of a property they constrain, like `"type": { "const": "SEQ" }` in each
  *   schema of a `oneOf` (a discriminator), which is a `propertySwitch`, or
@@ -146,13 +149,182 @@ export default {
       return undefined;
     };
 
+    /** @type Map<Handle, Values | undefined> */
+    const schemaValuesChecked = new Map();
+
+    /**
+     * The values, if an expression passes those scalar values and nothing
+     * else, like `{ "const": "a" }`, maybe with a `type` they have, or an
+     * `anyOf` of them, maybe through a schema whose only groups with an
+     * effect do that. A schema that's still being worked out, because it
+     * applies itself, doesn't.
+     *
+     * @type (expression: Expression) => Values | undefined
+     */
+    const valuesChecked = (expression) => {
+      switch (expression.op) {
+        case "equals":
+          return isScalar(expression.value) ? new Set([expression.value]) : undefined;
+        case "oneOfValues":
+          return expression.values.every(isScalar) ? new Set(expression.values) : undefined;
+        case "inline":
+          return valuesChecked({ op: "all", of: expression.keywords.map(({ expression }) => expression) });
+        case "all": {
+          const { of } = expression;
+          /** @type Values | undefined */
+          let values;
+          /** @type TypeName[][] */
+          const types = [];
+          for (const subexpression of of) {
+            if (isInert(subexpression, mode)) {
+              continue;
+            } else if (subexpression.op === "typeIs") {
+              types.push(subexpression.types);
+              continue;
+            }
+            const checked = valuesChecked(subexpression);
+            if (checked === undefined) {
+              return undefined;
+            }
+            values = values === undefined ? checked : intersect(values, checked);
+          }
+          if (values === undefined) {
+            // A type with only a few values, like `null`, is those values
+            const few = types.find((each) => each.every((type) => Object.hasOwn(typeValues, type)));
+            if (few === undefined) {
+              return undefined;
+            }
+            values = new Set(few.flatMap((type) => typeValues[/** @type keyof typeof typeValues */ (type)]));
+          }
+          return new Set([...values].filter((value) => types.every((each) => hasType(value, each))));
+        }
+        case "any":
+        case "one": {
+          const each = expression.of.map(valuesChecked);
+          if (each.some((values) => values === undefined)) {
+            return undefined;
+          }
+          const all = /** @type Values[] */ (each);
+          return expression.op === "any"
+            ? union(all)
+            : new Set([...union(all)].filter((value) => all.filter((values) => values.has(value)).length === 1));
+        }
+        case "apply": {
+          if (schemaValuesChecked.has(expression.schema)) {
+            return schemaValuesChecked.get(expression.schema);
+          }
+          const compiled = kernel.schemas[expression.schema];
+          if (typeof compiled === "boolean") {
+            return compiled ? undefined : new Set();
+          }
+          schemaValuesChecked.set(expression.schema, undefined);
+          const values = valuesChecked({ op: "all", of: compiled.keywords.map(({ expression }) => expression) });
+          schemaValuesChecked.set(expression.schema, values);
+          return values;
+        }
+        case "fail":
+          return new Set();
+        default:
+          return undefined;
+      }
+    };
+
+    /** @type Map<Handle, Extract<Expression, { op: "typeSwitch" }> | undefined> */
+    const schemaSwitches = new Map();
+
+    /**
+     * The `typeSwitch`, if an expression is one once it's rewritten, maybe
+     * through schemas whose only group with an effect is one. Without a
+     * dynamic scope, applying a schema isn't observable in `fast`, so its
+     * switch can be evaluated in its place. A schema that's still being
+     * worked out, because it applies itself, isn't one.
+     *
+     * @type (expression: Expression) => Extract<Expression, { op: "typeSwitch" }> | undefined
+     */
+    const switchOf = (expression) => {
+      if (expression.op === "typeSwitch") {
+        return expression;
+      } else if (expression.op === "any" || expression.op === "one") {
+        const rewritten = rewrite(expression);
+        return rewritten.op === "typeSwitch" ? rewritten : undefined;
+      } else if (expression.op !== "apply" || kernel.reads.dynamicScope.length > 0) {
+        return undefined;
+      } else if (schemaSwitches.has(expression.schema)) {
+        return schemaSwitches.get(expression.schema);
+      }
+      const compiled = kernel.schemas[expression.schema];
+      if (typeof compiled === "boolean") {
+        return undefined;
+      }
+      schemaSwitches.set(expression.schema, undefined);
+      const groups = compiled.keywords.filter(({ expression }) => !isInert(expression, mode));
+      const typeSwitch = groups.length === 1 ? switchOf(groups[0].expression) : undefined;
+      schemaSwitches.set(expression.schema, typeSwitch);
+      return typeSwitch;
+    };
+
+    /**
+     * An `any` of a `typeSwitch` and types, like `anyOf` of a `$ref` to a
+     * `oneOf` and `{ "type": "null" }`, as one `typeSwitch` where the types
+     * pass. Otherwise, an instance of the types was dispatched, and failed,
+     * before it was checked. Only when nothing reads marks, which the switch
+     * could make for an instance the types pass.
+     *
+     * @type (expression: Extract<Expression, { op: "all" | "any" | "one" }>) => Expression | undefined
+     */
+    const withTypes = (expression) => {
+      if (kernel.reads.evaluated.length > 0) {
+        return undefined;
+      }
+
+      /** @type TypeName[] */
+      const types = [];
+      /** @type Extract<Expression, { op: "typeSwitch" }>[] */
+      const switches = [];
+      for (const subexpression of expression.of) {
+        const checked = typesChecked(subexpression);
+        const typeSwitch = checked === undefined ? switchOf(subexpression) : undefined;
+        if (checked !== undefined) {
+          types.push(...checked);
+        } else if (typeSwitch !== undefined) {
+          switches.push(typeSwitch);
+        } else {
+          return undefined;
+        }
+      }
+      if (switches.length !== 1 || types.length === 0 || (types.includes("integer") && !types.includes("number"))) {
+        return undefined;
+      }
+
+      const [{ cases, otherwise }] = switches;
+      /** @type Expression */
+      const pass = { op: "pass" };
+      return {
+        op: "typeSwitch",
+        cases: { ...cases, ...Object.fromEntries(types.filter((type) => type !== "integer").map((type) => [type, pass])) },
+        otherwise
+      };
+    };
+
     /** @type (expression: Extract<Expression, { op: "all" | "any" | "one" }>) => Expression | undefined */
     const byType = (expression) => {
-      if (expression.op === "any") {
-        const types = expression.of.map(typesChecked);
-        return types.every((type) => type !== undefined) ? { op: "typeIs", types: [...new Set(types.flat())] } : undefined;
-      } else if (expression.op !== "one") {
+      if (expression.op === "all") {
         return undefined;
+      } else if (expression.op === "any") {
+        const types = expression.of.map(typesChecked);
+        if (types.every((type) => type !== undefined)) {
+          return { op: "typeIs", types: [...new Set(types.flat())] };
+        }
+      }
+
+      // An `anyOf` or `oneOf` of constants, maybe with `null`, is an `enum`:
+      // one lookup, not a call for each. Only in `fast`, because with
+      // plugins, the error would be the `anyOf`'s, not each constant's.
+      const values = mode.fast ? valuesChecked(expression) : undefined;
+      if (values !== undefined) {
+        return values.size === 0 ? { op: "fail" } : { op: "oneOfValues", values: [...values] };
+      } else if (expression.op === "any") {
+        return mode.fast ? withTypes(expression) : undefined;
       }
 
       /** @type [Set<TypeName>, Expression][] */
@@ -556,6 +728,13 @@ const noFacts = Object.freeze({ required: new Set(), values: new Map(), allowed:
 
 /** @type (value: Json) => value is Scalar */
 const isScalar = (value) => value === null || typeof value !== "object";
+
+/** The types with only a few values, and their values */
+const typeValues = { null: [null], boolean: [true, false] };
+
+/** @type (value: Scalar, types: TypeName[]) => boolean */
+const hasType = (value, types) => types.includes(typeOf(value))
+  || (types.includes("integer") && Number.isInteger(value));
 
 /** @type (a: Values, b: Values) => Values */
 const intersect = (a, b) => a.intersection(b);

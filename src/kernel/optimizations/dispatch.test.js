@@ -37,6 +37,51 @@ describe("dispatch", () => {
       expect(expression).to.eql({ op: "any", of: [{ op: "apply", schema: "/anyOf/0" }, { op: "apply", schema: "/anyOf/1" }] });
     });
 
+    test("of constants is a oneOfValues", async () => {
+      const expression = await optimized({ anyOf: [{ const: "a" }, { type: "string", const: "b" }, { enum: ["c", 1] }, { anyOf: [{ const: null }] }] }, "anyOf");
+      expect(expression).to.eql({ op: "oneOfValues", values: ["a", "b", "c", 1, null] });
+    });
+
+    test("of constants leaves out a constant without the type", async () => {
+      const expression = await optimized({ anyOf: [{ type: "string", const: 1 }, { type: "integer", enum: [2, 2.5] }] }, "anyOf");
+      expect(expression).to.eql({ op: "equals", value: 2 });
+    });
+
+    test("of constants and null is a oneOfValues", async () => {
+      const expression = await optimized({ anyOf: [{ enum: ["a", "b"] }, { type: "null" }] }, "anyOf");
+      expect(expression).to.eql({ op: "oneOfValues", values: ["a", "b", null] });
+    });
+
+    test("of a typeSwitch and a type is one typeSwitch", async () => {
+      const expression = await optimized({
+        $defs: { level: { oneOf: [{ enum: ["on", "off"] }, { type: "object", required: ["level"] }] } },
+        anyOf: [{ $ref: "#/$defs/level" }, { type: "null" }]
+      }, "anyOf");
+      expect(expression).to.eql({
+        op: "typeSwitch",
+        cases: { string: { op: "apply", schema: "/$defs/level/oneOf/0" }, object: { op: "apply", schema: "/$defs/level/oneOf/1" }, null: { op: "pass" } },
+        otherwise: { op: "fail" }
+      });
+    });
+
+    test("of a typeSwitch and a type is kept with plugins", async () => {
+      const expression = await optimized({
+        $defs: { level: { oneOf: [{ type: "string" }, { type: "object", required: ["level"] }] } },
+        anyOf: [{ $ref: "#/$defs/level" }, { type: "null" }]
+      }, "anyOf", { fast: false, plugins: true, annotations: false });
+      expect(expression).to.include({ op: "any" });
+    });
+
+    test("of constants is kept with plugins", async () => {
+      const expression = await optimized({ anyOf: [{ const: "a" }, { const: "b" }] }, "anyOf", { fast: false, plugins: true, annotations: false });
+      expect(expression).to.include({ op: "any" });
+    });
+
+    test("is kept if a schema has more than constants", async () => {
+      const expression = await optimized({ anyOf: [{ const: "a" }, { const: "bc", maxLength: 1 }] }, "anyOf");
+      expect(expression).to.include({ op: "any" });
+    });
+
     test("is kept if a schema annotates and annotations can be seen", async () => {
       /** @type Record<string, Json> */
       const schema = { anyOf: [{ type: "boolean", title: "Yes or no" }, { type: "null" }] };
@@ -60,8 +105,13 @@ describe("dispatch", () => {
     });
 
     test("knows the types of const and enum", async () => {
-      const expression = await optimized({ oneOf: [{ const: 1 }, { enum: ["a", "b"] }] }, "oneOf");
+      const expression = await optimized({ oneOf: [{ const: 1 }, { enum: ["a", "b"] }, { type: "object", required: ["foo"] }] }, "oneOf");
       expect(expression).to.include({ op: "typeSwitch" });
+    });
+
+    test("of constants is a oneOfValues of the values only one has", async () => {
+      const expression = await optimized({ oneOf: [{ enum: ["a", "b"] }, { enum: ["b", "c"] }] }, "oneOf");
+      expect(expression).to.eql({ op: "oneOfValues", values: ["a", "c"] });
     });
 
     test("is kept if integer and number overlap", async () => {
