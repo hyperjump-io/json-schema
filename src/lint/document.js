@@ -1,4 +1,4 @@
-import { jrefVisit, jsonPointerGet } from "@hyperjump/browser";
+import { jrefHref, jrefVisit, jsonPointerGet } from "@hyperjump/browser";
 import { toAbsoluteIri } from "@hyperjump/uri";
 import { availableDefinitions } from "../kernel/definitions.js";
 import { lowerKeywords, nodeReader, targetReader } from "../kernel/lower.js";
@@ -15,7 +15,7 @@ import { provenance, sourcesWithoutEffect } from "./provenance.js";
  * @import { Format } from "../format.d.ts"
  * @import { Keyword, Reference } from "../keyword.d.ts"
  * @import { Handle } from "../kernel/kernel.d.ts"
- * @import { Target } from "@hyperjump/browser"
+ * @import { ReferenceTarget, Target } from "@hyperjump/browser"
  * @import { Inputs, ObjectSchemaNode, Reader } from "../kernel/lower.js"
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode } from "../schema/schema-ast.d.ts"
  * @import { FindSchemaResult } from "./find-schema.d.ts"
@@ -110,7 +110,7 @@ const gather = async (session, tree) => {
       }
     }
     for (const reference of read.references) {
-      const { href } = /** @type {{ href: NormalizedIri }} */ (reference.node);
+      const href = /** @type NormalizedIri */ (jrefHref(reference));
       pending.push([href, reference]);
     }
 
@@ -201,7 +201,7 @@ const cache = new WeakMap();
  *
  * @typedef {{
  *   schemaNodes: (JsonSchemaNode & { type: "json-schema" })[];
- *   references: Target[];
+ *   references: ReferenceTarget[];
  *   schemas: LintSchemas;
  * }} Read
  */
@@ -266,7 +266,7 @@ const lower = async (session, tree) => {
         schemaTargets.push(/** @type Target<JsonSchemaDocumentNode, ObjectSchemaNode> */ (target));
       }
     } else if (node.type === "reference") {
-      read.references.push(target);
+      read.references.push(/** @type ReferenceTarget */ (target));
     }
   }, { reference: "manual", maxDepth: Infinity });
 

@@ -7,7 +7,7 @@ import { pathToFileURL } from "node:url";
 import { describe, test, beforeEach, beforeAll, afterAll, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
-import { fetcher, fromJson, jrefSelect, jsonPointerGet, nodeTransport, rejsonParse, Hyperjump } from "@hyperjump/browser";
+import { fetcher, fromJson, jrefLocation, jrefSelect, jsonPointerGet, nodeTransport, rejsonParse, Hyperjump } from "@hyperjump/browser";
 import { jsonSchemaConfig, SchemaError, extendDialect } from "../json-schema.js";
 import { jsonSchemaResolve, resolveSchema } from "./resolve.js";
 import idKeyword from "../keywords/id.js";
@@ -975,12 +975,12 @@ describe("jsonSchemaResolve", () => {
       expect(written.node).to.include({ type: "reference", jsonType: "string", value: "#/$defs/a" });
 
       const followed = await browse(session, `${uri}#/properties/foo/$ref`);
-      expect(schemaNode(followed.node).location).to.equal(`${uri}#/$defs/a`);
+      expect(jrefLocation(followed)).to.equal(`${uri}#/$defs/a`);
 
       const foo = await browse(session, `${uri}#/properties/foo`);
       expect(foo.node, "the schema it's in isn't a reference").to.include({ type: "json-schema" });
       const selected = await jrefSelect(session, "> [key=$ref]", schemaTarget(foo));
-      expect(schemaNode(selected?.node).location).to.equal(`${uri}#/$defs/a`);
+      expect(selected && jrefLocation(selected)).to.equal(`${uri}#/$defs/a`);
     });
 
     test("references between embedded resources", async () => {
@@ -995,10 +995,10 @@ describe("jsonSchemaResolve", () => {
       });
 
       const a = await browse(session, `${uri}#/properties/foo`);
-      expect(schemaNode(a.node).location).to.equal("https://example.com/a#");
+      expect(jrefLocation(a)).to.equal("https://example.com/a#");
 
       const b = await jrefSelect(session, "> [key=properties] > [key=b]", schemaTarget(a));
-      expect(schemaNode(b?.node).location).to.equal("https://example.com/b#");
+      expect(b && jrefLocation(b)).to.equal("https://example.com/b#");
     });
 
     test("an embedded resource can reference the document that embeds it", async () => {
@@ -1015,7 +1015,7 @@ describe("jsonSchemaResolve", () => {
 
       const c = await browse(session, `${uri}#/properties/foo`);
       const d = await jrefSelect(session, "> [key=properties] > [key=root]", schemaTarget(c));
-      expect(schemaNode(d?.node).location).to.equal("https://example.com/embedding#/definitions/d");
+      expect(d && jrefLocation(d)).to.equal("https://example.com/embedding#/definitions/d");
     });
 
     test("an embedded resource isn't visible outside the document that embeds it", async () => {
@@ -1027,7 +1027,7 @@ describe("jsonSchemaResolve", () => {
       });
 
       const root = await browse(session, uri);
-      expect(schemaNode((await browse(session, embeddedUri, { referencedFrom: root })).node).location).to.equal(`${embeddedUri}#`);
+      expect(jrefLocation(await browse(session, embeddedUri, { referencedFrom: root }))).to.equal(`${embeddedUri}#`);
       await expect(browse(session, embeddedUri)).rejects.toMatchObject({ cause: { code: "ERR_RETRIEVAL_NOT_ALLOWED" } });
     });
 
@@ -1068,11 +1068,8 @@ describe("jsonSchemaResolve", () => {
  * The tests' sessions don't say their media types, so nothing is known
  * about what they find. These tests only find schemas.
  *
- * @type (node: unknown) => FollowedNode<JsonSchemaNode>
+ * @type (target: Target) => Target<unknown, FollowedNode<JsonSchemaNode>>
  */
-const schemaNode = (node) => /** @type FollowedNode<JsonSchemaNode> */ (node);
-
-/** @type (target: Target) => Target<unknown, FollowedNode<JsonSchemaNode>> */
 const schemaTarget = (target) => /** @type Target<unknown, FollowedNode<JsonSchemaNode>> */ (target);
 
 /** @type Keyword<any, any, any>[] */

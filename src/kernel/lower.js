@@ -1,4 +1,4 @@
-import { appendToLocation, browse, jrefArrayIter, jrefObjectEntries, jrefStep, jsonPointerGet, jsonValue, relativeFileUrl } from "@hyperjump/browser";
+import { appendToLocation, browse, jrefArrayIter, jrefHref, jrefIsReference, jrefObjectEntries, jrefStep, jsonPointerGet, jsonValue, relativeFileUrl } from "@hyperjump/browser";
 import { isErrorNode } from "../keywords/checks.js";
 import { keywordDefinitionUri } from "../keywords/unknown.js";
 import { siblingValues } from "../keywords/utilities.js";
@@ -16,7 +16,7 @@ import { differentResources, sameResource } from "../schema/same-resource.js";
  * @import { Keyword, LowerInput, Reference, Shape } from "../keyword.d.ts"
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode, JsonSchemaTolerantNode } from "../schema/schema-ast.d.ts"
  * @import { Expression, Handle, Kernel, KeywordGroup } from "./kernel.d.ts"
- * @import { Hyperjump, Target } from "@hyperjump/browser"
+ * @import { Hyperjump, ReferenceTarget, Target } from "@hyperjump/browser"
  * @import { JsonSchemaConfig } from "../json-schema.d.ts"
  */
 
@@ -204,13 +204,6 @@ export const lowerKeywords = async (keywords, schema, dialect, inputs, tolerant)
 };
 
 /**
- * A reference to a schema: a keyword's value whose shape is `"reference"`,
- * or a schema that's a reference
- *
- * @typedef {JsonSchemaNode & { href: Iri }} ReferenceNode
- */
-
-/**
  * A schema, with the document it's in, which is where its references are
  * followed from
  *
@@ -362,12 +355,11 @@ export const lower = async (session, uri) => {
    * @type (value: Target) => Promise<Handle>
    */
   const applied = async (value) => {
-    const node = /** @type JsonSchemaNode */ (value.node);
-    if (node.type !== "reference") {
+    if (!jrefIsReference(value)) {
       return schema(/** @type SchemaTarget */ (value));
     }
 
-    const { href } = /** @type ReferenceNode */ (node);
+    const href = jrefHref(value);
     return schema(schemaTarget(/** @type Target */ (await browse(session, href, { referencedFrom: value })), href));
   };
 
@@ -377,7 +369,7 @@ export const lower = async (session, uri) => {
     schema: applied,
     reference: async (value) => {
       const handle = await applied(value);
-      const { href } = /** @type ReferenceNode */ (value.node);
+      const href = /** @type Iri */ (jrefHref(/** @type ReferenceTarget */ (value)));
       return { uri: href, schema: { op: "apply", schema: handle }, handle, dynamicAnchors: resources[absoluteIri(handle)].dynamicAnchors };
     }
   };
