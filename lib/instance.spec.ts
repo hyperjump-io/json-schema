@@ -176,3 +176,27 @@ describe("Instance.fromJs", () => {
     expect(node.colonOffset).to.equal(undefined);
   });
 });
+
+describe("Instance.get property name pointers", () => {
+  it("resolves valid property name pointer", () => {
+    const root = Instance.fromJs({ foo: "bar" });
+    const keyNode = Instance.get("#*/foo", root);
+    expect(keyNode).not.to.equal(undefined);
+    expect(Instance.value(keyNode!)).to.equal("foo");
+  });
+
+  it("returns undefined for non-existent property name pointer", () => {
+    const root = Instance.fromJs({ foo: "bar" });
+    expect(Instance.get("#*/missing", root)).to.equal(undefined);
+  });
+
+  it("returns undefined for root property name pointer", () => {
+    const root = Instance.fromJs({ foo: "bar" });
+    expect(Instance.get("#*", root)).to.equal(undefined);
+  });
+
+  it("returns undefined for property name pointer targeting an array element", () => {
+    const root = Instance.fromJs(["item0", "item1"]);
+    expect(Instance.get("#*/1", root)).to.equal(undefined);
+  });
+});
