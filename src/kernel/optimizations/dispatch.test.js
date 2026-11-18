@@ -32,9 +32,23 @@ describe("dispatch", () => {
       expect(expression).to.eql({ op: "typeIs", types: ["boolean", "null"] });
     });
 
-    test("is kept if a schema has more than a type", async () => {
+    test("of schemas with different types is a typeSwitch", async () => {
       const expression = await optimized({ anyOf: [{ type: "boolean" }, { type: "string", maxLength: 3 }] }, "anyOf");
-      expect(expression).to.eql({ op: "any", of: [{ op: "apply", schema: "/anyOf/0" }, { op: "apply", schema: "/anyOf/1" }] });
+      expect(expression).to.eql({
+        op: "typeSwitch",
+        cases: { boolean: { op: "apply", schema: "/anyOf/0" }, string: { op: "apply", schema: "/anyOf/1" } },
+        otherwise: { op: "fail" }
+      });
+    });
+
+    test("is kept if schemas can pass the same type", async () => {
+      const expression = await optimized({ anyOf: [{ type: "string", minLength: 5 }, { type: "string", maxLength: 3 }] }, "anyOf");
+      expect(expression).to.include({ op: "any" });
+    });
+
+    test("of schemas with different types is kept with plugins", async () => {
+      const expression = await optimized({ anyOf: [{ type: "boolean" }, { type: "string", maxLength: 3 }] }, "anyOf", { fast: false, plugins: true, annotations: false });
+      expect(expression).to.include({ op: "any" });
     });
 
     test("of constants is a oneOfValues", async () => {

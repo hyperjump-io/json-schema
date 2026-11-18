@@ -9,7 +9,10 @@ errors of what's evaluated ([Optimizer](../../../specs/kernel/optimizer.md)).
   `one` whose expressions can't pass the same type (662 of
   `package.json`'s 697 `oneOf`s) is a `typeSwitch` with a branch for each
   type, otherwise `fail`, so it doesn't evaluate every schema to find out
-  none of the others passes. The types an expression can pass come
+  none of the others passes. In `fast`, an `any` like that is one too,
+  so it doesn't try the schemas before the one for the type first
+  ([Unions of constants](../../../benchmarks/kernel-in-src/unions-of-constants.md)).
+  The types an expression can pass come
   from `typeIs`, `equals`, and `oneOfValues`, through `all`, `any`,
   `one`, and `apply`, and anything else, or a schema that applies itself,
   counts as every type, so a schema is only left out if it can't pass.

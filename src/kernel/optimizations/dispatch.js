@@ -32,10 +32,10 @@ import { isInert } from "../inert.js";
  *   `anyOf` of `{ "type": "boolean" }` and `{ "type": "null" }`, is a
  *   `typeIs` with all their types. A `one` whose expressions can't pass the
  *   same type, like `oneOf` with a different `type` in each schema, is a
- *   `typeSwitch` with a branch for each, otherwise `fail`. An `any` like
- *   that isn't a `typeSwitch`: it already stops at the first that passes,
- *   and dispatching was slower. In `fast`, an `any` of one `typeSwitch`
- *   and types is one `typeSwitch` where the types pass.
+ *   `typeSwitch` with a branch for each, otherwise `fail`. In `fast`, an
+ *   `any` like that is too, because it tried the ones before the one for
+ *   the type first, and an `any` of one `typeSwitch` and types is one
+ *   `typeSwitch` where the types pass.
  * - **By value.** In `fast`, an `any` or `one` of expressions that only
  *   pass some scalars, like `anyOf` of `const`s, is a `oneOfValues`.
  * - **By tag.** Among the expressions that can pass an object, by the value
@@ -324,7 +324,10 @@ export default {
       if (values !== undefined) {
         return values.size === 0 ? { op: "fail" } : { op: "oneOfValues", values: [...values] };
       } else if (expression.op === "any") {
-        return mode.fast ? withTypes(expression) : undefined;
+        const merged = mode.fast ? withTypes(expression) : undefined;
+        if (merged !== undefined || !mode.fast) {
+          return merged;
+        }
       }
 
       /** @type [Set<TypeName>, Expression][] */
