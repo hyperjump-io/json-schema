@@ -105,9 +105,10 @@ could recover from, like the trailing comma here.
 ### A JSON AST node
 
 Use this for a parsed JSON AST you already have. It might come from the JSON
-parser in `@hyperjump/browser` or from a schema AST. For example, a
-lint rule might check a `default` value this way. Errors have the node's
-positions.
+parser in `@hyperjump/browser` or from a schema AST. For example, a lint
+rule might check a `default` value this way. A document, like the one
+`fromJson` or `rejsonParse` makes, is evaluated from its root. Errors have
+the node's positions.
 
 ```typescript
 import { fromJson } from "@hyperjump/browser";
@@ -115,7 +116,7 @@ import { fromJson } from "@hyperjump/browser";
 const isPersonNode = await validator(config, "https://example.com/person", { input: "node" });
 
 const { document } = fromJson(`{ "name": "Jason" }`, "https://example.com/jason.json");
-isPersonNode(document.children[0]); // true
+isPersonNode(document); // true
 ```
 
 ## Asking why

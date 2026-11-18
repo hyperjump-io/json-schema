@@ -4,7 +4,8 @@ import { FLAG } from "../output/flag.js";
  * @import { Validator } from "../kernel/validator.js"
  * @import { instrumented } from "../kernel/instrumented.js"
  * @import { CompiledSchema } from "./compile.d.ts"
- * @import { AnnotationResult, EvaluationOptions } from "./validate.d.ts"
+ * @import { JsonDocumentNode, JsonErrorNode, JsonNode } from "@hyperjump/browser"
+ * @import { AnnotationResult, EvaluationOptions, InstanceOf } from "./validate.d.ts"
  */
 
 // The functions validators and annotators are, for the operations that make
@@ -50,7 +51,7 @@ export const validateFunction = (validator, options, evaluator) => {
       return (json) => validator.validateJson(json, evaluation, evaluator);
     case "node":
       validator.prepare(true, false, evaluation, evaluator);
-      return (node) => validator.validateNode(node, evaluation, evaluator);
+      return (node) => validator.validateNode(instanceNode(node), evaluation, evaluator);
     default:
       throw TypeError(`'${options.input}' isn't an input. It's 'value', 'json', or 'node'.`);
   }
@@ -70,10 +71,27 @@ export const annotateFunction = (validator, options, evaluator) => {
       return (json) => validator.annotateJson(json, evaluation, evaluator);
     case "node":
       validator.prepare(true, true, evaluation, evaluator);
-      return (node) => ({ output: validator.annotateNode(node, evaluation, evaluator), status: "success", node });
+      return (instance) => {
+        const node = instanceNode(instance);
+        const output = validator.annotateNode(node, evaluation, evaluator);
+        // Annotating attached the annotations to it
+        return { output, status: "success", node: /** @type AnnotationResult<any>["node"] */ (node) };
+      };
     default:
       throw TypeError(`'${options.input}' isn't an input. It's 'value', 'json', or 'node'.`);
   }
+};
+
+/**
+ * The node a `node` input evaluates: the node, or a document's root
+ *
+ * @type (instance: InstanceOf<"node">) => JsonNode<unknown, JsonErrorNode> | JsonErrorNode
+ */
+const instanceNode = (instance) => {
+  // A node's type can be any string, so checking it doesn't narrow
+  return instance.type === "json-document"
+    ? /** @type JsonDocumentNode */ (instance).children[0]
+    : /** @type JsonNode<unknown, JsonErrorNode> | JsonErrorNode */ (instance);
 };
 
 /**

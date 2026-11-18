@@ -1,5 +1,5 @@
 import type { JsonSchemaConfig } from "../json-schema.d.ts";
-import type { JsonErrorNode, JsonNode, JsonParseStatus, ReadonlyJson } from "@hyperjump/browser";
+import type { JsonDocumentNode, JsonErrorNode, JsonNode, JsonParseStatus, ReadonlyJson } from "@hyperjump/browser";
 import type { EvaluationPlugin } from "../kernel/evaluation-plugin.d.ts";
 import type { OutputFormat } from "../output/output-format.d.ts";
 import type { SessionOptions } from "../session.d.ts";
@@ -47,9 +47,12 @@ export function annotator<S, R = boolean, I extends Input = "value">(config: Jso
  *   the parser could recover from, like a trailing comma, but the instance
  *   is still evaluated as far as it could be parsed, so all the problems are
  *   reported at once. Errors have positions.
- * - `node`: a JSON AST you already have, like a value in a schema AST.
- *   Errors have the nodes' positions. Annotating it attaches the
- *   annotations to the node you pass, so annotating it again adds to them.
+ * - `node`: a JSON AST you already have, like a value in a schema AST, or
+ *   a document, like the one `fromJson` or `rejsonParse` makes, whose root
+ *   is evaluated. Errors have the nodes' positions. A document's syntax
+ *   errors aren't errors of the instance, because they're reported where
+ *   it's parsed. Annotating it attaches the annotations to the node you
+ *   pass, or the document's root, so annotating it again adds to them.
  *
  * Values that couldn't be parsed (`json-missing` and `json-invalid` nodes)
  * aren't evaluated, so the syntax error is the only error for them. A JSON
@@ -59,7 +62,7 @@ export type Input = "value" | "json" | "node";
 
 /** The type of an instance for an {@link Input} */
 export type InstanceOf<I extends Input> = I extends "json" ? string
-  : I extends "node" ? JsonNode<unknown, JsonErrorNode> | JsonErrorNode
+  : I extends "node" ? JsonNode<unknown, JsonErrorNode> | JsonErrorNode | JsonDocumentNode
     : ReadonlyJson;
 
 export type EvaluationOptions<R = boolean, I extends Input = Input> = {

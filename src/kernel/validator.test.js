@@ -593,7 +593,7 @@ describe("Validator", () => {
         for (const length of [3, 20]) {
           const items = plugins(length);
           /** @type (json: string) => boolean */
-          const validate = (json) => /** @type boolean */ (validatorFor(compiled, { input: "node", ...options })(fromJson(json, noUrl).document.children[0]));
+          const validate = (json) => /** @type boolean */ (validatorFor(compiled, { input: "node", ...options })(fromJson(json, noUrl).document));
           expect(validate(`[${items}, @, @]`)).to.equal(true);
           expect(validate(`[${items}, { "name": }, { "name": }]`)).to.equal(true);
           expect(validate(`[${items}, { "name": "plugin0", "x": }, { "name": "plugin0", "x": }]`)).to.equal(true);
@@ -679,7 +679,7 @@ describe("Validator", () => {
       // A value that couldn't be parsed isn't evaluated, so it passes
       for (const options of [undefined, { plugins: [plugin] }]) {
         /** @type (json: string) => boolean */
-        const validate = (json) => /** @type boolean */ (validatorFor(positions, { input: "node", ...options })(fromJson(json, noUrl).document.children[0]));
+        const validate = (json) => /** @type boolean */ (validatorFor(positions, { input: "node", ...options })(fromJson(json, noUrl).document));
         expect(validate("[[1, 2], @]")).to.equal(true);
         expect(validate("[[1, @], [3, 4]]")).to.equal(true);
         expect(validate("[[1, @], [3]]")).to.equal(false);
@@ -1097,6 +1097,16 @@ describe("Validator", () => {
       expect(annotatorFor(compiled, { input: "node" })(node).output).to.equal(true);
       expect(jsonPointerGet("/foo", /** @type any */ (node)).data.annotations.get(titleKeyword.uri)).to.eql(["foo"]);
     });
+
+    test("a document is annotated from its root", async () => {
+      const compiled = await compile(jsonSchema, await schemaFile({ properties: { foo: { title: "foo" } } }));
+      const { document } = fromJson(`{ "foo": 1 }`, noUrl);
+      const { output, node } = annotatorFor(compiled, { input: "node" })(document);
+
+      expect(output).to.equal(true);
+      expect(node).to.equal(document.children[0]);
+      expect(jsonPointerGet("/foo", /** @type any */ (node)).data.annotations.get(titleKeyword.uri)).to.eql(["foo"]);
+    });
   });
 
   describe("unevaluatedProperties", () => {
@@ -1297,7 +1307,7 @@ describe("Validator", () => {
       const plugin = { afterSchema: (_schema, at) => values.push(at.value()) };
 
       validatorFor(compiled, { plugins: [plugin] })({ foo: 1 });
-      validatorFor(compiled, { input: "node", plugins: [plugin] })(fromJson(`{ "foo": 1 }`, noUrl).document.children[0]);
+      validatorFor(compiled, { input: "node", plugins: [plugin] })(fromJson(`{ "foo": 1 }`, noUrl).document);
       expect(values).to.eql([1, { foo: 1 }, 1, { foo: 1 }]);
     });
 

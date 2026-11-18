@@ -40,7 +40,7 @@ Each part of the value has its own node, with its own annotations. See
 
 With `input: "json"`, it does the same for JSON text, and the nodes have
 positions. With `input: "node"`, it annotates a node you already have, and
-`node` is the one you passed in. Like `validator`, it takes an
+`node` is the one you passed in, or the root of a document you passed in. Like `validator`, it takes an
 [`output`](output.md) option.
 
 ## Reading an annotation
