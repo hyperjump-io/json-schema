@@ -1,4 +1,4 @@
-import { jrefFindAll, jsonValue, relativeFileUrl } from "@hyperjump/browser";
+import { jrefFindAll, jrefHref, jsonValue, relativeFileUrl } from "@hyperjump/browser";
 import { getFragment, getScheme, isIri, isIriReference, normalizeIri, resolveIri, toAbsoluteIri, toRelativeIri } from "@hyperjump/uri";
 import { toId } from "../identifiers.js";
 import { browse, getDialect } from "../session.js";
@@ -12,7 +12,7 @@ import { differentResources, sameResource } from "../schema/same-resource.js";
  * @import { JsonSchemaDocumentNode, JsonSchemaNode } from "../schema/schema-ast.d.ts"
  * @import { NormalizedIri } from "@hyperjump/uri"
  * @import { Id } from "../identifiers.js"
- * @import { Hyperjump, Target } from "@hyperjump/browser"
+ * @import { Hyperjump, ReferenceTarget, Target } from "@hyperjump/browser"
  * @import { JsonSchemaConfig } from "../json-schema.d.ts"
  */
 
@@ -181,9 +181,9 @@ const referencedDocuments = async (session, main, externalSchemas) => {
   addResources(resources, main.document);
   const documents = [main];
   for (let index = 0; index < documents.length; index++) {
-    const references = /** @type Target[] */ (await jrefFindAll(session, /** @type any */ (documents[index]), "reference", { reference: "manual", maxDepth: Infinity }));
+    const references = /** @type ReferenceTarget[] */ (await jrefFindAll(session, /** @type any */ (documents[index]), "reference", { reference: "manual", maxDepth: Infinity }));
     for (const reference of references) {
-      const uri = toAbsoluteIri(/** @type {{ href: NormalizedIri }} */ (reference.node).href);
+      const uri = toAbsoluteIri(/** @type NormalizedIri */ (jrefHref(reference)));
       if (resources.has(uri) || externalSchemas.has(uri)) {
         continue;
       }
