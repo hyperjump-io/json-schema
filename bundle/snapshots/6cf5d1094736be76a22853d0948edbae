@@ -1,0 +1,18 @@
+{
+  "valid": false,
+  "errors": [
+    {
+      "keyword": "https://json-schema.org/keyword/properties",
+      "absoluteKeywordLocation": "https://bundler.hyperjump.io/main#/properties",
+      "instanceLocation": "#",
+      "errors": [
+        {
+          "keyword": "https://json-schema.org/keyword/type",
+          "absoluteKeywordLocation": "https://bundler.hyperjump.io/nested/#/type",
+          "instanceLocation": "#/foo"
+        }
+      ]
+    }
+  ],
+  "annotations": []
+}
