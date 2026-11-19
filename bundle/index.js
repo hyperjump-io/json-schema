@@ -27,7 +27,13 @@ export const bundle = async (url, options = {}) => {
     JsonPointer.assign(fullOptions.bundlingLocation, bundled, {});
   }
 
-  return await doBundling(mainSchema.uri, bundled, fullOptions);
+  await doBundling(mainSchema.uri, bundled, fullOptions);
+
+  if (Object.keys(JsonPointer.get(fullOptions.bundlingLocation, bundled)).length === 0) {
+    JsonPointer.remove(fullOptions.bundlingLocation, bundled);
+  }
+
+  return bundled;
 };
 
 const doBundling = async (schemaUri, bundled, fullOptions, contextSchema, visited = new Set()) => {
@@ -42,7 +48,7 @@ const doBundling = async (schemaUri, bundled, fullOptions, contextSchema, visite
 
     if (uri in schema.document.embedded && !(uri in schema._cache) && !hasSchema(uri)) {
       // Already in the bundle, but it can reference external schemas relative to its own $id
-      bundled = await doBundling(uri, bundled, fullOptions, schema, visited);
+      await doBundling(uri, bundled, fullOptions, schema, visited);
       continue;
     }
 
@@ -65,14 +71,8 @@ const doBundling = async (schemaUri, bundled, fullOptions, contextSchema, visite
     const pointer = JsonPointer.append(id, fullOptions.bundlingLocation);
     JsonPointer.assign(pointer, bundled, embeddedSchema);
 
-    bundled = await doBundling(uri, bundled, fullOptions, schema, visited);
+    await doBundling(uri, bundled, fullOptions, schema, visited);
   }
-
-  if (Object.keys(JsonPointer.get(fullOptions.bundlingLocation, bundled)).length === 0) {
-    JsonPointer.remove(fullOptions.bundlingLocation, bundled);
-  }
-
-  return bundled;
 };
 
 const allReferences = function* (node) {
