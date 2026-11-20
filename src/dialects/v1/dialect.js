@@ -62,6 +62,7 @@ import dateFormat from "../../formats/date.js";
 import timeFormat from "../../formats/time.js";
 import durationFormat from "../../formats/duration.js";
 import emailFormat from "../../formats/email.js";
+import hostnameFormat from "../../formats/hostname.js";
 import ipv4Format from "../../formats/ipv4.js";
 import ipv6Format from "../../formats/ipv6.js";
 import uriFormat from "../../formats/uri.js";
@@ -169,7 +170,7 @@ export const v1Dialect = {
     "duration": durationFormat,
     "email": emailFormat,
     "idn-email": "https://json-schema.org/format/idn-email",
-    "hostname": "https://json-schema.org/format/hostname",
+    "hostname": hostnameFormat,
     "idn-hostname": "https://json-schema.org/format/idn-hostname",
     "ipv4": ipv4Format,
     "ipv6": ipv6Format,

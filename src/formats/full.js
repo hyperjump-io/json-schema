@@ -1,6 +1,6 @@
 import { liteFormats } from "./lite.js";
 import idnEmailFormat from "./idn-email.js";
-import hostnameFormat from "./hostname.js";
+import hostnameFormat from "./draft-2020-12/hostname.js";
 import idnHostnameFormat from "./idn-hostname.js";
 
 /**

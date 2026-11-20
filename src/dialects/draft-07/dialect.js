@@ -122,7 +122,7 @@ export const draft07Dialect = {
     "time": timeFormat,
     "email": emailFormat,
     "idn-email": "https://json-schema.org/format/idn-email",
-    "hostname": "https://json-schema.org/format/hostname",
+    "hostname": "https://json-schema.org/format/draft-2020-12/hostname",
     "idn-hostname": "https://json-schema.org/format/idn-hostname",
     "ipv4": ipv4Format,
     "ipv6": ipv6Format,

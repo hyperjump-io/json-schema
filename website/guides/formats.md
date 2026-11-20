@@ -24,11 +24,12 @@ string.
 
 ## Which formats there are
 
-Each dialect comes with the formats its spec defines, with three
-exceptions: `hostname`, `idn-hostname`, and `idn-email`. Checking them
-correctly takes large tables of Unicode data, so they're only loaded if you
-ask for them. draft-04 and draft-06 have their own simpler `hostname`. It's
-always loaded.
+Each dialect comes with the formats its spec defines, with a few
+exceptions: `idn-hostname`, `idn-email`, and, in draft-07 through 2020-12,
+`hostname`. Checking them correctly takes large tables of Unicode data, so
+they're only loaded if you ask for them. v1, draft-04, and draft-06 have a
+simpler `hostname` that doesn't check internationalized labels. It's always
+loaded.
 
 In v1, `date-time` allows the time zone and tag suffixes of RFC 9557, like
 `"2022-07-08T00:14:07Z[Europe/London]"`. The other dialects only allow RFC

@@ -25,7 +25,7 @@ const dialects = [
 
 /** Formats that need large tables of Unicode data, which only the full formats add */
 const fullOnly = new Set([
-  "https://json-schema.org/format/hostname",
+  "https://json-schema.org/format/draft-2020-12/hostname",
   "https://json-schema.org/format/idn-hostname",
   "https://json-schema.org/format/idn-email"
 ]);

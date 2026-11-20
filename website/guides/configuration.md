@@ -29,7 +29,7 @@ These options decide what schemas can use.
 | Option | Default | What it does |
 | --- | --- | --- |
 | `dialects` | None | The dialects schemas can use, with their keywords and formats. See [Dialects](dialects.md). |
-| `formats` | None | More formats, like `fullFormats` for `hostname`, `idn-hostname`, and `idn-email`. See [Formats](formats.md). |
+| `formats` | None | More formats, like `fullFormats` for `idn-hostname`, `idn-email`, and draft-07 through 2020-12's `hostname`. See [Formats](formats.md). |
 | `keywords` | None | Keywords that replace a dialect's keywords or that a dialect names by URI. See [Custom keywords](../extending/keywords.md). |
 | `vocabularies` | None | Vocabularies meta-schemas can use with `$vocabulary`. See [Dialects](dialects.md#custom-meta-schemas). |
 | `defaultDialectUri` | None | The dialect of a schema that has no `$schema` and gets no dialect from anywhere else. See [Dialects](dialects.md#schemas-without-schema). |

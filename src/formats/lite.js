@@ -3,6 +3,7 @@ import dateFormat from "./date.js";
 import timeFormat from "./time.js";
 import durationFormat from "./duration.js";
 import emailFormat from "./email.js";
+import hostnameFormat from "./hostname.js";
 import ipv4Format from "./ipv4.js";
 import ipv6Format from "./ipv6.js";
 import uriFormat from "./uri.js";
@@ -26,6 +27,7 @@ export const liteFormats = [
   timeFormat,
   durationFormat,
   emailFormat,
+  hostnameFormat,
   ipv4Format,
   ipv6Format,
   uriFormat,

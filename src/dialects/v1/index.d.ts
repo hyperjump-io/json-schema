@@ -13,8 +13,8 @@ export const v1DialectUri: "https://json-schema.org/v1";
  * `requireAllExcept`, which aren't full proposals yet.
  *
  * `format` validates by default, with the lite formats. Add the full formats
- * (`formats/full.js`) to the `formats` config for `hostname`,
- * `idn-hostname`, and `idn-email`.
+ * (`formats/full.js`) to the `formats` config for `idn-hostname` and
+ * `idn-email`.
  */
 export const v1Dialect: DialectConfig<V1Keywords, typeof v1DialectUri, "error">;
 

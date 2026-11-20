@@ -37,7 +37,7 @@ import typeKeyword from "../../keywords/draft-2020-12/type.js";
 import uniqueItemsKeyword from "../../keywords/uniqueItems.js";
 import dateTimeFormat from "../../formats/draft-2020-12/date-time.js";
 import emailFormat from "../../formats/email.js";
-import hostnameFormat from "../../formats/draft-06/hostname.js";
+import hostnameFormat from "../../formats/hostname.js";
 import ipv4Format from "../../formats/ipv4.js";
 import ipv6Format from "../../formats/ipv6.js";
 import uriFormat from "../../formats/uri.js";

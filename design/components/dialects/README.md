@@ -32,8 +32,8 @@
   URI has to be defined, by another dialect or the options' `keywords`, or
   `jsonSchemaConfig` throws, because nothing can define it
   later. A format named by a URI nothing defines is only unsupported, like
-  `hostname` without the full formats. A dialect a meta-schema defines can
-  still name a keyword that isn't defined, and that's reported when a
+  2020-12's `hostname` without the full formats. A dialect a meta-schema
+  defines can still name a keyword that isn't defined, and that's reported when a
   schema uses it (`unsupported-keyword`).
 - `extendDialect(dialect, { keywords, formats })` is a function that
   returns a dialect with more keywords and formats, which goes in the

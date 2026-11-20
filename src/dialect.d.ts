@@ -6,7 +6,8 @@ import type { Format } from "./format.d.ts";
  * definitions it uses. A keyword or format can be a definition or a URI. A
  * URI means the definition comes from somewhere else: the options'
  * `keywords` or `formats`, or another dialect. A format named by a URI that
- * nothing defines isn't supported, like `hostname` without the full formats.
+ * nothing defines isn't supported, like 2020-12's `hostname` without the
+ * full formats.
  * The media types' definitions keep it as a {@link Dialect}, with URIs.
  *
  * Its type parameters are its keywords, URI, and what unknown keywords
