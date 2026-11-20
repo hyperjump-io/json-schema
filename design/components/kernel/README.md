@@ -89,7 +89,12 @@ There are two phases:
    Each evaluator is built the first time it's needed and cached on the
    compiled schema (`Validator`, which isn't exported). No `eval`. Bytecode run by one interpreter loop was tried
    instead of closures and wasn't faster (see
-   [the benchmarks](../../benchmarks/README.md)).
+   [the benchmarks](../../benchmarks/README.md)). Generated code was 0.4–0.7
+   times as long warm, but slower to start, and isn't allowed by a content
+   security policy without `unsafe-eval`. Building each schema's closures
+   on its first call made one instance of a large schema faster to start,
+   but not a corpus (see
+   [Generating code, and building lazily](../../benchmarks/code-generation.md)).
    - A function from `validator`, `validatorFor`, `annotator`, or
      `annotatorFor` builds every evaluator its options can use when it's
      made (`Validator.prepare`), not on its first call. Building the flag

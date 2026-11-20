@@ -62,3 +62,4 @@ something that can be run.
 - [Bundle size](bundle-size.md) (2026-10-29)
 - [Registry values](registry-values.md) (2026-11-10)
 - [Building the flag evaluator first](flag-evaluator-first.md) (2026-11-10)
+- [Generating code, and building lazily](code-generation.md) (2026-11-20)
