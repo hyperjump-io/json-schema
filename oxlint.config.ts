@@ -28,13 +28,10 @@ export default defineConfig({
       quotes: "double",
       semi: true
     }).rules as DummyRuleMap,
-    "@stylistic/array-bracket-newline": ["error", "consistent"],
     "@stylistic/curly-newline": ["error", { consistent: true }],
-    "@stylistic/function-paren-newline": ["error", "consistent"],
     "@stylistic/implicit-arrow-linebreak": ["error"],
     "@stylistic/newline-per-chained-call": ["error"],
     "@stylistic/no-extra-semi": ["error"],
-    "@stylistic/object-curly-newline": ["error", { consistent: true }],
     "@stylistic/semi-style": ["error"],
     "@stylistic/switch-colon-spacing": ["error"],
     "curly": ["error", "all"],

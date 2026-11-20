@@ -131,7 +131,15 @@ export const canPass = (expression) => {
  * @type Set<Op>
  */
 const assertions = new Set(/** @type Op[] */ ([
-  "range", "multipleOf", "stringLength", "matches", "itemCount", "uniqueItems", "propertyCount", "hasProperty", "propertyEquals",
+  "range",
+  "multipleOf",
+  "stringLength",
+  "matches",
+  "itemCount",
+  "uniqueItems",
+  "propertyCount",
+  "hasProperty",
+  "propertyEquals",
   "predicate"
 ]));
 

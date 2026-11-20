@@ -129,7 +129,12 @@ describe("the switches in lint", () => {
     const typeSwitch = { op: "typeSwitch", cases: { string: { op: "all", of: [isStringOp(), fromSibling] } }, otherwise: { op: "pass" } };
     /** @type Expression */
     const propertySwitch = {
-      op: "propertySwitch", name: "kind", cases: [], other: { op: "pass" }, absent: { op: "pass" }, unparsed: { op: "all", of: [isStringOp(), fromSibling] }
+      op: "propertySwitch",
+      name: "kind",
+      cases: [],
+      other: { op: "pass" },
+      absent: { op: "pass" },
+      unparsed: { op: "all", of: [isStringOp(), fromSibling] }
     };
     for (const [expression, without] of /** @type [Expression, Expression][] */ ([
       [typeSwitch, { ...typeSwitch, cases: { string: isStringOp() } }],

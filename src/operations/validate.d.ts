@@ -63,7 +63,7 @@ export type Input = "value" | "json" | "node";
 /** The type of an instance for an {@link Input} */
 export type InstanceOf<I extends Input> = I extends "json" ? string
   : I extends "node" ? JsonNode<unknown, JsonErrorNode> | JsonErrorNode | JsonDocumentNode
-    : ReadonlyJson;
+  : ReadonlyJson;
 
 export type EvaluationOptions<R = boolean, I extends Input = Input> = {
   /** What the instance is. It's `value` by default. */

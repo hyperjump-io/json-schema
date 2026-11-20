@@ -23,8 +23,21 @@ import { appliedSchemas } from "./applied.js";
 
 /** Operations that can fail, but never annotate or mark */
 const assertions = new Set(/** @type Op[] */ ([
-  "pass", "fail", "typeIs", "equals", "oneOfValues", "range", "multipleOf", "stringLength", "matches", "itemCount",
-  "uniqueItems", "propertyCount", "hasProperty", "propertyEquals", "predicate"
+  "pass",
+  "fail",
+  "typeIs",
+  "equals",
+  "oneOfValues",
+  "range",
+  "multipleOf",
+  "stringLength",
+  "matches",
+  "itemCount",
+  "uniqueItems",
+  "propertyCount",
+  "hasProperty",
+  "propertyEquals",
+  "predicate"
 ]));
 
 /** @type Effect[] */

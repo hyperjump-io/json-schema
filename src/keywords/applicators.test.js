@@ -139,7 +139,8 @@ describe("applicator errors", () => {
     /** @type Record<string, Json> */
     const schema = {
       conditional: [
-        { type: "string" }, { maxLength: 2 },
+        { type: "string" },
+        { maxLength: 2 },
         [{ type: "number" }, { minimum: 10 }],
         { const: null }
       ]

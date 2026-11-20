@@ -305,15 +305,15 @@ export type KeywordValue<K extends Keyword<any, any, any>, S> = K extends Keywor
 type ShapeValue<Sh, V, S>
   = [Shape] extends [Sh] ? unknown
     : Sh extends readonly (infer A)[] ? AlternativeValue<A, A, V, S>
-      : Sh extends { array: infer I } ? readonly ShapeValue<I, V extends readonly (infer E)[] ? E : never, S>[]
-        : Sh extends { map: infer I } ? { readonly [name: string]: ShapeValue<I, V extends readonly [string, infer E][] ? E : never, S> }
-          : LeafValue<Sh, V, S>;
+    : Sh extends { array: infer I } ? readonly ShapeValue<I, V extends readonly (infer E)[] ? E : never, S>[]
+    : Sh extends { map: infer I } ? { readonly [name: string]: ShapeValue<I, V extends readonly [string, infer E][] ? E : never, S> }
+    : LeafValue<Sh, V, S>;
 
 type LeafValue<Sh, V, S>
   = Sh extends "schema" | "unappliedSchema" ? S
     : Sh extends "reference" ? string
-      : Sh extends "data" ? DataValue<V>
-        : never;
+    : Sh extends "data" ? DataValue<V>
+    : never;
 
 // An alternative only gets values of JSON types the others don't match, so
 // a `"data"` alternative isn't an array if an array or map alternative is
@@ -328,7 +328,7 @@ type DataValue<V> = unknown extends V ? Json : DeepReadonly<Exclude<V, Expressio
 type DeepReadonly<T>
   = Json extends T ? ReadonlyJson
     : T extends object ? { readonly [K in keyof T]: DeepReadonly<T[K]> }
-      : T;
+    : T;
 
 export type CheckContext = {
   /**
