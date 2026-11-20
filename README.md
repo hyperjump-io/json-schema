@@ -32,9 +32,6 @@ The documentation is in [`website/`](website/README.md). Start with
 
 ## Contributing
 
-`@hyperjump/browser` is linked from a sibling directory (`../browser` on
-its `main` branch).
-
 ### Tests
 
 Run the tests
