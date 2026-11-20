@@ -75,7 +75,7 @@
     "@stylistic/eslint-plugin": "*",
     "@types/node": "*",
     "@vitest/coverage-v8": "*",
-    "json-schema-test-suite": "github:json-schema-org/JSON-Schema-Test-Suite#unify",
+    "json-schema-test-suite": "github:json-schema-org/JSON-Schema-Test-Suite#main",
     "oxlint": "*",
     "oxlint-tsgolint": "*",
     "typescript": "*",
