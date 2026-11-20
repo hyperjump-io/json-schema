@@ -10,8 +10,10 @@ from files, and lint them. Each step builds on the one before it.
 npm install @hyperjump/json-schema
 ```
 
-It's an ES module with TypeScript types. It works in Node.js and in
-browsers. In a browser, use a bundler that supports the `imports` field of
+It's an ES module with TypeScript types. It needs Node.js 24 or later. In a
+web browser, it needs Chrome 126 or later, Edge 126 or later, Firefox 131 or
+later, or Safari 18.4 or later. In an older one, importing it throws an
+error. In a browser, use a bundler that supports the `imports` field of
 `package.json`. Vite, webpack, esbuild, and Rollup all do.
 
 ## Create a config

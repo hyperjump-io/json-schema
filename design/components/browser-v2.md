@@ -3,6 +3,9 @@
 What this relies on from `@hyperjump/browser` v2. How each works, and why,
 is in browser's [design docs](https://github.com/hyperjump-io/browser/blob/v2/design/README.md).
 
+- The versions it runs in, which are browser's: Node.js 24, Chrome and
+  Edge 126, Firefox 131, and Safari 18.4. `engines` and the install docs
+  say them, and they change when browser's do.
 - The JSON AST: a type parameter for property node annotations, utilities
   that are generic over the node type, and a generic `DocumentNode<T>`.
 - A session is a `Hyperjump`, made from a configuration that's a plain
