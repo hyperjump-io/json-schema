@@ -6,6 +6,7 @@ import { readsDynamicScope, readsMarks } from "./kernel.js";
 import { normalForm } from "./normalize.js";
 import { getDialect } from "../session.js";
 import { definitionsOf } from "../definition-of.js";
+import { loadAhead } from "../load-ahead.js";
 import { isSchemaDocument, isSchemaNode } from "../schema/schema-nodes.js";
 import { differentResources, sameResource } from "../schema/same-resource.js";
 
@@ -262,11 +263,23 @@ const dynamicAnchorsOf = (resource) => {
  *
  * Schemas are lowered one at a time, in the order they're found, and a
  * reference is followed when it's reached, so what's compiled and what
- * fails is the same every time.
+ * fails is the same every time. What each document's references find is
+ * loaded ahead, so they're retrieved at the same time, and it returns when
+ * that's done, even what it didn't need.
  *
  * @type (session: Hyperjump<JsonSchemaConfig>, uri: string) => Promise<Kernel>
  */
 export const lower = async (session, uri) => {
+  const ahead = loadAhead(session);
+  try {
+    return await lowerLoadingAhead(session, uri, ahead);
+  } finally {
+    await ahead.settled();
+  }
+};
+
+/** @type (session: Hyperjump<JsonSchemaConfig>, uri: string, ahead: ReturnType<typeof loadAhead>) => Promise<Kernel> */
+const lowerLoadingAhead = async (session, uri, ahead) => {
   const keywords = definitionsOf(session.config).keywords;
 
   /** @type Kernel["schemas"] */
@@ -320,6 +333,7 @@ export const lower = async (session, uri) => {
    */
   const schema = (target) => {
     const { document, node } = target;
+    ahead.from(document);
     if (node.type !== "json-schema") {
       throw Error(`No schema found at '${relativeFileUrl(node.location)}'`);
     }

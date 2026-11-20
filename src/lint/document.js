@@ -6,6 +6,7 @@ import { keywordDefinitionUri } from "../keywords/unknown.js";
 import { findSchema } from "./find-schema.js";
 import { getDialect } from "../session.js";
 import { definitionsOf } from "../definition-of.js";
+import { loadAhead } from "../load-ahead.js";
 import { provenance, sourcesWithoutEffect } from "./provenance.js";
 
 /**
@@ -64,11 +65,22 @@ export const schemaAt = (document, uri) => {
 /**
  * Retrieve and lower every document the tree's references reach. A
  * reference is found from the tree, so a resource embedded in it is found
- * there.
+ * there. What each document's references find is loaded ahead, so they're
+ * retrieved at the same time.
  *
  * @type (session: Hyperjump<JsonSchemaConfig>, tree: JsonSchemaDocumentNode) => Promise<API.LintDocument>
  */
 const gather = async (session, tree) => {
+  const ahead = loadAhead(session);
+  try {
+    return await gatherLoadingAhead(session, tree, ahead);
+  } finally {
+    await ahead.settled();
+  }
+};
+
+/** @type (session: Hyperjump<JsonSchemaConfig>, tree: JsonSchemaDocumentNode, ahead: ReturnType<typeof loadAhead>) => Promise<API.LintDocument> */
+const gatherLoadingAhead = async (session, tree, ahead) => {
   /** @type LintSchemas */
   const reached = new Map();
   /** @type Map<string, FindSchemaResult> */
@@ -92,6 +104,7 @@ const gather = async (session, tree) => {
   /** @type (document: JsonSchemaDocumentNode) => Promise<Read> */
   const addDocument = async (document) => {
     documents.add(document);
+    ahead.from(document);
     const read = await readDocument(session, document);
     for (const schemaNode of read.schemaNodes) {
       schemaNodes.set(schemaNode.location, schemaNode);

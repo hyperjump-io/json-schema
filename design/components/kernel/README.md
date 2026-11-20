@@ -44,10 +44,33 @@ There are two phases:
      found by its location from the document it's in. Evaluation might
      need them whenever it enters the resource, and nothing can be
      retrieved then.
-   - A reference is retrieved when it's reached, so references are
-     retrieved one at a time. A schema that refers to many documents that
-     are slow to arrive takes the sum of them: 20 references that each
-     take 5 ms compile in about 135 ms.
+   - What each document's references find is loaded ahead
+     (`src/load-ahead.js`), so documents are retrieved at the same time.
+     When a document is first reached, the documents its references
+     find, and the ones theirs find, are browsed at `low` priority. A
+     reference is still followed when it's reached, and waits for it.
+     Browser shares a document that's being retrieved and raises it to
+     the priority of what's waiting, so what's compiled and what fails
+     doesn't change. 20 references that each take 5 ms compile in about
+     16 ms, and 135 ms without it. It's 5 to 7 percent slower on the 37
+     schemas, which are in a registry, so nothing is gained there.
+     - The references are read from the nodes, with their `href`, and
+       browsed from the document they're in. No target is made from a
+       node. Finding them with `jrefFindAll` made compiling 20 to 30
+       percent slower on the 37 schemas.
+     - A document is loaded once, and one the document contains isn't
+       loaded, because a reference finds it there.
+     - It retrieves what isn't compiled, like references in `$defs` that
+       nothing applies. A failure there is ignored, so it's only an error
+       if compiling follows the reference, and it's the same error then.
+     - Compiling returns when everything it loaded ahead is done, even
+       what it didn't need. A session is made for each operation, and
+       browse takes no `signal`, so what's still loading when it returns
+       would go on for nothing, and be in its traces after it's done. It
+       means a reference nothing applies, to a server that's slow to
+       answer, makes compiling wait for it.
+     - Rejected: compiling returning without waiting. It's as fast as
+       possible, but what it retrieves outlives it.
    - Rejected: browsing from the schema with `jrefVisit` to find every
      schema it applies, and lowering them afterwards. A visitor gets a
      schema before its references are followed, so it can't lower it, and
@@ -71,8 +94,6 @@ There are two phases:
      and the kernel put together afterwards in a fixed order. It retrieved
      in parallel, but it made promises for every schema, and a whole
      compile was 20 to 25 percent slower.
-   - Rejected: fetching every `href` up front, because it would retrieve
-     what isn't compiled, like references in `$defs` that nothing applies.
    - A handle names one schema, so a kernel can only have one resource for
      a URI. A resource that's reached in two documents has to be identical
      in both, or it's a `duplicate-id` problem. Schemas are queued by node,

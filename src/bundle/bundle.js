@@ -4,6 +4,7 @@ import { toId } from "../identifiers.js";
 import { browse, getDialect } from "../session.js";
 import { isSchemaDocument } from "../schema/schema-nodes.js";
 import { differentResources, sameResource } from "../schema/same-resource.js";
+import { loadAhead } from "../load-ahead.js";
 
 /**
  * @import { Json } from "@hyperjump/browser"
@@ -176,11 +177,24 @@ const schemaTarget = async (session, uri, referencedFrom) => {
  * @type (session: Hyperjump<JsonSchemaConfig>, main: DocumentTarget, externalSchemas: Set<Id>) => Promise<JsonSchemaDocumentNode[]>
  */
 const referencedDocuments = async (session, main, externalSchemas) => {
+  // What each document's references find is loaded ahead, so they're
+  // retrieved at the same time. External schemas aren't retrieved.
+  const ahead = loadAhead(session, (href) => !externalSchemas.has(/** @type Id */ (toAbsoluteIri(/** @type NormalizedIri */ (href)))));
+  try {
+    return await referencedDocumentsLoadingAhead(session, main, externalSchemas, ahead);
+  } finally {
+    await ahead.settled();
+  }
+};
+
+/** @type (session: Hyperjump<JsonSchemaConfig>, main: DocumentTarget, externalSchemas: Set<Id>, ahead: ReturnType<typeof loadAhead>) => Promise<JsonSchemaDocumentNode[]> */
+const referencedDocumentsLoadingAhead = async (session, main, externalSchemas, ahead) => {
   /** @type Map<string, [resource: JsonSchemaDocumentNode, document: JsonSchemaDocumentNode]> */
   const resources = new Map();
   addResources(resources, main.document);
   const documents = [main];
   for (let index = 0; index < documents.length; index++) {
+    ahead.from(documents[index].document);
     const references = /** @type ReferenceTarget[] */ (await jrefFindAll(session, /** @type any */ (documents[index]), "reference", { reference: "manual", maxDepth: Infinity }));
     for (const reference of references) {
       const uri = toAbsoluteIri(/** @type NormalizedIri */ (jrefHref(reference)));

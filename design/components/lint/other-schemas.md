@@ -27,6 +27,10 @@ document finds something. They can see what's in registries and what
   messages about 5× faster. Rejected: an object that hides the session and
   memoizes each helper, which keeps rules depending on something that
   retrieves.
+- What each document's references find is loaded ahead, as compiling
+  does (see [The kernel](../kernel/README.md)), so documents are retrieved
+  at the same time. Lint follows every static reference anyway, so it
+  retrieves nothing it doesn't use.
 - The identifier of what each of the file's references finds is found
   too, for `reference-by-location`, so no rule needs to find anything
   itself.

@@ -26,6 +26,11 @@ being considered (see [Open questions](../specs/keyword/README.md#open-questions
   what the session loaded was considered, because it would follow any
   keyword, but it misses definitions nothing uses, which a library of
   definitions is.
+- What each document's references find is loaded ahead, as compiling
+  does (see [The kernel](kernel/README.md)), so documents are retrieved at
+  the same time. An external schema isn't loaded. A reference to a
+  resource that's embedded in another document of the bundle is loaded,
+  though bundling doesn't follow it.
 - A reference to a resource that's already in the bundle, including one
   embedded in an embedded document, isn't followed. Each document is
   embedded once. That's looked for in every document that's been
