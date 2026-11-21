@@ -31,7 +31,7 @@ without the keyword URIs.
 - `contradictory-limits` compares the limits of all of them
   (`boundsInPlace`), and `required-property-not-allowed` what they require
   with what they don't allow, so a contradiction across `allOf` or `$ref`
-  is found. Until 2026-11-04, both only looked at one schema.
+  is found. Rejected: looking at one schema, which misses them.
 - A keyword from an applied schema counts as the keyword in the schema that
   applied it (`creditedKeyword`), the way required properties do. The
   message is on that keyword and names it ("'maximum' in '$ref'"), because

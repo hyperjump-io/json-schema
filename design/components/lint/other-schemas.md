@@ -18,13 +18,13 @@ document finds something. They can see what's in registries and what
   once for each session. Every helper (`schemaGroup`, `effectOf`,
   `marksEvery`, `evaluatorForLint`, `formatTypes`, `keywordAppliesTo`, …)
   is a synchronous function of it, except `lowerSchemaForLint`, which
-  lowers a schema a rule made. Before 2026-10-30, rules took
-  `(session, tree)`, each helper followed references itself, as it needed
-  them, with caches keyed by session in five modules, and `effectOf` found
-  references again for every keyword. Following all of them up front
-  retrieves nothing more than `evaluatorForLint` already did, which
-  `recommended` uses, and the schemastore corpus lints with the same
-  messages about 5× faster. Rejected: an object that hides the session and
+  lowers a schema a rule made. Following every reference up front
+  retrieves nothing more than `evaluatorForLint` does, which
+  `recommended` uses. Rejected: rules that take `(session, tree)`, with
+  each helper following references itself as it needs them. That needed
+  caches keyed by session in five modules, `effectOf` found references
+  again for every keyword, and the SchemaStore corpus linted with the
+  same messages about 5× slower. Rejected: an object that hides the session and
   memoizes each helper, which keeps rules depending on something that
   retrieves.
 - What each document's references find is loaded ahead, as compiling

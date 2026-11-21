@@ -25,10 +25,11 @@
   `typeIs`, like `type` and a custom keyword, and it allows the types they
   all allow (`typeIsOf`). Messages name the ones that are why, or all of
   them. A schema whose keywords allow no type together allows nothing, so
-  `keyword-for-disallowed-type` doesn't report its keywords. Until
-  2026-10-28, rules read only the first. Before 2026-10-28, about half the rules matched keyword
-  URIs. They missed what a schema in an `allOf` or a `$ref` requires, and
-  draft-04's limits, and each needed a table of URIs per dialect.
+  `keyword-for-disallowed-type` doesn't report its keywords. Rejected:
+  reading only the first. Rejected: rules about what a keyword means that
+  match keyword URIs. They miss what a schema in an `allOf` or a `$ref`
+  requires, and draft-04's limits, and each needs a table of URIs per
+  dialect.
 - A rule about how a keyword is written still finds it by keyword URI,
   never by name, so it works in every dialect with the keyword and does
   nothing if the keyword isn't loaded: `single-type-array`,
@@ -42,9 +43,9 @@
   keyword uses that keyword's URI. A rule about something a draft's own
   keyword already reports, like draft-04's empty `enum`, leaves that
   keyword's URI out.
-- `mergeable-schemas` was `mergeable-all-of-schema` until 2026-10-28, when
-  it started finding schemas from what keywords lower to, which made
-  `anyOf` and `oneOf` with one schema mergeable too. It decides whether a
+- `mergeable-schemas` finds schemas from what keywords lower to, so
+  `anyOf` and `oneOf` with one schema are mergeable, like `allOf`. It
+  decides whether a
   schema can be moved by lowering the schema it would make
   (`lowerSchemaForLint`, which is asynchronous because lowering is, and
   reads the schema as nodes because it isn't in a document) and comparing its operations with the two schemas' own. Deciding from shapes instead, that a keyword whose shape

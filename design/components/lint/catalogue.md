@@ -26,8 +26,7 @@ ported, merged into another rule, or not ported for a reason below.
   `recommended`, if it's usually right. That's what configuration is for.
   `type-implied-by-const-or-enum` reports a `type` that code generators
   may want, and those users turn it off. A rule that's a matter of style
-  is in `recommended` too, like `mergeable-schemas` (then
-  `mergeable-all-of-schema`), which was outside it until 2026-10-25.
+  is in `recommended` too, like `mergeable-schemas`.
   Rules that are much more opinionated, like whether `$defs` comes first
   or last, go in a style preset instead.
   The catalogue's rules that are matters of taste
@@ -68,14 +67,15 @@ catalogue doesn't cover: `keyword-allows-nothing`,
 `invalid-default-or-example` checking values against the schemas that
 apply theirs.
 `keyword-implied-by-const-or-enum` also covers the catalogue's
-`enum_validation_keywords_default`. `const_and_enum` was ported as
-`const-and-enum` and removed on 2026-10-28: `enum` next to `const` is a
-keyword next to `const` like any other, so
-`keyword-implied-by-const-or-enum` reports an `enum` that has the `const`
-value, and `const-or-enum-value-rejected` reports a `const` value that
-isn't in it.
-`empty_enum` was ported as `empty-enum`, and our `empty-type` was added
-next to it. On 2026-10-28 both became `keyword-allows-nothing`, which
-reports any keyword nothing is valid against, from what it lowers to.
+`enum_validation_keywords_default`. `const_and_enum` isn't a rule of
+its own: `enum` next to `const` is a keyword next to `const` like any
+other, so `keyword-implied-by-const-or-enum` reports an `enum` that has
+the `const` value, and `const-or-enum-value-rejected` reports a `const`
+value that isn't in it. Rejected: a `const-and-enum` rule, because those
+two cover it.
+`empty_enum` is `keyword-allows-nothing`, which reports any keyword
+nothing is valid against, from what it lowers to, like an empty `type`
+too. Rejected: an `empty-enum` and an `empty-type` rule, one for each
+keyword.
 Names from the catalogue are a starting point, and change whenever a
 better one, or a broader rule, suits.
