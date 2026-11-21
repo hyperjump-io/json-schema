@@ -154,8 +154,3 @@ written. Custom keywords are part of the type.
   config, with `satisfies Keyword`, avoids it.
 - A dialect declared as a variable needs `satisfies DialectConfig`, or
   `unknownKeywords` widens to `string` and doesn't fit.
-
-## Open questions
-
-- Whether `format` should be a union of the dialect's format names when
-  formats validate.
