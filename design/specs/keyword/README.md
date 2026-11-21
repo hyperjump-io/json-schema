@@ -1,9 +1,8 @@
 # Keywords (`src/keyword.d.ts`)
 
 Keywords are plain, stateless objects so one definition can be shared by
-every config and every dialect. Anything instance-specific
-should come through a context argument. (Classes with constructor injection
-were considered. See [Open questions](#open-questions).)
+every config and every dialect. What a hook needs comes to it as values in
+its context argument (see [Dependencies](#dependencies)).
 
 ```ts
 type Keyword = {
@@ -45,8 +44,17 @@ operations say), `reads` (except on `opaque`), the keywords'
 `siblingKeyword`, `compileSchemaArray`, and `compileSchemaMap` utilities,
 and `siblings.test.js`.
 
-## Open questions
+## Dependencies
 
-- **Where keywords get their dependencies.** From a context argument
-  (stateless, shareable keywords; current lean, and what `CompileContext`
-  does) or constructor injection (matches browser's plugins).
+Each hook's context has the values that hook needs: `check` has the
+dialect, the declared siblings, and `message`; `resolve` has the
+vocabularies and the dialect URI; `lower` has the dialect and the keyword's
+name; `evaluate` has the instance operations. A keyword that depends on the
+config reads it from the dialect, like `format`, which looks its format up
+in `dialect.formats` and puts the result in the operation it returns.
+
+Rejected: classes with constructor injection, like browser's plugins. A
+keyword would be an instance per config, so one definition couldn't be
+shared by every config and dialect, and something would have to build and
+keep the instances. Browser's plugins hold behavior (retrieval), and
+keywords don't need any.
