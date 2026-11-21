@@ -34,11 +34,8 @@
 - Extra information for the language server (schema locations, evaluated
   branches, annotations from failing schemas) comes from evaluation
   plugins.
-
-## Open questions
-
-- **Annotations for invalid instances.** The spec drops annotations from
-  failing schemas, which leaves the language server without them. Plugins
-  see every annotation (the `annotation` hook), so the language server can
-  have them. Whether `annotate` itself should offer another behavior is
-  still open.
+- **Annotations from failing schemas are dropped**, as the spec says.
+  Plugins see every annotation (the `annotation` hook), so the language
+  server has them from a plugin. Rejected: an `annotate` option that keeps
+  them. It's a behavior the spec doesn't have, in the main API and every
+  annotator, for one user that a plugin already serves.
