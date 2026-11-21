@@ -1,6 +1,6 @@
 # Public API
 
-Part of [The API as functions](README.md). Decided 2026-10-29.
+Part of [The API as functions](README.md).
 
 With operations as functions, a third party writes one the same way we do,
 so what it can build is what's public.

@@ -1,9 +1,7 @@
 # The API as functions
 
-Decided and built 2026-10-29, replacing methods on `JsonSchema`,
-`JsonSchemaSession`, and `Validator`, and setup methods like `addV1` and
-`addKeyword`. Bundles shrank as a result (see
-[Bundle size](../../benchmarks/bundle-size.md)).
+Everything is a function, not a method, so bundles only have what's
+imported (see [Bundle size](../../benchmarks/bundle-size.md)).
 
 What decides how schemas are read is a config: browser's, with the JSON
 Schema media types in its `mediaTypes`, which carry the definitions
@@ -28,8 +26,8 @@ isPerson(data);
 ```
 
 - An operation that isn't imported isn't in a bundle. Methods on a class
-  can't be tree-shaken, so a bundle that only validates had bundling,
-  linting, and every output format in it.
+  can't be tree-shaken, so a bundle that only validates would have
+  bundling, linting, and every output format in it.
 - A third party's operation is written the same way as ours, against the
   same public API (see [Public API](public-api.md)), without subclassing.
   An operation that isn't about JSON Schema, like bundling JRef, can take
@@ -39,52 +37,26 @@ isPerson(data);
   validate. A schema can be passed as a value, so a registry is only
   needed for schemas that reference each other.
 
-## `JsonSchema` as a value
+## The definitions
 
-Decided and built 2026-11-14, and replaced the same day by stage 1 of
-[JSON Schema as a media type](json-schema-media-type.md): the definitions
-went onto the media type plugin, and the config is browser's. What follows
-is still how sessions and the definitions' lookups work.
+The JSON Schema media type's `definitions` are frozen tables by URI:
+`keywords`, `formats`, `dialects`, and `vocabularies` (see
+[JSON Schema as a media type](json-schema-media-type.md)). The tables have
+no prototype, so a URI like `constructor` isn't found in them.
 
-`configureJsonSchema(config)` returned a frozen value instead of a class's
-instance: the config, with its `registry`, the stack, and the definitions
-by URI in `keywords`, `formats`, `dialects`, and `vocabularies`, which the
-media type's `definitions` are now. The tables have no prototype, so a URI
-like `constructor` isn't found in them. A session was
-`new JsonSchemaHyperjump(jsonSchema)`, and is browser's,
-`new Hyperjump(config)` (see [JSON Schema as a media type](json-schema-media-type.md)).
-
-- The names say what each makes. The argument to `configureJsonSchema` is
-  configuration, not a schema, which `createJsonSchema` made it sound
-  like. A session is a subclass of browser's `Hyperjump` (see
-  [Sessions](../sessions/README.md)), so it's constructed like one, and
-  the class is its type. Rejected: `hyperjump(config)` for the
-  `JsonSchema`, since browser's `Hyperjump` is a session and it isn't one;
-  `configure`, which is too generic; `configureHyperjump`, which suggests
-  it makes a `Hyperjump`; `hyperjumpJsonSchema` with `hyperjumpSession`,
-  which are long; and `createSession` or `startHyperjump`, a function
-  that only calls the constructor, with a separate `JsonSchemaSession`
-  type for the class. Both names went later the same day: a config is made
-  with `jsonSchemaConfig`, named for what it returns, and a session is
-  browser's `Hyperjump` (see
-  [JSON Schema as a media type](json-schema-media-type.md#making-a-config)).
-
-- It removed `session()`, a second way to make a session, and seven
-  `has` and `get` methods that were lookups in those tables. What they
-  added, the error for a keyword or format that isn't defined, is
-  `keywordOf` and `formatOf` (`src/definition-of.js`), used where a
-  missing definition is an error: compiling, restoring, and resolving.
-  `lowerKeywords` takes the keywords instead of a function that finds one.
-- Its type is a generic function instead of a constructor type with a
-  second signature for subclasses (see [Schema types](../schema-types.md)).
-- The registry is in the config, instead of a property that's assigned
-  (see [Registries](../registries/README.md)). Rejected: a `withRegistry`
-  that returns a copy with another registry. What's cached for a
-  `JsonSchema` (registry entries' identifications, registry indexes, and
-  resolved entries) is keyed by it, so each copy would start those caches
-  empty, or they'd have to be keyed by its tables instead.
-- Rejected: functions of a `JsonSchema` in place of the methods
-  (`getKeyword(jsonSchema, uri)`). They'd be the methods moved.
+- Code reads the tables. Where a missing definition is an error, like
+  compiling, restoring, and resolving, `keywordOf` and `formatOf`
+  (`src/definition-of.js`) throw it. `lowerKeywords` takes the keywords
+  instead of a function that finds one.
+- `jsonSchemaConfig`'s type is a generic function (see
+  [Schema types](../schema-types.md)).
+- The registry is in the config (see [Registries](../registries/README.md)).
+- Rejected: `has` and `get` methods for each kind of definition, and
+  functions of the config in their place (`getKeyword(config, uri)`).
+  They'd be lookups in the tables, and the functions would be the methods
+  moved.
+- Rejected: a second way to make a session, like a `session()` method. A
+  session is `new Hyperjump(config)`.
 
 Known limitations:
 
