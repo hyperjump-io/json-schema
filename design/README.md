@@ -3,9 +3,11 @@
 A from-scratch rewrite of `@hyperjump/json-schema` v1 (the `main` branch)
 built on [`@hyperjump/browser`](https://github.com/hyperjump-io/browser) v2
 and [unified](https://unifiedjs.com/). Most of the same concepts are
-included, but often reimagined.
+included, but often redesigned.
 
-These documents record the decisions made so far, and why. The `.d.ts`
+These documents record decisions: what the code does, why, and what was
+rejected and why. They don't record history, such as what the code used
+to do or when it changed. That's in git. The `.d.ts`
 files in `src/` are the source of truth for the API. They're written by
 hand and have JSDoc explaining the details. Documentation for users is in
 [`website/`](../website/README.md).
