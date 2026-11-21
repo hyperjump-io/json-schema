@@ -26,6 +26,12 @@ because normalizing costs something and changes how it reads.
   in a document, like `$id`'s, against a base. They do what v1's
   `toAbsoluteIri` and `resolveIri` did at those calls, which checked and
   normalized.
+  - Rejected: looking a key up as it's given and normalizing only on a
+    miss. Every key is normalized, so a hit would be right, but the only
+    lookups that normalize are `toId`'s, on identifiers from outside, a
+    few times a call. `resolveId` makes keys and `href`s, which have to be
+    normalized anyway. It would add a second lookup to every miss to save
+    work that hasn't been measured.
 - A resource's `uri` is an `Id`, so a node's `location`, its resource's
   URI and a fragment `encodeIriFragment` leaves normalized, is normalized
   too. That's a cast in `resolve.js`, because it's true by construction.
