@@ -36,17 +36,6 @@ describe("draft-04", () => {
     jsonSchema = draft04();
   });
 
-  test("$ref replaces the whole schema", async () => {
-    const compiled = await compile(jsonSchema, {
-      $schema,
-      definitions: { string: { type: "string" } },
-      properties: { foo: { $ref: "#/definitions/string", maxLength: 1 } }
-    });
-
-    expect(validatorFor(compiled)({ foo: "long" })).to.equal(true);
-    expect(validatorFor(compiled)({ foo: 1 })).to.equal(false);
-  });
-
   test("unknown keywords are ignored", async () => {
     const compiled = await compile(jsonSchema, { $schema, foo: "bar" });
 
@@ -54,50 +43,9 @@ describe("draft-04", () => {
   });
 
   describe("maximum and minimum", () => {
-    test("are inclusive by default", async () => {
-      const compiled = await compile(jsonSchema, { $schema, minimum: 1, maximum: 3 });
-
-      expect(validatorFor(compiled)(1)).to.equal(true);
-      expect(validatorFor(compiled)(3)).to.equal(true);
-      expect(validatorFor(compiled)(0)).to.equal(false);
-      expect(validatorFor(compiled)(4)).to.equal(false);
-    });
-
-    test("are exclusive with exclusiveMinimum and exclusiveMaximum", async () => {
-      const compiled = await compile(jsonSchema, { $schema, minimum: 1, exclusiveMinimum: true, maximum: 3, exclusiveMaximum: true });
-
-      expect(validatorFor(compiled)(2)).to.equal(true);
-      expect(validatorFor(compiled)(1)).to.equal(false);
-      expect(validatorFor(compiled)(3)).to.equal(false);
-    });
-
-    test("are inclusive with exclusiveMinimum and exclusiveMaximum false", async () => {
-      const compiled = await compile(jsonSchema, { $schema, minimum: 1, exclusiveMinimum: false, maximum: 3, exclusiveMaximum: false });
-
-      expect(validatorFor(compiled)(1)).to.equal(true);
-      expect(validatorFor(compiled)(3)).to.equal(true);
-    });
-
     test("exclusiveMinimum and exclusiveMaximum require minimum and maximum", async () => {
       await expect(compile(jsonSchema, { $schema, exclusiveMinimum: true })).rejects.toMatchObject({ messages: [{ message: "'exclusiveMinimum' requires 'minimum'" }] });
       await expect(compile(jsonSchema, { $schema, exclusiveMaximum: false })).rejects.toMatchObject({ messages: [{ message: "'exclusiveMaximum' requires 'maximum'" }] });
-    });
-  });
-
-  describe("dependencies", () => {
-    test("an array is properties that are required too", async () => {
-      const compiled = await compile(jsonSchema, { $schema, dependencies: { foo: ["bar"] } });
-
-      expect(validatorFor(compiled)({ foo: 1, bar: 2 })).to.equal(true);
-      expect(validatorFor(compiled)({ bar: 2 })).to.equal(true);
-      expect(validatorFor(compiled)({ foo: 1 })).to.equal(false);
-    });
-
-    test("a schema applies to the whole instance", async () => {
-      const compiled = await compile(jsonSchema, { $schema, dependencies: { foo: { required: ["bar"] } } });
-
-      expect(validatorFor(compiled)({ foo: 1, bar: 2 })).to.equal(true);
-      expect(validatorFor(compiled)({ foo: 1 })).to.equal(false);
     });
   });
 

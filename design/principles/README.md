@@ -14,3 +14,4 @@ where it shows up.
 - [Each definition reads on its own](read-on-its-own.md)
 - [Browser stays a generic client](browser-stays-generic.md)
 - [Small components](small-components.md)
+- [The suite tests what keywords mean](tests-follow-the-suite.md)

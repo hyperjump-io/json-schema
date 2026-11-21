@@ -36,25 +36,6 @@ describe("draft-07", () => {
     jsonSchema = draft07();
   });
 
-  test("$ref replaces the whole schema", async () => {
-    const compiled = await compile(jsonSchema, {
-      $schema,
-      definitions: { string: { type: "string" } },
-      properties: { foo: { $ref: "#/definitions/string", maxLength: 1 } }
-    });
-
-    expect(validatorFor(compiled)({ foo: "long" })).to.equal(true);
-    expect(validatorFor(compiled)({ foo: 1 })).to.equal(false);
-  });
-
-  test("exclusiveMinimum and exclusiveMaximum are numbers", async () => {
-    const compiled = await compile(jsonSchema, { $schema, exclusiveMinimum: 1, exclusiveMaximum: 3 });
-
-    expect(validatorFor(compiled)(2)).to.equal(true);
-    expect(validatorFor(compiled)(1)).to.equal(false);
-    expect(validatorFor(compiled)(3)).to.equal(false);
-  });
-
   test("format validates by default", async () => {
     const compiled = await compile(jsonSchema, { $schema, format: "ipv4" });
 
@@ -76,14 +57,5 @@ describe("draft-07", () => {
     const compiled = await compile(draft07({ validateFormats: false }), { $schema, format: "ipv4" });
 
     expect(validatorFor(compiled)("not an ip")).to.equal(true);
-  });
-
-  test("if, then, and else apply", async () => {
-    const compiled = await compile(jsonSchema, { $schema, if: { type: "string" }, then: { minLength: 2 }, else: { minimum: 2 } });
-
-    expect(validatorFor(compiled)("ab")).to.equal(true);
-    expect(validatorFor(compiled)("a")).to.equal(false);
-    expect(validatorFor(compiled)(2)).to.equal(true);
-    expect(validatorFor(compiled)(1)).to.equal(false);
   });
 });

@@ -36,25 +36,6 @@ describe("draft-06", () => {
     jsonSchema = draft06();
   });
 
-  test("$ref replaces the whole schema", async () => {
-    const compiled = await compile(jsonSchema, {
-      $schema,
-      definitions: { string: { type: "string" } },
-      properties: { foo: { $ref: "#/definitions/string", maxLength: 1 } }
-    });
-
-    expect(validatorFor(compiled)({ foo: "long" })).to.equal(true);
-    expect(validatorFor(compiled)({ foo: 1 })).to.equal(false);
-  });
-
-  test("exclusiveMinimum and exclusiveMaximum are numbers", async () => {
-    const compiled = await compile(jsonSchema, { $schema, exclusiveMinimum: 1, exclusiveMaximum: 3 });
-
-    expect(validatorFor(compiled)(2)).to.equal(true);
-    expect(validatorFor(compiled)(1)).to.equal(false);
-    expect(validatorFor(compiled)(3)).to.equal(false);
-  });
-
   test("format validates by default", async () => {
     const compiled = await compile(jsonSchema, { $schema, format: "ipv4" });
 
