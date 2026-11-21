@@ -1,9 +1,9 @@
+import { visit } from "unist-util-visit";
 import { canPass, keywordAppliesTo, operationsOf } from "../analysis.js";
 import { formatTypes } from "../format-types.js";
 import { documentForLint } from "../document.js";
 import { lintRule } from "../lint-rule.js";
 import { isNegated, schemaGroup } from "../schema-group.js";
-import { visitSchemas } from "../utilities.js";
 
 /**
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode } from "../../schema/schema-ast.d.ts"
@@ -37,7 +37,8 @@ const keywordWithoutType = lintRule({ origin: "json-schema-lint:keyword-without-
 
   /** @type JsonSchemaNode[] */
   const schemas = [];
-  visitSchemas(tree, (schemaNode) => {
+  visit(tree, "json-schema", (node) => {
+    const schemaNode = /** @type JsonSchemaNode */ (node);
     schemas.push(schemaNode);
   });
 

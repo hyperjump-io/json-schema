@@ -1,8 +1,9 @@
+import { visit } from "unist-util-visit";
 import { evaluatorForLint } from "../evaluate.js";
 import { documentForLint } from "../document.js";
 import { lintRule } from "../lint-rule.js";
 import { schemaGroup } from "../schema-group.js";
-import { findKeyword, visitSchemas } from "../utilities.js";
+import { findKeyword } from "../utilities.js";
 
 /**
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode, JsonSchemaTolerantNode } from "../../schema/schema-ast.d.ts"
@@ -26,7 +27,8 @@ const invalidDefaultOrExample = lintRule({ origin: "json-schema-lint:invalid-def
 
   /** @type Annotated[] */
   const annotated = [];
-  visitSchemas(tree, (schemaNode) => {
+  visit(tree, "json-schema", (node) => {
+    const schemaNode = /** @type JsonSchemaNode */ (node);
     const defaultNode = findKeyword(schemaNode, defaultUri);
     const examplesNode = findKeyword(schemaNode, examplesUri);
     if (defaultNode !== undefined || examplesNode !== undefined) {

@@ -1,12 +1,11 @@
+import { visit } from "unist-util-visit";
 import { toAbsoluteIri } from "@hyperjump/uri";
 import { documentForLint } from "../document.js";
 import { lintRule } from "../lint-rule.js";
-import { visitReferences } from "../utilities.js";
 
 /**
- * @import { JsonSchemaDocumentNode, JsonSchemaNode } from "../../schema/schema-ast.d.ts"
+ * @import { JsonSchemaDocumentNode } from "../../schema/schema-ast.d.ts"
  * @import { FindSchemaResult } from "../find-schema.d.ts"
- * @import { NormalizedIri } from "@hyperjump/uri"
  */
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
@@ -17,16 +16,11 @@ const referenceByLocation = lintRule({ origin: "json-schema-lint:reference-by-lo
     return;
   }
 
-  /** @type [NormalizedIri, JsonSchemaNode][] */
-  const references = [];
-  visitReferences(tree, (uri, node) => {
-    references.push([uri, node]);
-  });
-
-  for (const [uri, node] of references) {
+  visit(tree, "reference", (node) => {
+    const uri = node.href;
     const result = /** @type FindSchemaResult */ (document.found.get(uri));
     if (result.status !== "found") {
-      continue;
+      return;
     }
 
     // A node's location is its canonical URI, relative to the resource it's
@@ -34,17 +28,17 @@ const referenceByLocation = lintRule({ origin: "json-schema-lint:reference-by-lo
     const { location } = result.node;
     const identifier = location.endsWith("#") ? toAbsoluteIri(location) : location;
     if (toAbsoluteIri(identifier) === toAbsoluteIri(uri)) {
-      continue;
+      return;
     }
 
     // Only an identifier that finds the schema is one the reference can use
     const byIdentifier = /** @type FindSchemaResult */ (document.found.get(identifier));
     if (byIdentifier.status !== "found") {
-      continue;
+      return;
     }
 
     file.message(`The reference finds the schema by where it is, not by its identifier, '${identifier}'`, { place: node.position });
-  }
+  });
 });
 
 export default referenceByLocation;

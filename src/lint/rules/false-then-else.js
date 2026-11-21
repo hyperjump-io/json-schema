@@ -1,9 +1,9 @@
+import { visit } from "unist-util-visit";
 import { allowsNothing } from "../allows-nothing.js";
 import { keywordApplying } from "../applied.js";
 import { second } from "../bounds.js";
 import { documentForLint } from "../document.js";
 import { lintRule } from "../lint-rule.js";
-import { visitSchemas } from "../utilities.js";
 
 /**
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode } from "../../schema/schema-ast.d.ts"
@@ -25,7 +25,8 @@ const falseThenElse = lintRule({ origin: "json-schema-lint:false-then-else", url
 
   /** @type Map<string, JsonSchemaNode> */
   const schemaNodes = new Map();
-  visitSchemas(tree, (schemaNode) => {
+  visit(tree, "json-schema", (node) => {
+    const schemaNode = /** @type JsonSchemaNode */ (node);
     schemaNodes.set(schemaNode.location, schemaNode);
   });
 

@@ -1,10 +1,11 @@
+import { visit } from "unist-util-visit";
 import { allowsNothing } from "../allows-nothing.js";
 import { operationsOf, propertyOperations } from "../analysis.js";
 import { namesOf } from "../bounds.js";
 import { documentForLint } from "../document.js";
 import { keywordsThatMustPass } from "../in-place.js";
 import { lintRule } from "../lint-rule.js";
-import { nodeFor, visitSchemas } from "../utilities.js";
+import { nodeFor } from "../utilities.js";
 
 /**
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode } from "../../schema/schema-ast.d.ts"
@@ -31,7 +32,8 @@ const requiredPropertyNotAllowed = lintRule({ origin: "json-schema-lint:required
 
   /** @type Map<string, JsonSchemaNode> */
   const schemaNodes = new Map();
-  visitSchemas(tree, (schemaNode) => {
+  visit(tree, "json-schema", (node) => {
+    const schemaNode = /** @type JsonSchemaNode */ (node);
     schemaNodes.set(schemaNode.location, schemaNode);
   });
 

@@ -1,7 +1,7 @@
+import { visit } from "unist-util-visit";
 import { encodeIriFragment } from "@hyperjump/uri";
 import { documentForLint } from "../document.js";
 import { lintRule } from "../lint-rule.js";
-import { visitSchemas } from "../utilities.js";
 
 /**
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode } from "../../schema/schema-ast.d.ts"
@@ -19,7 +19,7 @@ const misnamedDefinitions = lintRule({ origin: "json-schema-lint:misnamed-defini
 
   /** @type [JsonSchemaKeywordNode, string][] */
   const found = [];
-  visitSchemas(tree, (schemaNode) => {
+  visit(tree, "json-schema", (schemaNode) => {
     // A draft-04–07 reference's properties aren't keywords
     if (schemaNode.type !== "json-schema" || schemaNode.jsonType !== "object") {
       return;

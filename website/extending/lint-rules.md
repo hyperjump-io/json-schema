@@ -70,6 +70,20 @@ for the others. The built-in rules in
 [`src/lint/rules/`](https://github.com/hyperjump-io/json-schema/tree/v2/src/lint/rules)
 show how they're used.
 
+To find nodes of a type, walk the tree. It's a
+[unist](https://github.com/syntax-tree/unist) tree, so unist utilities like
+[`unist-util-visit`](https://github.com/syntax-tree/unist-util-visit) work
+on it. A schema's type is `"json-schema"`. A reference's type is
+`"reference"`, with the URI it refers to as `href`.
+
+```typescript
+import { visit } from "unist-util-visit";
+
+visit(tree, "reference", (node) => {
+  console.log(node.href);
+});
+```
+
 ## The document and what it reaches
 
 A rule that needs more than the tree starts with `documentForLint`. It
@@ -97,24 +111,21 @@ A rule that needs another schema, such as the target of a `$ref`, reads
 what the reference found from `document.found`.
 
 ```typescript
-import type { JsonSchemaNode } from "@hyperjump/json-schema";
-import { visitReferences } from "@hyperjump/json-schema/lint";
+import { visit } from "unist-util-visit";
 
-const references: [string, JsonSchemaNode][] = [];
-visitReferences(tree, (uri, node) => references.push([uri, node]));
-for (const [uri, node] of references) {
-  const result = document.found.get(uri);
+visit(tree, "reference", (node) => {
+  const result = document.found.get(node.href);
   if (result?.status === "missing") {
     file.message(result.reason.message, { place: node.position });
   }
-}
+});
 ```
 
-`visitReferences` finds every `$ref` in every dialect along with the URI it
-refers to. A result says whether the schema is `found`, `missing`, or
-`unknown`. Only report `missing`. `unknown` means there's no way to tell,
-for example for a URL that `allowRetrieval` doesn't allow. `schemaAt`
-gives the schema a URI finds, a reference's or a location's.
+Every `$ref` in every dialect is a `"reference"` node. A result says
+whether the schema is `found`, `missing`, or `unknown`. Only report
+`missing`. `unknown` means there's no way to tell, for example for a URL
+that `allowRetrieval` doesn't allow. `schemaAt` gives the schema a URI
+finds, a reference's or a location's.
 
 ## Schemas that apply together
 

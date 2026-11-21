@@ -1,6 +1,6 @@
+import { visit } from "unist-util-visit";
 import { documentForLint } from "../document.js";
 import { lintRule } from "../lint-rule.js";
-import { visitSchemas } from "../utilities.js";
 
 /**
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode } from "../../schema/schema-ast.d.ts"
@@ -18,7 +18,7 @@ const singleValueEnum = lintRule({ origin: "json-schema-lint:single-value-enum",
 
   /** @type [JsonSchemaKeywordNode, string][] */
   const found = [];
-  visitSchemas(tree, (schemaNode) => {
+  visit(tree, "json-schema", (schemaNode) => {
     if (schemaNode.type !== "json-schema" || schemaNode.jsonType !== "object") {
       return;
     }

@@ -1,16 +1,5 @@
 import type { Node } from "unist";
-import type { NormalizedIri } from "@hyperjump/uri";
 import type { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode, JsonSchemaTolerantNode } from "../schema/schema-ast.d.ts";
-
-/**
- * Calls `visitor` with every schema in the document, including embedded
- * resources, which stay in the tree. Values that couldn't be parsed aren't
- * schemas, so they aren't visited.
- */
-export const visitSchemas: (
-  tree: JsonSchemaDocumentNode,
-  visitor: (schemaNode: JsonSchemaNode) => void
-) => void;
 
 /**
  * Calls `visitor` with every keyword in the document that has the given
@@ -22,23 +11,6 @@ export const visitKeywords: (
   tree: JsonSchemaDocumentNode,
   keywordUri: string,
   visitor: (keywordNode: JsonSchemaKeywordNode, schemaNode: JsonSchemaNode) => void
-) => void;
-
-/**
- * Calls `visitor` with every reference in the document and the absolute URI
- * it refers to. That's the value of a keyword whose shape is `"reference"`
- * (`$ref` since 2019-09, 2020-12's `$dynamicRef`, `$recursiveRef`),
- * resolved against the schema resource it's in, or a schema that's a
- * reference (`$ref` in draft-04 through draft-07). `node` is the keyword's
- * value or the reference.
- *
- * A dynamic reference is visited with the schema it resolves to, which is
- * where it starts. What it applies can be another schema, depending on
- * evaluation. v1's `$dynamicRef` is an anchor name, not a reference.
- */
-export const visitReferences: (
-  tree: JsonSchemaDocumentNode,
-  visitor: (uri: NormalizedIri, node: JsonSchemaNode) => void
 ) => void;
 
 /**

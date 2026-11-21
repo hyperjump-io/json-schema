@@ -1,7 +1,7 @@
+import { visit } from "unist-util-visit";
 import unknownKeyword, { keywordDefinitionUri } from "../../keywords/unknown.js";
 import { documentForLint } from "../document.js";
 import { lintRule } from "../lint-rule.js";
-import { visitSchemas } from "../utilities.js";
 
 /**
  * @import { Dialect } from "../../dialect.d.ts"
@@ -29,7 +29,7 @@ const unknownKeywordRule = lintRule({ origin: "json-schema-lint:unknown-keyword"
 
   /** @type [JsonSchemaKeywordNode, string][] */
   const found = [];
-  visitSchemas(tree, (schemaNode) => {
+  visit(tree, "json-schema", (schemaNode) => {
     // A draft-04–07 reference's properties aren't keywords
     if (schemaNode.type !== "json-schema" || schemaNode.jsonType !== "object") {
       return;

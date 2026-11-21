@@ -1,9 +1,9 @@
+import { visit } from "unist-util-visit";
 import { operationsOf } from "../analysis.js";
 import { keywordApplying } from "../applied.js";
 import { effectOf } from "../effect.js";
 import { documentForLint } from "../document.js";
 import { lintRule } from "../lint-rule.js";
-import { visitSchemas } from "../utilities.js";
 
 /**
  * @import { JsonSchemaDocumentNode, JsonSchemaNode } from "../../schema/schema-ast.d.ts"
@@ -25,7 +25,8 @@ const emptyThenElse = lintRule({ origin: "json-schema-lint:empty-then-else", url
 
   /** @type Map<string, JsonSchemaNode> */
   const schemaNodes = new Map();
-  visitSchemas(tree, (schemaNode) => {
+  visit(tree, "json-schema", (node) => {
+    const schemaNode = /** @type JsonSchemaNode */ (node);
     schemaNodes.set(schemaNode.location, schemaNode);
   });
 

@@ -36,7 +36,7 @@ export type LintDocument = {
   /**
    * What each static reference in these documents finds (`findSchema`), by
    * the URI it refers to, and what the identifier of the schema each of this
-   * document's references finds finds. See `visitReferences`.
+   * document's references finds finds, by a reference node's `href`.
    */
   found: ReadonlyMap<string, FindSchemaResult>;
 

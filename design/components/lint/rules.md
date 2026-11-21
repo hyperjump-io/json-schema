@@ -61,9 +61,19 @@
   loses those findings. Lowering only the combined keyword, which is
   still a value that isn't in a document. Putting the made schema in a
   document to read it as targets, which rebuilds what `nodeReader` does.
-- Utilities in `src/lint/` keep rules short: visit every schema, visit every
-  keyword by URI, get a sibling keyword, and find what a reference points
-  to. They know nothing about particular keywords. A rule that needs to
+- Rules find schemas and references with `unist-util-visit`, like
+  `visit(tree, "reference", …)`, because the tree is a unist tree and a
+  node's type says what it is. `visitSchemas` and `visitReferences` were
+  that walk with a type, and were removed. Rejected: browser's
+  `jrefFindAll` in rules. It's for a target that references are followed
+  from, and it needs a session and waits. A rule has the tree, and what
+  every reference finds is in `document.found` already. A schema node's
+  type allows error children, from a document that didn't parse, so the
+  rules that read schemas say they're a `JsonSchemaNode`, as
+  `visitSchemas` did.
+- Utilities in `src/lint/` keep rules short: visit every keyword by URI,
+  get a sibling keyword, and find what a reference points to. They know
+  nothing about particular keywords. A rule that needs to
   know what a keyword means reads what it lowers to
   (`LintDocument.schemas`; "Lowering for lint"): which types it applies to and can pass, its
   operations, its `typeIs`, and what applies to a property (`analysis.js`),

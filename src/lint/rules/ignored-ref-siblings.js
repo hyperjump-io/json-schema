@@ -1,5 +1,5 @@
+import { visit } from "unist-util-visit";
 import { lintRule } from "../lint-rule.js";
-import { visitReferences } from "../utilities.js";
 
 /**
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode } from "../../schema/schema-ast.d.ts"
@@ -14,7 +14,7 @@ const notReported = new Set(["$ref", "$schema", "$comment"]);
 
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
 const ignoredRefSiblings = lintRule({ origin: "json-schema-lint:ignored-ref-siblings", url: "https://hyperjump.io/json-schema/linting/rules/ignored-ref-siblings/" }, (tree, file) => {
-  visitReferences(tree, (_uri, node) => {
+  visit(tree, "reference", (node) => {
     // Only a schema that's a reference (draft-04 through draft-07). A `$ref`
     // keyword's value is a string.
     if (node.type !== "reference" || node.jsonType !== "object") {

@@ -1,9 +1,9 @@
+import { visit } from "unist-util-visit";
 import { documentForLint } from "../document.js";
 import { lintRule } from "../lint-rule.js";
-import { visitReferences } from "../utilities.js";
 
 /**
- * @import { JsonSchemaDocumentNode, JsonSchemaNode } from "../../schema/schema-ast.d.ts"
+ * @import { JsonSchemaDocumentNode } from "../../schema/schema-ast.d.ts"
  * @import { FindSchemaResult } from "../find-schema.d.ts"
  */
 
@@ -15,20 +15,14 @@ const referenceWithoutTarget = lintRule({ origin: "json-schema-lint:reference-wi
     return;
   }
 
-  /** @type [string, JsonSchemaNode][] */
-  const references = [];
-  visitReferences(tree, (uri, node) => {
-    references.push([uri, node]);
-  });
-
-  for (const [uri, node] of references) {
-    const result = /** @type FindSchemaResult */ (document.found.get(uri));
+  visit(tree, "reference", (node) => {
+    const result = /** @type FindSchemaResult */ (document.found.get(node.href));
     if (result.status === "missing") {
       // A missing schema is what's found, not a failure, so the reason's cause
       // and stack aren't reported
       file.message(`The reference doesn't find a schema. ${result.reason.message}`, { place: node.position });
     }
-  }
+  });
 });
 
 export default referenceWithoutTarget;

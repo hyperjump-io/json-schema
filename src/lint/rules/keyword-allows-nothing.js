@@ -1,7 +1,7 @@
+import { visit } from "unist-util-visit";
 import { allowsNothing } from "../allows-nothing.js";
 import { documentForLint } from "../document.js";
 import { lintRule } from "../lint-rule.js";
-import { visitSchemas } from "../utilities.js";
 
 /**
  * @import { JsonSchemaDocumentNode, JsonSchemaNode } from "../../schema/schema-ast.d.ts"
@@ -21,7 +21,8 @@ const keywordAllowsNothing = lintRule({ origin: "json-schema-lint:keyword-allows
 
   /** @type Map<string, JsonSchemaNode> */
   const schemaNodes = new Map();
-  visitSchemas(tree, (schemaNode) => {
+  visit(tree, "json-schema", (node) => {
+    const schemaNode = /** @type JsonSchemaNode */ (node);
     schemaNodes.set(schemaNode.location, schemaNode);
   });
 

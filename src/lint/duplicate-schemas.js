@@ -1,5 +1,5 @@
+import { visit } from "unist-util-visit";
 import { sameExpression } from "./same-schema.js";
-import { visitSchemas } from "./utilities.js";
 
 /**
  * @import { Node } from "unist"
@@ -21,7 +21,8 @@ import { visitSchemas } from "./utilities.js";
 export const duplicateSchemas = ({ tree, schemas: lowered }) => {
   /** @type Map<string, JsonSchemaNode> */
   const schemaNodes = new Map();
-  visitSchemas(tree, (schemaNode) => {
+  visit(tree, "json-schema", (node) => {
+    const schemaNode = /** @type JsonSchemaNode */ (node);
     schemaNodes.set(schemaNode.location, schemaNode);
   });
   const same = sameExpression(lowered, schemaNodes);

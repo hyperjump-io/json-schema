@@ -1,47 +1,9 @@
+import { visit } from "unist-util-visit";
+
 /**
  * @import { Node } from "unist"
- * @import { NormalizedIri } from "@hyperjump/uri"
  * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode, JsonSchemaTolerantNode } from "../schema/schema-ast.d.ts"
  */
-
-/**
- * @typedef {{ type: string; children?: TreeNode[] }} TreeNode
- */
-
-/**
- * Call `visitor` with every schema in the document, including embedded
- * resources, which stay in the tree. Schemas inside values that couldn't be
- * parsed aren't schemas, so they aren't visited.
- *
- * @type (tree: JsonSchemaDocumentNode, visitor: (schemaNode: JsonSchemaNode) => void) => void
- */
-export const visitSchemas = (tree, visitor) => {
-  visitNodes(tree, (node) => {
-    if (node.type === "json-schema") {
-      visitor(/** @type JsonSchemaNode */ (node));
-    }
-  });
-};
-
-/**
- * Call `visitor` with every reference in the document and the absolute URI
- * it refers to. That's the value of a keyword whose shape is `"reference"`
- * (`$ref` since 2019-09, 2020-12's `$dynamicRef`, `$recursiveRef`), or a
- * schema that's a reference (`$ref` in draft-04 through draft-07). Both are
- * `reference` nodes, with the URI as `href`. `node` is the keyword's value or
- * the reference. A value that isn't a valid IRI reference is a schema
- * problem, so it isn't visited.
- *
- * @type (tree: JsonSchemaDocumentNode, visitor: (uri: NormalizedIri, node: JsonSchemaNode) => void) => void
- */
-export const visitReferences = (tree, visitor) => {
-  visitNodes(tree, (node) => {
-    const referenceNode = /** @type JsonSchemaNode */ (node);
-    if (referenceNode.type === "reference") {
-      visitor(referenceNode.href, referenceNode);
-    }
-  });
-};
 
 /** Each official dialect's URI as its meta-schema identifies itself, by the URI without a fragment */
 const canonicalDialectUris = new Map([
@@ -73,8 +35,8 @@ const schemaUri = "https://json-schema.org/keyword/schema";
  * @type (tree: JsonSchemaDocumentNode, visitor: (valueNode: JsonSchemaNode & { jsonType: "string" }) => void) => void
  */
 export const visitDialectUris = (tree, visitor) => {
-  visitNodes(tree, (node) => {
-    const schemaNode = /** @type JsonSchemaNode */ (node);
+  visit(tree, (node) => {
+    const schemaNode = /** @type JsonSchemaNode */ (/** @type unknown */ (node));
     if ((schemaNode.type !== "json-schema" && schemaNode.type !== "reference") || schemaNode.jsonType !== "object") {
       return;
     }
@@ -98,7 +60,8 @@ export const visitDialectUris = (tree, visitor) => {
  * @type (tree: JsonSchemaDocumentNode, keywordUri: string, visitor: (keywordNode: JsonSchemaKeywordNode, schemaNode: JsonSchemaNode) => void) => void
  */
 export const visitKeywords = (tree, keywordUri, visitor) => {
-  visitSchemas(tree, (schemaNode) => {
+  visit(tree, "json-schema", (node) => {
+    const schemaNode = /** @type JsonSchemaNode */ (/** @type unknown */ (node));
     if (schemaNode.jsonType !== "object") {
       return;
     }
@@ -154,17 +117,4 @@ export const nodeFor = (keywordNode, name) => {
   } else if (valueNode.jsonType === "array") {
     return valueNode.children.find((itemNode) => itemNode.jsonType === "string" && itemNode.value === name);
   }
-};
-
-/** @type (tree: JsonSchemaDocumentNode, visitor: (node: TreeNode) => void) => void */
-const visitNodes = (tree, visitor) => {
-  /** @type (node: TreeNode) => void */
-  const visit = (node) => {
-    visitor(node);
-    for (const child of node.children ?? []) {
-      visit(child);
-    }
-  };
-
-  visit(/** @type TreeNode */ (tree));
 };
