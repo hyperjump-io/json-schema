@@ -120,6 +120,23 @@ describe("JSON Schema - toString", () => {
     });
   });
 
+  test("contextUri: baseURI with a query", async () => {
+    const contextDialectId = "https://json-schema.org/draft/2020-12/schema";
+    const id = `${testDomain}/other?version=2`;
+    registerSchema({ $schema: contextDialectId, type: "string" }, id);
+
+    try {
+      const schema = await getSchema(id);
+      expect(toSchema(schema, { contextUri: `${testDomain}/main` })).to.eql({
+        $schema: contextDialectId,
+        $id: "other?version=2",
+        type: "string"
+      });
+    } finally {
+      unregisterSchema(id);
+    }
+  });
+
   test("file self-identification", async () => {
     const contextDialectId = "https://json-schema.org/v1";
     const schema = await getSchema("./lib/string.schema.json");
