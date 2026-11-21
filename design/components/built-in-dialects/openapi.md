@@ -145,6 +145,11 @@ separate piece of work (see [Not done](#not-done)).
 - Requirements across keywords that the implementation recovers from
   aren't checked yet, and would be lint rules: `discriminator`
   without `oneOf`, `anyOf`, or `allOf`, and 3.2's deprecated `example`.
+  The discriminator's rules wait for a model of the OpenAPI document (see
+  [Not done](#not-done)). It's built on schema names, the keys of the
+  Components Object's `schemas`, for implicit mapping, `mapping` values,
+  and finding the schemas whose `allOf` references a parent with a
+  `discriminator`.
 
 ## Not done
 
