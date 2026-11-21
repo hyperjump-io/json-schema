@@ -71,7 +71,7 @@
     "@hyperjump/json-pointer": "^1.1.0",
     "@hyperjump/json-schema-formats": "^1.1.0",
     "@hyperjump/pact": "^1.2.0",
-    "@hyperjump/uri": "^1.2.0",
+    "@hyperjump/uri": "^1.4.1",
     "content-type": "^1.0.4",
     "just-curry-it": "^5.3.0",
     "uuid": "^14.0.0"
