@@ -57,7 +57,13 @@ describe("A keyword's value that doesn't fit its shape is reported once", () => 
         const root = /** @type any */ (document.children[0]);
         const misfit = jsonPointerGet(`/${name}${pointer}`, root).position;
         const ruleId = reportedBy === "schema" ? "invalid-schema" : keywordUri;
-        expect(file.messages.map((message) => [message.ruleId, message.place])).to.eql([[ruleId, misfit]]);
+        expect(file.messages.map((message) => message.ruleId)).to.eql([ruleId]);
+
+        // A string that isn't a valid identifier is placed on the characters
+        // that are wrong, in it
+        const { start, end } = /** @type any */ (file.messages[0].place);
+        expect(start.offset).to.be.at.least(misfit.start.offset);
+        expect(end.offset).to.be.at.most(misfit.end.offset);
       });
     }
   }

@@ -1,6 +1,7 @@
 import { InvalidIriError, assertIri, assertIriReference, hasScheme, normalizeIri, resolveIri, toAbsoluteIri } from "@hyperjump/uri";
 
 /**
+ * @import { Node, Point, Position } from "unist"
  * @import { AbsoluteIri, NormalizedIri } from "@hyperjump/uri"
  */
 
@@ -68,4 +69,30 @@ export const iriProblem = (error) => {
   }
 
   return error.message.slice(`Invalid ${error.rule}: ${error.value} — `.length);
+};
+
+/**
+ * Where a message about a string that isn't a valid identifier goes: on the
+ * characters an `InvalidIriError` says are wrong, if it's about the string
+ * as it's written, or else on the whole string. The string's text is its
+ * value in quotes only if it has no escapes, which is when it's two longer
+ * than its value. Positions and `InvalidIriError`'s indexes are both UTF-16.
+ * Something missing, like a scheme, is on the whole string, because it's
+ * nowhere in particular.
+ *
+ * @type (node: Node, error: unknown) => Position | undefined
+ */
+export const iriPlace = (node, error) => {
+  const { position } = node;
+  const value = /** @type {{ value?: unknown }} */ (node).value;
+  if (!(error instanceof InvalidIriError) || value !== error.value || error.start === error.end
+    || position?.start.offset === undefined || position.end.offset === undefined
+    || position.end.offset - position.start.offset !== error.value.length + 2) {
+    return position;
+  }
+
+  const { start } = position;
+  /** @type (index: number) => Point */
+  const at = (index) => ({ line: start.line, column: start.column + 1 + index, offset: /** @type number */ (start.offset) + 1 + index });
+  return { start: at(error.start), end: at(error.end) };
 };

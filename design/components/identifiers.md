@@ -107,9 +107,16 @@ and `$vocabulary`'s URIs, in the resolver and in registry identification.
   `@hyperjump/uri`, which needs a release of it for one property.
 - A value that isn't a string where a reference is expected is still
   "Expected a URI reference", because there's nothing to explain.
-- The message is placed on the whole value, not on the characters that
-  are wrong. The explanation's "at 9" is an index into the value, which is
-  the same as its place in the text only if the string has no escapes.
+- The message is placed on the characters that are wrong
+  (`InvalidIriError`'s `start` and `end`), by `iriPlace`, so an editor
+  underlines the space, not the whole URI. They're indexes into the value,
+  which are its place in the text only if the string has no escapes, and
+  then its text is two longer than the value. Both are UTF-16, like
+  positions. Otherwise, and when the error is about a different string,
+  like one resolved from the value, or what's wrong is missing, like a
+  scheme, it's on the whole value. Keywords give it to `context.message`
+  as a node with that position. A registry entry added as a value has no
+  positions either way.
 
 ## Kernels are data
 

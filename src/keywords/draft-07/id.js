@@ -1,5 +1,5 @@
 import { assertIriReference } from "@hyperjump/uri";
-import { iriProblem } from "../../identifiers.js";
+import { iriPlace, iriProblem } from "../../identifiers.js";
 import { string } from "../checks.js";
 
 /**
@@ -31,7 +31,7 @@ export default {
       try {
         assertIriReference(value);
       } catch (error) {
-        context.message(`'${value}' isn't a valid URI reference: ${iriProblem(error)}`);
+        context.message(`'${value}' isn't a valid URI reference: ${iriProblem(error)}`, { type: valueNode.type, position: iriPlace(valueNode, error) });
         return;
       }
     }

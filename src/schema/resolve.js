@@ -1,7 +1,7 @@
 import { relativeFileUrl } from "@hyperjump/browser";
 import { pointerAppend } from "@hyperjump/json-pointer";
 import { InvalidIriError, assertIriReference, encodeIriFragment, getScheme, isIriReference, normalizeIri, resolveIri, urlToIri } from "@hyperjump/uri";
-import { iriProblem, resolveId, toId } from "../identifiers.js";
+import { iriPlace, iriProblem, resolveId, toId } from "../identifiers.js";
 import { definitionsOf, keywordOf } from "../definition-of.js";
 import schemaKeyword from "../keywords/schema.js";
 import unknownKeyword from "../keywords/unknown.js";
@@ -349,7 +349,7 @@ class Resolver {
             baseUri = resolveId(reference, resource.uri);
           } catch (error) {
             // There's always a base here, so it's an invalid reference
-            context.message(`'${reference}' isn't a valid URI reference: ${iriProblem(error)}`);
+            this.#invalidIri(`'${reference}' isn't a valid URI reference: ${iriProblem(error)}`, valueNode, keyword.uri, error);
             return;
           }
 
@@ -383,7 +383,7 @@ class Resolver {
             assertIriReference(href);
             effects.reference = normalizeIri(resolveIri(href, resource.uri));
           } catch (error) {
-            context.message(`'${href}' isn't a valid URI reference: ${iriProblem(error)}`);
+            this.#invalidIri(`'${href}' isn't a valid URI reference: ${iriProblem(error)}`, valueNode, keyword.uri, error);
           }
         },
         defineDialect: (definition) => {
@@ -460,7 +460,7 @@ class Resolver {
     try {
       assertIriReference(node.value);
     } catch (error) {
-      this.#message(`'${node.value}' isn't a valid URI reference: ${iriProblem(error)}`, node, keywordUri);
+      this.#invalidIri(`'${node.value}' isn't a valid URI reference: ${iriProblem(error)}`, node, keywordUri, error);
       return;
     }
 
@@ -473,7 +473,7 @@ class Resolver {
     try {
       Object.assign(node, { type: "reference", href: normalizeIri(resolveIri(node.value, resource.uri)) });
     } catch (error) {
-      this.#message(`'${node.value}' isn't a valid URI reference: ${iriProblem(error)}`, node, keywordUri);
+      this.#invalidIri(`'${node.value}' isn't a valid URI reference: ${iriProblem(error)}`, node, keywordUri, error);
     }
   }
 
@@ -552,7 +552,7 @@ class Resolver {
       return await getDialect(this.#session, uri, { referencedFrom: this.#documentUri });
     } catch (error) {
       if (error instanceof InvalidIriError) {
-        this.#message(`'${uri}' isn't a valid URI: ${iriProblem(error)}`, node, "unknown-dialect");
+        this.#invalidIri(`'${uri}' isn't a valid URI: ${iriProblem(error)}`, node, "unknown-dialect", error);
         return;
       }
 
@@ -594,6 +594,16 @@ class Resolver {
     }
 
     this.#message(`The '${uri}' meta-schema describes itself, so its dialect has to be in the 'dialects' option of jsonSchemaConfig.`, node, "unknown-dialect");
+  }
+
+  /**
+   * A problem with a string that isn't a valid identifier, on the
+   * characters that are wrong when they can be found (see `iriPlace`)
+   *
+   * @type (reason: string, node: Node, ruleId: string, error: unknown) => void
+   */
+  #invalidIri(reason, node, ruleId, error) {
+    this.#message(reason, { type: node.type, position: iriPlace(node, error) }, ruleId);
   }
 
   /**

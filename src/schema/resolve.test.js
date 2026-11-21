@@ -208,6 +208,14 @@ describe("jsonSchemaResolve", () => {
       expect(at("/$defs/a/$ref", root)).to.include({ type: "reference", jsonType: "string", href: "https://example.com/other/b.json" });
     });
 
+    test("a reference that isn't a URI reference is placed on what's wrong with it, unless it has escapes", async () => {
+      const { file } = await resolve(jsonSchema, `{ "$schema": "${dialectUri}", "$defs": { "a": { "$ref": "a b" }, "b": { "$ref": "a\\u0020b" } } }`);
+
+      const [plain, escaped] = file.messages.map(({ place }) => /** @type import("unist").Position */ (place));
+      expect(plain.end.column - plain.start.column).to.equal(1);
+      expect(escaped.end.column - escaped.start.column).to.equal(`"a\\u0020b"`.length);
+    });
+
     test("a value that isn't a URI reference where its shape expects one is reported and has no URI", async () => {
       const { root, file } = await resolve(jsonSchema, `{ "$schema": "${dialectUri}", "$ref": "a b", "allOf": [{ "$ref": 1 }] }`);
 

@@ -1,5 +1,5 @@
 import { assertIri, isIri } from "@hyperjump/uri";
-import { iriProblem } from "../identifiers.js";
+import { iriPlace, iriProblem } from "../identifiers.js";
 import { boolean } from "./checks.js";
 
 /**
@@ -33,7 +33,7 @@ export default {
       try {
         assertIri(nameNode.value);
       } catch (error) {
-        context.message(`'${nameNode.value}' isn't a valid URI: ${iriProblem(error)}`, nameNode);
+        context.message(`'${nameNode.value}' isn't a valid URI: ${iriProblem(error)}`, { type: nameNode.type, position: iriPlace(nameNode, error) });
       }
       boolean(requiredNode, context);
     }
