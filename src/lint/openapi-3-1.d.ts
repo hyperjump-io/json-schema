@@ -2,7 +2,8 @@ import type { Preset } from "unified";
 
 /**
  * The lint rules for OpenAPI 3.1 Schema Objects: `recommended`, with the
- * rules for OpenAPI's keywords, like `unknown-field`.
+ * rules for OpenAPI's keywords, like `unknown-field` and
+ * `deprecated-example`.
  *
  * ```json
  * {

@@ -115,6 +115,12 @@ separate piece of work (see [Not done](#not-done)).
   would be the rule's only check of the dialect, and the omission looks
   like an oversight 3.1 fixed. Rejected: keywords exporting their
   `objectOf` fields for the rule, which is API on `Keyword` for one rule.
+- `example` is deprecated in 3.1 and 3.2 in favor of `examples`, and
+  isn't in 3.0, which has no `examples`. It's one keyword in every
+  version, so `deprecated-example` is in the 3.1 and 3.2 presets, at
+  `warn` ("discouraged", not a MUST). It suggests the dialect's name for
+  `examples`, and a dialect without it isn't reported, so it's right in
+  3.0 too.
 
 ## Formats
 
@@ -152,7 +158,7 @@ separate piece of work (see [Not done](#not-done)).
   where a schema goes is a boolean schema in every dialect.
 - Requirements across keywords that the implementation recovers from
   aren't checked yet, and would be lint rules: `discriminator`
-  without `oneOf`, `anyOf`, or `allOf`, and 3.2's deprecated `example`.
+  without `oneOf`, `anyOf`, or `allOf`.
   The discriminator's rules wait for a model of the OpenAPI document (see
   [Not done](#not-done)). It's built on schema names, the keys of the
   Components Object's `schemas`, for implicit mapping, `mapping` values,

@@ -27,6 +27,13 @@ describe("openapi-3-1 preset", () => {
       ["unknown-field", false]
     ]);
   });
+
+  test("deprecated-example is a warning", async () => {
+    const file = await lint(`{ "$schema": "${$schema}", "example": "Misty" }`);
+    expect(file.messages.map((message) => [message.ruleId, message.fatal])).to.eql([
+      ["deprecated-example", false]
+    ]);
+  });
 });
 
 /** @type (json: string) => Promise<VFile> */

@@ -12,6 +12,9 @@ import { draft07Dialect } from "../dialects/draft-07/index.js";
 import { draft201909Dialect } from "../dialects/draft-2019-09/index.js";
 import { draft202012Dialect } from "../dialects/draft-2020-12/index.js";
 import { openApi30Dialect } from "../dialects/openapi-3-0/index.js";
+import { openApi31Vocabulary, openApi31VocabularyUri } from "../dialects/openapi-3-1/index.js";
+import { openApi32Vocabulary, openApi32VocabularyUri } from "../dialects/openapi-3-2/index.js";
+import { SchemaRegistry } from "../registry/schema-registry.js";
 import recommended from "./recommended.js";
 import openApi30 from "./openapi-3-0.js";
 import openApi31 from "./openapi-3-1.js";
@@ -37,7 +40,16 @@ const ruleNames = readdirSync(rulesUrl)
 const readme = readFileSync(new URL("README.md", pagesUrl), "utf8");
 
 const jsonSchema = jsonSchemaConfig({
-  dialects: [v1Dialect, draft04Dialect, draft06Dialect, draft07Dialect, draft201909Dialect, draft202012Dialect, openApi30Dialect]
+  dialects: [v1Dialect, draft04Dialect, draft06Dialect, draft07Dialect, draft201909Dialect, draft202012Dialect, openApi30Dialect],
+  vocabularies: {
+    [openApi31VocabularyUri]: openApi31Vocabulary,
+    [openApi32VocabularyUri]: openApi32Vocabulary
+  },
+  // OpenAPI 3.1's and 3.2's dialects are their meta-schemas
+  registry: new SchemaRegistry([
+    "openapi-3-1/meta-schemas/dialect-2024-11-10.json",
+    "openapi-3-2/meta-schemas/dialect-2026-02-26.json"
+  ].map((path) => ({ schema: JSON.parse(readFileSync(new URL(`../dialects/${path}`, import.meta.url), "utf8")) })))
 });
 
 /**
