@@ -3,6 +3,7 @@ import { boundsInPlace, fromSameApplied, namesOf, second, tightestMax, tightestM
 import { documentForLint } from "../document.js";
 import { keywordsThatMustPass } from "../in-place.js";
 import { lintRule } from "../lint-rule.js";
+import { list } from "../list.js";
 import { fewestProperties, propertyAlternatives } from "../required-properties.js";
 
 /**
@@ -107,12 +108,3 @@ export default contradictoryLimits;
 
 /** @type (keywordNode: JsonSchemaKeywordNode) => string */
 const nameOf = (keywordNode) => `'${keywordNode.children[0].value}'`;
-
-/**
- * Names, like "'a', 'b', and 'c'"
- *
- * @type (names: string[]) => string
- */
-const list = (names) => names.length < 3
-  ? names.join(" and ")
-  : `${names.slice(0, -1).join(", ")}, and ${names.at(-1)}`;

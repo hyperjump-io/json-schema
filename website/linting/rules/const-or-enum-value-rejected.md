@@ -57,7 +57,7 @@ It has no options.
 }
 ```
 
-> 'minLength', 'maxLength' and 'pattern' reject this value, so it's never valid
+> 'minLength', 'maxLength', and 'pattern' reject this value, so it's never valid
 
 ### Not reported
 

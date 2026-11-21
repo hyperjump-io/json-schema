@@ -1,6 +1,7 @@
 import { operationsOf } from "../analysis.js";
 import { documentForLint } from "../document.js";
 import { lintRule } from "../lint-rule.js";
+import { list } from "../list.js";
 import { fewestProperties, propertyAlternatives } from "../required-properties.js";
 
 /**
@@ -51,12 +52,3 @@ const minPropertiesCoveredByRequired = lintRule({ origin: "json-schema-lint:min-
 });
 
 export default minPropertiesCoveredByRequired;
-
-/**
- * Names, like "'a', 'b', and 'c'"
- *
- * @type (names: string[]) => string
- */
-const list = (names) => names.length < 3
-  ? names.join(" and ")
-  : `${names.slice(0, -1).join(", ")}, and ${names.at(-1)}`;

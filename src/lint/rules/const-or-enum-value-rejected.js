@@ -1,6 +1,7 @@
 import { constOrEnumKeywords } from "../const-or-enum-keywords.js";
 import { documentForLint } from "../document.js";
 import { lintRule } from "../lint-rule.js";
+import { list } from "../list.js";
 
 /**
  * @import { JsonSchemaDocumentNode, JsonSchemaTolerantNode } from "../../schema/schema-ast.d.ts"
@@ -33,7 +34,7 @@ const constOrEnumValueRejected = lintRule({ origin: "json-schema-lint:const-or-e
   }
 
   for (const [valueNode, { isConst, valuesName, names }] of rejected) {
-    const keywords = names.length === 1 ? names[0] : `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
+    const keywords = list(names);
     const verb = names.length === 1 ? "rejects" : "reject";
     if (isConst) {
       file.message(`${keywords} ${verb} the '${valuesName}' value, so nothing is valid`, { place: valueNode.position });

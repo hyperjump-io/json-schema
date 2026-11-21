@@ -1,6 +1,7 @@
 import { dependsOn, operationsOf } from "../analysis.js";
 import { documentForLint } from "../document.js";
 import { lintRule } from "../lint-rule.js";
+import { list } from "../list.js";
 import { requiredByOthers } from "../required-properties.js";
 import { nodeFor } from "../utilities.js";
 
@@ -105,12 +106,3 @@ const requiredBy = (condition, schemas) => {
 
   return visit(condition) ? [...names] : undefined;
 };
-
-/**
- * Names, like "'a', 'b', and 'c'"
- *
- * @type (names: string[]) => string
- */
-const list = (names) => names.length < 3
-  ? names.join(" and ")
-  : `${names.slice(0, -1).join(", ")}, and ${names.at(-1)}`;
