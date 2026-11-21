@@ -36,7 +36,7 @@ There are two phases:
    - A keyword whose shape is data has no schemas or references in its
      value, so it's read from its node, without a step or a wait. Most
      keywords are, and stepping to each of their values made lowering
-     about 60 percent slower on 37 real schemas.
+     much slower.
    - `lowerKeywords` reads a schema the way its inputs say (`Reader`):
      as targets, or as nodes, for a schema that isn't in a document (see
      [Lowering for lint](../../specs/kernel/lowering-for-lint.md)).
@@ -51,13 +51,12 @@ There are two phases:
      reference is still followed when it's reached, and waits for it.
      Browser shares a document that's being retrieved and raises it to
      the priority of what's waiting, so what's compiled and what fails
-     doesn't change. 20 references that each take 5 ms compile in about
-     16 ms, and 135 ms without it. It's 5 to 7 percent slower on the 37
-     schemas, which are in a registry, so nothing is gained there.
+     doesn't change. References to slow servers are retrieved at the
+     same time instead of one after another. It's a little slower for
+     schemas that are in a registry, where nothing is gained.
      - The references are read from the nodes, with their `href`, and
        browsed from the document they're in. No target is made from a
-       node. Finding them with `jrefFindAll` made compiling 20 to 30
-       percent slower on the 37 schemas.
+       node. Finding them with `jrefFindAll` made compiling slower.
      - A document is loaded once, and one the document contains isn't
        loaded, because a reference finds it there.
      - It retrieves what isn't compiled, like references in `$defs` that
@@ -80,8 +79,8 @@ There are two phases:
      make a target from a node it has.
    - Rejected: lowering every schema it can with what's been retrieved,
      then retrieving what the rest need at the same time, and lowering
-     those again, until nothing is missing. It retrieved in parallel (17
-     ms for the 20 references), but a schema with a reference was lowered
+     those again, until nothing is missing. It retrieved in parallel, but
+     a schema with a reference was lowered
      twice, with a placeholder for what wasn't there yet, and compiling
      kept what was needed, what was being retrieved, and which document
      each schema came from.
@@ -93,7 +92,7 @@ There are two phases:
    - Rejected: one pass with every schema lowered as soon as it's found
      and the kernel put together afterwards in a fixed order. It retrieved
      in parallel, but it made promises for every schema, and a whole
-     compile was 20 to 25 percent slower.
+     compile was slower.
    - A handle names one schema, so a kernel can only have one resource for
      a URI. A resource that's reached in two documents has to be identical
      in both, or it's a `duplicate-id` problem. Schemas are queued by node,
