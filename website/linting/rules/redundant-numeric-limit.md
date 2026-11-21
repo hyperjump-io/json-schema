@@ -16,7 +16,7 @@ one schema at a time. It has no options.
 
 ### Reported
 
-#### A maximum above exclusiveMaximum
+#### A `maximum` above `exclusiveMaximum`
 
 ```json
 {
@@ -29,7 +29,7 @@ one schema at a time. It has no options.
 
 > 'maximum' has no effect, because 'exclusiveMaximum' is lower
 
-#### An exclusiveMaximum above maximum
+#### An `exclusiveMaximum` above `maximum`
 
 ```json
 {
@@ -65,7 +65,7 @@ one schema at a time. It has no options.
 }
 ```
 
-#### draft-04's exclusiveMaximum changes maximum
+#### draft-04's `exclusiveMaximum` changes `maximum`
 
 ```json
 {

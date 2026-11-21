@@ -31,7 +31,7 @@ already reports them. It has no options.
 
 > 'definitions' isn't a keyword in this dialect, so what's in it isn't a schema, and references to it don't find one. Use '$defs'.
 
-#### $defs in draft-07
+#### `$defs` in draft-07
 
 ```json
 {
@@ -44,7 +44,7 @@ already reports them. It has no options.
 
 ### Not reported
 
-#### $defs in 2020-12
+#### `$defs` in 2020-12
 
 ```json
 {

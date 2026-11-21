@@ -25,7 +25,7 @@ branch marks doesn't. A keyword with a schema that allows everything, like
 
 ### Reported
 
-#### additionalProperties next to unevaluatedProperties
+#### `additionalProperties` next to `unevaluatedProperties`
 
 ```json
 {
@@ -37,7 +37,7 @@ branch marks doesn't. A keyword with a schema that allows everything, like
 
 > 'unevaluatedProperties' has no effect, because other keywords evaluate every property
 
-#### additionalProperties in allOf
+#### `additionalProperties` in `allOf`
 
 ```json
 {
@@ -49,7 +49,7 @@ branch marks doesn't. A keyword with a schema that allows everything, like
 
 > 'unevaluatedProperties' has no effect, because other keywords evaluate every property
 
-#### Every branch of anyOf
+#### Every branch of `anyOf`
 
 ```json
 {
@@ -61,7 +61,7 @@ branch marks doesn't. A keyword with a schema that allows everything, like
 
 > 'unevaluatedProperties' has no effect, because other keywords evaluate every property
 
-#### Items next to unevaluatedItems
+#### `items` next to `unevaluatedItems`
 
 ```json
 {
@@ -96,7 +96,7 @@ branch marks doesn't. A keyword with a schema that allows everything, like
 }
 ```
 
-#### Items without prefixItems for every index
+#### `items` without `prefixItems` for every index
 
 ```json
 {

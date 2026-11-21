@@ -60,7 +60,7 @@ place. It has no options.
 }
 ```
 
-#### A property named oneOf isn't a keyword
+#### A property named `oneOf` isn't a keyword
 
 ```json
 {

@@ -22,7 +22,7 @@ some objects, so those aren't counted. It has no options.
 
 ### Reported
 
-#### minProperties equal to the number of required properties
+#### `minProperties` equal to the number of required properties
 
 ```json
 {
@@ -46,7 +46,7 @@ some objects, so those aren't counted. It has no options.
 
 > 'minProperties' has no effect, because 'required' already requires 1 property
 
-#### Required in an allOf
+#### `required` in an `allOf`
 
 ```json
 {
@@ -60,7 +60,7 @@ some objects, so those aren't counted. It has no options.
 
 ### Not reported
 
-#### minProperties greater than the number of required properties
+#### `minProperties` greater than the number of required properties
 
 ```json
 {

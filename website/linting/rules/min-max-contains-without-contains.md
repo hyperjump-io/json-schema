@@ -12,7 +12,7 @@ It finds the keywords by URI, so it works in every dialect that has
 
 ### Reported
 
-#### minContains without contains
+#### `minContains` without `contains`
 
 ```json
 { "$schema": "https://json-schema.org/v1", "minContains": 1 }
@@ -20,7 +20,7 @@ It finds the keywords by URI, so it works in every dialect that has
 
 > 'minContains' has no effect without 'contains'
 
-#### maxContains without contains
+#### `maxContains` without `contains`
 
 ```json
 { "$schema": "https://json-schema.org/v1", "maxContains": 1 }
@@ -30,7 +30,7 @@ It finds the keywords by URI, so it works in every dialect that has
 
 ### Not reported
 
-#### minContains and maxContains with contains
+#### `minContains` and `maxContains` with `contains`
 
 ```json
 {
@@ -41,7 +41,7 @@ It finds the keywords by URI, so it works in every dialect that has
 }
 ```
 
-#### A dialect without minContains
+#### A dialect without `minContains`
 
 ```json
 {

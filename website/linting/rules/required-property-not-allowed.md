@@ -22,7 +22,7 @@ the property depends on the instance. It has no options.
 
 ### Reported
 
-#### additionalProperties false
+#### `additionalProperties: false`
 
 ```json
 {

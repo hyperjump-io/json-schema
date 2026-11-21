@@ -49,7 +49,7 @@ options.
 }
 ```
 
-#### A property named additionalItems isn't a keyword
+#### A property named `additionalItems` isn't a keyword
 
 ```json
 {

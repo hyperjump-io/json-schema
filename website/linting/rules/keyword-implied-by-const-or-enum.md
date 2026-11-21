@@ -43,7 +43,7 @@ It has no options.
 
 > 'minLength' has no effect, because it allows every value in 'enum'
 
-#### The const value passes
+#### The `const` value passes
 
 ```json
 {

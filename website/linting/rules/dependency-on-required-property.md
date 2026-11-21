@@ -22,7 +22,7 @@ options.
 
 ### Reported
 
-#### dependentRequired
+#### `dependentRequired`
 
 ```json
 {
@@ -34,7 +34,7 @@ options.
 
 > 'meta' is required, so this dependency always applies
 
-#### Required in an allOf
+#### `required` in an `allOf`
 
 ```json
 {
@@ -70,7 +70,7 @@ options.
 }
 ```
 
-#### A property named dependentRequired
+#### A property named `dependentRequired`
 
 ```json
 {

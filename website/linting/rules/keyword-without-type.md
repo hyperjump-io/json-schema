@@ -89,7 +89,7 @@ reported by `keyword-for-disallowed-type`. It has no options.
 }
 ```
 
-#### Const or enum says what type it is
+#### `const` or `enum` says what type it is
 
 ```json
 {

@@ -15,7 +15,7 @@ instead. It has no options.
 
 ### Reported
 
-#### minContains 0 without maxContains
+#### `minContains` 0 without `maxContains`
 
 ```json
 {
@@ -29,7 +29,7 @@ instead. It has no options.
 
 ### Not reported
 
-#### With maxContains
+#### With `maxContains`
 
 ```json
 {
@@ -40,7 +40,7 @@ instead. It has no options.
 }
 ```
 
-#### minContains above 0
+#### `minContains` above 0
 
 ```json
 {

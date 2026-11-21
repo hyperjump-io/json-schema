@@ -29,7 +29,7 @@ to an empty `enum`, nothing is valid, so `type` has no effect.
 
 > 'type' has no effect, because it allows every value in 'enum'
 
-#### Type with const
+#### `type` with `const`
 
 ```json
 {
@@ -53,7 +53,7 @@ to an empty `enum`, nothing is valid, so `type` has no effect.
 }
 ```
 
-#### Without const or enum
+#### Without `const` or `enum`
 
 ```json
 {

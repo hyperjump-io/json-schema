@@ -15,7 +15,7 @@ ones apply depends on the instance. It has no options.
 
 ### Reported
 
-#### readOnly and writeOnly both true
+#### `readOnly` and `writeOnly` both `true`
 
 ```json
 {

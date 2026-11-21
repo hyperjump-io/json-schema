@@ -14,7 +14,7 @@ It finds the keywords by URI, so it works in every dialect that has
 
 ### Reported
 
-#### contentSchema without contentMediaType
+#### `contentSchema` without `contentMediaType`
 
 ```json
 {
@@ -28,7 +28,7 @@ It finds the keywords by URI, so it works in every dialect that has
 
 ### Not reported
 
-#### contentSchema with contentMediaType
+#### `contentSchema` with `contentMediaType`
 
 ```json
 {
@@ -38,7 +38,7 @@ It finds the keywords by URI, so it works in every dialect that has
 }
 ```
 
-#### draft-07 doesn't have contentSchema
+#### draft-07 doesn't have `contentSchema`
 
 ```json
 {

@@ -97,7 +97,7 @@ This rule doesn't look for those. It has no options.
 
 > This schema can replace the schema 'allOf' is in
 
-#### oneOf with one schema
+#### `oneOf` with one schema
 
 ```json
 {

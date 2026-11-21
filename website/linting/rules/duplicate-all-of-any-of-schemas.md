@@ -25,7 +25,7 @@ place. It has no options.
 
 ### Reported
 
-#### A duplicate in allOf
+#### A duplicate in `allOf`
 
 ```json
 {
@@ -36,7 +36,7 @@ place. It has no options.
 
 > This schema is already in 'allOf', so it has no effect
 
-#### A duplicate in anyOf
+#### A duplicate in `anyOf`
 
 ```json
 {
@@ -73,7 +73,7 @@ place. It has no options.
 }
 ```
 
-#### oneOf isn't reported
+#### `oneOf` isn't reported
 
 ```json
 {

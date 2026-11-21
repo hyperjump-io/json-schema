@@ -46,7 +46,7 @@ A required property that isn't allowed is reported by
 
 > 'nmae' is required, but no 'properties' or 'patternProperties' defines it, so any value is allowed
 
-#### patternProperties, with the u flag
+#### `patternProperties`, with the `u` flag
 
 ```json
 {
@@ -58,7 +58,7 @@ A required property that isn't allowed is reported by
 
 > 'ab' is required, but no 'properties' or 'patternProperties' defines it, so any value is allowed
 
-#### Required in anyOf is defined by the schema the anyOf is in
+#### `required` in `anyOf` is defined by the schema the `anyOf` is in
 
 ```json
 {
@@ -72,7 +72,7 @@ A required property that isn't allowed is reported by
 
 ### Not reported
 
-#### additionalProperties or unevaluatedProperties defines the rest
+#### `additionalProperties` or `unevaluatedProperties` defines the rest
 
 ```json
 {
@@ -83,7 +83,7 @@ A required property that isn't allowed is reported by
 }
 ```
 
-#### Required in anyOf is defined by the schema the anyOf is in
+#### `required` in `anyOf` is defined by the schema the `anyOf` is in
 
 ```json
 {

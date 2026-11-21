@@ -44,7 +44,7 @@ with the schema, which this rule doesn't report. It has no options.
 
 > 'type' is empty, so nothing is valid against it
 
-#### allOf with a schema that allows nothing
+#### `allOf` with a schema that allows nothing
 
 ```json
 {

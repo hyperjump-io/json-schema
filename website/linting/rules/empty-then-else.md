@@ -13,8 +13,9 @@ does.
 
 The same goes for any schema that's applied when a condition passes or
 when none does. That covers v1's `conditional` and `dependentSchemas`.
-Those are reported as "this schema". Without `if`, `then` and `else` aren't
-branches, and `then-else-without-if` reports them. It has no options.
+Their messages start with "This schema," not a keyword. Without `if`,
+`then` and `else` aren't branches, and `then-else-without-if` reports
+them. It has no options.
 
 ## Examples
 

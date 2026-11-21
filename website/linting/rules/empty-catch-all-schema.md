@@ -17,7 +17,7 @@ it's reported anyway. Turn the rule off for a schema that does.
 
 ### Reported
 
-#### additionalProperties: true
+#### `additionalProperties: true`
 
 ```json
 {
@@ -46,7 +46,7 @@ it's reported anyway. Turn the rule off for a schema that does.
 >
 > 'unevaluatedProperties' has a schema that allows everything, which is the same as leaving it out
 
-#### Items and additionalItems in 2019-09
+#### `items` and `additionalItems` in 2019-09
 
 ```json
 {

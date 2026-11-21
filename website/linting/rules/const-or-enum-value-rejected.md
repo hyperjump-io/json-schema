@@ -33,7 +33,7 @@ It has no options.
 
 > 'multipleOf' rejects this value, so it's never valid
 
-#### A const value
+#### A `const` value
 
 ```json
 {
