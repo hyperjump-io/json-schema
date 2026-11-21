@@ -52,6 +52,15 @@
   map's entries are independent, and it still needed `required` by URI.
   The `siblings` a keyword declares are still checked, because one that
   doesn't lower can read a sibling that lowering doesn't show.
+  Lowering a schema it made is what `nodeReader` is for, and why
+  `lowerKeywords` reads a schema through a `Reader`. With siblings
+  checked, keywords with different names lower to what they lower to
+  separately, so lowering only decides a keyword that's in both, like
+  `required` split across `allOf`. Rejected: not combining a keyword
+  that's in both, which would remove `nodeReader` and the `Reader`, but
+  loses those findings. Lowering only the combined keyword, which is
+  still a value that isn't in a document. Putting the made schema in a
+  document to read it as targets, which rebuilds what `nodeReader` does.
 - Utilities in `src/lint/` keep rules short: visit every schema, visit every
   keyword by URI, get a sibling keyword, and find what a reference points
   to. They know nothing about particular keywords. A rule that needs to
