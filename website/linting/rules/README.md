@@ -1,6 +1,8 @@
 # Rules
 
-Every rule is in the `recommended` preset. Each rule's page explains why
+Every rule is in the `recommended` preset, except OpenAPI's, which are in
+its version's preset, like `openapi-3-0` (see
+[Choosing rules](../choosing-rules.md)). Each rule's page explains why
 what it reports matters and lists its options. It also has examples of
 what it reports and what it doesn't.
 
@@ -24,6 +26,7 @@ what it reports and what it doesn't.
 | [`single-type-array`](single-type-array.md) | `type` that's an array of one type, like `["string"]`, instead of the type on its own |
 | [`mergeable-schemas`](mergeable-schemas.md) | A schema in `allOf`, or alone in `anyOf` or `oneOf`, whose keywords can be moved into its parent without changing what's valid |
 | [`additional-items-without-items-array`](additional-items-without-items-array.md) | `additionalItems` without an `items` that's an array of schemas (draft-04 through 2019-09) |
+| [`array-without-items`](array-without-items.md) | `type: "array"` without `items` in OpenAPI 3.0, which requires it (`openapi-3-0`) |
 | [`ignored-ref-siblings`](ignored-ref-siblings.md) | A property next to `$ref` in draft-04 through draft-07, where `$ref` replaces the whole schema |
 | [`misnamed-definitions`](misnamed-definitions.md) | `definitions` in 2019-09 and later, or `$defs` in draft-04 through draft-07. It isn't a keyword there, so what's in it isn't a schema. |
 | [`single-value-enum`](single-value-enum.md) | `enum` with only one value. `const` says it more directly (draft-06 and later). |

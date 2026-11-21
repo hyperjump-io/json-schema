@@ -25,6 +25,23 @@ and the `plugins` option of [`lint`](from-code.md).
 it and turn off the ones you don't want. The [Rules](rules/README.md) page
 lists them.
 
+## OpenAPI presets
+
+`@hyperjump/json-schema/lint/openapi-3-0` is for OpenAPI 3.0 Schema
+Objects. It's the recommended preset with the rules for what OpenAPI 3.0
+requires, like [`array-without-items`](rules/array-without-items.md).
+What 3.0 says MUST or MUST NOT be is an error, even where it's a warning
+in `recommended` because JSON Schema allows it. For example,
+[`read-only-and-write-only`](rules/read-only-and-write-only.md) is an
+error. [`implicit-dialect`](rules/implicit-dialect.md) is off, because 3.0
+Schema Objects don't have `$schema`. Use it instead of `recommended`.
+
+```json
+{
+  "plugins": ["@hyperjump/json-schema/lint/openapi-3-0"]
+}
+```
+
 ## Changing a rule
 
 Each rule is `@hyperjump/json-schema/lint/rules/<name>`. A rule listed after

@@ -1,6 +1,6 @@
 # `implicit-dialect`
 
-In `recommended`, as a warning.
+In `recommended`, as a warning. Off in `openapi-3-0`.
 
 A root schema without `$schema` whose dialect came from somewhere else.
 That can be the `dialectUri` option of `jsonSchemaResolve`, such as from a
@@ -12,6 +12,9 @@ problem applies.
 
 If a root schema has no `$schema` and its dialect can't be determined, the
 resolver reports an error instead.
+
+OpenAPI 3.0 Schema Objects don't have `$schema`, so their dialect always
+comes from somewhere else. That's why the rule is off in `openapi-3-0`.
 
 The CLI has no default dialect, so it never reports this rule. In the CLI,
 a `.schema.json` file without `$schema` gets that error, and a `.json`

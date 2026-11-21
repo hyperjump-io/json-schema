@@ -65,6 +65,17 @@ separate piece of work (see [Not done](#not-done)).
   `nullable`, and `true` adds `null`. `nullable` has no keyword group,
   because it means nothing without `type`, as 3.0.3 says. It doesn't change
   other keywords, so `enum` without `null` still fails `null`.
+- `type: "array"` without `items` is valid, and every item is, as in
+  JSON Schema. 3.0 says `items` MUST be present, but the schema is
+  understood without it, so it's the `array-without-items` lint rule, at
+  `error` in the `openapi-3-0` preset (see
+  [Be tolerant of bad input](../../principles/tolerant-input.md)).
+  Rejected: `type`'s check, with `items` as a sibling, which refused a
+  schema that's unambiguous.
+- `readOnly` and `writeOnly` both `true` is valid. 3.0 says MUST NOT, so
+  `read-only-and-write-only` is an error in `openapi-3-0` and a warning in
+  `recommended`, where JSON Schema allows it. 3.1 and 3.2 follow JSON
+  Schema. See [Rules](../lint/rules.md) for the presets.
 - `$ref` is draft-07's, which makes the schema a reference and ignores its
   siblings, as 3.0's Reference Object does.
 - `format` is draft-07's and an annotation by default, which is what most
@@ -132,8 +143,7 @@ separate piece of work (see [Not done](#not-done)).
 - Boolean schemas are allowed in 3.0, which doesn't have them. A boolean
   where a schema goes is a boolean schema in every dialect.
 - Requirements across keywords that the implementation recovers from
-  aren't checked, and would be lint rules: 3.0's `items` with
-  `type: "array"`, `readOnly` and `writeOnly` both `true`, `discriminator`
+  aren't checked yet, and would be lint rules: `discriminator`
   without `oneOf`, `anyOf`, or `allOf`, and 3.2's deprecated `example`.
 
 ## Not done

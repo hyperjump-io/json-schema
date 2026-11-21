@@ -149,7 +149,8 @@ OpenAPI 3.0 is a subset of draft-04. It has no `id`, `definitions`,
 `patternProperties`, `dependencies`, or `additionalItems`, and `items` is
 one schema. `type` is one type, without `null`. Use `nullable: true` to
 allow `null` too. OpenAPI doesn't publish a meta-schema for it, so it's a
-dialect, `openApi30Dialect`, in the table of dialects.
+dialect, `openApi30Dialect`, in the table of dialects. To lint them, use
+the [`openapi-3-0` preset](../linting/choosing-rules.md#openapi-presets).
 
 Schema Objects usually don't have `$schema`, so give them their dialect,
 like with the `dialectUri` of a registry entry:

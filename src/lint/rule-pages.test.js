@@ -11,10 +11,12 @@ import { draft06Dialect } from "../dialects/draft-06/index.js";
 import { draft07Dialect } from "../dialects/draft-07/index.js";
 import { draft201909Dialect } from "../dialects/draft-2019-09/index.js";
 import { draft202012Dialect } from "../dialects/draft-2020-12/index.js";
+import { openApi30Dialect } from "../dialects/openapi-3-0/index.js";
 import recommended from "./recommended.js";
+import openApi30 from "./openapi-3-0.js";
 
 /**
- * @import { Plugin } from "unified"
+ * @import { Plugin, Preset } from "unified"
  */
 
 // Each rule's page in website/linting/rules/ is checked against the rule,
@@ -33,7 +35,7 @@ const ruleNames = readdirSync(rulesUrl)
 const readme = readFileSync(new URL("README.md", pagesUrl), "utf8");
 
 const jsonSchema = jsonSchemaConfig({
-  dialects: [v1Dialect, draft04Dialect, draft06Dialect, draft07Dialect, draft201909Dialect, draft202012Dialect]
+  dialects: [v1Dialect, draft04Dialect, draft06Dialect, draft07Dialect, draft201909Dialect, draft202012Dialect, openApi30Dialect]
 });
 
 /**
@@ -108,18 +110,27 @@ const lint = async (name, rule, { code, dialectUri }) => {
   return file.messages.filter((message) => message.ruleId === name).map((message) => message.reason);
 };
 
+/** @type Record<string, Preset> */
+const presets = { "recommended": recommended, "openapi-3-0": openApi30 };
+
 /**
- * The severity a rule has in `recommended`
+ * What a rule's page says about it in each preset that lists it, like
+ * "In `recommended`, as a warning." A preset that includes another and
+ * doesn't change the rule doesn't list it.
  *
- * @type (rule: Plugin) => string | undefined
+ * @type (rule: Plugin) => string[]
  */
-const recommendedSeverity = (rule) => {
-  const entry = recommended.plugins?.find((plugin) => Array.isArray(plugin) && plugin[0] === rule);
-  if (!Array.isArray(entry)) {
-    return undefined;
+const presetSentences = (rule) => {
+  const sentences = [];
+  for (const [name, preset] of Object.entries(presets)) {
+    const entry = preset.plugins?.find((plugin) => Array.isArray(plugin) && plugin[0] === rule);
+    if (!Array.isArray(entry)) {
+      continue;
+    }
+    const [severity] = /** @type [string] */ (entry[1]);
+    sentences.push(severity === "off" ? `Off in \`${name}\`.` : `In \`${name}\`, as ${severity === "error" ? "an error" : "a warning"}.`);
   }
-  const [severity] = /** @type [string] */ (entry[1]);
-  return severity === "error" ? "an error" : "a warning";
+  return sentences;
 };
 
 describe("rule pages", () => {
@@ -136,11 +147,13 @@ describe("rule pages", () => {
         expect(readme).to.include(`| [\`${name}\`](${name}.md) |`);
       });
 
-      test("says its severity in recommended", async () => {
+      test("says its severity in each preset", async () => {
         const rule = (await import(new URL(`${name}.js`, rulesUrl).href)).default;
-        const severity = recommendedSeverity(rule);
-        expect(severity, "it's in recommended").to.not.equal(undefined);
-        expect(source).to.include(`In \`recommended\`, as ${severity}.`);
+        const sentences = presetSentences(rule);
+        expect(sentences, "it's in a preset").to.not.eql([]);
+        for (const sentence of sentences) {
+          expect(source).to.include(sentence);
+        }
       });
 
       test("has examples of both", () => {

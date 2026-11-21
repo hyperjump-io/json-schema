@@ -74,6 +74,10 @@
       "types": "./src/lint/recommended.d.ts",
       "default": "./src/lint/recommended.js"
     },
+    "./lint/openapi-3-0": {
+      "types": "./src/lint/openapi-3-0.d.ts",
+      "default": "./src/lint/openapi-3-0.js"
+    },
     "./lint/rules/*": {
       "types": "./src/lint/rules/*.d.ts",
       "default": "./src/lint/rules/*.js"

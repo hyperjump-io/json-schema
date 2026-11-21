@@ -14,6 +14,23 @@
   `remark-preset-lint-recommended`. A project's `.hyperjumprc` uses a
   preset and adjusts rules. The CLI loads plugins with the `hyperjump`
   prefix.
+- `recommended` is for JSON Schema. Each OpenAPI version has its own
+  preset, `lint/openapi-3-0` now, which is `recommended` followed by
+  what's different: the rules for what that version requires, and
+  severities that version decides differently. A later entry for the same
+  rule replaces the earlier one's setting, so it reuses `recommended`'s
+  rules, like `read-only-and-write-only`, which is a warning in
+  `recommended` because JSON Schema allows it and an error in
+  `openapi-3-0` because 3.0 says MUST NOT. A version's rules, like
+  `array-without-items`, aren't in `recommended`. 3.1 and 3.2 get presets
+  when they have something to change. Rejected: one `openapi` preset,
+  because a preset gives a rule one severity, and only 3.0 forbids
+  `readOnly` and `writeOnly` both `true`. Rejected: a rule that checks the
+  dialect to decide its severity, because severity is the preset's to set.
+- A rule page says its setting in each preset that lists it ("In
+  `recommended`, as a warning. In `openapi-3-0`, as an error."), checked
+  by `rule-pages.test.js`. A preset that only includes another doesn't
+  list its rules.
 - A rule about what a schema means finds it in what its keywords lower to,
   not by keyword URI, so it works for every keyword that says the same
   thing, including user-defined ones and v1's (`requireAllExcept` counts
