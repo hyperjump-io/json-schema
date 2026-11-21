@@ -1,4 +1,4 @@
-import { assertIri, assertIriReference, hasScheme, normalizeIri, resolveIri, toAbsoluteIri } from "@hyperjump/uri";
+import { InvalidIriError, assertIri, assertIriReference, hasScheme, normalizeIri, resolveIri, toAbsoluteIri } from "@hyperjump/uri";
 
 /**
  * @import { AbsoluteIri, NormalizedIri } from "@hyperjump/uri"
@@ -52,4 +52,20 @@ export const resolveId = (reference, base) => {
   }
 
   return normalizeIri(toAbsoluteIri(resolveIri(reference, base)));
+};
+
+/**
+ * What's wrong with a value that isn't a valid identifier, for a message
+ * that already shows the value, like `" " isn't allowed in a host, at 9`.
+ * An `InvalidIriError` says it after the rule and the value, which are
+ * left out. Any other error is its message.
+ *
+ * @type (error: unknown) => string
+ */
+export const iriProblem = (error) => {
+  if (!(error instanceof InvalidIriError)) {
+    return /** @type Error */ (error).message;
+  }
+
+  return error.message.slice(`Invalid ${error.rule}: ${error.value} — `.length);
 };

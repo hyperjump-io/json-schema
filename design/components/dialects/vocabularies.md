@@ -11,7 +11,9 @@
   keywords as annotations. Formats assert if any listed vocabulary says so,
   which is how 2020-12's format-assertion vocabulary works. A required
   vocabulary the keyword doesn't know is a problem with the meta-schema,
-  reported on the vocabulary's URI, so the meta-schema can't be used.
+  reported on the vocabulary's URI, so the meta-schema can't be used. A
+  vocabulary URI that isn't an IRI is reported by the keyword's `check`
+  and skipped by its hook, so the rest of the dialect is still built.
 - Vocabularies are definitions, like keywords, so they're in the config:
   a dialect carries the vocabularies its meta-schemas use (2019-09's and
   2020-12's, in their `vocabularies`), and the config's `vocabularies` adds

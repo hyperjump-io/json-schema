@@ -1,7 +1,7 @@
 import { relativeFileUrl } from "@hyperjump/browser";
 import { pointerAppend } from "@hyperjump/json-pointer";
-import { assertIriReference, encodeIriFragment, getScheme, isIriReference, normalizeIri, resolveIri, urlToIri } from "@hyperjump/uri";
-import { resolveId, toId } from "../identifiers.js";
+import { InvalidIriError, assertIriReference, encodeIriFragment, getScheme, isIriReference, normalizeIri, resolveIri, urlToIri } from "@hyperjump/uri";
+import { iriProblem, resolveId, toId } from "../identifiers.js";
 import { definitionsOf, keywordOf } from "../definition-of.js";
 import schemaKeyword from "../keywords/schema.js";
 import unknownKeyword from "../keywords/unknown.js";
@@ -347,9 +347,9 @@ class Resolver {
           let baseUri;
           try {
             baseUri = resolveId(reference, resource.uri);
-          } catch (_error) {
+          } catch (error) {
             // There's always a base here, so it's an invalid reference
-            context.message(`'${reference}' isn't a valid URI reference`);
+            context.message(`'${reference}' isn't a valid URI reference: ${iriProblem(error)}`);
             return;
           }
 
@@ -382,8 +382,8 @@ class Resolver {
           try {
             assertIriReference(href);
             effects.reference = normalizeIri(resolveIri(href, resource.uri));
-          } catch (_error) {
-            context.message(`'${href}' isn't a valid URI reference`);
+          } catch (error) {
+            context.message(`'${href}' isn't a valid URI reference: ${iriProblem(error)}`);
           }
         },
         defineDialect: (definition) => {
@@ -452,8 +452,15 @@ class Resolver {
    * @type (node: TreeNode, keywordUri: string, resource: JsonSchemaDocumentNode, pointer: string) => void
    */
   #reference(node, keywordUri, resource, pointer) {
-    if (isErrorNode(node) || node.jsonType !== "string" || !isIriReference(node.value)) {
+    if (isErrorNode(node) || node.jsonType !== "string") {
       this.#mismatch(node, "reference", keywordUri, resource, pointer);
+      return;
+    }
+
+    try {
+      assertIriReference(node.value);
+    } catch (error) {
+      this.#message(`'${node.value}' isn't a valid URI reference: ${iriProblem(error)}`, node, keywordUri);
       return;
     }
 
@@ -466,7 +473,7 @@ class Resolver {
     try {
       Object.assign(node, { type: "reference", href: normalizeIri(resolveIri(node.value, resource.uri)) });
     } catch (error) {
-      this.#message(/** @type Error */ (error).message, node, keywordUri);
+      this.#message(`'${node.value}' isn't a valid URI reference: ${iriProblem(error)}`, node, keywordUri);
     }
   }
 
@@ -544,6 +551,11 @@ class Resolver {
     try {
       return await getDialect(this.#session, uri, { referencedFrom: this.#documentUri });
     } catch (error) {
+      if (error instanceof InvalidIriError) {
+        this.#message(`'${uri}' isn't a valid URI: ${iriProblem(error)}`, node, "unknown-dialect");
+        return;
+      }
+
       // The error's message is the message, so what caused it is the cause
       const { message, cause } = /** @type Error */ (error);
       this.#message(message, node, "unknown-dialect", cause instanceof Error ? cause : undefined);

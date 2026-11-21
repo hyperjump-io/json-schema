@@ -91,6 +91,26 @@ resolver resolves it against the base the schema is in, like
   point that isn't public, and `index.js` exports everything in
   `resolve.js`. It's once for each document.
 
+## Messages say what's wrong
+
+A message about a value that isn't a valid identifier says what's wrong
+with it, as `@hyperjump/uri` explains it, after the value:
+`'http://ex ample.com/' isn't a valid URI reference: " " isn't allowed in
+a host, at 9`. That's for `$id`, `$ref`, `$schema` (as `unknown-dialect`),
+and `$vocabulary`'s URIs, in the resolver and in registry identification.
+
+- `iriProblem` in `src/identifiers.js` takes the explanation from an
+  `InvalidIriError`'s message, after its rule and value, which the error
+  has as properties. `@hyperjump/uri` doesn't have the explanation as a
+  property of its own, so a change to its message's format would show up
+  in these messages' tests. Rejected for now: adding one to
+  `@hyperjump/uri`, which needs a release of it for one property.
+- A value that isn't a string where a reference is expected is still
+  "Expected a URI reference", because there's nothing to explain.
+- The message is placed on the whole value, not on the characters that
+  are wrong. The explanation's "at 9" is an index into the value, which is
+  the same as its place in the text only if the string has no escapes.
+
 ## Kernels are data
 
 A kernel's handles stay `string`s. A kernel is serialized and restored,

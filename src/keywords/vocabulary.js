@@ -1,4 +1,5 @@
-import { isIri } from "@hyperjump/json-schema-formats";
+import { assertIri, isIri } from "@hyperjump/uri";
+import { iriProblem } from "../identifiers.js";
 import { boolean } from "./checks.js";
 
 /**
@@ -29,8 +30,10 @@ export default {
 
     for (const property of valueNode.children) {
       const [nameNode, requiredNode] = property.children;
-      if (!isIri(nameNode.value)) {
-        context.message("Expected a URI", nameNode);
+      try {
+        assertIri(nameNode.value);
+      } catch (error) {
+        context.message(`'${nameNode.value}' isn't a valid URI: ${iriProblem(error)}`, nameNode);
       }
       boolean(requiredNode, context);
     }
@@ -49,7 +52,8 @@ export default {
     let isSupported = true;
     for (const property of valueNode.children) {
       const [nameNode, requiredNode] = property.children;
-      if (requiredNode.type !== "json" || requiredNode.jsonType !== "boolean") {
+      // `check` reports a name that isn't a URI
+      if (requiredNode.type !== "json" || requiredNode.jsonType !== "boolean" || !isIri(nameNode.value)) {
         continue;
       }
 

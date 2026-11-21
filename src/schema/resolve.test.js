@@ -212,7 +212,7 @@ describe("jsonSchemaResolve", () => {
       const { root, file } = await resolve(jsonSchema, `{ "$schema": "${dialectUri}", "$ref": "a b", "allOf": [{ "$ref": 1 }] }`);
 
       expect(file.messages.map(({ reason, ruleId }) => [reason, ruleId])).to.eql([
-        ["Expected a URI reference", "https://example.com/keyword/ref"],
+        ["'a b' isn't a valid URI reference: \" \" isn't allowed in a path, at 1", "https://example.com/keyword/ref"],
         ["Expected a URI reference", "https://example.com/keyword/ref"]
       ]);
       expect(at("/$ref", root).href).to.equal(undefined);
@@ -367,8 +367,8 @@ describe("jsonSchemaResolve", () => {
       }`);
 
       expect(file.messages.map(({ reason, ruleId }) => [reason, ruleId])).to.eql([
-        ["'http:///a' isn't a valid URI reference", idKeyword.uri],
-        ["'urn:example' isn't a valid URI reference", idKeyword.uri]
+        ["'http:///a' isn't a valid URI reference: an http URI's host must be non-empty", idKeyword.uri],
+        ["'urn:example' isn't a valid URI reference: a urn URI's path must be a NID, \":\", and an NSS, in ASCII, like example:a", idKeyword.uri]
       ]);
     });
 
@@ -662,6 +662,14 @@ describe("jsonSchemaResolve", () => {
       expect(root.type).to.equal("json");
     });
 
+    test("$schema that isn't a URI is an unknown dialect, with what's wrong with it", async () => {
+      const { file } = await resolve(jsonSchema, `{ "$schema": "http://ex ample.com/" }`, { dialectUri });
+
+      expect(file.messages.map(({ reason, ruleId }) => [reason, ruleId])).to.eql([
+        ["'http://ex ample.com/' isn't a valid URI: \" \" isn't allowed in a host, at 9", "unknown-dialect"]
+      ]);
+    });
+
     test("$schema that isn't a string", async () => {
       const { root, file } = await resolve(jsonSchema, `{ "$schema": 42 }`, { dialectUri });
 
@@ -710,6 +718,18 @@ describe("jsonSchemaResolve", () => {
         expect(ruleIds(file)).to.eql(["unknown-dialect"]);
         expect(causes(file.messages[0])).to.contain("isn't a schema");
         expect(root.type).to.equal("json");
+      });
+
+      test("a vocabulary that isn't a URI is reported, and the rest of the dialect is still built", async () => {
+        const { document, file } = await resolve(jsonSchema, `{
+          "$schema": "${dialectUri}",
+          "$vocabulary": { "https://example.com/vocab/core": true, "http://ex ample.com/": false }
+        }`);
+
+        expect(file.messages.map(({ reason, ruleId }) => [reason, ruleId])).to.eql([
+          ["'http://ex ample.com/' isn't a valid URI: \" \" isn't allowed in a host, at 9", vocabularyKeyword.uri]
+        ]);
+        expect(document.definedDialect?.keywords).to.include({ $id: idKeyword.uri });
       });
 
       test("the meta-schema records the dialect it defines", async () => {
@@ -867,6 +887,15 @@ describe("jsonSchemaResolve", () => {
       }`);
 
       expect(ruleIds(file)).to.eql([legacyIdKeyword.uri]);
+    });
+
+    test("an invalid fragment-only $id says what's wrong with it", async () => {
+      const { file } = await resolve(jsonSchema, `{
+        "$schema": "${legacyDialectUri}",
+        "definitions": { "a": { "$id": "#a b" } }
+      }`);
+
+      expect(file.messages.map(({ reason }) => reason)).to.eql(["'#a b' isn't a valid URI reference: \" \" isn't allowed in a fragment, at 2"]);
     });
 
     test("unknown keywords ignored because of $ref aren't reported", async () => {

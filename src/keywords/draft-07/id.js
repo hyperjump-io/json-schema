@@ -1,4 +1,5 @@
-import { isIriReference } from "@hyperjump/uri";
+import { assertIriReference } from "@hyperjump/uri";
+import { iriProblem } from "../../identifiers.js";
 import { string } from "../checks.js";
 
 /**
@@ -26,9 +27,13 @@ export default {
     const value = valueNode.value;
     if (!value.startsWith("#")) {
       context.setBaseUri(value);
-    } else if (!isIriReference(value)) {
-      context.message(`'${value}' isn't a valid URI reference`);
-      return;
+    } else {
+      try {
+        assertIriReference(value);
+      } catch (error) {
+        context.message(`'${value}' isn't a valid URI reference: ${iriProblem(error)}`);
+        return;
+      }
     }
 
     const hash = value.indexOf("#");

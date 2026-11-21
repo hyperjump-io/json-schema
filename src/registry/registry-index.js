@@ -1,7 +1,7 @@
 import { VFileMessage } from "vfile-message";
 import { fromJs, fromJson, hasStatus, relativeFileUrl } from "@hyperjump/browser";
 import { getScheme } from "@hyperjump/uri";
-import { noUrl, resolveId, toId } from "../identifiers.js";
+import { iriProblem, noUrl, resolveId, toId } from "../identifiers.js";
 import { toVFileMessage } from "../output/validation-error.js";
 import { SchemaError } from "../schema/schema-error.js";
 import { toSchemaMessage } from "../schema/resolve-text.js";
@@ -446,7 +446,7 @@ const rootEffects = (definitions, root, dialect, retrievalUri) => {
           uri = resolveId(reference, retrievalUri);
           uriNode = valueNode;
         } catch (error) {
-          context.message(/** @type Error */ (error).message);
+          context.message(`'${reference}' isn't a valid URI reference: ${iriProblem(error)}`);
         }
       },
       addAnchor: () => {},
