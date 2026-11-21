@@ -94,6 +94,9 @@ const mergeableSchemas = lintRule({ origin: "json-schema-lint:mergeable-schemas"
       /** @type (keywordNodes: JsonSchemaKeywordNode[]) => Promise<KeywordGroup[] | undefined> */
       const lower = (keywordNodes) => lowerSchemaForLint(document, /** @type JsonSchemaNode */ ({ ...schemaNode, children: keywordNodes }));
 
+      // What `merged` lowers to, which only changes when a schema is moved
+      let separately = await lower(merged);
+
       for (const branch of /** @type JsonSchemaNode[] */ (valueNode.children)) {
         if (branch.type === "reference") {
           // A schema that's a reference (draft-04 through draft-07) replaces the
@@ -113,7 +116,6 @@ const mergeableSchemas = lintRule({ origin: "json-schema-lint:mergeable-schemas"
         }
 
         const candidate = combine(merged, branchKeywords);
-        const separately = await lower(merged);
         const together = candidate === undefined ? undefined : await lower(candidate);
         if (candidate === undefined || separately === undefined || together === undefined) {
           continue;
@@ -121,6 +123,7 @@ const mergeableSchemas = lintRule({ origin: "json-schema-lint:mergeable-schemas"
 
         if (sameOperations([...separately, ...branchGroups.map(({ group }) => group)], together)) {
           merged = candidate;
+          separately = together;
           file.message(`This schema's keywords can be moved into the schema '${name}' is in`, { place: branch.position });
         }
       }
