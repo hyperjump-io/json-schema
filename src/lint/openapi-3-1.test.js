@@ -28,6 +28,13 @@ describe("openapi-3-1 preset", () => {
     ]);
   });
 
+  test("wrapped-without-array is a warning", async () => {
+    const file = await lint(`{ "$schema": "${$schema}", "type": "string", "xml": { "wrapped": true } }`);
+    expect(file.messages.map((message) => [message.ruleId, message.fatal])).to.eql([
+      ["wrapped-without-array", false]
+    ]);
+  });
+
   test("deprecated-example is a warning", async () => {
     const file = await lint(`{ "$schema": "${$schema}", "example": "Misty" }`);
     expect(file.messages.map((message) => [message.ruleId, message.fatal])).to.eql([

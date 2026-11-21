@@ -51,6 +51,13 @@ describe("openapi-3-0 preset", () => {
     ]);
   });
 
+  test("wrapped-without-array is a warning", async () => {
+    const file = await lint(openApi30, `{ "type": "string", "xml": { "wrapped": true } }`);
+    expect(file.messages.map((message) => [message.ruleId, message.fatal])).to.eql([
+      ["wrapped-without-array", false]
+    ]);
+  });
+
   test("read-only-and-write-only is still a warning in recommended", async () => {
     const file = await lint(recommended, `{ "readOnly": true, "writeOnly": true }`);
     const messages = file.messages.filter((message) => message.ruleId === "read-only-and-write-only");

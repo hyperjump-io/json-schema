@@ -30,6 +30,7 @@ what it reports and what it doesn't.
 | [`unknown-field`](unknown-field.md) | A field OpenAPI's Discriminator, External Documentation, or XML Object doesn't define, like a typo (OpenAPI presets) |
 | [`deprecated-example`](deprecated-example.md) | OpenAPI's `example`, which 3.1 and later deprecate in favor of `examples` (OpenAPI 3.1 and 3.2 presets) |
 | [`deprecated-xml-field`](deprecated-xml-field.md) | `attribute` or `wrapped` in OpenAPI 3.2's `xml`, which 3.2 deprecates for `nodeType` (OpenAPI 3.2 preset) |
+| [`wrapped-without-array`](wrapped-without-array.md) | `wrapped: true` in OpenAPI's `xml` in a schema whose `type` isn't `array`. It has no effect. (OpenAPI presets) |
 | [`ignored-ref-siblings`](ignored-ref-siblings.md) | A property next to `$ref` in draft-04 through draft-07, where `$ref` replaces the whole schema |
 | [`misnamed-definitions`](misnamed-definitions.md) | `definitions` in 2019-09 and later, or `$defs` in draft-04 through draft-07. It isn't a keyword there, so what's in it isn't a schema. |
 | [`single-value-enum`](single-value-enum.md) | `enum` with only one value. `const` says it more directly (draft-06 and later). |

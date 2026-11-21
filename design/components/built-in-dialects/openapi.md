@@ -126,6 +126,12 @@ separate piece of work (see [Not done](#not-done)).
   `nodeType: "element"`, and `false` is the default.
   `deprecated-xml-field` reports them, at `warn` in `openapi-3-2`. It
   finds 3.2's `xml` by URI, which no other version has.
+- `wrapped` "MAY be used only for an array definition", and 3.2 says it
+  "takes effect only when defined alongside `type` being `"array"`", so
+  `wrapped: true` elsewhere has no effect. `wrapped-without-array`
+  reports it, at `warn` in every OpenAPI preset. `type` is what lowers to
+  `typeIs` in the same schema, which covers 3.0's `type`. In 3.2, where
+  `wrapped` is deprecated, `deprecated-xml-field` reports it too.
 
 ## Formats
 

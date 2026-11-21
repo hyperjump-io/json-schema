@@ -2,6 +2,7 @@ import recommended from "./recommended.js";
 import deprecatedExample from "./rules/deprecated-example.js";
 import deprecatedXmlField from "./rules/deprecated-xml-field.js";
 import unknownField from "./rules/unknown-field.js";
+import wrappedWithoutArray from "./rules/wrapped-without-array.js";
 
 /**
  * @import { Preset } from "unified"
@@ -13,7 +14,8 @@ const openApi32 = {
     recommended,
     [unknownField, ["warn"]],
     [deprecatedExample, ["warn"]],
-    [deprecatedXmlField, ["warn"]]
+    [deprecatedXmlField, ["warn"]],
+    [wrappedWithoutArray, ["warn"]]
   ]
 };
 

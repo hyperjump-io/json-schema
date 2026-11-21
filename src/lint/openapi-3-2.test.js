@@ -35,6 +35,14 @@ describe("openapi-3-2 preset", () => {
     ]);
   });
 
+  test("wrapped-without-array is a warning, next to deprecated-xml-field", async () => {
+    const file = await lint(`{ "$schema": "${$schema}", "type": "string", "xml": { "wrapped": true } }`);
+    expect(file.messages.map((message) => [message.ruleId, message.fatal]).sort(([a], [b]) => String(a).localeCompare(String(b)))).to.eql([
+      ["deprecated-xml-field", false],
+      ["wrapped-without-array", false]
+    ]);
+  });
+
   test("deprecated-example is a warning", async () => {
     const file = await lint(`{ "$schema": "${$schema}", "example": "Misty" }`);
     expect(file.messages.map((message) => [message.ruleId, message.fatal])).to.eql([

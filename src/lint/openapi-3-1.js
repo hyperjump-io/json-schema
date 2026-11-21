@@ -1,6 +1,7 @@
 import recommended from "./recommended.js";
 import deprecatedExample from "./rules/deprecated-example.js";
 import unknownField from "./rules/unknown-field.js";
+import wrappedWithoutArray from "./rules/wrapped-without-array.js";
 
 /**
  * @import { Preset } from "unified"
@@ -11,7 +12,8 @@ const openApi31 = {
   plugins: [
     recommended,
     [unknownField, ["warn"]],
-    [deprecatedExample, ["warn"]]
+    [deprecatedExample, ["warn"]],
+    [wrappedWithoutArray, ["warn"]]
   ]
 };
 
