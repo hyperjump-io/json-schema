@@ -46,6 +46,18 @@
       "types": "./src/dialects/draft-2020-12/index.d.ts",
       "default": "./src/dialects/draft-2020-12/index.js"
     },
+    "./openapi-3-0": {
+      "types": "./src/dialects/openapi-3-0/index.d.ts",
+      "default": "./src/dialects/openapi-3-0/index.js"
+    },
+    "./openapi-3-1": {
+      "types": "./src/dialects/openapi-3-1/index.d.ts",
+      "default": "./src/dialects/openapi-3-1/index.js"
+    },
+    "./openapi-3-2": {
+      "types": "./src/dialects/openapi-3-2/index.d.ts",
+      "default": "./src/dialects/openapi-3-2/index.js"
+    },
     "./formats/lite": {
       "types": "./src/formats/lite.d.ts",
       "default": "./src/formats/lite.js"

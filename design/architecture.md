@@ -39,7 +39,7 @@ text ─ fromJson ─▶ JSON AST ─ resolveSchema ─▶ Schema AST ─ (schem
 | `src/kernel/optimizations/` | Optimization passes on kernel expressions, one per file. `index.js` lists them in the order they run |
 | `src/output/` | Output formats and validation errors |
 | `src/registry/` | `SchemaRegistry`, indexing registries, and how a session finds schemas in them |
-| `src/dialects/` | The built-in dialects: `v1`, `draft-04` … `draft-2020-12`. Each has the dialect, with the definitions it uses, and its tests, including the test suite runners. `extend-dialect.js` has `extendDialect` |
+| `src/dialects/` | The built-in dialects: `v1`, `draft-04` … `draft-2020-12`, and `openapi-3-0` … `openapi-3-2`. Each has the dialect, with the definitions it uses, and its tests, including the test suite runners. OpenAPI 3.1 and 3.2 have their vocabularies instead, because their meta-schemas define their dialects. `extend-dialect.js` has `extendDialect` |
 | `src/keywords/` | Keyword definitions, and `checks.js`, the checks they share for their values |
 | `src/formats/` | Format definitions, and the lite and full format lists |
 | `src/bundle/` | Bundling, which embeds referenced schemas in one document, and its tests, ported from v1 |

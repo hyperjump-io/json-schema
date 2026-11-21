@@ -51,3 +51,4 @@ Any of them can be in one set of options.
 - [2020-12](draft-2020-12.md)
 - [2019-09](draft-2019-09.md)
 - [draft-04, draft-06, and draft-07](draft-04-06-07.md)
+- [OpenAPI 3.0, 3.1, and 3.2](openapi.md)
