@@ -46,7 +46,8 @@ Schema Objects don't have `$schema`. Use it instead of `recommended`.
 `@hyperjump/json-schema/lint/openapi-3-2` are for OpenAPI 3.1 and 3.2.
 They're the recommended preset with the rules for OpenAPI's keywords, like
 [`unknown-field`](rules/unknown-field.md), which every OpenAPI preset has,
-and [`deprecated-example`](rules/deprecated-example.md).
+and [`deprecated-example`](rules/deprecated-example.md). `openapi-3-2` also
+has [`deprecated-xml-field`](rules/deprecated-xml-field.md).
 
 ## Changing a rule
 

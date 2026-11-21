@@ -121,6 +121,11 @@ separate piece of work (see [Not done](#not-done)).
   `warn` ("discouraged", not a MUST). It suggests the dialect's name for
   `examples`, and a dialect without it isn't reported, so it's right in
   3.0 too.
+- 3.2 deprecates `xml`'s `attribute` and `wrapped` for `nodeType`:
+  `attribute: true` is `nodeType: "attribute"`, `wrapped: true` is
+  `nodeType: "element"`, and `false` is the default.
+  `deprecated-xml-field` reports them, at `warn` in `openapi-3-2`. It
+  finds 3.2's `xml` by URI, which no other version has.
 
 ## Formats
 

@@ -28,6 +28,13 @@ describe("openapi-3-2 preset", () => {
     ]);
   });
 
+  test("deprecated-xml-field is a warning", async () => {
+    const file = await lint(`{ "$schema": "${$schema}", "xml": { "attribute": true } }`);
+    expect(file.messages.map((message) => [message.ruleId, message.fatal])).to.eql([
+      ["deprecated-xml-field", false]
+    ]);
+  });
+
   test("deprecated-example is a warning", async () => {
     const file = await lint(`{ "$schema": "${$schema}", "example": "Misty" }`);
     expect(file.messages.map((message) => [message.ruleId, message.fatal])).to.eql([
