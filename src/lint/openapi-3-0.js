@@ -2,6 +2,7 @@ import recommended from "./recommended.js";
 import arrayWithoutItems from "./rules/array-without-items.js";
 import implicitDialect from "./rules/implicit-dialect.js";
 import readOnlyAndWriteOnly from "./rules/read-only-and-write-only.js";
+import unknownField from "./rules/unknown-field.js";
 
 /**
  * @import { Preset } from "unified"
@@ -16,7 +17,8 @@ const openApi30 = {
     [readOnlyAndWriteOnly, ["error"]],
     // 3.0's Schema Objects don't have `$schema`, so the dialect is always
     // implicit
-    [implicitDialect, ["off"]]
+    [implicitDialect, ["off"]],
+    [unknownField, ["warn"]]
   ]
 };
 

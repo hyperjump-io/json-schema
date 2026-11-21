@@ -27,6 +27,7 @@ what it reports and what it doesn't.
 | [`mergeable-schemas`](mergeable-schemas.md) | A schema in `allOf`, or alone in `anyOf` or `oneOf`, whose keywords can be moved into its parent without changing what's valid |
 | [`additional-items-without-items-array`](additional-items-without-items-array.md) | `additionalItems` without an `items` that's an array of schemas (draft-04 through 2019-09) |
 | [`array-without-items`](array-without-items.md) | `type: "array"` without `items` in OpenAPI 3.0, which requires it (`openapi-3-0`) |
+| [`unknown-field`](unknown-field.md) | A field OpenAPI's Discriminator, External Documentation, or XML Object doesn't define, like a typo (OpenAPI presets) |
 | [`ignored-ref-siblings`](ignored-ref-siblings.md) | A property next to `$ref` in draft-04 through draft-07, where `$ref` replaces the whole schema |
 | [`misnamed-definitions`](misnamed-definitions.md) | `definitions` in 2019-09 and later, or `$defs` in draft-04 through draft-07. It isn't a keyword there, so what's in it isn't a schema. |
 | [`single-value-enum`](single-value-enum.md) | `enum` with only one value. `const` says it more directly (draft-06 and later). |

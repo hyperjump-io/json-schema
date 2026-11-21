@@ -14,6 +14,8 @@ import { draft202012Dialect } from "../dialects/draft-2020-12/index.js";
 import { openApi30Dialect } from "../dialects/openapi-3-0/index.js";
 import recommended from "./recommended.js";
 import openApi30 from "./openapi-3-0.js";
+import openApi31 from "./openapi-3-1.js";
+import openApi32 from "./openapi-3-2.js";
 
 /**
  * @import { Plugin, Preset } from "unified"
@@ -111,7 +113,7 @@ const lint = async (name, rule, { code, dialectUri }) => {
 };
 
 /** @type Record<string, Preset> */
-const presets = { "recommended": recommended, "openapi-3-0": openApi30 };
+const presets = { "recommended": recommended, "openapi-3-0": openApi30, "openapi-3-1": openApi31, "openapi-3-2": openApi32 };
 
 /**
  * What a rule's page says about it in each preset that lists it, like
@@ -151,8 +153,10 @@ describe("rule pages", () => {
         const rule = (await import(new URL(`${name}.js`, rulesUrl).href)).default;
         const sentences = presetSentences(rule);
         expect(sentences, "it's in a preset").to.not.eql([]);
+        // Lines wrap anywhere, as Markdown reads them
+        const prose = source.replaceAll(/\s+/g, " ");
         for (const sentence of sentences) {
-          expect(source).to.include(sentence);
+          expect(prose).to.include(sentence);
         }
       });
 

@@ -106,7 +106,15 @@ separate piece of work (see [Not done](#not-done)).
   checks an object's named fields.
 - Fields the spec doesn't define aren't checked. The meta-schemas don't
   allow them, but the spec's text doesn't say they MUST NOT be there, so
-  they're lint (see [Validity and lint](../lint/validity.md)).
+  they're lint (see [Validity and lint](../lint/validity.md)):
+  `unknown-field`, a warning in every OpenAPI preset. Its fields are a
+  table by keyword URI, because 3.2's `discriminator` and `xml` have
+  fields 3.1's don't. `x-` fields are allowed in every one, though 3.0's
+  Discriminator Object, unlike the others and unlike 3.1's, doesn't say it
+  MAY be extended. 3.0 and 3.1 share the keyword, so telling them apart
+  would be the rule's only check of the dialect, and the omission looks
+  like an oversight 3.1 fixed. Rejected: keywords exporting their
+  `objectOf` fields for the rule, which is API on `Keyword` for one rule.
 
 ## Formats
 

@@ -136,7 +136,8 @@ const config = jsonSchemaConfig({
 ```
 
 Without the vocabulary, OpenAPI's keywords are unknown keywords, and their
-values aren't checked.
+values aren't checked. To lint them, use the `openapi-3-1` or `openapi-3-2`
+[preset](../linting/choosing-rules.md#openapi-presets).
 
 | Version | Module | Vocabulary |
 | --- | --- | --- |

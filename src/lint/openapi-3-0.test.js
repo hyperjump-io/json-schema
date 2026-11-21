@@ -44,6 +44,13 @@ describe("openapi-3-0 preset", () => {
     expect(file.messages).to.eql([]);
   });
 
+  test("unknown-field is a warning", async () => {
+    const file = await lint(openApi30, `{ "xml": { "nme": "pet" } }`);
+    expect(file.messages.map((message) => [message.ruleId, message.fatal])).to.eql([
+      ["unknown-field", false]
+    ]);
+  });
+
   test("read-only-and-write-only is still a warning in recommended", async () => {
     const file = await lint(recommended, `{ "readOnly": true, "writeOnly": true }`);
     const messages = file.messages.filter((message) => message.ruleId === "read-only-and-write-only");

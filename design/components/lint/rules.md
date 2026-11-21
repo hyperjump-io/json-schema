@@ -22,8 +22,9 @@
   rules, like `read-only-and-write-only`, which is a warning in
   `recommended` because JSON Schema allows it and an error in
   `openapi-3-0` because 3.0 says MUST NOT. A version's rules, like
-  `array-without-items`, aren't in `recommended`. 3.1 and 3.2 get presets
-  when they have something to change. Rejected: one `openapi` preset,
+  `array-without-items` and `unknown-field`, aren't in `recommended`.
+  `openapi-3-1` and `openapi-3-2` are `recommended` with `unknown-field`
+  so far. Rejected: one `openapi` preset,
   because a preset gives a rule one severity, and only 3.0 forbids
   `readOnly` and `writeOnly` both `true`. Rejected: a rule that checks the
   dialect to decide its severity, because severity is the preset's to set.
