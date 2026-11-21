@@ -1,5 +1,8 @@
 # Testing
 
+What's tested by the suite and what's a unit test is in
+[The suite tests what keywords mean](../principles/tests-follow-the-suite.md).
+
 - The JSON-Schema-Test-Suite's `main` branch runs for every release: v1
   (the suite's `9999`), 2020-12, 2019-09, and draft-04 through draft-07,
   each in its directory's `json-schema-test-suite.test.js`. v1 also runs

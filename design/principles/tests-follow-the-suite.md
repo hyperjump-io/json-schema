@@ -11,13 +11,14 @@ it.
   `src/dialects/*/json-schema-test-suite.test.js` and
   `annotation-test-suite.test.js`, through `test/test-suite.js`. A case
   that's skipped says why next to it.
-- A unit test doesn't repeat a suite case. Dialect tests had cases like
-  "`$ref` replaces the whole schema" and draft-04's boolean
-  `exclusiveMaximum`, which the suite runs for those dialects, and they
-  were removed.
+- A unit test doesn't repeat a suite case, like "`$ref` replaces the
+  whole schema" in draft-04 through draft-07, or draft-04's boolean
+  `exclusiveMaximum`, which the suite runs for those dialects.
 - Spec behavior the suite doesn't have is proposed upstream. Until it's
   merged, it's kept here in the suite's format, run by the same runner,
-  and removed once the suite has it.
+  and removed once the suite has it. Keywords that aren't in a spec, like
+  v1's `conditional`, are tested the same way, in
+  `src/dialects/v1/extension-tests` (see [Testing](../components/testing.md)).
 - Unit tests are for the library's own behavior: schema problems and
   their places, messages, config like `validateFormats`, output formats,
   lint, and the API. They're also for the contract of an internal
