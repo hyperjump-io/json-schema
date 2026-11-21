@@ -5,18 +5,33 @@ import { noUrl, resolveId, toId } from "../identifiers.js";
 import { toVFileMessage } from "../output/validation-error.js";
 import { SchemaError } from "../schema/schema-error.js";
 import { toSchemaMessage } from "../schema/resolve-text.js";
-import { entriesOf } from "./registry-entries.js";
 
 /**
  * @import { JsonNode } from "@hyperjump/browser"
  * @import { JsonSchemaDefinitions } from "../json-schema.d.ts"
  * @import { SchemaRegistry } from "./schema-registry.d.ts"
- * @import { RegistryEntry } from "./registry-entries.js"
  * @import { Dialect, DialectDefinition } from "../dialect.d.ts"
  * @import { ResolveContext } from "../keyword.d.ts"
  * @import { Id } from "../identifiers.js"
  * @import { Position } from "unist"
  * @import { SchemaMessage } from "../schema/schema-error.d.ts"
+ */
+
+/**
+ * A schema as it was added, as JSON text. It never changes, so everything
+ * derived from it can be cached. `stringified` says the text was made from a
+ * value, which is resolved without positions, so its problems have none.
+ * It isn't enumerable, so iterating a registry gives entries as they're
+ * documented, and the modules that index a registry read entries by
+ * iterating it.
+ *
+ * @typedef {{
+ *   schema: string;
+ *   stringified: boolean;
+ *   retrievalUri?: Id;
+ *   dialectUri?: Id;
+ *   origin?: string;
+ * }} RegistryEntry
  */
 
 /**
@@ -111,7 +126,7 @@ export class RegistryIndex {
     this.#waiting = new Map();
     this.#unidentified = new Map();
 
-    for (const entry of entriesOf(registry)) {
+    for (const entry of /** @type Iterable<RegistryEntry> */ (registry)) {
       this.#identify(entry);
     }
     this.#identifyWaiting();

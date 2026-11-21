@@ -1,16 +1,18 @@
 import { getScheme } from "@hyperjump/uri";
 import { toId } from "../identifiers.js";
-import { entriesOf, setEntries } from "./registry-entries.js";
 import { registryResponse } from "./registry-lookup.js";
 
 /**
  * @import { ReadonlyJson } from "@hyperjump/browser"
- * @import { RegistryEntry } from "./registry-entries.js"
  * @import * as API from "./schema-registry.d.ts"
+ * @import { RegistryEntry } from "./registry-index.js"
  */
 
 /** @implements API.SchemaRegistry */
 export class SchemaRegistry {
+  /** @type readonly RegistryEntry[] */
+  #entries;
+
   /**
    * @param {Iterable<API.SchemaRegistryEntry>} [entries]
    */
@@ -30,18 +32,18 @@ export class SchemaRegistry {
       added.push(entry);
     }
 
-    setEntries(this, added);
+    this.#entries = Object.freeze(added);
   }
 
   /** @type API.SchemaRegistry["with"] */
   with(schema, options = {}) {
-    const entries = entriesOf(this);
+    const entries = this.#entries;
     const entry = createEntry(schema, options);
     if (entry.retrievalUri !== undefined && entries.some(({ retrievalUri }) => retrievalUri === entry.retrievalUri)) {
       throw Error(`A schema has already been added with the retrieval URI '${entry.retrievalUri}'. Use the 'without' function first to replace it.`);
     }
 
-    return fromEntries([...entries, entry]);
+    return new SchemaRegistry([...entries, entry]);
   }
 
   /** @type API.SchemaRegistry["concat"] */
@@ -51,7 +53,7 @@ export class SchemaRegistry {
     /** @type Set<RegistryEntry> */
     const entries = new Set();
     for (const registry of /** @type API.SchemaRegistry<any>[] */ ([this, ...registries])) {
-      for (const entry of entriesOf(registry)) {
+      for (const entry of /** @type Iterable<RegistryEntry> */ (registry)) {
         // Registries made from the same registry share its entries
         if (entries.has(entry)) {
           continue;
@@ -66,12 +68,12 @@ export class SchemaRegistry {
       }
     }
 
-    return fromEntries([...entries]);
+    return new SchemaRegistry(entries);
   }
 
   /** @type API.SchemaRegistry[typeof Symbol.iterator] */
   [Symbol.iterator]() {
-    return entriesOf(this)[Symbol.iterator]();
+    return this.#entries[Symbol.iterator]();
   }
 
   /**
@@ -87,9 +89,8 @@ export class SchemaRegistry {
   /** @type API.SchemaRegistry["without"] */
   without(retrievalUri) {
     const uri = toId(retrievalUri);
-    const entries = entriesOf(this);
-    const kept = entries.filter((entry) => entry.retrievalUri !== uri);
-    return kept.length === entries.length ? this : fromEntries(kept);
+    const kept = this.#entries.filter((entry) => entry.retrievalUri !== uri);
+    return kept.length === this.#entries.length ? this : new SchemaRegistry(kept);
   }
 }
 
@@ -125,19 +126,9 @@ const createEntry = (schema, options) => {
 
 /**
  * Entries a registry created, which another registry can share instead of
- * copying, so what's cached from them carries over
+ * copying, so what's cached from them carries over. An object that only
+ * looks like one is created again, so it gets `createEntry`'s checks.
  *
  * @type WeakSet<object>
  */
 const createdEntries = new WeakSet();
-
-/**
- * A registry with entries that were already created and checked
- *
- * @type (entries: RegistryEntry[]) => SchemaRegistry
- */
-const fromEntries = (entries) => {
-  const registry = new SchemaRegistry();
-  setEntries(registry, entries);
-  return registry;
-};

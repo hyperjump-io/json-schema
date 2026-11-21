@@ -19,9 +19,16 @@ class SchemaRegistry<S = ReadonlyJson> {
 in TypeScript are checked (see [Schema types](../schema-types.md)).
 
 Implemented in `src/registry/schema-registry.js`, with the index of a
-registry for some definitions in `src/registry/registry-index.js`. A registry's
-entries are in `src/registry/registry-entries.js`, which isn't exported. How
+registry for some definitions in `src/registry/registry-index.js`. How
 a registry answers a session is in `src/registry/registry-lookup.js`.
+
+- A registry keeps its entries in a private field, and the modules that
+  index it read them by iterating it, which gives the same entry objects,
+  so what's cached from them is shared. Rejected: a module-level `WeakMap`
+  of each registry's entries, which was a private field kept outside the
+  registry. `createdEntries`, a `WeakSet`, stays: it tells an entry a
+  registry made, which can be shared, from an object that only looks like
+  one, which has to be checked.
 
 - A registry's schema isn't retrieved, so the registry isn't in the stack.
   A `SchemaRegistry` is browser's `Registry`, a config's `registry`, which

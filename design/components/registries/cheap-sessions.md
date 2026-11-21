@@ -27,6 +27,14 @@ and a registry that's one edit away from another is cheap to index.
 - What a session still builds itself is its document cache and embedded
   index for what it actually uses, plus anything that depends on a dialect
   only that session has.
+- The caches (`identifications`, `registryIndexes`, and
+  `sharedDocuments`) are module-level `WeakMap`s keyed by the
+  definitions. They're memos of pure functions of values that never
+  change, so they can't change a result, the way a hidden input would.
+  Rejected: keeping them on the definitions, which are plain and
+  stateless (see [No global state](../../principles/no-global-state.md)),
+  on a session, which wouldn't share them, or on the registry or the
+  `JsonSchema`, which would need the same maps keyed by the other.
 - A cached identification or resolved document can't go stale, because
   the definitions are made once by `jsonSchemaConfig` and never
   change. Rejected: definitions that can be added later, like with

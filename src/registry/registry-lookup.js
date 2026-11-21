@@ -10,7 +10,7 @@ import { DocumentResponse } from "./document-response.js";
  * @import { JsonSchemaConfig, JsonSchemaDefinitions } from "../json-schema.d.ts"
  * @import { JsonSchemaDocumentNode } from "../schema/schema-ast.d.ts"
  * @import { SchemaRegistry } from "./schema-registry.d.ts"
- * @import { RegistryEntry } from "./registry-entries.js"
+ * @import { RegistryEntry } from "./registry-index.js"
  * @import { IndexedEntry } from "./registry-index.js"
  */
 
