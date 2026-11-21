@@ -143,11 +143,14 @@ export const testSuiteJsonSchema = (options) => jsonSchemaConfig({
  * Compile a test case's schema. External schema URIs aren't unique across
  * test cases, so each test case has its own registry. The suite's schemas
  * don't have `$schema`, so the dialect under test is given for them.
+ * `metaSchemas` are found by their `$id`, for a dialect a meta-schema
+ * defines.
  *
- * @type (jsonSchema: JsonSchemaConfig, dialectUri: string, uri: string, schema: Json, externalSchemas?: Record<string, Json>) => Promise<CompiledSchema>
+ * @type (jsonSchema: JsonSchemaConfig, dialectUri: string, uri: string, schema: Json, externalSchemas?: Record<string, Json>, metaSchemas?: Json[]) => Promise<CompiledSchema>
  */
-export const compileTestCase = async (jsonSchema, dialectUri, uri, schema, externalSchemas = {}) => {
+export const compileTestCase = async (jsonSchema, dialectUri, uri, schema, externalSchemas = {}, metaSchemas = []) => {
   const registry = new SchemaRegistry([
+    ...metaSchemas.map((metaSchema) => ({ schema: metaSchema })),
     ...Object.entries(externalSchemas).map(([retrievalUri, schema]) => ({ schema, retrievalUri, dialectUri })),
     { schema, retrievalUri: uri, dialectUri }
   ]);
@@ -170,6 +173,7 @@ export const compileTestCase = async (jsonSchema, dialectUri, uri, schema, exter
  *   applies?: (testCase: ValidationTestCase) => boolean;
  *   testDirectories?: Record<string, string>;
  *   skip?: Set<string>;
+ *   metaSchemas?: Json[];
  * }} ValidationTestSuiteOptions
  */
 
@@ -183,6 +187,8 @@ export const compileTestCase = async (jsonSchema, dialectUri, uri, schema, exter
  * - `testDirectories`: Directories of test files, by the name their files
  *   are reported under. Defaults to the suite's validation tests.
  * - `skip`: Skipped test files, test cases, and tests (see {@link isSkipped})
+ * - `metaSchemas`: Meta-schemas in every test case's registry, for a
+ *   dialect a meta-schema defines
  *
  * @type (options: ValidationTestSuiteOptions) => void
  */
@@ -194,7 +200,8 @@ export const describeValidationTestSuite = (options) => {
     jsonSchema,
     applies = () => true,
     testDirectories = { "": validationTestsPath },
-    skip = new Set()
+    skip = new Set(),
+    metaSchemas = []
   } = options;
 
   /** @type Record<string, ValidationTestCase[]> */
@@ -232,7 +239,7 @@ export const describeValidationTestSuite = (options) => {
               }
 
               const uri = `${validationTestCaseUri}${file}/${index}`;
-              compiled = await compileTestCase(jsonSchema(testCase), dialectUri, uri, testCase.schema, testCase.externalSchemas);
+              compiled = await compileTestCase(jsonSchema(testCase), dialectUri, uri, testCase.schema, testCase.externalSchemas, metaSchemas);
             });
 
             for (const { description, data, valid } of testCase.tests) {
