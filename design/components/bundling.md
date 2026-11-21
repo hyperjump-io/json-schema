@@ -5,7 +5,7 @@
 the main schema's definitions with its identifier, so no reference changes.
 It's v1's bundler and keeps its options (`alwaysIncludeDialect`,
 `definitionNamingStrategy`, `externalSchemas`). A new kind of bundle is
-being considered (see [Open questions](../specs/keyword/README.md#open-questions)).
+being considered (see [Open questions](#open-questions)).
 
 - Like `compile`, `bundle` (`src/operations/bundle.js`) creates a session for it, and its
   options include `SessionOptions`, so the session's registry and
