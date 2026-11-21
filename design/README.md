@@ -88,4 +88,6 @@ hand and have JSDoc explaining the details. Documentation for users is in
 - [Validating JSON files](components/validate-plugin.md)
 - [CLI](components/cli.md)
 - [Testing](components/testing.md)
+- [Internationalization](components/i18n.md): which messages can be
+  translated, and what the rest would take
 - [Browser v2](components/browser-v2.md): what this relies on from browser
