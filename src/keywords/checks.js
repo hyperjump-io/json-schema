@@ -104,3 +104,34 @@ export const mapOf = (check) => (node, context) => {
     check(property.children[1], context);
   }
 };
+
+/**
+ * An object with named fields, like OpenAPI's Discriminator Object. Each
+ * field that's there is checked, and a required one has to be there. Other
+ * fields aren't checked.
+ *
+ * @type (fields: Record<string, Check>, required?: string[]) => Check
+ */
+export const objectOf = (fields, required = []) => (node, context) => {
+  if (isErrorNode(node)) {
+    return;
+  } else if (node.jsonType !== "object") {
+    context.message("Expected an object", node);
+    return;
+  }
+
+  const names = new Set();
+  for (const property of node.children) {
+    const [nameNode, valueNode] = property.children;
+    names.add(nameNode.value);
+    if (Object.hasOwn(fields, nameNode.value)) {
+      fields[nameNode.value](valueNode, context);
+    }
+  }
+
+  for (const name of required) {
+    if (!names.has(name)) {
+      context.message(`'${name}' is required`, node);
+    }
+  }
+};
