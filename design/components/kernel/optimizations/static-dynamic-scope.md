@@ -91,7 +91,9 @@ not tracking the dynamic scope, with plugins 8–13% faster, and BASIC up to
   aren't needed, and it leaves `tree` and `strict-tree` tracking the
   dynamic scope.
 
-## Open questions and limitations
+## Known limitations
 
 - **No real schema here needs copies.** The budget is a guess, set by the
-  tests' exponential schema and not by measurements.
+  tests' exponential schema and not by measurements. Going over it is
+  never wrong, only slower, so it can change when a real schema needs
+  copies.
