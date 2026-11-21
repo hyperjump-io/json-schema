@@ -71,6 +71,14 @@
   type allows error children, from a document that didn't parse, so the
   rules that read schemas say they're a `JsonSchemaNode`, as
   `visitSchemas` did.
+- A rule that looks up a schema by location, for `allowsNothing` or
+  `sameExpression`, makes the map from its tree, which goes with
+  `document.schemas`. Rejected: `document.schemaNodes`, which has every
+  reached document's schemas too, so a boolean in another document would
+  be understood but an object schema wouldn't, because it isn't in
+  `document.schemas`. Seeing into other documents would take
+  `document.schemaNodes` with `document.reached`, which changes what the
+  rules report.
 - Utilities in `src/lint/` keep rules short: visit every keyword by URI,
   get a sibling keyword, and find what a reference points to. They know
   nothing about particular keywords. A rule that needs to
