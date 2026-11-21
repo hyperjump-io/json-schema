@@ -181,14 +181,12 @@ a registry answers a session is in `src/registry/registry-lookup.js`.
   O(n). That's fast for a language server's workspace. If it shows up in
   a profile, an index could build on its parent's index.
 
-## Open questions
-
-- Listing the URIs a registry's entries are identified by, for something
-  like a language server's "go to schema". A registry can't do it, because
-  identification depends on the dialect, so it would be a function of a
-  config and a registry (`identify(config, registry)`), built on the index
-  the definitions already have. It's left until something needs
-  it.
+- There's no way to list the URIs a registry's entries are identified by,
+  for something like a language server's "go to schema". A registry can't
+  do it, because identification depends on the dialect, so it would be a
+  function of a config and a registry (`identify(config, registry)`),
+  built on the index the definitions already have. It's left until
+  something needs it.
 
 ## Contents
 
