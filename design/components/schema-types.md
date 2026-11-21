@@ -65,17 +65,13 @@ written. Custom keywords are part of the type.
   registry. Rejected: a type argument on each call
   (`validate<V1Schema>(…)`), which leaves the simple path unchecked.
 - **`jsonSchemaConfig` is a generic function.** It infers `S` from its
-  argument, and the config's other media types (`M`) from its
-  `mediaTypes`. On 2026-11-14, `configureJsonSchema` returned a
-  `JsonSchema<S>`, then `jsonSchemaMediaTypes` replaced it, and then
-  `jsonSchemaConfig` returned a config, the same day. Before that,
-  `JsonSchema` was a class, declared as an interface and a
-  `JsonSchemaConstructor` with a generic construct signature, plus one
-  without type parameters for `class X extends JsonSchema`, because a
-  class can't infer its type parameter as a type computed from its
-  constructor's argument. `S` isn't in any member's parameters, so a
-  `JsonSchemaConfig<V1Schema>` is assignable to a `JsonSchemaConfig`, whose
-  `S` is `any`.
+  argument, and the config's other media types (`M`) from its `mediaTypes`.
+  Rejected: a class, declared as an interface and a constructor type with a
+  generic construct signature, plus one without type parameters for
+  subclasses, because a class can't infer its type parameter as a type
+  computed from its constructor's argument. `S` isn't in any member's
+  parameters, so a `JsonSchemaConfig<V1Schema>` is assignable to a
+  `JsonSchemaConfig`, whose `S` is `any`.
 - **What it took in TypeScript 6.** The dialects' type parameter is
   `const`, so a dialect written in the options keeps `unknownKeywords` and
   its keywords' shapes as literals. Its constraint uses
@@ -95,16 +91,13 @@ written. Custom keywords are part of the type.
   `SchemaRegistry<V1Schema>` isn't a `SchemaRegistry<Json>`: neither schema
   type is assignable to the other.
 - **A registry is typed where it's made.** `new SchemaRegistry<V1Schema>()`
-  checks the schemas added to it. From 2026-10-29 to 2026-11-14, the
-  `JsonSchema`'s `registry` property had its schema type, so
-  `jsonSchema.registry = jsonSchema.registry.with(schema)` checked a schema
-  without a type written anywhere. The registry moved to the config, which
-  is given a registry that's already made, so that went with the
-  property. Rejected: checking it where it's used, which would need a registry's type
-  to accumulate every schema added to it and would report a mismatch at
-  the call instead of the schema; and a function that makes a typed empty
-  registry (`registryFor(jsonSchema)`), which does nothing at runtime and
-  is a second way to make one.
+  checks the schemas added to it. The config is given a registry that's
+  already made, so the config's schema type can't check what's added to it.
+  Rejected: checking it where it's used, which would need a registry's type
+  to accumulate every schema added to it and would report a mismatch at the
+  call instead of the schema; and a function that makes a typed empty
+  registry (`registryFor(config)`), which does nothing at runtime and is a
+  second way to make one.
 - **What's only read is `ReadonlyJson`** (from `@hyperjump/browser`):
   a registry's schemas, the instance `validate` and `annotate` get, and
   `restore`'s compiled schema. So is what a format, a keyword's

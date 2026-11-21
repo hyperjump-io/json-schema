@@ -29,13 +29,11 @@ depended on it. So state is separated by how long it lives.
     `allowRetrieval` and the stack. A registry's schema isn't retrieved, so
     `allowRetrieval` doesn't apply to it (see
     [Registries](../registries/README.md)).
-  - Decided 2026-11-14, in stage 2 of
-    [JSON Schema as a media type](../api/json-schema-media-type.md). Before
-    that, the same day, a session was `JsonSchemaHyperjump`, a subclass
-    whose `fetch` asked the registries, and before that, a plain value,
-    `{ hyperjump, jsonSchema, fetch, state, contextUrl, config }`, that
-    copied some of a `Hyperjump`'s members and reached the rest through
-    `hyperjump`.
+  - Rejected: a subclass whose `fetch` asks the registries (see
+    [JSON Schema as a media type](../api/json-schema-media-type.md)), and a
+    plain value, `{ hyperjump, jsonSchema, fetch, state, contextUrl,
+    config }`, that copies some of a `Hyperjump`'s members and reaches the
+    rest through `hyperjump`.
 - What this package adds to browsing is a function of a session,
   `getDialect(session, uri)`. `browse` is browser's, exported from here as
   it is. `annotation` doesn't need a session: it

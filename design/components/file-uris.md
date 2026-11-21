@@ -24,8 +24,8 @@ and the library re-exports the function for output formats and plugins.
   reference, or `$schema` written as one is an error (see
   [Schema validation](schema-validation.md)). Its message quotes it as the
   author wrote it, like any URI a message quotes from a schema, because
-  it's in the schema already. Before 2026-10-28, it was relative to the
-  working directory.
+  it's in the schema already. Rejected: quoting it relative to the working
+  directory.
 - Messages that say a URI that's usually not a file, like a dialect's or a
   handle, still go through `relativeFileUrl`, so one that is a file can't
   say where it is. `relativeFileUrl` returns anything else as it is.

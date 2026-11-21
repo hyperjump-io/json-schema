@@ -27,8 +27,8 @@ is in browser's [design docs](https://github.com/hyperjump-io/browser/blob/v2/de
   cache if it has one. Without one, each session has browser's default
   stack, which has no HTTP cache (see
   [JSON Schema as a media type](api/json-schema-media-type.md#sharing-the-http-cache)).
-  Before 2026-11-14, every session of a `JsonSchema` shared one with an
-  HTTP cache in Node.js (`src/default-stack.js`).
+  Rejected: every session made from a config sharing a default stack with
+  an HTTP cache in Node.js.
 - A session keeps a document under the URL its response came from, never
   the one the document says it has. A schema document's `url` is its
   `uri`, which is its `$id`, so a retrieved schema is only found by where
@@ -63,8 +63,7 @@ is in browser's [design docs](https://github.com/hyperjump-io/browser/blob/v2/de
   first one wins a tie. `jsonSchemaConfig` puts JSON Schema's first, in
   the order they run, JSON Schema and then JSON that can be a schema, and
   the options' `mediaTypes`, like JRef, after them, so JSON is read by the
-  plugin that finds schemas in it. Before 2026-11-14, `JsonSchema` put
-  its plugins, with JRef, before the config's itself.
+  plugin that finds schemas in it.
 - A plugin's `parse` gets the response and the session. The response has
   the `Content-Type`'s `schema` and `profile` parameters, and the session
   is what a schema's meta-schema is retrieved in.

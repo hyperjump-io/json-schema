@@ -33,16 +33,12 @@ Schema media types' (see
   RegistryIndex>>`). Entries identified with a dialect from a registry
   aren't shared between indexes. A schema an operation is given as a
   value is added to the call's registry, so it can use the dialects the
-  registry's meta-schemas define, and the other way around. Before 2026-11-14, a session's own
-  registry could use the dialects in the `JsonSchema`'s registry, but not
-  the other way around, and its index was cached by both.
+  registry's meta-schemas define, and the other way around.
 - An entry whose dialect isn't defined yet waits in a list by dialect URI.
   Nothing is retrieved to identify an entry. Waiting entries are tried
   again once the rest of the registry is identified. The definitions'
-  dialects never change, so that's the last time. Until 2026-10-29, they
-  were also tried again when a lookup missed, for a dialect added later
-  with `addDialect`. The dialects they're waiting for are in the error when
-  the lookup fails.
+  dialects never change, so that's the last time. The dialects they're
+  waiting for are in the error when the lookup fails.
   Until then, a waiting entry is found by its `retrievalUri`. Resolving it
   gets its dialect with `getDialect(session, uri)`, which can find the
   meta-schema anywhere.

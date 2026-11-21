@@ -17,16 +17,15 @@ Any of them can be in one set of options.
   defines its own format names, even though most are the same in every
   dialect. A dialect is read on its own, and a shared list would hide what
   each one uses.
-- Until 2026-10-29, these were presets: `addV1(jsonSchema)` and so on
-  added a dialect named by URIs, with a separate list of the definitions it
-  used (`addPreset`). Dialects carry their definitions now, so the list
-  became the dialect's maps, and the add functions went with the rest of
-  the setup methods (see [Dialects](../dialects/README.md#the-options)).
-- v1 used to be in every `JsonSchema`, because keyword schemas were written
-  in v1. Now it's a dialect like the others.
+- Rejected: presets, like `addV1(config)`, that add a dialect named by
+  URIs, with a separate list of the definitions it uses. Dialects carry
+  their definitions, so the list is the dialect's maps, and there are no
+  setup functions (see [Dialects](../dialects/README.md#the-options)).
+- v1 is a dialect like the others. Rejected: v1 in every config, so
+  keyword schemas could be written in v1.
 - v1's `conditional`, `itemPattern`, and `requireAllExcept` aren't full
-  proposals yet. They're in its `keywords` under a comment. They used to be
-  added with `extendDialect` as a reminder.
+  proposals yet. They're in its `keywords` under a comment. Rejected:
+  adding them with `extendDialect` as a reminder.
 - Formats that need Unicode data aren't in any dialect. A dialect names
   them by URI, and they're only supported when `fullFormats` is in the
   options' `formats`.

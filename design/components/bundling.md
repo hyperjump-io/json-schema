@@ -13,8 +13,8 @@ being considered (see [Open questions](../specs/keyword/README.md#open-questions
   `src/bundle/bundle.js`, which isn't exported.
 - Everything is retrieved first: the main document, the documents it
   references, and their dialects. The bundle is then made from them
-  without retrieving anything (`bundleDocuments`). Before 2026-10-30, the
-  dialects were retrieved as each document was embedded.
+  without retrieving anything (`bundleDocuments`). Rejected: retrieving
+  the dialects as each document is embedded.
 - A document's references are found by browsing it as it's written, with
   browser's `jrefFindAll` and `reference: "manual"`, which gives each
   `reference` node as a target (`$ref`, draft-04–07 reference nodes, and
@@ -69,9 +69,9 @@ being considered (see [Open questions](../specs/keyword/README.md#open-questions
   option, and a file that embeds nothing doesn't need it. `id` has to be
   absolute, not a file, and without a fragment. It's named for what it
   sets, the main schema's identifier, not "base URI", which is what
-  references are resolved against. Before 2026-10-27, a file's bundle had
-  no identifier and embedded files were identified relative to it, which
-  the rule about `file:` identifiers made invalid. Rejected: rewriting
+  references are resolved against. Rejected: a file's bundle without an
+  identifier, with embedded files identified relative to it, which the
+  rule about `file:` identifiers makes invalid. Rejected: rewriting
   references into the bundle (`#/$defs/address/...`), which makes an
   embedded file not a resource and changes how its own references and
   dynamic anchors resolve, and making up an identifier (`tag:`), which two

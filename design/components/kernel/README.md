@@ -149,11 +149,10 @@ definitions, so a definition that's missing fails there, not on the first
 evaluation. The evaluators and `Validator` only read the kernel's
 definitions, never the config. Lint's evaluator collects the ones the
 config's definitions have, and
-treats an asserting format without one as unknown. Before 2026-10-30, the
-evaluators were given the `JsonSchema` to look definitions up in, which
-made a compiled schema depend on a whole client, with its URI scheme
-plugins and HTTP cache, for two lookups, and compiling didn't check
-escape hatches' `evaluate`.
+treats an asserting format without one as unknown. Rejected: giving the
+evaluators the config to look definitions up in. A compiled schema would
+depend on a whole client, with its URI scheme plugins and HTTP cache, for
+two lookups, and compiling wouldn't check escape hatches' `evaluate`.
 
 A kernel for a schema in a file is serialized with its `file:` URIs
 relative to the entry's document (`src/kernel/kernel-uris.js`), so it

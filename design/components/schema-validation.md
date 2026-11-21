@@ -20,21 +20,20 @@ an internal meta-schema.
   with `resolveSchema`, by `resolveSchemaText`
   (`src/schema/resolve-text.js`), so code that only loads schemas loads
   neither `unified` nor `vfile` (see
-  [Bundle size](../benchmarks/bundle-size.md)). Before 2026-10-30, the
-  resolver was the plugin's transformer and reported on a `VFile`, rolling
-  the file's messages back while it tried a shape's alternatives, and
+  [Bundle size](../benchmarks/bundle-size.md)). Rejected: the resolver as
+  the plugin's transformer, reporting on a `VFile`. It rolled the file's
+  messages back while it tried a shape's alternatives, and
   `resolveSchemaText` called the transformer and `rejsonParse`'s parser
   with a fake processor. A keyword's `check` and `resolve` report with
   `context.message`, which returns nothing, so keywords don't depend on
   vfile either.
 - Its one asynchronous step is finding a dialect (`getDialect`), which can
   retrieve a meta-schema. Resolving in rounds, like compiling (see
-  [Compile and evaluate](kernel/README.md)), was considered on
-  2026-10-30, so the resolver could take dialects instead of the session,
-  and rejected: a schema's dialect decides which of its properties are
-  keywords and where its subschemas are, so a round can't get past a
-  dialect it doesn't have, and rounds would add machinery to remove one
-  `await`. Dialects are few, and a session finds each once.
+  [Compile and evaluate](kernel/README.md)), so the resolver could take
+  dialects instead of the session, was rejected: a schema's dialect
+  decides which of its properties are keywords and where its subschemas
+  are, so a round can't get past a dialect it doesn't have, and rounds
+  would add machinery to remove one `await`. Dialects are few, and a session finds each once.
 - Every problem with a schema is found while it's resolved, and a schema is
   always checked. There's no option to skip it. A trusted schema that has
   to start fast can be compiled once and restored with
@@ -65,8 +64,8 @@ an internal meta-schema.
   references would be resolved as if it were one, which would get around
   browser's rule that only files can reference files. A relative `$id` in a
   file needs an ancestor with an absolute identifier that isn't a file.
-  Before 2026-10-27, only a schema that wasn't retrieved from a file was
-  refused. v1 had that rule for registered schemas. The message quotes the
+  Rejected: refusing it only in a schema that wasn't retrieved from a
+  file, as v1 did for registered schemas. The message quotes the
   `$id` as it's written, and so do the messages about references and
   `$schema`.
 - A reference can't be written as a `file:` URI, in every dialect. It names
@@ -82,8 +81,8 @@ an internal meta-schema.
   wouldn't be the same on another machine. A meta-schema in a file is found
   by its `$id`, which can't be a file, from a registry, like the CLI's
   workspace registry. The schema has no dialect then, like one whose
-  dialect can't be found. Before 2026-10-27, a meta-schema could be found
-  by its path. The JSON-or-schema media type reads a `.json` file whose
+  dialect can't be found. Rejected: finding a meta-schema by its path. The
+  JSON-or-schema media type reads a `.json` file whose
   `$schema` is a file as JSON without retrieving it, because that's an
   instance naming its schema, like `"$schema": "./schema.json"`.
 - The resolver's own checks (schemas that aren't objects or booleans,

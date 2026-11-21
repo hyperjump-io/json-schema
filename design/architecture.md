@@ -20,10 +20,10 @@ text ─ fromJson ─▶ JSON AST ─ resolveSchema ─▶ Schema AST ─ (schem
   (the second of the JSON Schema media types, which replaces browser's
   JSON plugin), and
   JSON otherwise. A schema document has `anchors` and a JSON document
-  doesn't, so each one's fragments are its own. Before 2026-10-27, only `.schema.json` files
-  and `application/schema+json` responses were schemas, and a workspace
-  registry gave the CLI its `.json` schemas. Rejected: requiring
-  `.schema.json`, which many projects don't use.
+  doesn't, so each one's fragments are its own. Rejected: only
+  `.schema.json` files and `application/schema+json` responses being
+  schemas, with a workspace registry giving the CLI its `.json` schemas.
+  Many projects don't use `.schema.json`.
 
 ## Code map
 

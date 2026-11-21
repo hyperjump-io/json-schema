@@ -5,9 +5,9 @@
 lists what each built-in keyword lowers to.
 
 - It's synchronous and only reads its inputs and the context (`dialect`
-  and `keywordName`). It doesn't get the definitions. Before 2026-10-30
-  it did, and only `format` used it, for the `validateFormats` config and
-  to check that the format's definition exists.
+  and `keywordName`). It doesn't get the definitions. Rejected: giving it
+  them, when only `format` would use them, for the `validateFormats`
+  config and to check that the format's definition exists.
 - The kernel retrieves what references in the value and in the siblings
   it reads refer to before `lower` is called, so `lower` only gets
   references that are there. It isn't called if the value didn't fit its

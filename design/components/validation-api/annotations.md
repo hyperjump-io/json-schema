@@ -8,11 +8,11 @@
   for unknown keywords), so a URI doesn't need the dialect. Otherwise it's
   a name in the dialect (v1 by default), and a name that isn't in the
   dialect is an unknown keyword. The dialect has to be in the definitions,
-  so one a meta-schema defines is read by keyword URI. Decided 2026-11-14,
-  in stage 3 of [JSON Schema as a media type](../api/json-schema-media-type.md).
-  Before, it took a session, which had to be the one that built a dialect
-  from a meta-schema, and operations' sessions are their own, so a new
-  session never had it. Rejected: the `annotate` result carrying an
+  so one a meta-schema defines is read by keyword URI (see
+  [JSON Schema as a media type](../api/json-schema-media-type.md#annotation)).
+  Rejected: taking a session, which would have to be the one that built a
+  dialect from a meta-schema, and operations' sessions are their own, so a
+  new session never has it. Rejected: the `annotate` result carrying an
   `annotation` bound to its session, which would put a function in a
   result that's otherwise data, and in every result of an annotator. There's no `annotatedWith` like v1's. The AST is a unist
   tree, so unist utilities can find annotated nodes. Annotations don't

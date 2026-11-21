@@ -51,8 +51,8 @@ a registry answers a session is in `src/registry/registry-lookup.js`.
     `get` throws, with that the dialect isn't defined
     (`ERR_DIALECT_NOT_DEFINED`) or the schema's problem, and nothing is
     retrieved instead. Any other miss keeps its own error, so a typo in a
-    `$ref` isn't blamed on a registry. Before 2026-11-14, every failed
-    retrieval in a session whose registry had such a schema was an
+    `$ref` isn't blamed on a registry. Rejected: making every failed
+    retrieval in a session whose registry has such a schema an
     `AggregateError` of the failure and every one of them (see
     [JSON Schema as a media type](../api/json-schema-media-type.md#explaining-a-miss)).
 
@@ -102,9 +102,9 @@ a registry answers a session is in `src/registry/registry-lookup.js`.
     messages have none.
 - A registry entry can't be identified by a `file:` URI: `retrievalUri`
   can't be one, and neither can its `$id`. A schema in a file is retrieved
-  from the file, so a `file:` URI only ever comes from browser. Before
-  2026-10-27, `retrievalUri` could be one, because the code calling `with`
-  is trusted, and the CLI's workspace registry used them.
+  from the file, so a `file:` URI only ever comes from browser. Rejected:
+  allowing a `file:` `retrievalUri` because the code calling `with` is
+  trusted.
 - An entry's `origin` says where it came from, like the path of the file a
   tool read it from. It's never used to find or identify the entry. It's
   on the entry's document and every problem found in it, so a tool can
@@ -121,15 +121,13 @@ a registry answers a session is in `src/registry/registry-lookup.js`.
   registry, so a session doesn't index a registry another one already
   did. A config and its own registry, or a session's, are combined for
   each call, so a call's index is made again from cached identifications.
-  Decided 2026-11-14. Before, the
-  `JsonSchema` had a `registry` property that was changed by assigning a
-  new registry, and a session looked in two registries, with its own
-  index borrowing dialects from the `JsonSchema`'s. Only the session's
-  could use the other's dialects. Rejected: no registry on the
-  `JsonSchema` at all, which makes every call pass its meta-schemas. Before
-  2026-10-29, there were lists of both: `addRegistry` and `removeRegistry`
-  on `JsonSchema`, and a `registries` option. Two registries with a schema
-  identified by the same URI were already an error, so a list was one
+  Rejected: a registry property changed by assigning a new registry, with
+  a session that looks in two registries, its own index borrowing dialects
+  from the other's, so only the session's can use the other's dialects.
+  Rejected: no registry in the config at all, which makes every call pass
+  its meta-schemas. Rejected: lists of registries (`addRegistry`,
+  `removeRegistry`, and a `registries` option). Two registries with a
+  schema identified by the same URI are an error, so a list is one
   registry split up.
 - `concat` combines registries, like a workspace's and generated ones.
   Entries are shared, not copied, so what's cached from them carries over,

@@ -22,14 +22,14 @@ schema are in `src/kernel/validator.js`, which isn't exported.
   `annotate` with a node returns the node it was given, so every input has
   the same result type.
 - Without `output` or `plugins`, a value goes through the fast path that
-  takes no options, as `validate(instance)` did on the old `Validator`.
+  takes no options.
 - The instrumented evaluator (`src/kernel/instrumented.js`) isn't imported
   by the validator. `validator` and `annotator` load it with `import()`
   when the options need it (output, plugins, annotating, or an input other
   than a value) and pass it to each evaluation that needs it, so code that
-  only validates values with FLAG never loads it. Before 2026-10-30, it
-  was set on the compiled schema (`useInstrumented`), which every
-  operation shares, so an evaluation before it was set threw. `validatorFor`
+  only validates values with FLAG never loads it. Rejected: setting it on
+  the compiled schema (`useInstrumented`), which every operation shares,
+  so an evaluation before it's set throws. `validatorFor`
   and `annotatorFor` are synchronous, so they import it, in a module of
   their own (`src/operations/validate-compiled.js`). The package is
   `"sideEffects": false`, or bundlers keep every re-exported module (see
@@ -42,20 +42,19 @@ schema are in `src/kernel/validator.js`, which isn't exported.
   cached. A boolean has no `$schema`, so it needs `defaultDialectUri`, like
   any schema without one.
 - Each call has a session of its own, made from the config and the
-  call's `registry` and `allowRetrieval` (`src/operations/call-session.js`). Decided 2026-11-14. Before, an
-  operation also took a session (`Context`), so operations could share
-  what it retrieved, and `registry` or `allowRetrieval` in its options was
-  a `TypeError`, because the session already had its own. That was two
-  ways to do the same thing, and sharing a session past one unit of work
-  is a mistake: its documents go stale and it keeps everything it
-  resolved. Sessions are for browsing and pipelines (see
-  [Sessions](../sessions/README.md)). The CLI, the only code that gave an
-  operation a session, bundled a file in the session it was resolved in;
-  now its bundle reads the documents the file references again. Resolving
-  a file never put its tree in the session, so the file itself was read
-  again either way. Rejected: operations taking only a session, which
-  makes session lifetime every user's problem, even for one validation.
-  Considered 2026-10-29 and kept then, for the pipeline case.
+  call's `registry` and `allowRetrieval`
+  (`src/operations/call-session.js`). Sessions are for browsing and
+  pipelines (see [Sessions](../sessions/README.md)). So the CLI's bundle
+  of a file reads the documents the file references again, after it's
+  resolved. Resolving a file doesn't put its tree in the session, so the
+  file itself would be read again either way. Rejected: operations that
+  also take a session (`Context`), so they could share what it
+  retrieved, with `registry` or `allowRetrieval` in their options a
+  `TypeError`, because the session has its own. That's two ways to do the
+  same thing, and sharing a session past one unit of work is a mistake:
+  its documents go stale and it keeps everything it resolved. Rejected:
+  operations taking only a session, which makes session lifetime every
+  user's problem, even for one validation.
 - FLAG output is a plain `boolean` to avoid allocating. BASIC and DETAILED are
   `{ valid, errors }`. An output format is a value (`OutputFormat<R>`)
   passed as `output`, and its type is its result's. A new output format spec is in progress and
@@ -94,9 +93,9 @@ schema are in `src/kernel/validator.js`, which isn't exported.
   function (`check.json(text)`), which leaves the one-off calls without the
   other forms. Splitting them would save little in a bundle, because the
   JSON parser is loaded to read schemas anyway.
-- Output formats registered by name on the instance, as before 2026-10-29.
-  Every registered format stayed in a bundle, and a custom one needed
-  declaration merging for its type.
+- Output formats registered by name on the config. Every registered
+  format stays in a bundle, and a custom one needs declaration merging for
+  its type.
 - For a schema given as a value without an `$id`: a counter
   (`urn:hyperjump:anonymous-1`), which is easier to read but repeats
   between processes; one fixed URN, which can't tell two schemas apart;

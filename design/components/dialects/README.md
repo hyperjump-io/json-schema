@@ -38,24 +38,23 @@
 - `extendDialect(dialect, { keywords, formats })` is a function that
   returns a dialect with more keywords and formats, which goes in the
   options instead. That's how users add custom keywords and formats to v1.
-  It can't replace either. Before 2026-10-29 it was a method that changed
-  the instance's dialect, with `addDialect` and `removeDialect`, and a
-  schema resolved before the change didn't see it.
+  It can't replace either. Rejected: methods that change a dialect, with
+  `addDialect` and `removeDialect`, because a schema resolved before a
+  change doesn't see it.
 
 ## The options
 
 - The dialects, keywords, formats, and vocabularies are
   `jsonSchemaConfig`'s options, and can't change after the config is
-  made. Before 2026-10-29 they were added with methods, and a schema
-  resolved before a change didn't see it. Now nothing cached from a
-  definition can go stale. Adding a dialect later, like one loaded with
-  `import()` when a schema needs it, means making the media types again.
+  made, so nothing cached from a definition can go stale. Adding a
+  dialect later, like one loaded with `import()` when a schema needs it,
+  means making the media types again. Rejected: adding them with methods,
+  because a schema resolved before a change doesn't see it.
   - The options are read once, into frozen tables, so changing a list
-    afterward changes nothing. Before 2026-10-31, the `JsonSchema` kept the
-    caller's lists in its `config`, so changing one changed what `config`
-    said without changing the `JsonSchema`. From then until 2026-11-14, it
-    kept frozen copies.
-- There's still no default dialect. One isn't inferred when there's only
+    afterward changes nothing. Rejected: keeping the caller's lists, so
+    changing one would change what the config says without changing what
+    it does.
+- There's no default dialect. One isn't inferred when there's only
   one dialect, because adding a second would change how schemas without
   `$schema` are read. `defaultDialectUri` sets one.
 - A dialect in the config isn't plain data, because it holds definitions

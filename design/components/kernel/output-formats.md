@@ -14,11 +14,11 @@
 - FLAG is the default. The validator recognizes it and runs the fast
   closures without calling it, so it allocates nothing, and code that only
   uses FLAG never imports BASIC or DETAILED.
-- Before 2026-10-29, formats were registered by name on the `JsonSchema`
-  (`addOutputFormat`, `getOutputFormat`) and typed through an augmentable
-  `OutputFormats` interface. Every registered format stayed in a bundle,
-  and a custom one needed declaration merging. FLAG couldn't be replaced;
-  now there's nothing to replace.
+- Rejected: formats registered by name (`addOutputFormat`,
+  `getOutputFormat`) and typed by augmenting an `OutputFormats`
+  interface. Every registered format stays in a bundle, a custom one needs
+  declaration merging, and FLAG can't be replaced. With formats as values,
+  there's nothing to replace.
 - Without user plugins, an instance is evaluated with the fast closures
   first, and the format's plugin only runs on a second evaluation if the
   instance is invalid. Valid instances never pay for error collection. With
