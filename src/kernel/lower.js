@@ -134,7 +134,7 @@ export const lowerKeywords = async (keywords, schema, dialect, inputs, tolerant)
     const [nameNode, valueNode] = keywordNode.children;
     const keywordUri = keywordNode.keywordUri;
     const keyword = keywords[keywordDefinitionUri(keywordUri)];
-    if (keyword.lower === undefined || (tolerant && !accepts(keyword, valueNode, node))) {
+    if (keyword.lower === undefined || (tolerant && !accepts(keyword, valueNode, node, dialect))) {
       continue;
     }
 
@@ -156,7 +156,7 @@ export const lowerKeywords = async (keywords, schema, dialect, inputs, tolerant)
         }
 
         const siblingKeyword = keywords[keywordDefinitionUri(siblingUri)];
-        if (tolerant && !accepts(siblingKeyword, sibling.children[1], node)) {
+        if (tolerant && !accepts(siblingKeyword, sibling.children[1], node, dialect)) {
           continue;
         }
 
@@ -442,9 +442,9 @@ class Misfit extends Error {}
 /**
  * Whether a keyword's `check` accepts its value, as the resolver checks it
  *
- * @type (keyword: Keyword, valueNode: JsonSchemaNode, schemaNode: ObjectSchemaNode) => boolean
+ * @type (keyword: Keyword, valueNode: JsonSchemaNode, schemaNode: ObjectSchemaNode, dialect: Dialect) => boolean
  */
-const accepts = (keyword, valueNode, schemaNode) => {
+const accepts = (keyword, valueNode, schemaNode, dialect) => {
   const tolerantNode = /** @type JsonSchemaTolerantNode */ (valueNode);
   if (isErrorNode(tolerantNode)) {
     return false;
@@ -452,6 +452,7 @@ const accepts = (keyword, valueNode, schemaNode) => {
 
   let accepted = true;
   keyword.check?.(tolerantNode, {
+    dialect,
     siblings: siblingValues(/** @type JsonSchemaTolerantNode */ (schemaNode), keyword.siblings),
     message: () => {
       accepted = false;

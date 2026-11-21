@@ -88,9 +88,9 @@ before `check` is called.
 
 `check` reports problems the shape doesn't describe, like a negative
 `minLength`. It's called while the schema is resolved, and it gets the
-value as a JSON AST node. Call `message` to report a problem. Then the
-schema can't be compiled. Without `check`, any value that fits the shape
-is allowed.
+value as a JSON AST node, and the schema's `dialect`. Call `message` to
+report a problem. Then the schema can't be compiled. Without `check`, any
+value that fits the shape is allowed.
 
 ### `lower`
 

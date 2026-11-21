@@ -332,6 +332,12 @@ type DeepReadonly<T>
 
 export type CheckContext = {
   /**
+   * The dialect of the schema the keyword is in. Its `assertFormats` is the
+   * `validateFormats` config, if there is one.
+   */
+  dialect: Dialect;
+
+  /**
    * The values of the siblings the keyword declares ({@link Keyword.siblings}),
    * by the names it gives them, such as `maximum` for draft-04's
    * `exclusiveMaximum`. A sibling that isn't in the schema is undefined. A

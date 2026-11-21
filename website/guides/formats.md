@@ -57,13 +57,17 @@ loads every format.
 ## Formats that can't be checked
 
 When formats are validated, `compile` throws if a schema uses a format that
-can't be checked:
+can't be checked. Otherwise a schema that asks for a check that can't be
+made would pass everything.
 
-- One of the three formats above when `fullFormats` isn't loaded.
 - In v1, 2019-09, and 2020-12, a format the dialect doesn't define, like
-  `"phone"`. Otherwise a schema that asks for a check that can't be made
-  would pass everything. draft-04 to draft-07 ignore formats they don't
-  define.
+  `"phone"`, is a problem in the schema. `compile` throws a `SchemaError`
+  that points at it, and `lint` reports it, wherever it is in the
+  document. draft-04 to draft-07 ignore formats they don't define.
+- `idn-hostname`, `idn-email`, or a `hostname` that needs Unicode data,
+  when `fullFormats` isn't loaded, is a problem with the config.
+  `compile` throws an `Error` that says to add it to the `formats`
+  option.
 
 To support a format of your own, see
 [Custom formats](../extending/formats.md).

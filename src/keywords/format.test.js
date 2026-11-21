@@ -7,6 +7,7 @@ import { jsonSchemaConfig, extendDialect } from "../json-schema.js";
 import { v1Dialect, v1DialectUri } from "../dialects/v1/index.js";
 import { fullFormats } from "../formats/full.js";
 import { compile } from "../operations/compile.js";
+import { SchemaError } from "../schema/schema-error.js";
 import { annotatorFor, validatorFor } from "../operations/validate-compiled.js";
 
 /**
@@ -59,8 +60,25 @@ describe("format", () => {
     expect(validatorFor(compiled)("^\\&$")).to.equal(false);
   });
 
-  test("a format that isn't supported is an error", async () => {
-    await expect(compile(v1(), await schemaFile({ format: "nope" }))).rejects.toThrow("'nope' format isn't supported");
+  test("a format that isn't supported is a problem in the schema, at the format", async () => {
+    const error = await compile(v1(), await schemaFile({ format: "nope" })).catch((/** @type unknown */ error) => error);
+
+    expect(error).to.be.instanceOf(SchemaError);
+    expect(/** @type SchemaError */ (error).messages).toMatchObject([{
+      ruleId: "https://json-schema.org/keyword/format",
+      message: "The 'nope' format isn't supported in the 'https://json-schema.org/v1' dialect",
+      place: { start: { line: 1, column: 50 } }
+    }]);
+  });
+
+  test("a format that isn't supported is a problem even where it isn't compiled", async () => {
+    await expect(compile(v1(), await schemaFile({ $defs: { a: { format: "nope" } } }))).rejects.toThrow(SchemaError);
+  });
+
+  test("a format that isn't supported isn't a problem when formats aren't validated", async () => {
+    const compiled = await compile(v1({ validateFormats: false }), await schemaFile({ format: "nope" }));
+
+    expect(validatorFor(compiled)("anything")).to.equal(true);
   });
 
   test("the lite formats don't include the formats that need Unicode data", async () => {

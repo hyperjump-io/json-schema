@@ -18,8 +18,9 @@
   `contains`), a reference to something missing, and an unknown `format`
   that's only an annotation are lint. The schema still works.
 - An unsupported `format` when formats are validated is validity, because
-  the schema can't be compiled. It's a compile error today and moves to the
-  `format` keyword's `check`.
+  the schema can't be compiled. The `format` keyword's `check` reports it,
+  in every schema in the document, so it's a `SchemaError` with a place,
+  not an error from lowering. Its context has the dialect for that.
 - A MUST the implementation recovers from is lint, at `error` in
   `recommended`, rather than validity. Being tolerant of bad input is
   better than refusing a schema that can be understood. A v1 `$schema`

@@ -263,6 +263,7 @@ class Resolver {
       // parts are schemas
       if (keyword.check && !isErrorNode(valueNode)) {
         keyword.check(valueNode, {
+          dialect,
           siblings: siblingValues(/** @type JsonSchemaTolerantNode */ (schemaNode), keyword.siblings),
           message: (reason, node = valueNode) => this.#message(reason, node, keyword.uri)
         });
