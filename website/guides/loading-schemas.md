@@ -125,7 +125,8 @@ const config = jsonSchemaConfig({
 A call sees its own registry and the config's as one registry. A schema in
 either can use a dialect whose meta-schema is in the other. If both have a
 schema with the same URI, that's an error, so a call's registry can't
-replace a schema in the config's. Keep schemas that change in the
+replace a schema in the config's. It's a `SchemaError` with a
+`duplicate-id` problem in each of them, with their `origin`s. Keep schemas that change in the
 registries you pass to calls, so you can make the config once.
 
 ### Combining registries
@@ -223,12 +224,13 @@ the life of the session. To send credentials, see
 - An `Error` with the code `"ERR_NOT_A_SCHEMA"` when what's found isn't a
   schema, like a JSON document that isn't one, or a reference to
   `#/required`.
-- An `Error` when a schema in a registry probably has the URI, by its
-  `$id`, but can't be used. One whose `$schema` is a dialect that isn't
-  defined, by the dialects you gave `jsonSchemaConfig` or a
-  meta-schema in the registry, has the code `"ERR_DIALECT_NOT_DEFINED"`,
-  with its `dialect`. Nothing is retrieved for it, even if the URI could
-  be:
+- An error when a schema in a registry probably has the URI, by its
+  `$id`, but can't be used. Nothing is retrieved for it, even if the URI
+  could be. A schema with a problem, like a `file:` `$id`, is a
+  `SchemaError`. One whose `$schema` is a dialect that isn't defined, by
+  the dialects you gave `jsonSchemaConfig` or a meta-schema in the
+  registry, is an `Error` with the code `"ERR_DIALECT_NOT_DEFINED"`, with
+  its `dialect`:
 
   ```text
   'https://example.com/person' is in the registry, but it can't be identified until the 'https://example.com/my-dialect' dialect is defined

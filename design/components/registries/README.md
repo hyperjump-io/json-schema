@@ -142,7 +142,9 @@ a registry answers a session is in `src/registry/registry-lookup.js`.
   session's documents, then the stack, with its HTTP cache if it has
   one). Two entries found by the same URI are an error when the URI is
   looked up, so a
-  session's registry can't replace a schema in the config's. Two with the
+  session's registry can't replace a schema in the config's. It's a
+  `SchemaError` with a `duplicate-id` problem in each entry, at its `$id`
+  or `id` if that's what the URI found it by, with its `origin`. Two with the
   same `retrievalUri` are an error when `concat` combines them, the first
   time the session uses the registry. A registry can't check that itself,
   because identity depends on the dialect, and it means a language server
@@ -152,7 +154,21 @@ a registry answers a session is in `src/registry/registry-lookup.js`.
   combines the two checks that they're identical (see
   [Schema AST](../../specs/schema-ast.md)).
 
+- A problem that's one entry's is a `SchemaError` on that entry, with
+  its `origin`, like a retrieved document's problems, so a tool can show
+  which file to fix. That's two entries found by the same URI, and an
+  entry that can't be identified, like one with a `file:` `$id`, when a
+  lookup misses the URI it's probably identified by. The entry's
+  identifier is its `uri`. Rejected: a plain `Error`, which couldn't say
+  where the problem is. A dialect that isn't defined yet stays an `Error`
+  with `ERR_DIALECT_NOT_DEFINED`, because it isn't a problem in the entry.
+
 ## Known limitations
+
+- An entry with no identifier and no `retrievalUri` is never found and
+  never reported. A `SchemaMessage` needs a `uri`, and nothing could look
+  it up to report it. `with` can't refuse it, because whether a schema has
+  an identifier depends on its dialect.
 
 - Copying a registry's entries for `with` and indexing the new registry is
   O(n). That's fast for a language server's workspace. If it shows up in

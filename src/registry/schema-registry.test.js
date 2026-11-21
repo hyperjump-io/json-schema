@@ -150,9 +150,17 @@ describe("SchemaRegistry", () => {
 
     // A schema in a file is retrieved from the file
     test("a schema can't be identified as a file", async () => {
-      const registry = registryOf(v1({ $id: "file:///a.schema.json" }));
+      const registry = new SchemaRegistry([{ schema: `{ "$schema": "${v1DialectUri}", "$id": "file:///a.schema.json" }`, origin: "/work/a.schema.json" }]);
 
-      await expect(compile(registry, "file:///a.schema.json")).rejects.toThrow("can't be identified by a 'file:' URI");
+      await expect(compile(registry, "file:///a.schema.json")).rejects.toMatchObject({
+        name: "SchemaError",
+        messages: [{
+          ruleId: "file-uri-not-allowed",
+          message: expect.stringContaining("can't be identified by a file"),
+          place: { start: { line: 1, column: 51 } },
+          origin: "/work/a.schema.json"
+        }]
+      });
     });
 
     test("a schema can't have a file retrieval URI", () => {
@@ -314,6 +322,29 @@ describe("SchemaRegistry", () => {
       const registry = registryOf(v1({ $id: "https://example.com/a" }));
 
       await expect(compile(registry, "https://example.com/a")).rejects.toThrow("More than one schema in the registry is found by 'https://example.com/a'");
+    });
+
+    test("schemas found by the same URI are a duplicate-id problem in each of them", async () => {
+      /** @type (origin: string) => { schema: string; origin: string } */
+      const entry = (origin) => ({ schema: `{ "$schema": "${v1DialectUri}", "$id": "https://example.com/a" }`, origin });
+      const registry = new SchemaRegistry([entry("/work/a.schema.json"), entry("/work/b.schema.json")]);
+
+      await expect(compile(registry, "https://example.com/a")).rejects.toMatchObject({
+        name: "SchemaError",
+        messages: [
+          { ruleId: "duplicate-id", uri: "https://example.com/a", origin: "/work/a.schema.json", place: { start: { line: 1, column: 51 } } },
+          { ruleId: "duplicate-id", uri: "https://example.com/a", origin: "/work/b.schema.json", place: { start: { line: 1, column: 51 } } }
+        ]
+      });
+    });
+
+    test("a schema found by its retrieval URI as well as another's $id has no place for it", async () => {
+      const registry = new SchemaRegistry()
+        .with(`{ "$schema": "${v1DialectUri}", "$id": "https://example.com/a" }`)
+        .with(`{ "$schema": "${v1DialectUri}" }`, { retrievalUri: "https://example.com/a" });
+
+      const error = await compile(registry, "https://example.com/a").catch((/** @type unknown */ error) => error);
+      expect(/** @type {{ messages: { place?: unknown }[] }} */ (error).messages.map((message) => message.place !== undefined)).to.eql([true, false]);
     });
 
     test("the config's registry as the session's", async () => {

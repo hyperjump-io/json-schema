@@ -23,9 +23,10 @@ import { DocumentResponse } from "./document-response.js";
  * can't be identified, is an error, so it isn't retrieved instead.
  *
  * @type (registry: SchemaRegistry, url: string, session: Hyperjump<JsonSchemaConfig>) => Promise<Response | undefined>
- * @throws Error if more than one schema in the registry is found by the URL,
- *   or a schema that's probably found by it is waiting for its dialect or
- *   can't be identified
+ * @throws SchemaError if more than one schema in the registry is found by
+ *   the URL, or a schema that's probably found by it can't be identified
+ * @throws Error if a schema that's probably found by it is waiting for its
+ *   dialect (`ERR_DIALECT_NOT_DEFINED`)
  */
 export const registryResponse = async (registry, url, session) => {
   const definitions = definitionsOf(session.config);
@@ -50,7 +51,8 @@ export const registryResponse = async (registry, url, session) => {
  * identical one.
  *
  * @type (config: JsonSchemaConfig, registry: SchemaRegistry, uri: string) => void
- * @throws Error if another schema in the registry is identified by its `$id`
+ * @throws SchemaError if another schema in the registry is identified by
+ *   its `$id`
  */
 export const assertOnlyValue = (config, registry, uri) => {
   const index = registryIndex(definitionsOf(config), registry);

@@ -3,6 +3,8 @@ import { fromJs, fromJson, hasStatus, relativeFileUrl } from "@hyperjump/browser
 import { getScheme } from "@hyperjump/uri";
 import { noUrl, resolveId, toId } from "../identifiers.js";
 import { toVFileMessage } from "../output/validation-error.js";
+import { SchemaError } from "../schema/schema-error.js";
+import { toSchemaMessage } from "../schema/resolve-text.js";
 import { entriesOf } from "./registry-entries.js";
 
 /**
@@ -13,6 +15,8 @@ import { entriesOf } from "./registry-entries.js";
  * @import { Dialect, DialectDefinition } from "../dialect.d.ts"
  * @import { ResolveContext } from "../keyword.d.ts"
  * @import { Id } from "../identifiers.js"
+ * @import { Position } from "unist"
+ * @import { SchemaMessage } from "../schema/schema-error.d.ts"
  */
 
 /**
@@ -215,14 +219,15 @@ export class RegistryIndex {
    * The entry found by a URI
    *
    * @type (uri: Id) => IndexedEntry | undefined
-   * @throws Error if more than one entry is found by the URI
+   * @throws SchemaError if more than one entry is found by the URI, with a
+   *   `duplicate-id` problem in each of them
    */
   lookup(uri) {
     const found = this.#byUri.get(uri);
     if (!found) {
       return;
     } else if (found.length > 1) {
-      throw Error(`More than one schema in the registry is found by '${uri}'`);
+      throw new SchemaError(found.map((indexed) => duplicate(indexed, uri)));
     }
 
     return found[0];
@@ -235,6 +240,9 @@ export class RegistryIndex {
    * dialect says. It's the entry's problem, or that it's waiting for its
    * dialect.
    *
+   * A problem the entry has, like a `file:` identifier, is a `SchemaError`
+   * on it.
+   *
    * @type (uri: Id) => Error | undefined
    */
   missed(uri) {
@@ -243,9 +251,9 @@ export class RegistryIndex {
         return Error(`'${uri}' is in the registry, but it can't be identified until the '${waitingFor}' dialect is defined`, { cause: { code: "ERR_DIALECT_NOT_DEFINED", dialect: waitingFor } });
       }
     }
-    for (const { error, probably } of this.#unidentified.values()) {
+    for (const [entry, { error, probably }] of this.#unidentified) {
       if (probably === uri) {
-        return error;
+        return error instanceof VFileMessage ? new SchemaError([toSchemaMessage(error, uri, "error", entry.origin)]) : error;
       }
     }
   }
@@ -366,8 +374,10 @@ const identifyRoot = (definitions, entry, registryDialect, root) => {
     let uri = retrievalUri;
     /** @type DialectDefinition | undefined */
     let definedDialect;
+    /** @type JsonNode | undefined */
+    let uriNode;
     if (root.isObject && dialect !== undefined) {
-      ({ uri, definedDialect } = rootEffects(definitions, root, dialect, retrievalUri));
+      ({ uri, definedDialect, uriNode } = rootEffects(definitions, root, dialect, retrievalUri));
     }
 
     if (uri === undefined) {
@@ -375,7 +385,8 @@ const identifyRoot = (definitions, entry, registryDialect, root) => {
     }
 
     if (getScheme(uri) === "file") {
-      throw Error(`A schema in a registry can't be identified by a 'file:' URI: ${relativeFileUrl(uri)}`);
+      const written = uriNode?.jsonType === "string" ? uriNode.value : relativeFileUrl(uri);
+      throw new VFileMessage(`'${written}' identifies the schema by a 'file:' URI. A schema in a registry can't be identified by a file. Give it an absolute URI that isn't a file.`, { place: uriNode?.position, ruleId: "file-uri-not-allowed", source: "json-schema" });
     }
 
     return { uri, definedDialect, fromRegistry };
@@ -389,11 +400,15 @@ const identifyRoot = (definitions, entry, registryDialect, root) => {
  * defines. A root that's a reference (draft-04 through draft-07 `$ref`)
  * ignores both.
  *
- * @type (definitions: JsonSchemaDefinitions, root: Root, dialect: Dialect, retrievalUri: Id | undefined) => { uri?: Id; definedDialect?: DialectDefinition }
+ * `uriNode` is the value that set it.
+ *
+ * @type (definitions: JsonSchemaDefinitions, root: Root, dialect: Dialect, retrievalUri: Id | undefined) => { uri?: Id; uriNode?: JsonNode; definedDialect?: DialectDefinition }
  */
 const rootEffects = (definitions, root, dialect, retrievalUri) => {
   /** @type Id | undefined */
   let uri;
+  /** @type JsonNode | undefined */
+  let uriNode;
   /** @type DialectDefinition | undefined */
   let definedDialect;
   let isReference = false;
@@ -414,6 +429,7 @@ const rootEffects = (definitions, root, dialect, retrievalUri) => {
       setBaseUri: (reference) => {
         try {
           uri = resolveId(reference, retrievalUri);
+          uriNode = valueNode;
         } catch (error) {
           context.message(/** @type Error */ (error).message);
         }
@@ -433,7 +449,7 @@ const rootEffects = (definitions, root, dialect, retrievalUri) => {
     keyword.resolve(/** @type any */ (valueNode), context);
   }
 
-  return isReference ? { uri: retrievalUri } : { uri: uri ?? retrievalUri, definedDialect };
+  return isReference ? { uri: retrievalUri } : { uri: uri ?? retrievalUri, uriNode: uri === undefined ? undefined : uriNode, definedDialect };
 };
 
 /**
@@ -443,6 +459,47 @@ const rootEffects = (definitions, root, dialect, retrievalUri) => {
  */
 const propertyValue = (node, name) => {
   return /** @type JsonNode | undefined */ (node.children.find((property) => property.children[0].value === name)?.children[1]);
+};
+
+/**
+ * One of the entries a URI finds when it finds more than one, as a problem
+ * in it. It's at the entry's `$id` or `id` if the URI is the one that
+ * identifies it, and nowhere if it's the retrieval URI. An entry added as
+ * text is parsed again for the position, which only a problem needs. One
+ * added as a value has no positions.
+ *
+ * @type (indexed: IndexedEntry, uri: Id) => SchemaMessage
+ */
+const duplicate = ({ entry, uri: identifiedBy }, uri) => {
+  /** @type SchemaMessage */
+  const message = {
+    source: "json-schema",
+    ruleId: "duplicate-id",
+    severity: "error",
+    uri: identifiedBy,
+    message: `More than one schema in the registry is found by '${relativeFileUrl(uri)}'`
+  };
+  const place = identifiedBy === uri && !entry.stringified ? idPosition(entry) : undefined;
+  if (place !== undefined) {
+    message.place = place;
+  }
+  if (entry.origin !== undefined) {
+    message.origin = entry.origin;
+  }
+  return message;
+};
+
+/** @type (entry: RegistryEntry) => Position | undefined */
+const idPosition = (entry) => {
+  const { document } = fromJson(entry.schema, noUrl);
+  if (!hasStatus(document, "success")) {
+    return;
+  }
+  const node = /** @type JsonNode */ (document.children[0]);
+  if (node.jsonType !== "object") {
+    return;
+  }
+  return (propertyValue(node, "$id") ?? propertyValue(node, "id"))?.position;
 };
 
 /**

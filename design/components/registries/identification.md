@@ -23,7 +23,8 @@ Schema media types' (see
   resolves it, which throws a `SchemaError` with that problem and any
   others, like a retrieved file with problems. One
   without a `retrievalUri` can't be found, so its problem is reported when
-  a lookup misses.
+  a lookup misses the URI it's probably identified by, as a `SchemaError`
+  (see [Registries](README.md)).
 - An entry's dialect is one in the definitions or one defined by another
   entry in the same registry (its root's `defineDialect` effect). A
   session sees one registry, the config's combined with the call's, so a
