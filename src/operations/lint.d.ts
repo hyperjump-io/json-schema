@@ -14,7 +14,8 @@ import type { SessionOptions } from "../session.d.ts";
  * document with schema problems can't be linted, so its problems are
  * returned instead of thrown.
  *
- * @throws Error if `uri` isn't a schema.
+ * @throws Error if `uri` isn't a schema. Its `cause.code` is
+ * `ERR_NOT_A_SCHEMA`.
  * @throws An error from `@hyperjump/browser` if the document can't be
  * retrieved. Its `cause.code` says why.
  */

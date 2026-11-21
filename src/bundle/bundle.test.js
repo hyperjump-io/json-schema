@@ -339,6 +339,13 @@ describe("bundle", () => {
       expect(await bundle(fileJsonSchema, fileUri("string.schema.json"))).to.eql({ $schema: draft202012DialectUri, type: "string" });
     });
 
+    test("a document that isn't a schema is an error", async () => {
+      await expect(bundle(fileJsonSchema, fileUri("not-a-schema.json"))).rejects.toMatchObject({
+        message: expect.stringContaining("isn't a schema"),
+        cause: { code: "ERR_NOT_A_SCHEMA" }
+      });
+    });
+
     test("'id' can't be a file, relative, or have a fragment", async () => {
       await expect(bundle(fileJsonSchema, fileUri("main.schema.json"), { id: "file:///schemas/main.schema.json" })).rejects.toThrow("isn't a file");
       await expect(bundle(fileJsonSchema, fileUri("main.schema.json"), { id: "main.schema.json" })).rejects.toThrow("absolute URI");

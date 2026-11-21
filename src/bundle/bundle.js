@@ -157,7 +157,7 @@ const identifierFor = (main, documents, id) => {
 const schemaTarget = async (session, uri, referencedFrom) => {
   const target = /** @type Target */ (await browse(session, uri, { referencedFrom, reference: "manual" }));
   if (!isSchemaDocument(target.document)) {
-    throw Error(`'${relativeFileUrl(uri)}' isn't a schema`);
+    throw Error(`'${relativeFileUrl(uri)}' isn't a schema`, { cause: { code: "ERR_NOT_A_SCHEMA" } });
   }
 
   return /** @type DocumentTarget */ (target);

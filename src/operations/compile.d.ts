@@ -25,6 +25,8 @@ export type CompiledSchema = {
  * the first document found to have any. Two documents the schema reaches
  * that have different resources with the same URI are a problem
  * (`duplicate-id`), because a compiled schema names a schema by its URI.
+ * @throws Error if a reference ends at something that isn't a schema. Its
+ * `cause.code` is `ERR_NOT_A_SCHEMA`.
  * @throws An error from `@hyperjump/browser` if a schema can't be
  * retrieved. Its `cause.code` says why.
  */

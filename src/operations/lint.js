@@ -30,7 +30,7 @@ export const lint = async (config, uri, options = {}) => {
 
   if (!isSchemaDocument(document)) {
     // `browse` checked it
-    throw Error(`'${relativeFileUrl(/** @type IriReference */ (uri))}' isn't a schema`);
+    throw Error(`'${relativeFileUrl(/** @type IriReference */ (uri))}' isn't a schema`, { cause: { code: "ERR_NOT_A_SCHEMA" } });
   }
 
   // Loaded when it's needed, so code that never lints never loads the rules

@@ -220,6 +220,9 @@ the life of the session. To send credentials, see
   [browser's errors](https://github.com/hyperjump-io/browser/blob/v2/website/errors.md).
 - A `SchemaError` when the schema is found but has problems. See
   [Invalid schemas](invalid-schemas.md).
+- An `Error` with the code `"ERR_NOT_A_SCHEMA"` when what's found isn't a
+  schema, like a JSON document that isn't one, or a reference to
+  `#/required`.
 - An `Error` when a schema in a registry probably has the URI, by its
   `$id`, but can't be used. One whose `$schema` is a dialect that isn't
   defined, by the dialects you gave `jsonSchemaConfig` or a

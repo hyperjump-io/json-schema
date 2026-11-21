@@ -141,7 +141,10 @@ describe("lint", () => {
         allowRetrieval: [pathToFileURL(join(directory, "/")).href]
       });
 
-      await expect(lint(jsonSchema, pathToFileURL(path).href)).rejects.toThrow("isn't a schema");
+      await expect(lint(jsonSchema, pathToFileURL(path).href)).rejects.toMatchObject({
+        message: expect.stringContaining("isn't a schema"),
+        cause: { code: "ERR_NOT_A_SCHEMA" }
+      });
     });
   });
 });

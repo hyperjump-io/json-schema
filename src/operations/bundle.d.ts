@@ -30,6 +30,8 @@ import type { SchemaSource } from "./schema-source.d.ts";
  * which would ignore its identifier, a file would be embedded without
  * `id`, or the main schema's dialect has nowhere to put it. Also if `id`
  * isn't an absolute URI, is a file, or has a fragment.
+ * @throws Error if a document the bundle would embed isn't a schema. Its
+ * `cause.code` is `ERR_NOT_A_SCHEMA`.
  * @throws SchemaError if a schema has problems. Two documents in the
  * bundle that have different resources with the same URI are a problem
  * (`duplicate-id`).

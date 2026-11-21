@@ -543,6 +543,16 @@ describe("jsonSchemaMediaTypes", () => {
       expect([validate("a"), validate(42)]).to.eql([true, false]);
     });
 
+    test("a reference that ends at something that isn't a schema is an error", async () => {
+      const config = jsonSchemaConfig({ dialects: [v1Dialect] });
+      const registry = new SchemaRegistry().with({ $schema: v1DialectUri, $id: "https://example.com/main", $ref: "#/required", required: ["a"] });
+
+      await expect(compile(config, "https://example.com/main", { registry })).rejects.toMatchObject({
+        message: expect.stringContaining("isn't a schema"),
+        cause: { code: "ERR_NOT_A_SCHEMA" }
+      });
+    });
+
     test("schemas that are references that lead back to one already followed aren't compiled", async () => {
       const draft07 = jsonSchemaConfig({ dialects: [v1Dialect, draft07Dialect] });
       const registry = new SchemaRegistry()
