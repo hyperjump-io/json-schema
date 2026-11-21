@@ -101,4 +101,5 @@ being considered (see [Open questions](#open-questions)).
   implementations (a JS frontend and a C# backend) and restored in one step,
   straight into a registry. Paths would be the retrieval URIs. Unclear: how
   paths map to URIs, whether `$id`-less schemas need a base, and what other
-  implementations would need to adopt it. v1-style bundling comes first.
+  implementations would need to adopt it. It's only worth it if they read
+  the same format, so it would be agreed with them, not decided here.
