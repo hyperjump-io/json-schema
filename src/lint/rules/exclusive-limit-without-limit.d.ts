@@ -3,11 +3,12 @@ import type { JsonSchemaDocumentNode } from "../../schema/schema-ast.d.ts";
 
 /**
  * `exclusiveMaximum` without `maximum`, or `exclusiveMinimum` without
- * `minimum`, in OpenAPI 3.0. They only make the limit next to them
- * exclusive, so without it they have no effect, and the limit may be
- * missing by mistake. 3.0's JSON Schema draft (draft-wright-00) allows it,
- * so it's a warning. Draft-04 requires the limit, so there it's a problem
- * with the schema, which this rule doesn't report.
+ * `minimum`, in draft-04 and OpenAPI 3.0, where they're booleans that make
+ * the limit next to them exclusive. Without that limit they have no
+ * effect, and the limit may be missing by mistake. Draft-04 says the limit
+ * MUST be there, so it's an error in the recommended preset. 3.0's JSON
+ * Schema draft (draft-wright-00) doesn't, so it's a warning in
+ * `openapi-3-0`.
  * It has no options.
  */
 declare const exclusiveLimitWithoutLimit: Plugin<JsonSchemaDocumentNode, void>;

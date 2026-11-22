@@ -1,16 +1,16 @@
 # `exclusive-limit-without-limit`
 
-In `openapi-3-0`, as a warning.
+In `recommended`, as an error. In `openapi-3-0`, as a warning.
 
 `exclusiveMaximum` without `maximum`, or `exclusiveMinimum` without
-`minimum`, in OpenAPI 3.0. In 3.0, they're booleans that make the limit
-next to them exclusive. Without that limit, they have no effect, and the
-limit might be missing by mistake. 3.0's JSON Schema draft allows it, so
-it's a warning.
+`minimum`, in draft-04 and OpenAPI 3.0. There, they're booleans that make
+the limit next to them exclusive. Without that limit, they have no effect,
+and the limit might be missing by mistake.
 
-Draft-04 requires the limit, so there it's a problem with the schema,
-which this rule doesn't report. It's only for OpenAPI 3.0, and it has no
-options.
+Draft-04 says the limit must be there. This implementation accepts it
+anyway, but other implementations might not, so it's an error in the
+recommended preset. 3.0's JSON Schema draft doesn't say so, so it's a
+warning in `openapi-3-0`. It has no options.
 
 ## Examples
 
@@ -38,6 +38,18 @@ options.
 ```
 
 > 'exclusiveMaximum' has no effect without 'maximum'
+
+#### Draft-04
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "number",
+  "exclusiveMinimum": true
+}
+```
+
+> 'exclusiveMinimum' has no effect without 'minimum'
 
 ### Not reported
 

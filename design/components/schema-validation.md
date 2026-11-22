@@ -129,8 +129,13 @@ an internal meta-schema.
   [External references](built-in-dialects/openapi-documents.md#external-references)
   follow from it.
 
-## Open questions
-
-- **Where the resolver could be more tolerant.** Recoverable input should
-  be accepted and reported by the linter (see [Validity and lint](lint/validity.md)). Review
-  the resolver for places it's stricter than it needs to be.
+- The resolver accepts what it can recover from, and the linter reports
+  it (see [Validity and lint](lint/validity.md)): `definitions` next to a
+  draft-04–07 `$ref`, a misplaced `$schema` or `$vocabulary`, duplicates
+  in arrays that must be unique, empty arrays that can't be empty, and
+  draft-04's exclusive limits without their limits. Reviewed 2026-11-21.
+  What stays an error can't be understood one way: duplicate ids and
+  anchors, which make what a reference finds ambiguous, an `$id` with a
+  fragment, invalid identifiers and `file:` URIs, values of the wrong
+  type, regular expressions that can't be compiled, dialects that can't be
+  found, and keywords and formats that aren't supported.

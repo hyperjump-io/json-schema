@@ -50,6 +50,7 @@ import misplacedDialect from "./rules/misplaced-dialect.js";
 import misplacedVocabulary from "./rules/misplaced-vocabulary.js";
 import duplicateArrayItems from "./rules/duplicate-array-items.js";
 import emptyArray from "./rules/empty-array.js";
+import exclusiveLimitWithoutLimit from "./rules/exclusive-limit-without-limit.js";
 
 /**
  * @import { Preset } from "unified"
@@ -109,6 +110,9 @@ const recommended = {
     [misplacedVocabulary, ["error"]],
     [duplicateArrayItems, ["error"]],
     [emptyArray, ["error"]],
+    // Draft-04 says the limit MUST be there. 3.0 doesn't, so `openapi-3-0`
+    // makes it a warning.
+    [exclusiveLimitWithoutLimit, ["error"]],
     [referenceWithoutTarget, ["error"]]
   ]
 };

@@ -43,9 +43,12 @@ describe("draft-04", () => {
   });
 
   describe("maximum and minimum", () => {
-    test("exclusiveMinimum and exclusiveMaximum require minimum and maximum", async () => {
-      await expect(compile(jsonSchema, { $schema, exclusiveMinimum: true })).rejects.toMatchObject({ messages: [{ message: "'exclusiveMinimum' requires 'minimum'" }] });
-      await expect(compile(jsonSchema, { $schema, exclusiveMaximum: false })).rejects.toMatchObject({ messages: [{ message: "'exclusiveMaximum' requires 'maximum'" }] });
+    test("exclusiveMinimum and exclusiveMaximum without minimum and maximum have no effect", async () => {
+      // Draft-04 says they MUST be there. `exclusive-limit-without-limit`
+      // reports it.
+      const compiled = await compile(jsonSchema, { $schema, exclusiveMinimum: true, exclusiveMaximum: false });
+
+      expect(validatorFor(compiled)(1)).to.equal(true);
     });
   });
 

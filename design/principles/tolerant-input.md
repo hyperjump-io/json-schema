@@ -12,5 +12,5 @@ understood helps no one.
 - Before turning a MUST into a keyword check or a resolver error, ask
   whether the implementation already recovers. If it does, it's a lint
   rule.
-- Where the resolver is still stricter than it needs to be is an open
-  question (see [Schema validation](../components/schema-validation.md#open-questions)).
+- What the resolver accepts and what stays an error is in
+  [Schema validation](../components/schema-validation.md).

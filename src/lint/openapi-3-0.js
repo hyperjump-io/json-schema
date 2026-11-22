@@ -31,6 +31,8 @@ const openApi30 = {
     [implicitDialect, ["off"]],
     [unknownField, ["warn"]],
     [wrappedWithoutArray, ["warn"]],
+    // 3.0's JSON Schema draft doesn't say the limit MUST be there, as
+    // draft-04 does
     [exclusiveLimitWithoutLimit, ["warn"]],
     [nullableWithoutType, ["warn"]]
   ]

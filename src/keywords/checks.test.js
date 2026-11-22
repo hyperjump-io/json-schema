@@ -136,13 +136,9 @@ describe("keyword checks", () => {
       .to.eql([{ reason: "Expected a boolean", ruleId: "https://json-schema.org/keyword/vocabulary", at: `"yes"` }]);
   });
 
-  test("draft-04's exclusiveMaximum and exclusiveMinimum require maximum and minimum", async () => {
-    expect(await check(jsonSchema, `{ "$schema": "${draft04DialectUri}#", "exclusiveMaximum": true, "minimum": 1, "exclusiveMinimum": false }`)).to.eql([
-      { reason: "'exclusiveMaximum' requires 'maximum'", ruleId: "https://json-schema.org/keyword/draft-04/exclusiveMaximum", at: "true" }
-    ]);
-    expect(await check(jsonSchema, `{ "$schema": "${draft04DialectUri}#", "exclusiveMinimum": true, "maximum": 1, "exclusiveMaximum": true }`)).to.eql([
-      { reason: "'exclusiveMinimum' requires 'minimum'", ruleId: "https://json-schema.org/keyword/draft-04/exclusiveMinimum", at: "true" }
-    ]);
+  test("draft-04's exclusiveMaximum and exclusiveMinimum don't require maximum and minimum", async () => {
+    // `exclusive-limit-without-limit` reports them
+    expect(await check(jsonSchema, `{ "$schema": "${draft04DialectUri}#", "exclusiveMaximum": true, "exclusiveMinimum": false }`)).to.eql([]);
   });
 
   test("arrays that the specs say can't be empty can be", async () => {
