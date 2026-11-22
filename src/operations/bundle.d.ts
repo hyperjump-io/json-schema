@@ -43,7 +43,9 @@ export function bundle<S>(config: JsonSchemaConfig<S>, schema: NoInfer<SchemaSou
 export type BundleOptions = {
   /**
    * Give every embedded schema `$schema`. By default, only one whose dialect
-   * is different from the main schema's has it.
+   * is different from the main schema's has it. In draft-04 through
+   * draft-07, which only allow `$schema` at the document's root, no
+   * embedded schema has it.
    */
   alwaysIncludeDialect?: boolean;
 

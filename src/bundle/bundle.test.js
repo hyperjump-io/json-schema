@@ -217,6 +217,70 @@ describe("bundle", () => {
       await expect(bundle(jsonSchema, mainUri, { registry })).rejects.toThrow("its root is a '$ref'");
     });
 
+    describe("dialects", () => {
+      /** @type (entries: [string, Json, string][]) => Promise<Record<string, Json>> */
+      const bundleOfEntries = async (entries) => {
+        const registry = new SchemaRegistry(entries.map(([retrievalUri, schema, dialectUri]) => ({ schema, retrievalUri, dialectUri })));
+        return /** @type Record<string, Json> */ (await bundle(jsonSchema, mainUri, { registry }));
+      };
+
+      test("a schema in another dialect has $schema next to its $id in 2020-12", async () => {
+        const bundled = await bundleOfEntries([
+          [mainUri, { items: { $ref: "/legacy" } }, draft202012DialectUri],
+          [`${testDomain}/legacy`, { type: "string", maxLength: 3 }, draft07DialectUri]
+        ]);
+        const definitions = /** @type Record<string, Record<string, Json>> */ (bundled.$defs);
+
+        // draft-04 through draft-07 meta-schemas are written with an empty
+        // fragment
+        expect(definitions[`${testDomain}/legacy`]).to.include({ $schema: `${draft07DialectUri}#`, $id: `${testDomain}/legacy` });
+
+        const compiled = await compile(jsonSchema, mainUri, { registry: new SchemaRegistry([{ schema: bundled, retrievalUri: mainUri }]) });
+        expect(validatorFor(compiled)(["abc"])).to.equal(true);
+        expect(validatorFor(compiled)(["abcd"])).to.equal(false);
+      });
+
+      test("a schema in another dialect has $schema next to its $id in 2019-09", async () => {
+        // 2019-09 says a document's resources should have the same dialect,
+        // which `embedded-dialect-change` reports
+        const bundled = await bundleOfEntries([
+          [mainUri, { items: { $ref: "/legacy" } }, draft201909DialectUri],
+          [`${testDomain}/legacy`, { type: "string" }, draft07DialectUri]
+        ]);
+        const definitions = /** @type Record<string, Record<string, Json>> */ (bundled.$defs);
+
+        expect(definitions[`${testDomain}/legacy`]).to.include({ $schema: `${draft07DialectUri}#`, $id: `${testDomain}/legacy` });
+      });
+
+      test("a schema in another dialect can't be embedded in draft-04 through draft-07", async () => {
+        const promise = bundleOfEntries([
+          [mainUri, { items: { $ref: "/modern" } }, draft07DialectUri],
+          [`${testDomain}/modern`, { type: "string" }, draft202012DialectUri]
+        ]);
+
+        await expect(promise).rejects.toThrow(`because it's in the '${draft202012DialectUri}' dialect, and '${draft07DialectUri}' only allows '$schema' at the document's root`);
+      });
+
+      test("an embedded schema's own $schema is removed in draft-04 through draft-07", async () => {
+        const bundled = await bundleOfEntries([
+          [mainUri, { items: { $ref: "/string" } }, draft07DialectUri],
+          [`${testDomain}/string`, { $schema: `${draft07DialectUri}#`, type: "string" }, draft07DialectUri]
+        ]);
+        const definitions = /** @type Record<string, Record<string, Json>> */ (bundled.definitions);
+
+        expect(definitions[`${testDomain}/string`]).to.eql({ $id: `${testDomain}/string`, type: "string" });
+      });
+
+      test("a meta-schema that defines a dialect can't be embedded", async () => {
+        const promise = bundleOfEntries([
+          [mainUri, { $ref: "/meta" }, draft202012DialectUri],
+          [`${testDomain}/meta`, { $vocabulary: { "https://json-schema.org/draft/2020-12/vocab/core": true } }, draft202012DialectUri]
+        ]);
+
+        await expect(promise).rejects.toThrow("because it's a meta-schema that defines a dialect, and only a document's root can");
+      });
+    });
+
     test("a schema referenced by a URI it isn't identified by can't be embedded", async () => {
       const promise = bundleOf({
         [mainUri]: { $ref: "/foo" },
@@ -252,11 +316,13 @@ describe("bundle", () => {
       expect(definitions[`${testDomain}/string`].$schema).to.equal(draft202012DialectUri);
     });
 
-    test("alwaysIncludeDialect writes draft-07's dialect with an empty fragment", async () => {
+    test("alwaysIncludeDialect doesn't give an embedded schema $schema in draft-04 through draft-07", async () => {
+      // They only allow `$schema` at the document's root
       const bundled = await bundleOf(draft07DialectUri, { alwaysIncludeDialect: true });
       const definitions = /** @type Record<string, Record<string, Json>> */ (bundled.definitions);
 
-      expect(definitions[`${testDomain}/string`].$schema).to.equal(`${draft07DialectUri}#`);
+      expect(bundled.$schema).to.equal(`${draft07DialectUri}#`);
+      expect(definitions[`${testDomain}/string`]).to.not.have.property("$schema");
     });
 
     test("without alwaysIncludeDialect, an embedded schema in the same dialect doesn't have $schema", async () => {

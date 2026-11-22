@@ -57,6 +57,23 @@ being considered (see [Open questions](#open-questions)).
   another dialect is identified by its own dialect's `$id`. One that already
   has `$schema` keeps it. draft-04–07 dialects are written with an empty
   fragment, as their meta-schemas are.
+- The main schema's dialect decides where `$schema` can go, because the
+  bundle is read in it. Draft-04–07 only allow it at the document's root
+  (`misplaced-dialect`), so a main schema in those drafts can't embed a
+  schema in another dialect, which is an error: another implementation
+  would read it in the main schema's dialect. One in the same dialect
+  never gets `$schema`, even with `alwaysIncludeDialect`, and one it
+  already has is removed, which changes nothing. Rejected: writing
+  `$schema` anyway, which this resolver reads, but the bundle would fail
+  `misplaced-dialect` and validate differently elsewhere. 2019-09 allows
+  `$schema` next to an embedded schema's `$id`, and says a document's
+  resources should have the same dialect, so a 2019-09 bundle can embed
+  one in another dialect, and `embedded-dialect-change` warns about it.
+  2020-12 and later allow any dialect there. The dialects that restrict
+  `$schema` are the bundler's own list of dialect URIs, as they are
+  `misplaced-dialect`'s. A custom dialect is allowed anything. Rejected:
+  finding draft-04–07 by draft-07's `$id` keyword, which `misplaced-dialect`
+  didn't, and a table they share, which is two lists of three URIs.
 - A schema can't be identified by a `file:` URI, so a bundle of files is
   identified by the `id` option: the main schema gets it, and each embedded
   file is identified where it is relative to the main schema, resolved
@@ -93,7 +110,14 @@ being considered (see [Open questions](#open-questions)).
   [Schema validation](schema-validation.md)), so every reference between
   files is relative and finds the embedded schema in a bundle with `id`.
 - Meta-schemas aren't bundled. `$schema` isn't a reference, and
-  `getDialect` doesn't look in embedded resources.
+  `getDialect` doesn't look in embedded resources. A meta-schema that a
+  `$ref` refers to, like `{ "$ref": "https://json-schema.org/draft/2020-12/schema" }`,
+  can't be embedded either, if it defines a dialect (`definedDialect`),
+  which is an error. Only a document's root defines one (see
+  [Dialects from meta-schemas](dialects/from-meta-schemas.md)), so it
+  wouldn't work as a meta-schema in the bundle, as people would expect it
+  to. Rejected: removing its `$vocabulary`, which `misplaced-vocabulary`
+  reports, for the same reason. Make it an external schema instead.
 - Tests run v1's bundle test cases in every dialect, with both naming
   strategies: the bundle is compiled on its own and must give the same
   DETAILED errors and annotations as the schemas it was made from.

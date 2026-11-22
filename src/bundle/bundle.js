@@ -23,6 +23,18 @@ const legacyIdUri = "https://json-schema.org/keyword/draft-07/id";
 const notUri = "https://json-schema.org/keyword/not";
 
 /**
+ * The dialects that only allow `$schema` at the document's root. 2019-09
+ * allows it at an embedded resource's root, and says resources in a
+ * document should have the same dialect, which `embedded-dialect-change`
+ * reports. 2020-12 and later allow any dialect there.
+ */
+const rootOnlyDialects = new Set([
+  "http://json-schema.org/draft-04/schema",
+  "http://json-schema.org/draft-06/schema",
+  "http://json-schema.org/draft-07/schema"
+]);
+
+/**
  * See `bundle` in `src/operations/bundle.d.ts`. Everything that's retrieved
  * is retrieved first: the main document, the documents it references, and
  * their dialects. The bundle is made from them without retrieving anything.
@@ -75,7 +87,7 @@ const bundleDocuments = (main, documents, dialects, options) => {
   }
 
   const mainDialect = dialectOf(main);
-  const bundled = identify(/** @type Record<string, Json> */ (jsonValue(mainRoot)), mainDialect, identifier(main.uri), true);
+  const bundled = identify(/** @type Record<string, Json> */ (jsonValue(mainRoot)), mainDialect, identifier(main.uri), "always");
   if (documents.length === 0) {
     return bundled;
   }
@@ -87,12 +99,24 @@ const bundleDocuments = (main, documents, dialects, options) => {
 
   const existing = /** @type Record<string, Json> | undefined */ (bundled[definitionsName]);
 
+  // In these, an embedded schema can't say its dialect. Another
+  // implementation would read one in another dialect as the main schema's.
+  const rootOnlyDialect = rootOnlyDialects.has(mainDialect.uri);
+
   /** @type Record<string, Json> */
   const definitions = { ...existing };
   for (const document of documents) {
     const id = /** @type string */ (identifier(document.uri));
-    const includeDialect = alwaysIncludeDialect || document.dialectUri !== main.dialectUri;
-    const embedded = embeddable(document, dialectOf(document), id, includeDialect);
+    // A document whose root is a `$ref` has no dialect, and can't be embedded
+    // for that reason
+    const isOtherDialect = document.dialectUri !== undefined && document.dialectUri !== main.dialectUri;
+    if (rootOnlyDialect && isOtherDialect) {
+      throw Error(`'${relativeFileUrl(document.uri)}' can't be embedded in '${relativeFileUrl(main.uri)}', because it's in the '${document.dialectUri}' dialect, and '${mainDialect.uri}' only allows '$schema' at the document's root, so it couldn't say its dialect`);
+    }
+
+    /** @type DialectInclusion */
+    const inclusion = rootOnlyDialect ? "never" : (alwaysIncludeDialect || isOtherDialect ? "always" : "kept");
+    const embedded = embeddable(document, dialectOf(document), id, inclusion);
 
     const name = definitionNamingStrategy === "uuid" ? crypto.randomUUID() : id;
     if (Object.hasOwn(definitions, name)) {
@@ -238,11 +262,17 @@ const addResources = (resources, document) => {
 };
 
 /**
- * A referenced document as a schema that can be embedded
+ * A referenced document as a schema that can be embedded. A meta-schema
+ * that defines a dialect can't be, because only a document's root defines
+ * one, so it wouldn't work as one in the bundle.
  *
- * @type (document: JsonSchemaDocumentNode, dialect: Dialect, id: string, includeDialect: boolean) => Record<string, Json>
+ * @type (document: JsonSchemaDocumentNode, dialect: Dialect, id: string, inclusion: DialectInclusion) => Record<string, Json>
  */
-const embeddable = (document, dialect, id, includeDialect) => {
+const embeddable = (document, dialect, id, inclusion) => {
+  if (document.definedDialect !== undefined) {
+    throw Error(`'${relativeFileUrl(document.uri)}' can't be embedded, because it's a meta-schema that defines a dialect, and only a document's root can`);
+  }
+
   const root = /** @type JsonSchemaNode */ (document.children[0]);
   if (root.type === "reference") {
     throw Error(`'${relativeFileUrl(document.uri)}' can't be embedded, because its root is a '$ref' that replaces the whole object, so an identifier would be ignored`);
@@ -261,8 +291,15 @@ const embeddable = (document, dialect, id, includeDialect) => {
     schema = /** @type Record<string, Json> */ (jsonValue(root));
   }
 
-  return identify(schema, dialect, id, includeDialect);
+  return identify(schema, dialect, id, inclusion);
 };
+
+/**
+ * Whether a schema gets `$schema`: `always`, `kept` only if it has one
+ * already, or `never`, even if it has one
+ *
+ * @typedef {"always" | "kept" | "never"} DialectInclusion
+ */
 
 /**
  * Add `$schema` and an identifier to the root of a schema, first, the way
@@ -271,16 +308,18 @@ const embeddable = (document, dialect, id, includeDialect) => {
  * where the schema came from. A plain-name fragment in it (draft-04 through
  * draft-07) is kept, because it's an anchor.
  *
- * @type (schema: Record<string, Json>, dialect: Dialect, id: string | undefined, includeDialect: boolean) => Record<string, Json>
+ * @type (schema: Record<string, Json>, dialect: Dialect, id: string | undefined, inclusion: DialectInclusion) => Record<string, Json>
  */
-const identify = (schema, dialect, id, includeDialect) => {
+const identify = (schema, dialect, id, inclusion) => {
   const { $schema, ...keywords } = schema;
 
   /** @type Record<string, Json> */
   const identified = {};
-  if (typeof $schema === "string") {
+  if (inclusion === "never") {
+    // It's the main schema's dialect, so leaving it out changes nothing
+  } else if (typeof $schema === "string") {
     identified.$schema = $schema;
-  } else if (includeDialect) {
+  } else if (inclusion === "always") {
     // draft-04 through draft-07 meta-schemas are conventionally written with
     // an empty fragment
     identified.$schema = keywordName(dialect, legacyIdUri) === undefined ? dialect.uri : `${dialect.uri}#`;

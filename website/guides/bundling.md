@@ -100,7 +100,7 @@ await bundle(config, uri, {
 | --- | --- |
 | `id` | The main schema's identifier for a bundle of files. Each file is identified relative to it. It has to be an absolute URL that isn't a `file:` URL. |
 | `externalSchemas` | Schemas that will be available where the bundle is used. They aren't embedded. Neither is anything that only they reference. |
-| `alwaysIncludeDialect` | Give every embedded schema a `$schema`, not only the ones in a different dialect |
+| `alwaysIncludeDialect` | Give every embedded schema a `$schema`, not only the ones in a different dialect. Draft-04 to draft-07 only allow `$schema` at the document's root, so there, no embedded schema has one. |
 | `definitionNamingStrategy` | How embedded schemas are named. `"uri"` uses their identifier and is the default. `"uuid"` uses a random UUID. |
 
 Like `validator`, `bundle` also takes `registry` and `allowRetrieval`. The
@@ -115,6 +115,13 @@ means:
 - In draft-04 to draft-07, the root of a referenced schema is a `$ref`. The
   `$ref` replaces the whole object, so its `$id` would be ignored.
 - The main schema's dialect has no `$defs` or `definitions` to put it in.
+- The main schema is in draft-04 to draft-07, and a referenced schema is in
+  another dialect. Those drafts only allow `$schema` at the document's
+  root, so the embedded schema couldn't say its dialect.
+- A referenced schema is a meta-schema that defines a dialect, like one
+  with `$vocabulary`. Only a document's root defines a dialect, so it
+  wouldn't work as a meta-schema in the bundle. List it in
+  `externalSchemas` instead.
 - A file without an `$id` would be embedded, and there's no `id` to
   identify it by.
 
