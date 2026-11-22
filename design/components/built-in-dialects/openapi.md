@@ -23,12 +23,18 @@ separate piece of work (see [Not done](#not-done)).
   here. Each module exports the type of its schemas, with the published
   URIs as `$schema`.
 - What it costs:
-  - The meta-schema has to be in a registry. spec.openapis.org serves
-    its meta-schemas as `application/octet-stream`, which no media type
-    plugin reads, so retrieving one fails whatever `allowRetrieval` says.
-    A registry entry in the dialect isn't found by its `$id` until the
-    registry has the meta-schema either, which the registry's error says,
-    because a registry identifies its entries without retrieving anything.
+  - The meta-schema has to be in a registry, or retrieved.
+    spec.openapis.org serves its meta-schemas and its document schemas as
+    `application/octet-stream`, which no media type plugin reads.
+    `openApiSpecMediaType` (`src/openapi/spec-media-type.js`) is a plugin
+    for `application/octet-stream` that gives only that site's to the
+    schema media type, found by its media type in the session, and refuses
+    anything else as browser would without a plugin. A plugin is chosen by
+    media type, so it can't be for a URL. Rejected: a plugin that reads
+    any `application/octet-stream` as a schema. A registry entry in the
+    dialect isn't found by its `$id` until the registry has the
+    meta-schema, which the registry's error says, because a registry
+    identifies its entries without retrieving anything.
   - `annotation` reads OpenAPI's keywords by keyword URI, not by name,
     because the dialect isn't one the media types were made with.
   - The meta-schemas list OpenAPI's vocabulary as optional (`false`), so

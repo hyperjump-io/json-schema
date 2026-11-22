@@ -13,9 +13,9 @@ import { openApi31Vocabulary, openApi31VocabularyUri } from "../dialects/openapi
 import { openApi32Vocabulary, openApi32VocabularyUri } from "../dialects/openapi-3-2/index.js";
 import { unified } from "unified";
 import { VFile } from "vfile";
-import { rejsonParse, Hyperjump } from "@hyperjump/browser";
+import { fetcher, rejsonParse, Hyperjump } from "@hyperjump/browser";
 import unknownField from "../lint/rules/unknown-field.js";
-import { openApiMediaType, openApiResolve } from "./index.js";
+import { openApiMediaType, openApiResolve, openApiSchemaUri, openApiSpecMediaType } from "./index.js";
 
 /**
  * @import { Json } from "@hyperjump/browser"
@@ -299,6 +299,40 @@ describe("OpenAPI documents", () => {
     expect(file.messages.map((message) => message.reason)).to.eql([
       "'nme' isn't a field of the XML Object, so tools ignore it."
     ]);
+  });
+
+  describe("OpenAPI's published schemas", () => {
+    /** @type (body: string) => import("../json-schema.d.ts").JsonSchemaConfig */
+    const servedAsOctetStream = (body) => jsonSchemaConfig({
+      dialects: [draft202012Dialect],
+      vocabularies: { [openApi31VocabularyUri]: openApi31Vocabulary },
+      mediaTypes: [openApiMediaType, openApiSpecMediaType],
+      stack: fetcher(() => new Response(body, { headers: { "content-type": "application/octet-stream" } })),
+      allowRetrieval: ["https://spec.openapis.org/oas/", "https://example.com/"]
+    });
+
+    test("a dialect's meta-schema is retrieved from spec.openapis.org", async () => {
+      const metaSchema = await readFile(new URL("../dialects/openapi-3-1/meta-schemas/dialect-base.json", import.meta.url), "utf8");
+      const compiled = await compile(servedAsOctetStream(metaSchema), {
+        $schema: "https://spec.openapis.org/oas/3.1/dialect/base",
+        type: "string"
+      });
+      expect(validatorFor(compiled)("Misty")).to.equal(true);
+      expect(validatorFor(compiled)(1)).to.equal(false);
+    });
+
+    test("application/octet-stream from anywhere else is refused", async () => {
+      await expect(compile(servedAsOctetStream(`{ "type": "string" }`), "https://example.com/schema")).rejects.toMatchObject({
+        cause: { code: "ERR_UNSUPPORTED_MEDIA_TYPE" }
+      });
+    });
+
+    test("each version's document schema", () => {
+      expect(openApiSchemaUri("3.0.4")).to.equal("https://spec.openapis.org/oas/3.0/schema/2024-10-18");
+      expect(openApiSchemaUri("3.1.1")).to.equal("https://spec.openapis.org/oas/3.1/schema/2026-11-05");
+      expect(openApiSchemaUri("3.2.0")).to.equal("https://spec.openapis.org/oas/3.2/schema/2026-11-12");
+      expect(openApiSchemaUri("2.0")).to.equal(undefined);
+    });
   });
 
   test("a version this doesn't read", async () => {

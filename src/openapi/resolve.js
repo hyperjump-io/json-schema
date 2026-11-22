@@ -24,27 +24,52 @@ import { objectModel32 } from "./object-model-3-2.js";
  * @typedef {{
  *   objectModel: ObjectModel;
  *   dialectUri: string;
+ *   schemaUri: string;
  *   self: boolean;
  *   jsonSchemaDialect: boolean;
  * }} Version
  */
 
 /**
- * Each version's Objects, and its "OAS dialect schema id", the dialect of
- * Schema Objects without `jsonSchemaDialect`. 3.2.0 says it's 3.1's
+ * Each version's Objects, the schema its documents are validated against
+ * (OpenAPI's latest published `schema`, which only checks that a Schema
+ * Object is an object or a boolean, since the resolver checks them in their
+ * own dialects), and its "OAS dialect schema id", the dialect of Schema
+ * Objects without `jsonSchemaDialect`. 3.2.0 says it's 3.1's
  * `dialect/base`, which looks like a mistake, since that dialect doesn't have
  * 3.2's keywords, so it's the latest dated 3.2 dialect.
  *
  * @type [RegExp, Version][]
  */
 const versions = [
-  [/^3\.0\.\d+$/, { objectModel: objectModel30, dialectUri: openApi30DialectUri, self: false, jsonSchemaDialect: false }],
-  [/^3\.1\.\d+$/, { objectModel: objectModel31, dialectUri: "https://spec.openapis.org/oas/3.1/dialect/base", self: false, jsonSchemaDialect: true }],
-  [/^3\.2\.\d+$/, { objectModel: objectModel32, dialectUri: "https://spec.openapis.org/oas/3.2/dialect/2026-02-26", self: true, jsonSchemaDialect: true }]
+  [/^3\.0\.\d+$/, {
+    objectModel: objectModel30,
+    dialectUri: openApi30DialectUri,
+    schemaUri: "https://spec.openapis.org/oas/3.0/schema/2024-10-18",
+    self: false,
+    jsonSchemaDialect: false
+  }],
+  [/^3\.1\.\d+$/, {
+    objectModel: objectModel31,
+    dialectUri: "https://spec.openapis.org/oas/3.1/dialect/base",
+    schemaUri: "https://spec.openapis.org/oas/3.1/schema/2026-11-05",
+    self: false,
+    jsonSchemaDialect: true
+  }],
+  [/^3\.2\.\d+$/, {
+    objectModel: objectModel32,
+    dialectUri: "https://spec.openapis.org/oas/3.2/dialect/2026-02-26",
+    schemaUri: "https://spec.openapis.org/oas/3.2/schema/2026-11-12",
+    self: true,
+    jsonSchemaDialect: true
+  }]
 ];
 
 /** @type typeof API.openApiVersion */
 export const openApiVersion = (version) => versions.find(([pattern]) => pattern.test(version)) !== undefined;
+
+/** @type typeof API.openApiSchemaUri */
+export const openApiSchemaUri = (version) => versions.find(([pattern]) => pattern.test(version))?.[1].schemaUri;
 
 /** @type typeof API.resolveOpenApi */
 export const resolveOpenApi = async (tree, { session, uri }) => {

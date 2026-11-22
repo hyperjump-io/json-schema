@@ -134,10 +134,27 @@ dialect and OpenAPI's vocabulary, and a schema whose `$schema` is one of
 those URIs gets its dialect from the meta-schema. See
 [Custom meta-schemas](#custom-meta-schemas).
 
-The meta-schema has to be in your registry. OpenAPI serves its
-meta-schemas as `application/octet-stream`, not as JSON, so they can't be
-retrieved from `https://spec.openapis.org/`. Download the ones your schemas
-use and add them:
+The meta-schema has to be in your registry or retrieved. OpenAPI serves
+its meta-schemas as `application/octet-stream`, not as JSON. To retrieve
+them from `https://spec.openapis.org/`, add `openApiSpecMediaType` from
+`@hyperjump/json-schema/openapi` to `mediaTypes`, and the site to
+`allowRetrieval`. It reads only that site's `application/octet-stream`.
+
+```typescript
+import { jsonSchemaConfig } from "@hyperjump/json-schema";
+import { draft202012Dialect } from "@hyperjump/json-schema/draft-2020-12";
+import { openApi31Vocabulary, openApi31VocabularyUri } from "@hyperjump/json-schema/openapi-3-1";
+import { openApiSpecMediaType } from "@hyperjump/json-schema/openapi";
+
+const config = jsonSchemaConfig({
+  dialects: [draft202012Dialect],
+  vocabularies: { [openApi31VocabularyUri]: openApi31Vocabulary },
+  mediaTypes: [openApiSpecMediaType],
+  allowRetrieval: ["https://spec.openapis.org/oas/"]
+});
+```
+
+Or download the ones your schemas use and add them to the registry:
 
 ```typescript
 import { readFile } from "node:fs/promises";

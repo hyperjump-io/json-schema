@@ -28,3 +28,14 @@ export const resolveOpenApi: (tree: JsonDocumentNode, options: {
 
 /** Whether an `openapi` field is a version this reads */
 export const openApiVersion: (version: string) => boolean;
+
+/**
+ * The URI of the schema an OpenAPI document of a version, its `openapi`
+ * field, is validated against: OpenAPI's latest published `schema` for it,
+ * like `https://spec.openapis.org/oas/3.1/schema/2026-11-05`. It only checks
+ * that a Schema Object is an object or a boolean, because resolving checks
+ * them in their own dialects. It's undefined for a version this doesn't
+ * read. The schemas aren't included: retrieve them with
+ * `openApiSpecMediaType`, or put them in a registry.
+ */
+export const openApiSchemaUri: (version: string) => string | undefined;

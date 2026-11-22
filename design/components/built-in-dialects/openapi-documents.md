@@ -91,6 +91,22 @@ The dialects are in [OpenAPI 3.0, 3.1, and 3.2](openapi.md).
   Schema Object is in a structural position or in `components`, so finding
   them needs no references.
 - External references are in [External references](#external-references).
+- `openApiSchemaUri(version)` is the schema a document of a version is
+  validated against, from the same table as the version's default
+  dialect: OpenAPI's latest published `schema` for it,
+  `oas/3.0/schema/2024-10-18`, `oas/3.1/schema/2026-11-05`, and
+  `oas/3.2/schema/2026-11-12`. A new date changes it. Rejected:
+  `schema-base`, which also validates Schema Objects against the default
+  dialect, which resolving checks already, in each one's own dialect.
+  Rejected: a `latest` URL for each version, which would follow new dates
+  without a change here, because OpenAPI doesn't publish one. The
+  schemas aren't included. `openApiSpecMediaType` retrieves them (see
+  [OpenAPI 3.0, 3.1, and 3.2](openapi.md)).
+- An OpenAPI document is both: an instance of its version's schema, and a
+  document with schemas in it. The same AST can be validated and resolved,
+  in either order, because validating only reads values and resolving
+  annotates in place. The CLI does both (see its
+  [Schema or instance](https://github.com/hyperjump-io/cli/blob/main/design/components/schema-or-instance.md)).
 - Lint works on an OpenAPI document as it is: rules visit `json-schema`
   nodes, and the root isn't one. Rules about the discriminator read
   component names from the tree.

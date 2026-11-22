@@ -48,4 +48,24 @@ export const parseOpenApi: (text: string, session: Hyperjump<JsonSchemaConfig>, 
  */
 export const openApiResolve: Plugin<[{ session: Hyperjump<JsonSchemaConfig> }], JsonDocumentNode, JsonSchemaDocumentNode>;
 
-export { resolveOpenApi } from "./resolve.js";
+/**
+ * OpenAPI's dialect meta-schemas and document schemas, which
+ * `https://spec.openapis.org/oas/` serves as `application/octet-stream`.
+ * It's a media type plugin for `application/octet-stream` that only reads
+ * that site's, as JSON Schema. Anything else is refused as it would be
+ * without it. With it in `mediaTypes`, and the site in `allowRetrieval`,
+ * OpenAPI 3.1's and 3.2's dialects and the schemas from `openApiSchemaUri`
+ * can be retrieved instead of being in a registry.
+ *
+ * ```js
+ * const config = jsonSchemaConfig({
+ *   dialects: [draft202012Dialect],
+ *   vocabularies: { [openApi31VocabularyUri]: openApi31Vocabulary },
+ *   mediaTypes: [openApiMediaType, openApiSpecMediaType],
+ *   allowRetrieval: ["https://spec.openapis.org/oas/"]
+ * });
+ * ```
+ */
+export const openApiSpecMediaType: Readonly<MediaTypePlugin<JsonSchemaDocumentNode<"success">>>;
+
+export { openApiSchemaUri, resolveOpenApi } from "./resolve.js";
