@@ -5,8 +5,11 @@ In `recommended`, as a warning.
 A property next to `$ref` in draft-04 through draft-07. In those drafts,
 `$ref` replaces the whole schema, so every other property is ignored. That
 includes keywords, annotations like `description`, identifiers, and
-`definitions`. A reference into ignored `definitions` doesn't find a
-schema. 2019-09 and later evaluate `$ref` alongside its siblings.
+`definitions`. 2019-09 and later evaluate `$ref` alongside its siblings.
+
+An implementation might not find the schemas in `definitions` next to
+`$ref`, so a reference to one of them might not work. Wrap the `$ref` in
+an `allOf` instead, so `definitions` isn't next to it.
 
 `$schema` isn't reported, because it decides the dialect, and the dialect
 is what makes `$ref` replace the schema. `$comment` isn't reported,
@@ -58,7 +61,7 @@ because a comment never has an effect. It has no options.
 }
 ```
 
-> 'definitions' is ignored, because '$ref' replaces the schema it's in
+> 'definitions' is ignored, because '$ref' replaces the schema it's in, so an implementation might not find its schemas. Wrap the '$ref' in an 'allOf'.
 
 ### Not reported
 

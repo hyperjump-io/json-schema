@@ -28,7 +28,8 @@ import type { DialectDefinition } from "../dialect.d.ts";
  *   `$ref` since 2019-09. An object is a `$ref` in a dialect where `$ref`
  *   replaces the whole object, such as draft-04 through draft-07. It
  *   works like a JRef reference, and its other properties are ignored, so
- *   they're plain JSON and not keywords.
+ *   they're plain JSON and not keywords, except `definitions`, which is a
+ *   keyword that still holds schemas.
  *
  * A node's `location` is relative to the schema resource that contains it.
  * Nodes in an embedded resource use that resource's URI, not the URI of the

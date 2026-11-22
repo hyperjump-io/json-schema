@@ -97,15 +97,40 @@ an internal meta-schema.
   keyword's shape, `check`, or `resolve` hook use the keyword's URI as the
   `ruleId`.
 
+- In draft-04–07, a `$ref` replaces the schema it's in, and everything
+  next to it is ignored, except that `definitions` still holds schemas.
+  Tools like typescript-json-schema generate
+  `{ "$ref": "#/definitions/root", "definitions": {…} }`, and other
+  validators accept it. `definitions` evaluates nothing, so keeping it
+  only changes where schemas are found, and it's decided when the schema
+  is resolved, so a reference from another document finds them too. Its
+  schemas are resolved like any others, with their identifiers and their
+  problems. The other properties are still plain JSON.
+  `ignored-ref-siblings` still reports it, because other implementations
+  might ignore it, and a bundle can't have it (see [Bundling](bundling.md)). The
+  resolver knows the keyword by its URI, as bundling does. Rejected: a
+  property of `Keyword` saying it's kept next to a reference, a fact for
+  one keyword. Rejected: finding the schemas in every property next to
+  `$ref` without applying their effects, which would make identifiers in
+  ignored keywords identify schemas, and have lint report on schemas that
+  are never evaluated.
+- A reference to a location that isn't a schema, like inside `definitions`
+  in 2020-12 or `$defs` in draft-07, is an error, which
+  `reference-without-target` and `misnamed-definitions` report. Rejected:
+  applying it as a schema in the dialect of the resource the reference is
+  in. In place in the tree, the resolver can only do that for references
+  in the same document: a document that's resolved already can't change
+  because another document refers to it, since sessions share resolved
+  registry entries. Across documents, it would need a copy resolved when
+  the reference is followed, cached in the session, which is a second
+  mechanism, puts resolving in lowering, and hides those schemas from lint
+  and the language server. Working in a document and not across documents
+  isn't worth having. OpenAPI's
+  [External references](built-in-dialects/openapi-documents.md#external-references)
+  follow from it.
+
 ## Open questions
 
 - **Where the resolver could be more tolerant.** Recoverable input should
   be accepted and reported by the linter (see [Validity and lint](lint/validity.md)). Review
-  the resolver for places it's stricter than it needs to be. A reference
-  to a location that isn't a schema, like inside `definitions` in 2020-12
-  or `$defs` in draft-07, stays an error, which `reference-without-target`
-  and `misnamed-definitions` report (see
-  [External references](built-in-dialects/openapi-documents.md#external-references)
-  for why it isn't applied as a schema). Another case: in draft-04–07, `{ "$ref": "#/definitions/root", "definitions":
-  {…} }` fails, because everything next to `$ref` is ignored, though tools
-  like typescript-json-schema generate it and other validators accept it.
+  the resolver for places it's stricter than it needs to be.

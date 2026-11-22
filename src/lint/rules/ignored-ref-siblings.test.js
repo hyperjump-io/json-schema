@@ -33,7 +33,13 @@ describe("ignored-ref-siblings", () => {
 
   test("at the root, where $schema isn't ignored, but definitions are", async () => {
     expect(await reasons(`{ "$schema": "${draft07}", "$ref": "#/definitions/a", "definitions": { "a": {} } }`)).to.eql([
-      "'definitions' is ignored, because '$ref' replaces the schema it's in"
+      "'definitions' is ignored, because '$ref' replaces the schema it's in, so an implementation might not find its schemas. Wrap the '$ref' in an 'allOf'."
+    ]);
+  });
+
+  test("definitions next to $ref that isn't at the root", async () => {
+    expect(await reasons(`{ "$schema": "${draft07}", "items": { "$ref": "#/items/definitions/a", "definitions": { "a": {} } } }`)).to.eql([
+      "'definitions' is ignored, because '$ref' replaces the schema it's in, so an implementation might not find its schemas. Wrap the '$ref' in an 'allOf'."
     ]);
   });
 

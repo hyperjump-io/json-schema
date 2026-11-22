@@ -15,6 +15,7 @@ import anchorKeyword from "../keywords/anchor.js";
 import dynamicAnchorKeyword from "../keywords/dynamicAnchor.js";
 import legacyIdKeyword from "../keywords/draft-07/id.js";
 import legacyRefKeyword from "../keywords/draft-07/ref.js";
+import definitionsKeyword from "../keywords/definitions.js";
 import recursiveAnchorKeyword from "../keywords/draft-2019-09/recursiveAnchor.js";
 import vocabularyKeyword from "../keywords/vocabulary.js";
 import { noUrl } from "../identifiers.js";
@@ -634,7 +635,7 @@ describe("jsonSchemaResolve", () => {
 
       expect(file.messages).to.eql([]);
       expect(document.embedded["https://example.com/foo"].dialectUri).to.equal(legacyDialectUri);
-      expect(keywordNode(at("/$defs/foo", root), "definitions").keywordUri).to.equal("https://example.com/keyword/defs");
+      expect(keywordNode(at("/$defs/foo", root), "definitions").keywordUri).to.equal(definitionsKeyword.uri);
       expect(at("/$defs/foo/definitions/bar", root).dialectUri).to.equal(legacyDialectUri);
     });
 
@@ -876,6 +877,40 @@ describe("jsonSchemaResolve", () => {
       expect(Object.keys(document.embedded)).to.eql([baseUri]);
     });
 
+    test("definitions next to $ref still holds schemas", async () => {
+      const { document, root, file } = await resolve(jsonSchema, `{
+        "$schema": "${legacyDialectUri}",
+        "$ref": "#/definitions/a",
+        "type": "number",
+        "definitions": {
+          "a": { "type": "string" },
+          "b": { "$id": "/b", "$ref": "#" }
+        }
+      }`);
+
+      expect(file.messages).to.eql([]);
+      expect(root).to.include({ type: "reference", href: `${baseUri}#/definitions/a` });
+      expect(keywordNode(root, "definitions").keywordUri).to.equal(definitionsKeyword.uri);
+      expect(keywordNode(root, "type").keywordUri).to.equal(undefined);
+      expect(at("/definitions/a", root)).to.include({ type: "json-schema", dialectUri: legacyDialectUri, location: `${baseUri}#/definitions/a` });
+      expect(at("/definitions/b", root).type).to.equal("reference");
+      expect(Object.keys(document.embedded)).to.eql([baseUri]);
+    });
+
+    test("definitions next to $ref identifies schemas, and its problems are reported", async () => {
+      const { document, file } = await resolve(jsonSchema, `{
+        "$schema": "${legacyDialectUri}",
+        "$ref": "#/definitions/a",
+        "definitions": {
+          "a": { "$id": "/a", "type": "string" },
+          "b": 42
+        }
+      }`);
+
+      expect(ruleIds(file)).to.eql(["invalid-schema"]);
+      expect(Object.keys(document.embedded)).to.eql(["https://example.com/a", baseUri]);
+    });
+
     test("a $ref written as a file: URI is reported and doesn't replace the schema", async () => {
       const { root, file } = await resolve(jsonSchema, `{
         "$schema": "${legacyDialectUri}",
@@ -1020,6 +1055,19 @@ describe("jsonSchemaResolve", () => {
       expect(selected && jrefLocation(selected)).to.equal(`${uri}#/$defs/a`);
     });
 
+    test("a root $ref finds a schema in the definitions next to it", async () => {
+      const session = new Hyperjump(jsonSchema);
+      const uri = await schemaFile("root-ref.schema.json", {
+        $schema: legacyDialectUri,
+        $ref: "#/definitions/a",
+        definitions: { a: { type: "string" } }
+      });
+
+      const a = await browse(session, uri);
+      expect(jrefLocation(a)).to.equal(`${uri}#/definitions/a`);
+      expect(a.node).to.include({ type: "json-schema" });
+    });
+
     test("references between embedded resources", async () => {
       const session = new Hyperjump(jsonSchema);
       const uri = await schemaFile("embedded.schema.json", {
@@ -1118,6 +1166,7 @@ const testKeywords = [
   legacyRefKeyword,
   recursiveAnchorKeyword,
   vocabularyKeyword,
+  definitionsKeyword,
   { uri: "https://example.com/keyword/defs", shape: { map: "schema" } },
   { uri: "https://example.com/keyword/properties", shape: { map: "schema" } },
   { uri: "https://example.com/keyword/allOf", shape: { array: "schema" } },
@@ -1163,7 +1212,7 @@ const legacyDialect = {
   keywords: {
     $id: legacyIdKeyword.uri,
     $ref: legacyRefKeyword.uri,
-    definitions: "https://example.com/keyword/defs",
+    definitions: definitionsKeyword.uri,
     properties: "https://example.com/keyword/properties",
     type: "https://example.com/keyword/type"
   },

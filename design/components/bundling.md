@@ -81,8 +81,12 @@ being considered (see [Open questions](#open-questions)).
 - `false` is embedded as `{ "not": {} }`, because only an object can have
   an identifier. `true` is `{}`.
 - In draft-04–07, a `$ref` at the root replaces the whole object. An
-  embedded document with one would lose its identifier, and a main schema
-  with one would lose its definitions, so both are errors. A main schema
+  embedded document with one would lose its identifier, so it's an error.
+  A main schema with one is an error too: it can't have an identifier,
+  and though the resolver finds the schemas in `definitions` next to
+  `$ref` (see [Schema validation](schema-validation.md)), other
+  implementations might not, and `ignored-ref-siblings` reports it. A bundle
+  is meant to be used anywhere. A main schema
   that's only a `$ref` with nothing to embed is returned as it is, because
   its dialect isn't recorded.
 - A reference can't be written as a `file:` URI (see

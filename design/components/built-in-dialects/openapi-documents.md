@@ -156,17 +156,8 @@ Rejected:
   would pass a context to plugins, and a document parsed in two contexts
   would conflict, which Appendix G says MAY be an error.
 - A reference applying its target as a schema when the target isn't one,
-  in the dialect of the resource it's in, which would also have made
-  references into unknown keywords work, like `definitions` in 2020-12. In place in the tree, which a
-  node can be because data carries nothing but its type, the resolver
-  can only do it for references in the same document: a document parsed
-  already can't change because another document refers to it, since
-  sessions share resolved registry entries and a document can't change
-  what another's reference finds. Across documents, it would need a copy
-  resolved when the reference is followed, cached in the session, which
-  is a second mechanism, puts resolving in lowering, and hides those
-  schemas from lint and the language server. Working in a document and
-  not across documents isn't worth having.
+  in the dialect of the resource it's in (see
+  [Schema validation](../schema-validation.md) for why).
 
 ## Where Schema Objects are
 

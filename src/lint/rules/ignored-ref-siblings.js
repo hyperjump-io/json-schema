@@ -12,6 +12,13 @@ import { lintRule } from "../lint-rule.js";
  */
 const notReported = new Set(["$ref", "$schema", "$comment"]);
 
+/**
+ * `definitions` is ignored too, but the resolver still finds its schemas,
+ * because tools generate a `$ref` to one of them next to it. Other
+ * implementations might not, so it's still reported.
+ */
+const definitionsUri = "https://json-schema.org/keyword/definitions";
+
 /** @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void> */
 const ignoredRefSiblings = lintRule({ origin: "json-schema-lint:ignored-ref-siblings", url: "https://hyperjump.io/json-schema/linting/rules/ignored-ref-siblings/" }, (tree, file) => {
   visit(tree, "reference", (node) => {
@@ -23,7 +30,9 @@ const ignoredRefSiblings = lintRule({ origin: "json-schema-lint:ignored-ref-sibl
 
     for (const property of /** @type JsonSchemaKeywordNode[] */ (node.children)) {
       const name = property.children[0].value;
-      if (!notReported.has(name)) {
+      if (property.keywordUri === definitionsUri) {
+        file.message(`'${name}' is ignored, because '$ref' replaces the schema it's in, so an implementation might not find its schemas. Wrap the '$ref' in an 'allOf'.`, { place: property.position });
+      } else if (!notReported.has(name)) {
         file.message(`'${name}' is ignored, because '$ref' replaces the schema it's in`, { place: property.position });
       }
     }

@@ -63,7 +63,7 @@ const bundleDocuments = (main, documents, dialects, options) => {
   const mainRoot = /** @type JsonSchemaNode */ (main.children[0]);
   if (mainRoot.type === "reference") {
     if (documents.length > 0) {
-      throw Error(`Schemas can't be embedded in '${relativeFileUrl(main.uri)}', because its root is a '$ref' that replaces the whole object, so its definitions would be ignored`);
+      throw Error(`Schemas can't be embedded in '${relativeFileUrl(main.uri)}', because its root is a '$ref' that replaces the whole object, so it can't have an identifier, and an implementation might ignore definitions next to it`);
     }
 
     // Nothing else in it means anything, so it isn't given a dialect or an

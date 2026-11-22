@@ -3,6 +3,7 @@ import { pointerAppend } from "@hyperjump/json-pointer";
 import { InvalidIriError, assertIriReference, encodeIriFragment, getScheme, isIriReference, normalizeIri, resolveIri, urlToIri } from "@hyperjump/uri";
 import { iriPlace, iriProblem, resolveId, toId } from "../identifiers.js";
 import { definitionsOf, keywordOf } from "../definition-of.js";
+import definitionsKeyword from "../keywords/definitions.js";
 import schemaKeyword from "../keywords/schema.js";
 import unknownKeyword from "../keywords/unknown.js";
 import { siblingValues } from "../keywords/utilities.js";
@@ -242,6 +243,18 @@ class Resolver {
       // The reference replaces the whole object, so nothing else in it means
       // anything. A sibling `$id` doesn't change the base URI.
       this.#data(node, resource, pointer, false);
+
+      // Except that `definitions` still holds schemas. It evaluates nothing,
+      // so ignoring it is only about finding them, and tools generate a root
+      // `$ref` to one of them. `ignored-ref-siblings` reports it, because
+      // other implementations might not.
+      for (const [property, keywordUri, keyword] of keywords) {
+        if (keywordUri === definitionsKeyword.uri) {
+          property.keywordUri = keywordUri;
+          const [nameNode, valueNode] = property.children;
+          await this.#shape(valueNode, keyword.shape, keywordUri, resource, pointerAppend(nameNode.value, pointer), dialect);
+        }
+      }
       return;
     }
 
