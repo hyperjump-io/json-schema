@@ -225,9 +225,9 @@ class Resolver {
 
     // `$schema` is only allowed where a schema resource starts. Anywhere else,
     // it's ignored and the schema is interpreted with its parent's dialect.
+    // `misplaced-dialect` reports it.
     if ($schemaNode && !isDocumentRoot && effects.baseUri === undefined && effects.reference === undefined && dialect !== parentDialect) {
       this.#messages.length = messageCount;
-      this.#message("'$schema' is only allowed at the root of a schema resource. It's ignored.", $schemaNode, "misplaced-dialect");
 
       dialect = /** @type Dialect */ (parentDialect);
       messageCount = this.#messages.length;

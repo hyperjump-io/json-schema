@@ -200,16 +200,17 @@ describe("OpenAPI documents", () => {
       expect(isPet({ name: 1 })).to.equal(false);
     });
 
-    test("$schema is only allowed next to $id", async () => {
+    test("$schema that isn't next to $id is ignored", async () => {
+      // `misplaced-dialect` reports it
       const openapi = await write("openapi.json", {
         openapi: "3.1.1",
         info: { title: "Pets", version: "1" },
         components: { schemas: { Name: { $schema: "https://json-schema.org/draft/2020-12/schema", type: "string" } } }
       });
 
-      await expect(compile(withMetaSchemas, `${openapi}#/components/schemas/Name`)).rejects.toMatchObject({
-        messages: [{ ruleId: "misplaced-dialect" }]
-      });
+      const isName = await validator(`${openapi}#/components/schemas/Name`);
+      expect(isName("Misty")).to.equal(true);
+      expect(isName(1)).to.equal(false);
     });
   });
 

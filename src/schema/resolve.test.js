@@ -53,7 +53,7 @@ describe("resolveSchema", () => {
     const { document: tree } = fromJson(JSON.stringify({ $schema: dialectUri, properties: { a: { $schema: strictDialectUri, foo: 1 } } }), noUrl);
     const { messages } = await resolveSchema(tree, { session: new Hyperjump(testJsonSchema()), uri: baseUri });
 
-    expect(messages.map(({ ruleId }) => ruleId)).to.eql(["misplaced-dialect"]);
+    expect(messages).to.eql([]);
   });
 });
 
@@ -152,7 +152,7 @@ describe("jsonSchemaResolve", () => {
         }
       }`);
 
-      expect(ruleIds(file)).to.eql(["misplaced-dialect", "unknown-keyword"]);
+      expect(ruleIds(file)).to.eql(["unknown-keyword"]);
     });
 
     test("a keyword in the dialect that isn't supported", async () => {
@@ -650,7 +650,8 @@ describe("jsonSchemaResolve", () => {
         }
       }`);
 
-      expect(ruleIds(file)).to.eql(["misplaced-dialect"]);
+      // `misplaced-dialect` reports it
+      expect(file.messages).to.eql([]);
       expect(at("/$defs/foo", root).dialectUri).to.equal(dialectUri);
       expect(keywordNode(at("/$defs/foo", root), "definitions").keywordUri).to.equal("https://json-schema.org/keyword/unknown#definitions");
     });

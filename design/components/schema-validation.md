@@ -86,7 +86,7 @@ an internal meta-schema.
   `$schema` is a file as JSON without retrieving it, because that's an
   instance naming its schema, like `"$schema": "./schema.json"`.
 - The resolver's own checks (schemas that aren't objects or booleans,
-  misplaced `$schema`, duplicate ids and anchors, invalid identifiers,
+  duplicate ids and anchors, invalid identifiers,
   `file:` identifiers, references, and dialects) are schema validation too.
   Every problem is a
   `VFileMessage` with `source: "json-schema"`, a `ruleId`, and `fatal: true`,

@@ -60,6 +60,7 @@ what it reports and what it doesn't.
 | [`unknown-keyword`](unknown-keyword.md) | A property of a schema that isn't a keyword in its dialect. It's usually a misspelling, and the message suggests a keyword when one is close. The `ignore` option lists names not to report. |
 | [`non-canonical-dialect-uri`](non-canonical-dialect-uri.md) | A `$schema` that other implementations might not recognize. It has a non-empty fragment, isn't normalized, or doesn't match its dialect's official URI, like draft-07 without `#`. |
 | [`invalid-dialect-uri`](invalid-dialect-uri.md) | A v1 `$schema` that has a fragment or isn't normalized. v1 doesn't allow either, so it's an error. |
+| [`misplaced-dialect`](misplaced-dialect.md) | `$schema` where its dialect doesn't allow it: anywhere but a schema resource's root, or the document's root in draft-04 through draft-07 |
 | [`relative-root-id`](relative-root-id.md) | A relative `$id` on the root schema, like `/user`. The schema's identifier then depends on where it was retrieved from. |
 | [`implicit-dialect`](implicit-dialect.md) | A root schema without `$schema` whose dialect came from a media type parameter or the default dialect. Other tools might not know the dialect. |
 | [`reference-by-location`](reference-by-location.md) | A `$ref` that finds a schema by its file or by a JSON Pointer into an embedded resource instead of by the schema's `$id` |

@@ -46,6 +46,7 @@ import keywordImpliedByConstOrEnum from "./rules/keyword-implied-by-const-or-enu
 import constOrEnumValueRejected from "./rules/const-or-enum-value-rejected.js";
 import invalidDefaultOrExample from "./rules/invalid-default-or-example.js";
 import keywordAllowsNothing from "./rules/keyword-allows-nothing.js";
+import misplacedDialect from "./rules/misplaced-dialect.js";
 
 /**
  * @import { Preset } from "unified"
@@ -101,6 +102,7 @@ const recommended = {
     [constOrEnumValueRejected, ["warn"]],
     [invalidDefaultOrExample, ["warn"]],
     [invalidDialectUri, ["error"]],
+    [misplacedDialect, ["error"]],
     [referenceWithoutTarget, ["error"]]
   ]
 };
