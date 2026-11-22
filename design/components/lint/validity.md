@@ -9,11 +9,11 @@
 
 - What a spec says a keyword's value MUST be is validity, and what it says
   it SHOULD be is lint. The spec's text decides, not its meta-schema, as
-  v1 says. The draft meta-schemas don't allow an empty `type` array, or an
-  empty `enum` in draft-06 and draft-07, but the drafts' text does, so
-  they're lint. Draft-04's `exclusiveMaximum` MUST have a `maximum`, so
-  it's an error, and an empty `enum` is an error in draft-04 (MUST) and
-  lint after it (SHOULD).
+  v1 says. The draft meta-schemas don't allow an empty `type` array, an
+  empty `enum` in draft-06 and draft-07, or an empty array `items` in
+  2019-09, but the drafts' text does, so they're lint. Draft-04's
+  `exclusiveMaximum` MUST have a `maximum`, so it's an error, and an empty
+  `enum` is an error in draft-04 (MUST) and lint after it (SHOULD).
 - A keyword with no effect (`then` without `if`, `minContains` without
   `contains`), a reference to something missing, and an unknown `format`
   that's only an annotation are lint. The schema still works.

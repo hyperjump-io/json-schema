@@ -1,5 +1,4 @@
 import { all } from "../utilities.js";
-import { nonEmpty } from "../checks.js";
 
 /**
  * @import { Keyword } from "../../keyword.d.ts"
@@ -16,7 +15,6 @@ import { nonEmpty } from "../checks.js";
 export default {
   uri: "https://json-schema.org/keyword/draft-2019-09/items",
   shape: ["schema", { array: "schema" }],
-  check: nonEmpty,
   lower: (items) => Array.isArray(items)
     ? all(items.map((schema, index) => ({ op: "item", index, of: schema })))
     : { op: "eachItem", from: 0, of: items }

@@ -176,6 +176,11 @@ describe("keyword checks", () => {
     ]);
   });
 
+  test("2019-09's items can be an empty array", async () => {
+    // Only its meta-schema says it can't
+    expect(await check(jsonSchema, `{ "$schema": "${draft201909DialectUri}", "items": [] }`)).to.eql([]);
+  });
+
   test("enum and required can be empty or have duplicates after draft-04", async () => {
     const messages = await check(jsonSchema, `{ "$schema": "${v1DialectUri}", "enum": [], "properties": { "a": { "enum": [1, 1] }, "b": { "required": [] } } }`);
 
