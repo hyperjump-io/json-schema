@@ -110,9 +110,14 @@ finds a schema only where the target document has one.
 | A Reference Object to a document whose root is another Object, like a Parameter | Not followed; not supported |
 
 - The environment is per document: a registry entry's `dialectUri`, the
-  `Content-Type`'s `schema` parameter, and in the CLI, file patterns that
-  give matching files a dialect. So one config can have a 3.0 description
-  and a 3.1 one. The config's `defaultDialectUri` still applies only to
+  `Content-Type`'s `schema` parameter, and in the CLI, its `defaultDialect`
+  setting, which gives files that match a glob a dialect, with a media type
+  plugin that gives their text to the schema media type with that `schema`
+  parameter (see the CLI's
+  [Default dialects](https://github.com/hyperjump-io/cli/blob/main/design/components/default-dialect.md)).
+  So one config can have a 3.0 description and a 3.1 one. Rejected:
+  expanding `defaultDialectUri` to take URL prefixes or a function, for
+  the CLI's globs, which is the library doing what only the CLI needs. The config's `defaultDialectUri` still applies only to
   documents that are schemas already, like `.schema.json`, and the
   JSON-or-schema plugin still reads a `.json` without `$schema` or
   `openapi` as JSON.
@@ -185,10 +190,10 @@ Every version:
    resource, the OpenAPI resolver with the grammar tables, and
    `openApiMediaType` for JSON, so `openapi.json#/components/schemas/Pet`
    compiles and an OpenAPI document lints. Built.
-2. Sniffing `openapi` in `.json` (built), and the CLI's file patterns for
-   the dialect of schema files without `$schema`, so a referenced
+2. Sniffing `openapi` in `.json`, and the CLI's `defaultDialect` setting
+   for the dialect of schema files without `$schema`, so a referenced
    `pet.json` works there. From code, a registry entry's `dialectUri`
-   already does.
+   already does. Built.
 3. The discriminator's lint rules (see [OpenAPI 3.0, 3.1, and
    3.2](openapi.md)).
 4. YAML, as its own plugin.
@@ -198,9 +203,6 @@ Every version:
 - The default for a version without the meta-schema in the registry:
   3.1's and 3.2's dialects are their meta-schemas, so a document without
   `jsonSchemaDialect` needs the default one there.
-- How the CLI's file patterns reach the parse: a registry of the matched
-  files with their `dialectUri`, or something else. And whether a `.json`
-  that matches is a schema.
 - `operations` like `compile` take a schema URI. A URI into an OpenAPI
   document works once the node there is a schema. Whether the document's
   URI on its own should mean anything.
