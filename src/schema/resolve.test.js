@@ -793,7 +793,9 @@ describe("jsonSchemaResolve", () => {
         expect(document.definedDialect).to.equal(undefined);
       });
 
-      test("an embedded resource can define a dialect", async () => {
+      test("an embedded resource doesn't define a dialect", async () => {
+        // Its URI only finds it from a reference in the same document, so
+        // `getDialect` can't find it. `misplaced-vocabulary` reports it.
         const { document, file } = await resolve(jsonSchema, `{
           "$schema": "${dialectUri}",
           "$defs": {
@@ -803,7 +805,7 @@ describe("jsonSchemaResolve", () => {
 
         expect(file.messages).to.eql([]);
         expect(document.definedDialect).to.equal(undefined);
-        expect(document.embedded["https://example.com/meta"].definedDialect).to.include({ unknownKeywords: "annotation" });
+        expect(document.embedded["https://example.com/meta"].definedDialect).to.equal(undefined);
       });
 
       test("a dialect is only defined where a schema resource starts", async () => {

@@ -32,9 +32,9 @@ describe("misplaced-vocabulary", () => {
     expect(await reasons(`{ "$schema": "${draft202012}", "$vocabulary": { "${core}": true } }`)).to.eql([]);
   });
 
-  test("at the root of an embedded resource, which this implementation uses", async () => {
+  test("at the root of an embedded resource", async () => {
     expect(await reasons(`{ "$schema": "${draft202012}", "$defs": { "a": { "$id": "https://example.com/a", "$vocabulary": { "${core}": true } } } }`)).to.eql([
-      "'$vocabulary' is only allowed at the root of the document. Other implementations might ignore it."
+      "'$vocabulary' is only allowed at the root of the document. It's ignored."
     ]);
   });
 

@@ -122,9 +122,10 @@ export type JsonSchemaDocumentNode<S extends JsonParseStatus = JsonParseStatus> 
   dialectUri?: string;
 
   /**
-   * The dialect the resource defines as a meta-schema, from a resolve hook
-   * such as `$vocabulary`'s. It's identified by any URI the resource is found
-   * by.
+   * The dialect the document defines as a meta-schema, from a resolve hook
+   * such as `$vocabulary`'s. It's identified by any URI the document is
+   * found by. Only a document's root defines one, so an embedded resource
+   * never has it.
    */
   definedDialect?: DialectDefinition;
 

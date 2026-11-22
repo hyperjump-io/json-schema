@@ -275,9 +275,11 @@ class Resolver {
         this.#embedded[resource.uri] = resource;
       }
 
-      // A dialect is only defined at a resource's root. Anywhere else, its
-      // definition is ignored, and `misplaced-vocabulary` reports it.
-      if (effects.dialect) {
+      // A dialect is only defined at the document's root, because a
+      // dialect's meta-schema is found by its URI, and that only finds a
+      // document. Anywhere else, its definition is ignored, and
+      // `misplaced-vocabulary` reports it.
+      if (isDocumentRoot && effects.dialect) {
         resource.definedDialect = effects.dialect;
       }
     }

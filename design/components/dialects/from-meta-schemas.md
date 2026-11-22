@@ -2,9 +2,13 @@
 
 - A meta-schema can define a dialect. A resolve hook calls
   `defineDialect` with the dialect without its URI (`DialectDefinition`),
-  and the resolver records it on the schema resource
-  (`JsonSchemaDocumentNode.definedDialect`). It's only allowed where a schema
-  resource starts. Anywhere else, it's ignored with a message.
+  and the resolver records it on the document
+  (`JsonSchemaDocumentNode.definedDialect`). Only the document's root
+  defines a dialect, because a meta-schema is found by its URI with
+  `browse`, and a URI only finds a document. An embedded resource's URI
+  only finds it from a reference in the same document. Anywhere else,
+  it's ignored, and `misplaced-vocabulary` reports it. Rejected: an
+  embedded resource defining a dialect, which nothing could find.
 
 - A dialect that isn't defined is the one its meta-schema defines.
   `getDialect(session, uri)` gets the meta-schema with `browse`, so

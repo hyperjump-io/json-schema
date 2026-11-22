@@ -7,10 +7,10 @@ In `recommended`, as an error.
 specs say it belongs at the root of a meta-schema's document, and must not
 appear in subschemas.
 
-Where a schema resource doesn't start, this implementation ignores it. It
-does use one at the root of a schema with an `$id`, so a meta-schema
-embedded in a bundle defines its dialect. Other implementations might not,
-so it's an error in the recommended preset. It has no options.
+This implementation ignores it anywhere else, even at the root of a schema
+with an `$id`, because a meta-schema is found by its URI, which only finds
+a document. Other implementations might not accept it, so it's an error in
+the recommended preset. It has no options.
 
 ## Examples
 
@@ -45,7 +45,7 @@ so it's an error in the recommended preset. It has no options.
 }
 ```
 
-> '$vocabulary' is only allowed at the root of the document. Other implementations might ignore it.
+> '$vocabulary' is only allowed at the root of the document. It's ignored.
 
 ### Not reported
 
