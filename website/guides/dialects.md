@@ -105,8 +105,8 @@ valid.
 To use the Schema Objects in an OpenAPI document, add `openApiMediaType`
 from `@hyperjump/json-schema/openapi` to the config's `mediaTypes`. Then a
 URI into the document, like `openapi.json#/components/schemas/Pet`, is a
-schema. It reads JSON documents named `openapi.json` or served as
-`application/openapi+json`. A Schema Object's dialect is the document's
+schema. It reads JSON documents served as `application/openapi+json`, and
+any `.json` file with a top-level `openapi` and no `$schema`. A Schema Object's dialect is the document's
 `jsonSchemaDialect`, or the version's default, which the config needs to
 have.
 

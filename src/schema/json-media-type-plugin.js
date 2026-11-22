@@ -1,4 +1,4 @@
-import { jsonMediaType } from "@hyperjump/browser";
+import { jsonMediaType, mediaTypeForContentType } from "@hyperjump/browser";
 import { normalizeIri, toAbsoluteIri, urlToIri } from "@hyperjump/uri";
 import { resolveId } from "../identifiers.js";
 import { resolveSchemaText } from "./resolve-text.js";
@@ -7,7 +7,7 @@ import { getDialect, hasDialect } from "../session.js";
 import { definitionsIn } from "../definition-of.js";
 
 /**
- * @import { DocumentSession } from "@hyperjump/browser"
+ * @import { DocumentSession, MediaTypePlugin } from "@hyperjump/browser"
  * @import { AbsoluteIri } from "@hyperjump/uri"
  * @import { Hyperjump } from "@hyperjump/browser"
  * @import { JsonSchemaConfig } from "../json-schema.d.ts"
@@ -29,13 +29,46 @@ export const jsonOrSchemaMediaType = Object.freeze({
     // The dialect itself is found again when the schema is resolved
     const dialectUri = await schemaDialect(text, uri, session);
     if (dialectUri === undefined) {
-      // The text has been read, so the JSON plugin gets it as it is
-      return jsonMediaType.parse({ text: async () => text, url: response.url });
+      // The text has been read, so the next plugin gets it as it is
+      const source = { text: async () => text, url: response.url, headers: response.headers };
+      const openApi = openApiPlugin(text, session);
+      if (openApi !== undefined) {
+        return /** @type any */ (openApi.parse(/** @type Response */ (source), session));
+      }
+      return jsonMediaType.parse(source);
     }
 
     return /** @type JsonSchemaMediaTypeDocument */ (await resolveSchemaText(text, dialectUri.session, uri, contentTypeParameters(response).schema));
   }
 });
+
+/**
+ * The plugin that reads OpenAPI documents, if the text is one, by its
+ * top-level `openapi`, and the session has a plugin for
+ * `application/openapi+json`. It's found by the media type, so this
+ * doesn't depend on OpenAPI's module, and a session without it reads the
+ * document as JSON. Without a plugin of its own, the media type finds this
+ * one, by its `+json` suffix.
+ *
+ * @type (text: string, session: DocumentSession) => MediaTypePlugin | undefined
+ */
+const openApiPlugin = (text, session) => {
+  if (!definitionsIn(session.config) || !text.includes(`"openapi"`)) {
+    return;
+  }
+
+  try {
+    const json = /** @type unknown */ (JSON.parse(text));
+    if (typeof json !== "object" || json === null || !("openapi" in json) || typeof json.openapi !== "string") {
+      return;
+    }
+  } catch {
+    return;
+  }
+
+  const plugin = mediaTypeForContentType(session.config.mediaTypes ?? [], "application/openapi+json");
+  return plugin === jsonOrSchemaMediaType ? undefined : plugin;
+};
 
 /**
  * The dialect of JSON text that's a schema: its top-level `$schema`, if the

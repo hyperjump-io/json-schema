@@ -35,11 +35,17 @@ The dialects are in [OpenAPI 3.0, 3.1, and 3.2](openapi.md).
   Browser picks the most specific match, so the plugin's place in
   `mediaTypes` doesn't matter: an exact subtype beats `application/json`'s
   suffix match, and a file name beats `.json`.
-- Any `.json` whose top-level `openapi` is a version the plugin reads is an
-  OpenAPI document. The JSON-or-schema plugin checks for it, as it checks
-  for `$schema`, and hands the text to the OpenAPI plugin when the
-  session's config has one. Rejected: only the media type and the file
-  name, which leaves `petstore.json` as JSON unless it's configured.
+- Any `.json` whose top-level `openapi` is a string is an OpenAPI
+  document. The JSON-or-schema plugin checks for it after `$schema`, so a
+  schema with a `$schema` dialect is still a schema, and hands the text to
+  the plugin the session has for `application/openapi+json`, found with
+  browser's `mediaTypeForContentType`. So it doesn't import the OpenAPI
+  module, which stays out of bundles that don't use it, and a session
+  without the plugin reads the document as JSON. Without the plugin, that
+  media type finds JSON-or-schema itself, by its `+json` suffix, which
+  isn't handed to. The OpenAPI plugin reports a version it doesn't read.
+  Rejected: only the media type and the file name, which leaves
+  `petstore.json` as JSON unless it's configured.
 - JSON first. YAML is a media type plugin of its own, probably a sibling
   package that parses YAML to a JSON AST with positions, so schemas in
   YAML work too. Then `application/openapi+yaml` and `/openapi.yaml`.
@@ -179,9 +185,10 @@ Every version:
    resource, the OpenAPI resolver with the grammar tables, and
    `openApiMediaType` for JSON, so `openapi.json#/components/schemas/Pet`
    compiles and an OpenAPI document lints. Built.
-2. Sniffing `openapi` in `.json`, and the CLI's file patterns for the
-   dialect of schema files without `$schema`, so a referenced `pet.json`
-   works there. From code, a registry entry's `dialectUri` already does.
+2. Sniffing `openapi` in `.json` (built), and the CLI's file patterns for
+   the dialect of schema files without `$schema`, so a referenced
+   `pet.json` works there. From code, a registry entry's `dialectUri`
+   already does.
 3. The discriminator's lint rules (see [OpenAPI 3.0, 3.1, and
    3.2](openapi.md)).
 4. YAML, as its own plugin.

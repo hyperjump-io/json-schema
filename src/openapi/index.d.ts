@@ -12,7 +12,9 @@ export type OpenApiDocument = JsonSchemaDocumentNode<"success">;
 
 /**
  * OpenAPI 3.0, 3.1, and 3.2 documents in JSON: `application/openapi+json`,
- * and files named `openapi.json`. The version is the document's `openapi`.
+ * and files named `openapi.json`. Any other JSON document with a top-level
+ * `openapi` and no `$schema` dialect is one too, when the session has this
+ * plugin. The version is the document's `openapi`.
  *
  * Its Schema Objects are schemas, so `openapi.json#/components/schemas/Pet`
  * compiles. A Schema Object's dialect is `jsonSchemaDialect` (3.1 and

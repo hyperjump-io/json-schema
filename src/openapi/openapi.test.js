@@ -244,6 +244,42 @@ describe("OpenAPI documents", () => {
     });
   });
 
+  describe("a .json file with another name", () => {
+    /** @type string */
+    let uri;
+
+    beforeAll(async () => {
+      uri = await write("petstore.json", {
+        openapi: "3.0.4",
+        info: { title: "Pets", version: "1" },
+        paths: {},
+        components: { schemas: { Pet: { type: "object", required: ["name"] } } }
+      });
+    });
+
+    test("is an OpenAPI document by its openapi field", async () => {
+      const isPet = await validator(`${uri}#/components/schemas/Pet`);
+      expect(isPet({ name: "Misty" })).to.equal(true);
+      expect(isPet({})).to.equal(false);
+    });
+
+    test("is JSON without the OpenAPI plugin", async () => {
+      const withoutPlugin = jsonSchemaConfig({ dialects: [openApi30Dialect] });
+      await expect(compile(withoutPlugin, `${uri}#/components/schemas/Pet`)).rejects.toMatchObject({ cause: { code: "ERR_NOT_A_SCHEMA" } });
+    });
+
+    test("is a schema if $schema is a dialect", async () => {
+      const schema = await write("openapi-keyword.json", {
+        $schema: "https://json-schema.org/draft/2020-12/schema",
+        openapi: "not a version",
+        type: "string"
+      });
+      const isString = await validator(schema);
+      expect(isString("Misty")).to.equal(true);
+      expect(isString(1)).to.equal(false);
+    });
+  });
+
   test("lint rules see the Schema Objects", async () => {
     const file = new VFile({
       path: join(directory, "lint.json"),

@@ -19,6 +19,10 @@ export type JsonOrSchemaDocument = JsonMediaTypeDocument | JsonSchemaMediaTypeDo
  * schema, rather than a dialect, is JSON, and so is one with a `$schema`
  * that's a file, which can't be a dialect.
  *
+ * A JSON document without a `$schema` dialect whose top-level `openapi` is
+ * a string is an OpenAPI document, if the session has a plugin for
+ * `application/openapi+json`, like `openApiMediaType`, which parses it.
+ *
  * A fragment of a schema is a schema's, and a fragment of JSON identifies
  * the whole document, which each document says with its `anchors`.
  *
