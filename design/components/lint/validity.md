@@ -25,12 +25,14 @@
   `recommended`, rather than validity. Being tolerant of bad input is
   better than refusing a schema that can be understood. A v1 `$schema`
   with a fragment, or that isn't normalized, still finds v1, so it's
-  `invalid-dialect-uri`. `$schema` where a schema resource doesn't start
-  is ignored, so it's `misplaced-dialect`. The rule follows each draft's
-  text, which is stricter than the resolver: draft-04–07 only allow
-  `$schema` at the document's root, but the resolver uses it at the root
-  of an embedded resource. The resolver still ignores what it ignored,
-  and reads the schema the same way, so only the report moved.
+  `invalid-dialect-uri`. `$schema` or `$vocabulary` where a schema
+  resource doesn't start is ignored, so it's `misplaced-dialect` or
+  `misplaced-vocabulary`. Those rules follow each draft's text, which is
+  stricter than the resolver: draft-04–07 only allow `$schema` at the
+  document's root, and `$vocabulary` belongs at a meta-schema document's
+  root, but the resolver uses them at the root of an embedded resource.
+  The resolver still ignores what it ignored, and reads the schema the
+  same way, so only the report moved.
 - `check` stays for validity only. Its context has the schema the keyword
   is in, for requirements on siblings, like draft-04's `exclusiveMaximum`
   needing `maximum`, but not other schemas or warnings. Rules read the

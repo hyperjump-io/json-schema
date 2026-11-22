@@ -43,7 +43,7 @@ import { getDialect } from "../session.js";
  *   anchors: [string, Node][];
  *   dynamicAnchors: [string, Node][];
  *   reference?: NormalizedIri;
- *   dialect?: { definition: DialectDefinition; node: Node; keywordUri: string };
+ *   dialect?: DialectDefinition;
  * }} Effects
  */
 
@@ -275,11 +275,11 @@ class Resolver {
         this.#embedded[resource.uri] = resource;
       }
 
+      // A dialect is only defined at a resource's root. Anywhere else, its
+      // definition is ignored, and `misplaced-vocabulary` reports it.
       if (effects.dialect) {
-        resource.definedDialect = effects.dialect.definition;
+        resource.definedDialect = effects.dialect;
       }
-    } else if (effects.dialect) {
-      this.#message("A dialect can only be defined at the root of a schema resource. It's ignored.", effects.dialect.node, effects.dialect.keywordUri);
     }
 
     this.#addAnchors(effects.anchors, resource.anchors, resource.uri, pointer, "anchor");
@@ -436,7 +436,7 @@ class Resolver {
             return;
           }
 
-          effects.dialect = { definition, node: valueNode, keywordUri: keyword.uri };
+          effects.dialect = definition;
         },
         message: (reason, node = valueNode) => this.#message(reason, node, keyword.uri)
       };

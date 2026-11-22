@@ -806,7 +806,7 @@ describe("jsonSchemaResolve", () => {
         expect(document.embedded["https://example.com/meta"].definedDialect).to.include({ unknownKeywords: "annotation" });
       });
 
-      test("a dialect can only be defined where a schema resource starts", async () => {
+      test("a dialect is only defined where a schema resource starts", async () => {
         const { document, file } = await resolve(jsonSchema, `{
           "$schema": "${dialectUri}",
           "$defs": {
@@ -814,7 +814,8 @@ describe("jsonSchemaResolve", () => {
           }
         }`);
 
-        expect(ruleIds(file)).to.eql([vocabularyKeyword.uri]);
+        // `misplaced-vocabulary` reports it
+        expect(file.messages).to.eql([]);
         expect(Object.values(document.embedded).map((resource) => resource.definedDialect)).to.eql([undefined]);
       });
 
