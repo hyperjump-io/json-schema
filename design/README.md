@@ -56,6 +56,8 @@ hand and have JSDoc explaining the details. Documentation for users is in
     [2019-09](components/built-in-dialects/draft-2019-09.md), and
     [draft-04, draft-06, and draft-07](components/built-in-dialects/draft-04-06-07.md),
     and [OpenAPI 3.0, 3.1, and 3.2](components/built-in-dialects/openapi.md)
+  - [OpenAPI documents](components/built-in-dialects/openapi-documents.md):
+    Schema Objects in an OpenAPI document (not built yet)
 - [Schema validation](components/schema-validation.md)
 - [Schema types](components/schema-types.md): checking schemas written in
   TypeScript

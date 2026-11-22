@@ -184,6 +184,7 @@ separate piece of work (see [Not done](#not-done)).
   unknown keyword's value is data, not a schema, so compiling from there
   fails. A media type for OpenAPI documents would find the Schema Objects
   where each version puts them and resolve them as schemas, with
-  `jsonSchemaDialect` as their default dialect.
+  `jsonSchemaDialect` as their default dialect. See
+  [OpenAPI documents](openapi-documents.md) for its design.
 - The OpenAPI document schemas aren't included, like the official
   meta-schemas (see [Built-in dialects](README.md#meta-schemas)).

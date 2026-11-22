@@ -101,12 +101,11 @@ an internal meta-schema.
 
 - **Where the resolver could be more tolerant.** Recoverable input should
   be accepted and reported by the linter (see [Validity and lint](lint/validity.md)). Review
-  the resolver for places it's stricter than it needs to be. For
-  references: anything a reference targets could be accepted as a schema,
-  even inside an unknown keyword, like `definitions` in 2020-12 or `$defs`
-  in draft-07, and a lint rule would report a reference to a location that
-  isn't a known schema. `reference-without-target` and
-  `misnamed-definitions` report these as missing schemas today. Another
-  case: in draft-04–07, `{ "$ref": "#/definitions/root", "definitions":
+  the resolver for places it's stricter than it needs to be. A reference
+  to a location that isn't a schema, like inside `definitions` in 2020-12
+  or `$defs` in draft-07, stays an error, which `reference-without-target`
+  and `misnamed-definitions` report (see
+  [External references](built-in-dialects/openapi-documents.md#external-references)
+  for why it isn't applied as a schema). Another case: in draft-04–07, `{ "$ref": "#/definitions/root", "definitions":
   {…} }` fails, because everything next to `$ref` is ignored, though tools
   like typescript-json-schema generate it and other validators accept it.
