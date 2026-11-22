@@ -50,7 +50,13 @@ import { getDialect } from "../session.js";
 export const resolveSchema = async (tree, options) => {
   const dialectUri = options.dialectUri ?? definitionsOf(options.session.config).defaultDialectUri;
   const resolver = new Resolver(options.session, tree, toId(options.uri));
-  return resolver.resolve(dialectUri);
+  return resolver.resolve(/** @type TreeNode | undefined */ (tree.children[0]), dialectUri);
+};
+
+/** @type typeof API.resolveSchemaAt */
+export const resolveSchemaAt = async (node, options) => {
+  const resolver = new Resolver(options.session, options.document, toId(options.uri), options.document.embedded);
+  return resolver.resolveAt(/** @type TreeNode */ (node), options.document, options.pointer, options.dialectUri);
 };
 
 /**
@@ -89,7 +95,11 @@ class Resolver {
    */
   #messages;
 
-  /** @type JsonDocumentNode */
+  /**
+   * What every resource made in the document shares with it
+   *
+   * @type Pick<JsonDocumentNode, "status" | "comments">
+   */
   #tree;
 
   /** @type Record<string, JsonSchemaDocumentNode> */
@@ -104,20 +114,22 @@ class Resolver {
 
   /**
    * @param {Hyperjump<JsonSchemaConfig>} session
-   * @param {JsonDocumentNode} tree
+   * @param {Pick<JsonDocumentNode, "status" | "comments">} tree
    * @param {Id} uri
+   * @param {Record<string, JsonSchemaDocumentNode>} [embedded] - The
+   * document's resources, when a schema is resolved in a document made
+   * elsewhere
    */
-  constructor(session, tree, uri) {
+  constructor(session, tree, uri, embedded = {}) {
     this.#documentUri = uri;
     this.#session = session;
     this.#messages = [];
     this.#tree = tree;
-    this.#embedded = {};
+    this.#embedded = embedded;
   }
 
-  /** @type (dialectUri: string | undefined) => Promise<{ document: JsonSchemaDocumentNode; messages: SchemaMessage[] }> */
-  async resolve(dialectUri) {
-    const root = /** @type TreeNode | undefined */ (this.#tree.children[0]);
+  /** @type (root: TreeNode | undefined, dialectUri: string | undefined) => Promise<{ document: JsonSchemaDocumentNode; messages: SchemaMessage[] }> */
+  async resolve(root, dialectUri) {
     const document = this.#createResource(this.#documentUri, root);
 
     if (root) {
@@ -133,6 +145,24 @@ class Resolver {
     this.#embedded[document.uri] ??= document;
 
     return { document, messages: this.#messages };
+  }
+
+  /**
+   * A schema in a document that isn't a schema at its root, like a Schema
+   * Object in an OpenAPI document. It isn't a resource's root, so `$schema`
+   * is only allowed next to `$id`.
+   *
+   * @type (node: TreeNode, resource: JsonSchemaDocumentNode, pointer: string, dialectUri: string) => Promise<SchemaMessage[]>
+   */
+  async resolveAt(node, resource, pointer, dialectUri) {
+    const dialect = await this.#getDialect(dialectUri, node);
+    if (dialect === undefined) {
+      // It's reported, and nothing in the schema can be interpreted
+      this.#data(node, resource, pointer);
+    } else {
+      await this.#schema(node, resource, pointer, dialect, false);
+    }
+    return this.#messages;
   }
 
   /**

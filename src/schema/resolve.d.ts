@@ -1,5 +1,5 @@
 import type { Plugin } from "unified";
-import type { JsonDocumentNode } from "@hyperjump/browser";
+import type { JsonDocumentNode, JsonErrorNode, JsonNode } from "@hyperjump/browser";
 import type { JsonSchemaDocumentNode } from "./schema-ast.d.ts";
 import type { SchemaMessage } from "./schema-error.d.ts";
 import type { Hyperjump } from "@hyperjump/browser";
@@ -38,6 +38,31 @@ export const resolveSchema: (tree: JsonDocumentNode, options: JsonSchemaResolveO
   document: JsonSchemaDocumentNode;
   messages: SchemaMessage[];
 }>;
+
+/**
+ * Resolve one node as a schema, in a document that isn't a schema at its
+ * root, like a Schema Object in an OpenAPI document. The document is the
+ * resource it's in, made by the caller, and the node is annotated in place,
+ * like {@link resolveSchema}'s tree. Resources it embeds, with `$id`, are
+ * added to the document's `embedded`. It isn't a resource's root, so
+ * `$schema` is only allowed next to `$id`. The problems are returned, as
+ * {@link resolveSchema}'s are.
+ */
+export const resolveSchemaAt: (node: JsonNode | JsonErrorNode, options: {
+  session: Hyperjump<JsonSchemaConfig>;
+
+  /** The resource the node is in, with `embedded` that the caller shares */
+  document: JsonSchemaDocumentNode;
+
+  /** The node's JSON Pointer from the resource's root */
+  pointer: string;
+
+  /** Its dialect, unless it has `$schema` next to `$id` */
+  dialectUri: string;
+
+  /** The URI the document was retrieved from, for messages and for what it may refer to */
+  uri: string;
+}) => Promise<SchemaMessage[]>;
 
 /**
  * {@link resolveSchema} as a unified plugin, which runs after `rejsonParse`.
