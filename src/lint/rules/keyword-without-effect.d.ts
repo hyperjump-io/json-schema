@@ -23,7 +23,9 @@ import type { JsonSchemaDocumentNode } from "../../schema/schema-ast.d.ts";
  * `empty-catch-all-schema` reports it too. So does a rule about a
  * keyword without effect because of its siblings, like `contentSchema`
  * without `contentMediaType`. Unknown keywords are left to
- * `unknown-keyword`, so its `ignore` option works.
+ * `unknown-keyword`, so its `ignore` option works, and an empty array where
+ * a spec says it can't be empty, like `allOf: []`, to `empty-array`, which
+ * reports it as an error.
  *
  * References are followed, into other documents too, so `$ref` to a schema
  * with no effect has no effect. One that can't be followed has an effect.

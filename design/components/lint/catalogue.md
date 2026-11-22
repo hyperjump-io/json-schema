@@ -14,12 +14,12 @@ ported, merged into another rule, or not ported for a reason below.
   `_modern` pairs, is one rule here if keyword URIs make it work everywhere.
 - Rule IDs are kebab-case and say what's found (`if-without-then-else`),
   not what to do.
-- Something a spec says a keyword's value MUST be is validity, so it isn't
-  ported as a rule (see [Validity and lint](validity.md)). Check what each draft says,
-  because some changed: draft-04's `enum` MUST have values, and later
-  drafts' SHOULD, so an empty `enum` is lint everywhere but draft-04
-  (`keyword-allows-nothing`).
-  A MUST the implementation recovers from is lint, though, at `error`:
+- Something a spec says a keyword's value MUST be is validity, unless the
+  implementation recovers from it, which makes it lint, at `error` (see
+  [Validity and lint](validity.md)). Check what each draft says, because
+  some changed: draft-04's `enum` MUST have values, and later drafts'
+  SHOULD, so an empty `enum` is `empty-array`, an error, in draft-04, and
+  `keyword-allows-nothing`, a warning, after it.
   `duplicate_required_values` is `duplicate-array-items`, which also
   reports duplicates in `type`, `dependentRequired`, `dependencies`, and
   draft-04's `enum`, where the specs say they must be unique. A duplicate

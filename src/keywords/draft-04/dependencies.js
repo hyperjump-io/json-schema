@@ -1,5 +1,4 @@
 import dependenciesKeyword from "../draft-07/dependencies.js";
-import { isErrorNode, nonEmpty, strings } from "../checks.js";
 
 /**
  * @import { Keyword } from "../../keyword.d.ts"
@@ -7,25 +6,13 @@ import { isErrorNode, nonEmpty, strings } from "../checks.js";
  */
 
 /**
- * `dependencies` in draft-04. It's the same as draft-07's, except that an
- * array can't be empty, as draft-04 says.
+ * `dependencies` in draft-04. It's the same as draft-07's. Draft-04 says an
+ * array can't be empty, but an empty one has no effect, so `empty-array`
+ * reports it. It has a URI of its own so lint can tell.
  *
  * @type Keyword<[string, Expression | string[]][], { map: ["schema", { array: "data" }] }>
  */
 export default {
   ...dependenciesKeyword,
-  uri: "https://json-schema.org/keyword/draft-04/dependencies",
-  check(valueNode, context) {
-    if (valueNode.jsonType !== "object") {
-      return;
-    }
-
-    for (const property of valueNode.children) {
-      const dependencyNode = property.children[1];
-      if (!isErrorNode(dependencyNode) && dependencyNode.jsonType === "array") {
-        nonEmpty(dependencyNode, context);
-        strings(dependencyNode, context);
-      }
-    }
-  }
+  uri: "https://json-schema.org/keyword/draft-04/dependencies"
 };

@@ -29,12 +29,9 @@ export default {
       return;
     }
 
-    if (valueNode.children.length === 0) {
-      context.message("Expected at least one type");
-    }
-
-    // The specs say the types must be unique, but a duplicate changes
-    // nothing, so `duplicate-array-items` reports it
+    // The specs say the types must be unique, and v1 that there's at least
+    // one, but a duplicate changes nothing and an empty array allows
+    // nothing, so `duplicate-array-items` and `empty-array` report them
     for (const itemNode of valueNode.children) {
       if (!isErrorNode(itemNode) && (itemNode.jsonType !== "string" || !types.includes(itemNode.value))) {
         context.message(expectedType, itemNode);

@@ -57,18 +57,6 @@ export const anchorName = expected("an anchor name: a letter or '_' followed by 
 });
 
 /**
- * An array that has items. Its shape already makes it an array, so anything
- * else was reported when the value was resolved.
- *
- * @type Check
- */
-export const nonEmpty = (node, context) => {
-  if (!isErrorNode(node) && node.jsonType === "array" && node.children.length === 0) {
-    context.message("Expected at least one item", node);
-  }
-};
-
-/**
  * An array of strings. The specs say some must be unique, but a duplicate
  * changes nothing, so `duplicate-array-items` reports it (see
  * `lint/validity.md`).

@@ -6,20 +6,13 @@ import typeKeyword from "../type.js";
  */
 
 /**
- * `type` in draft-04 through 2020-12. It's the same as `type`, except that
- * an array can be empty, which these drafts allow. Nothing is valid against
- * it.
+ * `type` in draft-04 through 2020-12. It's the same as `type`. These drafts
+ * allow an empty array, which nothing is valid against, and v1 doesn't, so
+ * it has a URI of its own so lint can tell.
  *
  * @type Keyword<SchemaType | SchemaType[], "data">
  */
 export default {
   ...typeKeyword,
-  uri: "https://json-schema.org/keyword/draft-2020-12/type",
-  check(valueNode, context) {
-    if (valueNode.jsonType === "array" && valueNode.children.length === 0) {
-      return;
-    }
-
-    /** @type NonNullable<typeof typeKeyword.check> */ (typeKeyword.check)(valueNode, context);
-  }
+  uri: "https://json-schema.org/keyword/draft-2020-12/type"
 };

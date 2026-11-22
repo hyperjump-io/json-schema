@@ -33,9 +33,9 @@ describe("keyword-allows-nothing", () => {
     expect(file.messages).to.eql([]);
   });
 
-  test("an empty enum is a schema problem in draft-04, not lint", async () => {
+  test("an empty enum in draft-04, which empty-array reports", async () => {
     const file = await lint(`{ "$schema": "http://json-schema.org/draft-04/schema#", "enum": [] }`);
-    expect(file.messages.map((message) => message.ruleId)).to.eql(["https://json-schema.org/keyword/draft-04/enum"]);
+    expect(file.messages).to.eql([]);
   });
 
   test("an empty type", async () => {
@@ -53,9 +53,9 @@ describe("keyword-allows-nothing", () => {
     expect(file.messages).to.have.length(1);
   });
 
-  test("an empty type is a schema problem in v1, not lint", async () => {
-    const file = await lint(`{ "$schema": "https://json-schema.org/v1", "type": [] }`);
-    expect(file.messages.map((message) => message.ruleId)).to.eql(["https://json-schema.org/keyword/type"]);
+  test("an empty type or anyOf in v1, which empty-array reports", async () => {
+    const file = await lint(`{ "$schema": "https://json-schema.org/v1", "type": [], "anyOf": [] }`);
+    expect(file.messages).to.eql([]);
   });
 
   test("allOf with a schema that allows nothing", async () => {

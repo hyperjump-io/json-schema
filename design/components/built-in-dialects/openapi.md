@@ -101,7 +101,8 @@ separate piece of work (see [Not done](#not-done)).
     keywords, which would make draft-04's MUST lint and change what
     [Validity and lint](../lint/validity.md) decided for it.
   - `required` is draft-04's, because wright-00 says it MUST have at least
-    one element and its elements MUST be unique too.
+    one element and its elements MUST be unique too. So an empty one is
+    `empty-array`, an error.
 - `$ref` is draft-07's, which makes the schema a reference and ignores its
   siblings, as 3.0's Reference Object does.
 - `format` is draft-07's and an annotation by default, which is what most

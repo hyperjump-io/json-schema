@@ -82,7 +82,6 @@ describe("keyword checks", () => {
 
     expect(messages.map(({ reason, at }) => [reason, at])).to.eql([
       ["Expected one of 'null', 'boolean', 'object', 'array', 'number', 'string', 'integer', or an array of them", `"nope"`],
-      ["Expected at least one type", "[]"],
       ["Expected one of 'null', 'boolean', 'object', 'array', 'number', 'string', 'integer'", `"nope"`]
     ]);
   });
@@ -146,33 +145,24 @@ describe("keyword checks", () => {
     ]);
   });
 
-  test("draft-04's enum, required, and dependencies can't be empty", async () => {
-    const messages = await check(jsonSchema, `{
+  test("arrays that the specs say can't be empty can be", async () => {
+    // `empty-array` reports them
+    expect(await check(jsonSchema, `{
       "$schema": "${draft04DialectUri}#",
+      "allOf": [],
       "properties": {
         "a": { "enum": [] },
-        "b": { "enum": [1, { "x": [1], "y": 2 }, 1.0, { "y": 2, "x": [1] }, "1", [1]] },
-        "c": { "required": [] },
-        "d": { "required": ["x", "x"] },
-        "e": { "dependencies": { "x": [], "y": ["z", "z"], "z": {} } }
+        "b": { "required": [] },
+        "c": { "dependencies": { "x": [] } }
       }
-    }`);
-
-    expect(messages.map(({ reason, ruleId, at }) => [reason, ruleId, at])).to.eql([
-      ["Expected at least one item", "https://json-schema.org/keyword/draft-04/enum", "[]"],
-      ["Expected at least one item", "https://json-schema.org/keyword/draft-04/required", "[]"],
-      ["Expected at least one item", "https://json-schema.org/keyword/draft-04/dependencies", "[]"]
-    ]);
+    }`)).to.eql([]);
+    expect(await check(jsonSchema, `{ "$schema": "${v1DialectUri}", "type": [], "anyOf": [], "oneOf": [], "prefixItems": [], "conditional": [] }`)).to.eql([]);
   });
 
-  test("type can only be empty before v1", async () => {
+  test("the drafts' type", async () => {
     expect(await check(jsonSchema, `{ "$schema": "${draft04DialectUri}#", "type": [] }`)).to.eql([]);
-    expect(await check(jsonSchema, `{ "$schema": "${draft202012DialectUri}", "type": [] }`)).to.eql([]);
     expect(await check(jsonSchema, `{ "$schema": "${draft202012DialectUri}", "type": ["nope", "null", "null"] }`)).to.eql([
       { reason: "Expected one of 'null', 'boolean', 'object', 'array', 'number', 'string', 'integer'", ruleId: "https://json-schema.org/keyword/draft-2020-12/type", at: `"nope"` }
-    ]);
-    expect(await check(jsonSchema, `{ "$schema": "${v1DialectUri}", "type": [] }`)).to.eql([
-      { reason: "Expected at least one type", ruleId: "https://json-schema.org/keyword/type", at: "[]" }
     ]);
   });
 

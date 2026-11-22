@@ -1,6 +1,7 @@
 import { keywordDefinitionUri } from "../../keywords/unknown.js";
 import { affectsAReader, effectOf } from "../effect.js";
 import { documentForLint } from "../document.js";
+import { emptyArrays } from "../empty-arrays.js";
 import { lintRule } from "../lint-rule.js";
 import { marksAreRead, schemaGroup } from "../schema-group.js";
 
@@ -30,8 +31,8 @@ const keywordWithoutEffect = lintRule({ origin: "json-schema-lint:keyword-withou
     const keywordNodes = /** @type JsonSchemaKeywordNode[] */ (schemaNode.jsonType === "object" ? schemaNode.children : []);
     for (const keywordNode of keywordNodes) {
       // An unknown keyword is `unknown-keyword`'s, so its `ignore` option
-      // works
-      if (keywordDefinitionUri(keywordNode.keywordUri) === unknownUri || affectsAReader(keywords, keywordNode)) {
+      // works, and an empty array the specs don't allow is `empty-array`'s
+      if (keywordDefinitionUri(keywordNode.keywordUri) === unknownUri || emptyArrays(keywordNode).length > 0 || affectsAReader(keywords, keywordNode)) {
         continue;
       }
 

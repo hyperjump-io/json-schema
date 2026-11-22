@@ -8,12 +8,14 @@
 | Default | Always on, always errors | Off, unless a preset turns it on |
 
 - What a spec says a keyword's value MUST be is validity, and what it says
-  it SHOULD be is lint. The spec's text decides, not its meta-schema, as
-  v1 says. The draft meta-schemas don't allow an empty `type` array, an
-  empty `enum` in draft-06 and draft-07, or an empty array `items` in
-  2019-09, but the drafts' text does, so they're lint. Draft-04's
-  `exclusiveMaximum` MUST have a `maximum`, so it's an error, and an empty
-  `enum` is an error in draft-04 (MUST) and lint after it (SHOULD).
+  it SHOULD be is lint, unless the implementation recovers from it (see
+  below). The spec's text decides, not its meta-schema, as v1 says. The
+  draft meta-schemas don't allow an empty `type` array, an empty `enum` in
+  draft-06 and draft-07, or an empty array `items` in 2019-09, but the
+  drafts' text does, so they're lint, as warnings. An empty `enum` is
+  `empty-array`, an error, in draft-04 (MUST), and `keyword-allows-nothing`,
+  a warning, after it (SHOULD). Draft-04's `exclusiveMaximum` MUST have a
+  `maximum`, so it's an error.
 - A keyword with no effect (`then` without `if`, `minContains` without
   `contains`), a reference to something missing, and an unknown `format`
   that's only an annotation are lint. The schema still works.
@@ -32,7 +34,12 @@
   document's root, and `$vocabulary` belongs at a meta-schema document's
   root, but the resolver uses them at the root of an embedded resource.
   A duplicate in an array the specs say must be unique, like `required`
-  or `type`, changes nothing, so it's `duplicate-array-items`. The
+  or `type`, changes nothing, so it's `duplicate-array-items`. An empty
+  array the specs say can't be empty, like `allOf` or `anyOf`, has no
+  effect or allows nothing, so it's `empty-array`. It has one meaning, so
+  refusing it helps no one. `keyword-allows-nothing` and
+  `keyword-without-effect` skip what `empty-array` reports
+  (`src/lint/empty-arrays.js`), so it's reported once, as an error. The
   resolver still ignores what it ignored, and reads the schema the same
   way, so only the report moved.
 - `check` stays for validity only. Its context has the schema the keyword

@@ -1,6 +1,7 @@
 import { visit } from "unist-util-visit";
 import { allowsNothing } from "../allows-nothing.js";
 import { documentForLint } from "../document.js";
+import { emptyArrays } from "../empty-arrays.js";
 import { lintRule } from "../lint-rule.js";
 
 /**
@@ -29,7 +30,8 @@ const keywordAllowsNothing = lintRule({ origin: "json-schema-lint:keyword-allows
   const lowered = document.schemas;
   for (const keywords of lowered.values()) {
     for (const { group, keywordNode } of keywords) {
-      if (!allowsNothing(group.expression, schemaNodes, lowered, group.location)) {
+      // An empty array the specs don't allow is `empty-array`'s
+      if (emptyArrays(keywordNode).length > 0 || !allowsNothing(group.expression, schemaNodes, lowered, group.location)) {
         continue;
       }
 

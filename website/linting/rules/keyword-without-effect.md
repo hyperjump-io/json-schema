@@ -26,7 +26,9 @@ other keywords don't cover, like `additionalProperties: true`, is also a
 keyword without effect. `empty-catch-all-schema` reports it too. Some
 other rules report a keyword that has no effect because of its siblings,
 like `contentSchema` without `contentMediaType`. Unknown keywords are left
-to `unknown-keyword` so that its `ignore` option works.
+to `unknown-keyword` so that its `ignore` option works. An empty array
+where a spec says it can't be empty, like `allOf: []`, is left to
+[`empty-array`](empty-array.md), which reports it as an error.
 
 References are followed, including into other documents. A `$ref` to a
 schema with no effect has no effect. A reference that can't be followed

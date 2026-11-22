@@ -1,5 +1,3 @@
-import { nonEmpty } from "./checks.js";
-
 /**
  * @import { Keyword } from "../keyword.d.ts"
  * @import { Expression } from "../kernel/kernel.d.ts"
@@ -16,7 +14,6 @@ import { nonEmpty } from "./checks.js";
 export default {
   uri: "https://json-schema.org/keyword/conditional",
   shape: { array: ["schema", { array: "schema" }] },
-  check: nonEmpty,
   lower(items) {
     // Conditions are followed by the schema that applies if they pass
     const schemas = items.flatMap((item) => Array.isArray(item) ? item : [item]);

@@ -49,6 +49,7 @@ import keywordAllowsNothing from "./rules/keyword-allows-nothing.js";
 import misplacedDialect from "./rules/misplaced-dialect.js";
 import misplacedVocabulary from "./rules/misplaced-vocabulary.js";
 import duplicateArrayItems from "./rules/duplicate-array-items.js";
+import emptyArray from "./rules/empty-array.js";
 
 /**
  * @import { Preset } from "unified"
@@ -107,6 +108,7 @@ const recommended = {
     [misplacedDialect, ["error"]],
     [misplacedVocabulary, ["error"]],
     [duplicateArrayItems, ["error"]],
+    [emptyArray, ["error"]],
     [referenceWithoutTarget, ["error"]]
   ]
 };

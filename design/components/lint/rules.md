@@ -63,9 +63,10 @@
   (`read-only-and-write-only`, `invalid-default-or-example`). A suggestion
   of a keyword to use instead, like `const` in `single-value-range`, is the
   dialect's own name for the keyword's URI. A rule about a draft-specific
-  keyword uses that keyword's URI. A rule about something a draft's own
-  keyword already reports, like draft-04's empty `enum`, leaves that
-  keyword's URI out.
+  keyword uses that keyword's URI. A rule that would report what a rule
+  for a MUST reports leaves it out, so it's reported once, at the MUST's
+  severity: `keyword-allows-nothing` and `keyword-without-effect` skip the
+  empty arrays `empty-array` reports, like draft-04's empty `enum`.
 - `mergeable-schemas` finds schemas from what keywords lower to, so
   `anyOf` and `oneOf` with one schema are mergeable, like `allOf`. It
   decides whether a

@@ -15,9 +15,9 @@ import type { JsonSchemaDocumentNode } from "../../schema/schema-ast.d.ts";
  * Neither is a keyword that only rejects some properties or items, like
  * `items: false` or `additionalProperties: false`, or `not: {}`, a common
  * way to say "nothing" on purpose. The specs say `enum` should have at
- * least one value. Draft-04 says it must, and v1 doesn't allow an empty
- * `type`, so there they're problems with the schema, which this rule
- * doesn't report. It has no options.
+ * least one value. Where a spec says an array must have one, like `enum` in
+ * draft-04 or `type` and `anyOf` in v1, `empty-array` reports it as an
+ * error instead. It has no options.
  */
 declare const keywordAllowsNothing: Plugin<JsonSchemaDocumentNode, void>;
 export default keywordAllowsNothing;

@@ -20,9 +20,10 @@ Neither is a keyword that only rejects some properties or items, like
 `items: false` or `additionalProperties: false`. `not: {}` isn't reported
 either, because it's a common way to say "nothing" on purpose.
 
-The specs say `enum` should have at least one value. Draft-04 says it
-must, and v1 doesn't allow an empty `type`. In those cases it's a problem
-with the schema, which this rule doesn't report. It has no options.
+The specs say `enum` should have at least one value. Where a spec says
+an array must have one, like `enum` in draft-04 or `type` and `anyOf` in
+v1, [`empty-array`](empty-array.md) reports it as an error instead. It
+has no options.
 
 ## Examples
 
@@ -63,7 +64,7 @@ with the schema, which this rule doesn't report. It has no options.
 { "$schema": "https://json-schema.org/v1", "enum": [null] }
 ```
 
-#### An empty enum is a schema problem in draft-04, not lint
+#### An empty enum in draft-04, which empty-array reports
 
 ```json
 { "$schema": "http://json-schema.org/draft-04/schema#", "enum": [] }
