@@ -26,7 +26,8 @@
   `openapi-3-1` and `openapi-3-2` are `recommended` with `unknown-field`
   and `deprecated-example` so far, and `openapi-3-2` has
   `deprecated-xml-field`. Every OpenAPI preset has `unknown-field`,
-  `wrapped-without-array`, and `discriminator-without-composition`. Rejected: one `openapi` preset,
+  `wrapped-without-array`, `discriminator-without-composition`, and
+  `discriminator-mapping-without-target`. Rejected: one `openapi` preset,
   because a preset gives a rule one severity, and only 3.0 forbids
   `readOnly` and `writeOnly` both `true`. Rejected: a rule that checks the
   dialect to decide its severity, because severity is the preset's to set.

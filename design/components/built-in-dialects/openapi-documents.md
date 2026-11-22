@@ -217,7 +217,17 @@ Every version:
    OpenAPI says it's "legal only when using" one of them. Which schemas
    are searched for an `allOf` is implementation-defined. 3.0.4
    RECOMMENDS every named schema in `components`, and every `allOf` in the
-   document includes them.
+   document includes them. `discriminator-mapping-without-target` is
+   built: a `mapping` or `defaultMapping` value that doesn't find a
+   schema, an error like `reference-without-target`. A value that can be a
+   component name is one, as 3.0.4, 3.1.1, and 3.2 RECOMMEND when it could
+   be either, so a URI reference like one needs `./`, which they say
+   authors MUST add. The message says to, so that MUST isn't a rule of its
+   own. Rejected: a name only if a component has it, and a URI reference
+   otherwise, which read `Bird` as a document next to this one, so a
+   missing name was never reported. A URI reference into another document
+   isn't checked, because rules don't retrieve anything, and a value isn't
+   a reference that `LintDocument.found` has.
 4. YAML, as its own plugin.
 
 ## Open questions
