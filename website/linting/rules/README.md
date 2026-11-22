@@ -33,6 +33,7 @@ what it reports and what it doesn't.
 | [`wrapped-without-array`](wrapped-without-array.md) | `wrapped: true` in OpenAPI's `xml` in a schema whose `type` isn't `array`. It has no effect. (OpenAPI presets) |
 | [`discriminator-without-composition`](discriminator-without-composition.md) | `discriminator` without `oneOf`, `anyOf`, or `allOf`, in a schema that no `allOf` builds on (OpenAPI presets) |
 | [`discriminator-mapping-without-target`](discriminator-mapping-without-target.md) | A `discriminator`'s `mapping` or `defaultMapping` that isn't a schema name or a URI reference to a schema (OpenAPI presets) |
+| [`discriminator-property-optional-without-default`](discriminator-property-optional-without-default.md) | An OpenAPI 3.2 `discriminator` whose property is optional, without `defaultMapping` (OpenAPI 3.2 preset) |
 | [`ignored-ref-siblings`](ignored-ref-siblings.md) | A property next to `$ref` in draft-04 through draft-07, where `$ref` replaces the whole schema |
 | [`misnamed-definitions`](misnamed-definitions.md) | `definitions` in 2019-09 and later, or `$defs` in draft-04 through draft-07. It isn't a keyword there, so what's in it isn't a schema. |
 | [`single-value-enum`](single-value-enum.md) | `enum` with only one value. `const` says it more directly (draft-06 and later). |

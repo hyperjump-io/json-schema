@@ -228,6 +228,18 @@ Every version:
    missing name was never reported. A URI reference into another document
    isn't checked, because rules don't retrieve anything, and a value isn't
    a reference that `LintDocument.found` has.
+   `discriminator-property-optional-without-default` is built: a 3.2
+   `discriminator` without `defaultMapping` whose property is optional,
+   an error in `openapi-3-2`, because 3.2 says it MUST have one then. 3.2
+   doesn't say which schema decides that the property is optional, so it's
+   required if every object valid against the schema with the
+   `discriminator` has it (`propertyAlternatives`, over
+   `LintDocument.reached`): `required` next to it, or in every `oneOf`
+   alternative, as 3.2's examples do. It doesn't need component names, so
+   it checks schemas in files of their own too. 3.2's "it is important
+   that each subschema that defines a value for the discriminating
+   property also define the property as required" isn't a requirement, so
+   it isn't a rule.
 4. YAML, as its own plugin.
 
 ## Open questions
