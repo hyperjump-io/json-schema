@@ -47,6 +47,7 @@ import constOrEnumValueRejected from "./rules/const-or-enum-value-rejected.js";
 import invalidDefaultOrExample from "./rules/invalid-default-or-example.js";
 import keywordAllowsNothing from "./rules/keyword-allows-nothing.js";
 import misplacedDialect from "./rules/misplaced-dialect.js";
+import embeddedDialectChange from "./rules/embedded-dialect-change.js";
 import misplacedVocabulary from "./rules/misplaced-vocabulary.js";
 import duplicateArrayItems from "./rules/duplicate-array-items.js";
 import emptyArray from "./rules/empty-array.js";
@@ -105,6 +106,7 @@ const recommended = {
     [keywordImpliedByConstOrEnum, ["warn"]],
     [constOrEnumValueRejected, ["warn"]],
     [invalidDefaultOrExample, ["warn"]],
+    [embeddedDialectChange, ["warn"]],
     [invalidDialectUri, ["error"]],
     [misplacedDialect, ["error"]],
     [misplacedVocabulary, ["error"]],

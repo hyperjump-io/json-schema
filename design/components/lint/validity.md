@@ -32,6 +32,9 @@
   stricter than the resolver: draft-04–07 only allow `$schema` at the
   document's root, and `$vocabulary` belongs at a meta-schema document's
   root, but the resolver uses them at the root of an embedded resource.
+  2019-09 allows `$schema` there, but says a document's resources SHOULD
+  have the same dialect, so a different one is
+  `embedded-dialect-change`, a warning.
   A duplicate in an array the specs say must be unique, like `required`
   or `type`, changes nothing, so it's `duplicate-array-items`. An empty
   array the specs say can't be empty, like `allOf` or `anyOf`, has no

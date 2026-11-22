@@ -65,6 +65,7 @@ what it reports and what it doesn't.
 | [`non-canonical-dialect-uri`](non-canonical-dialect-uri.md) | A `$schema` that other implementations might not recognize. It has a non-empty fragment, isn't normalized, or doesn't match its dialect's official URI, like draft-07 without `#`. |
 | [`invalid-dialect-uri`](invalid-dialect-uri.md) | A v1 `$schema` that has a fragment or isn't normalized. v1 doesn't allow either, so it's an error. |
 | [`misplaced-dialect`](misplaced-dialect.md) | `$schema` where its dialect doesn't allow it: anywhere but a schema resource's root, or the document's root in draft-04 through draft-07 |
+| [`embedded-dialect-change`](embedded-dialect-change.md) | An embedded schema resource whose `$schema` names a different dialect from the 2019-09 schema it's in |
 | [`misplaced-vocabulary`](misplaced-vocabulary.md) | `$vocabulary` anywhere but the document's root (2019-09 and 2020-12) |
 | [`relative-root-id`](relative-root-id.md) | A relative `$id` on the root schema, like `/user`. The schema's identifier then depends on where it was retrieved from. |
 | [`implicit-dialect`](implicit-dialect.md) | A root schema without `$schema` whose dialect came from a media type parameter or the default dialect. Other tools might not know the dialect. |
