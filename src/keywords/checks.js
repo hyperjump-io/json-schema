@@ -68,8 +68,14 @@ export const nonEmpty = (node, context) => {
   }
 };
 
-/** @type Check */
-export const uniqueStrings = (node, context) => {
+/**
+ * An array of strings. The specs say some must be unique, but a duplicate
+ * changes nothing, so `duplicate-array-items` reports it (see
+ * `lint/validity.md`).
+ *
+ * @type Check
+ */
+export const strings = (node, context) => {
   if (isErrorNode(node)) {
     return;
   } else if (node.jsonType !== "array") {
@@ -77,16 +83,9 @@ export const uniqueStrings = (node, context) => {
     return;
   }
 
-  const seen = new Set();
   for (const itemNode of node.children) {
-    if (isErrorNode(itemNode)) {
-      continue;
-    } else if (itemNode.jsonType !== "string") {
+    if (!isErrorNode(itemNode) && itemNode.jsonType !== "string") {
       context.message("Expected a string", itemNode);
-    } else if (seen.has(itemNode.value)) {
-      context.message(`'${itemNode.value}' is a duplicate`, itemNode);
-    } else {
-      seen.add(itemNode.value);
     }
   }
 };

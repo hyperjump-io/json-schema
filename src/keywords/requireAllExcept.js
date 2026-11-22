@@ -1,5 +1,5 @@
 import { all, hasProperty } from "./utilities.js";
-import { uniqueStrings } from "./checks.js";
+import { strings } from "./checks.js";
 
 /**
  * @import { Keyword } from "../keyword.d.ts"
@@ -16,7 +16,7 @@ export default {
   uri: "https://json-schema.org/keyword/requireAllExcept",
   siblings: { properties: "https://json-schema.org/keyword/properties" },
   shape: "data",
-  check: uniqueStrings,
+  check: strings,
   lower: (except, { properties = [] }) => all(properties
     .filter(([name]) => !except.includes(name))
     .map(([name]) => hasProperty(name)))

@@ -66,8 +66,7 @@ describe("keyword checks", () => {
     const messages = await check(jsonSchema, `{ "$schema": "${v1DialectUri}", "required": ["a", 1, "a"] }`);
 
     expect(messages).to.eql([
-      { reason: "Expected a string", ruleId: "https://json-schema.org/keyword/required", at: "1" },
-      { reason: "'a' is a duplicate", ruleId: "https://json-schema.org/keyword/required", at: `"a"` }
+      { reason: "Expected a string", ruleId: "https://json-schema.org/keyword/required", at: "1" }
     ]);
   });
 
@@ -84,8 +83,7 @@ describe("keyword checks", () => {
     expect(messages.map(({ reason, at }) => [reason, at])).to.eql([
       ["Expected one of 'null', 'boolean', 'object', 'array', 'number', 'string', 'integer', or an array of them", `"nope"`],
       ["Expected at least one type", "[]"],
-      ["Expected one of 'null', 'boolean', 'object', 'array', 'number', 'string', 'integer'", `"nope"`],
-      ["'string' is a duplicate", `"string"`]
+      ["Expected one of 'null', 'boolean', 'object', 'array', 'number', 'string', 'integer'", `"nope"`]
     ]);
   });
 
@@ -131,8 +129,7 @@ describe("keyword checks", () => {
 
   test("checks of keywords from other dialects", async () => {
     expect(await check(jsonSchema, `{ "$schema": "${draft07DialectUri}", "dependencies": { "a": ["b", 1, "b"], "c": {}, "d": [] } }`)).to.eql([
-      { reason: "Expected a string", ruleId: "https://json-schema.org/keyword/draft-07/dependencies", at: "1" },
-      { reason: "'b' is a duplicate", ruleId: "https://json-schema.org/keyword/draft-07/dependencies", at: `"b"` }
+      { reason: "Expected a string", ruleId: "https://json-schema.org/keyword/draft-07/dependencies", at: "1" }
     ]);
     expect((await check(jsonSchema, `{ "$schema": "${draft201909DialectUri}", "$anchor": "_a" }`)).map(({ ruleId, at }) => [ruleId, at]))
       .to.eql([["https://json-schema.org/keyword/draft-2019-09/anchor", `"_a"`]]);
@@ -149,7 +146,7 @@ describe("keyword checks", () => {
     ]);
   });
 
-  test("draft-04's enum, required, and dependencies can't be empty or have duplicates", async () => {
+  test("draft-04's enum, required, and dependencies can't be empty", async () => {
     const messages = await check(jsonSchema, `{
       "$schema": "${draft04DialectUri}#",
       "properties": {
@@ -163,12 +160,8 @@ describe("keyword checks", () => {
 
     expect(messages.map(({ reason, ruleId, at }) => [reason, ruleId, at])).to.eql([
       ["Expected at least one item", "https://json-schema.org/keyword/draft-04/enum", "[]"],
-      ["This value is a duplicate", "https://json-schema.org/keyword/draft-04/enum", "1.0"],
-      ["This value is a duplicate", "https://json-schema.org/keyword/draft-04/enum", `{ "y": 2, "x": [1] }`],
       ["Expected at least one item", "https://json-schema.org/keyword/draft-04/required", "[]"],
-      ["'x' is a duplicate", "https://json-schema.org/keyword/draft-04/required", `"x"`],
-      ["Expected at least one item", "https://json-schema.org/keyword/draft-04/dependencies", "[]"],
-      ["'z' is a duplicate", "https://json-schema.org/keyword/draft-04/dependencies", `"z"`]
+      ["Expected at least one item", "https://json-schema.org/keyword/draft-04/dependencies", "[]"]
     ]);
   });
 
@@ -176,8 +169,7 @@ describe("keyword checks", () => {
     expect(await check(jsonSchema, `{ "$schema": "${draft04DialectUri}#", "type": [] }`)).to.eql([]);
     expect(await check(jsonSchema, `{ "$schema": "${draft202012DialectUri}", "type": [] }`)).to.eql([]);
     expect(await check(jsonSchema, `{ "$schema": "${draft202012DialectUri}", "type": ["nope", "null", "null"] }`)).to.eql([
-      { reason: "Expected one of 'null', 'boolean', 'object', 'array', 'number', 'string', 'integer'", ruleId: "https://json-schema.org/keyword/draft-2020-12/type", at: `"nope"` },
-      { reason: "'null' is a duplicate", ruleId: "https://json-schema.org/keyword/draft-2020-12/type", at: `"null"` }
+      { reason: "Expected one of 'null', 'boolean', 'object', 'array', 'number', 'string', 'integer'", ruleId: "https://json-schema.org/keyword/draft-2020-12/type", at: `"nope"` }
     ]);
     expect(await check(jsonSchema, `{ "$schema": "${v1DialectUri}", "type": [] }`)).to.eql([
       { reason: "Expected at least one type", ruleId: "https://json-schema.org/keyword/type", at: "[]" }

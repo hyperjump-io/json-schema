@@ -1,5 +1,5 @@
 import { all, hasProperty } from "./utilities.js";
-import { uniqueStrings } from "./checks.js";
+import { strings } from "./checks.js";
 
 /**
  * @import { Keyword } from "../keyword.d.ts"
@@ -14,6 +14,6 @@ import { uniqueStrings } from "./checks.js";
 export default {
   uri: "https://json-schema.org/keyword/required",
   shape: "data",
-  check: uniqueStrings,
+  check: strings,
   lower: (required) => all(required.map(hasProperty))
 };

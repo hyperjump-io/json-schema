@@ -31,8 +31,10 @@
   stricter than the resolver: draft-04–07 only allow `$schema` at the
   document's root, and `$vocabulary` belongs at a meta-schema document's
   root, but the resolver uses them at the root of an embedded resource.
-  The resolver still ignores what it ignored, and reads the schema the
-  same way, so only the report moved.
+  A duplicate in an array the specs say must be unique, like `required`
+  or `type`, changes nothing, so it's `duplicate-array-items`. The
+  resolver still ignores what it ignored, and reads the schema the same
+  way, so only the report moved.
 - `check` stays for validity only. Its context has the schema the keyword
   is in, for requirements on siblings, like draft-04's `exclusiveMaximum`
   needing `maximum`, but not other schemas or warnings. Rules read the

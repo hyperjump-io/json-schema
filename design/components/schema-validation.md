@@ -51,7 +51,7 @@ an internal meta-schema.
   which parts of the value are schemas. That's how `itemPattern`'s check
   only looks at what isn't a schema or a group. It isn't called for a value
   that couldn't be parsed, or for keywords a reference ignores.
-- The checks keywords share, like `nonNegativeInteger` and `uniqueStrings`,
+- The checks keywords share, like `nonNegativeInteger` and `strings`,
   are in `src/keywords/checks.js`. They aren't exported.
 - `$schema` has no check. The resolver reads it to find the dialect and
   reports what's wrong with it then.

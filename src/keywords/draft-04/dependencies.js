@@ -1,5 +1,5 @@
 import dependenciesKeyword from "../draft-07/dependencies.js";
-import { isErrorNode, nonEmpty, uniqueStrings } from "../checks.js";
+import { isErrorNode, nonEmpty, strings } from "../checks.js";
 
 /**
  * @import { Keyword } from "../../keyword.d.ts"
@@ -24,7 +24,7 @@ export default {
       const dependencyNode = property.children[1];
       if (!isErrorNode(dependencyNode) && dependencyNode.jsonType === "array") {
         nonEmpty(dependencyNode, context);
-        uniqueStrings(dependencyNode, context);
+        strings(dependencyNode, context);
       }
     }
   }

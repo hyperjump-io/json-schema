@@ -8,8 +8,8 @@ JSON Schema compares them. Objects are compared without regard to property
 order, and `1` and `1.0` are equal. Each duplicate is reported.
 
 The specs say values should be unique. Draft-04 says they must be, so in
-draft-04 it's a problem with the schema, which this rule doesn't report.
-It has no options.
+draft-04, [`duplicate-array-items`](duplicate-array-items.md) reports
+them, as an error. It has no options.
 
 ## Examples
 
@@ -55,7 +55,7 @@ It has no options.
 }
 ```
 
-#### Duplicates are a schema problem in draft-04, not lint
+#### Draft-04, where duplicate-array-items reports them
 
 ```json
 {

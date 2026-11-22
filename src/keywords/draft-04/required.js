@@ -1,5 +1,5 @@
 import requiredKeyword from "../required.js";
-import { nonEmpty, uniqueStrings } from "../checks.js";
+import { nonEmpty, strings } from "../checks.js";
 
 /**
  * @import { Keyword } from "../../keyword.d.ts"
@@ -16,7 +16,7 @@ export default {
   uri: "https://json-schema.org/keyword/draft-04/required",
   // An empty array, which is the same as leaving it out, isn't allowed
   check(valueNode, context) {
-    uniqueStrings(valueNode, context);
+    strings(valueNode, context);
     nonEmpty(valueNode, context);
   }
 };

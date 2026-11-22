@@ -8,7 +8,7 @@ import type { JsonSchemaDocumentNode } from "../../schema/schema-ast.d.ts";
  * are equal. Each duplicate is reported.
  *
  * The specs say values should be unique. Draft-04 says they must be, so
- * there it's a problem with the schema, which this rule doesn't report.
+ * `duplicate-array-items` reports them there, as an error.
  * It has no options.
  */
 declare const duplicateEnumValues: Plugin<JsonSchemaDocumentNode, void>;

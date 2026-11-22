@@ -13,6 +13,7 @@ what it reports and what it doesn't.
 | [`empty-then-else`](empty-then-else.md) | `then`, `else`, or another branch of a condition that every value is valid against, like `{}`. It has no effect. |
 | [`false-then-else`](false-then-else.md) | `then` or `else` that allows nothing when `not` or the `if` schema would say the same thing. Also `then` and `else` that both allow nothing, so nothing is valid. |
 | [`duplicate-enum-values`](duplicate-enum-values.md) | A value in `enum` that's equal to one before it |
+| [`duplicate-array-items`](duplicate-array-items.md) | An item in `required`, `type`, `dependentRequired`, or another array that must be unique, that's equal to one before it |
 | [`keyword-allows-nothing`](keyword-allows-nothing.md) | A keyword that nothing is valid against, like an empty `enum` or `type` or `allOf` with `false` |
 | [`duplicate-one-of-schemas`](duplicate-one-of-schemas.md) | A schema in `oneOf` that's the same as one before it. A value it matches always fails. |
 | [`duplicate-all-of-any-of-schemas`](duplicate-all-of-any-of-schemas.md) | A schema in `allOf` or `anyOf` that's the same as one before it. It has no effect. |

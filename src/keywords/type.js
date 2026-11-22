@@ -33,16 +33,11 @@ export default {
       context.message("Expected at least one type");
     }
 
-    const seen = new Set();
+    // The specs say the types must be unique, but a duplicate changes
+    // nothing, so `duplicate-array-items` reports it
     for (const itemNode of valueNode.children) {
-      if (isErrorNode(itemNode)) {
-        continue;
-      } else if (itemNode.jsonType !== "string" || !types.includes(itemNode.value)) {
+      if (!isErrorNode(itemNode) && (itemNode.jsonType !== "string" || !types.includes(itemNode.value))) {
         context.message(expectedType, itemNode);
-      } else if (seen.has(itemNode.value)) {
-        context.message(`'${itemNode.value}' is a duplicate`, itemNode);
-      } else {
-        seen.add(itemNode.value);
       }
     }
   },

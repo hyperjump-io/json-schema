@@ -1,5 +1,5 @@
 import { all, hasProperty, whenProperty } from "./utilities.js";
-import { mapOf, uniqueStrings } from "./checks.js";
+import { mapOf, strings } from "./checks.js";
 
 /**
  * @import { Keyword } from "../keyword.d.ts"
@@ -13,7 +13,7 @@ import { mapOf, uniqueStrings } from "./checks.js";
 export default {
   uri: "https://json-schema.org/keyword/dependentRequired",
   shape: "data",
-  check: mapOf(uniqueStrings),
+  check: mapOf(strings),
   lower: (dependentRequired) => all(Object.entries(dependentRequired).map(([name, required]) => {
     return whenProperty(hasProperty(name), all(required.map(hasProperty)));
   }))

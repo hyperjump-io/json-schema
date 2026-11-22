@@ -1,5 +1,5 @@
 import { all, hasProperty, whenProperty } from "../utilities.js";
-import { isErrorNode, uniqueStrings } from "../checks.js";
+import { isErrorNode, strings } from "../checks.js";
 
 /**
  * @import { Keyword } from "../../keyword.d.ts"
@@ -10,7 +10,7 @@ import { isErrorNode, uniqueStrings } from "../checks.js";
  * `dependencies` in draft-06 and draft-07. If the instance has the
  * property, an array is property names it has to have too, like
  * `dependentRequired`, and a schema applies to the whole instance, like
- * `dependentSchemas`. An array's names must be unique.
+ * `dependentSchemas`.
  *
  * @type Keyword<[string, Expression | string[]][], { map: ["schema", { array: "data" }] }>
  */
@@ -25,7 +25,7 @@ export default {
     for (const property of valueNode.children) {
       const dependencyNode = property.children[1];
       if (!isErrorNode(dependencyNode) && dependencyNode.jsonType === "array") {
-        uniqueStrings(dependencyNode, context);
+        strings(dependencyNode, context);
       }
     }
   },

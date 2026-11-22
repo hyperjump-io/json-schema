@@ -19,9 +19,14 @@ ported, merged into another rule, or not ported for a reason below.
   because some changed: draft-04's `enum` MUST have values, and later
   drafts' SHOULD, so an empty `enum` is lint everywhere but draft-04
   (`keyword-allows-nothing`).
-  `duplicate_required_values` isn't, because `required`'s check
-  (`uniqueStrings`) reports duplicates in every dialect, as their
-  meta-schemas do.
+  A MUST the implementation recovers from is lint, though, at `error`:
+  `duplicate_required_values` is `duplicate-array-items`, which also
+  reports duplicates in `type`, `dependentRequired`, `dependencies`, and
+  draft-04's `enum`, where the specs say they must be unique. A duplicate
+  changes nothing. Draft-06 and later's `enum` stays
+  `duplicate-enum-values`, a warning, because they say SHOULD. Rejected:
+  `duplicate-enum-values` for draft-04 too, which would make a MUST a
+  warning.
 - A rule that some users' tools disagree with is still ported and still in
   `recommended`, if it's usually right. That's what configuration is for.
   `type-implied-by-const-or-enum` reports a `type` that code generators
