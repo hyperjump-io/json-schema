@@ -12,6 +12,12 @@ import { openApiResolve } from "../../openapi/index.js";
 import { linter } from "../test-linter.js";
 import misplacedDialect from "./misplaced-dialect.js";
 
+/** The "OAS dialect schema id" of 3.1, and the latest dated 3.2 dialect */
+const defaultDialects = {
+  3.1: "https://spec.openapis.org/oas/3.1/dialect/base",
+  3.2: "https://spec.openapis.org/oas/3.2/dialect/2026-02-26"
+};
+
 const draft04 = "http://json-schema.org/draft-04/schema#";
 const draft07 = "http://json-schema.org/draft-07/schema#";
 const draft202012 = "https://json-schema.org/draft/2020-12/schema";
@@ -128,7 +134,7 @@ const lintOpenApi = async (json) => {
   const file = new VFile({ path: "/api/openapi.json", value: json });
   const processor = unified()
     .use(rejsonParse)
-    .use(openApiResolve, { session: new Hyperjump(jsonSchema) })
+    .use(openApiResolve, { session: new Hyperjump(jsonSchema), defaultDialects })
     .use(misplacedDialect);
   await processor.run(processor.parse(file), file);
   return file;

@@ -73,14 +73,33 @@ The dialects are in [OpenAPI 3.0, 3.1, and 3.2](openapi.md).
   browser finds its fragments and embedded resources, and lint rules take
   it as they are. `openApiResolve` is `resolveOpenApi` as a unified plugin,
   like `jsonSchemaResolve`.
-- The defaults without `jsonSchemaDialect`: 3.0's is
-  `https://spec.openapis.org/oas/3.0/dialect`, and 3.1's is its "OAS
-  dialect schema id", `https://spec.openapis.org/oas/3.1/dialect/base`.
-  3.2.0 says its "OAS dialect schema id" is 3.1's `dialect/base` too,
-  which looks like a mistake, since that dialect doesn't have 3.2's
-  keywords, so 3.2's is the latest dated 3.2 dialect,
-  `https://spec.openapis.org/oas/3.2/dialect/2026-02-26`. A new date
-  changes it. Rejected: following the text, and no default for 3.2.
+- The default without `jsonSchemaDialect` is the user's, given to the
+  plugin: `openApiMediaType({ defaultDialects: { "3.1": uri, "3.2": uri } })`,
+  keyed by major and minor version. 3.0's is
+  `https://spec.openapis.org/oas/3.0/dialect`, unless it's given, because
+  OpenAPI publishes no dialect for 3.0, and that's ours. 3.1 and 3.2 have
+  none: a document without `jsonSchemaDialect` is one `missing-dialect`
+  error at `openapi`, and its Schema Objects are data. Users bring the
+  meta-schemas already, so they name the one that's the default too. That
+  takes nothing here that follows OpenAPI's dates, and no reading of 3.2.0,
+  whose "OAS dialect schema id" is 3.1's `dialect/base`, which doesn't have
+  3.2's keywords. `openApiResolve` and `parseOpenApi` take the same option.
+  A key that isn't a version this reads is a `TypeError`, because `3.0`
+  written as a number is the key `"3"`. Rejected: defaults built in, 3.1's
+  `dialect/base` and the latest dated 3.2 dialect, which the user's
+  registry needs the meta-schemas for anyway, and a new date changed.
+  Rejected: config dialects at the default URIs, so they'd work without a
+  meta-schema, which is a dialect for each version again (see
+  [OpenAPI 3.0, 3.1, and 3.2](openapi.md#dialects-from-meta-schemas)).
+  Rejected: the default meta-schemas shipped as data, which saves only
+  copying a file. Rejected: 2020-12 when the dialect can't be found, which
+  is the wrong dialect without saying so.
+- The dialect is found once, before the walk, and a problem with it is one
+  error, where it was chosen: at `jsonSchemaDialect`, or at `openapi` for a
+  default. Then every Schema Object is data. Every one needs it, even one
+  with its own `$schema`, because the dialect is what finds its `$id`.
+  Rejected: an error at each Schema Object, which `resolveSchemaAt` gave,
+  with a retrieval for each.
 - A Path Item Object's `$ref` is one of its fields, so a Path Item with
   `$ref` is still walked. Any other Object with `$ref` is a Reference
   Object, which is data.
@@ -92,10 +111,9 @@ The dialects are in [OpenAPI 3.0, 3.1, and 3.2](openapi.md).
   them needs no references.
 - External references are in [External references](#external-references).
 - `openApiSchemaUri(version)` is the schema a document of a version is
-  validated against, from the same table as the version's default
-  dialect: OpenAPI's latest published `schema` for it,
-  `oas/3.0/schema/2024-10-18`, `oas/3.1/schema/2026-11-05`, and
-  `oas/3.2/schema/2026-11-12`. A new date changes it. Rejected:
+  validated against, from the version table: OpenAPI's latest published
+  `schema` for it, `oas/3.0/schema/2024-10-18`,
+  `oas/3.1/schema/2026-11-05`, and `oas/3.2/schema/2026-11-12`. A new date changes it. Rejected:
   `schema-base`, which also validates Schema Objects against the default
   dialect, which resolving checks already, in each one's own dialect.
   Rejected: a `latest` URL for each version, which would follow new dates
@@ -239,9 +257,6 @@ Every version:
 
 ## Open questions
 
-- The default for a version without the meta-schema in the registry:
-  3.1's and 3.2's dialects are their meta-schemas, so a document without
-  `jsonSchemaDialect` needs the default one there.
 - `operations` like `compile` take a schema URI. A URI into an OpenAPI
   document works once the node there is a schema. Whether the document's
   URI on its own should mean anything.

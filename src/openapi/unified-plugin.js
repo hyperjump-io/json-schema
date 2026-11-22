@@ -1,5 +1,5 @@
 import { urlToIri } from "@hyperjump/uri";
-import { resolveOpenApi } from "./resolve.js";
+import { assertDefaultDialects, resolveOpenApi } from "./resolve.js";
 
 /**
  * @import * as API from "./index.d.ts"
@@ -13,6 +13,7 @@ import { resolveOpenApi } from "./resolve.js";
  * @type typeof API.openApiResolve
  */
 export function openApiResolve(options) {
+  assertDefaultDialects(options.defaultDialects ?? {});
   return async (tree, file) => {
     const uri = urlToIri(new URL(tree.url));
 

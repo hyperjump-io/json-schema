@@ -19,9 +19,10 @@ separate piece of work (see [Not done](#not-done)).
   [Dialects from meta-schemas](../dialects/from-meta-schemas.md)). So
   there's nothing to define but the vocabulary.
 - Every published URI is a dialect, as OpenAPI says, including the dated
-  ones and `jsonSchemaDialect`'s default, and a new date needs nothing
-  here. Each module exports the type of its schemas, with the published
-  URIs as `$schema`.
+  ones, and a new date needs nothing here. Which one is the default
+  without `jsonSchemaDialect` is the user's (see
+  [OpenAPI documents](openapi-documents.md)). Each module exports the
+  type of its schemas, with the published URIs as `$schema`.
 - What it costs:
   - The meta-schema has to be in a registry, or retrieved.
     spec.openapis.org serves its meta-schemas and its document schemas as

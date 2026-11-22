@@ -24,6 +24,12 @@ import { openApiMediaType, openApiResolve, openApiSchemaUri, openApiSpecMediaTyp
 /** @type (path: string) => Promise<Json> */
 const readMetaSchema = async (path) => JSON.parse(await readFile(new URL(`../dialects/${path}`, import.meta.url), "utf8"));
 
+/** The "OAS dialect schema id" of 3.1, and the latest dated 3.2 dialect */
+const defaultDialects = {
+  3.1: "https://spec.openapis.org/oas/3.1/dialect/base",
+  3.2: "https://spec.openapis.org/oas/3.2/dialect/2026-02-26"
+};
+
 describe("OpenAPI documents", () => {
   /** A directory in the working directory, which the default allows */
   let directory = "";
@@ -42,7 +48,7 @@ describe("OpenAPI documents", () => {
       [openApi31VocabularyUri]: openApi31Vocabulary,
       [openApi32VocabularyUri]: openApi32Vocabulary
     },
-    mediaTypes: [openApiMediaType]
+    mediaTypes: [openApiMediaType({ defaultDialects })]
   });
 
   /** @type (uri: string) => Promise<(instance: Json) => boolean> */
@@ -142,7 +148,7 @@ describe("OpenAPI documents", () => {
   });
 
   describe("3.1", () => {
-    test("Schema Objects default to the OAS dialect", async () => {
+    test("Schema Objects default to 3.1's dialect in defaultDialects", async () => {
       const openapi = await write("openapi.json", {
         openapi: "3.1.1",
         info: { title: "Pets", version: "1" },
@@ -215,7 +221,7 @@ describe("OpenAPI documents", () => {
   });
 
   describe("3.2", () => {
-    test("Schema Objects default to 3.2's dialect", async () => {
+    test("Schema Objects default to 3.2's dialect in defaultDialects", async () => {
       const openapi = await write("openapi.json", {
         openapi: "3.2.0",
         info: { title: "Pets", version: "1" },
@@ -293,7 +299,7 @@ describe("OpenAPI documents", () => {
     });
     const processor = unified()
       .use(rejsonParse)
-      .use(openApiResolve, { session: new Hyperjump(withMetaSchemas) })
+      .use(openApiResolve, { session: new Hyperjump(withMetaSchemas), defaultDialects })
       .use(unknownField);
     await processor.run(processor.parse(file), file);
 
@@ -307,7 +313,7 @@ describe("OpenAPI documents", () => {
     const servedAsOctetStream = (body) => jsonSchemaConfig({
       dialects: [draft202012Dialect],
       vocabularies: { [openApi31VocabularyUri]: openApi31Vocabulary },
-      mediaTypes: [openApiMediaType, openApiSpecMediaType],
+      mediaTypes: [openApiMediaType({ defaultDialects }), openApiSpecMediaType],
       stack: fetcher(() => new Response(body, { headers: { "content-type": "application/octet-stream" } })),
       allowRetrieval: ["https://spec.openapis.org/oas/", "https://example.com/"]
     });
@@ -333,6 +339,68 @@ describe("OpenAPI documents", () => {
       expect(openApiSchemaUri("3.1.1")).to.equal("https://spec.openapis.org/oas/3.1/schema/2026-11-05");
       expect(openApiSchemaUri("3.2.0")).to.equal("https://spec.openapis.org/oas/3.2/schema/2026-11-12");
       expect(openApiSchemaUri("2.0")).to.equal(undefined);
+    });
+  });
+
+  describe("defaultDialects", () => {
+    /** @type (defaultDialects: import("./index.d.ts").DefaultDialects, registry?: SchemaRegistry) => import("../json-schema.d.ts").JsonSchemaConfig */
+    const configWith = (defaultDialects, registry = withMetaSchemas.registry) => jsonSchemaConfig({
+      dialects: [draft202012Dialect, openApi30Dialect],
+      vocabularies: { [openApi31VocabularyUri]: openApi31Vocabulary },
+      registry,
+      mediaTypes: [openApiMediaType({ defaultDialects })]
+    });
+
+    test("3.1 and 3.2 have none, which is reported once, at openapi", async () => {
+      const openapi = await write("openapi.json", {
+        openapi: "3.1.1",
+        info: { title: "Pets", version: "1" },
+        components: { schemas: { Name: { type: "string" }, Age: { type: "integer" } } }
+      });
+
+      await expect(compile(configWith({}), `${openapi}#/components/schemas/Name`)).rejects.toMatchObject({
+        messages: [{ ruleId: "missing-dialect", place: { start: { column: 12 } } }]
+      });
+    });
+
+    test("jsonSchemaDialect doesn't need one", async () => {
+      const openapi = await write("openapi.json", {
+        openapi: "3.1.1",
+        info: { title: "Pets", version: "1" },
+        jsonSchemaDialect: "https://json-schema.org/draft/2020-12/schema",
+        components: { schemas: { Name: { type: "string" } } }
+      });
+
+      const isName = validatorFor(await compile(configWith({}), `${openapi}#/components/schemas/Name`));
+      expect(isName("Misty")).to.equal(true);
+    });
+
+    test("a dialect that isn't found is reported once, where it was chosen", async () => {
+      const openapi = await write("openapi.json", {
+        openapi: "3.1.1",
+        info: { title: "Pets", version: "1" },
+        components: { schemas: { Name: { type: "string" }, Age: { type: "integer" } } }
+      });
+
+      await expect(compile(configWith(defaultDialects, new SchemaRegistry()), `${openapi}#/components/schemas/Name`)).rejects.toMatchObject({
+        messages: [{ ruleId: "unknown-dialect", place: { start: { column: 12 } } }]
+      });
+    });
+
+    test("a version this doesn't read is refused", () => {
+      // `{ 3.0: uri }` is the key "3"
+      expect(() => openApiMediaType({ defaultDialects: /** @type any */ ({ 3: "https://json-schema.org/draft/2020-12/schema" }) })).to.throw(TypeError);
+    });
+
+    test("3.0's can be replaced", async () => {
+      const openapi = await write("openapi.json", {
+        openapi: "3.0.4",
+        info: { title: "Pets", version: "1" },
+        components: { schemas: { Name: { type: ["string", "null"] } } }
+      });
+
+      const isName = validatorFor(await compile(configWith({ "3.0": "https://json-schema.org/draft/2020-12/schema" }), `${openapi}#/components/schemas/Name`));
+      expect(isName(null)).to.equal(true);
     });
   });
 

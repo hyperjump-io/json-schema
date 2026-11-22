@@ -106,9 +106,10 @@ To use the Schema Objects in an OpenAPI document, add `openApiMediaType`
 from `@hyperjump/json-schema/openapi` to the config's `mediaTypes`. Then a
 URI into the document, like `openapi.json#/components/schemas/Pet`, is a
 schema. It reads JSON documents served as `application/openapi+json`, and
-any `.json` file with a top-level `openapi` and no `$schema`. A Schema Object's dialect is the document's
-`jsonSchemaDialect`, or the version's default, which the config needs to
-have.
+any `.json` file with a top-level `openapi` and no `$schema`. A Schema
+Object's dialect is the document's `jsonSchemaDialect`, or the default for
+its version, which the config needs to have. OpenAPI 3.0's default is
+`openApi30Dialect`.
 
 ```typescript
 import { jsonSchemaConfig, validator } from "@hyperjump/json-schema";
@@ -117,7 +118,7 @@ import { openApiMediaType } from "@hyperjump/json-schema/openapi";
 
 const config = jsonSchemaConfig({
   dialects: [openApi30Dialect],
-  mediaTypes: [openApiMediaType]
+  mediaTypes: [openApiMediaType()]
 });
 
 const isPet = await validator(config, "https://example.com/openapi.json#/components/schemas/Pet");
@@ -154,7 +155,34 @@ const config = jsonSchemaConfig({
 });
 ```
 
-Or download the ones your schemas use and add them to the registry:
+3.1 and 3.2 documents without `jsonSchemaDialect` have no default until
+you give one. OpenAPI names `https://spec.openapis.org/oas/3.1/dialect/base`
+as 3.1's, and each 3.2 dialect is dated. Give `openApiMediaType` the ones
+your documents use, by version, as strings. A document without
+`jsonSchemaDialect` and without a default for its version is an error.
+
+```typescript
+import { jsonSchemaConfig } from "@hyperjump/json-schema";
+import { draft202012Dialect } from "@hyperjump/json-schema/draft-2020-12";
+import { openApi31Vocabulary, openApi31VocabularyUri } from "@hyperjump/json-schema/openapi-3-1";
+import { openApiMediaType, openApiSpecMediaType } from "@hyperjump/json-schema/openapi";
+
+const config = jsonSchemaConfig({
+  dialects: [draft202012Dialect],
+  vocabularies: { [openApi31VocabularyUri]: openApi31Vocabulary },
+  mediaTypes: [
+    openApiMediaType({
+      defaultDialects: { "3.1": "https://spec.openapis.org/oas/3.1/dialect/base" }
+    }),
+    openApiSpecMediaType
+  ],
+  allowRetrieval: ["https://spec.openapis.org/oas/"]
+});
+```
+
+`defaultDialects` can replace 3.0's default too.
+
+Or download the meta-schemas your schemas use and add them to the registry:
 
 ```typescript
 import { readFile } from "node:fs/promises";

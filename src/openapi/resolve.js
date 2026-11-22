@@ -2,6 +2,7 @@ import { pointerAppend } from "@hyperjump/json-pointer";
 import { encodeIriFragment } from "@hyperjump/uri";
 import { iriProblem, resolveId, toId } from "../identifiers.js";
 import { resolveSchemaAt } from "../schema/resolve.js";
+import { getDialect } from "../session.js";
 import { openApi30DialectUri } from "../dialects/openapi-3-0/dialect.js";
 import { objectModel30 } from "./object-model-3-0.js";
 import { objectModel31 } from "./object-model-3-1.js";
@@ -16,14 +17,16 @@ import { objectModel32 } from "./object-model-3-2.js";
  * @import { SchemaMessage } from "../schema/schema-error.d.ts"
  * @import { Field, ObjectModel } from "./object-model.d.ts"
  * @import * as API from "./resolve.d.ts"
+ * @import { OpenApiVersion } from "./resolve.d.ts"
  */
 
 /**
  * @typedef {JsonNode | JsonErrorNode} TreeNode
  *
  * @typedef {{
+ *   name: OpenApiVersion;
  *   objectModel: ObjectModel;
- *   dialectUri: string;
+ *   dialectUri?: string;
  *   schemaUri: string;
  *   self: boolean;
  *   jsonSchemaDialect: boolean;
@@ -31,18 +34,18 @@ import { objectModel32 } from "./object-model-3-2.js";
  */
 
 /**
- * Each version's Objects, the schema its documents are validated against
- * (OpenAPI's latest published `schema`, which only checks that a Schema
- * Object is an object or a boolean, since the resolver checks them in their
- * own dialects), and its "OAS dialect schema id", the dialect of Schema
- * Objects without `jsonSchemaDialect`. 3.2.0 says it's 3.1's
- * `dialect/base`, which looks like a mistake, since that dialect doesn't have
- * 3.2's keywords, so it's the latest dated 3.2 dialect.
+ * Each version's Objects, its key in `defaultDialects`, and the schema its
+ * documents are validated against (OpenAPI's latest published `schema`,
+ * which only checks that a Schema Object is an object or a boolean, since the
+ * resolver checks them in their own dialects). 3.0 has a default dialect,
+ * which is ours, because OpenAPI publishes none for it. 3.1's and 3.2's are
+ * whatever the user configures.
  *
  * @type [RegExp, Version][]
  */
 const versions = [
   [/^3\.0\.\d+$/, {
+    name: "3.0",
     objectModel: objectModel30,
     dialectUri: openApi30DialectUri,
     schemaUri: "https://spec.openapis.org/oas/3.0/schema/2024-10-18",
@@ -50,20 +53,31 @@ const versions = [
     jsonSchemaDialect: false
   }],
   [/^3\.1\.\d+$/, {
+    name: "3.1",
     objectModel: objectModel31,
-    dialectUri: "https://spec.openapis.org/oas/3.1/dialect/base",
     schemaUri: "https://spec.openapis.org/oas/3.1/schema/2026-11-05",
     self: false,
     jsonSchemaDialect: true
   }],
   [/^3\.2\.\d+$/, {
+    name: "3.2",
     objectModel: objectModel32,
-    dialectUri: "https://spec.openapis.org/oas/3.2/dialect/2026-02-26",
     schemaUri: "https://spec.openapis.org/oas/3.2/schema/2026-11-12",
     self: true,
     jsonSchemaDialect: true
   }]
 ];
+
+/** @type typeof API.assertDefaultDialects */
+export const assertDefaultDialects = (defaultDialects) => {
+  const names = versions.map(([, version]) => version.name);
+  for (const name in defaultDialects) {
+    if (!names.includes(/** @type OpenApiVersion */ (name))) {
+      // A key written as a number, like `3.0`, is "3"
+      throw TypeError(`'${name}' in 'defaultDialects' isn't a version of OpenAPI this reads. Use ${names.map((name) => `"${name}"`).join(", ")}, as strings.`);
+    }
+  }
+};
 
 /** @type typeof API.openApiVersion */
 export const openApiVersion = (version) => versions.find(([pattern]) => pattern.test(version)) !== undefined;
@@ -72,7 +86,7 @@ export const openApiVersion = (version) => versions.find(([pattern]) => pattern.
 export const openApiSchemaUri = (version) => versions.find(([pattern]) => pattern.test(version))?.[1].schemaUri;
 
 /** @type typeof API.resolveOpenApi */
-export const resolveOpenApi = async (tree, { session, uri }) => {
+export const resolveOpenApi = async (tree, { session, uri, defaultDialects = {} }) => {
   const retrievalUri = toId(uri);
   /** @type SchemaMessage[] */
   const messages = [];
@@ -101,7 +115,7 @@ export const resolveOpenApi = async (tree, { session, uri }) => {
     }
   }
 
-  let dialectUri = version?.dialectUri;
+  let dialectUri = version === undefined ? undefined : defaultDialects[version.name] ?? version.dialectUri;
   const dialectNode = version?.jsonSchemaDialect && root !== undefined ? propertyValue(root, "jsonSchemaDialect") : undefined;
   const jsonSchemaDialect = stringOf(dialectNode);
   if (dialectNode !== undefined && jsonSchemaDialect !== undefined) {
@@ -109,6 +123,23 @@ export const resolveOpenApi = async (tree, { session, uri }) => {
       dialectUri = resolveId(jsonSchemaDialect, documentUri);
     } catch (error) {
       message(`'jsonSchemaDialect' isn't a valid URI: ${iriProblem(error)}`, dialectNode, "invalid-dialect");
+      dialectUri = undefined;
+    }
+  } else if (version !== undefined && dialectUri === undefined && root !== undefined) {
+    message(`OpenAPI ${version.name} has no default dialect. Add 'jsonSchemaDialect', or give 'openApiMediaType' a '${version.name}' in 'defaultDialects'.`, versionNode ?? root, "missing-dialect");
+  }
+
+  // The dialect is found once, and a problem with it is reported where it was
+  // chosen. Every Schema Object needs it, even one with its own `$schema`,
+  // because the dialect is what finds its `$id`.
+  if (dialectUri !== undefined && root !== undefined) {
+    try {
+      await getDialect(session, dialectUri, { referencedFrom: retrievalUri });
+    } catch (error) {
+      const { message: reason, cause } = /** @type Error */ (error);
+      const node = dialectNode ?? versionNode ?? root;
+      messages.push({ source: "openapi", ruleId: "unknown-dialect", severity: "error", uri: retrievalUri, place: node.position, message: reason, cause: cause instanceof Error ? cause : undefined });
+      dialectUri = undefined;
     }
   }
 

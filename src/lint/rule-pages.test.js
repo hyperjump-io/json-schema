@@ -21,6 +21,12 @@ import openApi30 from "./openapi-3-0.js";
 import openApi31 from "./openapi-3-1.js";
 import openApi32 from "./openapi-3-2.js";
 
+/** The "OAS dialect schema id" of 3.1, and the latest dated 3.2 dialect */
+const defaultDialects = {
+  3.1: "https://spec.openapis.org/oas/3.1/dialect/base",
+  3.2: "https://spec.openapis.org/oas/3.2/dialect/2026-02-26"
+};
+
 /**
  * @import { Plugin, Preset } from "unified"
  */
@@ -119,7 +125,7 @@ const lint = async (name, rule, { code, dialectUri }) => {
   // An example whose root has `openapi` is an OpenAPI document, as the CLI
   // decides
   const processor = isOpenApi(code)
-    ? parser.use(openApiResolve, { session }).use(rule)
+    ? parser.use(openApiResolve, { session, defaultDialects }).use(rule)
     : parser.use(jsonSchemaResolve, { session, ...dialectUri && { dialectUri } }).use(rule);
   await processor.run(processor.parse(file), file);
   return file.messages.filter((message) => message.ruleId === name).map((message) => message.reason);

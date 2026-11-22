@@ -2,7 +2,7 @@ import { fromJson, jsonSyntaxErrorMessage } from "@hyperjump/browser";
 import { toAbsoluteIri, urlToIri } from "@hyperjump/uri";
 import { noUrl } from "../identifiers.js";
 import { SchemaError } from "../schema/schema-error.js";
-import { resolveOpenApi } from "./resolve.js";
+import { assertDefaultDialects, resolveOpenApi } from "./resolve.js";
 
 /**
  * @import { SchemaMessage } from "../schema/schema-error.d.ts"
@@ -10,21 +10,27 @@ import { resolveOpenApi } from "./resolve.js";
  */
 
 /** @type typeof API.openApiMediaType */
-export const openApiMediaType = Object.freeze({
+export const openApiMediaType = (options = {}) => {
+  assertDefaultDialects(options.defaultDialects ?? {});
+  return openApiMediaTypePlugin(options);
+};
+
+/** @type (options: API.OpenApiOptions) => API.OpenApiMediaTypePlugin */
+const openApiMediaTypePlugin = (options) => Object.freeze({
   mediaType: "application/openapi+json",
   extensions: ["/openapi.json"],
 
-  /** @type typeof API.openApiMediaType.parse */
+  /** @type API.OpenApiMediaTypePlugin["parse"] */
   parse: async (response, session) => {
     // A schema's identifiers are IRIs, so the response's URL is converted
     // where it comes in
     const uri = toAbsoluteIri(urlToIri(new URL(response.url)));
-    return parseOpenApi(await response.text(), /** @type any */ (session), uri);
+    return parseOpenApi(await response.text(), /** @type any */ (session), uri, options);
   }
 });
 
 /** @type typeof API.parseOpenApi */
-export const parseOpenApi = async (text, session, uri) => {
+export const parseOpenApi = async (text, session, uri, options = {}) => {
   const { document: tree, errors } = fromJson(text, noUrl);
 
   /** @type SchemaMessage[] */
@@ -39,7 +45,7 @@ export const parseOpenApi = async (text, session, uri) => {
 
   // A syntax error the parser can't recover from leaves nothing to resolve
   if (tree.status !== "failure") {
-    const resolved = await resolveOpenApi(tree, { session, uri });
+    const resolved = await resolveOpenApi(tree, { session, uri, defaultDialects: options.defaultDialects });
     messages.push(...resolved.messages);
     if (messages.length === 0) {
       // Without problems, the parse succeeded

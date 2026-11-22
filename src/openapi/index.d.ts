@@ -3,12 +3,25 @@ import type { Hyperjump, JsonDocumentNode, MediaTypePlugin } from "@hyperjump/br
 import type { AbsoluteIri } from "@hyperjump/uri";
 import type { JsonSchemaConfig } from "../json-schema.d.ts";
 import type { JsonSchemaDocumentNode } from "../schema/schema-ast.d.ts";
+import type { DefaultDialects } from "./resolve.d.ts";
 
 /**
  * An OpenAPI document whose Schema Objects are schemas. Its root is data.
  * Documents are only made for ones without problems.
  */
 export type OpenApiDocument = JsonSchemaDocumentNode<"success">;
+
+export type OpenApiMediaTypePlugin = Readonly<MediaTypePlugin<OpenApiDocument>>;
+
+export type OpenApiOptions = {
+  /**
+   * The dialect of Schema Objects in documents without `jsonSchemaDialect`,
+   * for each version. 3.0's is `https://spec.openapis.org/oas/3.0/dialect`
+   * unless it's given. 3.1 and 3.2 have none, so a document of that version
+   * without `jsonSchemaDialect` is a problem.
+   */
+  defaultDialects?: DefaultDialects;
+};
 
 /**
  * OpenAPI 3.0, 3.1, and 3.2 documents in JSON: `application/openapi+json`,
@@ -18,35 +31,41 @@ export type OpenApiDocument = JsonSchemaDocumentNode<"success">;
  *
  * Its Schema Objects are schemas, so `openapi.json#/components/schemas/Pet`
  * compiles. A Schema Object's dialect is `jsonSchemaDialect` (3.1 and
- * later), or the version's default: `https://spec.openapis.org/oas/3.0/dialect`,
- * `https://spec.openapis.org/oas/3.1/dialect/base`, or
- * `https://spec.openapis.org/oas/3.2/dialect/2026-02-26`. The config needs
+ * later), or the version's default from `defaultDialects`. The config needs
  * that dialect, and for 3.1 and 3.2, its meta-schema in a registry.
  * Reference Objects aren't followed.
  *
  * Add it to `jsonSchemaConfig`'s `mediaTypes`.
  *
  * ```js
- * const config = jsonSchemaConfig({ dialects: [openApi30Dialect], mediaTypes: [openApiMediaType] });
+ * const config = jsonSchemaConfig({
+ *   dialects: [openApi30Dialect, draft202012Dialect],
+ *   vocabularies: { [openApi31VocabularyUri]: openApi31Vocabulary },
+ *   registry: new SchemaRegistry().with(openApi31MetaSchema),
+ *   mediaTypes: [openApiMediaType({
+ *     defaultDialects: { "3.1": "https://spec.openapis.org/oas/3.1/dialect/base" }
+ *   })]
+ * });
  * ```
  *
  * @throws SchemaError from `parse`, with every problem in the document
  */
-export const openApiMediaType: Readonly<MediaTypePlugin<OpenApiDocument>>;
+export const openApiMediaType: (options?: OpenApiOptions) => OpenApiMediaTypePlugin;
 
 /**
  * Parse and resolve the text of an OpenAPI document
  *
  * @throws SchemaError with every problem in the document
  */
-export const parseOpenApi: (text: string, session: Hyperjump<JsonSchemaConfig>, uri: AbsoluteIri) => Promise<OpenApiDocument>;
+export const parseOpenApi: (text: string, session: Hyperjump<JsonSchemaConfig>, uri: AbsoluteIri, options?: OpenApiOptions) => Promise<OpenApiDocument>;
 
 /**
  * Resolves an OpenAPI document in a unified pipeline, after `rejsonParse`,
  * like `jsonSchemaResolve` does a schema, so its Schema Objects can be
- * linted. Each problem is an error on the file.
+ * linted. Each problem is an error on the file. Give it the same
+ * `defaultDialects` as `openApiMediaType`.
  */
-export const openApiResolve: Plugin<[{ session: Hyperjump<JsonSchemaConfig> }], JsonDocumentNode, JsonSchemaDocumentNode>;
+export const openApiResolve: Plugin<[{ session: Hyperjump<JsonSchemaConfig> } & OpenApiOptions], JsonDocumentNode, JsonSchemaDocumentNode>;
 
 /**
  * OpenAPI's dialect meta-schemas and document schemas, which
@@ -69,3 +88,4 @@ export const openApiResolve: Plugin<[{ session: Hyperjump<JsonSchemaConfig> }], 
 export const openApiSpecMediaType: Readonly<MediaTypePlugin<JsonSchemaDocumentNode<"success">>>;
 
 export { openApiSchemaUri, resolveOpenApi } from "./resolve.js";
+export type { DefaultDialects, OpenApiVersion } from "./resolve.d.ts";
