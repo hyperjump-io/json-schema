@@ -109,6 +109,21 @@ describe("OpenAPI 3.0", () => {
     expect(validatorFor(duplicates)("a")).to.equal(true);
   });
 
+  test("exclusiveMaximum and exclusiveMinimum make maximum and minimum exclusive", async () => {
+    const compiled = await compile(jsonSchema, { minimum: 1, exclusiveMinimum: true, maximum: 3, exclusiveMaximum: true });
+
+    expect(validatorFor(compiled)(1)).to.equal(false);
+    expect(validatorFor(compiled)(2)).to.equal(true);
+    expect(validatorFor(compiled)(3)).to.equal(false);
+  });
+
+  test("exclusiveMaximum and exclusiveMinimum don't require maximum and minimum, as draft-04's do", async () => {
+    // 3.0's JSON Schema draft, draft-wright-00, doesn't require them
+    const compiled = await compile(jsonSchema, { exclusiveMaximum: true, exclusiveMinimum: true });
+
+    expect(validatorFor(compiled)(1)).to.equal(true);
+  });
+
   test("items is a schema", async () => {
     await expect(compile(jsonSchema, { items: [{}] })).rejects.toMatchObject({ messages: [{ message: "A schema must be an object or a boolean" }] });
   });

@@ -89,6 +89,14 @@ separate piece of work (see [Not done](#not-done)).
     one element" and elements "SHOULD be unique" are MUSTs in draft-04. So
     an empty `enum` is `keyword-allows-nothing` and a duplicate is
     `duplicate-enum-values`, both warnings.
+  - `exclusiveMaximum` and `exclusiveMinimum` are 3.0's own
+    (`oas/3.0/exclusiveMaximum`), because wright-00 doesn't require
+    `maximum` and `minimum` with them, as draft-04 does. Without them,
+    they have no effect. `maximum` and `minimum` are draft-04's with 3.0's
+    as their siblings (`oas/3.0/maximum`), because a sibling is found by
+    keyword URI. Rejected: dropping the requirement from draft-04's
+    keywords, which would make draft-04's MUST lint and change what
+    [Validity and lint](../lint/validity.md) decided for it.
   - `required` is draft-04's, because wright-00 says it MUST have at least
     one element and its elements MUST be unique too.
 - `$ref` is draft-07's, which makes the schema a reference and ignores its
