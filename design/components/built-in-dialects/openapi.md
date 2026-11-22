@@ -178,13 +178,10 @@ separate piece of work (see [Not done](#not-done)).
 
 ## Not done
 
-- Schemas in OpenAPI documents, like
-  `openapi.json#/components/schemas/Pet`. v1 read the whole document as a
-  schema, so a pointer into it went through unknown keywords. Here, an
-  unknown keyword's value is data, not a schema, so compiling from there
-  fails. A media type for OpenAPI documents would find the Schema Objects
-  where each version puts them and resolve them as schemas, with
-  `jsonSchemaDialect` as their default dialect. See
-  [OpenAPI documents](openapi-documents.md) for its design.
+- Schemas in OpenAPI documents beyond what
+  [OpenAPI documents](openapi-documents.md) has built: YAML, sniffing
+  `openapi` in other `.json` files, and the CLI's file patterns. v1 read
+  the whole document as a schema, so a pointer into it went through
+  unknown keywords.
 - The OpenAPI document schemas aren't included, like the official
   meta-schemas (see [Built-in dialects](README.md#meta-schemas)).

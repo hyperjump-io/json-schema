@@ -100,8 +100,28 @@ In every dialect, the `regex` format needs a pattern that's valid with the
 The OpenAPI dialects are for the Schema Objects in OpenAPI descriptions.
 Each one adds OpenAPI's keywords, `discriminator`, `example`,
 `externalDocs`, and `xml`, which are annotations. They don't change what's
-valid. Schemas inside an OpenAPI document, like
-`openapi.json#/components/schemas/Pet`, aren't supported yet.
+valid.
+
+To use the Schema Objects in an OpenAPI document, add `openApiMediaType`
+from `@hyperjump/json-schema/openapi` to the config's `mediaTypes`. Then a
+URI into the document, like `openapi.json#/components/schemas/Pet`, is a
+schema. It reads JSON documents named `openapi.json` or served as
+`application/openapi+json`. A Schema Object's dialect is the document's
+`jsonSchemaDialect`, or the version's default, which the config needs to
+have.
+
+```typescript
+import { jsonSchemaConfig, validator } from "@hyperjump/json-schema";
+import { openApi30Dialect } from "@hyperjump/json-schema/openapi-3-0";
+import { openApiMediaType } from "@hyperjump/json-schema/openapi";
+
+const config = jsonSchemaConfig({
+  dialects: [openApi30Dialect],
+  mediaTypes: [openApiMediaType]
+});
+
+const isPet = await validator(config, "https://example.com/openapi.json#/components/schemas/Pet");
+```
 
 ### OpenAPI 3.1 and 3.2
 
