@@ -5,7 +5,7 @@ import defaultKeyword from "../../keywords/default.js";
 import deprecatedKeyword from "../../keywords/deprecated.js";
 import descriptionKeyword from "../../keywords/description.js";
 import discriminatorKeyword from "../../keywords/oas/3.1/discriminator.js";
-import enumKeyword from "../../keywords/draft-04/enum.js";
+import enumKeyword from "../../keywords/enum.js";
 import exampleKeyword from "../../keywords/oas/3.2/example.js";
 import exclusiveMaximumKeyword from "../../keywords/draft-04/exclusiveMaximum.js";
 import exclusiveMinimumKeyword from "../../keywords/draft-04/exclusiveMinimum.js";

@@ -100,6 +100,15 @@ describe("OpenAPI 3.0", () => {
     expect(validatorFor(compiled)({ foo: "1" })).to.equal(false);
   });
 
+  test("enum can be empty and have duplicates, which 3.0's JSON Schema draft says it should not", async () => {
+    // `keyword-allows-nothing` and `duplicate-enum-values` report them
+    const empty = await compile(jsonSchema, { enum: [] });
+    expect(validatorFor(empty)("a")).to.equal(false);
+
+    const duplicates = await compile(jsonSchema, { enum: ["a", "a"] });
+    expect(validatorFor(duplicates)("a")).to.equal(true);
+  });
+
   test("items is a schema", async () => {
     await expect(compile(jsonSchema, { items: [{}] })).rejects.toMatchObject({ messages: [{ message: "A schema must be an object or a boolean" }] });
   });

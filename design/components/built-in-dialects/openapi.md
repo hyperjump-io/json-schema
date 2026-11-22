@@ -82,6 +82,15 @@ separate piece of work (see [Not done](#not-done)).
   `read-only-and-write-only` is an error in `openapi-3-0` and a warning in
   `recommended`, where JSON Schema allows it. 3.1 and 3.2 follow JSON
   Schema. See [Rules](../lint/rules.md) for the presets.
+- 3.0's Schema Object is based on draft-wright-00, not draft-04, and
+  wright-00 relaxed some of draft-04's MUSTs. Where it did, 3.0 doesn't
+  use draft-04's keyword:
+  - `enum` is the one later drafts have. wright-00's "SHOULD have at least
+    one element" and elements "SHOULD be unique" are MUSTs in draft-04. So
+    an empty `enum` is `keyword-allows-nothing` and a duplicate is
+    `duplicate-enum-values`, both warnings.
+  - `required` is draft-04's, because wright-00 says it MUST have at least
+    one element and its elements MUST be unique too.
 - `$ref` is draft-07's, which makes the schema a reference and ignores its
   siblings, as 3.0's Reference Object does.
 - `format` is draft-07's and an annotation by default, which is what most
