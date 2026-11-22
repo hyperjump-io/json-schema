@@ -125,6 +125,15 @@ The dialects are in [OpenAPI 3.0, 3.1, and 3.2](openapi.md).
   in either order, because validating only reads values and resolving
   annotates in place. The CLI does both (see its
   [Schema or instance](https://github.com/hyperjump-io/cli/blob/main/design/components/schema-or-instance.md)).
+- A URI into an OpenAPI document is a schema only where the node is a
+  Schema Object. The document's URI on its own isn't one, so `compile`,
+  `validate`, and `bundle` with it are an `ERR_NOT_A_SCHEMA` error, as any
+  location that's data is. `lint` takes the whole document. Rejected: the
+  document's URI meaning its version's document schema
+  (`openApiSchemaUri`), which the document is an instance of, not a schema
+  in it, and compiling every Schema Object, which is one validator for
+  many schemas. Bundling an OpenAPI description, its external references
+  pulled into the document, is a feature of its own, not yet designed.
 - Lint works on an OpenAPI document as it is: rules visit `json-schema`
   nodes, and the root isn't one. Rules about the discriminator read
   component names from the tree.
@@ -254,9 +263,3 @@ Every version:
    value for the discriminating property also define the property as
    required" isn't a requirement, so it isn't a rule.
 4. YAML, as its own plugin. Not started.
-
-## Open questions
-
-- `operations` like `compile` take a schema URI. A URI into an OpenAPI
-  document works once the node there is a schema. Whether the document's
-  URI on its own should mean anything.
