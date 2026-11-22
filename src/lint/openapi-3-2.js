@@ -1,7 +1,7 @@
 import recommended from "./recommended.js";
 import discriminatorWithoutComposition from "./rules/discriminator-without-composition.js";
 import discriminatorMappingWithoutTarget from "./rules/discriminator-mapping-without-target.js";
-import discriminatorPropertyOptionalWithoutDefault from "./rules/discriminator-property-optional-without-default.js";
+import discriminatorPropertyOptional from "./rules/discriminator-property-optional.js";
 import deprecatedExample from "./rules/deprecated-example.js";
 import deprecatedXmlField from "./rules/deprecated-xml-field.js";
 import unknownField from "./rules/unknown-field.js";
@@ -18,8 +18,8 @@ const openApi32 = {
     // OpenAPI says it's "legal only when using" one of them
     [discriminatorWithoutComposition, ["error"]],
     [discriminatorMappingWithoutTarget, ["error"]],
-    // 3.2 says it MUST have `defaultMapping` then
-    [discriminatorPropertyOptionalWithoutDefault, ["error"]],
+    // 3.2 says an optional one MUST have `defaultMapping`
+    [discriminatorPropertyOptional, ["error"]],
     [unknownField, ["warn"]],
     [deprecatedExample, ["warn"]],
     [deprecatedXmlField, ["warn"]],

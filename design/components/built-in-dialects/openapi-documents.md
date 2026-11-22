@@ -211,10 +211,10 @@ Every version:
    `pet.json` works there. From code, a registry entry's `dialectUri`
    already does. Built.
 3. The discriminator's lint rules (see [OpenAPI 3.0, 3.1, and
-   3.2](openapi.md)). `discriminator-without-composition` is built: a
+   3.2](openapi.md)). Built. `discriminator-without-composition` is built: a
    `discriminator` with no `oneOf`, `anyOf`, or `allOf` that no `allOf` in
    the document refers to, an error in every OpenAPI preset, because
-   OpenAPI says it's "legal only when using" one of them. Which schemas
+   OpenAPI says a discriminator is "legal only when using" one of them. Which schemas
    are searched for an `allOf` is implementation-defined. 3.0.4
    RECOMMENDS every named schema in `components`, and every `allOf` in the
    document includes them. `discriminator-mapping-without-target` is
@@ -228,19 +228,23 @@ Every version:
    missing name was never reported. A URI reference into another document
    isn't checked, because rules don't retrieve anything, and a value isn't
    a reference that `LintDocument.found` has.
-   `discriminator-property-optional-without-default` is built: a 3.2
-   `discriminator` without `defaultMapping` whose property is optional,
-   an error in `openapi-3-2`, because 3.2 says it MUST have one then. 3.2
-   doesn't say which schema decides that the property is optional, so it's
-   required if every object valid against the schema with the
-   `discriminator` has it (`propertyAlternatives`, over
-   `LintDocument.reached`): `required` next to it, or in every `oneOf`
-   alternative, as 3.2's examples do. It doesn't need component names, so
-   it checks schemas in files of their own too. 3.2's "it is important
-   that each subschema that defines a value for the discriminating
-   property also define the property as required" isn't a requirement, so
-   it isn't a rule.
-4. YAML, as its own plugin.
+   `discriminator-property-optional` is built: a `discriminator` whose
+   property is optional. 3.0.4 and 3.1.1 say it SHOULD be required, "as
+   the behavior when the property is absent is undefined", so the rule is
+   a warning in `openapi-3-0` and `openapi-3-1`. 3.2 says it MAY be optional,
+   but then the Discriminator Object MUST have `defaultMapping`, so 3.2's
+   is only reported without one, an error in `openapi-3-2`. The two are one
+   rule, because they ask one question, and the presets give each version
+   its severity. Rejected: a rule for each version. 3.2 doesn't say which
+   schema decides that the property is optional, so it's required if
+   every object valid against the schema with the `discriminator` has it
+   (`propertyAlternatives`, over `LintDocument.reached`): `required` next
+   to it, or in every `oneOf` alternative, as 3.2's examples do. It
+   doesn't need component names, so it checks schemas in files of their
+   own too. 3.2's "it is important that each subschema that defines a
+   value for the discriminating property also define the property as
+   required" isn't a requirement, so it isn't a rule.
+4. YAML, as its own plugin. Not started.
 
 ## Open questions
 

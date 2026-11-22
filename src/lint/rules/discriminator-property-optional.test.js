@@ -11,7 +11,7 @@ import { openApi30Dialect } from "../../dialects/openapi-3-0/index.js";
 import { openApi31Vocabulary, openApi31VocabularyUri } from "../../dialects/openapi-3-1/index.js";
 import { openApi32Vocabulary, openApi32VocabularyUri } from "../../dialects/openapi-3-2/index.js";
 import { openApiResolve } from "../../openapi/index.js";
-import discriminatorPropertyOptionalWithoutDefault from "./discriminator-property-optional-without-default.js";
+import discriminatorPropertyOptional from "./discriminator-property-optional.js";
 
 /**
  * @import { Json } from "@hyperjump/browser"
@@ -41,7 +41,7 @@ const openApi = (version, schemas) => JSON.stringify({
   components: { schemas }
 });
 
-describe("discriminator-property-optional-without-default", () => {
+describe("discriminator-property-optional", () => {
   test("an optional discriminating property without defaultMapping", async () => {
     const file = await lint(openApi("3.2.0", {
       Pet: { oneOf: [{ $ref: "#/components/schemas/Cat" }], discriminator: { propertyName: "petType" } },
@@ -50,7 +50,7 @@ describe("discriminator-property-optional-without-default", () => {
     expect(file.messages.map((message) => message.reason)).to.eql([
       "'petType' is optional, so 'discriminator' needs 'defaultMapping' for objects without it"
     ]);
-    expect(file.messages[0].ruleId).to.equal("discriminator-property-optional-without-default");
+    expect(file.messages[0].ruleId).to.equal("discriminator-property-optional");
     expect(file.messages[0].source).to.equal("json-schema-lint");
   });
 
@@ -88,9 +88,29 @@ describe("discriminator-property-optional-without-default", () => {
     expect(file.messages).to.have.length(1);
   });
 
-  test("3.1 has no defaultMapping", async () => {
+  test("3.0 and 3.1 say it SHOULD be required", async () => {
+    for (const version of ["3.0.4", "3.1.1"]) {
+      const file = await lint(openApi(version, {
+        Pet: { oneOf: [{ $ref: "#/components/schemas/Cat" }], discriminator: { propertyName: "petType" } },
+        Cat: { type: "object" }
+      }));
+      expect(file.messages.map((message) => message.reason), version).to.eql([
+        "'petType' is optional, and what 'discriminator' does without it is undefined. Make it required."
+      ]);
+    }
+  });
+
+  test("3.0 and 3.1 have no defaultMapping, so it doesn't make an optional property fine", async () => {
     const file = await lint(openApi("3.1.1", {
-      Pet: { oneOf: [{ $ref: "#/components/schemas/Cat" }], discriminator: { propertyName: "petType" } },
+      Pet: { oneOf: [{ $ref: "#/components/schemas/Cat" }], discriminator: { propertyName: "petType", defaultMapping: "Cat" } },
+      Cat: { type: "object" }
+    }));
+    expect(file.messages).to.have.length(1);
+  });
+
+  test("required in 3.0", async () => {
+    const file = await lint(openApi("3.0.4", {
+      Pet: { oneOf: [{ $ref: "#/components/schemas/Cat" }], required: ["petType"], discriminator: { propertyName: "petType" } },
       Cat: { type: "object" }
     }));
     expect(file.messages).to.eql([]);
@@ -104,9 +124,9 @@ describe("discriminator-property-optional-without-default", () => {
     const processor = unified()
       .use(rejsonParse)
       .use(jsonSchemaResolve, { session: new Hyperjump(jsonSchema) })
-      .use(discriminatorPropertyOptionalWithoutDefault);
+      .use(discriminatorPropertyOptional);
     await processor.run(processor.parse(file), file);
-    expect(file.messages.map((message) => message.ruleId)).to.eql(["discriminator-property-optional-without-default"]);
+    expect(file.messages.map((message) => message.ruleId)).to.eql(["discriminator-property-optional"]);
   });
 });
 
@@ -116,7 +136,7 @@ const lint = async (json) => {
   const processor = unified()
     .use(rejsonParse)
     .use(openApiResolve, { session: new Hyperjump(jsonSchema) })
-    .use(discriminatorPropertyOptionalWithoutDefault);
+    .use(discriminatorPropertyOptional);
   await processor.run(processor.parse(file), file);
   return file;
 };

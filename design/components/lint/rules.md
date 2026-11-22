@@ -25,7 +25,9 @@
   `array-without-items` and `unknown-field`, aren't in `recommended`.
   `openapi-3-1` and `openapi-3-2` are `recommended` with `unknown-field`
   and `deprecated-example` so far, and `openapi-3-2` has
-  `deprecated-xml-field` and `discriminator-property-optional-without-default`. Every OpenAPI preset has `unknown-field`,
+  `deprecated-xml-field`. `discriminator-property-optional` is a
+  warning in `openapi-3-0` and `openapi-3-1` and an error in `openapi-3-2`,
+  because 3.0.4 and 3.1.1 say SHOULD and 3.2 says MUST. Every OpenAPI preset has `unknown-field`,
   `wrapped-without-array`, `discriminator-without-composition`, and
   `discriminator-mapping-without-target`. Rejected: one `openapi` preset,
   because a preset gives a rule one severity, and only 3.0 forbids
