@@ -1,4 +1,5 @@
 import recommended from "./recommended.js";
+import discriminatorWithoutComposition from "./rules/discriminator-without-composition.js";
 import arrayWithoutItems from "./rules/array-without-items.js";
 import implicitDialect from "./rules/implicit-dialect.js";
 import readOnlyAndWriteOnly from "./rules/read-only-and-write-only.js";
@@ -13,6 +14,8 @@ import wrappedWithoutArray from "./rules/wrapped-without-array.js";
 const openApi30 = {
   plugins: [
     recommended,
+    // OpenAPI says it's "legal only when using" one of them
+    [discriminatorWithoutComposition, ["error"]],
     [arrayWithoutItems, ["error"]],
     // 3.0 says they MUST NOT both be true. JSON Schema allows it.
     [readOnlyAndWriteOnly, ["error"]],

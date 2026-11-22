@@ -15,6 +15,7 @@ import { openApi30Dialect } from "../dialects/openapi-3-0/index.js";
 import { openApi31Vocabulary, openApi31VocabularyUri } from "../dialects/openapi-3-1/index.js";
 import { openApi32Vocabulary, openApi32VocabularyUri } from "../dialects/openapi-3-2/index.js";
 import { SchemaRegistry } from "../registry/schema-registry.js";
+import { openApiResolve } from "../openapi/index.js";
 import recommended from "./recommended.js";
 import openApi30 from "./openapi-3-0.js";
 import openApi31 from "./openapi-3-1.js";
@@ -113,15 +114,25 @@ const examples = (source) => {
  */
 const lint = async (name, rule, { code, dialectUri }) => {
   const file = new VFile(code);
-  const processor = unified()
-    .use(rejsonParse, { accept: "recovered", url: "https://example.com/schema.json" })
-    .use(jsonSchemaResolve, {
-      session: new Hyperjump({ ...jsonSchema, allowRetrieval: [] }),
-      ...dialectUri && { dialectUri }
-    })
-    .use(rule);
+  const session = new Hyperjump({ ...jsonSchema, allowRetrieval: [] });
+  const parser = unified().use(rejsonParse, { accept: "recovered", url: "https://example.com/schema.json" });
+  // An example whose root has `openapi` is an OpenAPI document, as the CLI
+  // decides
+  const processor = isOpenApi(code)
+    ? parser.use(openApiResolve, { session }).use(rule)
+    : parser.use(jsonSchemaResolve, { session, ...dialectUri && { dialectUri } }).use(rule);
   await processor.run(processor.parse(file), file);
   return file.messages.filter((message) => message.ruleId === name).map((message) => message.reason);
+};
+
+/** @type (code: string) => boolean */
+const isOpenApi = (code) => {
+  try {
+    const json = /** @type unknown */ (JSON.parse(code));
+    return typeof json === "object" && json !== null && "openapi" in json;
+  } catch {
+    return false;
+  }
 };
 
 /** @type Record<string, Preset> */

@@ -211,7 +211,13 @@ Every version:
    `pet.json` works there. From code, a registry entry's `dialectUri`
    already does. Built.
 3. The discriminator's lint rules (see [OpenAPI 3.0, 3.1, and
-   3.2](openapi.md)).
+   3.2](openapi.md)). `discriminator-without-composition` is built: a
+   `discriminator` with no `oneOf`, `anyOf`, or `allOf` that no `allOf` in
+   the document refers to, an error in every OpenAPI preset, because
+   OpenAPI says it's "legal only when using" one of them. Which schemas
+   are searched for an `allOf` is implementation-defined. 3.0.4
+   RECOMMENDS every named schema in `components`, and every `allOf` in the
+   document includes them.
 4. YAML, as its own plugin.
 
 ## Open questions

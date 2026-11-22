@@ -173,14 +173,13 @@ separate piece of work (see [Not done](#not-done)).
   `validateFormats`, it's an unsupported format, which is an error.
 - Boolean schemas are allowed in 3.0, which doesn't have them. A boolean
   where a schema goes is a boolean schema in every dialect.
-- Requirements across keywords that the implementation recovers from
-  aren't checked yet, and would be lint rules: `discriminator`
-  without `oneOf`, `anyOf`, or `allOf`.
-  The discriminator's rules wait for a model of the OpenAPI document (see
-  [Not done](#not-done)). It's built on schema names, the keys of the
-  Components Object's `schemas`, for implicit mapping, `mapping` values,
-  and finding the schemas whose `allOf` references a parent with a
-  `discriminator`.
+- The discriminator is built on schema names, the keys of the Components
+  Object's `schemas`, for implicit mapping and `mapping` values, and on
+  finding the schemas whose `allOf` refers to a parent with a
+  `discriminator`. Its rules only check OpenAPI documents (see
+  [OpenAPI documents](openapi-documents.md)). A schema in a file of its
+  own isn't checked, because what builds on it or names it can be in
+  other documents.
 
 ## Not done
 
