@@ -69,8 +69,10 @@ separate piece of work (see [Not done](#not-done)).
   unsupported" keywords and its Specification Extensions.
 - `type` (`oas/3.0/type`) is one type, without `null`. It reads the sibling
   `nullable`, and `true` adds `null`. `nullable` has no keyword group,
-  because it means nothing without `type`, as 3.0.3 says. It doesn't change
-  other keywords, so `enum` without `null` still fails `null`.
+  because it means nothing without `type`, as 3.0.3 says.
+  `nullable-without-type` reports it, a warning in `openapi-3-0`. It
+  doesn't change other keywords, so `enum` without `null` still fails
+  `null`.
 - `type: "array"` without `items` is valid, and every item is, as in
   JSON Schema. 3.0 says `items` MUST be present, but the schema is
   understood without it, so it's the `array-without-items` lint rule, at
@@ -92,9 +94,10 @@ separate piece of work (see [Not done](#not-done)).
   - `exclusiveMaximum` and `exclusiveMinimum` are 3.0's own
     (`oas/3.0/exclusiveMaximum`), because wright-00 doesn't require
     `maximum` and `minimum` with them, as draft-04 does. Without them,
-    they have no effect. `maximum` and `minimum` are draft-04's with 3.0's
-    as their siblings (`oas/3.0/maximum`), because a sibling is found by
-    keyword URI. Rejected: dropping the requirement from draft-04's
+    they have no effect, which `exclusive-limit-without-limit` reports, a
+    warning in `openapi-3-0`. `maximum` and `minimum` are draft-04's with
+    3.0's as their siblings (`oas/3.0/maximum`), because a sibling is
+    found by keyword URI. Rejected: dropping the requirement from draft-04's
     keywords, which would make draft-04's MUST lint and change what
     [Validity and lint](../lint/validity.md) decided for it.
   - `required` is draft-04's, because wright-00 says it MUST have at least

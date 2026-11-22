@@ -28,6 +28,8 @@ what it reports and what it doesn't.
 | [`mergeable-schemas`](mergeable-schemas.md) | A schema in `allOf`, or alone in `anyOf` or `oneOf`, whose keywords can be moved into its parent without changing what's valid |
 | [`additional-items-without-items-array`](additional-items-without-items-array.md) | `additionalItems` without an `items` that's an array of schemas (draft-04 through 2019-09) |
 | [`array-without-items`](array-without-items.md) | `type: "array"` without `items` in OpenAPI 3.0, which requires it (`openapi-3-0`) |
+| [`exclusive-limit-without-limit`](exclusive-limit-without-limit.md) | `exclusiveMaximum` without `maximum`, or `exclusiveMinimum` without `minimum`, in OpenAPI 3.0. It has no effect. (`openapi-3-0`) |
+| [`nullable-without-type`](nullable-without-type.md) | `nullable` without `type` in the same schema, in OpenAPI 3.0. It has no effect. (`openapi-3-0`) |
 | [`unknown-field`](unknown-field.md) | A field OpenAPI's Discriminator, External Documentation, or XML Object doesn't define, like a typo (OpenAPI presets) |
 | [`deprecated-example`](deprecated-example.md) | OpenAPI's `example`, which 3.1 and later deprecate in favor of `examples` (OpenAPI 3.1 and 3.2 presets) |
 | [`deprecated-xml-field`](deprecated-xml-field.md) | `attribute` or `wrapped` in OpenAPI 3.2's `xml`, which 3.2 deprecates for `nodeType` (OpenAPI 3.2 preset) |

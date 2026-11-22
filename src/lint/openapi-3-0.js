@@ -7,6 +7,8 @@ import implicitDialect from "./rules/implicit-dialect.js";
 import readOnlyAndWriteOnly from "./rules/read-only-and-write-only.js";
 import unknownField from "./rules/unknown-field.js";
 import wrappedWithoutArray from "./rules/wrapped-without-array.js";
+import exclusiveLimitWithoutLimit from "./rules/exclusive-limit-without-limit.js";
+import nullableWithoutType from "./rules/nullable-without-type.js";
 
 /**
  * @import { Preset } from "unified"
@@ -28,7 +30,9 @@ const openApi30 = {
     // implicit
     [implicitDialect, ["off"]],
     [unknownField, ["warn"]],
-    [wrappedWithoutArray, ["warn"]]
+    [wrappedWithoutArray, ["warn"]],
+    [exclusiveLimitWithoutLimit, ["warn"]],
+    [nullableWithoutType, ["warn"]]
   ]
 };
 
