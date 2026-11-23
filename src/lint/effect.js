@@ -64,7 +64,15 @@ export const effectOf = (document, keyword, handle) => {
     if (node === undefined) {
       return "some";
     } else if (node.type === "reference") {
-      return ofSchema(find(node.href));
+      // A reference that leads back to itself never finds a schema
+      if (following.has(node)) {
+        return "some";
+      }
+
+      following.add(node);
+      const effect = ofSchema(find(node.href));
+      following.delete(node);
+      return effect;
     } else if (node.jsonType === "boolean") {
       return node.value ? "none" : "some";
     }
