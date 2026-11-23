@@ -1,4 +1,5 @@
 import { lintRule as unifiedLintRule } from "unified-lint-rule";
+import { visit } from "unist-util-visit";
 import unknownKeyword from "../keywords/unknown.js";
 import { visitKeywords } from "./utilities.js";
 
@@ -7,7 +8,7 @@ import { visitKeywords } from "./utilities.js";
  * @import { Processor } from "unified"
  * @import { VFile } from "vfile"
  * @import { Meta, Plugin, Rule } from "unified-lint-rule"
- * @import { JsonSchemaDocumentNode, JsonSchemaNode } from "../schema/schema-ast.d.ts"
+ * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode } from "../schema/schema-ast.d.ts"
  */
 
 /**
@@ -115,28 +116,49 @@ const directives = (tree) => {
   if (result === undefined) {
     /** @type Directive[] */
     const found = [];
+
+    /** @type (valueNode: JsonSchemaNode, schemaNode: JsonSchemaNode) => void */
+    const addDirective = (valueNode, schemaNode) => {
+      const start = schemaNode.position?.start.offset;
+      const end = schemaNode.position?.end.offset;
+      if (valueNode.jsonType !== "string" || start === undefined || end === undefined) {
+        return;
+      }
+
+      const [name, ...ruleIds] = valueNode.value.trim().split(/\s+/);
+      if (name.startsWith(directivePrefix)) {
+        found.push({
+          name: name,
+          enabled: directiveStates[name],
+          ruleIds: ruleIds.length === 0 ? undefined : ruleIds,
+          start: start,
+          end: end,
+          node: valueNode
+        });
+      }
+    };
+
     for (const commentUri of commentUris) {
       visitKeywords(tree, commentUri, (keywordNode, schemaNode) => {
-        const valueNode = keywordNode.children[1];
-        const start = schemaNode.position?.start.offset;
-        const end = schemaNode.position?.end.offset;
-        if (valueNode.jsonType !== "string" || start === undefined || end === undefined) {
-          return;
-        }
-
-        const [name, ...ruleIds] = valueNode.value.trim().split(/\s+/);
-        if (name.startsWith(directivePrefix)) {
-          found.push({
-            name: name,
-            enabled: directiveStates[name],
-            ruleIds: ruleIds.length === 0 ? undefined : ruleIds,
-            start: start,
-            end: end,
-            node: valueNode
-          });
-        }
+        addDirective(keywordNode.children[1], schemaNode);
       });
     }
+
+    // In draft-04 through draft-07, a schema with `$ref` is a reference,
+    // whose properties aren't keywords, but a `$comment` next to `$ref` is
+    // still about it, like `$schema` (see `visitDialectUris`)
+    visit(tree, "reference", (node) => {
+      const schemaNode = /** @type JsonSchemaNode */ (/** @type unknown */ (node));
+      if (schemaNode.jsonType !== "object") {
+        return;
+      }
+
+      for (const property of /** @type JsonSchemaKeywordNode[] */ (schemaNode.children)) {
+        if (property.children[0].value === "$comment") {
+          addDirective(property.children[1], schemaNode);
+        }
+      }
+    });
     result = found;
     directivesByTree.set(tree, result);
   }
