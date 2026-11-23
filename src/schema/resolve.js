@@ -1,7 +1,7 @@
 import { relativeFileUrl } from "@hyperjump/browser";
 import { pointerAppend } from "@hyperjump/json-pointer";
 import { InvalidIriError, assertIriReference, encodeIriFragment, getScheme, isIriReference, normalizeIri, resolveIri, urlToIri } from "@hyperjump/uri";
-import { iriPlace, iriProblem, resolveId, toId } from "../identifiers.js";
+import { assertUrl, iriPlace, iriProblem, resolveId, toId } from "../identifiers.js";
 import { definitionsOf, keywordOf } from "../definition-of.js";
 import definitionsKeyword from "../keywords/definitions.js";
 import schemaKeyword from "../keywords/schema.js";
@@ -425,7 +425,7 @@ class Resolver {
 
           try {
             assertIriReference(href);
-            effects.reference = normalizeIri(resolveIri(href, resource.uri));
+            effects.reference = assertUrl(normalizeIri(resolveIri(href, resource.uri)));
           } catch (error) {
             this.#invalidIri(`'${href}' isn't a valid URI reference: ${iriProblem(error)}`, valueNode, keyword.uri, error);
           }
@@ -515,7 +515,7 @@ class Resolver {
     }
 
     try {
-      Object.assign(node, { type: "reference", href: normalizeIri(resolveIri(node.value, resource.uri)) });
+      Object.assign(node, { type: "reference", href: assertUrl(normalizeIri(resolveIri(node.value, resource.uri))) });
     } catch (error) {
       this.#invalidIri(`'${node.value}' isn't a valid URI reference: ${iriProblem(error)}`, node, keywordUri, error);
     }

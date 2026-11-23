@@ -1,7 +1,7 @@
 import { describe, test, expect } from "vitest";
 import { fromJson } from "@hyperjump/browser";
 import { assertIri, assertIriReference } from "@hyperjump/uri";
-import { iriPlace, iriProblem, noUrl } from "./identifiers.js";
+import { iriPlace, iriProblem, noUrl, resolveId, toId } from "./identifiers.js";
 
 /** @type (text: string) => import("unist").Node */
 const stringNode = (text) => /** @type any */ (fromJson(text, noUrl).document.children[0]);
@@ -14,6 +14,19 @@ const errorOf = (check, value) => {
     return error;
   }
 };
+
+describe("toId", () => {
+  test("an IRI that can't be parsed as a URL isn't an identifier", () => {
+    expect(() => toId("http://localhost:80800/a")).to.throw("'http://localhost:80800/a' can't be parsed as a URL");
+  });
+});
+
+describe("resolveId", () => {
+  test("a reference to an IRI that can't be parsed as a URL isn't an identifier", () => {
+    expect(() => resolveId("http://1.2.3.256/a", undefined)).to.throw("it can't be parsed as a URL");
+    expect(() => resolveId("//localhost:80800/a", /** @type any */ ("https://example.com/"))).to.throw("it can't be parsed as a URL");
+  });
+});
 
 describe("iriProblem", () => {
   test("is what's wrong, without the rule and the value", () => {

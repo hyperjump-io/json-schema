@@ -36,6 +36,10 @@ describe("draft-07", () => {
     jsonSchema = draft07();
   });
 
+  test("a $ref that can't be parsed as a URL is a schema problem", async () => {
+    await expect(compile(jsonSchema, { $schema, properties: { a: { $ref: "http://localhost:80800/a" } } })).rejects.toThrow("'http://localhost:80800/a' isn't a valid URI reference: it can't be parsed as a URL");
+  });
+
   test("format validates by default", async () => {
     const compiled = await compile(jsonSchema, { $schema, format: "ipv4" });
 
