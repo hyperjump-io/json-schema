@@ -1,7 +1,18 @@
 import { describe, test, expect } from "vitest";
+import { unified } from "unified";
 import { VFile } from "vfile";
+import { fromJson, jsonPointerGet, Hyperjump } from "@hyperjump/browser";
 import { linter } from "../test-linter.js";
+import { jsonSchemaConfig } from "../../json-schema.js";
+import { resolveSchemaAt } from "../../schema/resolve.js";
+import { toId, noUrl } from "../../identifiers.js";
+import { draft07Dialect } from "../../dialects/draft-07/index.js";
+import { draft202012Dialect } from "../../dialects/draft-2020-12/index.js";
 import misplacedDialect from "./misplaced-dialect.js";
+
+/**
+ * @import { JsonSchemaDocumentNode } from "../../schema/schema-ast.d.ts"
+ */
 
 const draft04 = "http://json-schema.org/draft-04/schema#";
 const draft07 = "http://json-schema.org/draft-07/schema#";
@@ -82,6 +93,32 @@ describe("misplaced-dialect", () => {
   test("a property named $schema isn't a keyword", async () => {
     expect(await reasons(`{ "$schema": "${draft202012}", "properties": { "$schema": { "type": "string" } } }`)).to.eql([]);
   });
+
+  describe("a schema that no schema is around, like a Schema Object", () => {
+    test("is in the dialect it was read in, unless it starts a resource", async () => {
+      expect(await reasonsAt({
+        ignored: { $schema: draft07, type: "string" },
+        resource: { $id: "https://example.com/a", $schema: draft07, type: "string" }
+      }, draft202012)).to.eql([
+        "'$schema' is only allowed at the root of a schema resource. It's ignored."
+      ]);
+    });
+
+    test("read in draft-04 through draft-07", async () => {
+      expect(await reasonsAt({
+        ignored: { $schema: draft07, type: "string" },
+        resource: { $id: "https://example.com/a", $schema: draft07, type: "string" }
+      }, draft07)).to.eql([
+        "'$schema' is only allowed at the root of the document in draft-07. It's ignored."
+      ]);
+    });
+
+    test("in a subschema", async () => {
+      expect(await reasonsAt({ a: { items: { $schema: draft202012 } } }, draft202012)).to.eql([
+        "'$schema' is only allowed at the root of a schema resource. It's ignored."
+      ]);
+    });
+  });
 });
 
 /** @type (json: string) => Promise<VFile> */
@@ -95,3 +132,40 @@ const lint = async (json) => {
 
 /** @type (json: string) => Promise<string[]> */
 const reasons = async (json) => (await lint(json)).messages.map((message) => message.reason);
+
+/**
+ * Resolves each property of a document that isn't a schema as a schema in
+ * the dialect, as a resolver for a document like OpenAPI does, and lints it
+ *
+ * @type (schemas: Record<string, unknown>, dialectUri: string) => Promise<string[]>
+ */
+const reasonsAt = async (schemas, dialectUri) => {
+  const uri = "https://example.com/document";
+  const { document: tree } = fromJson(JSON.stringify(schemas), noUrl);
+  /** @type JsonSchemaDocumentNode */
+  const document = {
+    type: "json-schema-document",
+    status: tree.status,
+    children: /** @type any */ (tree.children),
+    comments: tree.comments,
+    uri: toId(uri),
+    url: uri,
+    anchors: {},
+    dynamicAnchors: {},
+    embedded: {}
+  };
+  document.embedded[document.uri] = document;
+
+  const session = new Hyperjump(jsonSchemaConfig({ dialects: [draft202012Dialect, draft07Dialect] }));
+  for (const name of Object.keys(schemas)) {
+    const pointer = `/${name}`;
+    const node = jsonPointerGet(pointer, /** @type any */ (document.children[0]));
+    expect(await resolveSchemaAt(node, { session, document, pointer, dialectUri, uri })).to.eql([]);
+  }
+
+  const file = new VFile({ path: "/document.json" });
+  await unified()
+    .use(misplacedDialect)
+    .run(document, file);
+  return file.messages.map((message) => message.reason);
+};

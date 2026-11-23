@@ -9,7 +9,7 @@ import { unified } from "unified";
 import { VFile } from "vfile";
 import { fetcher, fromJson, jrefLocation, jrefSelect, jsonPointerGet, nodeTransport, rejsonParse, Hyperjump } from "@hyperjump/browser";
 import { jsonSchemaConfig, SchemaError, extendDialect } from "../json-schema.js";
-import { jsonSchemaResolve, resolveSchema } from "./resolve.js";
+import { jsonSchemaResolve, resolveSchema, resolveSchemaAt } from "./resolve.js";
 import idKeyword from "../keywords/id.js";
 import anchorKeyword from "../keywords/anchor.js";
 import dynamicAnchorKeyword from "../keywords/dynamicAnchor.js";
@@ -29,7 +29,7 @@ import { definitionsOf } from "../definition-of.js";
  * @import { Keyword } from "../keyword.d.ts"
  * @import { JsonSchemaResolveOptions } from "./resolve.d.ts"
  * @import { FollowedNode, Target } from "@hyperjump/browser"
- * @import { JsonSchemaKeywordNode, JsonSchemaNode, JsonSchemaTolerantNode } from "./schema-ast.d.ts"
+ * @import { JsonSchemaDocumentNode, JsonSchemaKeywordNode, JsonSchemaNode, JsonSchemaTolerantNode } from "./schema-ast.d.ts"
  */
 
 const dialectUri = "https://example.com/dialect";
@@ -54,6 +54,79 @@ describe("resolveSchema", () => {
     const { messages } = await resolveSchema(tree, { session: new Hyperjump(testJsonSchema()), uri: baseUri });
 
     expect(messages).to.eql([]);
+  });
+});
+
+describe("resolveSchemaAt", () => {
+  // A document that isn't a schema at its root, made the way a resolver for
+  // another kind of document, like OpenAPI, makes it
+
+  test("the node is a schema in the given dialect, located by its pointer", async () => {
+    const { document, at } = documentOf({ schemas: { a: { type: "string", properties: { b: true } } } });
+    const messages = await resolveSchemaAt(at("/schemas/a"), { session: new Hyperjump(testJsonSchema()), document, pointer: "/schemas/a", dialectUri, uri: baseUri });
+
+    expect(messages).to.eql([]);
+    expect(at("/schemas/a").type).to.equal("json-schema");
+    expect(at("/schemas/a").dialectUri).to.equal(dialectUri);
+    expect(at("/schemas/a").location).to.equal(`${baseUri}#/schemas/a`);
+    expect(at("/schemas/a/properties/b").location).to.equal(`${baseUri}#/schemas/a/properties/b`);
+    expect(document.dialectUri).to.equal(undefined);
+  });
+
+  test("$schema next to $id starts a resource in its dialect, in the document's embedded", async () => {
+    const { document, at } = documentOf({ schemas: { a: { $id: "/a", $schema: legacyDialectUri, definitions: { b: {} } } } });
+    const messages = await resolveSchemaAt(at("/schemas/a"), { session: new Hyperjump(testJsonSchema()), document, pointer: "/schemas/a", dialectUri, uri: baseUri });
+
+    expect(messages).to.eql([]);
+    expect(Object.keys(document.embedded)).to.eql([baseUri, "https://example.com/a"]);
+    expect(document.embedded["https://example.com/a"].dialectUri).to.equal(legacyDialectUri);
+    expect(at("/schemas/a").location).to.equal("https://example.com/a#");
+    expect(at("/schemas/a/definitions/b").dialectUri).to.equal(legacyDialectUri);
+  });
+
+  test("$schema without $id is ignored, because a resource doesn't start there", async () => {
+    const { document, at } = documentOf({ schemas: { a: { $schema: legacyDialectUri, definitions: {} } } });
+    const messages = await resolveSchemaAt(at("/schemas/a"), { session: new Hyperjump(testJsonSchema()), document, pointer: "/schemas/a", dialectUri, uri: baseUri });
+
+    // `misplaced-dialect` reports it
+    expect(messages).to.eql([]);
+    expect(at("/schemas/a").dialectUri).to.equal(dialectUri);
+    expect(keywordNode(at("/schemas/a"), "definitions").keywordUri).to.equal("https://json-schema.org/keyword/unknown#definitions");
+  });
+
+  test("schemas resolved in the same document share its resources", async () => {
+    const { document, at } = documentOf({ schemas: { a: { $id: "/a" }, b: { $id: "/a" } } });
+    const session = new Hyperjump(testJsonSchema());
+    const first = await resolveSchemaAt(at("/schemas/a"), { session, document, pointer: "/schemas/a", dialectUri, uri: baseUri });
+    const second = await resolveSchemaAt(at("/schemas/b"), { session, document, pointer: "/schemas/b", dialectUri, uri: baseUri });
+
+    expect(first).to.eql([]);
+    expect(second.map(({ ruleId }) => ruleId)).to.eql(["duplicate-id"]);
+  });
+
+  test("problems are reported with the URI the document was retrieved from", async () => {
+    const { document, at } = documentOf({ schemas: { a: { $id: "#not-absolute" } } });
+    const retrievalUri = "https://example.com/retrieved";
+    const messages = await resolveSchemaAt(at("/schemas/a"), { session: new Hyperjump(testJsonSchema()), document, pointer: "/schemas/a", dialectUri, uri: retrievalUri });
+
+    expect(messages.map(({ ruleId, severity, uri }) => [ruleId, severity, uri])).to.eql([[idKeyword.uri, "error", retrievalUri]]);
+  });
+
+  test("a dialect that can't be retrieved is reported, and the node is data", async () => {
+    const { document, at } = documentOf({ schemas: { a: { type: "string" } } });
+    const messages = await resolveSchemaAt(at("/schemas/a"), { session: new Hyperjump(testJsonSchema()), document, pointer: "/schemas/a", dialectUri: "test:/does-not-exist", uri: baseUri });
+
+    expect(messages.map(({ ruleId }) => ruleId)).to.eql(["unknown-dialect"]);
+    expect(at("/schemas/a").type).to.equal("json");
+    expect(at("/schemas/a").location).to.equal(`${baseUri}#/schemas/a`);
+  });
+
+  test("a node that isn't a schema", async () => {
+    const { document, at } = documentOf({ schemas: { a: 42 } });
+    const messages = await resolveSchemaAt(at("/schemas/a"), { session: new Hyperjump(testJsonSchema()), document, pointer: "/schemas/a", dialectUri, uri: baseUri });
+
+    expect(messages.map(({ ruleId }) => ruleId)).to.eql(["invalid-schema"]);
+    expect(at("/schemas/a").type).to.equal("json-schema");
   });
 });
 
@@ -1281,6 +1354,30 @@ const resolve = async (jsonSchema, json, options = {}) => {
   const document = await processor.run(processor.parse(file), file);
 
   return { document, file, root: /** @type JsonSchemaTolerantNode */ (document.children[0]) };
+};
+
+/**
+ * A document for {@link resolveSchemaAt}, which is the resource at
+ * `baseUri`, and a way to get its nodes
+ *
+ * @type (json: unknown) => { document: JsonSchemaDocumentNode; at: (pointer: string) => any }
+ */
+const documentOf = (json) => {
+  const { document: tree } = fromJson(JSON.stringify(json), noUrl);
+  /** @type JsonSchemaDocumentNode */
+  const document = {
+    type: "json-schema-document",
+    status: tree.status,
+    children: /** @type any */ (tree.children),
+    comments: tree.comments,
+    uri: toId(baseUri),
+    url: baseUri,
+    anchors: {},
+    dynamicAnchors: {},
+    embedded: {}
+  };
+  document.embedded[document.uri] = document;
+  return { document, at: (pointer) => jsonPointerGet(pointer, /** @type any */ (document.children[0])) };
 };
 
 /** @type (pointer: string, node: JsonSchemaTolerantNode) => any */
