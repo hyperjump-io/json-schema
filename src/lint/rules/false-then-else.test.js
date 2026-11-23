@@ -60,6 +60,12 @@ describe("false-then-else", () => {
   test("draft-07", async () => {
     expect(await reasons(`{ "$schema": "http://json-schema.org/draft-07/schema#", "if": true, "else": false }`)).to.have.length(1);
   });
+
+  test("if that's a reference in draft-07, where $ref replaces the schema", async () => {
+    expect(await reasons(`{ "$schema": "http://json-schema.org/draft-07/schema#", "if": { "$ref": "#/definitions/a" }, "then": false, "definitions": { "a": { "type": "string" } } }`)).to.eql([
+      "'if' with a 'then' that allows nothing is the same as 'not' with the 'if' schema"
+    ]);
+  });
 });
 
 /** @type (json: string) => Promise<VFile> */

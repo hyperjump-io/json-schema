@@ -76,6 +76,12 @@ describe("empty-then-else", () => {
     expect(await reasons(`{ "$schema": "http://json-schema.org/draft-07/schema#", "if": true, "then": {} }`)).to.have.length(1);
   });
 
+  test("a reference to an empty schema in draft-07, where $ref replaces the schema", async () => {
+    expect(await reasons(`{ "$schema": "http://json-schema.org/draft-07/schema#", "if": { "required": ["a"] }, "then": { "$ref": "#/definitions/a" }, "definitions": { "a": {} } }`)).to.eql([
+      "'then' has no effect, because every value is valid against it"
+    ]);
+  });
+
   test("draft-06 doesn't have if", async () => {
     expect(await reasons(`{ "$schema": "http://json-schema.org/draft-06/schema#", "if": true, "then": {} }`)).to.eql([]);
   });

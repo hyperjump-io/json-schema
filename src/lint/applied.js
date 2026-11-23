@@ -57,13 +57,23 @@ export const appliedSchemas = (document) => {
  * schema in `if`'s `cases`. It's undefined if the expression doesn't apply
  * a schema that's a whole keyword's value.
  *
+ * A schema that's a reference (draft-04 through draft-07's `$ref`) is
+ * applied by the URI it resolves to, so it's that keyword's if it's the
+ * only one whose reference resolves there. Two that resolve to the same
+ * schema can't be told apart.
+ *
  * @type (keyword: LoweredKeyword, expression: Expression | null) => JsonSchemaKeywordNode | undefined
  */
 export const keywordApplying = ({ keywordNode, sourceNodes }, expression) => {
   if (expression?.op !== "apply") {
     return;
   }
-  return [keywordNode, ...sourceNodes].find((node) => /** @type JsonSchemaNode */ (node.children[1]).location === expression.schema);
+
+  const applying = [keywordNode, ...sourceNodes].filter((node) => {
+    const schemaNode = /** @type JsonSchemaNode */ (node.children[1]);
+    return (schemaNode.type === "reference" ? schemaNode.href : schemaNode.location) === expression.schema;
+  });
+  return applying.length === 1 ? applying[0] : undefined;
 };
 
 /**
