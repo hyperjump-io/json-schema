@@ -1,6 +1,5 @@
-import { resolveIri } from "@hyperjump/uri";
+import { resolveIri, toRelativeIri } from "@hyperjump/uri";
 import { describe, expect, test } from "vitest";
-import { toRelativeIri } from "./common.js";
 
 
 describe("toRelativeIri", () => {
@@ -19,7 +18,10 @@ describe("toRelativeIri", () => {
     ["https://example.com/foo/bar/baz", "https://example.com/foo/bar/baz-quux", "baz-quux"],
     ["https://example.com/baz-quux", "https://example.com/baz", "baz"],
     ["https://example.com/baz", "https://example.com/baz-quux", "baz-quux"],
-    ["https://example.com/page1/page2/foo", "https://example.com/", "../../"]
+    ["https://example.com/page1/page2/foo", "https://example.com/", "../../"],
+    ["https://example.com/main", "https://example.com/other?version=2", "other?version=2"],
+    ["https://example.com/a?x=1", "https://example.com/a?x=2", "?x=2"],
+    ["https://example.com/var/lib", "https://example.com/bin?q", "../bin?q"]
   ])("toRelativeIri(%s, %s) => %s", (from, to, expected) => {
     const relative = toRelativeIri(from, to);
     expect(relative).to.equal(expected);
