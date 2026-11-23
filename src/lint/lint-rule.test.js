@@ -108,6 +108,32 @@ describe("configuration comments", () => {
     expect(file.messages).to.eql([]);
   });
 
+  test("a directive next to $ref in a dialect where $ref replaces the schema", async () => {
+    const file = await lint(`{
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "foo": {
+          "$comment": "json-schema-lint-disable ignored-ref-siblings",
+          "$ref": "#/definitions/foo",
+          "description": "Shown by a docs tool"
+        }
+      },
+      "definitions": { "foo": { "type": "string" } }
+    }`);
+    expect(file.messages).to.eql([]);
+  });
+
+  test("an unknown directive next to $ref in a dialect where $ref replaces the schema is a warning", async () => {
+    const file = await lint(`{
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "properties": {
+        "foo": { "$comment": "json-schema-lint-disabel", "$ref": "#/definitions/foo" }
+      },
+      "definitions": { "foo": { "type": "string" } }
+    }`);
+    expect(ruleIds(file)).to.eql(["unknown-directive"]);
+  });
+
   test("a rule is turned back on in a subschema", async () => {
     const file = await lint(`{
       "$schema": "https://json-schema.org/v1",
