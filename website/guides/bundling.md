@@ -124,6 +124,11 @@ means:
   `externalSchemas` instead.
 - A file without an `$id` would be embedded, and there's no `id` to
   identify it by.
+- A file references the main schema by its path, like
+  `"$ref": "tree.schema.json"`, and `id` doesn't end with that name, so the
+  reference wouldn't find the main schema in the bundle.
+- Two files would be identified the same, because `id` has fewer path
+  segments than the files go up from the main schema.
 
 Like `compile`, it throws a `SchemaError` for a schema with problems and
 [browser's error](loading-schemas.md#when-a-schema-isnt-found) for a schema

@@ -397,6 +397,27 @@ describe("bundle", () => {
       expect(validatorFor(compiled)({ foo: 1 })).to.equal(false);
     });
 
+    test("a file that's referenced by its path needs an 'id' that ends with its name", async () => {
+      await expect(bundle(fileJsonSchema, fileUri("tree.schema.json"), { id: "https://example.com/schemas/tree" }))
+        .rejects.toThrow("Give the bundle an 'id' that ends with 'tree.schema.json'");
+    });
+
+    test("a file that's referenced by its path is found in the bundle", async () => {
+      const treeId = "https://example.com/schemas/tree.schema.json";
+      const bundled = await bundle(fileJsonSchema, fileUri("tree.schema.json"), { id: treeId });
+      const compiled = await compile(fileJsonSchema, treeId, { registry: new SchemaRegistry().with(bundled) });
+
+      expect(validatorFor(compiled)({ children: [{ value: 1, subtree: { children: [{ value: 2 }] } }] })).to.equal(true);
+      expect(validatorFor(compiled)({ children: [{ value: 1, subtree: { children: [{ value: "a" }] } }] })).to.equal(false);
+    });
+
+    test("files can't be identified the same", async () => {
+      await expect(bundle(fileJsonSchema, fileUri("nested/main.schema.json"), { id: "https://example.com/main.schema.json" }))
+        .rejects.toThrow("would both be identified as 'https://example.com/string.schema.json'");
+      await expect(bundle(fileJsonSchema, fileUri("nested/main.schema.json"), { id: "https://example.com/schemas/main.schema.json" }))
+        .resolves.toBeDefined();
+    });
+
     test("embedding a file without 'id' is an error", async () => {
       await expect(bundle(fileJsonSchema, fileUri("main.schema.json"))).rejects.toThrow("Give the bundle an identifier with the 'id' option");
     });

@@ -1,0 +1,5 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+  "allOf": [{ "$ref": "../string.schema.json" }, { "$ref": "string.schema.json" }]
+}
