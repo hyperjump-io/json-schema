@@ -20,6 +20,20 @@ export type SessionOptions = {
    * allow what the config allows too, include its entries.
    */
   allowRetrieval?: string[];
+
+  /**
+   * The dialect of documents without `$schema`, by URL, instead of the
+   * config's `defaultDialects`. It replaces the config's rather than adding
+   * to it, like `allowRetrieval`.
+   */
+  defaultDialects?: Readonly<Record<string, string>>;
+
+  /**
+   * The dialect of a schema given to the call as a value, if it doesn't
+   * have `$schema`, like a boolean schema. It's that schema's, like a
+   * registry entry's `dialectUri`.
+   */
+  dialectUri?: string;
 };
 
 // A session for retrieving and browsing schemas is browser's: a `Hyperjump`

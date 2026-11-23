@@ -1,7 +1,7 @@
 import { describe, test, expect } from "vitest";
 import { unified } from "unified";
 import { VFile } from "vfile";
-import { rejsonParse, Hyperjump } from "@hyperjump/browser";
+import { fetcher, rejsonParse, Hyperjump } from "@hyperjump/browser";
 import { jsonSchemaConfig } from "../../json-schema.js";
 import { SchemaRegistry } from "../../registry/schema-registry.js";
 import { jsonSchemaResolve } from "../../schema/resolve.js";
@@ -15,8 +15,8 @@ const draft07 = "http://json-schema.org/draft-07/schema";
 const draft202012 = "https://json-schema.org/draft/2020-12/schema";
 
 describe("implicit-dialect", () => {
-  test("a dialect from the default", async () => {
-    const file = await lint(`{ "type": "string" }`, { defaultDialectUri: draft202012 });
+  test("a dialect from how it was loaded", async () => {
+    const file = await lint(`{ "type": "string" }`, { dialectUri: draft202012 });
     expect(file.messages.map((message) => message.reason)).to.eql([
       `The schema doesn't declare its dialect, so it's '${draft202012}' only because of how it was loaded. Add '"$schema": "${draft202012}"' so other tools read it the same way.`
     ]);
@@ -37,7 +37,7 @@ describe("implicit-dialect", () => {
   });
 
   test("with $schema", async () => {
-    const file = await lint(`{ "$schema": "${draft07}#", "type": "string" }`, { defaultDialectUri: draft202012 });
+    const file = await lint(`{ "$schema": "${draft07}#", "type": "string" }`, { dialectUri: draft202012 });
     expect(file.messages).to.eql([]);
   });
 
@@ -58,7 +58,7 @@ describe("implicit-dialect", () => {
   });
 
   test("a boolean schema", async () => {
-    const file = await lint(`true`, { defaultDialectUri: draft202012 });
+    const file = await lint(`true`, { dialectUri: draft202012 });
     expect(file.messages).to.eql([]);
   });
 
@@ -91,14 +91,12 @@ describe("implicit-dialect", () => {
       expect(results.map((result) => result.ruleId)).to.eql(["implicit-dialect"]);
     });
 
-    test("the default dialect", async () => {
+    test("a dialect from defaultDialects", async () => {
       const jsonSchema = jsonSchemaConfig({
-        defaultDialectUri: draft202012,
         dialects: [draft202012Dialect],
-        registry: new SchemaRegistry([{
-          schema: `{ "type": "string" }`,
-          retrievalUri: "https://example.com/a"
-        }])
+        defaultDialects: { "https://example.com/": draft202012 },
+        stack: fetcher(() => new Response(`{ "type": "string" }`, { headers: { "content-type": "application/schema+json" } })),
+        allowRetrieval: ["https://example.com/"]
       });
       const results = await lintSchema(jsonSchema, "https://example.com/a", { plugins: [implicitDialect] });
 
@@ -107,10 +105,9 @@ describe("implicit-dialect", () => {
   });
 });
 
-/** @type (json: string, options: { dialectUri?: string; defaultDialectUri?: string }) => Promise<VFile> */
-const lint = async (json, { dialectUri, defaultDialectUri }) => {
+/** @type (json: string, options: { dialectUri?: string }) => Promise<VFile> */
+const lint = async (json, { dialectUri }) => {
   const jsonSchema = jsonSchemaConfig({
-    defaultDialectUri,
     dialects: [draft07Dialect, draft202012Dialect]
   });
 

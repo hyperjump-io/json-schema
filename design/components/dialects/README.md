@@ -7,10 +7,12 @@
   [Built-in dialects](../built-in-dialects/README.md)). The core has no vocabularies. A dialect is one flat map of
   keywords, and vocabularies are only how `$vocabulary` builds one. `unknownKeywords` is `"error"` (v1), `"annotation"` (2019-09,
   2020-12), or `"ignore"` (draft-04 through draft-07).
-- There's no default dialect unless the user sets `defaultDialectUri` in
-  the options. Otherwise, a schema whose dialect can't be determined is an error.
-  The dialect comes from `$schema`, then the containing resource, then the
-  `schema`/`profile` media type parameter, then the options.
+- There's no default dialect for every schema. A schema whose dialect
+  can't be determined is an error. The dialect comes from `$schema`, then
+  the containing resource, then a registry entry's or an operation's
+  `dialectUri`, then the `schema`/`profile` media type parameter, then
+  `defaultDialects`, by the document's URL (see
+  [Default dialects](default-dialects.md)).
 - `$schema` is only allowed where a schema resource starts. Anywhere else,
   it's ignored with a message and the parent's dialect is used.
 - A `$schema` is read the same way in every dialect, and it's tolerant: the
@@ -56,7 +58,8 @@
     it does.
 - There's no default dialect. One isn't inferred when there's only
   one dialect, because adding a second would change how schemas without
-  `$schema` are read. `defaultDialectUri` sets one.
+  `$schema` are read. `defaultDialects` gives one to the documents at the
+  URLs it names.
 - A dialect in the config isn't plain data, because it holds definitions
   with functions. Nothing needed it to be: compiled schemas don't
   serialize dialects, and dialects from meta-schemas are built internally
@@ -64,6 +67,7 @@
 
 ## Contents
 
+- [Default dialects](default-dialects.md)
 - [Vocabularies](vocabularies.md)
 - [Dialects from meta-schemas](from-meta-schemas.md)
 - [`x-` keywords](x-keywords.md)

@@ -11,7 +11,7 @@ export { extendDialect } from "./dialects/extend-dialect.js";
 
 /** @type typeof API.jsonSchemaConfig */
 export const jsonSchemaConfig = (options = {}) => {
-  const { dialects, keywords, formats, vocabularies, defaultDialectUri, validateFormats, mediaTypes = [], httpCache, ...config } = options;
+  const { dialects, keywords, formats, vocabularies, validateFormats, mediaTypes = [], httpCache, ...config } = options;
 
   // The cache is made here, so every session made from the config shares it
   if (httpCache !== undefined) {
@@ -23,7 +23,7 @@ export const jsonSchemaConfig = (options = {}) => {
   return /** @type any */ ({
     ...config,
     mediaTypes: Object.freeze([
-      ...jsonSchemaMediaTypes({ dialects, keywords, formats, vocabularies, defaultDialectUri, validateFormats }),
+      ...jsonSchemaMediaTypes({ dialects, keywords, formats, vocabularies, validateFormats }),
       ...mediaTypes
     ])
   });

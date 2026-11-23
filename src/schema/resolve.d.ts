@@ -14,8 +14,9 @@ export type JsonSchemaResolveOptions = {
 
   /**
    * The dialect to use if the document doesn't have `$schema`, such as the
-   * `schema` parameter of a `Content-Type` header. If this isn't given, the
-   * `defaultDialectUri` the JSON Schema media types were made with is used.
+   * `schema` parameter of a `Content-Type` header, or the config's
+   * `defaultDialects` for its URL. Without one, a schema without `$schema`
+   * is an error.
    */
   dialectUri?: string;
 };

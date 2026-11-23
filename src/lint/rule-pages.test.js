@@ -21,8 +21,17 @@ import openApi30 from "./openapi-3-0.js";
 import openApi31 from "./openapi-3-1.js";
 import openApi32 from "./openapi-3-2.js";
 
-/** The "OAS dialect schema id" of 3.1, and the latest dated 3.2 dialect */
-const defaultDialects = {
+/**
+ * The dialect of a test's Schema Objects without `jsonSchemaDialect`, by its
+ * OpenAPI version, as `defaultDialects` would give it: 3.1's "OAS dialect
+ * schema id", and the latest dated 3.2 dialect
+ *
+ * @type (json: string) => string | undefined
+ */
+const defaultDialectOf = (json) => versionDialects[/"openapi"\s*:\s*"(\d+\.\d+)/.exec(json)?.[1] ?? ""];
+
+/** @type Record<string, string> */
+const versionDialects = {
   3.1: "https://spec.openapis.org/oas/3.1/dialect/base",
   3.2: "https://spec.openapis.org/oas/3.2/dialect/2026-02-26"
 };
@@ -125,7 +134,7 @@ const lint = async (name, rule, { code, dialectUri }) => {
   // An example whose root has `openapi` is an OpenAPI document, as the CLI
   // decides
   const processor = isOpenApi(code)
-    ? parser.use(openApiResolve, { session, defaultDialects }).use(rule)
+    ? parser.use(openApiResolve, { session, dialectUri: defaultDialectOf(code) }).use(rule)
     : parser.use(jsonSchemaResolve, { session, ...dialectUri && { dialectUri } }).use(rule);
   await processor.run(processor.parse(file), file);
   return file.messages.filter((message) => message.ruleId === name).map((message) => message.reason);

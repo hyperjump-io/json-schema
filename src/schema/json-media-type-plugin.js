@@ -5,6 +5,7 @@ import { resolveSchemaText } from "./resolve-text.js";
 import { contentTypeParameters } from "./media-type-plugin.js";
 import { getDialect, hasDialect } from "../session.js";
 import { definitionsIn } from "../definition-of.js";
+import { defaultDialectFor } from "../default-dialects.js";
 
 /**
  * @import { DocumentSession, MediaTypePlugin } from "@hyperjump/browser"
@@ -34,6 +35,10 @@ export const jsonOrSchemaMediaType = Object.freeze({
       const openApi = openApiPlugin(text, session);
       if (openApi !== undefined) {
         return /** @type any */ (openApi.parse(/** @type Response */ (source), session));
+      }
+      const defaultDialect = await keyDialect(text, response.url, session);
+      if (defaultDialect !== undefined) {
+        return /** @type JsonSchemaMediaTypeDocument */ (await resolveSchemaText(text, defaultDialect.session, uri, defaultDialect.uri));
       }
       return jsonMediaType.parse(source);
     }
@@ -68,6 +73,54 @@ const openApiPlugin = (text, session) => {
 
   const plugin = mediaTypeForContentType(session.config.mediaTypes ?? [], "application/openapi+json");
   return plugin === jsonOrSchemaMediaType ? undefined : plugin;
+};
+
+/**
+ * The dialect `defaultDialects` gives JSON text at a URL, which makes it a
+ * schema, if the text doesn't have a top-level `$schema` and the key's value
+ * is a dialect. A `$schema` that isn't a dialect is an instance's schema, so
+ * that text is JSON, as it would be without the key.
+ *
+ * @type (text: string, url: string, session: DocumentSession) => Promise<{ uri: string, session: Hyperjump<JsonSchemaConfig> } | undefined>
+ */
+const keyDialect = async (text, url, documentSession) => {
+  if (!definitionsIn(documentSession.config)) {
+    return;
+  }
+  const session = /** @type Hyperjump<JsonSchemaConfig> */ (/** @type unknown */ (documentSession));
+  const dialectUri = defaultDialectFor(session, url);
+  if (dialectUri === undefined || hasTopLevel(text, "$schema")) {
+    return;
+  }
+
+  if (hasDialect(session, dialectUri)) {
+    return { uri: dialectUri, session };
+  }
+
+  try {
+    await getDialect(session, dialectUri, { referencedFrom: url });
+    return { uri: dialectUri, session };
+  } catch {
+    return;
+  }
+};
+
+/**
+ * Whether JSON text's root is an object with this property. Text that isn't
+ * JSON doesn't.
+ *
+ * @type (text: string, name: string) => boolean
+ */
+const hasTopLevel = (text, name) => {
+  if (!text.includes(`"${name}"`)) {
+    return false;
+  }
+  try {
+    const json = /** @type unknown */ (JSON.parse(text));
+    return typeof json === "object" && json !== null && !Array.isArray(json) && name in json;
+  } catch {
+    return false;
+  }
 };
 
 /**

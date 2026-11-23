@@ -360,7 +360,7 @@ const nodeRoot = (node) => {
 /** @type (definitions: JsonSchemaDefinitions, entry: RegistryEntry, registryDialect: RegistryDialects, root: Root) => Identification */
 const identifyRoot = (definitions, entry, registryDialect, root) => {
   const { retrievalUri } = entry;
-  const dialectUri = root.$schema ?? entry.dialectUri ?? definitions.defaultDialectUri;
+  const dialectUri = root.$schema ?? entry.dialectUri;
 
   /** @type Dialect | undefined */
   let dialect;

@@ -39,8 +39,8 @@ schema are in `src/kernel/validator.js`, which isn't exported.
   changes. It's found by a new `urn:uuid:` URI, which also identifies it
   without an `$id`. Its `$id` is looked up when it's added, so one another
   schema in the registry also has throws, even if identical. Nothing is
-  cached. A boolean has no `$schema`, so it needs `defaultDialectUri`, like
-  any schema without one.
+  cached. A boolean has no `$schema`, so it needs the call's `dialectUri`, which
+  is its registry entry's.
 - Each call has a session of its own, made from the config and the
   call's `registry` and `allowRetrieval`
   (`src/operations/call-session.js`). Sessions are for browsing and

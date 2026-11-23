@@ -4,7 +4,7 @@ In `recommended`, as a warning. Off in `openapi-3-0`.
 
 A root schema without `$schema` whose dialect came from somewhere else.
 That can be the `dialectUri` option of `jsonSchemaResolve`, such as from a
-`schema` media type parameter, or the `defaultDialectUri` config. Other
+`schema` media type parameter, or the `defaultDialects` config. Other
 tools won't know the dialect, or they'll assume a different one. So will
 this tool if it's loaded differently. Every spec from draft-06 on says
 `$schema` SHOULD be in the root schema. draft-04 doesn't say, but the same
@@ -20,7 +20,7 @@ The CLI has no default dialect, so it never reports this rule. In the CLI,
 a `.schema.json` file without `$schema` gets that error, and a `.json`
 file without one is treated as an instance. This rule is reported when
 linting from code. It applies when a schema's dialect comes from a
-registry entry's `dialectUri`, the `defaultDialectUri` config, or a media
+registry entry's `dialectUri`, the `defaultDialects` config, or a media
 type parameter.
 
 A boolean root schema can't have `$schema`, so it isn't reported. Neither
@@ -31,9 +31,9 @@ document a dialect. It has no options.
 
 ### Reported
 
-#### A dialect from the default
+#### A dialect from how it was loaded
 
-With `defaultDialectUri` set to `https://json-schema.org/draft/2020-12/schema`:
+With `defaultDialects` giving its URL `https://json-schema.org/draft/2020-12/schema`:
 
 ```json dialect=https://json-schema.org/draft/2020-12/schema
 {

@@ -48,15 +48,29 @@ it gets its dialect from somewhere else:
   [Loading schemas](loading-schemas.md#schemas-without-id).
 - An HTTP response can name it with a `schema` parameter on its
   `Content-Type`.
-- The `defaultDialectUri` option of `jsonSchemaConfig` sets the
-  dialect for every schema that still doesn't have one.
+- The `defaultDialects` option of `jsonSchemaConfig` gives documents a
+  dialect by their URL.
+- A schema given to a call as a value, like a boolean schema, can be given
+  one with the call's `dialectUri` option.
 
 ```typescript
 const config = jsonSchemaConfig({
   dialects: [v1Dialect],
-  defaultDialectUri: "https://json-schema.org/v1"
+  defaultDialects: {
+    "./schemas/": "https://json-schema.org/v1",
+    "./legacy/person.json": "https://json-schema.org/v1"
+  }
 });
 ```
+
+A key that ends with `/` is for everything under it, and any other key is
+only for itself. When more than one matches, the longest wins. A relative
+key is resolved against the working directory in Node.js, and the page in
+a browser. A JSON file a key matches, and that doesn't have `$schema`, is a
+schema in that dialect, so a reference to `./schemas/pet.json` finds a
+schema. A JSON file whose `$schema` isn't a dialect is still JSON, because
+that `$schema` is an instance's schema. Keep data files out of the folders
+your keys name, or name schema files one at a time.
 
 A default makes your schemas depend on your configuration. Other tools
 won't know how to read them. Prefer giving every schema `$schema`. The
@@ -107,9 +121,9 @@ from `@hyperjump/json-schema/openapi` to the config's `mediaTypes`. Then a
 URI into the document, like `openapi.json#/components/schemas/Pet`, is a
 schema. It reads JSON documents served as `application/openapi+json`, and
 any `.json` file with a top-level `openapi` and no `$schema`. A Schema
-Object's dialect is the document's `jsonSchemaDialect`, or the default for
-its version, which the config needs to have. OpenAPI 3.0's default is
-`openApi30Dialect`.
+Object's dialect is the document's `jsonSchemaDialect`, or the one
+`defaultDialects` gives the document. Without either, OpenAPI 3.0's is
+`openApi30Dialect`, which the config needs to have.
 
 ```typescript
 import { jsonSchemaConfig, validator } from "@hyperjump/json-schema";
@@ -118,7 +132,7 @@ import { openApiMediaType } from "@hyperjump/json-schema/openapi";
 
 const config = jsonSchemaConfig({
   dialects: [openApi30Dialect],
-  mediaTypes: [openApiMediaType()]
+  mediaTypes: [openApiMediaType]
 });
 
 const isPet = await validator(config, "https://example.com/openapi.json#/components/schemas/Pet");
@@ -155,11 +169,14 @@ const config = jsonSchemaConfig({
 });
 ```
 
-3.1 and 3.2 documents without `jsonSchemaDialect` have no default until
-you give one. OpenAPI names `https://spec.openapis.org/oas/3.1/dialect/base`
-as 3.1's, and each 3.2 dialect is dated. Give `openApiMediaType` the ones
-your documents use, by version, as strings. A document without
-`jsonSchemaDialect` and without a default for its version is an error.
+3.1 and 3.2 documents without `jsonSchemaDialect` have no default dialect
+until `defaultDialects` gives them one. OpenAPI names
+`https://spec.openapis.org/oas/3.1/dialect/base` as 3.1's, and each 3.2
+dialect is dated. A 3.1 or 3.2 document with Schema Objects, and without
+`jsonSchemaDialect` or a key for its URL, is an error. Name your OpenAPI
+documents in `defaultDialects` one at a time, or a folder that only has
+OpenAPI documents, because a key makes any other JSON file under it a
+schema.
 
 ```typescript
 import { jsonSchemaConfig } from "@hyperjump/json-schema";
@@ -170,17 +187,15 @@ import { openApiMediaType, openApiSpecMediaType } from "@hyperjump/json-schema/o
 const config = jsonSchemaConfig({
   dialects: [draft202012Dialect],
   vocabularies: { [openApi31VocabularyUri]: openApi31Vocabulary },
-  mediaTypes: [
-    openApiMediaType({
-      defaultDialects: { "3.1": "https://spec.openapis.org/oas/3.1/dialect/base" }
-    }),
-    openApiSpecMediaType
-  ],
+  defaultDialects: {
+    "./api/openapi.json": "https://spec.openapis.org/oas/3.1/dialect/2024-11-10"
+  },
+  mediaTypes: [openApiMediaType, openApiSpecMediaType],
   allowRetrieval: ["https://spec.openapis.org/oas/"]
 });
 ```
 
-`defaultDialects` can replace 3.0's default too.
+A key can give a 3.0 document a dialect other than `openApi30Dialect` too.
 
 Or download the meta-schemas your schemas use and add them to the registry:
 

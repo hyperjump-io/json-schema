@@ -77,15 +77,16 @@ describe("operations", () => {
       expect(check(42)).to.equal(false);
     });
 
-    test("a boolean schema", async () => {
-      const withDefault = jsonSchemaConfig({
-        dialects: [v1Dialect],
-        defaultDialectUri: v1DialectUri,
-        allowRetrieval: []
-      });
+    test("a boolean schema, with its dialect", async () => {
+      const v1 = jsonSchemaConfig({ dialects: [v1Dialect], allowRetrieval: [] });
 
-      expect(await validate(withDefault, true, 42)).to.equal(true);
-      expect(await validate(withDefault, false, 42)).to.equal(false);
+      expect(await validate(v1, true, 42, { dialectUri: v1DialectUri })).to.equal(true);
+      expect(await validate(v1, false, 42, { dialectUri: v1DialectUri })).to.equal(false);
+    });
+
+    test("a boolean schema without a dialect", async () => {
+      const v1 = jsonSchemaConfig({ dialects: [v1Dialect], allowRetrieval: [] });
+      await expect(validate(v1, true, 42)).rejects.toMatchObject({ messages: [{ ruleId: "missing-dialect" }] });
     });
   });
 

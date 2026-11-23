@@ -3,8 +3,8 @@
 Browser already has a model for a kind of document: a session is a
 `Hyperjump`, its config is a plain value, and a media type plugin knows how
 to read one kind of document. JSON Schema is that model with more config
-on top: dialects, keywords, formats, vocabularies, `defaultDialectUri`,
-`validateFormats`, and a registry. The definitions are on the JSON Schema
+on top: dialects, keywords, formats, vocabularies, `validateFormats`,
+`defaultDialects`, and a registry. The definitions are on the JSON Schema
 media type plugin and registries are in browser, so JSON Schema is a media
 type, a session is a plain `Hyperjump`, and the long-lived value is a
 `HyperjumpConfig`.
@@ -68,8 +68,10 @@ const config = jsonSchemaConfig({ dialects: [v1Dialect], mediaTypes: [jrefMediaT
 
 - `jsonSchemaMediaTypes(options)` builds the definition tables once and
   returns the schema plugin and the JSON-or-schema plugin, frozen. The
-  schema plugin has a `definitions` property: the tables,
-  `defaultDialectUri`, and `validateFormats`. The JSON-or-schema plugin is
+  schema plugin has a `definitions` property: the tables and
+  `validateFormats`. `defaultDialects` isn't a definition. It's in the
+  config, like `allowRetrieval`, so a session can replace it (see
+  [Default dialects](../dialects/default-dialects.md)). The JSON-or-schema plugin is
   the same for every config, because nothing in it reads the definitions
   except through the session.
 - What needs the definitions finds them with `definitionsOf(config)`

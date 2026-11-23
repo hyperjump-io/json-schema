@@ -608,13 +608,6 @@ describe("jsonSchemaResolve", () => {
       expect(root).to.include({ type: "json-schema", dialectUri: dialectUri });
     });
 
-    test("the default dialect", async () => {
-      const jsonSchema = testJsonSchema({ config: { defaultDialectUri: dialectUri } });
-      const { root } = await resolve(jsonSchema, `{ "type": "string" }`);
-
-      expect(root).to.include({ type: "json-schema", dialectUri: dialectUri });
-    });
-
     test("$schema takes precedence over the dialect option", async () => {
       const { root } = await resolve(jsonSchema, `{ "$schema": "${legacyDialectUri}" }`, { dialectUri });
 

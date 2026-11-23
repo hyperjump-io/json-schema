@@ -17,29 +17,25 @@ import { objectModel32 } from "./object-model-3-2.js";
  * @import { SchemaMessage } from "../schema/schema-error.d.ts"
  * @import { Field, ObjectModel } from "./object-model.d.ts"
  * @import * as API from "./resolve.d.ts"
- * @import { OpenApiVersion } from "./resolve.d.ts"
  */
 
 /**
  * @typedef {JsonNode | JsonErrorNode} TreeNode
  *
  * @typedef {{
- *   name: OpenApiVersion;
+ *   name: string;
  *   objectModel: ObjectModel;
  *   dialectUri?: string;
- *   schemaUri: string;
  *   self: boolean;
  *   jsonSchemaDialect: boolean;
  * }} Version
  */
 
 /**
- * Each version's Objects, its key in `defaultDialects`, and the schema its
- * documents are validated against (OpenAPI's latest published `schema`,
- * which only checks that a Schema Object is an object or a boolean, since the
- * resolver checks them in their own dialects). 3.0 has a default dialect,
- * which is ours, because OpenAPI publishes none for it. 3.1's and 3.2's are
- * whatever the user configures.
+ * Each version's Objects, and its dialect when the environment gives none.
+ * 3.0's is ours, because OpenAPI publishes none for it. 3.1 and 3.2 have
+ * none, so their documents need `jsonSchemaDialect` or one from the
+ * environment.
  *
  * @type [RegExp, Version][]
  */
@@ -48,45 +44,25 @@ const versions = [
     name: "3.0",
     objectModel: objectModel30,
     dialectUri: openApi30DialectUri,
-    schemaUri: "https://spec.openapis.org/oas/3.0/schema/2024-10-18",
     self: false,
     jsonSchemaDialect: false
   }],
   [/^3\.1\.\d+$/, {
     name: "3.1",
     objectModel: objectModel31,
-    schemaUri: "https://spec.openapis.org/oas/3.1/schema/2026-11-05",
     self: false,
     jsonSchemaDialect: true
   }],
   [/^3\.2\.\d+$/, {
     name: "3.2",
     objectModel: objectModel32,
-    schemaUri: "https://spec.openapis.org/oas/3.2/schema/2026-11-12",
     self: true,
     jsonSchemaDialect: true
   }]
 ];
 
-/** @type typeof API.assertDefaultDialects */
-export const assertDefaultDialects = (defaultDialects) => {
-  const names = versions.map(([, version]) => version.name);
-  for (const name in defaultDialects) {
-    if (!names.includes(/** @type OpenApiVersion */ (name))) {
-      // A key written as a number, like `3.0`, is "3"
-      throw TypeError(`'${name}' in 'defaultDialects' isn't a version of OpenAPI this reads. Use ${names.map((name) => `"${name}"`).join(", ")}, as strings.`);
-    }
-  }
-};
-
-/** @type typeof API.openApiVersion */
-export const openApiVersion = (version) => versions.find(([pattern]) => pattern.test(version)) !== undefined;
-
-/** @type typeof API.openApiSchemaUri */
-export const openApiSchemaUri = (version) => versions.find(([pattern]) => pattern.test(version))?.[1].schemaUri;
-
 /** @type typeof API.resolveOpenApi */
-export const resolveOpenApi = async (tree, { session, uri, defaultDialects = {} }) => {
+export const resolveOpenApi = async (tree, { session, uri, dialectUri: environmentDialectUri }) => {
   const retrievalUri = toId(uri);
   /** @type SchemaMessage[] */
   const messages = [];
@@ -115,31 +91,17 @@ export const resolveOpenApi = async (tree, { session, uri, defaultDialects = {} 
     }
   }
 
-  let dialectUri = version === undefined ? undefined : defaultDialects[version.name] ?? version.dialectUri;
+  let dialectUri = version === undefined ? undefined : environmentDialectUri ?? version.dialectUri;
   const dialectNode = version?.jsonSchemaDialect && root !== undefined ? propertyValue(root, "jsonSchemaDialect") : undefined;
   const jsonSchemaDialect = stringOf(dialectNode);
+  let invalidDialect = false;
   if (dialectNode !== undefined && jsonSchemaDialect !== undefined) {
     try {
       dialectUri = resolveId(jsonSchemaDialect, documentUri);
     } catch (error) {
       message(`'jsonSchemaDialect' isn't a valid URI: ${iriProblem(error)}`, dialectNode, "invalid-dialect");
       dialectUri = undefined;
-    }
-  } else if (version !== undefined && dialectUri === undefined && root !== undefined) {
-    message(`OpenAPI ${version.name} has no default dialect. Add 'jsonSchemaDialect', or give 'openApiMediaType' a '${version.name}' in 'defaultDialects'.`, versionNode ?? root, "missing-dialect");
-  }
-
-  // The dialect is found once, and a problem with it is reported where it was
-  // chosen. Every Schema Object needs it, even one with its own `$schema`,
-  // because the dialect is what finds its `$id`.
-  if (dialectUri !== undefined && root !== undefined) {
-    try {
-      await getDialect(session, dialectUri, { referencedFrom: retrievalUri });
-    } catch (error) {
-      const { message: reason, cause } = /** @type Error */ (error);
-      const node = dialectNode ?? versionNode ?? root;
-      messages.push({ source: "openapi", ruleId: "unknown-dialect", severity: "error", uri: retrievalUri, place: node.position, message: reason, cause: cause instanceof Error ? cause : undefined });
-      dialectUri = undefined;
+      invalidDialect = true;
     }
   }
 
@@ -163,14 +125,38 @@ export const resolveOpenApi = async (tree, { session, uri, defaultDialects = {} 
 
   /** @type [TreeNode, string][] */
   const schemaObjects = [];
-  if (version === undefined || dialectUri === undefined) {
+  if (version === undefined) {
     data(root, documentUri, "");
   } else {
     walk(root, "OpenAPI", "", version.objectModel, documentUri, schemaObjects);
   }
 
+  // A document without Schema Objects doesn't need a dialect. Otherwise, it's
+  // found once, and a problem with it is reported where it was chosen. Every
+  // Schema Object needs it, even one with its own `$schema`, because the
+  // dialect is what finds its `$id`.
+  if (version !== undefined && schemaObjects.length > 0) {
+    const where = dialectNode ?? versionNode ?? root;
+    if (dialectUri === undefined && !invalidDialect) {
+      message(`OpenAPI ${version.name} has no default dialect. Add 'jsonSchemaDialect', or give the document's URL a dialect in 'defaultDialects'.`, where, "missing-dialect");
+    } else if (dialectUri !== undefined) {
+      try {
+        await getDialect(session, dialectUri, { referencedFrom: retrievalUri });
+      } catch (error) {
+        const { message: reason, cause } = /** @type Error */ (error);
+        messages.push({ source: "openapi", ruleId: "unknown-dialect", severity: "error", uri: retrievalUri, place: where.position, message: reason, cause: cause instanceof Error ? cause : undefined });
+        dialectUri = undefined;
+      }
+    }
+  }
+
   for (const [node, pointer] of schemaObjects) {
-    messages.push(...await resolveSchemaAt(node, { session, document, pointer, dialectUri: /** @type string */ (dialectUri), uri: retrievalUri }));
+    if (dialectUri === undefined) {
+      // It's reported, and nothing in the schema can be interpreted
+      data(node, documentUri, pointer);
+    } else {
+      messages.push(...await resolveSchemaAt(node, { session, document, pointer, dialectUri, uri: retrievalUri }));
+    }
   }
 
   return { document, messages };

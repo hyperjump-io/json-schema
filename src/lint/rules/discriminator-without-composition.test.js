@@ -13,8 +13,17 @@ import { openApi32Vocabulary, openApi32VocabularyUri } from "../../dialects/open
 import { openApiResolve } from "../../openapi/index.js";
 import discriminatorWithoutComposition from "./discriminator-without-composition.js";
 
-/** The "OAS dialect schema id" of 3.1, and the latest dated 3.2 dialect */
-const defaultDialects = {
+/**
+ * The dialect of a test's Schema Objects without `jsonSchemaDialect`, by its
+ * OpenAPI version, as `defaultDialects` would give it: 3.1's "OAS dialect
+ * schema id", and the latest dated 3.2 dialect
+ *
+ * @type (json: string) => string | undefined
+ */
+const defaultDialectOf = (json) => versionDialects[/"openapi"\s*:\s*"(\d+\.\d+)/.exec(json)?.[1] ?? ""];
+
+/** @type Record<string, string> */
+const versionDialects = {
   3.1: "https://spec.openapis.org/oas/3.1/dialect/base",
   3.2: "https://spec.openapis.org/oas/3.2/dialect/2026-02-26"
 };
@@ -125,7 +134,7 @@ const lint = async (json) => {
   const file = new VFile({ path: "/api/openapi.json", value: json });
   const processor = unified()
     .use(rejsonParse)
-    .use(openApiResolve, { session: new Hyperjump(jsonSchema), defaultDialects })
+    .use(openApiResolve, { session: new Hyperjump(jsonSchema), dialectUri: defaultDialectOf(json) })
     .use(discriminatorWithoutComposition);
   await processor.run(processor.parse(file), file);
   return file;

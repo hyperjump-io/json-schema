@@ -2,6 +2,7 @@ import { toAbsoluteIri, urlToIri } from "@hyperjump/uri";
 import { parse as parseContentType } from "content-type";
 import { resolveSchemaText } from "./resolve-text.js";
 import { DocumentResponse } from "../registry/document-response.js";
+import { defaultDialectFor } from "../default-dialects.js";
 
 /**
  * @import * as API from "./media-type-plugin.d.ts"
@@ -23,7 +24,8 @@ export const schemaMediaType = Object.freeze({
     // where it comes in
     const uri = toAbsoluteIri(urlToIri(new URL(response.url)));
     const { schema, profile } = contentTypeParameters(response);
-    return /** @type API.JsonSchemaMediaTypeDocument */ (await resolveSchemaText(await response.text(), /** @type any */ (session), uri, schema ?? profile));
+    const dialectUri = schema ?? profile ?? defaultDialectFor(/** @type any */ (session), response.url);
+    return /** @type API.JsonSchemaMediaTypeDocument */ (await resolveSchemaText(await response.text(), /** @type any */ (session), uri, dialectUri));
   }
 });
 

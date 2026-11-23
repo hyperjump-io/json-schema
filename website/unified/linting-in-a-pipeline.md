@@ -43,7 +43,7 @@ They aren't thrown, so every problem in the file is reported.
 | Option | What it is |
 | --- | --- |
 | `session` | A session from your config. It has the dialects and keywords. Rules use it to find the schemas the document references, so it decides what they can see. See [Controlling retrieval](../guides/retrieval.md). |
-| `dialectUri` | The dialect to use if the schema doesn't have `$schema`. The default is the `defaultDialectUri` of the config's JSON Schema media types. |
+| `dialectUri` | The dialect to use if the schema doesn't have `$schema`. Without it, a schema without `$schema` is an error. |
 
 It's asynchronous because a dialect from a custom meta-schema has to be
 retrieved first.

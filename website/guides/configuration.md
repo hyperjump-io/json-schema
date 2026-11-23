@@ -10,7 +10,7 @@ import { fullFormats } from "@hyperjump/json-schema/formats/full";
 const config = jsonSchemaConfig({
   dialects: [v1Dialect],
   formats: fullFormats,
-  defaultDialectUri: "https://json-schema.org/v1",
+  defaultDialects: { "./schemas/": "https://json-schema.org/v1" },
   validateFormats: true,
   allowRetrieval: ["./", "https://schemas.example.com/"]
 });
@@ -32,7 +32,7 @@ These options decide what schemas can use.
 | `formats` | None | More formats, like `fullFormats` for `idn-hostname`, `idn-email`, and draft-07 through 2020-12's `hostname`. See [Formats](formats.md). |
 | `keywords` | None | Keywords that replace a dialect's keywords or that a dialect names by URI. See [Custom keywords](../extending/keywords.md). |
 | `vocabularies` | None | Vocabularies meta-schemas can use with `$vocabulary`. See [Dialects](dialects.md#custom-meta-schemas). |
-| `defaultDialectUri` | None | The dialect of a schema that has no `$schema` and gets no dialect from anywhere else. See [Dialects](dialects.md#schemas-without-schema). |
+| `defaultDialects` | None | The dialect of documents without `$schema`, by URL. A JSON file it gives a dialect is a schema. See [Dialects](dialects.md#schemas-without-schema). |
 | `validateFormats` | The dialect's | Whether `format` validates in every dialect. See [Formats](formats.md). |
 
 The config's first media type, JSON Schema, has the definitions in its
@@ -73,9 +73,11 @@ are `validate`, `validator`, `compile`, `bundle`, `lint`, and so on.
 | --- | --- |
 | `registry` | Schemas for this call. The call sees them and the config's `registry` as one registry. |
 | `allowRetrieval` | Replaces the config's `allowRetrieval` |
+| `defaultDialects` | Replaces the config's `defaultDialects` |
+| `dialectUri` | The dialect of a schema given to the call as a value, if it doesn't have `$schema`, like a boolean schema |
 
-A session takes only a config. For a session with its own registry or
-`allowRetrieval`, give it a config that has them, like
+A session takes only a config. For a session with its own registry,
+`allowRetrieval`, or `defaultDialects`, give it a config that has them, like
 `new Hyperjump({ ...config, registry })`, with `Hyperjump` from
 `@hyperjump/browser`.
 

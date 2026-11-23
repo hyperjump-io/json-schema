@@ -41,8 +41,8 @@ in the schema are resolved against it.
 
 It can reference schemas in a [registry](loading-schemas.md#registries),
 but its `$id` can't be one that a registry also has, even if the schemas
-are identical. A boolean schema has no `$schema`, so it needs the
-`defaultDialectUri` option of `jsonSchemaConfig`.
+are identical. A boolean schema has no `$schema`, so give the call its
+dialect with the `dialectUri` option.
 
 Nothing is cached. Calling `validate(config, schema, value)` with the
 same schema value compiles it again each time. Call `validator` once

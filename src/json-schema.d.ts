@@ -15,14 +15,6 @@ export type { BasicOutput, DetailedOutput, OutputError, OutputFormat, JsonSyntax
 /** The definitions schemas are read with, which `jsonSchemaConfig` takes */
 export type JsonSchemaOptions<D extends DialectConfig<any, any, any> = DialectConfig<any, any, any>> = {
   /**
-   * The dialect of a schema that doesn't have `$schema` and doesn't get a
-   * dialect from anywhere else, such as a `Content-Type` parameter or the
-   * resource it's embedded in. There is no default. Without one, such a
-   * schema is an error.
-   */
-  defaultDialectUri?: string;
-
-  /**
    * Validate `format`. Defaults to whatever the dialect says. `format` is an
    * annotation in most dialects.
    */
@@ -86,6 +78,21 @@ export type JsonSchemaConfig<S = any> = HyperjumpConfig & {
    * schemas are checked.
    */
   readonly registry?: SchemaRegistry<any>;
+
+  /**
+   * The dialect of documents that don't have `$schema`, by URL. A key that
+   * ends with `/` is for every URL under it, and any other key only for
+   * itself. When several match, the longest wins. A relative key, like
+   * `"./schemas/"`, is resolved against the working directory in Node.js,
+   * and the page in a browser. A JSON document at a URL a key matches, and
+   * without a top-level `$schema`, is a schema in that dialect, if it is
+   * one. Without a key, such a document is JSON, and a schema without
+   * `$schema` is an error. A document's own `$schema`, a registry entry's
+   * `dialectUri`, and the `schema` parameter of a `Content-Type` win over
+   * it. For an OpenAPI document, it's the dialect of Schema Objects
+   * without `jsonSchemaDialect`.
+   */
+  readonly defaultDialects?: Readonly<Record<string, string>>;
 };
 
 /**
@@ -142,6 +149,21 @@ export type JsonSchemaConfigOptions<D extends DialectConfig<any, any, any> = Dia
   = JsonSchemaOptions<D> & Omit<HyperjumpConfig, "mediaTypes"> & {
     /** Schemas every call and session sees, like custom meta-schemas */
     registry?: SchemaRegistry<any>;
+
+    /**
+     * The dialect of documents that don't have `$schema`, by URL. A key that
+     * ends with `/` is for every URL under it, and any other key only for
+     * itself. When several match, the longest wins. A relative key, like
+     * `"./schemas/"`, is resolved against the working directory in Node.js,
+     * and the page in a browser. A JSON document at a URL a key matches, and
+     * without a top-level `$schema`, is a schema in that dialect, if it is
+     * one. Without a key, such a document is JSON, and a schema without
+     * `$schema` is an error. A document's own `$schema`, a registry entry's
+     * `dialectUri`, and the `schema` parameter of a `Content-Type` win over
+     * it. For an OpenAPI document, it's the dialect of Schema Objects
+     * without `jsonSchemaDialect`.
+     */
+    defaultDialects?: Readonly<Record<string, string>>;
 
     /**
      * Media types documents can be in, besides JSON Schema and JSON, like
@@ -215,7 +237,6 @@ export type JsonSchemaDefinitions = {
    */
   readonly vocabularies: Readonly<Record<string, Vocabulary>>;
 
-  readonly defaultDialectUri: string | undefined;
   readonly validateFormats: boolean | undefined;
 };
 

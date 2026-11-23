@@ -73,28 +73,31 @@ The dialects are in [OpenAPI 3.0, 3.1, and 3.2](openapi.md).
   browser finds its fragments and embedded resources, and lint rules take
   it as they are. `openApiResolve` is `resolveOpenApi` as a unified plugin,
   like `jsonSchemaResolve`.
-- The default without `jsonSchemaDialect` is the user's, given to the
-  plugin: `openApiMediaType({ defaultDialects: { "3.1": uri, "3.2": uri } })`,
-  keyed by major and minor version. 3.0's is
-  `https://spec.openapis.org/oas/3.0/dialect`, unless it's given, because
-  OpenAPI publishes no dialect for 3.0, and that's ours. 3.1 and 3.2 have
-  none: a document without `jsonSchemaDialect` is one `missing-dialect`
-  error at `openapi`, and its Schema Objects are data. Users bring the
-  meta-schemas already, so they name the one that's the default too. That
-  takes nothing here that follows OpenAPI's dates, and no reading of 3.2.0,
-  whose "OAS dialect schema id" is 3.1's `dialect/base`, which doesn't have
-  3.2's keywords. `openApiResolve` and `parseOpenApi` take the same option.
-  A key that isn't a version this reads is a `TypeError`, because `3.0`
-  written as a number is the key `"3"`. Rejected: defaults built in, 3.1's
-  `dialect/base` and the latest dated 3.2 dialect, which the user's
-  registry needs the meta-schemas for anyway, and a new date changed.
-  Rejected: config dialects at the default URIs, so they'd work without a
-  meta-schema, which is a dialect for each version again (see
+- The default without `jsonSchemaDialect` comes from the document's
+  environment, like a schema's without `$schema`: `defaultDialects`, by the
+  document's URL (see [Default dialects](../dialects/default-dialects.md)).
+  `openApiMediaType` looks the response's URL up and gives the dialect to
+  `resolveOpenApi` as `dialectUri`, which `openApiResolve` and
+  `parseOpenApi` take too, like `resolveSchema`'s. Without one, 3.0's is
+  `https://spec.openapis.org/oas/3.0/dialect`, because OpenAPI publishes no
+  dialect for 3.0, and that's ours. 3.1 and 3.2 have none: a document
+  without `jsonSchemaDialect` is one `missing-dialect` error at `openapi`,
+  and its Schema Objects are data. A document without Schema Objects needs
+  no dialect. Users bring the meta-schemas already, so they name the one
+  that's the default too. That takes nothing here that follows OpenAPI's
+  dates, and no reading of 3.2.0, whose "OAS dialect schema id" is 3.1's
+  `dialect/base`, which doesn't have 3.2's keywords. Rejected: defaults
+  built in, 3.1's `dialect/base` and the latest dated 3.2 dialect, which
+  the user's registry needs the meta-schemas for anyway, and a new date
+  changed. Rejected: the plugin's own `defaultDialects`, keyed by version,
+  which was a second way to give a dialect, and a CLI setting of its own
+  to fill it. Rejected: config dialects at the default URIs, so they'd work
+  without a meta-schema, which is a dialect for each version again (see
   [OpenAPI 3.0, 3.1, and 3.2](openapi.md#dialects-from-meta-schemas)).
   Rejected: the default meta-schemas shipped as data, which saves only
   copying a file. Rejected: 2020-12 when the dialect can't be found, which
   is the wrong dialect without saying so.
-- The dialect is found once, before the walk, and a problem with it is one
+- The dialect is found once, after the walk, and a problem with it is one
   error, where it was chosen: at `jsonSchemaDialect`, or at `openapi` for a
   default. Then every Schema Object is data. Every one needs it, even one
   with its own `$schema`, because the dialect is what finds its `$id`.
@@ -110,17 +113,14 @@ The dialects are in [OpenAPI 3.0, 3.1, and 3.2](openapi.md).
   Schema Object is in a structural position or in `components`, so finding
   them needs no references.
 - External references are in [External references](#external-references).
-- `openApiSchemaUri(version)` is the schema a document of a version is
-  validated against, from the version table: OpenAPI's latest published
-  `schema` for it, `oas/3.0/schema/2024-10-18`,
-  `oas/3.1/schema/2026-11-05`, and `oas/3.2/schema/2026-11-12`. A new date changes it. Rejected:
-  `schema-base`, which also validates Schema Objects against the default
-  dialect, which resolving checks already, in each one's own dialect.
-  Rejected: a `latest` URL for each version, which would follow new dates
-  without a change here, because OpenAPI doesn't publish one. The
-  schemas aren't included. `openApiSpecMediaType` retrieves them (see
-  [OpenAPI 3.0, 3.1, and 3.2](openapi.md)).
-- An OpenAPI document is both: an instance of its version's schema, and a
+- Which schema a document is validated against is the user's, like an
+  instance's. `openapi` names the version of the spec, not a schema, and
+  OpenAPI publishes dated schemas for each version. Rejected:
+  `openApiSchemaUri(version)`, OpenAPI's latest published `schema` for
+  each version, which was this choosing for the user, and a new date
+  changed it. The schemas aren't included. `openApiSpecMediaType`
+  retrieves them (see [OpenAPI 3.0, 3.1, and 3.2](openapi.md)).
+- An OpenAPI document is both: an instance of a document schema, and a
   document with schemas in it. The same AST can be validated and resolved,
   in either order, because validating only reads values and resolving
   annotates in place. The CLI does both (see its
@@ -129,9 +129,8 @@ The dialects are in [OpenAPI 3.0, 3.1, and 3.2](openapi.md).
   Schema Object. The document's URI on its own isn't one, so `compile`,
   `validate`, and `bundle` with it are an `ERR_NOT_A_SCHEMA` error, as any
   location that's data is. `lint` takes the whole document. Rejected: the
-  document's URI meaning its version's document schema
-  (`openApiSchemaUri`), which the document is an instance of, not a schema
-  in it, and compiling every Schema Object, which is one validator for
+  document's URI meaning its document schema, which the document is an
+  instance of, not a schema in it, and compiling every Schema Object, which is one validator for
   many schemas. Bundling an OpenAPI description, its external references
   pulled into the document, is a feature of its own, not yet designed.
 - Lint works on an OpenAPI document as it is: rules visit `json-schema`
@@ -153,17 +152,12 @@ finds a schema only where the target document has one.
 | A Reference Object to a document whose root is another Object, like a Parameter | Not followed; not supported |
 
 - The environment is per document: a registry entry's `dialectUri`, the
-  `Content-Type`'s `schema` parameter, and in the CLI, its `defaultDialect`
-  setting, which gives files that match a glob a dialect, with a media type
-  plugin that gives their text to the schema media type with that `schema`
-  parameter (see the CLI's
-  [Default dialects](https://github.com/hyperjump-io/cli/blob/main/design/components/default-dialect.md)).
-  So one config can have a 3.0 description and a 3.1 one. Rejected:
-  expanding `defaultDialectUri` to take URL prefixes or a function, for
-  the CLI's globs, which is the library doing what only the CLI needs. The config's `defaultDialectUri` still applies only to
-  documents that are schemas already, like `.schema.json`, and the
-  JSON-or-schema plugin still reads a `.json` without `$schema` or
-  `openapi` as JSON.
+  `Content-Type`'s `schema` parameter, and `defaultDialects`, by the
+  document's URL, which makes a `.json` without `$schema` a schema (see
+  [Default dialects](../dialects/default-dialects.md)). The CLI expands its
+  globs to `defaultDialects` keys (see its
+  [Default schemas](https://github.com/hyperjump-io/cli/blob/main/design/components/default-schema.md)).
+  So one config can have a 3.0 description and a 3.1 one.
 - OpenAPI says every document in a description MUST have an OpenAPI
   Object or a Schema Object at its root, so the error for the last two
   rows can say that. Appendix G leaves other documents
@@ -175,10 +169,10 @@ Rejected:
   mean something different depending on what refers to it: a draft-07
   file without `$schema` would be 2020-12 when a 2020-12 schema refers to
   it.
-- The config's `defaultDialectUri` for `.json` without `$schema`, with
-  the JSON-or-schema plugin reading those as schemas when there's a
-  default. It's one dialect for every description a config has, and an
-  instance file in a session with a default would be read as a schema.
+- One default dialect for every `.json` without `$schema`, with the
+  JSON-or-schema plugin reading those as schemas when there's a default.
+  It's one dialect for every description a config has, and an instance
+  file would be read as a schema.
 - A reference carrying what it expects to the target's parse. Browser
   would pass a context to plugins, and a document parsed in two contexts
   would conflict, which Appendix G says MAY be an error.
@@ -224,10 +218,9 @@ Every version:
    resource, the OpenAPI resolver with the grammar tables, and
    `openApiMediaType` for JSON, so `openapi.json#/components/schemas/Pet`
    compiles and an OpenAPI document lints. Built.
-2. Sniffing `openapi` in `.json`, and the CLI's `defaultDialect` setting
-   for the dialect of schema files without `$schema`, so a referenced
-   `pet.json` works there. From code, a registry entry's `dialectUri`
-   already does. Built.
+2. Sniffing `openapi` in `.json`, and `defaultDialects` for the dialect
+   of schema files without `$schema`, so a referenced `pet.json` works.
+   Sniffing is built, `defaultDialects` isn't.
 3. The discriminator's lint rules (see [OpenAPI 3.0, 3.1, and
    3.2](openapi.md)). Built. `discriminator-without-composition` is built: a
    `discriminator` with no `oneOf`, `anyOf`, or `allOf` that no `allOf` in

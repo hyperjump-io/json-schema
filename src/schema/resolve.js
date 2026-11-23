@@ -49,9 +49,8 @@ import { getDialect } from "../session.js";
 
 /** @type typeof API.resolveSchema */
 export const resolveSchema = async (tree, options) => {
-  const dialectUri = options.dialectUri ?? definitionsOf(options.session.config).defaultDialectUri;
   const resolver = new Resolver(options.session, tree, toId(options.uri));
-  return resolver.resolve(/** @type TreeNode | undefined */ (tree.children[0]), dialectUri);
+  return resolver.resolve(/** @type TreeNode | undefined */ (tree.children[0]), options.dialectUri);
 };
 
 /** @type typeof API.resolveSchemaAt */
@@ -138,7 +137,7 @@ class Resolver {
       if (dialectUri !== undefined) {
         dialect = await this.#getDialect(dialectUri, root);
       } else if (isSchemaNode(root) && !hasProperty(root, "$schema")) {
-        this.#message("Unable to determine the dialect of the schema. Add '$schema' or configure a default dialect.", root, "missing-dialect");
+        this.#message("Unable to determine the dialect of the schema. Add '$schema', or give its URL a dialect in 'defaultDialects'.", root, "missing-dialect");
       }
       await this.#schema(root, document, "", dialect, true);
     }

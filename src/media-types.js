@@ -74,7 +74,6 @@ export const jsonSchemaMediaTypes = (options = {}) => {
     formats: Object.freeze(tables.formats),
     dialects: Object.freeze(tables.dialects),
     vocabularies: Object.freeze(tables.vocabularies),
-    defaultDialectUri: options.defaultDialectUri,
     validateFormats: options.validateFormats
   });
 

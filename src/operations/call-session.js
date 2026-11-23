@@ -14,9 +14,10 @@ import { assertOnlyValue } from "../registry/registry-lookup.js";
 /**
  * A session for one call, and the URI of its schema. It sees the config's
  * registry and the call's as one registry, and the call's `allowRetrieval`
- * replaces the config's. A schema given as a value is added to the
- * session's registry, found by a new `urn:uuid:` URI, which identifies it
- * if it doesn't have an `$id`, before the session is made, so the session's
+ * and `defaultDialects` replace the config's. A schema given as a value is
+ * added to the session's registry, in the call's `dialectUri` if it has no
+ * `$schema`, found by a new `urn:uuid:` URI, which identifies it if it
+ * doesn't have an `$id`, before the session is made, so the session's
  * registry never changes.
  *
  * @type (config: JsonSchemaConfig, schema: SchemaSource<unknown>, options?: SessionOptions) => { session: Hyperjump<JsonSchemaConfig>; uri: string }
@@ -32,7 +33,7 @@ export const callSession = (config, schema, options = {}) => {
   let uri = /** @type string */ (schema);
   if (typeof schema !== "string") {
     uri = toId(`urn:uuid:${crypto.randomUUID()}`);
-    registry = (registry ?? new SchemaRegistry()).with(/** @type any */ (schema), { retrievalUri: uri });
+    registry = (registry ?? new SchemaRegistry()).with(/** @type any */ (schema), { retrievalUri: uri, dialectUri: options.dialectUri });
     assertOnlyValue(config, registry, uri);
   }
 
@@ -40,6 +41,9 @@ export const callSession = (config, schema, options = {}) => {
   const sessionConfig = { ...config, registry };
   if (options.allowRetrieval !== undefined) {
     sessionConfig.allowRetrieval = options.allowRetrieval;
+  }
+  if (options.defaultDialects !== undefined) {
+    Object.assign(sessionConfig, { defaultDialects: options.defaultDialects });
   }
   return { session: new Hyperjump(sessionConfig), uri };
 };

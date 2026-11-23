@@ -4,7 +4,7 @@ import type { JsonSchemaDocumentNode } from "../../schema/schema-ast.d.ts";
 /**
  * A root schema without `$schema` whose dialect came from somewhere else:
  * the `dialectUri` option of `jsonSchemaResolve`, such as a `schema` media
- * type parameter, or the `defaultDialectUri` config. Other tools, and this
+ * type parameter, or the `defaultDialects` config. Other tools, and this
  * one loaded differently, don't know the dialect, or assume a different
  * one. Every spec from draft-06 on says `$schema` SHOULD be in the root
  * schema. draft-04 doesn't say, but the same problem applies.
