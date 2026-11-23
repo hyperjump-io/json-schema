@@ -10,8 +10,8 @@ import type { JsonSchemaDocumentNode } from "../../schema/schema-ast.d.ts";
  * schema. draft-04 doesn't say, but the same problem applies.
  *
  * A root without `$schema` whose dialect can't be determined is an error
- * from the resolver instead, which is always the case in the CLI, because
- * it has no default dialect. A boolean root schema can't have `$schema`, so
+ * from the resolver instead. In the CLI, a dialect comes from its
+ * `defaultSchema` setting. A boolean root schema can't have `$schema`, so
  * it isn't reported, and neither is a draft-04–07 root with `$ref`, because
  * the resolver doesn't give that document a dialect. It has no options.
  */

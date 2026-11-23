@@ -16,12 +16,12 @@ resolver reports an error instead.
 OpenAPI 3.0 Schema Objects don't have `$schema`, so their dialect always
 comes from somewhere else. That's why the rule is off in `openapi-3-0`.
 
-The CLI has no default dialect, so it never reports this rule. In the CLI,
-a `.schema.json` file without `$schema` gets that error, and a `.json`
-file without one is treated as an instance. This rule is reported when
-linting from code. It applies when a schema's dialect comes from a
-registry entry's `dialectUri`, the `defaultDialects` config, or a media
-type parameter.
+In the CLI, it's reported for a file whose dialect comes from the
+`defaultSchema` setting. A `.schema.json` file without `$schema` or a
+setting gets the resolver's error, and a `.json` file without either is
+treated as an instance. From code, it applies when a schema's dialect
+comes from a registry entry's `dialectUri`, the `defaultDialects` config,
+or a media type parameter.
 
 A boolean root schema can't have `$schema`, so it isn't reported. Neither
 is a draft-04–07 root with `$ref`, because the resolver doesn't give that
