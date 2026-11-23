@@ -28,10 +28,16 @@ export const noUrl = "urn:hyperjump:none";
  *
  * @type (uri: string) => Id
  * @throws {import("@hyperjump/uri").InvalidIriError} If `uri` isn't an IRI.
+ * @throws {Error} If `uri` can't be parsed as a URL.
  */
 export const toId = (uri) => {
   assertIri(uri);
-  return normalizeIri(toAbsoluteIri(uri));
+  const id = normalizeIri(toAbsoluteIri(uri));
+  if (!URL.canParse(id)) {
+    throw Error(`'${uri}' can't be parsed as a URL`);
+  }
+
+  return id;
 };
 
 /**
@@ -42,17 +48,34 @@ export const toId = (uri) => {
  * @type (reference: string, base: AbsoluteIri | undefined) => Id
  * @throws {import("@hyperjump/uri").InvalidIriError} If `reference` isn't an
  *   IRI-reference, or resolving it breaks its scheme's rules.
- * @throws {Error} If `reference` is relative and there's no `base`.
+ * @throws {Error} If `reference` is relative and there's no `base`, or
+ *   what it identifies can't be parsed as a URL.
  */
 export const resolveId = (reference, base) => {
   assertIriReference(reference);
   if (hasScheme(reference)) {
-    return normalizeIri(toAbsoluteIri(reference));
+    return assertUrl(normalizeIri(toAbsoluteIri(reference)));
   } else if (base === undefined) {
     throw Error(`'${reference}' is relative, and there's no base URI to resolve it against`);
   }
 
-  return normalizeIri(toAbsoluteIri(resolveIri(reference, base)));
+  return assertUrl(normalizeIri(toAbsoluteIri(resolveIri(reference, base))));
+};
+
+/**
+ * Browser's identifiers are WHATWG URLs, so an IRI that can't be parsed as
+ * one, like one with a port over 65535 or an IPv4 address with a part over
+ * 255, can't identify a document, though it's a valid IRI.
+ *
+ * @type <T extends string>(iri: T) => T
+ * @throws {Error} If `iri` can't be parsed as a URL.
+ */
+export const assertUrl = (iri) => {
+  if (!URL.canParse(iri)) {
+    throw Error("it can't be parsed as a URL");
+  }
+
+  return iri;
 };
 
 /**

@@ -454,6 +454,22 @@ describe("jsonSchemaResolve", () => {
       ]);
     });
 
+    test("an $id or a reference that can't be parsed as a URL is reported", async () => {
+      const { root, file } = await resolve(jsonSchema, `{
+        "$schema": "${dialectUri}",
+        "$defs": {
+          "a": { "$id": "http://localhost:80800/a" },
+          "b": { "$ref": "http://1.2.3.256/b" }
+        }
+      }`);
+
+      expect(file.messages.map(({ reason, ruleId }) => [reason, ruleId])).to.eql([
+        ["'http://localhost:80800/a' isn't a valid URI reference: it can't be parsed as a URL", idKeyword.uri],
+        ["'http://1.2.3.256/b' isn't a valid URI reference: it can't be parsed as a URL", "https://example.com/keyword/ref"]
+      ]);
+      expect(at("/$defs/b/$ref", root).href).to.equal(undefined);
+    });
+
     test("a reference that breaks its scheme's rules is reported and has no URI", async () => {
       const { root, file } = await resolve(jsonSchema, `{
         "$schema": "${dialectUri}",

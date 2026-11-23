@@ -21,6 +21,7 @@ export const noUrl: string;
  * config's, such as the URI a document was retrieved from.
  *
  * @throws {import("@hyperjump/uri").InvalidIriError} If `uri` isn't an IRI.
+ * @throws {Error} If `uri` can't be parsed as a URL.
  */
 export const toId: (uri: string) => Id;
 
@@ -31,9 +32,19 @@ export const toId: (uri: string) => Id;
  *
  * @throws {import("@hyperjump/uri").InvalidIriError} If `reference` isn't an
  *   IRI-reference, or resolving it breaks its scheme's rules.
- * @throws {Error} If `reference` is relative and there's no `base`.
+ * @throws {Error} If `reference` is relative and there's no `base`, or
+ *   what it identifies can't be parsed as a URL.
  */
 export const resolveId: (reference: string, base: AbsoluteIri | undefined) => Id;
+
+/**
+ * Browser's identifiers are WHATWG URLs, so an IRI that can't be parsed as
+ * one, like one with a port over 65535, can't identify a document, though
+ * it's a valid IRI.
+ *
+ * @throws {Error} If `iri` can't be parsed as a URL.
+ */
+export const assertUrl: <T extends string>(iri: T) => T;
 
 /**
  * What's wrong with a value that isn't a valid identifier, for a message

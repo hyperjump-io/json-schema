@@ -15,6 +15,15 @@ return, and its types say which a string is (`Iri`, `AbsoluteIri`,
 - A value the library hands out is branded: a resource's `uri`, a node's
   `location` and `href`, and a `SchemaMessage`'s `uri`.
 
+## Identifiers are URLs too
+
+Browser's identifiers are WHATWG URLs (see [Browser v2](browser-v2.md)), so
+an identifier has to be one too. Some valid IRIs aren't, like
+`http://localhost:80800/` (a port over 65535) or `http://1.2.3.256/`.
+`toId`, `resolveId`, and the resolver's references check that
+(`assertUrl`), so one is reported where it's written, instead of throwing
+`new URL`'s `TypeError` when a document is made for it.
+
 ## Normalized where they're keys
 
 An identifier is normalized where equivalent ones have to be the same,
