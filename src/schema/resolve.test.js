@@ -184,6 +184,15 @@ describe("jsonSchemaResolve", () => {
       expect(at("/foo", root).type).to.equal("json");
     });
 
+    test("unknown keywords named like Object.prototype's properties", async () => {
+      const { root, file } = await resolve(jsonSchema, `{ "$schema": "${dialectUri}", "constructor": 42, "toString": 42, "__proto__": 42 }`);
+
+      expect(file.messages).to.eql([]);
+      expect(keywordNode(root, "constructor").keywordUri).to.equal("https://json-schema.org/keyword/unknown#constructor");
+      expect(keywordNode(root, "toString").keywordUri).to.equal("https://json-schema.org/keyword/unknown#toString");
+      expect(keywordNode(root, "__proto__").keywordUri).to.equal("https://json-schema.org/keyword/unknown#__proto__");
+    });
+
     test("$schema is a keyword in every dialect", async () => {
       const jsonSchema = testJsonSchema({ dialects: [{ uri: "https://example.com/minimal", keywords: {}, unknownKeywords: "error" }] });
       const { root, file } = await resolve(jsonSchema, `{ "$schema": "https://example.com/minimal" }`);
@@ -207,6 +216,12 @@ describe("jsonSchemaResolve", () => {
       expect(ruleIds(file)).to.eql(["unknown-keyword"]);
       expect(file.messages[0].place).to.eql(keywordNode(root, "foo").position);
       expect(keywordNode(root, "foo").keywordUri).to.equal("https://json-schema.org/keyword/unknown#foo");
+    });
+
+    test("a keyword named like an Object.prototype property in a dialect that doesn't allow unknown keywords", async () => {
+      const { file } = await resolve(jsonSchema, `{ "$schema": "${strictDialectUri}", "constructor": 42 }`);
+
+      expect(ruleIds(file)).to.eql(["unknown-keyword"]);
     });
 
     test("x- keywords are allowed in a dialect that doesn't allow unknown keywords", async () => {

@@ -110,6 +110,14 @@ describe("jsonSchemaMediaTypes", () => {
       expect(() => extendDialect(dialect, { keywords: { $schema: "https://example.com/keyword/schema" } })).to.throw("already has");
     });
 
+    test("extendDialect can add a keyword or format named like an Object.prototype property", () => {
+      const constructor = { uri: "https://example.com/keyword/constructor", shape: /** @type const */ ("data") };
+      const toString = { uri: "https://example.com/format/to-string", validate: () => true };
+      const extended = extendDialect(dialect, { keywords: { constructor }, formats: { toString } });
+
+      expect(extended).to.eql({ ...dialect, keywords: { ...dialect.keywords, constructor }, formats: { toString } });
+    });
+
     test("extendDialect can't replace a format", () => {
       const withFormat = { ...dialect, formats: { bar: "https://example.com/format/bar" } };
 
