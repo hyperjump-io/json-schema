@@ -64,6 +64,10 @@ describe("empty-catch-all-schema", () => {
     expect(await reasons(`{ "$schema": "${draft202012}", "additionalProperties": { "$ref": "#/$defs/a" }, "$defs": { "a": { "type": "string" } } }`)).to.eql([]);
   });
 
+  test("references that only lead to each other", async () => {
+    expect(await reasons(`{ "$schema": "${draft07}", "additionalProperties": { "$ref": "#/definitions/a" }, "definitions": { "a": { "$ref": "#/definitions/b" }, "b": { "$ref": "#/definitions/a" } } }`)).to.eql([]);
+  });
+
   test("a pattern or a named property isn't every property", async () => {
     expect(await reasons(`{ "$schema": "${draft202012}", "patternProperties": { "^a": true }, "properties": { "b": {} } }`)).to.eql([]);
   });

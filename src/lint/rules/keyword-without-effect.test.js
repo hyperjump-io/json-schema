@@ -170,6 +170,11 @@ describe("keyword-without-effect", () => {
     expect(await reasons(`{ "$schema": "${draft202012}", "$defs": { "a": { "allOf": [{ "$ref": "#/$defs/a" }] } } }`)).to.eql([]);
   });
 
+  test("references that only lead to each other", async () => {
+    expect(await reasons(`{ "$schema": "${draft07}", "allOf": [{ "$ref": "#/definitions/a" }], "definitions": { "a": { "$ref": "#/definitions/b" }, "b": { "$ref": "#/definitions/a" } } }`)).to.eql([]);
+    expect(await reasons(`{ "$schema": "${draft04}", "properties": { "x": { "$ref": "#/definitions/a" } }, "definitions": { "a": { "$ref": "#/definitions/a" } } }`)).to.eql([]);
+  });
+
   test("an annotation in a subschema", async () => {
     expect(await reasons(`{ "$schema": "${draft202012}", "allOf": [{ "title": "a" }] }`)).to.eql([]);
   });
