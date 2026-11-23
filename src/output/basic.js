@@ -41,8 +41,12 @@ export class BasicOutputPlugin {
     const start = startOf(state);
     if (valid) {
       this.#dropFrom(start);
-    } else if (!keyword.explainsFailure) {
-      // A failing keyword's error comes before its subschemas' errors
+    } else if (!keyword.explainsFailure || start === this.errors.length) {
+      // A failing keyword's error comes before its subschemas' errors. One
+      // whose subschemas didn't say why gets one too: copies of a schema
+      // share their keywords' infos, but an optimization can rewrite each
+      // copy's expression differently, so `explainsFailure` can be about a
+      // different copy's.
       const error = validationError(keyword.keywordUri, keyword.absoluteKeywordLocation, at);
       if (start === this.errors.length) {
         this.errors.push(error);

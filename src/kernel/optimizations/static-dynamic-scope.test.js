@@ -224,6 +224,36 @@ describe("staticDynamicScope", () => {
       ]);
     });
 
+    test("BASIC reports a keyword that fails without its subschemas saying why in any copy", async () => {
+      /** @type (properties: Record<string, Json>) => Record<string, Json> */
+      const entry = (properties) => ({
+        $id: `https://example.com/explains-failure-${count++}/entry`,
+        properties,
+        $defs: {
+          r1: { $id: "r1", $defs: { x: { $dynamicAnchor: "x", not: true } }, $ref: "s" },
+          r2: { $id: "r2", $defs: { x: { $dynamicAnchor: "x", type: "string" } }, $ref: "s" },
+          s: {
+            $id: "s",
+            $defs: { x: { $dynamicAnchor: "x", type: "null" } },
+            oneOf: /** @type Json[] */ ([{ $dynamicRef: "#x" }, { type: "number" }])
+          }
+        }
+      });
+
+      // `s` is copied for each anchor, and `oneOf` is optimized differently
+      // in each copy, so which copy is built first can't decide its error
+      for (const properties of [{ a: { $ref: "r1" }, b: { $ref: "r2" } }, { b: { $ref: "r2" }, a: { $ref: "r1" } }]) {
+        const schema = entry(properties);
+        const compiled = await compile(schema);
+        const output = validatorFor(compiled, { output: BASIC })({ b: true });
+        expect(output.valid).to.equal(false);
+        expect(output.errors.map((error) => {
+          const { absoluteKeywordLocation, instanceLocation } = /** @type ValidationError */ (error);
+          return [absoluteKeywordLocation, instanceLocation];
+        })).to.eql([[new URL("s#/oneOf", /** @type string */ (schema.$id)).href, "/b"]]);
+      }
+    });
+
     test("annotating applies the copies", async () => {
       const compiled = await looseAndStrict();
       expect(copies(optimize(/** @type Kernel */ (serialize(compiled)), { fast: false, plugins: false, annotations: true }))).to.be.greaterThan(0);
