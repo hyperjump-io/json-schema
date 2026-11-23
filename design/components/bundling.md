@@ -93,6 +93,15 @@ being considered (see [Open questions](#open-questions)).
   embedded file not a resource and changes how its own references and
   dynamic anchors resolve, and making up an identifier (`tag:`), which two
   bundles would both claim.
+- The main schema is the one file that isn't identified where it is
+  relative to itself, resolved against `id`, because it's `id`. A
+  reference to it by its path finds its name resolved against `id`, so
+  if something references it that way, `id` has to end with its name, or
+  it's an error that says so. A draft-04 to draft-07 `$ref` in the main
+  schema is taken as a fragment, because it isn't kept as it's written.
+  And two files can't be identified the same, which happens when `id`
+  has fewer path segments than the files go up from the main schema,
+  because `..` stops at the root.
 - Its errors say document URIs relative to the working directory (see
   [Local paths in messages and output](file-uris.md)).
 - `false` is embedded as `{ "not": {} }`, because only an object can have

@@ -11,7 +11,7 @@ import { loadAhead } from "../load-ahead.js";
  * @import { Dialect } from "../dialect.d.ts"
  * @import { BundleOptions } from "../operations/bundle.d.ts"
  * @import { JsonSchemaDocumentNode, JsonSchemaNode } from "../schema/schema-ast.d.ts"
- * @import { NormalizedIri } from "@hyperjump/uri"
+ * @import { IriReference, NormalizedIri } from "@hyperjump/uri"
  * @import { Id } from "../identifiers.js"
  * @import { Hyperjump, ReferenceTarget, Target } from "@hyperjump/browser"
  * @import { JsonSchemaConfig } from "../json-schema.d.ts"
@@ -46,7 +46,7 @@ export const bundle = async (session, uri, options = {}) => {
 
   const mainTarget = await schemaTarget(session, toId(uri));
   const main = mainTarget.document;
-  const documents = await referencedDocuments(session, mainTarget, externalSchemas);
+  const { documents, isMainReferencedByPath } = await referencedDocuments(session, mainTarget, externalSchemas);
 
   /** @type Map<string, Dialect> */
   const dialects = new Map();
@@ -57,18 +57,18 @@ export const bundle = async (session, uri, options = {}) => {
     }
   }
 
-  return bundleDocuments(main, documents, dialects, options);
+  return bundleDocuments(main, documents, dialects, options, isMainReferencedByPath);
 };
 
 /**
  * A bundle of the main document and the documents it references, with each
  * document's dialect
  *
- * @type (main: JsonSchemaDocumentNode, documents: JsonSchemaDocumentNode[], dialects: Map<string, Dialect>, options: BundleOptions) => Json
+ * @type (main: JsonSchemaDocumentNode, documents: JsonSchemaDocumentNode[], dialects: Map<string, Dialect>, options: BundleOptions, isMainReferencedByPath: boolean) => Json
  */
-const bundleDocuments = (main, documents, dialects, options) => {
+const bundleDocuments = (main, documents, dialects, options, isMainReferencedByPath) => {
   const { alwaysIncludeDialect = false, definitionNamingStrategy = "uri" } = options;
-  const identifier = identifierFor(main, documents, options.id);
+  const identifier = identifierFor(main, documents, options.id, isMainReferencedByPath);
   /** @type (document: JsonSchemaDocumentNode) => Dialect */
   const dialectOf = (document) => /** @type Dialect */ (dialects.get(/** @type string */ (document.dialectUri)));
 
@@ -138,9 +138,15 @@ const bundleDocuments = (main, documents, dialects, options) => {
  * a file that embeds nothing isn't given one. Anything that isn't a file
  * keeps its URI.
  *
- * @type (main: JsonSchemaDocumentNode, documents: JsonSchemaDocumentNode[], id: string | undefined) => (uri: Id) => string | undefined
+ * A reference to the main schema by its path finds its name resolved
+ * against `id`, which is `id` only if `id` ends with that name. And `id`
+ * has to have enough segments for where the files are, or two of them
+ * would be identified the same. Either would change what a reference
+ * finds, so it's an error.
+ *
+ * @type (main: JsonSchemaDocumentNode, documents: JsonSchemaDocumentNode[], id: string | undefined, isMainReferencedByPath: boolean) => (uri: Id) => string | undefined
  */
-const identifierFor = (main, documents, id) => {
+const identifierFor = (main, documents, id, isMainReferencedByPath) => {
   const isFile = (/** @type Id */ uri) => getScheme(uri) === "file";
   if (!isFile(main.uri)) {
     return (uri) => uri;
@@ -162,7 +168,29 @@ const identifierFor = (main, documents, id) => {
     throw Error(`The bundle's 'id' has to be an absolute URI that isn't a file, without a fragment: '${id}'`);
   }
 
-  return (uri) => isFile(uri) ? resolveIri(toRelativeIri(uri, main.uri) || base, base) : uri;
+  if (isMainReferencedByPath) {
+    const name = /** @type IriReference */ (main.uri.slice(main.uri.lastIndexOf("/") + 1));
+    const byPath = normalizeIri(resolveIri(name, base));
+    if (byPath !== base) {
+      throw Error(`'${relativeFileUrl(main.uri)}' is referenced by its path, which would find '${byPath}' in the bundle, but the bundle is identified as '${base}'. Give the bundle an 'id' that ends with '${name}'.`);
+    }
+  }
+
+  /** @type (uri: Id) => string | undefined */
+  const identifier = (uri) => isFile(uri) ? resolveIri(toRelativeIri(uri, main.uri) || base, base) : uri;
+
+  /** @type Map<string, Id> */
+  const identified = new Map([[base, main.uri]]);
+  for (const { uri } of documents) {
+    const documentId = /** @type string */ (identifier(uri));
+    const other = identified.get(documentId);
+    if (other !== undefined) {
+      throw Error(`'${relativeFileUrl(uri)}' and '${relativeFileUrl(other)}' would both be identified as '${documentId}' in the bundle. Files are identified by where they are relative to the main schema, resolved against 'id', so 'id' needs as many path segments as the files go up from the main schema.`);
+    }
+    identified.set(documentId, uri);
+  }
+
+  return identifier;
 };
 
 /**
@@ -198,7 +226,7 @@ const schemaTarget = async (session, uri, referencedFrom) => {
  * gives each one as a target. v1's `$dynamicRef` is a name, so it never
  * references another document.
  *
- * @type (session: Hyperjump<JsonSchemaConfig>, main: DocumentTarget, externalSchemas: Set<Id>) => Promise<JsonSchemaDocumentNode[]>
+ * @type (session: Hyperjump<JsonSchemaConfig>, main: DocumentTarget, externalSchemas: Set<Id>) => Promise<ReferencedDocuments>
  */
 const referencedDocuments = async (session, main, externalSchemas) => {
   // What each document's references find is loaded ahead, so they're
@@ -211,17 +239,28 @@ const referencedDocuments = async (session, main, externalSchemas) => {
   }
 };
 
-/** @type (session: Hyperjump<JsonSchemaConfig>, main: DocumentTarget, externalSchemas: Set<Id>, ahead: ReturnType<typeof loadAhead>) => Promise<JsonSchemaDocumentNode[]> */
+/**
+ * The documents the main document references, and whether a reference finds
+ * the main document by its path, not only by a fragment
+ *
+ * @typedef {{ documents: JsonSchemaDocumentNode[]; isMainReferencedByPath: boolean }} ReferencedDocuments
+ */
+
+/** @type (session: Hyperjump<JsonSchemaConfig>, main: DocumentTarget, externalSchemas: Set<Id>, ahead: ReturnType<typeof loadAhead>) => Promise<ReferencedDocuments> */
 const referencedDocumentsLoadingAhead = async (session, main, externalSchemas, ahead) => {
   /** @type Map<string, [resource: JsonSchemaDocumentNode, document: JsonSchemaDocumentNode]> */
   const resources = new Map();
   addResources(resources, main.document);
   const documents = [main];
+  let isMainReferencedByPath = false;
   for (let index = 0; index < documents.length; index++) {
     ahead.from(documents[index].document);
     const references = /** @type ReferenceTarget[] */ (await jrefFindAll(session, /** @type any */ (documents[index]), "reference", { reference: "manual", maxDepth: Infinity }));
     for (const reference of references) {
       const uri = toAbsoluteIri(/** @type NormalizedIri */ (jrefHref(reference)));
+      if (uri === main.document.uri && (index > 0 || isPathReference(reference))) {
+        isMainReferencedByPath = true;
+      }
       if (resources.has(uri) || externalSchemas.has(uri)) {
         continue;
       }
@@ -237,7 +276,19 @@ const referencedDocumentsLoadingAhead = async (session, main, externalSchemas, a
     }
   }
 
-  return documents.slice(1).map(({ document }) => document);
+  return { documents: documents.slice(1).map(({ document }) => document), isMainReferencedByPath };
+};
+
+/**
+ * Whether a reference, as it's written, has more than a fragment. A
+ * draft-04 to draft-07 `$ref` makes the schema it's in a reference, so it
+ * isn't written as a string, and it's taken as a fragment.
+ *
+ * @type (reference: ReferenceTarget) => boolean
+ */
+const isPathReference = (reference) => {
+  const written = /** @type {{ value?: unknown }} */ (reference.node).value;
+  return typeof written === "string" && !written.startsWith("#");
 };
 
 /**
