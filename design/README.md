@@ -54,10 +54,9 @@ hand and have JSDoc explaining the details. Documentation for users is in
   - [Built-in keywords](components/built-in-dialects/built-in-keywords.md)
   - [2020-12](components/built-in-dialects/draft-2020-12.md),
     [2019-09](components/built-in-dialects/draft-2019-09.md), and
-    [draft-04, draft-06, and draft-07](components/built-in-dialects/draft-04-06-07.md),
-    and [OpenAPI 3.0, 3.1, and 3.2](components/built-in-dialects/openapi.md)
-  - [OpenAPI documents](components/built-in-dialects/openapi-documents.md):
-    Schema Objects in an OpenAPI document (not built yet)
+    [draft-04, draft-06, and draft-07](components/built-in-dialects/draft-04-06-07.md)
+  - [OpenAPI](components/built-in-dialects/README.md#openapi): a package of
+    its own, [`@hyperjump/openapi`](https://github.com/hyperjump-io/openapi/blob/main/design/README.md)
 - [Schema validation](components/schema-validation.md)
 - [Schema types](components/schema-types.md): checking schemas written in
   TypeScript

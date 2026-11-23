@@ -52,5 +52,32 @@ These stay public, because something users write depends on them.
   and they're reconsidered when someone needs that. Running a kernel is
   already public through `restore`.
 - The bundler's parts (finding the documents a schema references,
-  rewriting references, naming definitions) are left for the OpenAPI work,
-  which needs a different layout (`components/schemas`).
+  rewriting references, naming definitions) are left for bundling OpenAPI
+  descriptions in `@hyperjump/openapi`, which needs a different layout
+  (`components/schemas`).
+
+## For other packages
+
+What [`@hyperjump/openapi`](https://github.com/hyperjump-io/openapi/blob/main/design/README.md) builds on,
+which a package for another format with schemas in it would too.
+
+| What | What it's for |
+| --- | --- |
+| `resolveSchemaAt` | Resolving a node as a schema in a document another resolver made, like a Schema Object |
+| `defaultDialectFor` | A media type plugin finding `defaultDialects`' dialect for a document's URL |
+| `toId`, `resolveId`, `iriProblem`, `noUrl`, and `Id` | A document's URI kept the way resources are, and messages about one that isn't valid |
+| `propertyAlternatives` in `./lint` | Rules about which properties an object has to have |
+| Each dialect's `keywords` and `formats` | A dialect that uses the built-in keywords, like `draft04Dialect.keywords.maximum` |
+
+- Keyword and format modules aren't exported. A dialect that uses a
+  built-in keyword takes it from the built-in dialect that has it, which
+  says where it comes from. Rejected: `./keywords/*` and `./formats/*`,
+  which make every file an API.
+- The keyword helpers (`annotationKeyword`, the checks) aren't exported.
+  They're a few lines, and a package that needs them has its own.
+- The JSON-or-schema plugin still reads a top-level `openapi` and hands
+  the document to the session's `application/openapi+json` plugin (see
+  [OpenAPI documents](https://github.com/hyperjump-io/openapi/blob/main/design/components/documents.md)). It only names a
+  media type, so it doesn't depend on the package. Rejected: a `.json`
+  plugin in `@hyperjump/openapi` that wraps this one, which needs this one
+  exported and a rule for which `.json` plugin a config has.

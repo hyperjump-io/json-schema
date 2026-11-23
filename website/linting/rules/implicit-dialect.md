@@ -1,6 +1,6 @@
 # `implicit-dialect`
 
-In `recommended`, as a warning. Off in `openapi-3-0`.
+In `recommended`, as a warning.
 
 A root schema without `$schema` whose dialect came from somewhere else.
 That can be the `dialectUri` option of `jsonSchemaResolve`, such as from a
@@ -14,7 +14,8 @@ If a root schema has no `$schema` and its dialect can't be determined, the
 resolver reports an error instead.
 
 OpenAPI 3.0 Schema Objects don't have `$schema`, so their dialect always
-comes from somewhere else. That's why the rule is off in `openapi-3-0`.
+comes from somewhere else. That's why the rule is off in
+[`@hyperjump/openapi`'s `openapi-3-0` preset](https://github.com/hyperjump-io/openapi/blob/main/website/linting/README.md).
 
 In the CLI, it's reported for a file whose dialect comes from the
 `defaultSchema` setting. A `.schema.json` file without `$schema` or a

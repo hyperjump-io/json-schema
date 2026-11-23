@@ -21,7 +21,8 @@ export type JsonOrSchemaDocument = JsonMediaTypeDocument | JsonSchemaMediaTypeDo
  *
  * A JSON document without a `$schema` dialect whose top-level `openapi` is
  * a string is an OpenAPI document, if the session has a plugin for
- * `application/openapi+json`, like `openApiMediaType`, which parses it.
+ * `application/openapi+json`, like `@hyperjump/openapi`'s `openApiMediaType`,
+ * which parses it.
  *
  * Any other JSON document without a top-level `$schema`, at a URL one of
  * the session's `defaultDialects` keys matches, is a schema in that key's

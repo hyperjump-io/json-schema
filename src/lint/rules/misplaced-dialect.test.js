@@ -1,31 +1,7 @@
-import { readFileSync } from "node:fs";
 import { describe, test, expect } from "vitest";
-import { unified } from "unified";
 import { VFile } from "vfile";
-import { rejsonParse, Hyperjump } from "@hyperjump/browser";
-import { jsonSchemaConfig } from "../../json-schema.js";
-import { draft07Dialect } from "../../dialects/draft-07/index.js";
-import { draft202012Dialect } from "../../dialects/draft-2020-12/index.js";
-import { openApi31Vocabulary, openApi31VocabularyUri } from "../../dialects/openapi-3-1/index.js";
-import { SchemaRegistry } from "../../registry/schema-registry.js";
-import { openApiResolve } from "../../openapi/index.js";
 import { linter } from "../test-linter.js";
 import misplacedDialect from "./misplaced-dialect.js";
-
-/**
- * The dialect of a test's Schema Objects without `jsonSchemaDialect`, by its
- * OpenAPI version, as `defaultDialects` would give it: 3.1's "OAS dialect
- * schema id", and the latest dated 3.2 dialect
- *
- * @type (json: string) => string | undefined
- */
-const defaultDialectOf = (json) => versionDialects[/"openapi"\s*:\s*"(\d+\.\d+)/.exec(json)?.[1] ?? ""];
-
-/** @type Record<string, string> */
-const versionDialects = {
-  3.1: "https://spec.openapis.org/oas/3.1/dialect/base",
-  3.2: "https://spec.openapis.org/oas/3.2/dialect/2026-02-26"
-};
 
 const draft04 = "http://json-schema.org/draft-04/schema#";
 const draft07 = "http://json-schema.org/draft-07/schema#";
@@ -103,17 +79,6 @@ describe("misplaced-dialect", () => {
     ]);
   });
 
-  test("a Schema Object in an OpenAPI document", async () => {
-    const schemas = {
-      Ignored: { $schema: draft202012, type: "string" },
-      Resource: { $id: "https://example.com/name", $schema: draft07, type: "string" }
-    };
-    const file = await lintOpenApi(JSON.stringify({ openapi: "3.1.1", info: { title: "Pets", version: "1" }, paths: {}, components: { schemas } }));
-    expect(file.messages.map((message) => message.reason)).to.eql([
-      "'$schema' is only allowed at the root of a schema resource. It's ignored."
-    ]);
-  });
-
   test("a property named $schema isn't a keyword", async () => {
     expect(await reasons(`{ "$schema": "${draft202012}", "properties": { "$schema": { "type": "string" } } }`)).to.eql([]);
   });
@@ -130,21 +95,3 @@ const lint = async (json) => {
 
 /** @type (json: string) => Promise<string[]> */
 const reasons = async (json) => (await lint(json)).messages.map((message) => message.reason);
-
-/** @type (json: string) => Promise<VFile> */
-const lintOpenApi = async (json) => {
-  const metaSchema = JSON.parse(readFileSync(new URL("../../dialects/openapi-3-1/meta-schemas/dialect-base.json", import.meta.url), "utf8"));
-  const jsonSchema = jsonSchemaConfig({
-    dialects: [draft202012Dialect, draft07Dialect],
-    vocabularies: { [openApi31VocabularyUri]: openApi31Vocabulary },
-    registry: new SchemaRegistry([{ schema: metaSchema }]),
-    allowRetrieval: []
-  });
-  const file = new VFile({ path: "/api/openapi.json", value: json });
-  const processor = unified()
-    .use(rejsonParse)
-    .use(openApiResolve, { session: new Hyperjump(jsonSchema), dialectUri: defaultDialectOf(json) })
-    .use(misplacedDialect);
-  await processor.run(processor.parse(file), file);
-  return file;
-};

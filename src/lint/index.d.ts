@@ -7,3 +7,5 @@ export * from "./document.js";
 export type * from "./lower.d.ts";
 export * from "./schema-group.js";
 export * from "./utilities.js";
+export { propertyAlternatives } from "./required-properties.js";
+export type { Alternative } from "./required-properties.js";

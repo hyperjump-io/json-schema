@@ -11,30 +11,7 @@ import { draft06Dialect } from "../dialects/draft-06/index.js";
 import { draft07Dialect } from "../dialects/draft-07/index.js";
 import { draft201909Dialect } from "../dialects/draft-2019-09/index.js";
 import { draft202012Dialect } from "../dialects/draft-2020-12/index.js";
-import { openApi30Dialect } from "../dialects/openapi-3-0/index.js";
-import { openApi31Vocabulary, openApi31VocabularyUri } from "../dialects/openapi-3-1/index.js";
-import { openApi32Vocabulary, openApi32VocabularyUri } from "../dialects/openapi-3-2/index.js";
-import { SchemaRegistry } from "../registry/schema-registry.js";
-import { openApiResolve } from "../openapi/index.js";
 import recommended from "./recommended.js";
-import openApi30 from "./openapi-3-0.js";
-import openApi31 from "./openapi-3-1.js";
-import openApi32 from "./openapi-3-2.js";
-
-/**
- * The dialect of a test's Schema Objects without `jsonSchemaDialect`, by its
- * OpenAPI version, as `defaultDialects` would give it: 3.1's "OAS dialect
- * schema id", and the latest dated 3.2 dialect
- *
- * @type (json: string) => string | undefined
- */
-const defaultDialectOf = (json) => versionDialects[/"openapi"\s*:\s*"(\d+\.\d+)/.exec(json)?.[1] ?? ""];
-
-/** @type Record<string, string> */
-const versionDialects = {
-  3.1: "https://spec.openapis.org/oas/3.1/dialect/base",
-  3.2: "https://spec.openapis.org/oas/3.2/dialect/2026-02-26"
-};
 
 /**
  * @import { Plugin, Preset } from "unified"
@@ -56,16 +33,7 @@ const ruleNames = readdirSync(rulesUrl)
 const readme = readFileSync(new URL("README.md", pagesUrl), "utf8");
 
 const jsonSchema = jsonSchemaConfig({
-  dialects: [v1Dialect, draft04Dialect, draft06Dialect, draft07Dialect, draft201909Dialect, draft202012Dialect, openApi30Dialect],
-  vocabularies: {
-    [openApi31VocabularyUri]: openApi31Vocabulary,
-    [openApi32VocabularyUri]: openApi32Vocabulary
-  },
-  // OpenAPI 3.1's and 3.2's dialects are their meta-schemas
-  registry: new SchemaRegistry([
-    "openapi-3-1/meta-schemas/dialect-2024-11-10.json",
-    "openapi-3-2/meta-schemas/dialect-2026-02-26.json"
-  ].map((path) => ({ schema: JSON.parse(readFileSync(new URL(`../dialects/${path}`, import.meta.url), "utf8")) })))
+  dialects: [v1Dialect, draft04Dialect, draft06Dialect, draft07Dialect, draft201909Dialect, draft202012Dialect]
 });
 
 /**
@@ -131,27 +99,13 @@ const lint = async (name, rule, { code, dialectUri }) => {
   const file = new VFile(code);
   const session = new Hyperjump({ ...jsonSchema, allowRetrieval: [] });
   const parser = unified().use(rejsonParse, { accept: "recovered", url: "https://example.com/schema.json" });
-  // An example whose root has `openapi` is an OpenAPI document, as the CLI
-  // decides
-  const processor = isOpenApi(code)
-    ? parser.use(openApiResolve, { session, dialectUri: defaultDialectOf(code) }).use(rule)
-    : parser.use(jsonSchemaResolve, { session, ...dialectUri && { dialectUri } }).use(rule);
+  const processor = parser.use(jsonSchemaResolve, { session, ...dialectUri && { dialectUri } }).use(rule);
   await processor.run(processor.parse(file), file);
   return file.messages.filter((message) => message.ruleId === name).map((message) => message.reason);
 };
 
-/** @type (code: string) => boolean */
-const isOpenApi = (code) => {
-  try {
-    const json = /** @type unknown */ (JSON.parse(code));
-    return typeof json === "object" && json !== null && "openapi" in json;
-  } catch {
-    return false;
-  }
-};
-
 /** @type Record<string, Preset> */
-const presets = { "recommended": recommended, "openapi-3-0": openApi30, "openapi-3-1": openApi31, "openapi-3-2": openApi32 };
+const presets = { recommended };
 
 /**
  * What a rule's page says about it in each preset that lists it, like

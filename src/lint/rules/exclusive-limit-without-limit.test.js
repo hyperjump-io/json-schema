@@ -6,7 +6,6 @@ import { jsonSchemaConfig } from "../../json-schema.js";
 import { jsonSchemaResolve } from "../../schema/resolve.js";
 import { draft04Dialect, draft04DialectUri } from "../../dialects/draft-04/index.js";
 import { draft202012Dialect } from "../../dialects/draft-2020-12/index.js";
-import { openApi30Dialect, openApi30DialectUri } from "../../dialects/openapi-3-0/index.js";
 import exclusiveLimitWithoutLimit from "./exclusive-limit-without-limit.js";
 
 describe("exclusive-limit-without-limit", () => {
@@ -47,11 +46,6 @@ describe("exclusive-limit-without-limit", () => {
     expect(file.messages).to.eql([]);
   });
 
-  test("draft-04", async () => {
-    const file = await lint(`{ "type": "number", "exclusiveMaximum": true }`, draft04DialectUri);
-    expect(file.messages.map((message) => message.reason)).to.eql(["'exclusiveMaximum' has no effect without 'maximum'"]);
-  });
-
   test("a dialect with exclusiveMaximum that's a number", async () => {
     const file = await lint(`{ "$schema": "https://json-schema.org/draft/2020-12/schema", "exclusiveMaximum": 1 }`);
     expect(file.messages).to.eql([]);
@@ -59,8 +53,8 @@ describe("exclusive-limit-without-limit", () => {
 });
 
 /** @type (json: string, dialectUri?: string) => Promise<VFile> */
-const lint = async (json, dialectUri = openApi30DialectUri) => {
-  const jsonSchema = jsonSchemaConfig({ dialects: [draft04Dialect, draft202012Dialect, openApi30Dialect] });
+const lint = async (json, dialectUri = draft04DialectUri) => {
+  const jsonSchema = jsonSchemaConfig({ dialects: [draft04Dialect, draft202012Dialect] });
   const file = new VFile({ path: "/schemas/a.schema.json", value: json });
   const processor = unified()
     .use(rejsonParse)

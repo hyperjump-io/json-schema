@@ -8,7 +8,7 @@ import type { JsonSchemaDocumentNode } from "../../schema/schema-ast.d.ts";
  * effect, and the limit may be missing by mistake. Draft-04 says the limit
  * MUST be there, so it's an error in the recommended preset. 3.0's JSON
  * Schema draft (draft-wright-00) doesn't, so it's a warning in
- * `openapi-3-0`.
+ * `@hyperjump/openapi`'s `openapi-3-0`.
  * It has no options.
  */
 declare const exclusiveLimitWithoutLimit: Plugin<JsonSchemaDocumentNode, void>;

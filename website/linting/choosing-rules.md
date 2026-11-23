@@ -27,28 +27,9 @@ lists them.
 
 ## OpenAPI presets
 
-`@hyperjump/json-schema/lint/openapi-3-0` is for OpenAPI 3.0 Schema
-Objects. It's the recommended preset with the rules for what OpenAPI 3.0
-requires, like [`array-without-items`](rules/array-without-items.md).
-What 3.0 says MUST or MUST NOT be is an error, even where it's a warning
-in `recommended` because JSON Schema allows it. For example,
-[`read-only-and-write-only`](rules/read-only-and-write-only.md) is an
-error. [`implicit-dialect`](rules/implicit-dialect.md) is off, because 3.0
-Schema Objects don't have `$schema`. Use it instead of `recommended`.
-
-```json
-{
-  "plugins": ["@hyperjump/json-schema/lint/openapi-3-0"]
-}
-```
-
-`@hyperjump/json-schema/lint/openapi-3-1` and
-`@hyperjump/json-schema/lint/openapi-3-2` are for OpenAPI 3.1 and 3.2.
-They're the recommended preset with the rules for OpenAPI's keywords, like
-[`unknown-field`](rules/unknown-field.md) and
-[`wrapped-without-array`](rules/wrapped-without-array.md), which every
-OpenAPI preset has, and [`deprecated-example`](rules/deprecated-example.md). `openapi-3-2` also
-has [`deprecated-xml-field`](rules/deprecated-xml-field.md).
+The presets for OpenAPI's Schema Objects, one for each version, are in
+[`@hyperjump/openapi`](https://github.com/hyperjump-io/openapi/blob/main/website/linting/README.md).
+Each one is the recommended preset with OpenAPI's rules.
 
 ## Changing a rule
 

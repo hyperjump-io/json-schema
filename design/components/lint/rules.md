@@ -14,29 +14,17 @@
   `remark-preset-lint-recommended`. A project's `.hyperjumprc` uses a
   preset and adjusts rules. The CLI loads plugins with the `hyperjump`
   prefix.
-- `recommended` is for JSON Schema. Each OpenAPI version has its own
-  preset, `lint/openapi-3-0` now, which is `recommended` followed by
-  what's different: the rules for what that version requires, and
-  severities that version decides differently. A later entry for the same
-  rule replaces the earlier one's setting, so it reuses `recommended`'s
-  rules, like `read-only-and-write-only`, which is a warning in
-  `recommended` because JSON Schema allows it and an error in
-  `openapi-3-0` because 3.0 says MUST NOT. A version's rules, like
-  `array-without-items` and `unknown-field`, aren't in `recommended`.
-  `openapi-3-1` and `openapi-3-2` are `recommended` with `unknown-field`
-  and `deprecated-example` so far, and `openapi-3-2` has
-  `deprecated-xml-field`. `discriminator-property-optional` is a
-  warning in `openapi-3-0` and `openapi-3-1` and an error in `openapi-3-2`,
-  because 3.0.4 and 3.1.1 say SHOULD and 3.2 says MUST. Every OpenAPI preset has `unknown-field`,
-  `wrapped-without-array`, `discriminator-without-composition`, and
-  `discriminator-mapping-without-target`. Rejected: one `openapi` preset,
-  because a preset gives a rule one severity, and only 3.0 forbids
-  `readOnly` and `writeOnly` both `true`. Rejected: a rule that checks the
-  dialect to decide its severity, because severity is the preset's to set.
+- `recommended` is for JSON Schema. OpenAPI's presets, one for each
+  version, are `recommended` followed by what's different, in
+  [`@hyperjump/openapi`](https://github.com/hyperjump-io/openapi/blob/main/design/components/lint.md). A later entry
+  for the same rule replaces the earlier one's setting, so a preset in
+  another package can change one of these rules' severity, like
+  `read-only-and-write-only`'s.
 - A rule page says its setting in each preset that lists it ("In
-  `recommended`, as a warning. In `openapi-3-0`, as an error."), checked
-  by `rule-pages.test.js`. A preset that only includes another doesn't
-  list its rules.
+  `recommended`, as a warning."), checked by `rule-pages.test.js`. A
+  preset that only includes another doesn't list its rules. A preset in
+  another package that changes a rule is linked from the rule's page, and
+  says the setting on its own pages, because the test can't see it.
 - A rule about what a schema means finds it in what its keywords lower to,
   not by keyword URI, so it works for every keyword that says the same
   thing, including user-defined ones and v1's (`requireAllExcept` counts

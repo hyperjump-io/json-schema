@@ -35,7 +35,7 @@ user says which documents get which dialect, by URL.
   a dialect. That's the rule `$schema` has: a dialect makes a document a
   schema, and anything else leaves it JSON. A top-level `openapi` makes it
   an OpenAPI document, whose Schema Objects get the key's dialect (see
-  [OpenAPI documents](../built-in-dialects/openapi-documents.md)). A key is
+  [OpenAPI documents](https://github.com/hyperjump-io/openapi/blob/main/design/components/documents.md)). A key is
   the user naming those documents, which a default for every document
   wasn't (see below). Under a key like `./`, a data file is read as a
   schema, so keys should name schemas' folders or files.

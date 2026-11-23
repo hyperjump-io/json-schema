@@ -29,7 +29,6 @@ const config = jsonSchemaConfig({
 | draft-07 | `@hyperjump/json-schema/draft-07` | `draft07Dialect` | `http://json-schema.org/draft-07/schema#` |
 | draft-06 | `@hyperjump/json-schema/draft-06` | `draft06Dialect` | `http://json-schema.org/draft-06/schema#` |
 | draft-04 | `@hyperjump/json-schema/draft-04` | `draft04Dialect` | `http://json-schema.org/draft-04/schema#` |
-| OpenAPI 3.0 | `@hyperjump/json-schema/openapi-3-0` | `openApi30Dialect` | `https://spec.openapis.org/oas/3.0/dialect` |
 
 Each module also exports its dialect URI for code that needs it. Examples
 are `v1DialectUri` and `draft202012DialectUri`.
@@ -83,8 +82,8 @@ What a property that isn't a keyword means depends on the dialect:
 
 | Dialect | An unknown keyword is |
 | --- | --- |
-| v1, OpenAPI 3.0 | An error, unless its name starts with `x-`. Then it's an annotation. |
-| 2019-09, 2020-12, OpenAPI 3.1, OpenAPI 3.2 | An annotation |
+| v1 | An error, unless its name starts with `x-`. Then it's an annotation. |
+| 2019-09, 2020-12 | An annotation |
 | draft-04 to draft-07 | Ignored |
 
 In every dialect, the [`unknown-keyword`](../linting/rules/unknown-keyword.md)
@@ -101,7 +100,7 @@ punctuation that doesn't need it, like `\&` or `\%`:
 | Dialect | A pattern that's only valid without the `u` flag |
 | --- | --- |
 | v1 | Is an error |
-| draft-04 to 2020-12, OpenAPI | Works without the flag |
+| draft-04 to 2020-12 | Works without the flag |
 
 Without the flag, `.` matches half of a character outside the Basic
 Multilingual Plane, like an emoji.
@@ -111,145 +110,9 @@ In every dialect, the `regex` format needs a pattern that's valid with the
 
 ## OpenAPI
 
-The OpenAPI dialects are for the Schema Objects in OpenAPI descriptions.
-Each one adds OpenAPI's keywords, `discriminator`, `example`,
-`externalDocs`, and `xml`, which are annotations. They don't change what's
-valid.
-
-To use the Schema Objects in an OpenAPI document, add `openApiMediaType`
-from `@hyperjump/json-schema/openapi` to the config's `mediaTypes`. Then a
-URI into the document, like `openapi.json#/components/schemas/Pet`, is a
-schema. It reads JSON documents served as `application/openapi+json`, and
-any `.json` file with a top-level `openapi` and no `$schema`. A Schema
-Object's dialect is the document's `jsonSchemaDialect`, or the one
-`defaultDialects` gives the document. Without either, OpenAPI 3.0's is
-`openApi30Dialect`, which the config needs to have.
-
-```typescript
-import { jsonSchemaConfig, validator } from "@hyperjump/json-schema";
-import { openApi30Dialect } from "@hyperjump/json-schema/openapi-3-0";
-import { openApiMediaType } from "@hyperjump/json-schema/openapi";
-
-const config = jsonSchemaConfig({
-  dialects: [openApi30Dialect],
-  mediaTypes: [openApiMediaType]
-});
-
-const isPet = await validator(config, "https://example.com/openapi.json#/components/schemas/Pet");
-```
-
-### OpenAPI 3.1 and 3.2
-
-OpenAPI 3.1 and 3.2 are 2020-12 with OpenAPI's keywords. 3.2 adds
-`defaultMapping` to `discriminator` and `nodeType` to `xml`. Their dialects
-are defined by OpenAPI's meta-schemas, like
-`https://spec.openapis.org/oas/3.1/dialect/base` and
-`https://spec.openapis.org/oas/3.2/dialect/2026-02-26`. Add the 2020-12
-dialect and OpenAPI's vocabulary, and a schema whose `$schema` is one of
-those URIs gets its dialect from the meta-schema. See
-[Custom meta-schemas](#custom-meta-schemas).
-
-The meta-schema has to be in your registry or retrieved. OpenAPI serves
-its meta-schemas as `application/octet-stream`, not as JSON. To retrieve
-them from `https://spec.openapis.org/`, add `openApiSpecMediaType` from
-`@hyperjump/json-schema/openapi` to `mediaTypes`, and the site to
-`allowRetrieval`. It reads only that site's `application/octet-stream`.
-
-```typescript
-import { jsonSchemaConfig } from "@hyperjump/json-schema";
-import { draft202012Dialect } from "@hyperjump/json-schema/draft-2020-12";
-import { openApi31Vocabulary, openApi31VocabularyUri } from "@hyperjump/json-schema/openapi-3-1";
-import { openApiSpecMediaType } from "@hyperjump/json-schema/openapi";
-
-const config = jsonSchemaConfig({
-  dialects: [draft202012Dialect],
-  vocabularies: { [openApi31VocabularyUri]: openApi31Vocabulary },
-  mediaTypes: [openApiSpecMediaType],
-  allowRetrieval: ["https://spec.openapis.org/oas/"]
-});
-```
-
-3.1 and 3.2 documents without `jsonSchemaDialect` have no default dialect
-until `defaultDialects` gives them one. OpenAPI names
-`https://spec.openapis.org/oas/3.1/dialect/base` as 3.1's, and each 3.2
-dialect is dated. A 3.1 or 3.2 document with Schema Objects, and without
-`jsonSchemaDialect` or a key for its URL, is an error. Name your OpenAPI
-documents in `defaultDialects` one at a time, or a folder that only has
-OpenAPI documents, because a key makes any other JSON file under it a
-schema.
-
-```typescript
-import { jsonSchemaConfig } from "@hyperjump/json-schema";
-import { draft202012Dialect } from "@hyperjump/json-schema/draft-2020-12";
-import { openApi31Vocabulary, openApi31VocabularyUri } from "@hyperjump/json-schema/openapi-3-1";
-import { openApiMediaType, openApiSpecMediaType } from "@hyperjump/json-schema/openapi";
-
-const config = jsonSchemaConfig({
-  dialects: [draft202012Dialect],
-  vocabularies: { [openApi31VocabularyUri]: openApi31Vocabulary },
-  defaultDialects: {
-    "./api/openapi.json": "https://spec.openapis.org/oas/3.1/dialect/2024-11-10"
-  },
-  mediaTypes: [openApiMediaType, openApiSpecMediaType],
-  allowRetrieval: ["https://spec.openapis.org/oas/"]
-});
-```
-
-A key can give a 3.0 document a dialect other than `openApi30Dialect` too.
-
-Or download the meta-schemas your schemas use and add them to the registry:
-
-```typescript
-import { readFile } from "node:fs/promises";
-import { jsonSchemaConfig, SchemaRegistry } from "@hyperjump/json-schema";
-import { draft202012Dialect } from "@hyperjump/json-schema/draft-2020-12";
-import { openApi31Vocabulary, openApi31VocabularyUri } from "@hyperjump/json-schema/openapi-3-1";
-
-// https://spec.openapis.org/oas/3.1/dialect/base, downloaded
-const metaSchema = JSON.parse(await readFile("./oas-3.1-dialect-base.json", "utf8"));
-
-const config = jsonSchemaConfig({
-  dialects: [draft202012Dialect],
-  vocabularies: { [openApi31VocabularyUri]: openApi31Vocabulary },
-  registry: new SchemaRegistry([{ schema: metaSchema }])
-});
-```
-
-Without the vocabulary, OpenAPI's keywords are unknown keywords, and their
-values aren't checked. To lint them, use the `openapi-3-1` or `openapi-3-2`
-[preset](../linting/choosing-rules.md#openapi-presets).
-
-| Version | Module | Vocabulary |
-| --- | --- | --- |
-| OpenAPI 3.2 | `@hyperjump/json-schema/openapi-3-2` | `openApi32Vocabulary` |
-| OpenAPI 3.1 | `@hyperjump/json-schema/openapi-3-1` | `openApi31Vocabulary` |
-
-### OpenAPI 3.0
-
-OpenAPI 3.0 is a subset of draft-04. It has no `id`, `definitions`,
-`patternProperties`, `dependencies`, or `additionalItems`, and `items` is
-one schema. `type` is one type, without `null`. Use `nullable: true` to
-allow `null` too. OpenAPI doesn't publish a meta-schema for it, so it's a
-dialect, `openApi30Dialect`, in the table of dialects. To lint them, use
-the [`openapi-3-0` preset](../linting/choosing-rules.md#openapi-presets).
-
-Schema Objects usually don't have `$schema`, so give them their dialect,
-like with the `dialectUri` of a registry entry:
-
-```typescript
-import { jsonSchemaConfig, SchemaRegistry, validator } from "@hyperjump/json-schema";
-import { openApi30Dialect, openApi30DialectUri } from "@hyperjump/json-schema/openapi-3-0";
-
-const config = jsonSchemaConfig({ dialects: [openApi30Dialect] });
-const registry = new SchemaRegistry([{
-  schema: { type: "string", nullable: true },
-  retrievalUri: "https://example.com/name",
-  dialectUri: openApi30DialectUri
-}]);
-
-const isName = await validator(config, "https://example.com/name", { registry });
-isName(null); // true
-```
+The dialects of OpenAPI's Schema Objects, and reading the Schema Objects
+in OpenAPI documents, are in
+[`@hyperjump/openapi`](https://github.com/hyperjump-io/openapi/blob/main/website/dialects.md).
 
 ## Custom meta-schemas
 

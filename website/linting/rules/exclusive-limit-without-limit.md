@@ -1,6 +1,6 @@
 # `exclusive-limit-without-limit`
 
-In `recommended`, as an error. In `openapi-3-0`, as a warning.
+In `recommended`, as an error.
 
 `exclusiveMaximum` without `maximum`, or `exclusiveMinimum` without
 `minimum`, in draft-04 and OpenAPI 3.0. There, they're booleans that make
@@ -10,7 +10,8 @@ and the limit might be missing by mistake.
 Draft-04 says the limit must be there. This implementation accepts it
 anyway, but other implementations might not, so it's an error in the
 recommended preset. 3.0's JSON Schema draft doesn't say so, so it's a
-warning in `openapi-3-0`. It has no options.
+warning in [`@hyperjump/openapi`'s `openapi-3-0` preset](https://github.com/hyperjump-io/openapi/blob/main/website/linting/README.md). It
+has no options.
 
 ## Examples
 
@@ -18,8 +19,9 @@ warning in `openapi-3-0`. It has no options.
 
 #### Without maximum
 
-```json dialect=https://spec.openapis.org/oas/3.0/dialect
+```json
 {
+  "$schema": "http://json-schema.org/draft-04/schema#",
   "type": "number",
   "exclusiveMaximum": true
 }
@@ -29,8 +31,9 @@ warning in `openapi-3-0`. It has no options.
 
 #### The other limit doesn't count
 
-```json dialect=https://spec.openapis.org/oas/3.0/dialect
+```json
 {
+  "$schema": "http://json-schema.org/draft-04/schema#",
   "type": "number",
   "minimum": 0,
   "exclusiveMaximum": true
@@ -39,7 +42,7 @@ warning in `openapi-3-0`. It has no options.
 
 > 'exclusiveMaximum' has no effect without 'maximum'
 
-#### Draft-04
+#### Without minimum
 
 ```json
 {
@@ -55,8 +58,9 @@ warning in `openapi-3-0`. It has no options.
 
 #### With the limit
 
-```json dialect=https://spec.openapis.org/oas/3.0/dialect
+```json
 {
+  "$schema": "http://json-schema.org/draft-04/schema#",
   "type": "number",
   "maximum": 1,
   "exclusiveMaximum": true

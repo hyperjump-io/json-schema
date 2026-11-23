@@ -1,10 +1,10 @@
 # Rules
 
-Every rule is in the `recommended` preset, except OpenAPI's, which are in
-its version's preset, like `openapi-3-0` (see
-[Choosing rules](../choosing-rules.md)). Each rule's page explains why
-what it reports matters and lists its options. It also has examples of
-what it reports and what it doesn't.
+Every rule is in the `recommended` preset (see
+[Choosing rules](../choosing-rules.md)). OpenAPI's rules are in
+[`@hyperjump/openapi`](https://github.com/hyperjump-io/openapi/blob/main/website/linting/rules/README.md).
+Each rule's page explains why what it reports matters and lists its
+options. It also has examples of what it reports and what it doesn't.
 
 | Rule | Reports |
 | --- | --- |
@@ -28,16 +28,7 @@ what it reports and what it doesn't.
 | [`single-type-array`](single-type-array.md) | `type` that's an array of one type, like `["string"]`, instead of the type on its own |
 | [`mergeable-schemas`](mergeable-schemas.md) | A schema in `allOf`, or alone in `anyOf` or `oneOf`, whose keywords can be moved into its parent without changing what's valid |
 | [`additional-items-without-items-array`](additional-items-without-items-array.md) | `additionalItems` without an `items` that's an array of schemas (draft-04 through 2019-09) |
-| [`array-without-items`](array-without-items.md) | `type: "array"` without `items` in OpenAPI 3.0, which requires it (`openapi-3-0`) |
 | [`exclusive-limit-without-limit`](exclusive-limit-without-limit.md) | `exclusiveMaximum` without `maximum`, or `exclusiveMinimum` without `minimum`, in draft-04 and OpenAPI 3.0. It has no effect. |
-| [`nullable-without-type`](nullable-without-type.md) | `nullable` without `type` in the same schema, in OpenAPI 3.0. It has no effect. (`openapi-3-0`) |
-| [`unknown-field`](unknown-field.md) | A field OpenAPI's Discriminator, External Documentation, or XML Object doesn't define, like a typo (OpenAPI presets) |
-| [`deprecated-example`](deprecated-example.md) | OpenAPI's `example`, which 3.1 and later deprecate in favor of `examples` (OpenAPI 3.1 and 3.2 presets) |
-| [`deprecated-xml-field`](deprecated-xml-field.md) | `attribute` or `wrapped` in OpenAPI 3.2's `xml`, which 3.2 deprecates for `nodeType` (OpenAPI 3.2 preset) |
-| [`wrapped-without-array`](wrapped-without-array.md) | `wrapped: true` in OpenAPI's `xml` in a schema whose `type` isn't `array`. It has no effect. (OpenAPI presets) |
-| [`discriminator-without-composition`](discriminator-without-composition.md) | `discriminator` without `oneOf`, `anyOf`, or `allOf`, in a schema that no `allOf` builds on (OpenAPI presets) |
-| [`discriminator-mapping-without-target`](discriminator-mapping-without-target.md) | A `discriminator`'s `mapping` or `defaultMapping` that isn't a schema name or a URI reference to a schema (OpenAPI presets) |
-| [`discriminator-property-optional`](discriminator-property-optional.md) | A `discriminator` whose property is optional. In OpenAPI 3.2, only without `defaultMapping`. (OpenAPI presets) |
 | [`ignored-ref-siblings`](ignored-ref-siblings.md) | A property next to `$ref` in draft-04 through draft-07, where `$ref` replaces the whole schema |
 | [`misnamed-definitions`](misnamed-definitions.md) | `definitions` in 2019-09 and later, or `$defs` in draft-04 through draft-07. It isn't a keyword there, so what's in it isn't a schema. |
 | [`single-value-enum`](single-value-enum.md) | `enum` with only one value. `const` says it more directly (draft-06 and later). |

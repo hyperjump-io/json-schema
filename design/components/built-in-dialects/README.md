@@ -45,10 +45,24 @@ Any of them can be in one set of options.
   Compiling a meta-schema, or a schema that references one, retrieves it
   like any other schema.
 
+## OpenAPI
+
+- OpenAPI isn't built in. Its dialects, reading the Schema Objects in
+  OpenAPI documents, and its lint rules and presets are
+  [`@hyperjump/openapi`](https://github.com/hyperjump-io/openapi/blob/main/design/README.md), in its own
+  repository. They're one feature: the document resolver decides the
+  dialect of Schema Objects, the discriminator's rules read the document's
+  component names, and bundling a description needs both. In its own
+  package, OpenAPI's releases and dated meta-schemas don't release this
+  one, and it's a test that a dialect and a document format can be built
+  on the public API (see
+  [Public API](../api/public-api.md#for-other-packages)). Rejected: the
+  dialects built in and only the documents in a package of their own,
+  which splits OpenAPI across two repositories.
+
 ## Contents
 
 - [Built-in keywords](built-in-keywords.md)
 - [2020-12](draft-2020-12.md)
 - [2019-09](draft-2019-09.md)
 - [draft-04, draft-06, and draft-07](draft-04-06-07.md)
-- [OpenAPI 3.0, 3.1, and 3.2](openapi.md)

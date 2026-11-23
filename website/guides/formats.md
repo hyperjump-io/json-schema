@@ -6,7 +6,7 @@
 | Dialect | What format does |
 | --- | --- |
 | v1, draft-04 to draft-07 | Validates |
-| 2019-09, 2020-12, OpenAPI | Only annotates. A value that isn't an email is still valid. |
+| 2019-09, 2020-12 | Only annotates. A value that isn't an email is still valid. |
 
 The `validateFormats` option of `jsonSchemaConfig` overrides the dialect
 for every schema:
@@ -50,12 +50,8 @@ const config = jsonSchemaConfig({
 | draft-07 | The same, without `duration` and `uuid` |
 | draft-06 | `date-time`, `email`, `hostname`, `ipv4`, `ipv6`, `uri`, `uri-reference`, `uri-template`, `json-pointer` |
 | draft-04 | `date-time`, `email`, `hostname`, `ipv4`, `ipv6`, `uri` |
-| OpenAPI 3.1, OpenAPI 3.2 | 2020-12's, and `int32` and `password` with OpenAPI's vocabulary |
-| OpenAPI 3.0 | `date`, `date-time`, `email`, `hostname`, `int32`, `ipv4`, `ipv6`, `password`, `uri` |
 
-Every string is a valid `password`. It's only a hint to hide the value.
-OpenAPI's `int64`, `float`, `double`, `byte`, and `binary` aren't defined,
-because they're deprecated or don't say exactly what's valid.
+OpenAPI's formats are in [`@hyperjump/openapi`](https://github.com/hyperjump-io/openapi/blob/main/website/dialects.md#formats).
 
 The [Hyperjump CLI](https://github.com/hyperjump-io/cli/blob/main/website/README.md)
 loads every format.
@@ -66,11 +62,11 @@ When formats are validated, `compile` throws if a schema uses a format that
 can't be checked. Otherwise a schema that asks for a check that can't be
 made would pass everything.
 
-- In v1, 2019-09, 2020-12, OpenAPI 3.1, and OpenAPI 3.2, a format the
-  dialect doesn't define, like `"phone"`, is a problem in the schema.
+- In v1, 2019-09, and 2020-12, a format the dialect doesn't define, like
+  `"phone"`, is a problem in the schema.
   `compile` throws a `SchemaError` that points at it, and `lint` reports
-  it, wherever it is in the document. draft-04 to draft-07 and OpenAPI 3.0 ignore formats they don't
-  define.
+  it, wherever it is in the document. draft-04 to draft-07 ignore
+  formats they don't define.
 - `idn-hostname`, `idn-email`, or a `hostname` that needs Unicode data,
   when `fullFormats` isn't loaded, is a problem with the config.
   `compile` throws an `Error` that says to add it to the `formats`

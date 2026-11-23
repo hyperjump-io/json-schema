@@ -112,8 +112,8 @@ const recommended = {
     [misplacedVocabulary, ["error"]],
     [duplicateArrayItems, ["error"]],
     [emptyArray, ["error"]],
-    // Draft-04 says the limit MUST be there. 3.0 doesn't, so `openapi-3-0`
-    // makes it a warning.
+    // Draft-04 says the limit MUST be there. OpenAPI 3.0 doesn't, so
+    // @hyperjump/openapi's `openapi-3-0` makes it a warning.
     [exclusiveLimitWithoutLimit, ["error"]],
     [referenceWithoutTarget, ["error"]]
   ]

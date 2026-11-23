@@ -4,8 +4,8 @@ A JSON Schema validator and linter built on
 [`@hyperjump/browser`](https://github.com/hyperjump-io/browser) and
 [unified](https://unifiedjs.com/).
 
-- Dialects: v1, draft-2020-12, draft-2019-09, draft-07, draft-06, draft-04,
-  and OpenAPI 3.0, 3.1, and 3.2 Schema Objects
+- Dialects: v1, draft-2020-12, draft-2019-09, draft-07, draft-06, and
+  draft-04. OpenAPI is [`@hyperjump/openapi`](https://github.com/hyperjump-io/openapi).
 - Get a boolean, errors, or annotations, for a plain JS value, JSON text, or
   a JSON AST. See [Validating](website/guides/validating.md).
 - With JSON text, every error has a position, and syntax errors are reported

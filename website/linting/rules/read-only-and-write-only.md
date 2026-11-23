@@ -1,13 +1,14 @@
 # `read-only-and-write-only`
 
-In `recommended`, as a warning. In `openapi-3-0`, as an error.
+In `recommended`, as a warning.
 
 `readOnly` and `writeOnly` both `true` in the same schema. A read-only
 value can't be changed, and a write-only value is never retrieved, so the
 value can't be used at all. One of them is probably a mistake. The JSON
 Schema specs allow it, so this is a lint rule rather than an error.
 OpenAPI 3.0 says a property MUST NOT be both, so it's an error in
-`openapi-3-0`. OpenAPI 3.1 and later follow JSON Schema.
+[`@hyperjump/openapi`'s `openapi-3-0` preset](https://github.com/hyperjump-io/openapi/blob/main/website/linting/README.md). OpenAPI
+3.1 and later follow JSON Schema.
 
 It only looks at one schema at a time. The annotations also combine across
 schemas that apply to the same value, such as two in an `allOf`. But which

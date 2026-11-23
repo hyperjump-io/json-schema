@@ -1,6 +1,8 @@
 export * from "./json-schema.js";
 export { annotation } from "./annotation.js";
 export { browse, getDialect } from "./session.js";
+export { defaultDialectFor } from "./default-dialects.js";
+export { noUrl, toId, resolveId, iriProblem } from "./identifiers.js";
 export * from "./schema/resolve.js";
 export * from "./schema/schema-nodes.js";
 export { SchemaRegistry } from "./registry/schema-registry.js";

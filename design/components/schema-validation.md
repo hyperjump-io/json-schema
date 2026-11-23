@@ -126,7 +126,7 @@ an internal meta-schema.
   mechanism, puts resolving in lowering, and hides those schemas from lint
   and the language server. Working in a document and not across documents
   isn't worth having. OpenAPI's
-  [External references](built-in-dialects/openapi-documents.md#external-references)
+  [External references](https://github.com/hyperjump-io/openapi/blob/main/design/components/documents.md#external-references)
   follow from it.
 
 - The resolver accepts what it can recover from, and the linter reports
