@@ -9,11 +9,24 @@ which only applies to strings. The keyword ignores values of other types,
 so they're valid. `{ "properties": { … } }` accepts `"hello"` and `42`.
 That's rarely what's meant.
 
-`type`, `const`, or `enum` says what type the value is. It can be in any
-schema that applies to the same value. So `required` in an `anyOf` is fine
-if `type` is next to the `anyOf`. A schema in `$defs` is fine if whatever
-references it has a `type`. It's reported once for each group of schemas,
-on the first keyword that's for one type.
+`type`, `const`, or `enum` says what type the value is. It counts where it
+has to pass whenever the keyword applies:
+
+- Next to the keyword
+- In a schema the keyword's schema applies, like one in its `allOf`, or
+  the schema its `$ref` refers to
+- In a schema that applies the keyword's schema. `required` in an `anyOf`
+  is fine if `type` is next to the `anyOf`. A schema in `$defs` is fine if
+  everything that references it has a `type`.
+- In a condition the keyword's schema depends on, like an `if` with a
+  `type` for a keyword in `then`
+
+A `type` in another schema of the same `anyOf` or `oneOf` doesn't count,
+because that schema doesn't have to pass. An `anyOf` says the type itself
+only if every one of its schemas does.
+
+It's reported once for each group of schemas that apply to the same value,
+on the first keyword for one type that nothing says the type for.
 
 These aren't reported:
 
@@ -77,7 +90,57 @@ reported by `keyword-for-disallowed-type`. It has no options.
 
 > 'required' applies only to objects, but there's no 'type', so values of other types are valid
 
+#### A type in another schema of an `anyOf`
+
+The `enum` only says what the first schema allows. The second one allows
+every value that isn't a string.
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "anyOf": [{ "enum": ["default"] }, { "pattern": "^[dD]efault$" }]
+}
+```
+
+> 'pattern' applies only to strings, but there's no 'type', so values of other types are valid
+
+#### A schema that's referenced with a type and without one
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "a": { "type": "string", "$ref": "#/$defs/name" },
+    "b": { "$ref": "#/$defs/name" }
+  },
+  "$defs": { "name": { "minLength": 1 } }
+}
+```
+
+> 'minLength' applies only to strings, but there's no 'type', so values of other types are valid
+
 ### Not reported
+
+#### Every schema of an `anyOf` says the type
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "minLength": 1,
+  "anyOf": [{ "type": "string" }, { "type": "null" }]
+}
+```
+
+#### A condition that says the type
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "if": { "type": "object" },
+  "then": { "required": ["a"] }
+}
+```
 
 #### With type
 

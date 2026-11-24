@@ -18,6 +18,36 @@ what it applies in place, through `allOf`, `$ref`, and so on. Rules like
   doesn't use the dynamic scope is followed like `$ref`.
 - `mergeable-schemas` reads `readsMarks`.
 
+## What says a keyword's type (`keyword-without-type`)
+
+`keyword-without-type` reports a keyword for one type where nothing says
+what type the value is. Something says if it has to pass whenever the
+keyword applies.
+
+- **A schema says the type if it can't pass every type**, from its
+  keywords and what they apply in place (`canPass` with the applied
+  schemas' types): `all` of them is the types they all pass, and `any` or
+  `one` the types any of them does. So `anyOf` of two `type`s says, and
+  `anyOf` with one schema that doesn't, doesn't.
+- **A schema that doesn't is fine if every schema that applies it in place
+  says**, followed up the group's links, or only applies it where a
+  `cases` condition that says the type passes (`then`, a dependent
+  schema). A schema that's applied to a value of its own
+  (`isAppliedToAValue`) has nothing above it. One that nothing in the
+  document applies is used from other documents, which may say.
+- **It's still reported once for each group**, on the first keyword for
+  one type in a schema nothing says the type for, so one missing `type`
+  isn't a message on every schema under it.
+- Rejected: a `type`, `const`, or `enum` anywhere in the group saying the
+  type for all of it. A schema in an `anyOf` doesn't have to pass, so
+  `anyOf: [{ "enum": ["a"] }, { "pattern": "^a" }]` passed every
+  non-string without a report. The 49 schemas of the benchmark corpora
+  had 11 reports that way and 33 this way: 20 more in `ui5-manifest` for that
+  shape, and 2 for a schema that's referenced both with a `type` and
+  without one.
+- Rejected: a schema being fine if any schema that applies it says the
+  type. The one that doesn't still passes other types.
+
 ## What has to pass (`src/lint/in-place.js`)
 
 `keywordsThatMustPass` is a schema's keywords and the keywords of the

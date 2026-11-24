@@ -24,8 +24,12 @@ export const appliesTo: (document: LintDocument, expression: Expression) => Set<
  */
 export const keywordAppliesTo: (document: LintDocument, keywords: LoweredKeyword[], keywordNode: JsonSchemaKeywordNode) => JsonType[];
 
-/** The types of value an expression can pass, as far as it's known without applying a schema */
-export const canPass: (expression: Expression) => Set<JsonType>;
+/**
+ * The types of value an expression can pass, as far as it's known. A schema
+ * it applies can pass what `applied` says for its handle, or any type
+ * without it.
+ */
+export const canPass: (expression: Expression, applied?: (handle: string) => Set<JsonType> | undefined) => Set<JsonType>;
 
 /**
  * Whether an expression asserts something on its own: it can fail without a

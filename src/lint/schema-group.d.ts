@@ -68,6 +68,15 @@ export type SchemaGroup = {
 export const schemaGroup: (document: LintDocument, schemaNode: JsonSchemaNode) => SchemaGroup;
 
 /**
+ * Whether a schema in the document is applied to a value of its own,
+ * rather than to the value of the schema that applies it: it's the
+ * document's root, or it's in a keyword that applies it to part of the
+ * instance, like `properties` or `items`. Nothing in the document says
+ * more about that value than the schema and what it applies in place.
+ */
+export const isAppliedToAValue: (document: LintDocument, schemaNode: JsonSchemaNode) => boolean;
+
+/**
  * Whether a schema in a group is applied through an odd number of `not`s,
  * following the subschema links to it up to a schema that isn't a subschema
  * applied in place. References aren't followed. Its keywords then reject

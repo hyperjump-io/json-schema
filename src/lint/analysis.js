@@ -72,10 +72,15 @@ export const keywordAppliesTo = (document, keywords, keywordNode) => {
 };
 
 /** @type typeof API.canPass */
-export const canPass = (expression) => {
+export const canPass = (expression, applied) => {
+  /** @type (expression: Expression) => Set<JsonType> */
+  const each = (expression) => canPass(expression, applied);
+
   switch (expression.op) {
     case "fail":
       return new Set();
+    case "apply":
+      return applied?.(expression.schema) ?? all();
     case "typeIs":
       return jsonTypesOf(expression.types);
     case "equals":
@@ -83,16 +88,16 @@ export const canPass = (expression) => {
     case "oneOfValues":
       return new Set(expression.values.map(typeOfValue));
     case "all":
-      return intersection(expression.of.map(canPass));
+      return intersection(expression.of.map(each));
     case "any":
     case "one":
-      return union(expression.of.map(canPass));
+      return union(expression.of.map(each));
     case "typeSwitch":
-      return union(jsonTypes.map((type) => intersection([new Set([type]), canPass(expression.cases[type] ?? expression.otherwise)])));
+      return union(jsonTypes.map((type) => intersection([new Set([type]), each(expression.cases[type] ?? expression.otherwise)])));
     case "propertySwitch":
     case "keySwitch": {
       // What isn't an object passes
-      const objects = union(subexpressions(expression).map(canPass)).has("object");
+      const objects = union(subexpressions(expression).map(each)).has("object");
       return new Set(jsonTypes.filter((type) => type !== "object" || objects));
     }
     default:

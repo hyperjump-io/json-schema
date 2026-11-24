@@ -68,6 +68,18 @@ export const schemaGroup = (document, schemaNode) => {
   return group;
 };
 
+/** @type typeof API.isAppliedToAValue */
+export const isAppliedToAValue = (document, schemaNode) => {
+  schemaGroup(document, schemaNode);
+  const { positions, applications } = /** @type Context */ (contexts.get(document));
+  if (!positions.has(schemaNode)) {
+    return false;
+  }
+
+  const parent = positions.get(schemaNode);
+  return parent === undefined || applications(parent).children.has(schemaNode);
+};
+
 /** @type typeof API.isNegated */
 export const isNegated = (group, schemaNode) => {
   let negated = false;

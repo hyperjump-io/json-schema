@@ -45,6 +45,37 @@ describe("keyword-without-type", () => {
     expect(await reasons(`{ "$schema": "${draft2020}", "allOf": [{ "type": "object" }, { "properties": { "a": {} } }] }`)).to.eql([]);
   });
 
+  test("type in the schemas a keyword is next to", async () => {
+    expect(await reasons(`{ "$schema": "${draft2020}", "minLength": 1, "anyOf": [{ "type": "string" }, { "type": "null" }] }`)).to.eql([]);
+    expect(await reasons(`{ "$schema": "${draft2020}", "minLength": 1, "anyOf": [{ "type": "string" }, {}] }`)).to.have.length(1);
+    expect(await reasons(`{ "$schema": "${draft2020}", "minLength": 1, "$ref": "#/$defs/a", "$defs": { "a": { "enum": ["a", "b"] } } }`)).to.eql([]);
+  });
+
+  test("a type in another schema of an anyOf doesn't say", async () => {
+    expect(await reasons(`{ "$schema": "${draft2020}", "anyOf": [{ "enum": ["default"] }, { "pattern": "^d" }] }`)).to.eql([
+      "'pattern' applies only to strings, but there's no 'type', so values of other types are valid"
+    ]);
+    expect(await reasons(`{ "$schema": "${draft2020}", "oneOf": [{ "type": "object", "required": ["a"] }, { "required": ["b"] }] }`)).to.eql([
+      "'required' applies only to objects, but there's no 'type', so values of other types are valid"
+    ]);
+    expect(await reasons(`{ "$schema": "${draft2020}", "type": "string", "anyOf": [{ "enum": ["default"] }, { "pattern": "^d" }] }`)).to.eql([]);
+  });
+
+  test("a condition that says the type", async () => {
+    expect(await reasons(`{ "$schema": "${draft2020}", "if": { "type": "object" }, "then": { "required": ["a"] } }`)).to.eql([]);
+    expect(await reasons(`{ "$schema": "${draft2020}", "if": { "type": "object" }, "else": { "minLength": 1 } }`)).to.have.length(1);
+    expect(await reasons(`{ "$schema": "${draft2020}", "type": "object", "dependentSchemas": { "a": { "required": ["b"] } } }`)).to.eql([]);
+  });
+
+  test("a schema that's referenced with a type and without one", async () => {
+    expect(await reasons(`{
+      "$schema": "${draft2020}",
+      "type": "object",
+      "properties": { "a": { "type": "string", "$ref": "#/$defs/name" }, "b": { "$ref": "#/$defs/name" } },
+      "$defs": { "name": { "minLength": 1 } }
+    }`)).to.eql(["'minLength' applies only to strings, but there's no 'type', so values of other types are valid"]);
+  });
+
   test("once for each group", async () => {
     expect(await reasons(`{ "$schema": "${draft2020}", "anyOf": [{ "required": ["a"] }, { "required": ["b"] }], "properties": { "a": {}, "b": {} } }`)).to.eql([
       "'required' applies only to objects, but there's no 'type', so values of other types are valid"
