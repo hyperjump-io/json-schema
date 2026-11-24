@@ -1,4 +1,4 @@
-# Implication (`src/kernel/implies.js`)
+# Implication and exclusion (`src/kernel/implies.js`)
 
 `implies(schemas)(a, b)` says whether every instance that passes the
 expression `a` passes `b`. Lint's `redundant-all-of-any-of-schemas` and
@@ -30,6 +30,47 @@ knows nothing about documents.
   implies an operation that doesn't apply to its types. The table was
   lint's, in `analysis.js`.
 
+## Exclusion
+
+`excludes(schemas)(a, b)` says whether no instance passes both `a` and
+`b`, with the same table and the same answer: `true` is sure. It's
+`implies(a, not b)`, so the two are built together, and `implies` asks it
+what implies a `not`.
+
+- **It's decided for each type of instance.** An operation passes every
+  instance it doesn't apply to, so `maximum: 3` and `minimum: 5` both pass
+  a string, and don't exclude each other. Two expressions do if, for each
+  of the six types, one of them can't pass it or what they say about it
+  can't both hold. What they say about a type is in `excludes`' JSDoc.
+- **Each side is everything that has to pass**: what's in its `all`s and
+  the groups of the schemas it applies, as one list. Then a `type` in one
+  keyword and limits in another are seen together, which the per-type
+  decision needs, and `implies`' "one part is enough" doesn't.
+- **A side's own limits count**, so `minimum: 5` with `maximum: 4` and a
+  `type` excludes everything. `excludes(a, pass)` is "nothing passes
+  `a`".
+- **A property decides if one side requires it**, so schemas with
+  different `const`s for a required property exclude each other, which is
+  the tag `dispatch` finds. `propertyEquals` is read as requiring the
+  property and its value being equal.
+- **`not`** on one side is excluded by whatever implies its expression,
+  for the type. The two functions call each other through `not`, to a
+  depth of 16.
+
+Nothing reads `excludes` on its own yet. Counted on the 39 schemas of the
+benchmark corpora, with what it knows now:
+
+- **Contradictions**: no `allOf` whose schemas exclude each other, and 2
+  schemas whose own keywords do (`type: "integer"` with `enum: [{}]`),
+  which `const-or-enum-value-for-disallowed-type` reports.
+- **`oneOf`s whose schemas all exclude each other**: 94% of them, before
+  optimizing. After the `fast` optimizations, 516 `one`s are left, mostly
+  in the branches of `dispatch`'s switches, and 211 of them are exclusive:
+  197 in `cql2`, 6 in `geojson`, 5 in `ui5-manifest`, 2 in
+  `package.json`, and 1 in OpenAPI 3.0. An exclusive `one` could be an
+  `any`, which stops at the first that passes instead of trying the rest.
+  Comparing them took 19 ms for all 39.
+
 ## Rejected
 
 - **Evaluating instead**, like `keyword-implied-by-const-or-enum` does for
@@ -51,6 +92,12 @@ knows nothing about documents.
   from one mistake in one schema.
 
 ## Open questions and limitations
+
+- **Whether an exclusive `one` should be an `any`**, as a pass after
+  `dispatch`. It isn't measured.
+- **`excludes` doesn't know** `hasProperty` against an `eachProperty` that
+  rejects the name, a pattern against a value's string, `integer` against
+  a `range` with no integer in it, or `multipleOf`.
 
 - **The dynamic scope.** A schema that both expressions apply is taken to
   have the same result in both. One that reads the dynamic scope could be

@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { implies } from "./implies.js";
+import { excludes, implies } from "./implies.js";
 
 /**
  * @import { Expression } from "./kernel.d.ts"
@@ -40,7 +40,6 @@ describe("implies", () => {
     expect(none(isNumber, { op: "range", min: 1 })).to.equal(false);
     expect(none(isInteger, { op: "range", min: 1 })).to.equal(false);
     expect(none({ op: "typeIs", types: ["string", "array"] }, { op: "hasProperty", name: "a" })).to.equal(true);
-    expect(none(isString, { op: "not", of: isNumber })).to.equal(false);
   });
 
   test("a range implies a looser one", () => {
@@ -140,6 +139,13 @@ describe("implies", () => {
     expect(none({ op: "not", of: isInteger }, { op: "not", of: isNumber })).to.equal(false);
   });
 
+  test("anything implies not of what it excludes", () => {
+    expect(none(isString, { op: "not", of: isNumber })).to.equal(true);
+    expect(none(isNumber, { op: "not", of: isInteger })).to.equal(false);
+    expect(none({ op: "all", of: [isNumber, { op: "range", max: 3 }] }, { op: "not", of: { op: "all", of: [isNumber, { op: "range", min: 5 }] } })).to.equal(true);
+    expect(none({ op: "range", max: 3 }, { op: "not", of: { op: "range", min: 5 } })).to.equal(false);
+  });
+
   test("propertyEquals implies hasProperty", () => {
     expect(none({ op: "propertyEquals", name: "a", value: 1 }, { op: "hasProperty", name: "a" })).to.equal(true);
     expect(none({ op: "propertyEquals", name: "a", value: 1 }, { op: "hasProperty", name: "b" })).to.equal(false);
@@ -219,5 +225,132 @@ describe("implies", () => {
       expect(withSchemas(apply("itself"), isString)).to.equal(false);
       expect(withSchemas(isString, apply("itself"))).to.equal(true);
     });
+  });
+});
+
+describe("excludes", () => {
+  const none = excludes(new Map());
+
+  /** @type (...of: Expression[]) => Expression */
+  const all = (...of) => ({ op: "all", of });
+  /** @type (...of: Expression[]) => Expression */
+  const any = (...of) => ({ op: "any", of });
+
+  /** @type (a: Expression, b: Expression, expected: boolean) => void */
+  const expectExcludes = (a, b, expected) => {
+    expect(none(a, b)).to.equal(expected);
+    expect(none(b, a)).to.equal(expected);
+  };
+
+  test("fail excludes everything, and pass nothing", () => {
+    expectExcludes({ op: "fail" }, isString, true);
+    expectExcludes({ op: "fail" }, { op: "pass" }, true);
+    expectExcludes({ op: "pass" }, isString, false);
+    expectExcludes({ op: "pass" }, { op: "pass" }, false);
+  });
+
+  test("types", () => {
+    expectExcludes(isString, isNumber, true);
+    expectExcludes(isString, { op: "typeIs", types: ["string", "null"] }, false);
+    expectExcludes(isInteger, isNumber, false);
+    expectExcludes(isInteger, isString, true);
+  });
+
+  test("values", () => {
+    expectExcludes({ op: "equals", value: 1 }, { op: "equals", value: 2 }, true);
+    expectExcludes({ op: "equals", value: 1 }, { op: "oneOfValues", values: [1, 2] }, false);
+    expectExcludes({ op: "oneOfValues", values: ["a", "b"] }, { op: "oneOfValues", values: ["c", 1] }, true);
+    expectExcludes({ op: "oneOfValues", values: ["a", 1] }, { op: "oneOfValues", values: ["c", 1] }, false);
+    expectExcludes({ op: "equals", value: "a" }, isNumber, true);
+    expectExcludes({ op: "equals", value: 1.5 }, isInteger, true);
+    expectExcludes({ op: "equals", value: 1 }, isInteger, false);
+    expectExcludes({ op: "equals", value: 5 }, { op: "range", max: 4 }, true);
+    expectExcludes({ op: "equals", value: 3 }, { op: "range", max: 4 }, false);
+    expectExcludes({ op: "equals", value: "abc" }, { op: "stringLength", max: 2 }, true);
+    expectExcludes({ op: "oneOfValues", values: ["abc", 5] }, { op: "stringLength", max: 2 }, false);
+    expectExcludes({ op: "equals", value: { a: 1 } }, { op: "hasProperty", name: "b" }, true);
+    expectExcludes({ op: "equals", value: "a" }, { op: "matches", pattern: "b" }, false);
+  });
+
+  test("limits that don't overlap exclude only with the type", () => {
+    expectExcludes({ op: "range", max: 3 }, { op: "range", min: 5 }, false);
+    expectExcludes(all(isNumber, { op: "range", max: 3 }), { op: "range", min: 5 }, true);
+    expectExcludes(all(isNumber, { op: "range", max: 5 }), { op: "range", min: 5 }, false);
+    expectExcludes(all(isNumber, { op: "range", max: 5, exclusiveMax: true }), { op: "range", min: 5 }, true);
+    expectExcludes(all(isNumber, { op: "range", max: 5 }), { op: "range", min: 5, exclusiveMin: true }, true);
+    expectExcludes(all(isString, { op: "stringLength", max: 3 }), { op: "stringLength", min: 4 }, true);
+    expectExcludes(all(isString, { op: "stringLength", max: 3 }), { op: "stringLength", min: 3 }, false);
+    expectExcludes(all({ op: "typeIs", types: ["array"] }, { op: "itemCount", max: 1 }), { op: "itemCount", min: 2 }, true);
+    expectExcludes(all({ op: "typeIs", types: ["object"] }, { op: "propertyCount", max: 1 }), { op: "propertyCount", min: 2 }, true);
+    expectExcludes(all(isString, { op: "stringLength", max: 3 }), { op: "itemCount", min: 4 }, false);
+  });
+
+  test("limits of one side that don't overlap", () => {
+    expectExcludes(all(isNumber, { op: "range", min: 5, max: 4 }), { op: "pass" }, true);
+    expectExcludes(all(isNumber, { op: "range", min: 5 }, { op: "range", max: 4 }), isNumber, true);
+    expectExcludes({ op: "range", min: 5, max: 4 }, { op: "pass" }, false);
+  });
+
+  test("any excludes what every one of its expressions does", () => {
+    expectExcludes(any(isString, isNumber), { op: "typeIs", types: ["null"] }, true);
+    expectExcludes(any(isString, isNumber), isNumber, false);
+    expectExcludes(any({ op: "equals", value: 1 }, { op: "equals", value: 2 }), all(isNumber, { op: "range", min: 3 }), true);
+    expectExcludes({ op: "one", of: [isString, isNumber] }, { op: "typeIs", types: ["null"] }, true);
+  });
+
+  test("not excludes what implies its expression", () => {
+    expectExcludes({ op: "not", of: isNumber }, isInteger, true);
+    expectExcludes({ op: "not", of: isInteger }, isNumber, false);
+    expectExcludes({ op: "not", of: { op: "range", max: 4 } }, all(isNumber, { op: "range", max: 3 }), true);
+    expectExcludes({ op: "not", of: { op: "range", max: 4 } }, { op: "range", max: 3 }, true);
+    expectExcludes({ op: "not", of: { op: "hasProperty", name: "a" } }, { op: "hasProperty", name: "b" }, false);
+    expectExcludes(
+      { op: "not", of: { op: "hasProperty", name: "a" } },
+      all({ op: "typeIs", types: ["object"] }, { op: "hasProperty", name: "a" }),
+      true
+    );
+  });
+
+  test("a property both say something about, which one of them requires", () => {
+    /** @type (value: string, required?: boolean) => Expression */
+    const tagged = (value, required = true) => all(
+      { op: "typeIs", types: ["object"] },
+      { op: "property", name: "type", of: { op: "equals", value } },
+      ...required ? [/** @type Expression */ ({ op: "hasProperty", name: "type" })] : []
+    );
+    expectExcludes(tagged("a"), tagged("b"), true);
+    expectExcludes(tagged("a"), tagged("b", false), true);
+    expectExcludes(tagged("a", false), tagged("b", false), false);
+    expectExcludes(tagged("a"), tagged("a"), false);
+    expectExcludes(
+      all({ op: "typeIs", types: ["object"] }, { op: "propertyEquals", name: "type", value: "a" }),
+      all({ op: "typeIs", types: ["object"] }, { op: "propertyEquals", name: "type", value: "b" }),
+      true
+    );
+    expectExcludes({ op: "propertyEquals", name: "type", value: "a" }, { op: "propertyEquals", name: "type", value: "b" }, false);
+  });
+
+  test("schemas", () => {
+    /** @type Map<string, Expression[]> */
+    const schemas = new Map([
+      ["false", [{ op: "fail" }]],
+      ["string", [isString]],
+      ["number", [isNumber, { op: "annotate", value: "a" }]],
+      ["small", [apply("number"), { op: "range", max: 3 }]],
+      ["large", [apply("number"), { op: "range", min: 5 }]],
+      ["notSmall", [{ op: "not", of: apply("small") }]],
+      ["a", [{ op: "not", of: apply("b") }]],
+      ["b", [{ op: "not", of: apply("a") }]]
+    ]);
+    const withSchemas = excludes(schemas);
+    expect(withSchemas(apply("string"), apply("number"))).to.equal(true);
+    expect(withSchemas(apply("small"), apply("large"))).to.equal(true);
+    expect(withSchemas(apply("large"), apply("small"))).to.equal(true);
+    expect(withSchemas(apply("small"), apply("number"))).to.equal(false);
+    expect(withSchemas(apply("small"), apply("notSmall"))).to.equal(true);
+    expect(withSchemas(apply("false"), apply("unknown"))).to.equal(true);
+    expect(withSchemas(apply("string"), apply("unknown"))).to.equal(false);
+    expect(withSchemas(apply("a"), apply("b"))).to.equal(true);
+    expect(withSchemas(apply("a"), apply("a"))).to.equal(false);
   });
 });
