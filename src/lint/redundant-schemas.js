@@ -92,6 +92,48 @@ export const redundantSchemas = (document) => {
 };
 
 /**
+ * A schema in a keyword whose group is `one` of the schemas it applies
+ * (`oneOf`) that allows nothing another of them doesn't (`implies`), so no
+ * value passes the keyword because of it: whatever it allows, the other
+ * one allows too. It's with the keyword, where the schema is, and the
+ * index of the other one, which is undefined if the keyword's value isn't
+ * an array of the schemas. Of two that allow the same, both are. A schema
+ * that allows nothing isn't one, because it has no values to fail.
+ *
+ * @typedef {{ keywordNode: JsonSchemaKeywordNode; node: Node; other: number | undefined }} Covered
+ *
+ * @type (document: LintDocument) => Covered[]
+ */
+export const coveredSchemas = (document) => {
+  const expressionImplies = implies(schemaExpressions(document));
+
+  /** @type Covered[] */
+  const covered = [];
+  for (const keywords of document.schemas.values()) {
+    for (const { group, keywordNode } of keywords) {
+      const { expression } = group;
+      if (expression.op !== "one" || !expression.of.every(({ op }) => op === "apply")) {
+        continue;
+      }
+
+      const valueNode = keywordNode.children[1];
+      const itemNodes = valueNode.jsonType === "array" && valueNode.children.length === expression.of.length ? valueNode.children : undefined;
+      for (const [index, of] of expression.of.entries()) {
+        if (expressionImplies(of, { op: "fail" })) {
+          continue;
+        }
+
+        const other = expression.of.findIndex((other, otherIndex) => otherIndex !== index && expressionImplies(of, other));
+        if (other !== -1) {
+          covered.push({ keywordNode, node: itemNodes?.[index] ?? keywordNode, other: itemNodes === undefined ? undefined : other });
+        }
+      }
+    }
+  }
+  return covered;
+};
+
+/**
  * What each schema in a document is, for `implies`: its keyword groups'
  * expressions, none for `true`, and `fail` for `false`
  *

@@ -1,4 +1,4 @@
-# Redundant schemas (`src/lint/redundant-schemas.js`)
+# Redundant and covered schemas (`src/lint/redundant-schemas.js`)
 
 `redundant-all-of-any-of-schemas` reports a schema in `anyOf` that allows
 nothing another one doesn't, and a schema in `allOf` that allows
@@ -34,6 +34,22 @@ kernel's [`implies`](../kernel/implies.md).
   findings in the 49 schemas of the benchmark corpora, 11 were that, and
   32 came from a mistake.
 
+## `covered-one-of-schemas`
+
+In `oneOf`, a schema that allows nothing another one doesn't can never be
+the one that passes: every value it allows matches both, and fails.
+`coveredSchemas` finds them with the same comparison.
+
+- **It's about the result, so marks and annotations don't matter.** A
+  schema with a `title` is reported.
+- **Two schemas that allow the same are both reported**, because neither
+  one's values can pass. `duplicate-one-of-schemas` reports the later one
+  too.
+- **A schema that allows nothing isn't reported** (`false`, or what
+  implies `fail`). It implies every schema, but it has no values to fail.
+- **It's a rule of its own**, like `duplicate-one-of-schemas`, because the
+  schema isn't redundant. It's why valid-looking values are rejected.
+
 ## Rejected
 
 - **Not reporting a schema that's only `const` or `enum` values**, so the
@@ -47,9 +63,9 @@ kernel's [`implies`](../kernel/implies.md).
 
 ## Open questions and limitations
 
-- **`oneOf`** isn't reported. A schema in `oneOf` that allows nothing
-  another one doesn't can never be the one that passes, so every value it
-  allows fails. That's a rule of its own, like `duplicate-one-of-schemas`.
+- **A schema that allows nothing in a way `implies` doesn't know**, like
+  `not: {}`, is reported by `covered-one-of-schemas` if another schema
+  allows everything, though it has no values to fail.
 - **Keywords next to the `allOf` or `anyOf`** aren't compared with its
   schemas, so `minimum: 5` next to `allOf: [{ "minimum": 3 }]` isn't
   reported.

@@ -19,6 +19,7 @@ options. It also has examples of what it reports and what it doesn't.
 | [`duplicate-one-of-schemas`](duplicate-one-of-schemas.md) | A schema in `oneOf` that's the same as one before it. A value it matches always fails. |
 | [`duplicate-all-of-any-of-schemas`](duplicate-all-of-any-of-schemas.md) | A schema in `allOf` or `anyOf` that's the same as one before it. It has no effect. |
 | [`redundant-all-of-any-of-schemas`](redundant-all-of-any-of-schemas.md) | A schema in `anyOf` that allows nothing another one doesn't, or in `allOf` that allows everything another one does. It has no effect. |
+| [`covered-one-of-schemas`](covered-one-of-schemas.md) | A schema in `oneOf` that allows nothing another one doesn't. A value it matches always fails. |
 | [`contradictory-limits`](contradictory-limits.md) | A lower limit above its upper limit, like `minimum` above `maximum` or `minLength` above `maxLength`. Also more required properties than `maxProperties` allows. |
 | [`impossible-property`](impossible-property.md) | A property no valid object can have, because an object with it needs more properties than `maxProperties` allows. For example, a property that a `dependentRequired` depends on. |
 | [`redundant-numeric-limit`](redundant-numeric-limit.md) | `maximum` with `exclusiveMaximum`, or `minimum` with `exclusiveMinimum`, where the looser one has no effect |

@@ -1,8 +1,8 @@
 # Implication (`src/kernel/implies.js`)
 
 `implies(schemas)(a, b)` says whether every instance that passes the
-expression `a` passes `b`. Lint's `redundant-all-of-any-of-schemas` reads
-it. It's in the kernel because it's about what expressions mean, and
+expression `a` passes `b`. Lint's `redundant-all-of-any-of-schemas` and
+`covered-one-of-schemas` read it. It's in the kernel because it's about what expressions mean, and
 knows nothing about documents.
 
 - **`true` is sure, and `false` is "not known".** It never evaluates

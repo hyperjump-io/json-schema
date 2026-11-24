@@ -68,7 +68,8 @@ catalogue doesn't cover: `keyword-allows-nothing`,
 `keyword-without-type`, `required` against `maxProperties` in
 `contradictory-limits`, `const-or-enum-value-rejected`,
 `required-dependent-property`, `unevaluated-without-effect`,
-`reference-by-location`, `redundant-all-of-any-of-schemas`, and
+`reference-by-location`, `redundant-all-of-any-of-schemas`,
+`covered-one-of-schemas`, and
 `invalid-default-or-example` checking values against the schemas that
 apply theirs.
 `keyword-implied-by-const-or-enum` also covers the catalogue's

@@ -4,6 +4,7 @@ import duplicateEnumValues from "./rules/duplicate-enum-values.js";
 import duplicateOneOfSchemas from "./rules/duplicate-one-of-schemas.js";
 import duplicateAllOfAnyOfSchemas from "./rules/duplicate-all-of-any-of-schemas.js";
 import redundantAllOfAnyOfSchemas from "./rules/redundant-all-of-any-of-schemas.js";
+import coveredOneOfSchemas from "./rules/covered-one-of-schemas.js";
 import contradictoryLimits from "./rules/contradictory-limits.js";
 import impossibleProperty from "./rules/impossible-property.js";
 import additionalItemsWithoutItemsArray from "./rules/additional-items-without-items-array.js";
@@ -68,6 +69,7 @@ const recommended = {
     [duplicateOneOfSchemas, ["warn"]],
     [duplicateAllOfAnyOfSchemas, ["warn"]],
     [redundantAllOfAnyOfSchemas, ["warn"]],
+    [coveredOneOfSchemas, ["warn"]],
     [contradictoryLimits, ["warn"]],
     [impossibleProperty, ["warn"]],
     [additionalItemsWithoutItemsArray, ["warn"]],
