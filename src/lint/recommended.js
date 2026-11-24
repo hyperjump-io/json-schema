@@ -3,6 +3,7 @@ import ifWithoutThenElse from "./rules/if-without-then-else.js";
 import duplicateEnumValues from "./rules/duplicate-enum-values.js";
 import duplicateOneOfSchemas from "./rules/duplicate-one-of-schemas.js";
 import duplicateAllOfAnyOfSchemas from "./rules/duplicate-all-of-any-of-schemas.js";
+import redundantAllOfAnyOfSchemas from "./rules/redundant-all-of-any-of-schemas.js";
 import contradictoryLimits from "./rules/contradictory-limits.js";
 import impossibleProperty from "./rules/impossible-property.js";
 import additionalItemsWithoutItemsArray from "./rules/additional-items-without-items-array.js";
@@ -66,6 +67,7 @@ const recommended = {
     [keywordAllowsNothing, ["warn"]],
     [duplicateOneOfSchemas, ["warn"]],
     [duplicateAllOfAnyOfSchemas, ["warn"]],
+    [redundantAllOfAnyOfSchemas, ["warn"]],
     [contradictoryLimits, ["warn"]],
     [impossibleProperty, ["warn"]],
     [additionalItemsWithoutItemsArray, ["warn"]],

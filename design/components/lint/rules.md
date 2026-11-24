@@ -100,8 +100,9 @@
   operations, its `typeIs`, and what applies to a property (`analysis.js`),
   its limits (`bounds.js`), the properties every valid object has
   (`required-properties.js`), what it does (`effect.js`), whether a
-  schema allows nothing (`allows-nothing.js`), and whether two schemas
-  mean the same (`same-schema.js`). A rule that needs to know
+  schema allows nothing (`allows-nothing.js`), whether two schemas
+  mean the same (`same-schema.js`), and which schemas of an `allOf` or
+  `anyOf` another one makes redundant (`redundant-schemas.js`). A rule that needs to know
   whether a value is valid evaluates the lowered schemas
   (`evaluatorForLint` in `evaluate.js`) instead of compiling.
 - A rule's messages are in document order. `lintRule` sorts each rule's
