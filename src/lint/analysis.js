@@ -1,4 +1,4 @@
-import { subexpressions } from "../kernel/kernel.js";
+import { domains, subexpressions } from "../kernel/kernel.js";
 import { patternRegExp } from "../keywords/utilities.js";
 
 /**
@@ -11,30 +11,6 @@ import { patternRegExp } from "../keywords/utilities.js";
 
 /** @type JsonType[] */
 const jsonTypes = ["null", "boolean", "number", "string", "array", "object"];
-
-/**
- * The one type an operation is about
- *
- * @type Partial<Record<Op, JsonType>>
- */
-const domains = {
-  range: "number",
-  multipleOf: "number",
-  stringLength: "string",
-  matches: "string",
-  itemCount: "array",
-  uniqueItems: "array",
-  item: "array",
-  eachItem: "array",
-  contains: "array",
-  itemSequence: "array",
-  propertyCount: "object",
-  hasProperty: "object",
-  propertyEquals: "object",
-  property: "object",
-  eachProperty: "object",
-  eachPropertyName: "object"
-};
 
 /** @type typeof API.appliesTo */
 export const appliesTo = (document, expression) => {

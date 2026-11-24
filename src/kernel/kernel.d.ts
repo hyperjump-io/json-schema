@@ -185,6 +185,12 @@ export type Kernel = {
   reads: Record<EvaluationState, Handle[]>;
 };
 
+/**
+ * The one type each operation that's about one type applies to. It passes
+ * an instance of any other type.
+ */
+export const domains: Partial<Record<Op, JsonTypeName>>;
+
 /** The expressions directly in an expression, not through `apply` */
 export const subexpressions: (expression: Expression) => Expression[];
 

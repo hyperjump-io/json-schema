@@ -2,6 +2,26 @@
  * @import * as API from "./kernel.d.ts"
  */
 
+/** @type typeof API.domains */
+export const domains = {
+  range: "number",
+  multipleOf: "number",
+  stringLength: "string",
+  matches: "string",
+  itemCount: "array",
+  uniqueItems: "array",
+  item: "array",
+  eachItem: "array",
+  contains: "array",
+  itemSequence: "array",
+  propertyCount: "object",
+  hasProperty: "object",
+  propertyEquals: "object",
+  property: "object",
+  eachProperty: "object",
+  eachPropertyName: "object"
+};
+
 /** @type typeof API.subexpressions */
 export const subexpressions = (expression) => {
   switch (expression.op) {

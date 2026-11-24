@@ -74,6 +74,7 @@ hand and have JSDoc explaining the details. Documentation for users is in
   - [Evaluation state](components/kernel/evaluation-state.md)
   - [Plugins](components/kernel/plugins.md)
   - [Output formats](components/kernel/output-formats.md)
+  - [Implication](components/kernel/implies.md)
 - [Bundling](components/bundling.md)
 - [Identifiers](components/identifiers.md)
 - [Referenced schemas](components/referenced-schemas.md)
