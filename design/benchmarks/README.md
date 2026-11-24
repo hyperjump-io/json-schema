@@ -59,6 +59,7 @@ something that can be run.
   - [Index loops instead of iterators](kernel-in-src/index-loops.md)
   - [Plugin loops and schemas of one group](kernel-in-src/plugin-loops-and-one-group.md)
   - [Unions of constants, and nullable type switches](kernel-in-src/unions-of-constants.md)
+  - [An exclusive `one` as `any`](kernel-in-src/exclusive-one.md)
 - [Bundle size](bundle-size.md) (2026-10-29)
 - [Registry values](registry-values.md) (2026-11-10)
 - [Building the flag evaluator first](flag-evaluator-first.md) (2026-11-10)

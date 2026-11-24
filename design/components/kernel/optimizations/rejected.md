@@ -21,3 +21,9 @@
   slower: it already stops at the first that passes. So was choosing in a
   `one` where a type still has more than one schema, or looking the type
   up by name instead of by index.
+- Making a `one` whose expressions all exclude each other an `any`, in
+  `fast`, so it stops at the first that passes. `dispatch` already leaves
+  a `one` only what can pass the instance's type or tag, so it was about
+  1% on `cql2` and nothing on the other corpora, and the pass cost 0.4–3.6
+  ms when an evaluator is built
+  ([An exclusive `one` as `any`](../../../benchmarks/kernel-in-src/exclusive-one.md)).

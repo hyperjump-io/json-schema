@@ -69,7 +69,8 @@ benchmark corpora, with what it knows now:
   197 in `cql2`, 6 in `geojson`, 5 in `ui5-manifest`, 2 in
   `package.json`, and 1 in OpenAPI 3.0. An exclusive `one` could be an
   `any`, which stops at the first that passes instead of trying the rest.
-  Comparing them took 19 ms for all 39.
+  That was tried and isn't used
+  ([An exclusive `one` as `any`](../../benchmarks/kernel-in-src/exclusive-one.md)).
 
 ## Rejected
 
@@ -93,8 +94,6 @@ benchmark corpora, with what it knows now:
 
 ## Open questions and limitations
 
-- **Whether an exclusive `one` should be an `any`**, as a pass after
-  `dispatch`. It isn't measured.
 - **`excludes` doesn't know** `hasProperty` against an `eachProperty` that
   rejects the name, a pattern against a value's string, `integer` against
   a `range` with no integer in it, or `multipleOf`.
