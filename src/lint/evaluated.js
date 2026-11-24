@@ -1,4 +1,5 @@
 import { subexpressions } from "../kernel/kernel.js";
+import { selects } from "./analysis.js";
 import { appliedSchemas } from "./applied.js";
 
 /**
@@ -113,8 +114,40 @@ export const marksRead = (expression) => {
  * @type (document: LintDocument, schemaNode: JsonSchemaNode, reader: LoweredKeyword, children: Children) => boolean
  */
 export const marksEvery = (document, schemaNode, reader, children) => {
+  return isAll(markedBy(document, schemaNode, reader, children, "always"), children);
+};
+
+/**
+ * Whether a schema's keywords other than `reader` might mark a property,
+ * so an `unevaluated*` in it might not see it. It's the other bound from
+ * {@link marksEvery}: a mark any branch of `anyOf`, `oneOf`, or `if` makes
+ * counts, and an `opaque` operation, a dynamic reference, a reference that
+ * can't be followed, and a pattern that isn't valid might mark anything.
+ *
+ * @type (document: LintDocument, schemaNode: JsonSchemaNode, reader: LoweredKeyword, name: string) => boolean
+ */
+export const mightMarkProperty = (document, schemaNode, reader, name) => {
+  const marked = markedBy(document, schemaNode, reader, "properties", "possibly");
+  return marked.all
+    || marked.names.has(name)
+    || [...marked.patterns].some((pattern) => selects({ pattern }, name) !== false)
+    || marked.excepts.some((except) => selects({ except }, name) !== false);
+};
+
+/**
+ * What a schema's keywords other than `reader` mark, following the schemas
+ * they apply in place: what's marked whenever they pass (`always`), or
+ * everything that might be (`possibly`). Where only one of some expressions
+ * has to pass, the first is what they all mark and the second what any of
+ * them does, and what isn't known marks nothing in the first and
+ * everything in the second.
+ *
+ * @type (document: LintDocument, schemaNode: JsonSchemaNode, reader: LoweredKeyword, children: Children, bound: "always" | "possibly") => Marked
+ */
+const markedBy = (document, schemaNode, reader, children, bound) => {
   const { keywordsOf, find, appliedBy } = appliedSchemas(document);
-  const intersect = intersection(children);
+  const either = bound === "always" ? intersection(children) : union;
+  const unknown = () => ({ ...nothing(), all: bound === "possibly" });
 
   /** @type Set<JsonSchemaNode> */
   const following = new Set();
@@ -122,14 +155,17 @@ export const marksEvery = (document, schemaNode, reader, children) => {
   /** @type (node: JsonSchemaNode | undefined) => Marked */
   const ofSchema = (node) => {
     if (node === undefined) {
-      return nothing();
+      return unknown();
     } else if (node.type === "reference") {
       return ofSchema(find(node.href));
+    } else if (node.jsonType === "boolean" || following.has(node)) {
+      // A schema that's being followed has its marks counted already
+      return nothing();
     }
 
     const keywords = keywordsOf(node);
-    if (keywords === undefined || following.has(node)) {
-      return nothing();
+    if (keywords === undefined) {
+      return unknown();
     }
 
     following.add(node);
@@ -167,7 +203,7 @@ export const marksEvery = (document, schemaNode, reader, children) => {
           return combined(expression.of, union);
         case "any":
         case "one":
-          return combined(expression.of, intersect);
+          return combined(expression.of, either);
         case "cases": {
           // A condition's marks are kept when its branch applies
           /** @type Marked[] */
@@ -176,7 +212,7 @@ export const marksEvery = (document, schemaNode, reader, children) => {
             branches.push(union(ofExpression(condition), then === null ? nothing() : ofExpression(then)));
           }
           branches.push(expression.otherwise === null ? nothing() : ofExpression(expression.otherwise));
-          return branches.reduce(intersect);
+          return branches.reduce(either);
         }
         case "typeSwitch": {
           const type = children === "properties" ? "object" : "array";
@@ -184,7 +220,7 @@ export const marksEvery = (document, schemaNode, reader, children) => {
         }
         case "propertySwitch":
         case "keySwitch":
-          return combined(subexpressions(expression), intersect);
+          return combined(subexpressions(expression), either);
         case "apply":
           return ofSchema(applied(expression.schema));
         case "property":
@@ -207,6 +243,10 @@ export const marksEvery = (document, schemaNode, reader, children) => {
             : { ...nothing(), all: children === "items" };
         case "itemSequence":
           return { ...nothing(), all: children === "items" };
+        case "inline":
+        case "dynamicApply":
+        case "opaque":
+          return unknown();
         default:
           return nothing();
       }
@@ -215,5 +255,5 @@ export const marksEvery = (document, schemaNode, reader, children) => {
     return ofExpression(keyword.group.expression);
   };
 
-  return isAll(ofSchema(schemaNode), children);
+  return ofSchema(schemaNode);
 };

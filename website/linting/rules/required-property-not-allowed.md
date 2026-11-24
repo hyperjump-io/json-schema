@@ -6,17 +6,21 @@ A required property that the schema doesn't allow, so no object is
 valid. Either its schema in `properties` or a matching
 `patternProperties` allows nothing, like `false` or
 `{ "type": "string", "const": 1 }`. Or it's in neither and
-`additionalProperties` allows nothing. It's often a typo in `required` or
-in `properties`.
+`additionalProperties` allows nothing. Or `unevaluatedProperties` allows
+nothing and no other keyword could evaluate the property. It's often a typo
+in `required` or in `properties`.
 
 It also looks at the schemas that have to pass with the schema, like the
 ones in `allOf` and the one `$ref` refers to. A property one of them
 requires, or one of them doesn't allow, counts. The message names the
 keyword that applies that schema, like `'b' is required in 'allOf'`.
 Schemas in `anyOf`, `oneOf`, `not`, and `if`/`then`/`else` don't count,
-because they don't always have to pass. It doesn't consider
-`unevaluatedProperties: false`, because whether another schema evaluates
-the property depends on the instance. It has no options.
+because they don't always have to pass. It has no options.
+
+For `unevaluatedProperties`, a property that a schema in `anyOf`, `oneOf`,
+`if`/`then`/`else`, or `dependentSchemas` defines isn't reported, because
+that schema might evaluate it. The rule reports nothing when it can't tell
+what's evaluated, like with `$dynamicRef` or a reference that isn't found.
 
 ## Examples
 
@@ -34,6 +38,19 @@ the property depends on the instance. It has no options.
 ```
 
 > 'b' is required, but 'additionalProperties' doesn't allow it, so no object is valid
+
+#### `unevaluatedProperties: false`
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": { "name": {} },
+  "unevaluatedProperties": false,
+  "required": ["target"]
+}
+```
+
+> 'target' is required, but 'unevaluatedProperties' doesn't allow it, so no object is valid
 
 #### False in properties
 
@@ -109,5 +126,19 @@ the property depends on the instance. It has no options.
   "properties": { "a": {} },
   "additionalProperties": { "type": "string" },
   "required": ["a", "b"]
+}
+```
+
+#### A schema that might pass evaluates it
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "anyOf": [
+    { "properties": { "a": {} } },
+    { "properties": { "b": {} } }
+  ],
+  "unevaluatedProperties": false,
+  "required": ["a"]
 }
 ```

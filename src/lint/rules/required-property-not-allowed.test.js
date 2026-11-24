@@ -42,8 +42,74 @@ describe("required-property-not-allowed", () => {
     expect(await reasons(`{ "$schema": "${draft2020}", "properties": { "a": {} }, "additionalProperties": { "type": "string" }, "required": ["a", "b"] }`)).to.eql([]);
   });
 
-  test("unevaluatedProperties false isn't considered", async () => {
-    expect(await reasons(`{ "$schema": "${draft2020}", "unevaluatedProperties": false, "required": ["a"] }`)).to.eql([]);
+  test("unevaluatedProperties false", async () => {
+    expect(await reasons(`{ "$schema": "${draft2020}", "properties": { "a": {} }, "unevaluatedProperties": false, "required": ["a", "b"] }`)).to.eql([
+      "'b' is required, but 'unevaluatedProperties' doesn't allow it, so no object is valid"
+    ]);
+  });
+
+  test("unevaluatedProperties false in v1", async () => {
+    expect(await reasons(`{ "$schema": "https://json-schema.org/v1", "properties": { "name": {} }, "unevaluatedProperties": false, "required": ["target"] }`)).to.eql([
+      "'target' is required, but 'unevaluatedProperties' doesn't allow it, so no object is valid"
+    ]);
+  });
+
+  test("unevaluatedProperties that allows something", async () => {
+    expect(await reasons(`{ "$schema": "${draft2020}", "unevaluatedProperties": { "type": "string" }, "required": ["a"] }`)).to.eql([]);
+  });
+
+  test("unevaluatedProperties false with a property a pattern evaluates", async () => {
+    expect(await reasons(`{ "$schema": "${draft2020}", "patternProperties": { "^a": {} }, "unevaluatedProperties": false, "required": ["ab"] }`)).to.eql([]);
+  });
+
+  test("unevaluatedProperties false with additionalProperties", async () => {
+    expect(await reasons(`{ "$schema": "${draft2020}", "additionalProperties": {}, "unevaluatedProperties": false, "required": ["a"] }`)).to.eql([]);
+  });
+
+  test("unevaluatedProperties false with a property a schema that might pass evaluates", async () => {
+    expect(await reasons(`{ "$schema": "${draft2020}", "anyOf": [{ "properties": { "a": {} } }, {}], "unevaluatedProperties": false, "required": ["a"] }`)).to.eql([]);
+    expect(await reasons(`{ "$schema": "${draft2020}", "oneOf": [{ "properties": { "a": {} } }, {}], "unevaluatedProperties": false, "required": ["a"] }`)).to.eql([]);
+    expect(await reasons(`{ "$schema": "${draft2020}", "if": { "properties": { "a": {} } }, "unevaluatedProperties": false, "required": ["a"] }`)).to.eql([]);
+    expect(await reasons(`{ "$schema": "${draft2020}", "if": {}, "then": { "properties": { "a": {} } }, "unevaluatedProperties": false, "required": ["a"] }`)).to.eql([]);
+    expect(await reasons(`{ "$schema": "${draft2020}", "if": false, "else": { "properties": { "a": {} } }, "unevaluatedProperties": false, "required": ["a"] }`)).to.eql([]);
+    expect(await reasons(`{ "$schema": "${draft2020}", "dependentSchemas": { "b": { "properties": { "a": {} } } }, "unevaluatedProperties": false, "required": ["a"] }`)).to.eql([]);
+    expect(await reasons(`{ "$schema": "${draft2020}", "allOf": [{ "anyOf": [{ "$ref": "#/$defs/a" }] }], "unevaluatedProperties": false, "required": ["a"], "$defs": { "a": { "properties": { "a": {} } } } }`)).to.eql([]);
+  });
+
+  test("unevaluatedProperties false with a property no schema that might pass evaluates", async () => {
+    expect(await reasons(`{ "$schema": "${draft2020}", "anyOf": [{ "properties": { "a": {} } }, { "$ref": "#/$defs/c" }], "unevaluatedProperties": false, "required": ["b"], "$defs": { "c": { "properties": { "c": {} } } } }`)).to.eql([
+      "'b' is required, but 'unevaluatedProperties' doesn't allow it, so no object is valid"
+    ]);
+  });
+
+  test("unevaluatedProperties false with a schema in not", async () => {
+    expect(await reasons(`{ "$schema": "${draft2020}", "not": { "properties": { "a": {} } }, "unevaluatedProperties": false, "required": ["a"] }`)).to.eql([
+      "'a' is required, but 'unevaluatedProperties' doesn't allow it, so no object is valid"
+    ]);
+  });
+
+  test("unevaluatedProperties false with what isn't known", async () => {
+    expect(await reasons(`{ "$schema": "${draft2020}", "$dynamicRef": "#a", "unevaluatedProperties": false, "required": ["a"], "$defs": { "a": { "$dynamicAnchor": "a" } } }`)).to.eql([]);
+    expect(await reasons(`{ "$schema": "${draft2020}", "$ref": "https://example.com/not-found", "unevaluatedProperties": false, "required": ["a"] }`)).to.eql([]);
+  });
+
+  test("unevaluatedProperties false with a schema that applies itself", async () => {
+    expect(await reasons(`{ "$schema": "${draft2020}", "anyOf": [{ "$ref": "#" }, {}], "unevaluatedProperties": false, "required": ["a"] }`)).to.eql([
+      "'a' is required, but 'unevaluatedProperties' doesn't allow it, so no object is valid"
+    ]);
+  });
+
+  test("unevaluatedProperties doesn't see what the schema that applies it evaluates", async () => {
+    expect(await reasons(`{ "$schema": "${draft2020}", "properties": { "a": {} }, "required": ["a"], "allOf": [{ "unevaluatedProperties": false }] }`)).to.eql([
+      "'a' is required, but 'unevaluatedProperties' in 'allOf' doesn't allow it, so no object is valid"
+    ]);
+  });
+
+  test("unevaluatedProperties sees what the schemas it applies evaluate", async () => {
+    expect(await reasons(`{ "$schema": "${draft2020}", "allOf": [{ "properties": { "a": {} }, "required": ["a"] }], "unevaluatedProperties": false }`)).to.eql([]);
+    expect(await reasons(`{ "$schema": "${draft2020}", "allOf": [{ "properties": { "a": {} }, "required": ["b"] }], "unevaluatedProperties": false }`)).to.eql([
+      "'b' is required in 'allOf', but 'unevaluatedProperties' doesn't allow it, so no object is valid"
+    ]);
   });
 
   test("in a subschema", async () => {

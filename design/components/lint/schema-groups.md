@@ -32,6 +32,17 @@ without the keyword URIs.
   (`boundsInPlace`), and `required-property-not-allowed` what they require
   with what they don't allow, so a contradiction across `allOf` or `$ref`
   is found. Rejected: looking at one schema, which misses them.
+- `required-property-not-allowed` also reports a property that an
+  `unevaluated` `eachProperty` rejects, when nothing else in that keyword's
+  schema might mark it (`mightMarkProperty` in `src/lint/evaluated.js`).
+  It's the other bound from `marksEvery`, on the same walk: a mark that any
+  branch of `any`, `one`, `cases`, or a switch makes counts, and what isn't
+  known (`opaque`, `dynamicApply`, `inline`, a reference that can't be
+  followed) might mark anything, so nothing is reported. The walk starts
+  at the schema the keyword is in (`MustPass.schema`), because it doesn't
+  see what the schemas that apply it mark. Rejected: not considering
+  `unevaluatedProperties`, because what's evaluated depends on the
+  instance. Whether anything could evaluate a name doesn't.
 - A keyword from an applied schema counts as the keyword in the schema that
   applied it (`creditedKeyword`), the way required properties do. The
   message is on that keyword and names it ("'maximum' in '$ref'"), because

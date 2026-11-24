@@ -42,7 +42,7 @@ options. It also has examples of what it reports and what it doesn't.
 | [`const-or-enum-value-for-disallowed-type`](const-or-enum-value-for-disallowed-type.md) | A `const` value or a value in `enum` that `type` doesn't allow. It's never valid. |
 | [`keyword-implied-by-const-or-enum`](keyword-implied-by-const-or-enum.md) | A keyword next to `const` or `enum` that allows every value, like `minLength` or `allOf`. It has no effect. |
 | [`const-or-enum-value-rejected`](const-or-enum-value-rejected.md) | A `const` value or a value in `enum` that a keyword next to it rejects, like `multipleOf` or `properties`. It's never valid. |
-| [`required-property-not-allowed`](required-property-not-allowed.md) | A required property that `properties`, `patternProperties`, or `additionalProperties` doesn't allow. No object is valid. |
+| [`required-property-not-allowed`](required-property-not-allowed.md) | A required property that `properties`, `patternProperties`, `additionalProperties`, or `unevaluatedProperties` doesn't allow. No object is valid. |
 | [`required-property-not-defined`](required-property-not-defined.md) | A property in `required` that isn't defined in `properties` or `patternProperties` by any schema that applies to the same object. That includes schemas combined with it by `allOf`, `anyOf`, `$ref`, and so on. |
 | [`keyword-without-type`](keyword-without-type.md) | A keyword or known format for one type of value, like `properties`, `minimum`, or the `date` format, when no `type`, `const`, or `enum` says what type the value is. Values of other types are valid. |
 | [`property-names-type`](property-names-type.md) | `type` in a `propertyNames` schema. Property names are always strings, so it either has no effect or rejects every property name. |

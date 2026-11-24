@@ -6,13 +6,14 @@ import { operationsOf } from "./analysis.js";
  */
 
 /**
- * A keyword that has to pass for a schema to pass. For a keyword of a
- * schema the schema applies, `applying` is the keyword in the schema that it
- * counts as, and `via` is the location of the schema that keyword applies,
- * which has the keyword in its own group. Both are undefined for the
- * schema's own keywords.
+ * A keyword that has to pass for a schema to pass. `schema` is the location
+ * of the schema the keyword is in. For a keyword of a schema the schema
+ * applies, `applying` is the keyword in the schema that it counts as, and
+ * `via` is the location of the schema that keyword applies, which has the
+ * keyword in its own group. Both are undefined for the schema's own
+ * keywords.
  *
- * @typedef {{ keyword: LoweredKeyword; applying?: JsonSchemaKeywordNode; via?: string }} MustPass
+ * @typedef {{ keyword: LoweredKeyword; schema: string; applying?: JsonSchemaKeywordNode; via?: string }} MustPass
  */
 
 /**
@@ -33,10 +34,10 @@ export const keywordsThatMustPass = (schemaNode, keywords, schemas) => {
   /** @type Set<string> */
   const followed = new Set([schemaNode.location]);
 
-  /** @type (keywords: LoweredKeyword[], applying?: JsonSchemaKeywordNode, via?: string) => void */
-  const follow = (keywords, applying, via) => {
+  /** @type (schema: string, keywords: LoweredKeyword[], applying?: JsonSchemaKeywordNode, via?: string) => void */
+  const follow = (schema, keywords, applying, via) => {
     for (const keyword of keywords) {
-      result.push({ keyword, applying, via });
+      result.push({ keyword, schema, applying, via });
       for (const operation of operationsOf(keyword.group.expression)) {
         const applied = operation.op === "apply" ? schemas.get(operation.schema) : undefined;
         if (operation.op !== "apply" || applied === undefined || followed.has(operation.schema)) {
@@ -44,12 +45,12 @@ export const keywordsThatMustPass = (schemaNode, keywords, schemas) => {
         }
 
         followed.add(operation.schema);
-        follow(applied, applying ?? creditedKeyword(keyword, operation.schema), via ?? operation.schema);
+        follow(operation.schema, applied, applying ?? creditedKeyword(keyword, operation.schema), via ?? operation.schema);
       }
     }
   };
 
-  follow(keywords);
+  follow(schemaNode.location, keywords);
   return result;
 };
 
