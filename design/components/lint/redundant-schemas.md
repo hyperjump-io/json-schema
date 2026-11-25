@@ -131,14 +131,15 @@ A `oneOf` whose schemas all exclude each other (the kernel's
   fail.
 - **Schemas the kernel can't tell apart cheaply are all compared**
   ([Ruling pairs out](../kernel/implies.md#ruling-pairs-out)), so for
-  them the time grows with the square of how many there are. On
-  2026-11-24, an `anyOf` or `oneOf` of 1,000 schemas took
+  them the time grows with the square of how many there are: objects
+  that require nothing, or schemas that each have an `anyOf` of their
+  own. On 2026-11-24, an `anyOf` or `oneOf` of 1,000 schemas took
   `redundant-all-of-any-of-schemas` and `covered-one-of-schemas` about
   0.1 s each where the schemas have a `const` for a required property,
-  0.03 s where each is a `const`, and 1 s where they're objects that
-  require different properties, which nothing rules out. Before, the
-  first took 3.3 s. The rules don't share what they compare, because
-  `anyOf` and `oneOf` are different pairs, and `excludes` is a different
+  0.03 s where each is a `const`, and 0.06 s where they're objects that
+  require different properties. Before pairs were ruled out, the first
+  took 3.3 s. The rules don't share what they compare, because `anyOf`
+  and `oneOf` are different pairs, and `excludes` is a different
   question.
 - **Keywords next to the `allOf` or `anyOf`** aren't compared with its
   schemas, so `minimum: 5` next to `allOf: [{ "minimum": 3 }]` isn't

@@ -103,6 +103,18 @@ export const overlapping = (schemas) => relations(schemas).overlapping;
  * passes one fails the other, so neither implies the other unless no
  * object passes it.
  *
+ * The properties an expression requires are keys too. One that implies
+ * another requires every property the other does, so two that require
+ * something and nothing in common don't imply each other. Each is found
+ * by the property it requires that the fewest of them do, so a property
+ * they all require doesn't make them all comparable.
+ *
+ * An expression nothing passes implies everything, and `implies` can know
+ * that it implies another from one of its parts, whatever the others say.
+ * So one with an `any` or `one`, whose expressions might all say the same
+ * thing, only has its types as keys, and one with values isn't keyed by
+ * its properties.
+ *
  * @type (schemas: ReadonlyMap<Handle, Expression[]>) => (expressions: Expression[]) => (index: number) => number[]
  */
 export const comparable = (schemas) => relations(schemas).comparable;
@@ -416,23 +428,39 @@ const relations = (schemas) => {
       keys.set("type", new Set(types));
     }
 
+    // Two expressions that are ruled out exclude each other whatever else
+    // they say. For which one implies another, an expression nothing passes
+    // implies everything, and `implies` can know it from one part: an `any`
+    // or `one` whose expressions all say the same, or a value. So there,
+    // one with a part like that next to what its keys are from has no keys.
+    const hasChoice = forObjects && side.parts.some(isChoice);
+    const hasValues = side.parts.some(({ op }) => op === "equals" || op === "oneOfValues");
+
     const values = valuesIn(side.parts);
-    if (values !== undefined) {
+    if (values !== undefined && !hasChoice) {
       keys.set("values", values);
     }
 
     // A property's values only say something about objects
-    if (forObjects ? types.includes("object") : types.length === 1 && types[0] === "object") {
-      for (const part of side.parts) {
-        if (part.op !== "hasProperty" || keys.has(`property ${part.name}`)) {
-          continue;
-        }
+    const forProperties = forObjects ? types.includes("object") && !hasChoice && !hasValues : types.length === 1 && types[0] === "object";
+    for (const part of forProperties ? side.parts : []) {
+      if (part.op !== "hasProperty" || keys.has(`property ${part.name}`)) {
+        continue;
+      }
 
-        const ofProperty = side.parts.flatMap((other) => other.op === "property" && other.name === part.name ? conjuncts(other.of, noSchemas).parts : []);
-        const propertyValues = valuesIn(ofProperty);
-        if (propertyValues !== undefined) {
-          keys.set(`property ${part.name}`, propertyValues);
-        }
+      const ofProperty = side.parts.flatMap((other) => other.op === "property" && other.name === part.name ? conjuncts(other.of, noSchemas).parts : []);
+      const propertyValues = valuesIn(ofProperty);
+      if (propertyValues !== undefined && !(forObjects && ofProperty.some(isChoice))) {
+        keys.set(`property ${part.name}`, propertyValues);
+      }
+    }
+
+    // What's required only says which objects pass, and whether one
+    // expression implies another, not whether they exclude each other
+    if (forObjects && forProperties) {
+      const required = new Set(side.parts.flatMap((part) => part.op === "hasProperty" ? [part.name] : []));
+      if (required.size > 0) {
+        keys.set(requiredWay, required);
       }
     }
 
@@ -445,63 +473,125 @@ const relations = (schemas) => {
     const count = expressions.length;
 
     // The way that leaves the fewest pairs to compare
-    /** @type {{ way: string; buckets: Map<string, number[]>; unkeyed: number[]; pairs: number } | undefined} */
+    /** @type {{ way: Way; pairs: number } | undefined} */
     let best;
-    for (const way of new Set(keys.flatMap((each) => [...each.keys()]))) {
-      /** @type Map<string, number[]> */
-      const buckets = new Map();
-      /** @type number[] */
-      const unkeyed = [];
-      for (const [index, each] of keys.entries()) {
-        const ofWay = each.get(way);
-        if (ofWay === undefined) {
-          unkeyed.push(index);
+    for (const name of new Set(keys.flatMap((each) => [...each.keys()]))) {
+      const ofWay = keys.map((each) => each.get(name));
+      const withKey = bucketsOf(ofWay);
+
+      // What each one is found by: any of its keys, or of the properties
+      // it requires, the one the fewest require
+      let finders = ofWay;
+      let foundBy = withKey;
+      if (name === requiredWay) {
+        finders = ofWay.map((each) => {
+          if (each !== undefined) {
+            const [rarest] = [...each].sort((a, b) => /** @type number[] */ (withKey.get(a)).length - /** @type number[] */ (withKey.get(b)).length);
+            return new Set([rarest]);
+          }
+        });
+        foundBy = bucketsOf(finders);
+      }
+      const unkeyed = ofWay.flatMap((each, index) => each === undefined ? [index] : []);
+      /** @type Way */
+      const way = { ofWay, finders, withKey, foundBy, unkeyed };
+
+      // About how many it leaves, without listing them
+      let pairs = unkeyed.length * count;
+      for (const [index, each] of ofWay.entries()) {
+        for (const key of each ?? []) {
+          pairs += /** @type number[] */ (foundBy.get(key) ?? []).length;
         }
-        for (const key of ofWay ?? []) {
-          const bucket = buckets.get(key);
-          if (bucket === undefined) {
-            buckets.set(key, [index]);
-          } else {
-            bucket.push(index);
+        if (each !== undefined) {
+          pairs += unkeyed.length;
+          for (const key of finders === ofWay ? [] : finders[index] ?? []) {
+            pairs += /** @type number[] */ (withKey.get(key)).length;
           }
         }
       }
-
-      let pairs = unkeyed.length * count;
-      for (const each of keys) {
-        for (const key of each.get(way) ?? []) {
-          pairs += unkeyed.length + /** @type number[] */ (buckets.get(key)).length;
-        }
-      }
       if (best === undefined || pairs < best.pairs) {
-        best = { way, buckets, unkeyed, pairs };
+        best = { way, pairs };
       }
     }
 
-    const all = expressions.map((_, index) => index);
-    if (best === undefined || best.pairs >= count * count) {
-      return (index) => all.filter((other) => other !== index);
-    }
-
-    const { way, buckets, unkeyed } = best;
-    return (index) => {
-      const ofWay = keys[index].get(way);
-      if (ofWay === undefined) {
-        return all.filter((other) => other !== index);
-      }
-
-      const others = new Set(unkeyed);
-      for (const key of ofWay) {
-        for (const other of /** @type number[] */ (buckets.get(key))) {
-          others.add(other);
-        }
-      }
-      others.delete(index);
-      return [...others].sort((a, b) => a - b);
-    };
+    const way = best?.way ?? { ofWay: [], finders: [], withKey: new Map(), foundBy: new Map(), unkeyed: [] };
+    return (index) => othersIn(way, index, count);
   };
 
   return { implies: expressionImplies, excludes: expressionExcludes, overlapping: ruledOutBy(false), comparable: ruledOutBy(true) };
+};
+
+/** @type (expression: Expression) => boolean */
+const isChoice = ({ op }) => op === "any" || op === "one";
+
+/** The kind of key that's the properties an expression requires */
+const requiredWay = "required";
+
+/**
+ * One kind of key for a list of expressions: each one's keys (`ofWay`),
+ * or undefined for one without any, which are the `unkeyed`, the keys
+ * each is found by (`finders`), and which have each key (`withKey`) and
+ * are found by it (`foundBy`)
+ *
+ * @typedef {{
+ *   ofWay: (Set<string> | undefined)[];
+ *   finders: (Set<string> | undefined)[];
+ *   withKey: Map<string, number[]>;
+ *   foundBy: Map<string, number[]>;
+ *   unkeyed: number[];
+ * }} Way
+ */
+
+/**
+ * The indexes that have each key
+ *
+ * @type (keys: (Set<string> | undefined)[]) => Map<string, number[]>
+ */
+const bucketsOf = (keys) => {
+  /** @type Map<string, number[]> */
+  const buckets = new Map();
+  for (const [index, each] of keys.entries()) {
+    for (const key of each ?? []) {
+      const bucket = buckets.get(key);
+      if (bucket === undefined) {
+        buckets.set(key, [index]);
+      } else {
+        bucket.push(index);
+      }
+    }
+  }
+  return buckets;
+};
+
+/**
+ * The others a kind of key doesn't rule out for one of `count`
+ * expressions, in order: every other one if it has no key, or else the
+ * ones without a key, the ones found by one of its keys, and the ones
+ * with a key it's found by
+ *
+ * @type (way: Way, index: number, count: number) => number[]
+ */
+const othersIn = ({ ofWay, finders, withKey, foundBy, unkeyed }, index, count) => {
+  const keys = ofWay[index];
+  if (keys === undefined) {
+    return Array.from({ length: count }, (_, other) => other).filter((other) => other !== index);
+  }
+
+  const others = new Set(unkeyed);
+  for (const key of keys) {
+    for (const other of foundBy.get(key) ?? []) {
+      others.add(other);
+    }
+  }
+  if (finders !== ofWay) {
+    for (const key of finders[index] ?? []) {
+      for (const other of withKey.get(key) ?? []) {
+        others.add(other);
+      }
+    }
+  }
+  others.delete(index);
+  return [...others].sort((a, b) => a - b);
 };
 
 /**

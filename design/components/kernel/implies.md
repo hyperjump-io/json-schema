@@ -88,9 +88,28 @@ only those.
   object passes**, because two schemas with different values for a
   required property both pass a string. For `comparable`, it's enough
   that an object can pass: one that passes the first fails the second.
+- **For `comparable`, the properties an expression requires are keys
+  too.** One that implies another requires every property it does, so two
+  that require something and nothing in common don't imply each other.
+  It says nothing about exclusion: an object with both properties passes
+  both. Each expression is found by the property it requires that the
+  fewest of them do, so a property they all require, like `id`, doesn't
+  put them all in one bucket. That's sound because the one that's
+  implied has its rarest property required by the other.
+- **For `comparable`, an expression that might allow nothing has fewer
+  keys.** One that nothing passes implies everything, and `implies` can
+  know it from one part, whatever the rest says: an `any` whose
+  expressions all require what the other does, next to a different value
+  for the same property. So an expression with an `any` or `one` only
+  has its types as keys, and one with values isn't keyed by its
+  properties. `overlapping` doesn't need this, because two expressions
+  that are ruled out exclude each other whatever else they say.
+- **A test compares it with `implies`** on random expressions, and fails
+  if a pair that's ruled out is implied, so what `implies` learns to know
+  can't be lost here without the test saying so. It found the case above.
 - **Checked on 2026-11-24**: the three rules report the same 2,274
   messages on the 73 documents of the benchmark corpora with it and
-  without, and in 150,000 random lists of expressions, no pair that was
+  without, and in 500,000 random lists of expressions, no pair that was
   ruled out passed the same instance or was implied.
 
 Lint's `exclusive-one-of-schemas` reads `excludes`. Counted on the 39 schemas of the

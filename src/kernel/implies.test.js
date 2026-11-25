@@ -2,6 +2,7 @@ import { describe, test, expect } from "vitest";
 import { comparable, excludes, implies, overlapping } from "./implies.js";
 
 /**
+ * @import { Json } from "@hyperjump/browser"
  * @import { Expression } from "./kernel.d.ts"
  */
 
@@ -469,5 +470,87 @@ describe("comparable", () => {
     const expressions = [tagged("a"), all(tagged("a"), tagged("b")), tagged("c")];
     expect(comparable(new Map())(expressions)(1)).to.eql([0, 2]);
     expect(comparable(new Map())(expressions)(0)).to.eql([1]);
+  });
+
+  test("the properties they require rule out expressions that require nothing in common", () => {
+    /** @type (...names: string[]) => Expression */
+    const requires = (...names) => all(...names.map((name) => /** @type Expression */ ({ op: "hasProperty", name })));
+    const none = comparable(new Map());
+
+    expect(none([requires("a"), requires("b")])(0)).to.eql([]);
+    expect(none([requires("a"), requires("a", "b"), requires("c")])(0)).to.eql([1]);
+    expect(none([requires("a"), requires("a", "b"), requires("c")])(2)).to.eql([]);
+    // One that requires nothing is implied by any of them
+    expect(none([requires("a"), requires("b"), { op: "propertyCount", max: 3 }])(0)).to.eql([2]);
+    // A string passes both, so they don't exclude each other
+    expect(overlapping(new Map())([requires("a"), requires("b")])(0)).to.eql([1]);
+  });
+
+  test("a property they all require doesn't make them comparable", () => {
+    /** @type Expression[] */
+    const expressions = ["a", "b", "c"].map((name) => all({ op: "hasProperty", name: "id" }, { op: "hasProperty", name }));
+    expect(comparable(new Map())(expressions)(0)).to.eql([]);
+    expect(comparable(new Map())([...expressions, { op: "hasProperty", name: "id" }])(0)).to.eql([3]);
+    expect(comparable(new Map())([...expressions, { op: "hasProperty", name: "id" }])(3)).to.eql([0, 1, 2]);
+  });
+
+  test("one that could require a property another way isn't ruled out by what it requires", () => {
+    /** @type Expression */
+    const a = { op: "hasProperty", name: "a" };
+    /** @type Expression */
+    const b = { op: "hasProperty", name: "b" };
+    expect(comparable(new Map())([all(a, { op: "any", of: [b, all(b, isString)] }), b])(0)).to.eql([1]);
+    expect(comparable(new Map())([all(a, { op: "equals", value: { a: 1, b: 1 } }), b])(0)).to.eql([1]);
+    expect(comparable(new Map())([all(a, isString), b])(0)).to.eql([1]);
+  });
+
+  test("what's ruled out isn't implied, for random expressions", () => {
+    let seed = 1;
+    const random = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+    /** @type <T>(items: T[]) => T */
+    const pick = (items) => items[Math.floor(random() * items.length)];
+    /** @type Json[] */
+    const values = [1, "x", { a: 1 }, { a: "x", b: 1 }, { b: 1, a: "x" }];
+
+    /** @type (depth: number) => Expression */
+    const generate = (depth) => {
+      /** @type (() => Expression)[] */
+      const leaves = [
+        () => ({ op: "typeIs", types: pick([["object"], ["string"], ["object", "string"], ["number"]]) }),
+        () => ({ op: "equals", value: pick(values) }),
+        () => ({ op: "oneOfValues", values: values.filter(() => random() < 0.4) }),
+        () => ({ op: "hasProperty", name: pick(["a", "b"]) }),
+        () => ({ op: "propertyEquals", name: pick(["a", "b"]), value: pick(values) }),
+        () => ({ op: "fail" }),
+        () => apply(pick(["s", "t"]))
+      ];
+      /** @type (() => Expression)[] */
+      const branches = [
+        () => all(generate(depth - 1), generate(depth - 1), generate(depth - 1)),
+        () => ({ op: "any", of: [generate(depth - 1), generate(depth - 1)] }),
+        () => ({ op: "property", name: pick(["a", "b"]), of: generate(depth - 1) }),
+        () => ({ op: "not", of: generate(depth - 1) })
+      ];
+      return pick(depth === 0 || random() < 0.4 ? leaves : branches)();
+    };
+
+    let ruledOut = 0;
+    for (let trial = 0; trial < 2000; trial++) {
+      /** @type Map<string, Expression[]> */
+      const schemas = new Map([["s", [generate(1), generate(1)]], ["t", [generate(2)]]]);
+      const expressions = Array.from({ length: 5 }, () => all(generate(1), generate(2)));
+      const others = comparable(schemas)(expressions);
+      const withSchemas = implies(schemas);
+      for (const [index, expression] of expressions.entries()) {
+        const compared = new Set(others(index));
+        for (const [otherIndex, other] of expressions.entries()) {
+          if (otherIndex !== index && !compared.has(otherIndex)) {
+            ruledOut++;
+            expect(withSchemas(expression, other), JSON.stringify([expression, other, [...schemas]])).to.equal(false);
+          }
+        }
+      }
+    }
+    expect(ruledOut).to.be.greaterThan(1000);
   });
 });
