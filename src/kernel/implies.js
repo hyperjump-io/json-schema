@@ -69,7 +69,54 @@ export const implies = (schemas) => relations(schemas).implies;
  */
 export const excludes = (schemas) => relations(schemas).excludes;
 
-/** @type (schemas: ReadonlyMap<Handle, Expression[]>) => Record<"implies" | "excludes", (a: Expression, b: Expression) => boolean> */
+/**
+ * For some expressions, the ones each might pass an instance with: the
+ * indexes, in order, of the others that a cheap test doesn't rule out. One
+ * that's ruled out is sure to exclude it, so it isn't worth comparing, and
+ * neither implies the other unless nothing passes it. `schemas` is as in
+ * {@link implies}.
+ *
+ * It's for a long `anyOf` or `oneOf`, where comparing every pair takes
+ * time that grows with the square of how many there are. Each expression
+ * gets keys in whichever of these says the most for all of them, and two
+ * with no key in common are ruled out:
+ *
+ * - The types it can pass, if that isn't every type
+ * - The values it allows (`equals`, `oneOfValues`)
+ * - For one that only passes objects, the values it allows for a property
+ *   it requires, like a discriminator
+ *
+ * An expression without a key there is compared with every other one, and
+ * so is one that nothing passes as far as its types say, because it
+ * implies everything.
+ *
+ * @type (schemas: ReadonlyMap<Handle, Expression[]>) => (expressions: Expression[]) => (index: number) => number[]
+ */
+export const overlapping = (schemas) => relations(schemas).overlapping;
+
+/**
+ * For some expressions, the ones each might imply or be implied by, like
+ * {@link overlapping}. It rules out more: a required property's values
+ * count for any expression that can pass an object, not only for one that
+ * passes nothing else. Two like that with different values might both
+ * pass a string, so they don't exclude each other, but an object that
+ * passes one fails the other, so neither implies the other unless no
+ * object passes it.
+ *
+ * @type (schemas: ReadonlyMap<Handle, Expression[]>) => (expressions: Expression[]) => (index: number) => number[]
+ */
+export const comparable = (schemas) => relations(schemas).comparable;
+
+/**
+ * @typedef {{
+ *   implies: (a: Expression, b: Expression) => boolean;
+ *   excludes: (a: Expression, b: Expression) => boolean;
+ *   overlapping: (expressions: Expression[]) => (index: number) => number[];
+ *   comparable: (expressions: Expression[]) => (index: number) => number[];
+ * }} Relations
+ */
+
+/** @type (schemas: ReadonlyMap<Handle, Expression[]>) => Relations */
 const relations = (schemas) => {
   // What's known about each pair of schemas. A pair that's being compared
   // isn't known to imply, and whatever is found from there is still sure.
@@ -350,7 +397,147 @@ const relations = (schemas) => {
     }
   });
 
-  return { implies: expressionImplies, excludes: expressionExcludes };
+  /**
+   * An expression's keys in each way of telling expressions apart, by the
+   * way's name. Two expressions with keys in the same way and none in
+   * common exclude each other, or with `forObjects`, no object passes
+   * both.
+   *
+   * @type (expression: Expression, forObjects: boolean) => Map<string, Set<string>>
+   */
+  const keysOf = (expression, forObjects) => {
+    /** @type Map<string, Set<string>> */
+    const keys = new Map();
+    const side = conjuncts(expression, noSchemas);
+    const types = jsonTypes.filter((type) => canPassType(type, side));
+    if (types.length === 0) {
+      return keys;
+    } else if (types.length < jsonTypes.length) {
+      keys.set("type", new Set(types));
+    }
+
+    const values = valuesIn(side.parts);
+    if (values !== undefined) {
+      keys.set("values", values);
+    }
+
+    // A property's values only say something about objects
+    if (forObjects ? types.includes("object") : types.length === 1 && types[0] === "object") {
+      for (const part of side.parts) {
+        if (part.op !== "hasProperty" || keys.has(`property ${part.name}`)) {
+          continue;
+        }
+
+        const ofProperty = side.parts.flatMap((other) => other.op === "property" && other.name === part.name ? conjuncts(other.of, noSchemas).parts : []);
+        const propertyValues = valuesIn(ofProperty);
+        if (propertyValues !== undefined) {
+          keys.set(`property ${part.name}`, propertyValues);
+        }
+      }
+    }
+
+    return keys;
+  };
+
+  /** @type (forObjects: boolean) => Relations["overlapping"] */
+  const ruledOutBy = (forObjects) => (expressions) => {
+    const keys = expressions.map((expression) => keysOf(expression, forObjects));
+    const count = expressions.length;
+
+    // The way that leaves the fewest pairs to compare
+    /** @type {{ way: string; buckets: Map<string, number[]>; unkeyed: number[]; pairs: number } | undefined} */
+    let best;
+    for (const way of new Set(keys.flatMap((each) => [...each.keys()]))) {
+      /** @type Map<string, number[]> */
+      const buckets = new Map();
+      /** @type number[] */
+      const unkeyed = [];
+      for (const [index, each] of keys.entries()) {
+        const ofWay = each.get(way);
+        if (ofWay === undefined) {
+          unkeyed.push(index);
+        }
+        for (const key of ofWay ?? []) {
+          const bucket = buckets.get(key);
+          if (bucket === undefined) {
+            buckets.set(key, [index]);
+          } else {
+            bucket.push(index);
+          }
+        }
+      }
+
+      let pairs = unkeyed.length * count;
+      for (const each of keys) {
+        for (const key of each.get(way) ?? []) {
+          pairs += unkeyed.length + /** @type number[] */ (buckets.get(key)).length;
+        }
+      }
+      if (best === undefined || pairs < best.pairs) {
+        best = { way, buckets, unkeyed, pairs };
+      }
+    }
+
+    const all = expressions.map((_, index) => index);
+    if (best === undefined || best.pairs >= count * count) {
+      return (index) => all.filter((other) => other !== index);
+    }
+
+    const { way, buckets, unkeyed } = best;
+    return (index) => {
+      const ofWay = keys[index].get(way);
+      if (ofWay === undefined) {
+        return all.filter((other) => other !== index);
+      }
+
+      const others = new Set(unkeyed);
+      for (const key of ofWay) {
+        for (const other of /** @type number[] */ (buckets.get(key))) {
+          others.add(other);
+        }
+      }
+      others.delete(index);
+      return [...others].sort((a, b) => a - b);
+    };
+  };
+
+  return { implies: expressionImplies, excludes: expressionExcludes, overlapping: ruledOutBy(false), comparable: ruledOutBy(true) };
+};
+
+/**
+ * The values some expressions that all have to pass allow, if any of them
+ * says (`equals`, `oneOfValues`), each as a string that's the same for
+ * values that are equal: the ones every one that says allows. It's
+ * undefined if none says, or if they allow none, so nothing passes.
+ *
+ * @type (parts: Expression[]) => Set<string> | undefined
+ */
+const valuesIn = (parts) => {
+  /** @type Set<string> | undefined */
+  let values;
+  for (const part of parts) {
+    if (part.op === "equals" || part.op === "oneOfValues") {
+      const allowed = new Set((part.op === "equals" ? [part.value] : part.values).map(canonical));
+      values = values === undefined ? allowed : values.intersection(allowed);
+    }
+  }
+  return values?.size === 0 ? undefined : values;
+};
+
+/**
+ * A value as JSON with each object's properties in order, so values that
+ * are equal are the same string
+ *
+ * @type (value: Json) => string
+ */
+const canonical = (value) => {
+  if (Array.isArray(value)) {
+    return `[${value.map(canonical).join(",")}]`;
+  } else if (typeof value === "object" && value !== null) {
+    const properties = Object.keys(value).sort();
+    return `{${properties.map((key) => `${JSON.stringify(key)}:${canonical(value[key])}`).join(",")}}`;
+  }
+  return JSON.stringify(value);
 };
 
 /**

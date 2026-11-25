@@ -1,6 +1,6 @@
 import { jsonPointerGet } from "@hyperjump/browser";
 import { EXIT, visit } from "unist-util-visit";
-import { excludes, implies } from "../kernel/implies.js";
+import { comparable, excludes, implies, overlapping } from "../kernel/implies.js";
 import { subexpressions } from "../kernel/kernel.js";
 import { marksAreRead, schemaGroup } from "./schema-group.js";
 
@@ -38,6 +38,7 @@ export const redundantSchemas = (document) => {
   const lowered = document.schemas;
   const schemas = schemaExpressions(document);
   const expressionImplies = implies(schemas);
+  const mightImply = comparable(schemas);
   const referable = referableSchemas(document);
 
   /** @type Redundant[] */
@@ -88,14 +89,17 @@ export const redundantSchemas = (document) => {
         return applyingItself[index];
       };
 
+      // Only schemas that might imply each other are compared
+      const others = mightImply(expression.of);
       for (const [index, of] of expression.of.entries()) {
         // Of two that make each other redundant, the later one is, unless
         // only the earlier one has no other effect
-        const other = expression.of.findIndex((other, otherIndex) => {
-          return otherIndex !== index && makesRedundant(other, of) && !appliesItself(otherIndex)
+        const other = others(index).find((otherIndex) => {
+          const other = expression.of[otherIndex];
+          return makesRedundant(other, of) && !appliesItself(otherIndex)
             && !(otherIndex > index && makesRedundant(of, other) && !appliesItself(index) && hasOnlyResult(otherIndex));
         });
-        if (other !== -1 && hasOnlyResult(index)) {
+        if (other !== undefined && hasOnlyResult(index)) {
           redundant.push({
             op: expression.op,
             keywordNode,
@@ -127,6 +131,7 @@ export const coveredSchemas = (document) => {
   const schemas = schemaExpressions(document);
   const expressionImplies = implies(schemas);
   const expressionExcludes = excludes(schemas);
+  const mightImply = comparable(schemas);
 
   /** @type Covered[] */
   const covered = [];
@@ -139,13 +144,14 @@ export const coveredSchemas = (document) => {
 
       const valueNode = keywordNode.children[1];
       const itemNodes = valueNode.jsonType === "array" && valueNode.children.length === expression.of.length ? valueNode.children : undefined;
+      const others = mightImply(expression.of);
       for (const [index, of] of expression.of.entries()) {
         if (expressionExcludes(of, { op: "pass" })) {
           continue;
         }
 
-        const other = expression.of.findIndex((other, otherIndex) => otherIndex !== index && expressionImplies(of, other));
-        if (other !== -1) {
+        const other = others(index).find((otherIndex) => expressionImplies(of, expression.of[otherIndex]));
+        if (other !== undefined) {
           covered.push({ keywordNode, node: itemNodes?.[index] ?? keywordNode, other: itemNodes === undefined ? undefined : other });
         }
       }
@@ -163,7 +169,9 @@ export const coveredSchemas = (document) => {
  * @type (document: LintDocument) => { schemaNode: JsonSchemaNode; keywordNode: JsonSchemaKeywordNode }[]
  */
 export const exclusiveSchemas = (document) => {
-  const expressionExcludes = excludes(schemaExpressions(document));
+  const schemas = schemaExpressions(document);
+  const expressionExcludes = excludes(schemas);
+  const mightOverlap = overlapping(schemas);
 
   /** @type {{ schemaNode: JsonSchemaNode; keywordNode: JsonSchemaKeywordNode }[]} */
   const exclusive = [];
@@ -174,8 +182,10 @@ export const exclusiveSchemas = (document) => {
         continue;
       }
 
+      // Schemas that can't allow the same value exclude each other
       const { of } = expression;
-      if (of.every((each, index) => of.slice(index + 1).every((other) => expressionExcludes(each, other)))) {
+      const others = mightOverlap(of);
+      if (of.every((each, index) => others(index).every((other) => other < index || expressionExcludes(each, of[other])))) {
         exclusive.push({ schemaNode, keywordNode });
       }
     }

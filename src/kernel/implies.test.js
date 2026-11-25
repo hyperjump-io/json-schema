@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { excludes, implies } from "./implies.js";
+import { comparable, excludes, implies, overlapping } from "./implies.js";
 
 /**
  * @import { Expression } from "./kernel.d.ts"
@@ -367,5 +367,107 @@ describe("excludes", () => {
     expect(withSchemas(apply("both"), { op: "typeIs", types: ["null"] })).to.equal(false);
     expect(withSchemas(apply("strings"), apply("strings"))).to.equal(false);
     expect(implies(schemas)(isNumber, { op: "not", of: apply("strings") })).to.equal(false);
+  });
+});
+
+describe("overlapping", () => {
+  /** @type (...of: Expression[]) => Expression */
+  const all = (...of) => ({ op: "all", of });
+  /** @type (name: string, value: string | number) => Expression */
+  const tagged = (name, value) => ({ op: "all", of: [{ op: "hasProperty", name }, { op: "property", name, of: { op: "equals", value } }] });
+  /** @type Expression */
+  const isObject = { op: "typeIs", types: ["object"] };
+
+  /** @type (others: (index: number) => number[], count: number) => number[][] */
+  const each = (others, count) => Array.from({ length: count }, (_, index) => others(index));
+
+  test("expressions that can't pass the same type are ruled out", () => {
+    /** @type Expression[] */
+    const expressions = [isString, isNumber, isInteger, { op: "typeIs", types: ["string", "null"] }];
+    expect(each(overlapping(new Map())(expressions), 4)).to.eql([[3], [2], [1], [0]]);
+  });
+
+  test("expressions that allow different values are ruled out", () => {
+    /** @type Expression[] */
+    const expressions = [
+      { op: "equals", value: { a: 1, b: 2 } },
+      { op: "oneOfValues", values: [{ b: 2, a: 1 }, "a"] },
+      { op: "equals", value: "a" },
+      { op: "equals", value: 1 },
+      { op: "equals", value: "1" }
+    ];
+    expect(each(overlapping(new Map())(expressions), 5)).to.eql([[1], [0, 2], [1], [], []]);
+  });
+
+  test("one without a key is compared with every other one", () => {
+    /** @type Expression[] */
+    const expressions = [{ op: "equals", value: "a" }, { op: "equals", value: "b" }, { op: "stringLength", max: 3 }];
+    expect(each(overlapping(new Map())(expressions), 3)).to.eql([[2], [2], [0, 1]]);
+  });
+
+  test("one that nothing passes is compared with every other one", () => {
+    /** @type Expression[] */
+    const expressions = [
+      { op: "equals", value: "a" },
+      { op: "equals", value: "b" },
+      { op: "all", of: [{ op: "equals", value: "c" }, { op: "fail" }] },
+      { op: "all", of: [{ op: "equals", value: "c" }, { op: "equals", value: "d" }] }
+    ];
+    expect(each(overlapping(new Map())(expressions), 4)).to.eql([[2, 3], [2, 3], [0, 1, 3], [0, 1, 2]]);
+  });
+
+  test("a required property's values rule out expressions that only pass objects", () => {
+    const expressions = [
+      all(isObject, tagged("kind", "a")),
+      all(isObject, tagged("kind", "b")),
+      all(isObject, { op: "propertyEquals", name: "kind", value: "a" })
+    ];
+    expect(each(overlapping(new Map())(expressions), 3)).to.eql([[2], [], [0]]);
+
+    // A string passes both
+    const untyped = [tagged("kind", "a"), tagged("kind", "b")];
+    expect(each(overlapping(new Map())(untyped), 2)).to.eql([[1], [0]]);
+    // An object without the property passes both
+    /** @type Expression[] */
+    const optional = [all(isObject, { op: "property", name: "kind", of: { op: "equals", value: "a" } }), all(isObject, tagged("kind", "b"))];
+    expect(each(overlapping(new Map())(optional), 2)).to.eql([[1], [0]]);
+  });
+
+  test("the way that rules out the most is used", () => {
+    const expressions = [
+      all(isObject, tagged("version", 1), tagged("kind", "a")),
+      all(isObject, tagged("version", 1), tagged("kind", "b")),
+      all(isObject, tagged("version", 1), tagged("kind", "c"))
+    ];
+    expect(each(overlapping(new Map())(expressions), 3)).to.eql([[], [], []]);
+  });
+
+  test("schemas", () => {
+    /** @type Map<string, Expression[]> */
+    const schemas = new Map([
+      ["a", [isObject, tagged("kind", "a")]],
+      ["b", [isObject, apply("base"), { op: "property", name: "kind", of: apply("b/kind") }]],
+      ["b/kind", [{ op: "equals", value: "b" }]],
+      ["base", [{ op: "hasProperty", name: "kind" }]]
+    ]);
+    expect(each(overlapping(schemas)([apply("a"), apply("b"), apply("unknown")]), 3)).to.eql([[2], [2], [0, 1]]);
+  });
+});
+
+describe("comparable", () => {
+  /** @type (...of: Expression[]) => Expression */
+  const all = (...of) => ({ op: "all", of });
+  /** @type (value: string) => Expression */
+  const tagged = (value) => ({ op: "all", of: [{ op: "hasProperty", name: "kind" }, { op: "property", name: "kind", of: { op: "equals", value } }] });
+
+  test("a required property's values rule out expressions that can pass an object", () => {
+    expect(comparable(new Map())([tagged("a"), tagged("b")])(0)).to.eql([]);
+    expect(comparable(new Map())([all(isString, tagged("a")), tagged("b")])(0)).to.eql([1]);
+  });
+
+  test("one whose values for the property can't all hold is compared with every other one", () => {
+    const expressions = [tagged("a"), all(tagged("a"), tagged("b")), tagged("c")];
+    expect(comparable(new Map())(expressions)(1)).to.eql([0, 2]);
+    expect(comparable(new Map())(expressions)(0)).to.eql([1]);
   });
 });

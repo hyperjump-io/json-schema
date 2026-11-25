@@ -62,7 +62,38 @@ what implies a `not`.
   Leaving out something that has to pass only makes less known. The depth
   doesn't stop this, because nothing is compared on the way down.
 
-Lint's `exclusive-one-of-schemas` reads it. Counted on the 39 schemas of the
+## Ruling pairs out
+
+Comparing every pair of a long `anyOf`'s schemas takes time that grows
+with the square of how many there are. `overlapping(schemas)(expressions)`
+says, for each one, which of the others it might pass an instance with,
+and `comparable` which it might imply or be implied by. Lint compares
+only those.
+
+- **A pair that's ruled out is sure to exclude each other**, so it's
+  never one that `excludes` doesn't know about, and neither implies the
+  other unless nothing passes it.
+- **Each expression gets keys**: the types it can pass, the values it
+  allows, or the values it allows for a property it requires. Two with
+  keys of the same kind and none in common are ruled out. A value's key is
+  its JSON with properties in order, so equal objects have the same one.
+- **One kind of key is used for a list**, the one that leaves the fewest
+  pairs, so the expressions go in buckets and nothing is compared to find
+  the pairs. Rejected: ruling a pair out by any kind, which is a test for
+  each pair again.
+- **An expression without a key is compared with every other one**, and
+  so is one that nothing passes as far as its keys say, like two `const`s
+  in an `allOf`. That one implies everything, which `implies` might know.
+- **A property's values are keys for `overlapping` only if nothing but an
+  object passes**, because two schemas with different values for a
+  required property both pass a string. For `comparable`, it's enough
+  that an object can pass: one that passes the first fails the second.
+- **Checked on 2026-11-24**: the three rules report the same 2,274
+  messages on the 73 documents of the benchmark corpora with it and
+  without, and in 150,000 random lists of expressions, no pair that was
+  ruled out passed the same instance or was implied.
+
+Lint's `exclusive-one-of-schemas` reads `excludes`. Counted on the 39 schemas of the
 benchmark corpora, with what it knows now:
 
 - **Contradictions**: no `allOf` whose schemas exclude each other, and 2
