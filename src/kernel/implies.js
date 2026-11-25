@@ -236,9 +236,9 @@ const relations = (schemas) => {
         knownToExclude.set(pair, false);
       }
       depth++;
-      const aParts = conjuncts(a);
-      const bParts = conjuncts(b);
-      result = jsonTypes.every((type) => excludeFor(type, aParts, bParts));
+      const aSide = conjuncts(a, noSchemas);
+      const bSide = conjuncts(b, noSchemas);
+      result = jsonTypes.every((type) => excludeFor(type, aSide, bSide));
       depth--;
       if (pair !== undefined) {
         knownToExclude.set(pair, result);
@@ -249,17 +249,20 @@ const relations = (schemas) => {
 
   /**
    * Everything that has to pass for an expression to: what's in its `all`s
-   * and the groups of the schemas it applies, each schema once. A schema
-   * that isn't known is left out, which only makes less known.
-   * `propertyEquals` is the two things it says.
+   * and the groups of the schemas it applies, each schema once, with the
+   * schemas it applied. A schema that isn't known is left out, which only
+   * makes less known. `propertyEquals` is the two things it says.
    *
-   * @type (expression: Expression) => Expression[]
+   * `within` is the schemas whose groups the expression is already in: it's
+   * in an `any` or `one` of theirs. They're left out too, so a schema that
+   * applies itself in an `any` or `one` isn't looked into forever.
+   *
+   * @type (expression: Expression, within: ReadonlySet<Handle>) => Side
    */
-  const conjuncts = (expression) => {
+  const conjuncts = (expression, within) => {
     /** @type Expression[] */
     const parts = [];
-    /** @type Set<Handle> */
-    const applied = new Set();
+    const applied = new Set(within);
 
     /** @type (expression: Expression) => void */
     const add = (expression) => {
@@ -281,13 +284,13 @@ const relations = (schemas) => {
     };
     add(expression);
 
-    return parts;
+    return { parts, applied };
   };
 
   /**
    * Whether no instance of a type passes everything on both sides
    *
-   * @type (type: JsonTypeName, a: Expression[], b: Expression[]) => boolean
+   * @type (type: JsonTypeName, a: Side, b: Side) => boolean
    */
   const excludeFor = (type, a, b) => {
     if (!canPassType(type, a) || !canPassType(type, b)) {
@@ -295,18 +298,18 @@ const relations = (schemas) => {
     }
 
     // Two operations that no instance of the type passes, on either side
-    const both = [...a, ...b];
+    const both = [...a.parts, ...b.parts];
     if (both.some((x) => both.some((y) => operationsExclude(type, x, y)))) {
       return true;
     }
 
-    for (const [parts, others] of [[a, b], [b, a]]) {
+    for (const [side, others] of [[a, b], [b, a]]) {
       /** @type Expression */
-      const ofType = { op: "all", of: [{ op: "typeIs", types: [type] }, ...others] };
-      for (const part of parts) {
+      const ofType = { op: "all", of: [{ op: "typeIs", types: [type] }, ...others.parts] };
+      for (const part of side.parts) {
         if (part.op === "not" && expressionImplies(ofType, part.of)) {
           return true;
-        } else if ((part.op === "any" || part.op === "one") && part.of.every((of) => excludeFor(type, conjuncts(of), others))) {
+        } else if ((part.op === "any" || part.op === "one") && part.of.every((of) => excludeFor(type, conjuncts(of, side.applied), others))) {
           return true;
         }
       }
@@ -314,8 +317,8 @@ const relations = (schemas) => {
 
     // A property both sides say something about, which an object has to have
     if (type === "object") {
-      for (const x of a) {
-        for (const y of b) {
+      for (const x of a.parts) {
+        for (const y of b.parts) {
           if (x.op === "property" && y.op === "property" && x.name === y.name
             && both.some((part) => part.op === "hasProperty" && part.name === x.name) && expressionExcludes(x.of, y.of)) {
             return true;
@@ -330,9 +333,9 @@ const relations = (schemas) => {
   /**
    * Whether an instance of a type could pass everything that has to pass
    *
-   * @type (type: JsonTypeName, parts: Expression[]) => boolean
+   * @type (type: JsonTypeName, side: Side) => boolean
    */
-  const canPassType = (type, parts) => parts.every((part) => {
+  const canPassType = (type, { parts, applied }) => parts.every((part) => {
     switch (part.op) {
       case "fail":
         return false;
@@ -344,7 +347,7 @@ const relations = (schemas) => {
         return part.values.some((value) => typeOf(value) === type);
       case "any":
       case "one":
-        return part.of.some((of) => canPassType(type, conjuncts(of)));
+        return part.of.some((of) => canPassType(type, conjuncts(of, applied)));
       default:
         return true;
     }
@@ -352,6 +355,16 @@ const relations = (schemas) => {
 
   return { implies: expressionImplies, excludes: expressionExcludes };
 };
+
+/**
+ * One side of `excludes`: everything that has to pass, and the schemas
+ * whose groups those are
+ *
+ * @typedef {{ parts: Expression[]; applied: ReadonlySet<Handle> }} Side
+ */
+
+/** @type ReadonlySet<Handle> */
+const noSchemas = new Set();
 
 /** How deep `excludes` and `implies` follow each other through `not` */
 const maxDepth = 16;

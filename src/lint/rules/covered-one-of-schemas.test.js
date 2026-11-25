@@ -64,6 +64,11 @@ describe("covered-one-of-schemas", () => {
     }`)).to.have.length(1);
   });
 
+  test("a schema that applies itself in anyOf", async () => {
+    const itself = `"$defs": { "s": { "anyOf": [{ "$ref": "#/$defs/s" }, { "type": "string" }] } }`;
+    expect(await reasons(`{ "$schema": "${draft2020}", ${itself}, "oneOf": [{ "$ref": "#/$defs/s" }, { "not": { "$ref": "#/$defs/s" } }] }`)).to.eql([]);
+  });
+
   test("allOf and anyOf aren't reported", async () => {
     expect(await reasons(`{ "$schema": "${draft2020}", "anyOf": [{ "type": "integer" }, { "type": "number" }] }`)).to.eql([]);
     expect(await reasons(`{ "$schema": "${draft2020}", "allOf": [{ "type": "integer" }, { "type": "number" }] }`)).to.eql([]);

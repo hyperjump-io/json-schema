@@ -56,6 +56,11 @@ what implies a `not`.
 - **`not`** on one side is excluded by whatever implies its expression,
   for the type. The two functions call each other through `not`, to a
   depth of 16.
+- **A schema that applies itself in an `any` or `one` is left out there.**
+  Each expression of an `any` or `one` is a side of its own, made knowing
+  which schemas' groups it's already in, and it doesn't add those again.
+  Leaving out something that has to pass only makes less known. The depth
+  doesn't stop this, because nothing is compared on the way down.
 
 Lint's `exclusive-one-of-schemas` reads it. Counted on the 39 schemas of the
 benchmark corpora, with what it knows now:

@@ -131,6 +131,11 @@ describe("redundant-all-of-any-of-schemas", () => {
     expect(await reasons(`{ "$schema": "${draft2020}", "anyOf": ${schemas} }`)).to.eql([]);
   });
 
+  test("a schema that applies itself in oneOf", async () => {
+    const itself = `"$defs": { "s": { "oneOf": [{ "$ref": "#/$defs/s" }, { "type": "string" }] } }`;
+    expect(await reasons(`{ "$schema": "${draft2020}", ${itself}, "anyOf": [{ "$ref": "#/$defs/s" }, { "not": { "$ref": "#/$defs/s" } }] }`)).to.eql([]);
+  });
+
   test("oneOf isn't reported", async () => {
     expect(await reasons(`{ "$schema": "${draft2020}", "oneOf": [{ "type": "integer" }, { "type": "number" }] }`)).to.eql([]);
   });

@@ -66,6 +66,11 @@ describe("exclusive-one-of-schemas", () => {
     expect(await reasons(`{ "$schema": "${draft2020}", "oneOf": [{ "$ref": "https://example.com/other" }, { "type": "string" }] }`)).to.eql([]);
   });
 
+  test("a schema that applies itself in anyOf", async () => {
+    const itself = `"$defs": { "s": { "anyOf": [{ "$ref": "#/$defs/s" }, { "type": "string" }] } }`;
+    expect(await reasons(`{ "$schema": "${draft2020}", ${itself}, "oneOf": [{ "$ref": "#/$defs/s" }, { "type": "number" }] }`)).to.eql([]);
+  });
+
   test("one schema isn't reported", async () => {
     expect(await reasons(`{ "$schema": "${draft2020}", "oneOf": [{ "type": "string" }] }`)).to.eql([]);
   });

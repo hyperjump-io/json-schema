@@ -353,4 +353,19 @@ describe("excludes", () => {
     expect(withSchemas(apply("a"), apply("b"))).to.equal(true);
     expect(withSchemas(apply("a"), apply("a"))).to.equal(false);
   });
+
+  test("a schema that applies itself in any or one", () => {
+    /** @type Map<string, Expression[]> */
+    const schemas = new Map([
+      ["strings", [{ op: "any", of: [apply("strings"), isString] }]],
+      ["both", [{ op: "one", of: [{ op: "all", of: [apply("both"), isNumber] }, apply("strings")] }]]
+    ]);
+    const withSchemas = excludes(schemas);
+    expect(withSchemas(apply("strings"), isNumber)).to.equal(false);
+    expect(withSchemas(isNumber, apply("strings"))).to.equal(false);
+    expect(withSchemas(apply("both"), apply("strings"))).to.equal(false);
+    expect(withSchemas(apply("both"), { op: "typeIs", types: ["null"] })).to.equal(false);
+    expect(withSchemas(apply("strings"), apply("strings"))).to.equal(false);
+    expect(implies(schemas)(isNumber, { op: "not", of: apply("strings") })).to.equal(false);
+  });
 });
