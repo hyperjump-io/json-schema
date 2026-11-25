@@ -40,6 +40,9 @@ describe("covered-one-of-schemas", () => {
   test("a schema that allows nothing isn't reported", async () => {
     expect(await reasons(`{ "$schema": "${draft2020}", "oneOf": [false, { "type": "string" }] }`)).to.eql([]);
     expect(await reasons(`{ "$schema": "${draft2020}", "oneOf": [{ "allOf": [false] }, { "type": "string" }] }`)).to.eql([]);
+    expect(await reasons(`{ "$schema": "${draft2020}", "oneOf": [{ "type": "string", "maxLength": 1, "minLength": 5 }, { "type": "string" }] }`)).to.eql([]);
+    expect(await reasons(`{ "$schema": "${draft2020}", "oneOf": [{ "not": {} }, true] }`)).to.eql([]);
+    expect(await reasons(`{ "$schema": "${draft2020}", "oneOf": [{ "type": "string", "const": 1 }, { "type": "string" }] }`)).to.eql([]);
   });
 
   test("schemas that each allow something the other doesn't aren't reported", async () => {

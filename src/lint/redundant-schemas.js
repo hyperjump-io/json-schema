@@ -102,14 +102,17 @@ export const redundantSchemas = (document) => {
  * one allows too. It's with the keyword, where the schema is, and the
  * index of the other one, which is undefined if the keyword's value isn't
  * an array of the schemas. Of two that allow the same, both are. A schema
- * that allows nothing isn't one, because it has no values to fail.
+ * that's known to allow nothing (`excludes`) isn't one, because it has no
+ * values to fail.
  *
  * @typedef {{ keywordNode: JsonSchemaKeywordNode; node: Node; other: number | undefined }} Covered
  *
  * @type (document: LintDocument) => Covered[]
  */
 export const coveredSchemas = (document) => {
-  const expressionImplies = implies(schemaExpressions(document));
+  const schemas = schemaExpressions(document);
+  const expressionImplies = implies(schemas);
+  const expressionExcludes = excludes(schemas);
 
   /** @type Covered[] */
   const covered = [];
@@ -123,7 +126,7 @@ export const coveredSchemas = (document) => {
       const valueNode = keywordNode.children[1];
       const itemNodes = valueNode.jsonType === "array" && valueNode.children.length === expression.of.length ? valueNode.children : undefined;
       for (const [index, of] of expression.of.entries()) {
-        if (expressionImplies(of, { op: "fail" })) {
+        if (expressionExcludes(of, { op: "pass" })) {
           continue;
         }
 

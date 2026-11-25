@@ -52,8 +52,10 @@ the one that passes: every value it allows matches both, and fails.
 - **Two schemas that allow the same are both reported**, because neither
   one's values can pass. `duplicate-one-of-schemas` reports the later one
   too.
-- **A schema that allows nothing isn't reported** (`false`, or what
-  implies `fail`). It implies every schema, but it has no values to fail.
+- **A schema that allows nothing isn't reported**, as far as `excludes`
+  knows: one that excludes `pass`, like `false`, `not: {}`, or limits
+  that don't overlap. It implies every schema, but it has no values to
+  fail.
 - **It's a rule of its own**, like `duplicate-one-of-schemas`, because the
   schema isn't redundant. It's why valid-looking values are rejected.
 
@@ -94,9 +96,10 @@ A `oneOf` whose schemas all exclude each other (the kernel's
 
 ## Open questions and limitations
 
-- **A schema that allows nothing in a way `implies` doesn't know**, like
-  `not: {}`, is reported by `covered-one-of-schemas` if another schema
-  allows everything, though it has no values to fail.
+- **A schema that allows nothing in a way `excludes` doesn't know**, like
+  a `pattern` nothing matches, is reported by `covered-one-of-schemas` if
+  another schema allows everything it could, though it has no values to
+  fail.
 - **Keywords next to the `allOf` or `anyOf`** aren't compared with its
   schemas, so `minimum: 5` next to `allOf: [{ "minimum": 3 }]` isn't
   reported.
