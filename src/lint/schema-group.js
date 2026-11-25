@@ -48,13 +48,19 @@ const childOps = new Set(["item", "eachItem", "contains", "property", "eachPrope
  */
 const contexts = new WeakMap();
 
-/** @type typeof API.schemaGroup */
-export const schemaGroup = (document, schemaNode) => {
+/** @type (document: LintDocument) => Context */
+const contextOf = (document) => {
   let context = contexts.get(document);
   if (context === undefined) {
     context = buildContext(document);
     contexts.set(document, context);
   }
+  return context;
+};
+
+/** @type typeof API.schemaGroup */
+export const schemaGroup = (document, schemaNode) => {
+  const context = contextOf(document);
 
   let group = context.groups.get(schemaNode);
   if (group === undefined) {
@@ -70,8 +76,7 @@ export const schemaGroup = (document, schemaNode) => {
 
 /** @type typeof API.isAppliedToAValue */
 export const isAppliedToAValue = (document, schemaNode) => {
-  schemaGroup(document, schemaNode);
-  const { positions, applications } = /** @type Context */ (contexts.get(document));
+  const { positions, applications } = contextOf(document);
   if (!positions.has(schemaNode)) {
     return false;
   }
