@@ -27,6 +27,11 @@ describe("additional-items-without-items-array", () => {
       .to.eql(["'additionalItems' has no effect when 'items' is a schema, not an array of schemas"]);
   });
 
+  test("items that isn't a schema or an array", async () => {
+    expect(await reasons(`{ "$schema": "${draft07}", "items": 3, "additionalItems": false }`)).to.eql(["Expected a schema or an array"]);
+    expect(await reasons(`{ "$schema": "${draft07}", "items": { "$ref": "#/definitions/a" }, "additionalItems": false, "definitions": { "a": {} } }`)).to.have.length(1);
+  });
+
   test("without items", async () => {
     expect(await reasons(`{ "$schema": "${draft07}", "additionalItems": false }`))
       .to.eql(["'additionalItems' has no effect without 'items'"]);

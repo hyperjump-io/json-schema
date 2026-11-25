@@ -15,7 +15,7 @@ const additionalItemsWithoutItemsArray = lintRule({ origin: "json-schema-lint:ad
     const itemsNode = findKeyword(schemaNode, itemsUri);
     if (itemsNode === undefined) {
       file.message(`'${name}' has no effect without 'items'`, { place: keywordNode.position });
-    } else if (itemsNode.children[1].jsonType !== "array") {
+    } else if (itemsNode.children[1].jsonType === "object" || itemsNode.children[1].jsonType === "boolean") {
       const itemsName = itemsNode.children[0].value;
       file.message(`'${name}' has no effect when '${itemsName}' is a schema, not an array of schemas`, { place: keywordNode.position });
     }
