@@ -67,6 +67,12 @@ describe("keyword-without-type", () => {
     expect(await reasons(`{ "$schema": "${draft2020}", "type": "object", "dependentSchemas": { "a": { "required": ["b"] } } }`)).to.eql([]);
   });
 
+  test("a condition that says the type of a schema that's a reference", async () => {
+    const draft07 = "http://json-schema.org/draft-07/schema#";
+    expect(await reasons(`{ "$schema": "${draft07}", "if": { "type": "object" }, "then": { "$ref": "#/definitions/o" }, "definitions": { "o": { "required": ["a"] } } }`)).to.eql([]);
+    expect(await reasons(`{ "$schema": "${draft07}", "if": { "type": "object" }, "else": { "$ref": "#/definitions/o" }, "definitions": { "o": { "required": ["a"] } } }`)).to.have.length(1);
+  });
+
   test("a schema that's referenced with a type and without one", async () => {
     expect(await reasons(`{
       "$schema": "${draft2020}",

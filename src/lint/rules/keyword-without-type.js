@@ -94,11 +94,14 @@ const keywordWithoutType = lintRule({ origin: "json-schema-lint:keyword-without-
 
   // Whether a schema only applies another where a condition that says the
   // type passes, like `then` with an `if` that has a `type`, or a dependent
-  // schema, which only applies to objects
+  // schema, which only applies to objects. A schema that's a reference is
+  // applied by the URI it refers to.
   /** @type (from: JsonSchemaNode, to: JsonSchemaNode) => boolean */
   const appliesWhereTyped = (from, to) => {
     return (keywordsOf(from) ?? []).some((keyword) => {
       const applied = appliedBy(keyword);
+      /** @type (handle: string) => boolean */
+      const isApplied = (handle) => to.type === "reference" ? handle === to.href : applied(handle) === to;
 
       /** @type (expression: Expression) => boolean */
       const isBranchWhereTyped = (expression) => {
@@ -106,7 +109,7 @@ const keywordWithoutType = lintRule({ origin: "json-schema-lint:keyword-without-
           return subexpressions(expression).some(isBranchWhereTyped);
         }
         return expression.cases.some(([condition, then]) => {
-          return then !== null && operationsOf(then).some((operation) => operation.op === "apply" && applied(operation.schema) === to)
+          return then !== null && operationsOf(then).some((operation) => operation.op === "apply" && isApplied(operation.schema))
             && canPass(condition, (handle) => typesOf(applied(handle))).size < everyType;
         });
       };

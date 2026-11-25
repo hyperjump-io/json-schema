@@ -32,7 +32,8 @@ keyword applies.
 - **A schema that doesn't is fine if every schema that applies it in place
   says**, followed up the group's links, or only applies it where a
   `cases` condition that says the type passes (`then`, a dependent
-  schema). A schema that's applied to a value of its own
+  schema). A schema that's a reference is the one applied if the
+  `apply` is of the URI it refers to. A schema that's applied to a value of its own
   (`isAppliedToAValue`) has nothing above it. One that nothing in the
   document applies is used from other documents, which may say.
 - **It's still reported once for each group**, on the first keyword for
