@@ -1,4 +1,5 @@
-import { visit } from "unist-util-visit";
+import { jsonPointerGet } from "@hyperjump/browser";
+import { EXIT, visit } from "unist-util-visit";
 import { excludes, implies } from "../kernel/implies.js";
 import { subexpressions } from "../kernel/kernel.js";
 import { marksAreRead, schemaGroup } from "./schema-group.js";
@@ -21,7 +22,8 @@ import { marksAreRead, schemaGroup } from "./schema-group.js";
  *
  * A schema that might do more than pass or fail isn't one: it annotates,
  * or it marks properties or items where something might read the marks, or
- * what it does isn't known. `other` is undefined if the keyword's value
+ * what it does isn't known, or something could refer to it or to a schema
+ * in it ({@link referableSchemas}). `other` is undefined if the keyword's value
  * isn't an array of the schemas.
  *
  * @typedef {{ op: "all" | "any"; keywordNode: JsonSchemaKeywordNode; node: Node; other: number | undefined }} Redundant
@@ -32,6 +34,7 @@ export const redundantSchemas = (document) => {
   const lowered = document.schemas;
   const schemas = schemaExpressions(document);
   const expressionImplies = implies(schemas);
+  const referable = referableSchemas(document);
 
   /** @type Redundant[] */
   const redundant = [];
@@ -65,7 +68,8 @@ export const redundantSchemas = (document) => {
             const group = schemaGroup(document, schemaNode);
             marksMightBeRead = group.open || marksAreRead(document, group);
           }
-          onlyResults[index] = !effects.unknown && !effects.annotates && !(effects.marks && marksMightBeRead);
+          onlyResults[index] = !effects.unknown && !effects.annotates && !(effects.marks && marksMightBeRead)
+            && !hasAny(itemNodes?.[index] ?? keywordNode, referable);
         }
         return onlyResults[index];
       };
@@ -183,6 +187,52 @@ const schemaExpressions = ({ tree, schemas: lowered }) => {
     }
   });
   return schemas;
+};
+
+/**
+ * The schemas something refers to, or could by a name: what each static
+ * reference in a document and the documents it reaches finds, the root of
+ * each resource in the document (`$id`), and what each of their anchors and
+ * dynamic anchors is on. Without one of them, a reference to it finds
+ * nothing.
+ *
+ * @type (document: LintDocument) => Set<Node>
+ */
+const referableSchemas = ({ tree, found }) => {
+  /** @type Set<Node> */
+  const referable = new Set();
+  for (const result of found.values()) {
+    if (result.status === "found") {
+      referable.add(result.node);
+    }
+  }
+  for (const resource of Object.values(tree.embedded)) {
+    const root = /** @type JsonSchemaNode */ (resource.children[0]);
+    referable.add(root);
+    for (const pointer of [...Object.values(resource.anchors), ...Object.values(resource.dynamicAnchors)]) {
+      const anchored = jsonPointerGet(pointer, root);
+      if (anchored !== undefined) {
+        referable.add(anchored);
+      }
+    }
+  }
+  return referable;
+};
+
+/**
+ * Whether a node or anything in it is one of some nodes
+ *
+ * @type (node: Node, nodes: ReadonlySet<Node>) => boolean
+ */
+const hasAny = (node, nodes) => {
+  let result = false;
+  visit(node, (each) => {
+    if (nodes.has(each)) {
+      result = true;
+      return EXIT;
+    }
+  });
+  return result;
 };
 
 /**

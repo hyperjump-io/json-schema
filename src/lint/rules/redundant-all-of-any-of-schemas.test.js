@@ -136,6 +136,23 @@ describe("redundant-all-of-any-of-schemas", () => {
     expect(await reasons(`{ "$schema": "${draft2020}", ${itself}, "anyOf": [{ "$ref": "#/$defs/s" }, { "not": { "$ref": "#/$defs/s" } }] }`)).to.eql([]);
   });
 
+  test("a schema something could refer to isn't reported", async () => {
+    const string = `{ "type": "string" }`;
+    const short = `"type": "string", "maxLength": 3`;
+    expect(await reasons(`{ "$schema": "${draft2020}", "anyOf": [${string}, { "$id": "https://example.com/short", ${short} }] }`)).to.eql([]);
+    expect(await reasons(`{ "$schema": "${draft2020}", "anyOf": [${string}, { "$anchor": "short", ${short} }] }`)).to.eql([]);
+    expect(await reasons(`{ "$schema": "${draft2020}", "anyOf": [${string}, { "$dynamicAnchor": "short", ${short} }] }`)).to.eql([]);
+    expect(await reasons(`{ "$schema": "${draft2020}", "anyOf": [${string}, { ${short} }], "properties": { "a": { "$ref": "#/anyOf/1" } } }`)).to.eql([]);
+    expect(await reasons(`{ "$schema": "${draft2020}", "anyOf": [${string}, { ${short}, "$defs": { "a": {} } }], "properties": { "a": { "$ref": "#/anyOf/1/$defs/a" } } }`)).to.eql([]);
+    expect(await reasons(`{ "$schema": "${draft2020}", "anyOf": [${string}, { ${short}, "$defs": { "a": {} } }] }`)).to.have.length(1);
+  });
+
+  test("of schemas that allow the same, the one nothing could refer to is reported", async () => {
+    expect(await reasons(`{ "$schema": "${draft2020}", "anyOf": [{ "type": "string" }, { "$anchor": "string", "type": "string" }] }`)).to.eql([
+      "This schema has no effect, because 'anyOf/1' allows everything it allows"
+    ]);
+  });
+
   test("oneOf isn't reported", async () => {
     expect(await reasons(`{ "$schema": "${draft2020}", "oneOf": [{ "type": "integer" }, { "type": "number" }] }`)).to.eql([]);
   });

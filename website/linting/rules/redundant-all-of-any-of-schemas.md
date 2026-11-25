@@ -34,7 +34,12 @@ A schema that annotates, like one with a `title`, isn't reported, because
 the annotation is an effect. Neither is a schema that evaluates properties
 or items where `unevaluatedProperties` or `unevaluatedItems` might depend
 on it. That includes the root schema and schemas in `$defs`, because
-another document could reference them. It has no options.
+another document could reference them.
+
+A schema that a reference refers to isn't reported either, or one with an
+`$id`, an `$anchor`, or a `$dynamicAnchor`, because a reference would
+break without it. The same goes for a schema that contains one of those.
+It has no options.
 
 ## Examples
 
@@ -121,6 +126,21 @@ another document could reference them. It has no options.
     { "title": "A known size", "enum": ["small", "large"] },
     { "type": "string" }
   ]
+}
+```
+
+#### A schema that's referenced
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "anyOf": [
+    { "type": "string" },
+    { "$anchor": "short", "type": "string", "maxLength": 3 }
+  ],
+  "properties": {
+    "code": { "$ref": "#short" }
+  }
 }
 ```
 

@@ -14,6 +14,13 @@ kernel's [`implies`](../kernel/implies.md).
   if its schema's group reads marks or is open, as in
   `keyword-without-effect` ([What a keyword group does](effect.md)). The
   other schema's marks and annotations don't matter, because it stays.
+- **A schema something could refer to isn't reported**, or one with such
+  a schema in it: what a static reference in the document or one it
+  reaches finds, a schema with an identifier (`$id`), and one with an
+  anchor or a dynamic anchor (`referableSchemas`). Leaving it out breaks
+  the reference. An identifier or anchor counts without a reference to
+  it, because it's there to be referred to, and another document could.
+  A `$defs` nothing refers to doesn't count.
 - **Of two schemas that allow the same, the later one is reported**,
   unless it has another effect and the earlier one doesn't. Then the
   earlier one is the one that can be left out.
