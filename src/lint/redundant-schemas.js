@@ -23,7 +23,11 @@ import { marksAreRead, schemaGroup } from "./schema-group.js";
  * A schema that might do more than pass or fail isn't one: it annotates,
  * or it marks properties or items where something might read the marks, or
  * what it does isn't known, or something could refer to it or to a schema
- * in it ({@link referableSchemas}). `other` is undefined if the keyword's value
+ * in it ({@link referableSchemas}). A schema that applies the keyword's
+ * schema in place isn't why another is redundant, because what it allows
+ * depends on the other one: in `anyOf: [{ "$ref": "#" }, { "type":
+ * "string" }]`, a string passes the reference only because of the second
+ * schema. `other` is undefined if the keyword's value
  * isn't an array of the schemas.
  *
  * @typedef {{ op: "all" | "any"; keywordNode: JsonSchemaKeywordNode; node: Node; other: number | undefined }} Redundant
@@ -74,12 +78,22 @@ export const redundantSchemas = (document) => {
         return onlyResults[index];
       };
 
+      // Whether a schema applies the keyword's schema in place, so what
+      // it allows depends on the keyword's other schemas
+      /** @type (boolean | undefined)[] */
+      const applyingItself = [];
+      /** @type (index: number) => boolean */
+      const appliesItself = (index) => {
+        applyingItself[index] ??= appliesInPlace(expression.of[index], schemaNode.location, schemas);
+        return applyingItself[index];
+      };
+
       for (const [index, of] of expression.of.entries()) {
         // Of two that make each other redundant, the later one is, unless
         // only the earlier one has no other effect
         const other = expression.of.findIndex((other, otherIndex) => {
-          return otherIndex !== index && makesRedundant(other, of)
-            && !(otherIndex > index && makesRedundant(of, other) && hasOnlyResult(otherIndex));
+          return otherIndex !== index && makesRedundant(other, of) && !appliesItself(otherIndex)
+            && !(otherIndex > index && makesRedundant(of, other) && !appliesItself(index) && hasOnlyResult(otherIndex));
         });
         if (other !== -1 && hasOnlyResult(index)) {
           redundant.push({
@@ -236,6 +250,39 @@ const hasAny = (node, nodes) => {
     }
   });
   return result;
+};
+
+/**
+ * Operations whose subexpressions apply to something in the instance, like
+ * a property's value
+ */
+const childOps = new Set(["property", "eachProperty", "item", "eachItem", "contains", "itemSequence", "eachPropertyName"]);
+
+/**
+ * Whether an expression applies a schema to the instance it's evaluated
+ * on, following the schemas it applies in place. A schema that isn't known
+ * isn't followed.
+ *
+ * @type (expression: Expression, schema: string, schemas: ReadonlyMap<string, Expression[]>) => boolean
+ */
+const appliesInPlace = (expression, schema, schemas) => {
+  /** @type Set<string> */
+  const followed = new Set();
+
+  /** @type (expression: Expression) => boolean */
+  const applies = (expression) => {
+    if (expression.op === "apply") {
+      if (expression.schema === schema) {
+        return true;
+      } else if (followed.has(expression.schema)) {
+        return false;
+      }
+      followed.add(expression.schema);
+      return (schemas.get(expression.schema) ?? []).some(applies);
+    }
+    return !childOps.has(expression.op) && subexpressions(expression).some(applies);
+  };
+  return applies(expression);
 };
 
 /**

@@ -21,6 +21,13 @@ kernel's [`implies`](../kernel/implies.md).
   the reference. An identifier or anchor counts without a reference to
   it, because it's there to be referred to, and another document could.
   A `$defs` nothing refers to doesn't count.
+- **A schema that applies the keyword's schema in place isn't the
+  reason.** In `anyOf: [{ "$ref": "#" }, { "type": "string" }]`, a string
+  passes the reference, but only because of the second schema, and
+  without it nothing passes. `implies` is right that it does. What's
+  wrong is leaving the schema out, so it's the rule that checks
+  (`appliesInPlace`). Applying the schema to a property or an item is
+  fine, because that's about a smaller value.
 - **Of two schemas that allow the same, the later one is reported**,
   unless it has another effect and the earlier one doesn't. Then the
   earlier one is the one that can be left out.

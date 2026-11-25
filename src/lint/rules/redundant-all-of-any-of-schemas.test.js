@@ -136,6 +136,20 @@ describe("redundant-all-of-any-of-schemas", () => {
     expect(await reasons(`{ "$schema": "${draft2020}", ${itself}, "anyOf": [{ "$ref": "#/$defs/s" }, { "not": { "$ref": "#/$defs/s" } }] }`)).to.eql([]);
   });
 
+  test("a schema that applies the keyword's schema isn't why another is redundant", async () => {
+    expect(await reasons(`{ "$schema": "${draft2020}", "items": { "$ref": "#/$defs/s" }, "$defs": { "s": { "anyOf": [{ "$ref": "#/$defs/s" }, { "type": "string" }] } } }`)).to.eql([]);
+    expect(await reasons(`{ "$schema": "${draft2020}", "items": { "$ref": "#/$defs/s" }, "$defs": { "s": { "allOf": [{ "$ref": "#/$defs/s" }, { "type": "string" }] } } }`)).to.eql([]);
+    expect(await reasons(`{ "$schema": "${draft2020}", "items": { "$ref": "#/$defs/s" }, "$defs": { "s": { "anyOf": [{ "$ref": "#/$defs/t" }, { "type": "string" }] }, "t": { "allOf": [{ "$ref": "#/$defs/s" }] } } }`)).to.eql([]);
+    // The schema that applies it is redundant itself
+    expect(await reasons(`{ "$schema": "${draft2020}", "items": { "$ref": "#/$defs/s" }, "$defs": { "s": { "anyOf": [{ "$ref": "#/$defs/s" }, true] } } }`)).to.eql([
+      "This schema has no effect, because 'anyOf/1' allows everything it allows"
+    ]);
+    // Applying it to property names doesn't depend on the other schemas
+    expect(await reasons(`{ "$schema": "${draft2020}", "items": { "$ref": "#/$defs/s" }, "$defs": { "s": { "anyOf": [{ "propertyNames": { "$ref": "#/$defs/s" } }, { "type": "string" }] } } }`)).to.eql([
+      "This schema has no effect, because 'anyOf/0' allows everything it allows"
+    ]);
+  });
+
   test("a schema something could refer to isn't reported", async () => {
     const string = `{ "type": "string" }`;
     const short = `"type": "string", "maxLength": 3`;
