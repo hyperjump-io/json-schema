@@ -3,6 +3,7 @@ import { addReachable, itemSequenceStates, multipleOf, selector } from "../kerne
 import { astInstance, jsInstance } from "../kernel/instance.js";
 import { readsMarks } from "../kernel/kernel.js";
 import { codePointLengthIsWithin, instanceEqual, patternRegExp } from "../keywords/utilities.js";
+import { isWhollyLowered } from "./applied.js";
 import { schemaAt } from "./document.js";
 
 /**
@@ -194,6 +195,8 @@ const buildEvaluator = (document) => {
 
     return applyIn(schemaNode, instance, marks, () => {
       const own = noMarks();
+      // A keyword that couldn't be lowered might have marked anything
+      own.anything = !isWhollyLowered(document, schemaNode, keywords);
       /** @type boolean | undefined */
       let valid = true;
       let annotates = false;
@@ -694,6 +697,7 @@ const buildEvaluator = (document) => {
     keywords: (schemaNode, instance) => {
       const keywords = orderedKeywords(schemaNode) ?? [];
       const own = noMarks();
+      own.anything = !isWhollyLowered(document, schemaNode, keywords);
       /** @type Map<LoweredKeyword, API.LintEvaluation> */
       const evaluations = new Map();
       for (const keyword of keywords) {

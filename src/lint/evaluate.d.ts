@@ -37,7 +37,8 @@ export type LintEvaluator = {
  * be followed, a `dynamicApply`, because the dynamic scope depends on what
  * applies the schema, an `opaque` operation, and a schema whose dialect
  * isn't known. A keyword that wasn't lowered, like one whose value doesn't
- * fit its shape, isn't evaluated, so it passes. A value that couldn't be
+ * fit its shape, isn't evaluated, so it passes, but it might have marked
+ * anything, so what reads marks next to it isn't known. A value that couldn't be
  * parsed passes every schema, as it does when validating.
  *
  * The evaluator is built once for each document, so rules share it.

@@ -28,4 +28,9 @@ unknown, so a rule reports only what's sure.
   marks part of it, which are effects for
   `keyword-implied-by-const-or-enum`.
 - A keyword that wasn't lowered isn't evaluated, so it passes, and a value
-  that couldn't be parsed passes every schema, as when validating.
+  that couldn't be parsed passes every schema, as when validating. What
+  such a keyword would have marked isn't known, so its schema's marks
+  might be anything, and an `unevaluated*` next to it is unknown
+  (`isWhollyLowered`). Before 2026-11-24 it marked nothing, and
+  `unevaluatedItems` next to an `items` that wasn't lowered rejected
+  every item.

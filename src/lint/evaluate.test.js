@@ -185,6 +185,14 @@ describe("evaluatorForLint", () => {
     expect(evaluate({ b: "x" })).to.eql({ valid: true, annotates: false, marks: false });
   });
 
+  test("what a keyword that wasn't lowered marks isn't known", async () => {
+    const schema = { $schema: draft2020, properties: 3, unevaluatedProperties: false };
+    expect(await valid(schema, { a: 1 })).to.equal(undefined);
+    expect(await valid({ $schema: draft2020, allOf: [{ properties: 3 }], unevaluatedProperties: false }, { a: 1 })).to.equal(undefined);
+    expect(await valid({ ...schema, type: "string" }, { a: 1 })).to.equal(false);
+    expect(await valid({ $schema: draft2020, title: "a", $defs: {}, unevaluatedProperties: false }, { a: 1 })).to.equal(false);
+  });
+
   test("a subschema", async () => {
     expect(await valid({ $schema: draft2020, properties: { a: { type: "string" } } }, 1, "/properties/a")).to.equal(false);
   });

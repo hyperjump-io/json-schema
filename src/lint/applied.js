@@ -1,3 +1,4 @@
+import { keywordDefinitionUri } from "../keywords/unknown.js";
 import { isReferenceSchema } from "../schema/schema-nodes.js";
 
 /**
@@ -49,6 +50,26 @@ export const appliedSchemas = (document) => {
   };
 
   return { keywordsOf: (node) => document.reached.get(node), find, appliedBy };
+};
+
+/**
+ * Whether every keyword of a schema that lowers to something was lowered:
+ * each one whose definition has `lower` has a group in `keywords`, which
+ * is what the schema lowers to. One that doesn't has a value that isn't
+ * valid, or reads a sibling whose value isn't, so what the schema allows,
+ * marks, and annotates isn't known.
+ *
+ * @type (document: LintDocument, schemaNode: JsonSchemaNode, keywords: LoweredKeyword[]) => boolean
+ */
+export const isWhollyLowered = (document, schemaNode, keywords) => {
+  if (schemaNode.jsonType !== "object") {
+    return true;
+  }
+
+  const lowered = new Set(keywords.map(({ keywordNode }) => keywordNode));
+  return /** @type JsonSchemaKeywordNode[] */ (schemaNode.children).every((keywordNode) => {
+    return lowered.has(keywordNode) || document.definitions.keywords[keywordDefinitionUri(keywordNode.keywordUri)]?.lower === undefined;
+  });
 };
 
 /**
