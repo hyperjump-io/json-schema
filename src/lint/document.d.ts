@@ -22,7 +22,8 @@ export type LintDocument = {
    * dynamic anchors of a resource in the document are known, so a dynamic
    * reference into one that isn't lowers to `dynamicApply`. A keyword whose
    * value doesn't fit its shape, or that can't be lowered, has no group, and
-   * neither does one without `lower`, like `$defs`. A schema whose dialect
+   * neither does one that reads a sibling like that, or one without `lower`,
+   * like `$defs`. A schema whose dialect
    * isn't known isn't included.
    */
   schemas: LintSchemas;

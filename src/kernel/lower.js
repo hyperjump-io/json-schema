@@ -111,8 +111,9 @@ export const nodeReader = {
  * keyword's `check` rejects, and a schema with a problem isn't compiled, so
  * when compiling, every value fits. Lint lowers broken documents, so if
  * `tolerant`, a keyword whose value doesn't fit or is rejected, or whose
- * `lower` throws, has no group, and a sibling whose value doesn't fit or is
- * rejected is left out. Each keyword is also lowered without each sibling
+ * `lower` throws, has no group, and neither does a keyword that reads a
+ * sibling whose value doesn't fit or is rejected: what it says without the
+ * sibling isn't what it would say with it. Each keyword is also lowered without each sibling
  * it read, so lint knows where each operation came from.
  *
  * `keywords` are the definitions, by URI. A resolved schema only has
@@ -157,19 +158,13 @@ export const lowerKeywords = async (keywords, schema, dialect, inputs, tolerant)
 
         const siblingKeyword = keywords[keywordDefinitionUri(siblingUri)];
         if (tolerant && !accepts(siblingKeyword, sibling.children[1], node, dialect)) {
-          continue;
+          throw new Misfit();
         }
 
-        try {
-          const parsedSibling = keywordValue(schema, sibling, siblingKeyword.shape, inputs);
-          siblings[name] = parsedSibling instanceof Promise ? await parsedSibling : parsedSibling;
-          sourceNodes.push(sibling);
-          sourceNames.push(name);
-        } catch (error) {
-          if (!tolerant || !(error instanceof Misfit)) {
-            throw error;
-          }
-        }
+        const parsedSibling = keywordValue(schema, sibling, siblingKeyword.shape, inputs);
+        siblings[name] = parsedSibling instanceof Promise ? await parsedSibling : parsedSibling;
+        sourceNodes.push(sibling);
+        sourceNames.push(name);
       }
 
       const lowerKeyword = keyword.lower;
@@ -436,7 +431,7 @@ const lowerLoadingAhead = async (session, uri, ahead) => {
   return { kernel: 1, uri: handle, schemas, resources, reads };
 };
 
-/** A value that doesn't fit its keyword's shape */
+/** A value that doesn't fit its keyword's shape, or that its `check` rejects */
 class Misfit extends Error {}
 
 /**

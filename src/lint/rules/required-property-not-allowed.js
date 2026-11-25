@@ -1,5 +1,4 @@
 import { visit } from "unist-util-visit";
-import { keywordDefinitionUri } from "../../keywords/unknown.js";
 import { allowsNothing } from "../allows-nothing.js";
 import { operationsOf, propertyOperations } from "../analysis.js";
 import { namesOf } from "../bounds.js";
@@ -20,11 +19,8 @@ import { nodeFor } from "../utilities.js";
  * named. Schemas that have to pass with the schema, like `allOf`'s and
  * `$ref`'s, count too (`keywordsThatMustPass`). An `eachProperty` with an
  * `unevaluated` selector applies to a property that nothing else in its
- * schema might mark (`mightMarkProperty`). A keyword that was lowered
- * without a sibling it reads, because the sibling's value isn't valid,
- * isn't known to reject anything: `additionalProperties` next to a
- * `patternProperties` with a pattern that isn't valid. A property required
- * and rejected in the same applied schema is reported there.
+ * schema might mark (`mightMarkProperty`). A property required and rejected
+ * in the same applied schema is reported there.
  *
  * @type import("unified-lint-rule").Plugin<JsonSchemaDocumentNode, void>
  */
@@ -53,21 +49,6 @@ const requiredPropertyNotAllowed = lintRule({ origin: "json-schema-lint:required
     const rejectsUnevaluated = ({ keyword }) => operationsOf(keyword.group.expression)
       .some((operation) => operation.op === "eachProperty" && "unevaluated" in operation.select && allowsNothing(operation.of, schemaNodes, lowered));
 
-    // Whether a keyword's schema has a sibling it reads that it was lowered
-    // without
-    /** @type (entry: MustPass | undefined) => boolean */
-    const lacksSibling = (entry) => {
-      const owner = entry && schemaNodes.get(entry.schema);
-      if (entry === undefined || owner?.jsonType !== "object") {
-        return true;
-      }
-
-      const { keywordNode, sourceNodes } = entry.keyword;
-      const read = Object.values(document.definitions.keywords[keywordDefinitionUri(keywordNode.keywordUri)]?.siblings ?? {});
-      return /** @type JsonSchemaKeywordNode[] */ (owner.children)
-        .some((sibling) => read.includes(sibling.keywordUri) && !sourceNodes.includes(sibling));
-    };
-
     /** @type (entry: MustPass, name: string) => boolean */
     const mightMark = ({ keyword, schema }, name) => {
       const owner = schemaNodes.get(schema);
@@ -82,7 +63,7 @@ const requiredPropertyNotAllowed = lintRule({ origin: "json-schema-lint:required
 
         const { name } = operation;
         const rejecting = propertyOperations(applied, name)
-          ?.find(({ keyword, of }) => allowsNothing(of, schemaNodes, lowered) && !lacksSibling(mustPassOf.get(keyword)));
+          ?.find(({ of }) => allowsNothing(of, schemaNodes, lowered));
         const rejectingEntry = rejecting === undefined
           ? mustPass.find((entry) => rejectsUnevaluated(entry) && !mightMark(entry, name))
           : /** @type MustPass */ (mustPassOf.get(rejecting.keyword));

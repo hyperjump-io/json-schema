@@ -90,11 +90,14 @@ describe("LintDocument.schemas", () => {
     expect(expressions(at(""))).to.eql([["minimum", { op: "range", min: 1 }]]);
   });
 
-  test("a sibling whose value doesn't fit its shape is left out", async () => {
-    const { at } = await lower(`{ "$schema": "${draft04}", "maximum": 5, "exclusiveMaximum": "x" }`);
-    const [maximum] = at("");
-    expect(maximum.group.expression).to.eql({ op: "range", max: 5 });
-    expect(maximum.sourceNodes).to.eql([]);
+  test("a keyword that reads a sibling whose value doesn't fit its shape has no group", async () => {
+    const { at } = await lower(`{ "$schema": "${draft04}", "maximum": 5, "exclusiveMaximum": "x", "minimum": 1 }`);
+    expect(expressions(at(""))).to.eql([["minimum", { op: "range", min: 1 }]]);
+  });
+
+  test("a keyword that reads a sibling whose value is rejected has no group", async () => {
+    const { at } = await lower(`{ "$schema": "${draft2020}", "patternProperties": { "(": {} }, "additionalProperties": false, "properties": { "a": {} } }`);
+    expect(at("").map(({ keywordNode }) => keywordNode.children[0].value)).to.eql(["properties"]);
   });
 
   test("a keyword with its default value lowers to the same as without it", async () => {

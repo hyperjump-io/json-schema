@@ -17,8 +17,16 @@ from other schemas' keywords isn't in a document, so it's read as nodes
   can only overstate which schemas might apply.
 - A keyword whose value can't be lowered, like one that doesn't fit its
   shape in a broken document or one its keyword's `check` rejects
-  (`"maximum": "x"`, because shape `"data"` fits anything), has no group,
-  and such a sibling is left out. Lint reports the value.
+  (`"maximum": "x"`, because shape `"data"` fits anything), has no group.
+  Neither does a keyword that reads such a sibling, like
+  `additionalProperties` next to a `patternProperties` with a pattern
+  that isn't valid. Lowered without the sibling, it says what it wouldn't
+  with it, and rules that reason about what a schema allows were wrong:
+  on 2026-11-24, seven of them were, such as `required-property-not-allowed`,
+  `invalid-default-or-example`, and `single-value-range`. Lint reports
+  the value, and the rules about the keyword wait until it's fixed.
+  Rejected: leaving the sibling out, which is what it did, and having
+  each rule check for a sibling its keyword didn't read.
 - Every keyword's value is parsed by its shape, including keywords without
   `lower`, so the references in `definitions` are found too.
 - Each group keeps its keyword's node and its sources' nodes, for where

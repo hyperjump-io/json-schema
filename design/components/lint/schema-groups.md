@@ -63,14 +63,6 @@ without the keyword URIs.
   (`boundsInPlace`), and `required-property-not-allowed` what they require
   with what they don't allow, so a contradiction across `allOf` or `$ref`
   is found. Rejected: looking at one schema, which misses them.
-- `required-property-not-allowed` doesn't report a keyword that was
-  lowered without a sibling it reads, like `additionalProperties` next to
-  a `patternProperties` with a pattern that isn't valid. Tolerant lowering
-  leaves the sibling out, so the keyword looks like it rejects names the
-  sibling might allow. The rule checks: the keyword's definition declares
-  the sibling, the schema has it, and the group didn't read it. Rejected:
-  giving such a keyword no group when lowering, which would take what it
-  still says from every other rule.
 - `required-property-not-allowed` also reports a property that an
   `unevaluated` `eachProperty` rejects, when nothing else in that keyword's
   schema might mark it (`mightMarkProperty` in `src/lint/evaluated.js`).
