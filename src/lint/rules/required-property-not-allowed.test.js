@@ -64,6 +64,9 @@ describe("required-property-not-allowed", () => {
     const notAPattern = `"patternProperties": { "(": {} }`;
     expect(await reasons(`{ "$schema": "${draft2020}", ${notAPattern}, "unevaluatedProperties": false, "required": ["a"] }`)).to.eql(["Expected a regular expression"]);
     expect(await reasons(`{ "$schema": "${draft2020}", "allOf": [{ ${notAPattern} }], "unevaluatedProperties": false, "required": ["a"] }`)).to.eql(["Expected a regular expression"]);
+    expect(await reasons(`{ "$schema": "${draft2020}", ${notAPattern}, "additionalProperties": false, "required": ["a"] }`)).to.eql(["Expected a regular expression"]);
+    expect(await reasons(`{ "$schema": "${draft2020}", "allOf": [{ ${notAPattern}, "additionalProperties": false }], "required": ["a"] }`)).to.eql(["Expected a regular expression"]);
+    expect(await reasons(`{ "$schema": "${draft2020}", "properties": 3, "additionalProperties": false, "required": ["a"] }`)).to.eql(["Expected an object"]);
     expect(await reasons(`{ "$schema": "${draft2020}", "then": {}, "minContains": 2, "$defs": {}, "title": "a", "unevaluatedProperties": false, "required": ["a"] }`)).to.have.length(1);
   });
 
