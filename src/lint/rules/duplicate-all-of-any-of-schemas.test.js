@@ -58,6 +58,25 @@ describe("duplicate-all-of-any-of-schemas", () => {
     }`)).to.have.length(1);
   });
 
+  test("schemas that refer to themselves in different ways", async () => {
+    expect(await reasons(`{
+      "$schema": "${draft2020}",
+      "anyOf": [{ "$ref": "#/$defs/b" }, { "$ref": "#/$defs/c" }],
+      "$defs": {
+        "b": { "items": { "$ref": "#/$defs/b" } },
+        "c": { "items": { "$ref": "#/$defs/d" } },
+        "d": { "items": { "$ref": "#/$defs/e" } },
+        "e": { "items": { "$ref": "#/$defs/c" } }
+      }
+    }`)).to.have.length(1);
+  });
+
+  test("a duplicate among many schemas", async () => {
+    const schemas = Array.from({ length: 50 }, (_, index) => ({ type: "object", properties: { kind: { const: index } }, required: ["kind"] }));
+    const anyOf = [...schemas, { required: ["kind"], properties: { kind: { enum: [7] } }, type: "object" }, { type: "object" }];
+    expect(await reasons(JSON.stringify({ $schema: draft2020, anyOf }))).to.have.length(1);
+  });
+
   test("annotations from different keywords aren't the same", async () => {
     expect(await reasons(`{ "$schema": "${draft2020}", "anyOf": [{ "title": "a" }, { "description": "a" }] }`)).to.eql([]);
     expect(await reasons(`{ "$schema": "${draft2020}", "anyOf": [{ "title": "a" }, { "title": "b" }] }`)).to.eql([]);

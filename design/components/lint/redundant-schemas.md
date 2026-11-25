@@ -48,6 +48,28 @@ kernel's [`implies`](../kernel/implies.md).
   findings in the 49 schemas of the benchmark corpora, 11 were that, and
   32 came from a mistake.
 
+## Duplicates (`src/lint/duplicate-schemas.js`)
+
+`duplicate-all-of-any-of-schemas` and `duplicate-one-of-schemas` report
+a schema that's the same as one before it (`sameExpression`).
+
+- **Only schemas with the same fingerprint are compared**
+  (`expressionFingerprint`), so a long `anyOf` doesn't have every pair
+  compared. Being the same is all or nothing, so one number for each
+  schema is enough, where implication needs
+  [buckets by kind](../kernel/implies.md#ruling-pairs-out). On
+  2026-11-24, 1,000 schemas with a `const` for a required property took
+  0.1 s, from 2.3 s.
+- **The fingerprint follows applied schemas three deep, and no further.**
+  Two schemas that apply themselves in different ways can still be the
+  same, like one that applies itself to its items and one that does it
+  through two other schemas. Written out to any one depth they're alike,
+  which following until a schema comes up again wouldn't be.
+- **Schemas with the same fingerprint are still compared**, so a number
+  two different schemas share only costs a comparison.
+- **Checked on 2026-11-24**: the two rules report the same on the
+  benchmark corpora and on 1,500 generated schemas with it and without.
+
 ## `covered-one-of-schemas`
 
 In `oneOf`, a schema that allows nothing another one doesn't can never be
@@ -115,8 +137,7 @@ A `oneOf` whose schemas all exclude each other (the kernel's
   0.1 s each where the schemas have a `const` for a required property,
   0.03 s where each is a `const`, and 1 s where they're objects that
   require different properties, which nothing rules out. Before, the
-  first took 3.3 s. `duplicate-one-of-schemas`, which compares pairs its
-  own way, takes 2.3 s. The rules don't share what they compare, because
+  first took 3.3 s. The rules don't share what they compare, because
   `anyOf` and `oneOf` are different pairs, and `excludes` is a different
   question.
 - **Keywords next to the `allOf` or `anyOf`** aren't compared with its
