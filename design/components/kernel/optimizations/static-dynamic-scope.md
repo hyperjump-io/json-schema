@@ -29,7 +29,10 @@ made from the entry and only as needed.
   DETAILED compare. A copy shares the schema's `SchemaInfo` and its groups'
   `KeywordInfo`s, by location, so each schema and keyword still has one
   info per evaluator, whichever copy is evaluated. A `KeywordInfo`'s
-  `expression` is the first copy's, and its `apply`s can name copies.
+  `expression` is the first copy's, and its `apply`s can name copies. So
+  is its `explainsFailure`, though dispatch can rewrite a keyword
+  differently in each copy, so BASIC also reports a failing keyword whose
+  subschemas didn't say why.
 - **The common case has no copies.** The outermost anchor wins, so an
   anchor the entry's resource defines identifies the same schema
   everywhere. Validating against a meta-schema, every `$dynamicRef` is to
