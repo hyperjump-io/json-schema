@@ -73,8 +73,7 @@ export const excludes = (schemas) => relations(schemas).excludes;
 const relations = (schemas) => {
   // What's known about each pair of schemas. A pair that's being compared
   // isn't known to imply, and whatever is found from there is still sure.
-  /** @type Map<string, boolean> */
-  const known = new Map();
+  const known = pairs();
 
   /** @type (a: Handle, b: Handle) => boolean */
   const schemaImplies = (a, b) => {
@@ -82,13 +81,12 @@ const relations = (schemas) => {
       return true;
     }
 
-    const pair = `${a}\0${b}`;
-    let result = known.get(pair);
+    let result = known.get(a, b);
     if (result === undefined) {
-      known.set(pair, false);
+      known.set(a, b, false);
       const bGroups = schemas.get(b);
       result = bGroups !== undefined && bGroups.every((group) => expressionImplies({ op: "apply", schema: a }, group));
-      known.set(pair, result);
+      known.set(a, b, result);
     }
     return result;
   };
@@ -215,9 +213,8 @@ const relations = (schemas) => {
   };
 
   // What's known about each pair of schemas excluding each other, like
-  // `known`
-  /** @type Map<string, boolean> */
-  const knownToExclude = new Map();
+  // `known`, in either order
+  const knownToExclude = pairs();
 
   // How many comparisons deep this one is, so expressions that apply each
   // other through `not` aren't compared forever
@@ -229,11 +226,11 @@ const relations = (schemas) => {
       return false;
     }
 
-    const pair = a.op === "apply" && b.op === "apply" ? [a.schema, b.schema].sort().join("\0") : undefined;
-    let result = pair === undefined ? undefined : knownToExclude.get(pair);
+    const pair = a.op === "apply" && b.op === "apply" ? [a.schema, b.schema].sort() : undefined;
+    let result = pair === undefined ? undefined : knownToExclude.get(pair[0], pair[1]);
     if (result === undefined) {
       if (pair !== undefined) {
-        knownToExclude.set(pair, false);
+        knownToExclude.set(pair[0], pair[1], false);
       }
       depth++;
       const aSide = conjuncts(a, noSchemas);
@@ -241,7 +238,7 @@ const relations = (schemas) => {
       result = jsonTypes.every((type) => excludeFor(type, aSide, bSide));
       depth--;
       if (pair !== undefined) {
-        knownToExclude.set(pair, result);
+        knownToExclude.set(pair[0], pair[1], result);
       }
     }
     return result;
@@ -365,6 +362,29 @@ const relations = (schemas) => {
 
 /** @type ReadonlySet<Handle> */
 const noSchemas = new Set();
+
+/**
+ * What's known about pairs of schemas. It's a map for each first schema,
+ * because a key made of both handles costs more than the comparison for
+ * the thousands of pairs in a long `anyOf`.
+ *
+ * @type () => { get: (a: Handle, b: Handle) => boolean | undefined; set: (a: Handle, b: Handle, value: boolean) => void }
+ */
+const pairs = () => {
+  /** @type Map<Handle, Map<Handle, boolean>> */
+  const known = new Map();
+  return {
+    get: (a, b) => known.get(a)?.get(b),
+    set: (a, b, value) => {
+      let ofA = known.get(a);
+      if (ofA === undefined) {
+        ofA = new Map();
+        known.set(a, ofA);
+      }
+      ofA.set(b, value);
+    }
+  };
+};
 
 /** How deep `excludes` and `implies` follow each other through `not` */
 const maxDepth = 16;

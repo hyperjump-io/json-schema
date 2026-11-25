@@ -100,6 +100,17 @@ A `oneOf` whose schemas all exclude each other (the kernel's
   a `pattern` nothing matches, is reported by `covered-one-of-schemas` if
   another schema allows everything it could, though it has no values to
   fail.
+- **Every pair of a keyword's schemas is compared**, so the time grows
+  with the square of how many there are. On 2026-11-24, an `anyOf` or
+  `oneOf` of references to small object schemas took
+  `redundant-all-of-any-of-schemas` and `covered-one-of-schemas` about
+  0.3 s each for 300 schemas and 3.3 s for 1,000, and
+  `exclusive-one-of-schemas` 0.2 s and 1.9 s. `duplicate-one-of-schemas`,
+  which compares pairs too, took 0.2 s and 2.3 s. No cheap check
+  was found that rules a pair out before comparing it: the schemas of a
+  long union usually have the same type. The rules don't share what they
+  compare, because `anyOf` and `oneOf` are different pairs, and
+  `excludes` is a different question.
 - **Keywords next to the `allOf` or `anyOf`** aren't compared with its
   schemas, so `minimum: 5` next to `allOf: [{ "minimum": 3 }]` isn't
   reported.
