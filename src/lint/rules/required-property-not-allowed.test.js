@@ -60,6 +60,11 @@ describe("required-property-not-allowed", () => {
 
   test("unevaluatedProperties false with a property a pattern evaluates", async () => {
     expect(await reasons(`{ "$schema": "${draft2020}", "patternProperties": { "^a": {} }, "unevaluatedProperties": false, "required": ["ab"] }`)).to.eql([]);
+    // A keyword that couldn't be lowered might mark anything
+    const notAPattern = `"patternProperties": { "(": {} }`;
+    expect(await reasons(`{ "$schema": "${draft2020}", ${notAPattern}, "unevaluatedProperties": false, "required": ["a"] }`)).to.eql(["Expected a regular expression"]);
+    expect(await reasons(`{ "$schema": "${draft2020}", "allOf": [{ ${notAPattern} }], "unevaluatedProperties": false, "required": ["a"] }`)).to.eql(["Expected a regular expression"]);
+    expect(await reasons(`{ "$schema": "${draft2020}", "then": {}, "minContains": 2, "$defs": {}, "title": "a", "unevaluatedProperties": false, "required": ["a"] }`)).to.have.length(1);
   });
 
   test("unevaluatedProperties false with additionalProperties", async () => {

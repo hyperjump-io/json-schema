@@ -1,10 +1,11 @@
 import { subexpressions } from "../kernel/kernel.js";
+import { keywordDefinitionUri } from "../keywords/unknown.js";
 import { selects } from "./analysis.js";
 import { appliedSchemas } from "./applied.js";
 
 /**
  * @import { Expression } from "../kernel/kernel.d.ts"
- * @import { JsonSchemaNode } from "../schema/schema-ast.d.ts"
+ * @import { JsonSchemaKeywordNode, JsonSchemaNode } from "../schema/schema-ast.d.ts"
  * @import { LintDocument } from "./document.d.ts"
  * @import { LoweredKeyword } from "./lower.d.ts"
  */
@@ -122,7 +123,8 @@ export const marksEvery = (document, schemaNode, reader, children) => {
  * so an `unevaluated*` in it might not see it. It's the other bound from
  * {@link marksEvery}: a mark any branch of `anyOf`, `oneOf`, or `if` makes
  * counts, and an `opaque` operation, a dynamic reference, a reference that
- * can't be followed, and a pattern that isn't valid might mark anything.
+ * can't be followed, and a keyword that couldn't be lowered, like
+ * `patternProperties` with a pattern that isn't valid, might mark anything.
  *
  * @type (document: LintDocument, schemaNode: JsonSchemaNode, reader: LoweredKeyword, name: string) => boolean
  */
@@ -140,7 +142,8 @@ export const mightMarkProperty = (document, schemaNode, reader, name) => {
  * everything that might be (`possibly`). Where only one of some expressions
  * has to pass, the first is what they all mark and the second what any of
  * them does, and what isn't known marks nothing in the first and
- * everything in the second.
+ * everything in the second. A keyword that couldn't be lowered isn't known:
+ * its definition has `lower`, and it has no group.
  *
  * @type (document: LintDocument, schemaNode: JsonSchemaNode, reader: LoweredKeyword, children: Children, bound: "always" | "possibly") => Marked
  */
@@ -165,6 +168,14 @@ const markedBy = (document, schemaNode, reader, children, bound) => {
 
     const keywords = keywordsOf(node);
     if (keywords === undefined) {
+      return unknown();
+    }
+
+    const lowered = new Set(keywords.map(({ keywordNode }) => keywordNode));
+    const isLowered = node.jsonType !== "object" || /** @type JsonSchemaKeywordNode[] */ (node.children).every((keywordNode) => {
+      return lowered.has(keywordNode) || document.definitions.keywords[keywordDefinitionUri(keywordNode.keywordUri)]?.lower === undefined;
+    });
+    if (!isLowered) {
       return unknown();
     }
 

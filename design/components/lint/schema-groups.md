@@ -69,7 +69,9 @@ without the keyword URIs.
   It's the other bound from `marksEvery`, on the same walk: a mark that any
   branch of `any`, `one`, `cases`, or a switch makes counts, and what isn't
   known (`opaque`, `dynamicApply`, `inline`, a reference that can't be
-  followed) might mark anything, so nothing is reported. The walk starts
+  followed, a keyword that couldn't be lowered, like `patternProperties`
+  with a pattern that isn't valid) might mark anything, so nothing is
+  reported. The walk starts
   at the schema the keyword is in (`MustPass.schema`), because it doesn't
   see what the schemas that apply it mark. Rejected: not considering
   `unevaluatedProperties`, because what's evaluated depends on the
