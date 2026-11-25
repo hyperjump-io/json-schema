@@ -1,4 +1,4 @@
-# Redundant and covered schemas (`src/lint/redundant-schemas.js`)
+# Redundant, covered, and exclusive schemas (`src/lint/redundant-schemas.js`)
 
 `redundant-all-of-any-of-schemas` reports a schema in `anyOf` that allows
 nothing another one doesn't, and a schema in `allOf` that allows
@@ -50,6 +50,23 @@ the one that passes: every value it allows matches both, and fails.
 - **It's a rule of its own**, like `duplicate-one-of-schemas`, because the
   schema isn't redundant. It's why valid-looking values are rejected.
 
+## `exclusive-one-of-schemas`
+
+A `oneOf` whose schemas all exclude each other (the kernel's
+[`excludes`](../kernel/implies.md)) says what `anyOf` of them says.
+`exclusiveSchemas` finds them.
+
+- **It isn't in a preset.** 94% of the `oneOf`s in the benchmark corpora
+  are like this, and writing `oneOf` for alternatives is a choice, not a
+  mistake. It's the first rule outside `recommended`, so its page says
+  "Not in a preset.", which `rule-pages.test.js` checks, and the rules'
+  README lists it apart.
+- **The message is on the keyword**, once, not on each schema.
+- **`anyOf` is the dialect's name for the keyword**, like `const` in
+  `single-value-range`, and nothing is reported in a dialect without it.
+- **A `oneOf` of one schema isn't reported.** `mergeable-schemas` reports
+  that.
+
 ## Rejected
 
 - **Not reporting a schema that's only `const` or `enum` values**, so the
@@ -60,6 +77,13 @@ the one that passes: every value it allows matches both, and fails.
   two schemas that imply each other, but that rule also reports schemas
   that annotate the same, and "it's already there" is a clearer message
   for a copy.
+
+- **A rule for a `oneOf` whose schemas might match the same value.**
+  `excludes` not knowing that they can't isn't knowing that they can.
+  `covered-one-of-schemas` reports the case that's sure.
+- **A rule for schemas in `allOf` that exclude each other.** The
+  benchmark corpora have none, and the rules for limits, values, and
+  required properties report the ones in one schema.
 
 ## Open questions and limitations
 

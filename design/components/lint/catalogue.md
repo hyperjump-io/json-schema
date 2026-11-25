@@ -33,7 +33,8 @@ ported, merged into another rule, or not ported for a reason below.
   may want, and those users turn it off. A rule that's a matter of style
   is in `recommended` too, like `mergeable-schemas`.
   Rules that are much more opinionated, like whether `$defs` comes first
-  or last, go in a style preset instead.
+  or last, go in a style preset instead. There isn't one yet, so
+  `exclusive-one-of-schemas`, the only one so far, isn't in a preset.
   The catalogue's rules that are matters of taste
   (`explicit_additional_properties`, `require_description_title`,
   `unknown_keywords_prefix`) weren't ported.
@@ -69,7 +70,7 @@ catalogue doesn't cover: `keyword-allows-nothing`,
 `contradictory-limits`, `const-or-enum-value-rejected`,
 `required-dependent-property`, `unevaluated-without-effect`,
 `reference-by-location`, `redundant-all-of-any-of-schemas`,
-`covered-one-of-schemas`, and
+`covered-one-of-schemas`, `exclusive-one-of-schemas`, and
 `invalid-default-or-example` checking values against the schemas that
 apply theirs.
 `keyword-implied-by-const-or-enum` also covers the catalogue's

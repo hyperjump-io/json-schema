@@ -57,7 +57,7 @@ what implies a `not`.
   for the type. The two functions call each other through `not`, to a
   depth of 16.
 
-Nothing reads `excludes` on its own yet. Counted on the 39 schemas of the
+Lint's `exclusive-one-of-schemas` reads it. Counted on the 39 schemas of the
 benchmark corpora, with what it knows now:
 
 - **Contradictions**: no `allOf` whose schemas exclude each other, and 2

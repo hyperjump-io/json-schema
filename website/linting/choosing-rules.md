@@ -21,9 +21,10 @@ and the `plugins` option of [`lint`](from-code.md).
 
 ## The recommended preset
 
-`@hyperjump/json-schema/lint/recommended` turns on every rule. Start with
-it and turn off the ones you don't want. The [Rules](rules/README.md) page
-lists them.
+`@hyperjump/json-schema/lint/recommended` turns on every rule except the
+few that are matters of style. Start with it and turn off the ones you
+don't want. The [Rules](rules/README.md) page lists them, and the ones
+that aren't in it.
 
 ## OpenAPI presets
 

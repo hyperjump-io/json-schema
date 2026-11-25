@@ -22,7 +22,8 @@
   `read-only-and-write-only`'s.
 - A rule page says its setting in each preset that lists it ("In
   `recommended`, as a warning."), checked by `rule-pages.test.js`. A
-  preset that only includes another doesn't list its rules. A preset in
+  preset that only includes another doesn't list its rules. A rule that
+  isn't in any says "Not in a preset.". A preset in
   another package that changes a rule is linked from the rule's page, and
   says the setting on its own pages, because the test can't see it.
 - A rule about what a schema means finds it in what its keywords lower to,
@@ -102,8 +103,8 @@
   (`required-properties.js`), what it does (`effect.js`), whether a
   schema allows nothing (`allows-nothing.js`), whether two schemas
   mean the same (`same-schema.js`), and which schemas of an `allOf`,
-  `anyOf`, or `oneOf` allow nothing another one doesn't
-  (`redundant-schemas.js`). A rule that needs to know
+  `anyOf`, or `oneOf` allow nothing another one doesn't, or can't pass
+  the same value (`redundant-schemas.js`). A rule that needs to know
   whether a value is valid evaluates the lowered schemas
   (`evaluatorForLint` in `evaluate.js`) instead of compiling.
 - A rule's messages are in document order. `lintRule` sorts each rule's

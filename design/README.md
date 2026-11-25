@@ -88,7 +88,7 @@ hand and have JSDoc explaining the details. Documentation for users is in
   - [Linting from code](components/lint/lint-api.md)
   - [What a keyword group does](components/lint/effect.md)
   - [Schema groups](components/lint/schema-groups.md)
-  - [Redundant and covered schemas](components/lint/redundant-schemas.md)
+  - [Redundant, covered, and exclusive schemas](components/lint/redundant-schemas.md)
 - [Validating JSON files](components/validate-plugin.md)
 - [CLI](components/cli.md)
 - [Testing](components/testing.md)

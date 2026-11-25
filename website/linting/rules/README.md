@@ -1,6 +1,7 @@
 # Rules
 
-Every rule is in the `recommended` preset (see
+Every rule is in the `recommended` preset, except the ones listed under
+[Not in a preset](#not-in-a-preset) (see
 [Choosing rules](../choosing-rules.md)). OpenAPI's rules are in
 [`@hyperjump/openapi`](https://github.com/hyperjump-io/openapi/blob/main/website/linting/rules/README.md).
 Each rule's page explains why what it reports matters and lists its
@@ -70,3 +71,11 @@ A rule with options takes them after the severity:
 ```json
 ["@hyperjump/json-schema/lint/rules/unknown-keyword", ["warn", { "ignore": ["x-internal"] }]]
 ```
+
+## Not in a preset
+
+These are matters of style. Add one to your configuration to use it.
+
+| Rule | Reports |
+| --- | --- |
+| [`exclusive-one-of-schemas`](exclusive-one-of-schemas.md) | A `oneOf` whose schemas can't match the same value. `anyOf` means the same. |

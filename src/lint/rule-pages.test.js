@@ -143,8 +143,9 @@ describe("rule pages", () => {
 
       test("says its severity in each preset", async () => {
         const rule = (await import(new URL(`${name}.js`, rulesUrl).href)).default;
-        const sentences = presetSentences(rule);
-        expect(sentences, "it's in a preset").to.not.eql([]);
+        // A rule that's a matter of style isn't in a preset, and says so
+        const inPresets = presetSentences(rule);
+        const sentences = inPresets.length > 0 ? inPresets : ["Not in a preset."];
         // Lines wrap anywhere, as Markdown reads them
         const prose = source.replaceAll(/\s+/g, " ");
         for (const sentence of sentences) {

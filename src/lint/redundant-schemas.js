@@ -1,5 +1,5 @@
 import { visit } from "unist-util-visit";
-import { implies } from "../kernel/implies.js";
+import { excludes, implies } from "../kernel/implies.js";
 import { subexpressions } from "../kernel/kernel.js";
 import { marksAreRead, schemaGroup } from "./schema-group.js";
 
@@ -134,7 +134,36 @@ export const coveredSchemas = (document) => {
 };
 
 /**
- * What each schema in a document is, for `implies`: its keyword groups'
+ * A keyword whose group is `one` of two or more schemas it applies
+ * (`oneOf`) that all exclude each other (`excludes`), so at most one of
+ * them can pass any value, and `any` of them would say the same. It's
+ * with the schema it's in.
+ *
+ * @type (document: LintDocument) => { schemaNode: JsonSchemaNode; keywordNode: JsonSchemaKeywordNode }[]
+ */
+export const exclusiveSchemas = (document) => {
+  const expressionExcludes = excludes(schemaExpressions(document));
+
+  /** @type {{ schemaNode: JsonSchemaNode; keywordNode: JsonSchemaKeywordNode }[]} */
+  const exclusive = [];
+  for (const [schemaNode, keywords] of document.schemas) {
+    for (const { group, keywordNode } of keywords) {
+      const { expression } = group;
+      if (expression.op !== "one" || expression.of.length < 2 || !expression.of.every(({ op }) => op === "apply")) {
+        continue;
+      }
+
+      const { of } = expression;
+      if (of.every((each, index) => of.slice(index + 1).every((other) => expressionExcludes(each, other)))) {
+        exclusive.push({ schemaNode, keywordNode });
+      }
+    }
+  }
+  return exclusive;
+};
+
+/**
+ * What each schema in a document is, for `implies` and `excludes`: its keyword groups'
  * expressions, none for `true`, and `fail` for `false`
  *
  * @type (document: LintDocument) => Map<string, Expression[]>
