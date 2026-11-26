@@ -332,7 +332,7 @@ class Resolver {
       const keywordNode = /** @type JsonSchemaKeywordNode<JsonErrorNode> */ (property);
       const name = property.children[0].value;
 
-      if (name !== "$schema" && !(name in dialect.keywords)) {
+      if (name !== "$schema" && !Object.hasOwn(dialect.keywords, name)) {
         if (dialect.unknownKeywords === "error" && !name.startsWith("x-")) {
           this.#message(`'${name}' isn't a keyword in the '${dialect.uri}' dialect`, property, "unknown-keyword");
         }

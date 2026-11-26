@@ -8,14 +8,14 @@ export const extendDialect = (dialect, { keywords = {}, formats = {} }) => {
   assertNoReservedKeywords(keywords);
 
   for (const name in keywords) {
-    if (name === "$schema" || name in dialect.keywords) {
+    if (name === "$schema" || Object.hasOwn(dialect.keywords, name)) {
       throw Error(`The '${dialect.uri}' dialect already has a '${name}' keyword`);
     }
   }
 
   const dialectFormats = dialect.formats ?? {};
   for (const name in formats) {
-    if (name in dialectFormats) {
+    if (Object.hasOwn(dialectFormats, name)) {
       throw Error(`The '${dialect.uri}' dialect already has a '${name}' format`);
     }
   }
